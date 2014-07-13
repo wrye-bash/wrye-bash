@@ -15883,32 +15883,12 @@ class CBash_MultiTweaker(CBash_Patcher):
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
 
-class DoublePatcher(ListPatcher):
-    """Subclass for patchers that have GUI lists of objects."""
+class ADoublePatcher(AListPatcher):
+    """docs - what's this about ?""" # TODO
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        Patcher.getConfig(self,configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
-        #--Verify file existence
-        newConfigItems = []
-        patchesList = getPatchesList()
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesList):
-                    newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
+        super(ADoublePatcher, self).getConfig(configs)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
         for tweak in self.tweaks:
@@ -15917,58 +15897,15 @@ class DoublePatcher(ListPatcher):
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
-        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
-        Patcher.saveConfig(self,configs)
+        super(ADoublePatcher, self).saveConfig(configs)
         config = configs[self.__class__.__name__]
         for tweak in self.tweaks:
             tweak.saveConfig(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
 
-class CBash_DoublePatcher(CBash_ListPatcher):
-    """Subclass for patchers that have GUI lists of objects."""
+class DoublePatcher(ADoublePatcher, ListPatcher): pass
 
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        CBash_Patcher.getConfig(self,configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
-        #--Verify file existence
-        newConfigItems = []
-        patchesList = getPatchesList()
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesList):
-                    newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
-        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
-        CBash_Patcher.saveConfig(self,configs)
-        config = configs[self.__class__.__name__]
-        for tweak in self.tweaks:
-            tweak.saveConfig(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
+class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
