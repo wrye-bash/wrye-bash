@@ -15763,7 +15763,7 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
             return [item for item in self.configItems if self.configChecks[item] and (item in self.patchFile.allMods or not reModExt.match(item.s))]
 
 #------------------------------------------------------------------------------
-class MultiTweakItem(object):
+class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     def __init__(self,label,tip,key,*choices,**kwargs):
         """Initialize."""
@@ -15819,14 +15819,20 @@ class MultiTweakItem(object):
         else: value = None
         configs[self.key] = self.isEnabled,value
 
-class CBash_MultiTweakItem(MultiTweakItem):
-    """A tweak item, optionally with configuration choices."""
+class MultiTweakItem(AMultiTweakItem): pass
+
+class CBash_MultiTweakItem(AMultiTweakItem):
+    # extra CBash_MultiTweakItem class variables
     iiMode = False
     scanRequiresChecked = False
     applyRequiresChecked = False
     # the default scan and edit orders - override as needed
     scanOrder = 32
     editOrder = 32
+
+    def __init__(self,label,tip,key,*choices,**kwargs):
+        super(CBash_MultiTweakItem,self).__init__(label,tip,key,*choices,**kwargs)
+        self.mod_count = {} # extra CBash_MultiTweakItem instance variable
 
 #------------------------------------------------------------------------------
 class MultiTweaker(Patcher):
@@ -20170,7 +20176,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
-        MultiTweakItem.__init__(self,label,tip,key)
+        super(AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
@@ -20216,9 +20222,8 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
-        CBash_MultiTweakItem.__init__(self,label,tip,key)
+        super(CBash_AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hideFlag = {u'armorShowsRings':'IsHideRings',u'armorShowsAmulets':'IsHideAmulets'}[key]
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -20253,7 +20258,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
-        MultiTweakItem.__init__(self,label,tip,key)
+        super(AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hidesBit = {u'ClothingShowsRings':16,u'ClothingShowsAmulets':17}[key]
 
     #--Patch Phase ------------------------------------------------------------
@@ -20288,7 +20293,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader('=== '+self.label)
+        log.setHeader(u'=== '+self.label)
         log(u'* '+_(u'Clothing Pieces Tweaked: %d') % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
@@ -20299,9 +20304,8 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key):
-        CBash_MultiTweakItem.__init__(self,label,tip,key)
+        super(CBash_AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hideFlag = {u'ClothingShowsRings':'IsHideRings',u'ClothingShowsAmulets':'IsHideAmulets'}[key]
-        self.mod_count = {}
 
     def getTypes(self):
         return ['CLOT']
@@ -20331,18 +20335,19 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_BowReach(MultiTweakItem):
+class AAssortedTweak_BowReach(AMultiTweakItem):
     """Fix bows to have reach = 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Bow Reach Fix"),
+        super(AAssortedTweak_BowReach, self).__init__(_(u"Bow Reach Fix"),
             _(u'Fix bows with zero reach. (Zero reach causes CTDs.)'),
             u'BowReach',
             (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
 
+class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -20378,20 +20383,10 @@ class AssortedTweak_BowReach(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
-    """Fix bows to have reach = 1.0."""
+class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,CBash_MultiTweakItem):
     name = _(u'Bow Reach Fix')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Bow Reach Fix"),
-            _(u'Fix bows with zero reach. (Zero reach causes CTDs.)'),
-            u'BowReach',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.defaultEnabled = True
-
     def getTypes(self):
         return ['WEAP']
 
@@ -20418,17 +20413,18 @@ class CBash_AssortedTweak_BowReach(CBash_MultiTweakItem):
         self.count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
+class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
     """Sets all one handed weapons as blades, two handed weapons as blunt."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Skyrim-style Weapons"),
+        super(AAssortedTweak_SkyrimStyleWeapons, self).__init__(_(u"Skyrim-style Weapons"),
             _(u'Sets all one handed weapons as blades, two handed weapons as blunt.'),
             u'skyrimweaponsstyle',
             (u'1.0',  u'1.0'),
             )
 
+class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -20469,19 +20465,10 @@ class AssortedTweak_SkyrimStyleWeapons(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
-    """Sets all one handed weapons as blades, two handed weapons as blunt."""
+class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,CBash_MultiTweakItem):
     name = _(u'Skyrim-style Weapons')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Skyrim-style Weapons"),
-            _(u'Sets all one handed weapons as blades, two handed weapons as blunt.'),
-            u'skyrimweaponsstyle',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['WEAP']
 
@@ -20511,17 +20498,19 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(CBash_MultiTweakItem):
         self.count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_ConsistentRings(MultiTweakItem):
+class AAssortedTweak_ConsistentRings(AMultiTweakItem):
     """Sets rings to all work on same finger."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Right Hand Rings"),
+        super(AAssortedTweak_ConsistentRings, self).__init__(_(u"Right Hand Rings"),
             _(u'Fixes rings to unequip consistently by making them prefer the right hand.'),
             u'ConsistentRings',
             (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
+
+class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,MultiTweakItem):
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -20559,20 +20548,10 @@ class AssortedTweak_ConsistentRings(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
-    """Sets rings to all work on same finger."""
+class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,CBash_MultiTweakItem):
     name = _(u'Right Hand Rings')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Right Hand Rings"),
-            _(u'Fixes rings to unequip consistently by making them prefer the right hand.'),
-            u'ConsistentRings',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-        self.defaultEnabled = True
-
     def getTypes(self):
         return ['CLOT']
 
@@ -20602,16 +20581,18 @@ class CBash_AssortedTweak_ConsistentRings(CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 rePlayableSkips = re.compile(ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
 
-class AssortedTweak_ClothingPlayable(MultiTweakItem):
+class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
     """Sets all clothes to playable"""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
+        super(AAssortedTweak_ClothingPlayable, self).__init__(_(u"All Clothing Playable"),
             _(u'Sets all clothing to be playable.'),
             u'PlayableClothing',
             (u'1.0',  u'1.0'),
             )
+
+class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,MultiTweakItem):
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -20654,21 +20635,12 @@ class AssortedTweak_ClothingPlayable(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
-    """Sets all clothes to playable"""
+class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show clothing tweaks
     editOrder = 29
     name = _(u'Playable Clothes')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"All Clothing Playable"),
-            _(u'Sets all clothing to be playable.'),
-            u'PlayableClothing',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['CLOT']
 
@@ -20700,17 +20672,18 @@ class CBash_AssortedTweak_ClothingPlayable(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class AssortedTweak_ArmorPlayable(MultiTweakItem):
+class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
     """Sets all armors to be playable"""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"All Armor Playable"),
+        super(AAssortedTweak_ArmorPlayable, self).__init__(_(u"All Armor Playable"),
             _(u'Sets all armor to be playable.'),
             u'PlayableArmor',
             (u'1.0',  u'1.0'),
             )
 
+class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -20752,20 +20725,11 @@ class AssortedTweak_ArmorPlayable(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_ArmorPlayable(CBash_MultiTweakItem):
-    """Sets all armors to be playable"""
+class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_MultiTweakItem):
     scanOrder = 29 #Run before the show armor tweaks
     editOrder = 29
     name = _(u'Playable Armor')
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"All Armor Playable"),
-            _(u'Sets all armor to be playable.'),
-            u'PlayableArmor',
-            (u'1.0',  u'1.0'),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['ARMO']
 
@@ -20970,18 +20934,19 @@ class CBash_AssortedTweak_DarnBooks(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AssortedTweak_FogFix(MultiTweakItem):
+class AAssortedTweak_FogFix(AMultiTweakItem):
     """Fix fog in cell to be non-zero."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Nvidia Fog Fix"),
+        super(AAssortedTweak_FogFix, self).__init__(_(u"Nvidia Fog Fix"),
             _(u'Fix fog related Nvidia black screen problems.'),
             u'FogFix',
             (u'0.0001',  u'0.0001'),
             )
         self.defaultEnabled = True
 
+class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -21018,20 +20983,10 @@ class AssortedTweak_FogFix(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_AssortedTweak_FogFix(CBash_MultiTweakItem):
-    """Fix fog in cell to be non-zero."""
+class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
     name = _(u'Nvidia Fog Fix')
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Nvidia Fog Fix"),
-            _(u'Fix fog related Nvidia black screen problems.'),
-            u'FogFix',
-            (u'0.0001',  u'0.0001'),
-            )
-        self.mod_count = {}
-        self.defaultEnabled = True
-
     def getTypes(self):
         return ['CELLS'] #or 'CELL', but we want this patcher to run in the same
                         #group as the CellImporter, so we'll have to skip
