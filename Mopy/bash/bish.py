@@ -53,6 +53,7 @@ import sys
 import types
 from subprocess import *
 from operator import attrgetter,itemgetter
+from patcher.RecordGroups import MobCell, MobWorld
 
 #--Local
 import bolt
@@ -146,9 +147,9 @@ def readRecord(record, melSet=0, skipLabel=0):
     global longest
     global indent
     indent += 2
-    if isinstance(record, bosh.MobCell):
+    if isinstance(record, MobCell):
         melSet = ['cell','persistent','distant','temp','land','pgrd']
-    elif isinstance(record, bosh.MobWorld):
+    elif isinstance(record, MobWorld):
         melSet = ['cellBlocks','world','road','worldCellBlock']
     elif hasattr(record, 'melSet'):
         melSet = record.melSet.getSlotsUsed()
