@@ -15879,7 +15879,14 @@ class AMultiTweaker(Abstract_Patcher):
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
 
-class MultiTweaker(AMultiTweaker,Patcher): pass
+class MultiTweaker(AMultiTweaker,Patcher):
+
+    def buildPatch(self,log,progress):
+        """Applies individual tweaks."""
+        if not self.isActive: return
+        log.setHeader(u'= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(log,progress,self.patchFile)
 
 class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
     #--Config Phase -----------------------------------------------------------
@@ -15889,6 +15896,14 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         for tweak in self.enabledTweaks:
             for type_ in tweak.getTypes():
                 group_patchers.setdefault(type_,[]).append(tweak)
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        log.setHeader(u'= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatchLog(log)
 
 class ADoublePatcher(AListPatcher):
     """docs - what's this about ?""" # TODO
@@ -16338,6 +16353,7 @@ class ImportPatcher(ListPatcher):
     scanOrder = 20
     editOrder = 20
     masters = {}
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -16362,6 +16378,7 @@ class CBash_ImportPatcher(CBash_ListPatcher):
     masters = {}
     scanRequiresChecked = True
     applyRequiresChecked = False
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -16383,13 +16400,15 @@ class CBash_ImportPatcher(CBash_ListPatcher):
                     self.scan(mod,conflict,tags)
             else: return
 
+# TODO: The buildPatchLog() methods of CBash_ImportPatcher subclasses vary in such
+# a degree that I can't extract a common - 6 are the same though - see CBash_CellImporter
+
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
     name = _(u'Import Cells')
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
@@ -16588,7 +16607,6 @@ class CBash_CellImporter(CBash_ImportPatcher):
     name = _(u'Import Cells')
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
@@ -16663,7 +16681,6 @@ class GraphicsPatcher(ImportPatcher):
     name = _(u'Import Graphics')
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Graphics'
 
     #--Patch Phase ------------------------------------------------------------
@@ -16845,7 +16862,6 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     name = _(u'Import Graphics')
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Graphics',))
 
     #--Config Phase -----------------------------------------------------------
@@ -16961,7 +16977,6 @@ class ActorImporter(ImportPatcher):
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race', u'Actors.Skeleton')
 
     #--Patch Phase ------------------------------------------------------------
@@ -17141,7 +17156,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',u'Actors.Skeleton'))
 
     #--Config Phase -----------------------------------------------------------
@@ -17242,7 +17256,6 @@ class KFFZPatcher(ImportPatcher):
     name = _(u'Import Actors: Animations')
     text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Actors.Anims'
 
     #--Patch Phase ------------------------------------------------------------
@@ -17373,7 +17386,6 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Animations')
     text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.Anims',))
 
     #--Config Phase -----------------------------------------------------------
@@ -17423,7 +17435,6 @@ class NPCAIPackagePatcher(ImportPatcher):
     name = _(u'Import Actors: AI Packages')
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
@@ -17602,7 +17613,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: AI Packages')
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
     scanRequiresChecked = False
 
@@ -17695,7 +17705,6 @@ class DeathItemPatcher(ImportPatcher):
     name = _(u'Import Actors: Death Items')
     text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Actors.DeathItem'
 
     #--Patch Phase ------------------------------------------------------------
@@ -17827,7 +17836,6 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Death Items')
     text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.DeathItem',))
 
     #--Config Phase -----------------------------------------------------------
@@ -18290,7 +18298,6 @@ class ImportScripts(ImportPatcher):
     name = _(u'Import Scripts')
     text = _(u"Import Scripts on containers, plants, misc, weapons etc. from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Scripts'
 
     #--Patch Phase ------------------------------------------------------------
@@ -18423,7 +18430,6 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     name = _(u'Import Scripts')
     text = _(u"Import Scripts on containers, plants, misc, weapons etc from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Scripts',))
 
     #--Config Phase -----------------------------------------------------------
@@ -18721,7 +18727,6 @@ class ImportActorsSpells(ImportPatcher):
     name = _(u'Import Actors: Spells')
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Actors.Spells',u'Actors.SpellsForceAdd')
 
     #--Patch Phase ------------------------------------------------------------
@@ -18901,7 +18906,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     name = _(u'Import Actors: Spells')
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Actors.Spells',u'Actors.SpellsForceAdd'))
 
     #--Config Phase -----------------------------------------------------------
@@ -19395,7 +19399,6 @@ class RoadImporter(ImportPatcher):
     name = _(u'Import Roads')
     text = _(u"Import roads from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Roads'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
@@ -19476,7 +19479,6 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     name = _(u'Import Roads')
     text = _(u"Import roads from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Roads',))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
@@ -19553,7 +19555,6 @@ class SoundPatcher(ImportPatcher):
     name = _(u'Import Sounds')
     text = _(u"Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Sound'
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
@@ -19696,7 +19697,6 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     name = _(u'Import Sounds')
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Sound',))
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
@@ -19773,7 +19773,6 @@ class StatsPatcher(ImportPatcher):
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = u'Stats'
 
     #--Patch Phase ------------------------------------------------------------
@@ -19897,7 +19896,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Stats',))
 
     #--Config Phase -----------------------------------------------------------
@@ -19990,7 +19988,6 @@ class SpellsPatcher(ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = (u'Spells',u'SpellStats')
 
     #--Patch Phase ------------------------------------------------------------
@@ -20091,7 +20088,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     autoKey = set((u'Spells',u'SpellStats'))
 
     #--Config Phase -----------------------------------------------------------
@@ -22539,13 +22535,6 @@ class AssortedTweaker(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.scanModFile(modFile,progress,self.patchFile)
 
-    def buildPatch(self,log,progress):
-        """Applies individual clothes tweaks."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
-
 class CBash_AssortedTweaker(CBash_MultiTweaker):
     """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
     scanOrder = 32
@@ -22602,14 +22591,6 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
 
 #------------------------------------------------------------------------------
 class GlobalsTweak(MultiTweakItem):
@@ -22959,14 +22940,6 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
 
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
-
 #------------------------------------------------------------------------------
 class GmstTweak(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -23169,14 +23142,6 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
                 tweak.count = 0
             else:
                 tweak.eid_count = {}
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
 
 #------------------------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):
@@ -24207,13 +24172,6 @@ class NamesTweaker(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.scanModFile(modFile,progress,self.patchFile)
 
-    def buildPatch(self,log,progress):
-        """Applies individual clothes tweaks."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
-
 class CBash_NamesTweaker(CBash_MultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
@@ -24288,14 +24246,6 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
                 tweak.codes = getattr(self.patchFile,'bodyTags',u'ARGHTCCPBS')
                 tweak.amulet,tweak.ring,tweak.gloves,tweak.head,tweak.tail,tweak.robe,tweak.chest,tweak.pants,tweak.shoes,tweak.shield = [
                     x for x in tweak.codes]
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
 
 #------------------------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
@@ -25147,13 +25097,6 @@ class TweakActors(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.scanModFile(modFile,progress,self.patchFile)
 
-    def buildPatch(self,log,progress):
-        """Applies individual tweaks."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
-
 class CBash_TweakActors(CBash_MultiTweaker):
     """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
     name = _(u'Tweak Actors')
@@ -25177,14 +25120,6 @@ class CBash_TweakActors(CBash_MultiTweaker):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
 
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher:
@@ -26432,7 +26367,9 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-
+# Races tweakers - notice the Pbash ones do not log in buildPatch - the
+# RacesTweaker patcher was callig their "log" method - now super's _patchLog()
+#------------------------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
@@ -26489,14 +26426,6 @@ class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakI
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
@@ -26599,14 +26528,6 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,Multi
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,CBash_MultiTweakItem):
     name = _(u"Merge Hairs from similar races")
@@ -26730,14 +26651,6 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
 class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,CBash_MultiTweakItem):
     """Merges similar race's eyes."""
     name = _(u"Merge Eyes from similar races")
@@ -26835,14 +26748,6 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
 class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
     name = _(u"Races Have All Hairs")
 
@@ -26903,14 +26808,6 @@ class RaceTweaker_AllEyes(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Races tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
     """Gives all races ALL eyes."""
@@ -26983,14 +26880,6 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Eyes tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
 class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakItem):
     """Sets all eyes to be playable."""
     name = _(u"Playable Eyes")
@@ -27053,14 +26942,6 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTweakItem):
     """Sets all hairs to be playable."""
@@ -27125,14 +27006,6 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-
-    def log(self,log):
-        """Will write to log."""
-        log.setHeader(self.logHeader)
-        count = self.count
-        log(u'* '+_(u'%d Hairs tweaked.') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakItem):
     name = _(u"Sexless Hairs")
@@ -27604,7 +27477,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             for srcMod in sorted(mod_npcsFixed):
                 log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
         for tweak in self.enabledTweaks:
-            tweak.log(log)
+            tweak._patchLog(log,tweak.count)
 
 #-------------------------- CBash only Race Patchers --------------------------#
 
