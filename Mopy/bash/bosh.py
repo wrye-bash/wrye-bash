@@ -19862,12 +19862,8 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem)
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(AssortedTweak_NoLightFlicker, self).__init__()
-        try: # TODO : NEEDED ? move to AAssortedTweak_NoLightFlicker ?
-            self.flags = flags = MreRecord.type_class['LIGH']._flags()
-            flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
-        except:
-            # Fails if the loaded game doesn't have LIGH records defined yet
-            pass
+        self.flags = flags = MreRecord.type_class['LIGH']._flags()
+        flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -20013,7 +20009,12 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTw
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_AssortedTweak_PotionWeight, self).__init__()
-        self.SEFF = MGEFCode('SEFF') # TODO : class variable ?
+        # see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
+        # CBash only, PBash gets away with just knowing the FormID of SEFF
+        # and always assuming it exists, since it's from Oblivion.esm. CBash
+        #  handles this by making sure the MGEF records are almost always
+        # read in, and always before patchers that will need them
+        self.SEFF = MGEFCode('SEFF')
 
     def getTypes(self):
         return ['ALCH']
@@ -20094,7 +20095,7 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_AssortedTweak_IngredientWeight, self).__init__()
-        self.SEFF = MGEFCode('SEFF') # TODO: again what's this ???
+        self.SEFF = MGEFCode('SEFF')
 
     def getTypes(self):
         return ['INGR']
@@ -22082,7 +22083,6 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
 class ANamesTweak_BodyTags(AMultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        # TODO added u'ARGHTCCPBS' etc - correct ?
         super(ANamesTweak_BodyTags,self).__init__(_(u"Body Part Codes"),
             _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
             u'bodyTags',
