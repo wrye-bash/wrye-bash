@@ -26940,18 +26940,19 @@ class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakI
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
+class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
     """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Merge Hairs from similar races"),
+        super(ARaceTweaker_MergeSimilarRaceHairs, self).__init__(_(u"Merge Hairs from similar races"),
             _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
             u'MergeSimilarRaceHairLists',
-            (u'Merge hairs only from vanilla races', 1),
-            (u'Full hair merge between similar races', 0)
+            (_(u'Merge hairs only from vanilla races'), 1),
+            (_(u'Full hair merge between similar races'), 0),
             )
 
+class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27014,18 +27015,19 @@ class RaceTweaker_MergeSimilarRaceHairs(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_MergeSimilarRaceEyes(MultiTweakItem):
+class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
     """Merges similar race's eyes."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Merge Eyes from similar races"),
+        super(ARaceTweaker_MergeSimilarRaceEyes, self).__init__(_(u"Merge Eyes from similar races"),
             _(u'Merges eye lists from similar races (f.e. give RBP khajit eyes to all the other varieties of khajits in Elsweyr)'),
             u'MergeSimilarRaceEyeLists',
-            (u'Merge eyes only from vanilla races', 1),
-            (u'Full eye merge between similar races', 0)
+            (_(u'Merge eyes only from vanilla races'), 1),
+            (_(u'Full eye merge between similar races'), 0),
             )
 
+class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27902,20 +27904,10 @@ class CBash_RaceTweaker_AllEyes(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
-    """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
+class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,CBash_MultiTweakItem):
     name = _(u"Merge Hairs from similar races")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Merge Hairs from similar races"),
-            _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
-            u'MergeSimilarRaceHairLists',
-            (_(u'Merge hairs only from vanilla races'), 1),
-            (_(u'Full hair merge between similar races'), 0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['RACE']
 
@@ -27976,20 +27968,11 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_MergeSimilarRaceEyes(CBash_MultiTweakItem):
+class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,CBash_MultiTweakItem):
     """Merges similar race's eyes."""
     name = _(u"Merge Eyes from similar races")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Merge Eyes from similar races"),
-            _(u'Merges eye lists from similar races (f.e. give RBP khajit eyes to all the other varieties of khajits in Elsweyr)'),
-            u'MergeSimilarRaceEyeLists',
-            (_(u'Merge eyes only from vanilla races'), 1),
-            (_(u'Full eye merge between similar races'), 0),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['RACE']
 
