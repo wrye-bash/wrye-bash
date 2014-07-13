@@ -4563,9 +4563,10 @@ class ModInfos(FileInfos):
                     else:
                         canMerge = PatchFile.modIsMergeable(fileInfo)
                 except Exception, e:
+                    # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
+                    # canMerge = False #presume non-mergeable.
                     raise
-                    deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
-                    canMerge = False #presume non-mergeable.
+
 
                 #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
                 if fileName == u"Oscuro's_Oblivion_Overhaul.esp":

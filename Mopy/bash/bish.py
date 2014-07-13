@@ -1019,7 +1019,6 @@ def parseRecords(fileName='Oblivion.esm'):
                         print item
                     print "Blergh", typed
                     sys.exit()
-                    return
         else:
             print typed
             return
