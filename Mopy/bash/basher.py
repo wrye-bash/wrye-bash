@@ -3842,7 +3842,10 @@ class InstallersPanel(SashTankPanel):
             data = self.data.data_sizeCrcDate
             refresh = False
             for file in changed:
-                path = file.relpath(bosh.dirs['mods'])
+                if file.cs.startswith(bosh.dirs['mods'].cs):
+                    path = file.relpath(bosh.dirs['mods'])
+                else:
+                    path = file
                 if file.exists():
                     data[path] = (file.size,file.crc,file.mtime)
                     refresh = True
