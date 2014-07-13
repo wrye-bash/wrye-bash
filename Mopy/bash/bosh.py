@@ -15629,8 +15629,8 @@ class CBash_Patcher(Abstract_Patcher):
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for type_ in self.getTypes():
+            group_patchers.setdefault(type_,[]).append(self)
         if self.allowUnloaded:
             loadMods = set([mod for mod in self.srcs if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
@@ -15872,8 +15872,8 @@ class CBash_MultiTweaker(CBash_Patcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                group_patchers.setdefault(type,[]).append(tweak)
+            for type_ in tweak.getTypes():
+                group_patchers.setdefault(type_,[]).append(tweak)
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
@@ -16278,8 +16278,8 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         self.isActive = bool(self.old_new)
         if not self.isActive: return
 
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
+        for type_ in self.getTypes():
+            group_patchers.setdefault(type_,[]).append(self)
 
     def getTypes(self):
         return ['MOD','FACT','RACE','MGEF','SCPT','LTEX','ENCH',
@@ -22083,26 +22083,26 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         count = {}
         keep = patchFile.getKeeper()
-        for type in self.activeTypes:
-            if type not in patchFile.tops: continue
-            for record in patchFile.tops[type].records:
+        for type_ in self.activeTypes:
+            if type_ not in patchFile.tops: continue
+            for record in patchFile.tops[type_].records:
                 if getattr(record, 'iconPath', None): continue
                 if getattr(record, 'maleIconPath', None): continue
                 if getattr(record, 'femaleIconPath', None): continue
                 changed = False
-                if type == 'ALCH':
+                if type_ == 'ALCH':
                     record.iconPath = u"Clutter\\Potions\\IconPotion01.dds"
                     changed = True
-                elif type == 'AMMO':
+                elif type_ == 'AMMO':
                     record.iconPath = u"Weapons\\IronArrow.dds"
                     changed = True
-                elif type == 'APPA':
+                elif type_ == 'APPA':
                     record.iconPath = u"Clutter\\IconMortarPestle.dds"
                     changed = True
-                elif type == 'AMMO':
+                elif type_ == 'AMMO':
                     record.iconPath = u"Weapons\\IronArrow.dds"
                     changed = True
-                elif type == 'ARMO':
+                elif type_ == 'ARMO':
                     if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
@@ -22129,10 +22129,10 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     else: #Default icon, probably a token or somesuch
                         record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
                         changed = True
-                elif type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
+                elif type_ in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
                     record.iconPath = u"Clutter\\iconbook%d.dds" % (random.randint(1,13))
                     changed = True
-                elif type == 'CLOT':
+                elif type_ == 'CLOT':
                     if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
@@ -22159,34 +22159,34 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     else: #amulet
                         record.maleIconPath = u"Clothes\\Amulet\\AmuletSilver.dds"
                         changed = True
-                elif type == 'FACT':
+                elif type_ == 'FACT':
                     #todo
                     #changed = True
                     pass
-                elif type == 'INGR':
+                elif type_ == 'INGR':
                     record.iconPath = u"Clutter\\IconSeeds.dds"
                     changed = True
-                elif type == 'KEYM':
+                elif type_ == 'KEYM':
                     record.iconPath = [u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"][random.randint(0,1)]
                     changed = True
-                elif type == 'LIGH':
+                elif type_ == 'LIGH':
                     if not record.flags.canTake: continue
                     record.iconPath = u"Lights\\IconTorch02.dds"
                     changed = True
-                elif type == 'MISC':
+                elif type_ == 'MISC':
                     record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
                     changed = True
-                elif type == 'QUST':
+                elif type_ == 'QUST':
                     if not record.stages: continue
                     record.iconPath = u"Quest\\icon_miscellaneous.dds"
                     changed = True
-                elif type == 'SGST':
+                elif type_ == 'SGST':
                     record.iconPath = u"IconSigilStone.dds"
                     changed = True
-                elif type == 'SLGM':
+                elif type_ == 'SLGM':
                     record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
                     changed = True
-                elif type == 'WEAP':
+                elif type_ == 'WEAP':
                     if record.weaponType == 0:
                         record.iconPath = u"Weapons\\IronDagger.dds"
                     elif record.weaponType == 1:
@@ -22807,7 +22807,7 @@ class AssortedTweaker(MultiTweaker):
             AssortedTweak_TextlessLSCRs(),
             ],key=lambda a: a.label.lower())
 
-   #--Patch Phase ------------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
         if not self.isActive: return tuple()
@@ -23539,8 +23539,8 @@ class NamesTweak_Body(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        format = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format
+        format_ = self.choiceValues[self.chosen][0]
+        showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
         codes = getattr(patchFile,'bodyTags','ARGHTCCPBS')
         amulet,ring,gloves,head,tail,robe,chest,pants,shoes,shield = [
@@ -23549,23 +23549,23 @@ class NamesTweak_Body(MultiTweakItem):
             if not record.full: continue
             if record.full[0] in u'+-=.()[]': continue
             flags = record.flags
-            if flags.head or flags.hair: type = head
-            elif flags.rightRing or flags.leftRing: type = ring
-            elif flags.amulet: type = amulet
-            elif flags.upperBody and flags.lowerBody: type = robe
-            elif flags.upperBody: type = chest
-            elif flags.lowerBody: type = pants
-            elif flags.hand: type = gloves
-            elif flags.foot: type = shoes
-            elif flags.tail: type = tail
-            elif flags.shield: type = shield
+            if flags.head or flags.hair: type_ = head
+            elif flags.rightRing or flags.leftRing: type_ = ring
+            elif flags.amulet: type_ = amulet
+            elif flags.upperBody and flags.lowerBody: type_ = robe
+            elif flags.upperBody: type_ = chest
+            elif flags.lowerBody: type_ = pants
+            elif flags.hand: type_ = gloves
+            elif flags.foot: type_ = shoes
+            elif flags.tail: type_ = tail
+            elif flags.shield: type_ = shield
             else: continue
             if record.recType == 'ARMO':
-                type += 'LH'[record.flags.heavyArmor]
+                type_ += 'LH'[record.flags.heavyArmor]
             if showStat:
-                record.full = format % (type,record.strength/100) + record.full
+                record.full = format_ % (type_,record.strength/100) + record.full
             else:
-                record.full = format % type + record.full
+                record.full = format_ % type_ + record.full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
@@ -23586,23 +23586,23 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
         if record.IsNonPlayable: return
         newFull = record.full
         if newFull:
-            if record.IsHead or record.IsHair: type = self.head
-            elif record.IsRightRing or record.IsLeftRing: type = self.ring
-            elif record.IsAmulet: type = self.amulet
-            elif record.IsUpperBody and record.IsLowerBody: type = self.robe
-            elif record.IsUpperBody: type = self.chest
-            elif record.IsLowerBody: type = self.pants
-            elif record.IsHand: type = self.gloves
-            elif record.IsFoot: type = self.shoes
-            elif record.IsTail: type = self.tail
-            elif record.IsShield: type = self.shield
+            if record.IsHead or record.IsHair: type_ = self.head
+            elif record.IsRightRing or record.IsLeftRing: type_ = self.ring
+            elif record.IsAmulet: type_ = self.amulet
+            elif record.IsUpperBody and record.IsLowerBody: type_ = self.robe
+            elif record.IsUpperBody: type_ = self.chest
+            elif record.IsLowerBody: type_ = self.pants
+            elif record.IsHand: type_ = self.gloves
+            elif record.IsFoot: type_ = self.shoes
+            elif record.IsTail: type_ = self.tail
+            elif record.IsShield: type_ = self.shield
             else: return
             if record._Type == 'ARMO':
-                type += 'LH'[record.IsHeavyArmor]
+                type_ += 'LH'[record.IsHeavyArmor]
             if self.showStat:
-                newFull = self.format % (type, record.strength / 100) + newFull
+                newFull = self.format % (type_, record.strength / 100) + newFull
             else:
-                newFull = self.format % type + newFull
+                newFull = self.format % type_ + newFull
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -23663,7 +23663,7 @@ class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        format = self.choiceValues[self.chosen][0]
+        format_ = self.choiceValues[self.chosen][0]
         hostileEffects = patchFile.getMgefHostiles()
         keep = patchFile.getKeeper()
         reOldLabel = self.__class__.reOldLabel
@@ -23695,7 +23695,7 @@ class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
                 record.full = u'.'+full
             else:
                 label = (u'X' if isPoison else u'') + u'ACDIMRU'[school]
-                record.full = format % label + full
+                record.full = format_ % label + full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
@@ -23867,7 +23867,6 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-
         newFull = record.full
         if newFull and record.IsScroll and not record.IsFixed:
             #--Magic label
@@ -23916,6 +23915,7 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
 
 #------------------------------------------------------------------------------
 class ANamesTweak_Spells(AMultiTweakItem):
+    """Names tweaker for spells."""
     #--Config Phase -----------------------------------------------------------
     reOldLabel = reSpell
     def __init__(self):
@@ -23993,8 +23993,6 @@ class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
-    """Names tweaker for spells."""
-
     #--Config Phase -----------------------------------------------------------
     def getTypes(self):
         return ['SPEL']
@@ -24047,10 +24045,11 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NamesTweak_Weapons(MultiTweakItem):
+class ANamesTweak_Weapons(AMultiTweakItem):
+    """Names tweaker for weapons and ammo."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Weapons"),
+        super(ANamesTweak_Weapons, self).__init__(_(u"Weapons"),
             _(u'Label ammo and weapons to sort by type and damage.'),
             u'WEAP',
             (_(u'B Iron Bow'),  u'%s '),
@@ -24064,7 +24063,7 @@ class NamesTweak_Weapons(MultiTweakItem):
             (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
 
-    #--Config Phase -----------------------------------------------------------
+class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -24090,25 +24089,25 @@ class NamesTweak_Weapons(MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         count = {}
-        format = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format
+        format_ = self.choiceValues[self.chosen][0]
+        showStat = u'%02d' in format_
         keep = patchFile.getKeeper()
         for record in patchFile.AMMO.records:
             if not record.full: continue
             if record.full[0] in u'+-=.()[]': continue
             if showStat:
-                record.full = format % (u'A',record.damage) + record.full
+                record.full = format_ % (u'A',record.damage) + record.full
             else:
-                record.full = format % u'A' + record.full
+                record.full = format_ % u'A' + record.full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         for record in patchFile.WEAP.records:
             if not record.full: continue
             if showStat:
-                record.full = format % (u'CDEFGB'[record.weaponType],record.damage) + record.full
+                record.full = format_ % (u'CDEFGB'[record.weaponType],record.damage) + record.full
             else:
-                record.full = format % u'CDEFGB'[record.weaponType] + record.full
+                record.full = format_ % u'CDEFGB'[record.weaponType] + record.full
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
@@ -24116,32 +24115,15 @@ class NamesTweak_Weapons(MultiTweakItem):
         log(u'* %s: %d' % (self.label,sum(count.values())))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
-    """Names tweaker for weapons and ammo."""
 
+class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Weapons"),
-            _(u'Label ammo and weapons to sort by type and damage.'),
-            u'WEAP',
-            (_(u'B Iron Bow'),  u'%s '),
-            (_(u'B. Iron Bow'), u'%s. '),
-            (_(u'B - Iron Bow'),u'%s - '),
-            (_(u'(B) Iron Bow'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'B08 Iron Bow'),  u'%s%02d '),
-            (_(u'B08. Iron Bow'), u'%s%02d. '),
-            (_(u'B08 - Iron Bow'),u'%s%02d - '),
-            (_(u'(B08) Iron Bow'),u'(%s%02d) '),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['AMMO','WEAP']
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
-        CBash_MultiTweakItem.saveConfig(self,configs)
+        super(CBash_NamesTweak_Weapons, self).saveConfig(configs)
         self.format = self.choiceValues[self.chosen][0]
         self.showStat = u'%02d' in self.format
 
@@ -24152,13 +24134,13 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
         if newFull:
             if record._Type == 'AMMO':
                 if newFull[0] in u'+-=.()[]': return
-                type = 6
+                type_ = 6
             else:
-                type = record.weaponType
+                type_ = record.weaponType
             if self.showStat:
-                newFull = self.format % (u'CDEFGBA'[type], record.damage) + newFull
+                newFull = self.format % (u'CDEFGBA'[type_], record.damage) + newFull
             else:
-                newFull = self.format % u'CDEFGBA'[type] + newFull
+                newFull = self.format % u'CDEFGBA'[type_] + newFull
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -24179,21 +24161,25 @@ class CBash_NamesTweak_Weapons(CBash_MultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class TextReplacer(MultiTweakItem):
+class ATextReplacer(AMultiTweakItem):
     """Base class for replacing any text via regular expressions."""
     #--Config Phase -----------------------------------------------------------
     def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        MultiTweakItem.__init__(self, label, tip, key, choices)
+        super(ATextReplacer, self).__init__(label, tip, key, choices)
+        self.reMatch = reMatch
+        self.reReplace = reReplace
+
+class TextReplacer(ATextReplacer,MultiTweakItem):
+    #--Config Phase -----------------------------------------------------------
+    def __init__(self, reMatch, reReplace, label, tip, key, choices):
+        super(TextReplacer, self).__init__(reMatch, reReplace, label, tip, key, choices)
         self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                             'CLAS','CLOT','CONT','CREA','DOOR',
                             'ENCH','EYES','FACT','FLOR','FURN','GMST',
                             'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
                             'MISC','NPC_','QUST','RACE','SCPT','SGST',
                             'SKIL','SLGM','SPEL','WEAP']
-        self.reMatch = reMatch
-        self.reReplace = reReplace
 
-    #--Config Phase -----------------------------------------------------------
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -24222,9 +24208,9 @@ class TextReplacer(MultiTweakItem):
         keep = patchFile.getKeeper()
         reMatch = re.compile(self.reMatch)
         reReplace = self.reReplace
-        for type in self.activeTypes:
-            if type not in patchFile.tops: continue
-            for record in patchFile.tops[type].records:
+        for type_ in self.activeTypes:
+            if type_ not in patchFile.tops: continue
+            for record in patchFile.tops[type_].records:
                 changed = False
                 if hasattr(record, 'full'):
                     changed = reMatch.search(record.full or u'')
@@ -24244,7 +24230,7 @@ class TextReplacer(MultiTweakItem):
                     if hasattr(record, 'description'):
                         changed = reMatch.search(record.description or u'')
                 if not changed:
-                    if type == 'GMST' and record.eid[0] == u's':
+                    if type_ == 'GMST' and record.eid[0] == u's':
                         changed = reMatch.search(record.value or u'')
                 if not changed:
                     if hasattr(record, 'stages'):
@@ -24254,7 +24240,7 @@ class TextReplacer(MultiTweakItem):
                                 changed = reMatch.search(entry.text or u'')
                                 if changed: break
                 if not changed:
-                    if type == 'SKIL':
+                    if type_ == 'SKIL':
                         changed = reMatch.search(record.apprentice or u'')
                         if not changed:
                             changed = reMatch.search(record.journeyman or u'')
@@ -24284,7 +24270,7 @@ class TextReplacer(MultiTweakItem):
                         newString = record.description
                         if newString:
                             record.description = reMatch.sub(reReplace, newString)
-                    if type == 'GMST' and record.eid[0] == u's':
+                    if type_ == 'GMST' and record.eid[0] == u's':
                         newString = record.value
                         if newString:
                             record.value = reMatch.sub(reReplace, newString)
@@ -24295,7 +24281,7 @@ class TextReplacer(MultiTweakItem):
                                 newString = entry.text
                                 if newString:
                                     entry.text = reMatch.sub(reReplace, newString)
-                    if type == 'SKIL':
+                    if type_ == 'SKIL':
                         newString = record.apprentice
                         if newString:
                             record.apprentice = reMatch.sub(reReplace, newString)
@@ -24317,17 +24303,10 @@ class TextReplacer(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_TextReplacer(CBash_MultiTweakItem):
-    """Base class for replacing any text via regular expressions."""
-
+class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        CBash_MultiTweakItem.__init__(self, label, tip, key, choices)
-        self.reMatch = reMatch
-        self.reReplace = reReplace
-        self.mod_count = {}
-
     def getTypes(self):
+        # TODO : notice it differs only in 'CELLS' form TextReplacer.activeTypes
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                 'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',
