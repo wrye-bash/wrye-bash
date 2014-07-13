@@ -15535,8 +15535,9 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-class Patcher:
-    """Abstract base class for patcher elements."""
+class Abstract_Patcher(object):
+    """Abstract base class for patcher elements - must be the penultimate class
+     in MRO, just before object"""
     scanOrder = 10
     editOrder = 10
     group = u'UNDEFINED'
@@ -15561,6 +15562,7 @@ class Patcher:
         #--Gui stuff
         self.isEnabled = False #--Patcher is enabled.
         self.gConfigPanel = None
+        # super(Abstract_Patcher, self).__init__() # NOT NEEDED - ALWAYS BEFORE obj
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
@@ -15582,79 +15584,47 @@ class Patcher:
 
     def initData(self,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        pass
+        pass  # TODO raise AbstractError ?
 
+class Patcher(Abstract_Patcher):
+    """Abstract base class for patcher elements performing a PBash patch - must
+    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
+    #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ()
+        return ()  # TODO raise AbstractError ?
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ()
+        return ()  # TODO raise AbstractError ?
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch mod,
         but won't alter it. If adds record, should first convert it to long fids."""
-        pass
+        pass  # TODO raise AbstractError ?
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
-        pass
+        pass  # TODO raise AbstractError ?
 
-class CBash_Patcher:
-    """Abstract base class for patcher elements."""
-    scanOrder = 10
-    editOrder = 10
-    group = u'UNDEFINED'
-    name = u'UNDEFINED'
-    text = u"UNDEFINED."
+class CBash_Patcher(Abstract_Patcher):
+    """Abstract base class for patcher elements performing a PBash patch - must
+    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
     unloadedText = u""
-    tip = None
-    defaultConfig = {'isEnabled':False}
-    iiMode = False
-    selectCommands = True
     allowUnloaded = True
     scanRequiresChecked = False
     applyRequiresChecked = False
 
-    def getName(self):
-        """Returns patcher name."""
-        return self.__class__.name
-
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        """Initialization of common values to defaults."""
-        self.patchFile = None
-        self.scanOrder = self.__class__.scanOrder
-        self.editOrder = self.__class__.editOrder
-        self.isActive = True
-        #--Gui stuff
-        self.isEnabled = False #--Patcher is enabled.
-        self.gConfigPanel = None
+        super(CBash_Patcher, self).__init__()
         if not self.allowUnloaded:
             self.text = self.text + self.unloadedText
 
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
-        for attr,default in self.__class__.defaultConfig.iteritems():
-            value = copy.deepcopy(config.get(attr,default))
-            setattr(self,attr,value)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        for attr in self.__class__.defaultConfig:
-            config[attr] = copy.deepcopy(getattr(self,attr))
-
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return []
+        return []  # TODO raise AbstractError ?
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -15667,11 +15637,11 @@ class CBash_Patcher:
 
     def buildPatchLog(self,log):
         """Write to log."""
-        pass
+        pass  # TODO raise AbstractError ?
 
 #------------------------------------------------------------------------------
-class ListPatcher(Patcher):
-    """Subclass for patchers that have GUI lists of objects."""
+class AListPatcher(Abstract_Patcher):
+    """Subclass for patchers that have GUI lists of objects (TODO better docs)."""
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
     defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
@@ -15693,24 +15663,24 @@ class ListPatcher(Patcher):
         self.choiceMenu = self.__class__.choiceMenu
         for modInfo in modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
-                if bush.fullLoadOrder[modInfo.name] > bush.fullLoadOrder[PatchFile.patchName]: continue
+                if bush.fullLoadOrder[modInfo.name] >\
+                   bush.fullLoadOrder[self._patchFile().patchName]: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(getPatchesList()):
+        for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
-                #autoNames.add(fileName)
         return autoItems
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        Patcher.getConfig(self,configs)
+        super(AListPatcher,self).getConfig(configs)
         if self.forceAuto:
             self.autoIsChecked = True
         #--Verify file existence
         newConfigItems = []
-        patchesDir = dirs['patches'].list()
+        patchesDir = self._patchesList()
         for srcPath in self.configItems:
             if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
                 reCsvExt.search(srcPath.s) and srcPath in patchesDir):
@@ -15727,6 +15697,10 @@ class ListPatcher(Patcher):
         if self.autoIsChecked:
             self.getAutoItems()
 
+    def _patchesList(self): raise AbstractError # TODO needed? check subclasses
+
+    def _patchFile(self): raise AbstractError
+
     def getChoice(self,item):
         """Get default config choice."""
         return self.configChoices.setdefault(item,self.choiceMenu[0])
@@ -15749,99 +15723,35 @@ class ListPatcher(Patcher):
         listSet = set(self.configItems)
         self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
         self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
-        Patcher.saveConfig(self,configs)
+        super(AListPatcher,self).saveConfig(configs)
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         return [item for item in self.configItems if self.configChecks[item]]
 
-class CBash_ListPatcher(CBash_Patcher):
-    """Subclass for patchers that have GUI lists of objects."""
+class ListPatcher(AListPatcher,Patcher):
+
+    def _patchesList(self):
+        return dirs['patches'].list()
+
+    def _patchFile(self):
+        return PatchFile
+
+class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the following list will be IGNORED.')
-    #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
-    autoKey = None
-    forceAuto = True
 
     #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        if isinstance(autoKey,basestring):
-            autoKey = set((autoKey,))
-        autoKey = set(autoKey)
-        self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
-                if bush.fullLoadOrder[modInfo.name] > bush.fullLoadOrder[CBash_PatchFile.patchName]: continue
-                autoItems.append(modInfo.name)
-                if self.choiceMenu: self.getChoice(modInfo.name)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        #autoNames = set()
-        for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
-            if reFile.search(fileName.s):
-                autoItems.append(fileName)
-        return autoItems
+    def _patchesList(self):
+        return getPatchesList()
 
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        CBash_Patcher.getConfig(self,configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
-        #--Verify file existence
-        newConfigItems = []
-        patchesList = getPatchesList()
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesList):
-                    newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
-
-    def getChoice(self,item):
-        """Get default config choice."""
-        return self.configChoices.setdefault(item,self.choiceMenu[0])
-
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        if isinstance(item,bolt.Path): item = item.s
-        if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
-        else:
-            return item
-
-    def sortConfig(self,items):
-        """Return sorted items. Default assumes mods and sorts by load order."""
-        return modInfos.getOrdered(items,False)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
-        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
-        CBash_Patcher.saveConfig(self,configs)
+    def _patchFile(self):
+        return CBash_PatchFile
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
         self.srcs = self.getConfigChecked()
         self.isActive = bool(self.srcs)
 
