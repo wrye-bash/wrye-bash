@@ -27090,17 +27090,18 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_AllHairs(MultiTweakItem):
+class ARaceTweaker_AllHairs(AMultiTweakItem):
     """Gives all races ALL hairs."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Races Have All Hairs"),
+        super(ARaceTweaker_AllHairs, self).__init__(_(u"Races Have All Hairs"),
             _(u'Gives all races every available hair.'),
             u'hairyraces',
             (u'get down tonight',1)
             )
 
+class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27186,17 +27187,18 @@ class RaceTweaker_AllEyes(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_PlayableEyes(MultiTweakItem):
+class ARaceTweaker_PlayableEyes(AMultiTweakItem):
     """Sets all eyes to be playable."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Playable Eyes"),
+        super(ARaceTweaker_PlayableEyes, self).__init__(_(u"Playable Eyes"),
             _(u'Sets all eyes to be playable.'),
             u'playableeyes',
             (u'Get it done', 1),
             )
 
+class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27234,17 +27236,18 @@ class RaceTweaker_PlayableEyes(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_PlayableHairs(MultiTweakItem):
+class ARaceTweaker_PlayableHairs(AMultiTweakItem):
     """Sets all hairs to be playable."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Playable Hairs"),
+        super(ARaceTweaker_PlayableHairs, self).__init__(_(u"Playable Hairs"),
             _(u'Sets all Hairs to be playable.'),
             u'playablehairs',
             (u'Get it done', 1),
             )
 
+class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27282,17 +27285,18 @@ class RaceTweaker_PlayableHairs(MultiTweakItem):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class RaceTweaker_SexlessHairs(MultiTweakItem):
+class ARaceTweaker_SexlessHairs(AMultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        MultiTweakItem.__init__(self,_(u"Sexless Hairs"),
+        super(ARaceTweaker_SexlessHairs, self).__init__(_(u"Sexless Hairs"),
             _(u'Lets any sex of character use any hair.'),
             u'sexlesshairs',
             (u'Get it done', 1),
             )
 
+class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -27826,19 +27830,10 @@ class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_AllHairs(CBash_MultiTweakItem):
-    """Gives all races ALL hairs."""
+class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
     name = _(u"Races Have All Hairs")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Races Have All Hairs"),
-            _(u'Gives all races every available hair.'),
-            u'hairyraces',
-            (u'get down tonight',1)
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['RACE']
 
@@ -28033,19 +28028,11 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
+class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakItem):
     """Sets all eyes to be playable."""
     name = _(u"Playable Eyes")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Playable Eyes"),
-            _(u'Sets all eyes to be playable.'),
-            u'playableeyes',
-            (u'Get it done', 1),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['EYES']
 
@@ -28072,19 +28059,11 @@ class CBash_RaceTweaker_PlayableEyes(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
+class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTweakItem):
     """Sets all hairs to be playable."""
     name = _(u"Playable Hairs")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Playable Hairs"),
-            _(u'Sets all eyes to be playable.'),
-            u'playablehairs',
-            (u'Get it done', 1),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['HAIR']
 
@@ -28111,19 +28090,10 @@ class CBash_RaceTweaker_PlayableHairs(CBash_MultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-class CBash_RaceTweaker_SexlessHairs(CBash_MultiTweakItem):
-    """Sets all hairs to be playable by both males and females."""
+class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakItem):
     name = _(u"Sexless Hairs")
 
     #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        CBash_MultiTweakItem.__init__(self,_(u"Sexless Hairs"),
-            _(u'Lets any sex of character use any hair.'),
-            u'sexlesshairs',
-            (u'Get it done', 1),
-            )
-        self.mod_count = {}
-
     def getTypes(self):
         return ['HAIR']
 
