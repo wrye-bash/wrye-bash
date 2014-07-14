@@ -193,12 +193,12 @@ class MobObjects(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())
+            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())# WARN: Unexpected argument
             out.write(self.data)
         else:
             size = self.getSize()
             if size == ModReader.recHeader.size: return #@UndefinedVariable
-            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())
+            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())# WARN: Unexpected argument
             for record in self.records:
                 record.dump(out)
 
@@ -294,10 +294,10 @@ class MobDials(MobObjects):
                 (recType,size,label,groupType,stamp) = ( #@UnusedVariable
                     header.recType,header.size,header.label,header.groupType,header.stamp)
                 if groupType == 7:
-                    record.infoStamp = stamp
+                    record.infoStamp = stamp # WARN: Local variable 'record' might be referenced before assignment
                     infoClass = loadGetRecClass('INFO')
                     if infoClass:
-                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass)
+                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass) # WARN: Local variable 'record' might be referenced before assignment
                     else:
                         ins.seek(ins.tell()+size-header.__class__.size)
                 else:
@@ -555,7 +555,7 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)
+            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)# WARN: Unexpected argument
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
@@ -600,10 +600,10 @@ class MobCells(MobBase):
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())# WARN: Unexpected argument
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())# WARN: Unexpected argument
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -727,7 +727,7 @@ class MobWorld(MobCells):
         errLabel = u'World Block'
         cell = None
         block = None
-        subblock = None
+        subblock = None # WARN: usused
         endBlockPos = endSubblockPos = 0
         cellBlocks = self.cellBlocks
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks('WRLD')
@@ -745,7 +745,7 @@ class MobWorld(MobCells):
             if curPos >= endBlockPos:
                 block = None
             if curPos >= endSubblockPos:
-                subblock = None
+                subblock = None # WARN: usused
             #--Get record info and handle it
             header = insRecHeader()
             recType,size = header.recType,header.size
@@ -776,7 +776,7 @@ class MobWorld(MobCells):
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block
                     subblock = structUnpack('2h',structPack('I',groupFid))
-                    subblock = (subblock[1],subblock[0])
+                    subblock = (subblock[1],subblock[0]) # WARN: usused
                     endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
                     if cell:
@@ -954,7 +954,7 @@ class MobWorlds(MobBase):
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)
+            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)# WARN: Unexpected argument
             out.write(header.pack())
             totalSize = header.__class__.size + sum(x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
@@ -1000,7 +1000,7 @@ class MobWorlds(MobBase):
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
         else:
-            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)
+            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)  # WARN: Unexpected argument
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
