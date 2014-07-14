@@ -476,7 +476,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = button(dialog,id=id,lable=lable)
+            but = button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
