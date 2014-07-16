@@ -193,12 +193,14 @@ class MobObjects(MobBase):
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())# WARN: Unexpected argument
+            # noinspection PyArgumentList
+            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())
             out.write(self.data)
         else:
             size = self.getSize()
             if size == ModReader.recHeader.size: return #@UndefinedVariable
-            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())# WARN: Unexpected argument
+            # noinspection PyArgumentList
+            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())
             for record in self.records:
                 record.dump(out)
 
@@ -555,7 +557,8 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)# WARN: Unexpected argument
+            # noinspection PyArgumentList
+            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
@@ -600,10 +603,12 @@ class MobCells(MobBase):
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())# WARN: Unexpected argument
+                # noinspection PyArgumentList
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())# WARN: Unexpected argument
+                # noinspection PyArgumentList
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -956,7 +961,8 @@ class MobWorlds(MobBase):
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)# WARN: Unexpected argument
+            # noinspection PyArgumentList
+            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)
             out.write(header.pack())
             totalSize = header.__class__.size + sum(x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
@@ -1002,7 +1008,8 @@ class MobWorlds(MobBase):
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
         else:
-            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)  # WARN: Unexpected argument
+            # noinspection PyArgumentList
+            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
