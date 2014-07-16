@@ -291,8 +291,8 @@ class MobDials(MobObjects):
                 recordLoadInfos = record.loadInfos
                 recordsAppend(record)
             elif recType == 'GRUP':
-                (recType,size,label,groupType,stamp) = ( #@UnusedVariable
-                    header.recType,header.size,header.label,header.groupType,header.stamp)
+                (size, groupType, stamp) = (header.size, header.groupType,
+                                            header.stamp)
                 if groupType == 7:
                     record.infoStamp = stamp # WARN: Local variable 'record' might be referenced before assignment
                     infoClass = loadGetRecClass('INFO')
@@ -727,7 +727,7 @@ class MobWorld(MobCells):
         errLabel = u'World Block'
         cell = None
         block = None
-        subblock = None # WARN: usused
+        # subblock = None # usused var
         endBlockPos = endSubblockPos = 0
         cellBlocks = self.cellBlocks
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks('WRLD')
@@ -745,7 +745,7 @@ class MobWorld(MobCells):
             if curPos >= endBlockPos:
                 block = None
             if curPos >= endSubblockPos:
-                subblock = None # WARN: usused
+                pass # subblock = None # usused var
             #--Get record info and handle it
             header = insRecHeader()
             recType,size = header.recType,header.size
@@ -775,8 +775,10 @@ class MobWorld(MobCells):
                     block = (block[1],block[0])
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block
-                    subblock = structUnpack('2h',structPack('I',groupFid))
-                    subblock = (subblock[1],subblock[0]) # WARN: usused
+                    pass # we don't actually care what the sub-block is, since
+                    # we never use that information here. So below was unused:
+                    # subblock = structUnpack('2h',structPack('I',groupFid))
+                    # subblock = (subblock[1],subblock[0]) # usused var
                     endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
                     if cell:
