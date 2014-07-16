@@ -171,7 +171,7 @@ class MobObjects(MobBase):
             recordsAppend(record)
         self.setChanged()
 
-    def getActiveRecords(self,getIgnored=True,getDeleted=True):
+    def getActiveRecords(self):
         """Returns non-ignored records."""
         return [record for record in self.records if not record.flags1.ignored]
 
@@ -299,7 +299,7 @@ class MobDials(MobObjects):
                     record.infoStamp = stamp # WARN: Local variable 'record' might be referenced before assignment
                     infoClass = loadGetRecClass('INFO')
                     if infoClass:
-                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass) # WARN: Local variable 'record' might be referenced before assignment
+                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass) # WARN: Local variable 'recordLoadInfos' might be referenced before assignment
                     else:
                         ins.seek(ins.tell()+size-header.__class__.size)
                 else:
@@ -575,7 +575,7 @@ class MobCells(MobBase):
         """Returns the total size of the block, but also returns a dictionary containing the sizes
         of the individual block,subblocks."""
         bsbCellBlocks = [(x.getBsb(),x) for x in self.cellBlocks]
-        bsbCellBlocks.sort(key = lambda x: x[1].cell.fid)
+        bsbCellBlocks.sort(key = lambda y: y[1].cell.fid)
         bsbCellBlocks.sort(key = itemgetter(0))
         bsb_size = {}
         totalSize = ModReader.recHeader.size #@UndefinedVariable
