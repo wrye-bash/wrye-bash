@@ -788,7 +788,7 @@ class MobWorld(MobCells):
                     block = (block[1],block[0])
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block
-                    pass # we don't actually care what the sub-block is, since
+                    # we don't actually care what the sub-block is, since
                     # we never use that information here. So below was unused:
                     # subblock = structUnpack('2h',structPack('I',groupFid))
                     # subblock = (subblock[1],subblock[0]) # usused var
