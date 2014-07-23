@@ -284,6 +284,8 @@ class MobDials(MobObjects):
         insRecHeader = ins.unpackRecHeader
         recordsAppend = records.append
         loadGetRecClass = self.loadFactory.getRecClass
+        record = None
+        recordLoadInfos = None
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
@@ -296,12 +298,18 @@ class MobDials(MobObjects):
                 (size, groupType, stamp) = (header.size, header.groupType,
                                             header.stamp)
                 if groupType == 7:
-                    record.infoStamp = stamp # WARN: Local variable 'record' might be referenced before assignment
-                    infoClass = loadGetRecClass('INFO')
-                    if infoClass:
-                        recordLoadInfos(ins,ins.tell()+size-header.__class__.size,infoClass) # WARN: Local variable 'recordLoadInfos' might be referenced before assignment
-                    else:
-                        ins.seek(ins.tell()+size-header.__class__.size)
+                    try: # record/recordLoadInfos should be initialized in 'if'
+                        record.infoStamp = stamp
+                        infoClass = loadGetRecClass('INFO')
+                        if infoClass:
+                            recordLoadInfos(ins, ins.tell() + size -
+                                            header.__class__.size,
+                                            infoClass)
+                        else:
+                            ins.seek(ins.tell() + size - header.__class__.size)
+                    except AttributeError:
+                        ModError(self.inName, u'Malformed Plugin: Exterior '
+                                 u'CELL subblock before worldspace GRUP')
                 else:
                     raise ModError(self.inName,u'Unexpected subgroup %d in DIAL group.' % groupType)
             else:
