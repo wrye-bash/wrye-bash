@@ -22,8 +22,7 @@
 #
 # =============================================================================
 
-"""Classes that group records.
-"""
+"""Classes that group records."""
 # Python imports
 from operator import itemgetter
 import struct
@@ -38,7 +37,8 @@ class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
     support unpacking, but can report its number of records and be written."""
 
-    __slots__=['header','size','label','groupType','stamp','debug','data','changed','numRecords','loadFactory','inName']
+    __slots__ = ['header','size','label','groupType','stamp','debug','data',
+                 'changed','numRecords','loadFactory','inName']
 
     def __init__(self,header,loadFactory,ins=None,unpack=False):
         """Initialize."""
@@ -66,7 +66,8 @@ class MobBase(object):
             self.data = ins.read(self.size-self.header.__class__.size,type)
         #--Analyze ins.
         elif ins is not None:
-            self.loadData(ins, ins.tell()+self.size-self.header.__class__.size)
+            self.loadData(ins,
+                          ins.tell() + self.size - self.header.__class__.size)
         #--Analyze internal buffer.
         else:
             with self.getReader() as reader:
@@ -90,8 +91,8 @@ class MobBase(object):
         return self.size
 
     def getNumRecords(self,includeGroups=True):
-        """Returns number of records, including self (if plusSelf), unless there's no
-        subrecords, in which case, it returns 0."""
+        """Returns number of records, including self (if plusSelf), unless
+        there's no subrecords, in which case, it returns 0."""
         if self.changed:
             raise AbstractError
         elif self.numRecords > -1: #--Cached value.
@@ -132,12 +133,13 @@ class MobBase(object):
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         raise AbstractError
 
     def updateRecords(self,block,mapper,toLong):
-        """Looks through all of the records in 'block', and updates any records in self that
-        exist with the data in 'block'."""
+        """Looks through all of the records in 'block', and updates any
+        records in self that exist with the data in 'block'."""
         raise AbstractError
 
 #------------------------------------------------------------------------------
@@ -183,24 +185,27 @@ class MobObjects(MobBase):
         return numRecords
 
     def getSize(self):
-        """Returns size (incuding size of any group headers)."""
+        """Returns size (including size of any group headers)."""
         if not self.changed:
             return self.size
         else:
             hsize = ModReader.recHeader.size #@UndefinedVariable
-            return hsize + sum((hsize + record.getSize()) for record in self.records)
+            return hsize + sum(
+                (hsize + record.getSize()) for record in self.records)
 
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
             # noinspection PyArgumentList
-            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,self.stamp).pack())
+            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,
+                                          self.stamp).pack())
             out.write(self.data)
         else:
             size = self.getSize()
             if size == ModReader.recHeader.size: return #@UndefinedVariable
             # noinspection PyArgumentList
-            out.write(ModReader.recHeader('GRUP',size,self.label,0,self.stamp).pack())
+            out.write(ModReader.recHeader('GRUP',size,self.label,0,
+                                          self.stamp).pack())
             for record in self.records:
                 record.dump(out)
 
@@ -211,7 +216,8 @@ class MobObjects(MobBase):
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         for record in self.records:
             record.convertFids(mapper,toLong)
         self.id_records.clear()
@@ -256,13 +262,15 @@ class MobObjects(MobBase):
 
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        self.records = [record for record in self.records if (record.fid == (record.isKeyedByEid and GPath(bash.bosh.modInfos.masterName),0) and record.eid in keepIds) or record.fid in keepIds]
+        self.records = [record for record in self.records if (record.fid == (
+            record.isKeyedByEid and GPath(bash.bosh.modInfos.masterName),
+            0) and record.eid in keepIds) or record.fid in keepIds]
         self.id_records.clear()
         self.setChanged()
 
     def updateRecords(self,srcBlock,mapper,mergeIds):
-        """Looks through all of the records in 'srcBlock', and updates any records in self that
-        exist within the data in 'block'."""
+        """Looks through all of the records in 'srcBlock', and updates any
+        records in self that exist within the data in 'block'."""
         fids = set([record.fid for record in self.records])
         for record in srcBlock.getActiveRecords():
             if mapper(record.fid) in fids:
@@ -311,10 +319,13 @@ class MobDials(MobObjects):
                         ModError(self.inName, u'Malformed Plugin: Exterior '
                                  u'CELL subblock before worldspace GRUP')
                 else:
-                    raise ModError(self.inName,u'Unexpected subgroup %d in DIAL group.' % groupType)
+                    raise ModError(self.inName,
+                                   u'Unexpected subgroup %d in DIAL group.'
+                                   % groupType)
             else:
-                raise ModError(self.inName,u'Unexpected %s record in %s group.'
-                    % (recType,expType))
+                raise ModError(self.inName,
+                               u'Unexpected %s record in %s group.'
+                               % (recType,expType))
         self.setChanged()
 
     def getSize(self):
@@ -326,22 +337,26 @@ class MobDials(MobObjects):
         for record in self.records:
             size += hsize + record.getSize()
             if record.infos:
-                size += hsize + sum(hsize+info.getSize() for info in record.infos)
+                size += hsize + sum(
+                    hsize + info.getSize() for info in record.infos)
         return size
 
     def getNumRecords(self,includeGroups=1):
         """Returns number of records, including self plus info records."""
         self.numRecords = (
-            len(self.records) + includeGroups*bool(self.records) +
-            sum((includeGroups + len(x.infos)) for x in self.records if x.infos)
-            )
+            len(self.records) + includeGroups * bool(self.records) +
+            sum((includeGroups + len(x.infos)) for x in self.records if
+                x.infos)
+        )
         return self.numRecords
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MobCell(MobBase):
-    """Represents cell block structure -- including the cell and all subrecords."""
+    """Represents cell block structure -- including the cell and all
+    subrecords."""
 
-    __slots__ = MobBase.__slots__ + ['cell','persistent','distant','temp','land','pgrd']
+    __slots__ = MobBase.__slots__ + ['cell','persistent','distant','temp',
+                                     'land','pgrd']
 
     def __init__(self,header,loadFactory,cell,ins=None,unpack=False):
         """Initialize."""
@@ -372,13 +387,19 @@ class MobCell(MobBase):
             if recType == 'GRUP':
                 groupType=header.groupType
                 if groupType not in (8, 9, 10):
-                    raise ModError(self.inName,u'Unexpected subgroup %d in cell children group.' % groupType)
+                    raise ModError(self.inName,
+                                   u'Unexpected subgroup %d in cell children '
+                                   u'group.' % groupType)
                 if subgroupLoaded[groupType - 8]:
-                    raise ModError(self.inName,u'Extra subgroup %d in cell children group.' % groupType)
+                    raise ModError(self.inName,
+                                   u'Extra subgroup %d in cell children '
+                                   u'group.' % groupType)
                 else:
                     subgroupLoaded[groupType - 8] = True
             elif recType not in cellType_class:
-                raise ModError(self.inName,u'Unexpected %s record in cell children group.' % recType)
+                raise ModError(self.inName,
+                               u'Unexpected %s record in cell children '
+                               u'group.' % recType)
             elif not recClass:
                 insSeek(header.size,1)
             elif recType in ('REFR','ACHR','ACRE'):
@@ -393,30 +414,45 @@ class MobCell(MobBase):
         self.setChanged()
 
     def getSize(self):
-        """Returns size (incuding size of any group headers)."""
-        return ModReader.recHeader.size + self.cell.getSize() + self.getChildrenSize() #@UndefinedVariable
+        """Returns size (including size of any group headers)."""
+        return ModReader.recHeader.size + self.cell.getSize() + \
+               self.getChildrenSize()  #@UndefinedVariable
 
     def getChildrenSize(self):
-        """Returns size of all children, including the group header.  This does not include the cell itself."""
-        size = self.getPersistentSize() + self.getTempSize() + self.getDistantSize()
-        return size + ModReader.recHeader.size*bool(size) #@UndefinedVariable
+        """Returns size of all children, including the group header.  This
+        does not include the cell itself."""
+        size = self.getPersistentSize() + self.getTempSize() + \
+               self.getDistantSize()
+        return size + ModReader.recHeader.size * bool(
+            size)  #@UndefinedVariable
 
     def getPersistentSize(self):
-        """Returns size of all persistent children, including the persistent children group."""
-        size = sum(ModReader.recHeader.size + x.getSize() for x in self.persistent) #@UndefinedVariable
-        return size + ModReader.recHeader.size*bool(size) #@UndefinedVariable
+        """Returns size of all persistent children, including the persistent
+        children group."""
+        size = sum(ModReader.recHeader.size + x.getSize() for x in
+                   self.persistent)  #@UndefinedVariable
+        return size + ModReader.recHeader.size * bool(
+            size)  #@UndefinedVariable
 
     def getTempSize(self):
-        """Returns size of all temporary children, including the temporary children group."""
-        size = sum(ModReader.recHeader.size + x.getSize() for x in self.temp) #@UndefinedVariable
-        if self.pgrd: size += ModReader.recHeader.size + self.pgrd.getSize() #@UndefinedVariable
-        if self.land: size += ModReader.recHeader.size + self.land.getSize() #@UndefinedVariable
-        return size + ModReader.recHeader.size*bool(size) #@UndefinedVariable
+        """Returns size of all temporary children, including the temporary
+        children group."""
+        size = sum(ModReader.recHeader.size + x.getSize() for x in
+                   self.temp)  #@UndefinedVariable
+        if self.pgrd: size+=ModReader.recHeader.size + self.pgrd.getSize()
+        #@UndefinedVariable
+        if self.land: size+=ModReader.recHeader.size + self.land.getSize()
+        #@UndefinedVariable
+        return size + ModReader.recHeader.size * bool(
+            size)  #@UndefinedVariable
 
     def getDistantSize(self):
-        """Returns size of all distant children, including the distant children group."""
-        size = sum(ModReader.recHeader.size + x.getSize() for x in self.distant) #@UndefinedVariable
-        return size + ModReader.recHeader.size*bool(size) #@UndefinedVariable
+        """Returns size of all distant children, including the distant
+        children group."""
+        size = sum(ModReader.recHeader.size + x.getSize() for x in
+                   self.distant)  #@UndefinedVariable
+        return size + ModReader.recHeader.size * bool(
+            size)  #@UndefinedVariable
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
@@ -432,19 +468,19 @@ class MobCell(MobBase):
 
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
-        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell, bsb is
-        ((blockX,blockY),(subblockX,subblockY))."""
+        For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
+        bsb is ((blockX,blockY),(subblockX,subblockY))."""
         cell = self.cell
         #--Interior cell
         if cell.flags.isInterior:
             baseFid = cell.fid & 0x00FFFFFF
-            return (baseFid%10, baseFid%100//10)
+            return baseFid%10, baseFid%100//10
         #--Exterior cell
         else:
             x,y = cell.posX,cell.posY
             if x is None: x = 0
             if y is None: y = 0
-            return ((x//32, y//32), (x//8, y//8))
+            return (x//32, y//32), (x//8, y//8)
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -473,7 +509,8 @@ class MobCell(MobBase):
     #--Fid manipulation, record filtering ----------------------------------
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         self.cell.convertFids(mapper,toLong)
         for record in self.temp:
             record.convertFids(mapper,toLong)
@@ -511,14 +548,16 @@ class MobCell(MobBase):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (
+                        myRecord.fid,record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
                     mergeDiscard(record.fid)
         for attr in ('persistent','temp','distant'):
             recordList = selfGetter(attr)
-            fids = dict((record.fid,index) for index,record in enumerate(recordList))
+            fids = dict(
+                (record.fid,index) for index,record in enumerate(recordList))
             for record in srcGetter(attr):
                 if not record.flags1.ignored and mapper(record.fid) in fids:
                     record = record.getTypeCopy(mapper)
@@ -534,22 +573,25 @@ class MobCell(MobBase):
         self.temp       = [x for x in self.temp if x.fid in keepIds]
         self.persistent = [x for x in self.persistent if x.fid in keepIds]
         self.distant    = [x for x in self.distant if x.fid in keepIds]
-        if self.pgrd or self.land or self.persistent or self.temp or self.distant:
+        if self.pgrd or self.land or self.persistent or self.temp or \
+                self.distant:
             keepIds.add(self.cell.fid)
         self.setChanged()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MobCells(MobBase):
     """A block containing cells. Subclassed by MobWorld and MobICells.
 
     Note that "blocks" here only roughly match the file block structure.
 
-    "Bsb" is a tuple of the file (block,subblock) labels. For interior cells, bsbs are tuples
-    of two numbers, while for exterior cells, bsb labels are tuples of grid tuples."""
+    "Bsb" is a tuple of the file (block,subblock) labels. For interior
+    cells, bsbs are tuples of two numbers, while for exterior cells, bsb labels
+    are tuples of grid tuples."""
 
     def __init__(self,header,loadFactory,ins=None,unpack=False):
         """Initialize."""
-        self.cellBlocks = [] #--Each cellBlock is a cell and it's related records.
+        self.cellBlocks = [] #--Each cellBlock is a cell and its related
+        # records.
         self.id_cellBlock = {}
         MobBase.__init__(self,header,loadFactory,ins,unpack)
 
@@ -566,7 +608,8 @@ class MobCells(MobBase):
             self.id_cellBlock[fid].cell = cell
         else:
             # noinspection PyArgumentList
-            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),self.loadFactory,cell)
+            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),
+                                self.loadFactory,cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
@@ -580,8 +623,8 @@ class MobCells(MobBase):
         return set(x.getBsb() for x in self.cellBlocks)
 
     def getBsbSizes(self):
-        """Returns the total size of the block, but also returns a dictionary containing the sizes
-        of the individual block,subblocks."""
+        """Returns the total size of the block, but also returns a
+        dictionary containing the sizes of the individual block,subblocks."""
         bsbCellBlocks = [(x.getBsb(),x) for x in self.cellBlocks]
         bsbCellBlocks.sort(key = lambda y: y[1].cell.fid)
         bsbCellBlocks.sort(key = itemgetter(0))
@@ -593,15 +636,20 @@ class MobCells(MobBase):
             totalSize += cellBlockSize
             bsb0 = (bsb[0],None) #--Block group
             bsb_setDefault(bsb0,ModReader.recHeader.size) #@UndefinedVariable
-            if bsb_setDefault(bsb,ModReader.recHeader.size) == ModReader.recHeader.size: #@UndefinedVariable
-                bsb_size[bsb0] += ModReader.recHeader.size #@UndefinedVariable
+            if bsb_setDefault(bsb,
+                              ModReader.recHeader.size) == \
+                    ModReader.recHeader.size:  #@UndefinedVariable
+                bsb_size[bsb0] += ModReader.recHeader.size  #@UndefinedVariable
             bsb_size[bsb] += cellBlockSize
             bsb_size[bsb0] += cellBlockSize
-        totalSize += ModReader.recHeader.size * len(bsb_size) #@UndefinedVariable
+        totalSize += ModReader.recHeader.size * len(
+            bsb_size)  #@UndefinedVariable
         return totalSize,bsb_size,bsbCellBlocks
 
-    def dumpBlocks(self,out,bsbCellBlocks,bsb_size,blockGroupType,subBlockGroupType):
-        """Dumps the cell blocks and their block and sub-block groups to out."""
+    def dumpBlocks(self,out,bsbCellBlocks,bsb_size,blockGroupType,
+                   subBlockGroupType):
+        """Dumps the cell blocks and their block and sub-block groups to
+        out."""
         curBlock = None
         curSubblock = None
         stamp = self.stamp
@@ -612,24 +660,28 @@ class MobCells(MobBase):
             if block != curBlock:
                 curBlock,curSubblock = bsb0
                 # noinspection PyArgumentList
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,blockGroupType,stamp).pack())
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,
+                                             blockGroupType,stamp).pack())
             if subblock != curSubblock:
                 curSubblock = subblock
                 # noinspection PyArgumentList
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,subBlockGroupType,stamp).pack())
+                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,
+                                             subBlockGroupType,stamp).pack())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
         """Returns number of records, including self and all children."""
         count = sum(x.getNumRecords(includeGroups) for x in self.cellBlocks)
         if count and includeGroups:
-            count += 1 + len(self.getUsedBlocks()) + len(self.getUsedSubblocks())
+            count += 1 + len(self.getUsedBlocks()) + len(
+                self.getUsedSubblocks())
         return count
 
     #--Fid manipulation, record filtering ----------------------------------
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        #--Note: this call will add the cell to keepIds if any of its related records are kept.
+        #--Note: this call will add the cell to keepIds if any of its
+        # related records are kept.
         for cellBlock in self.cellBlocks: cellBlock.keepRecords(keepIds)
         self.cellBlocks = [x for x in self.cellBlocks if x.cell.fid in keepIds]
         self.id_cellBlock.clear()
@@ -637,7 +689,8 @@ class MobCells(MobBase):
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         for cellBlock in self.cellBlocks:
             cellBlock.convertFids(mapper,toLong)
 
@@ -658,7 +711,7 @@ class MobCells(MobBase):
         for cellBlock in self.cellBlocks:
             cellBlock.updateMasters(masters)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MobICells(MobCells):
     """Tes4 top block for interior cell records."""
 
@@ -686,9 +739,13 @@ class MobICells(MobCells):
                     cellBlocksAppend(cellBlock)
                 cell = recCellClass(header,ins,True)
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
-                    raise ModError(self.inName,u'Interior cell <%X> %s outside of block or subblock.' % (cell.fid, cell.eid))
+                    raise ModError(self.inName,
+                                   u'Interior cell <%X> %s outside of block '
+                                   u'or subblock.' % (
+                                       cell.fid,cell.eid))
             elif recType == 'GRUP':
-                size,groupFid,groupType = header.size,header.label,header.groupType
+                size,groupFid,groupType = header.size,header.label, \
+                                          header.groupType
                 delta = size-header.__class__.size
                 if groupType == 2: # Block number
                     endBlockPos = insTell()+delta
@@ -697,21 +754,30 @@ class MobICells(MobCells):
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
-                            raise ModError(self.inName,u'Cell subgroup (%X) does not match CELL <%X> %s.' %
-                                (groupFid, cell.fid, cell.eid))
+                            raise ModError(self.inName,
+                                           u'Cell subgroup (%X) does not '
+                                           u'match CELL <%X> %s.' %
+                                           (groupFid,cell.fid,cell.eid))
                         if unpackCellBlocks:
-                            cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
+                            cellBlock = MobCell(header,selfLoadFactory,cell,
+                                                ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
                             insSeek(delta,1)
                         cellBlocksAppend(cellBlock)
                         cell = None
                     else:
-                        raise ModError(self.inName,u'Extra subgroup %d in CELL group.' % groupType)
+                        raise ModError(self.inName,
+                                       u'Extra subgroup %d in CELL group.' %
+                                       groupType)
                 else:
-                    raise ModError(self.inName,u'Unexpected subgroup %d in CELL group.' % groupType)
+                    raise ModError(self.inName,
+                                   u'Unexpected subgroup %d in CELL group.'
+                                   % groupType)
             else:
-                raise ModError(self.inName,u'Unexpected %s record in %s group.' % (recType,expType))
+                raise ModError(self.inName,
+                               u'Unexpected %s record in %s group.' % (
+                                   recType,expType))
         self.setChanged()
 
     def dump(self,out):
@@ -725,7 +791,7 @@ class MobICells(MobCells):
             out.write(self.header.pack())
             self.dumpBlocks(out,blocks,bsb_size,2,3)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MobWorld(MobCells):
     def __init__(self,header,loadFactory,world,ins=None,unpack=False):
         """Initialize."""
@@ -740,7 +806,7 @@ class MobWorld(MobCells):
         errLabel = u'World Block'
         cell = None
         block = None
-        # subblock = None # usused var
+        # subblock = None # unused var
         endBlockPos = endSubblockPos = 0
         cellBlocks = self.cellBlocks
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks('WRLD')
@@ -758,7 +824,7 @@ class MobWorld(MobCells):
             if curPos >= endBlockPos:
                 block = None
             if curPos >= endSubblockPos:
-                pass # subblock = None # usused var
+                pass # subblock = None # unused var
             #--Get record info and handle it
             header = insRecHeader()
             recType,size = header.recType,header.size
@@ -774,13 +840,18 @@ class MobWorld(MobCells):
                         cellBlocksAppend(cellBlock)
                     else:
                         if self.worldCellBlock:
-                            raise ModError(self.inName,u'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
+                            raise ModError(self.inName,
+                                           u'Extra exterior cell <%s> %s '
+                                           u'before block group.' % (
+                                               hex(cell.fid),cell.eid))
                         self.worldCellBlock = cellBlock
                 cell = recClass(header,ins,True)
                 if block:
                     if insTell() > endBlockPos or insTell() > endSubblockPos:
-                        raise ModError(self.inName,u'Exterior cell <%s> %s after block or'
-                                u' subblock.' % (hex(cell.fid), cell.eid))
+                        raise ModError(self.inName,
+                                       u'Exterior cell <%s> %s after block or'
+                                       u' subblock.' % (
+                                           hex(cell.fid),cell.eid))
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
@@ -791,15 +862,19 @@ class MobWorld(MobCells):
                     # we don't actually care what the sub-block is, since
                     # we never use that information here. So below was unused:
                     # subblock = structUnpack('2h',structPack('I',groupFid))
-                    # subblock = (subblock[1],subblock[0]) # usused var
+                    # subblock = (subblock[1],subblock[0]) # unused var
                     endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
-                            raise ModError(self.inName,u'Cell subgroup (%s) does not match CELL <%s> %s.' %
-                                (hex(groupFid), hex(cell.fid), cell.eid))
+                            raise ModError(self.inName,
+                                           u'Cell subgroup (%s) does not '
+                                           u'match CELL <%s> %s.' %
+                                           (hex(groupFid),hex(cell.fid),
+                                            cell.eid))
                         if unpackCellBlocks:
-                            cellBlock = MobCell(header,selfLoadFactory,cell,ins,True)
+                            cellBlock = MobCell(header,selfLoadFactory,cell,
+                                                ins,True)
                         else:
                             cellBlock = MobCell(header,selfLoadFactory,cell)
                             insSeek(delta,1)
@@ -807,15 +882,24 @@ class MobWorld(MobCells):
                             cellBlocksAppend(cellBlock)
                         else:
                             if self.worldCellBlock:
-                                raise ModError(self.inName,u'Extra exterior cell <%s> %s before block group.' % (hex(cell.fid), cell.eid))
+                                raise ModError(self.inName,
+                                               u'Extra exterior cell <%s> %s '
+                                               u'before block group.' % (
+                                                   hex(cell.fid),cell.eid))
                             self.worldCellBlock = cellBlock
                         cell = None
                     else:
-                        raise ModError(self.inName,u'Extra cell children subgroup in world children group.')
+                        raise ModError(self.inName,
+                                       u'Extra cell children subgroup in '
+                                       u'world children group.')
                 else:
-                    raise ModError(self.inName,u'Unexpected subgroup %d in world children group.' % groupType)
+                    raise ModError(self.inName,
+                                   u'Unexpected subgroup %d in world '
+                                   u'children group.' % groupType)
             else:
-                raise ModError(self.inName,u'Unexpected %s record in world children group.' % recType)
+                raise ModError(self.inName,
+                               u'Unexpected %s record in world children '
+                               u'group.' % recType)
         self.setChanged()
 
     def getNumRecords(self,includeGroups=True):
@@ -830,8 +914,10 @@ class MobWorld(MobCells):
         return count
 
     def dump(self,out):
-        """Dumps group header and then records.  Returns the total size of the world block."""
-        worldSize = self.world.getSize() + ModReader.recHeader.size #@UndefinedVariable
+        """Dumps group header and then records.  Returns the total size of
+        the world block."""
+        worldSize = self.world.getSize() + ModReader.recHeader.size
+        #@UndefinedVariable
         self.world.dump(out)
         if not self.changed:
             out.write(self.header.pack())
@@ -840,7 +926,8 @@ class MobWorld(MobCells):
         elif self.cellBlocks or self.road or self.worldCellBlock:
             (totalSize, bsb_size, blocks) = self.getBsbSizes()
             if self.road:
-                totalSize += self.road.getSize() + ModReader.recHeader.size #@UndefinedVariable
+                totalSize += self.road.getSize() + ModReader.recHeader.size
+                #@UndefinedVariable
             if self.worldCellBlock:
                 totalSize += self.worldCellBlock.getSize()
             self.header.size = totalSize
@@ -859,7 +946,8 @@ class MobWorld(MobCells):
     #--Fid manipulation, record filtering ----------------------------------
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         self.world.convertFids(mapper,toLong)
         if self.road:
             self.road.convertFids(mapper,toLong)
@@ -887,13 +975,15 @@ class MobWorld(MobCells):
             record = srcGetter(attr)
             if myRecord and record:
                 if myRecord.fid != mapper(record.fid):
-                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (myRecord.fid, record.fid))
+                    raise ArgumentError(u"Fids don't match! %08x, %08x" % (
+                        myRecord.fid,record.fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy(mapper)
                     selfSetter(attr,record)
                     mergeDiscard(record.fid)
         if self.worldCellBlock and srcBlock.worldCellBlock:
-            self.worldCellBlock.updateRecords(srcBlock.worldCellBlock,mapper,mergeIds)
+            self.worldCellBlock.updateRecords(srcBlock.worldCellBlock,mapper,
+                                              mergeIds)
         MobCells.updateRecords(self,srcBlock,mapper,mergeIds)
 
     def keepRecords(self,keepIds):
@@ -908,7 +998,7 @@ class MobWorld(MobCells):
         if self.road or self.worldCellBlock or self.cellBlocks:
             keepIds.add(self.world.fid)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MobWorlds(MobBase):
     """Tes4 top block for world records and related roads and cells. Consists
     of world blocks."""
@@ -941,25 +1031,33 @@ class MobWorlds(MobBase):
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
-                    raise ModError(ins.inName,u'Unexpected subgroup %d in CELL group.' % groupType)
+                    raise ModError(ins.inName,
+                                   u'Unexpected subgroup %d in CELL group.'
+                                   % groupType)
                 if not world:
-                    #raise ModError(ins.inName,'Extra subgroup %d in WRLD group.' % groupType)
+                    #raise ModError(ins.inName,'Extra subgroup %d in WRLD
+                    # group.' % groupType)
                     #--Orphaned world records. Skip over.
                     insSeek(header.size-header.__class__.size,1)
                     self.orphansSkipped += 1
                     continue
                 if groupFid != world.fid:
-                    raise ModError(ins.inName,u'WRLD subgroup (%s) does not match WRLD <%s> %s.' %
-                        (hex(groupFid), hex(world.fid), world.eid))
+                    raise ModError(ins.inName,
+                                   u'WRLD subgroup (%s) does not match WRLD '
+                                   u'<%s> %s.' % (
+                                   hex(groupFid),hex(world.fid),world.eid))
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
                 worldBlocksAppend(worldBlock)
                 world = None
             else:
-                raise ModError(ins.inName,u'Unexpected %s record in %s group.' % (recType,expType))
+                raise ModError(ins.inName,
+                               u'Unexpected %s record in %s group.' % (
+                                   recType,expType))
 
     def getSize(self):
-        """Returns size (incuding size of any group headers)."""
-        return ModReader.recHeader.size + sum(x.getSize() for x in self.worldBlocks) #@UndefinedVariable
+        """Returns size (including size of any group headers)."""
+        return ModReader.recHeader.size + sum(
+            x.getSize() for x in self.worldBlocks)  #@UndefinedVariable
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -972,7 +1070,8 @@ class MobWorlds(MobBase):
             # noinspection PyArgumentList
             header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)
             out.write(header.pack())
-            totalSize = header.__class__.size + sum(x.dump(out) for x in self.worldBlocks)
+            totalSize = header.__class__.size + sum(
+                x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
             out.pack('I', totalSize)
             out.seek(worldHeaderPos + totalSize)
@@ -984,7 +1083,8 @@ class MobWorlds(MobBase):
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
+        toLong should be True if converting to long format or False if
+        converting to short format."""
         for worldBlock in self.worldBlocks:
             worldBlock.convertFids(mapper,toLong)
 
@@ -1017,7 +1117,8 @@ class MobWorlds(MobBase):
             self.id_worldBlocks[fid].world = world
         else:
             # noinspection PyArgumentList
-            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),self.loadFactory,world)
+            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),
+                                  self.loadFactory,world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
@@ -1025,6 +1126,7 @@ class MobWorlds(MobBase):
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
         for worldBlock in self.worldBlocks: worldBlock.keepRecords(keepIds)
-        self.worldBlocks = [x for x in self.worldBlocks if x.world.fid in keepIds]
+        self.worldBlocks = [x for x in self.worldBlocks if
+                            x.world.fid in keepIds]
         self.id_worldBlocks.clear()
         self.setChanged()
