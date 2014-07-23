@@ -63,7 +63,7 @@ class MobBase(object):
         if self.debug: print u'GRUP load:',self.label
         #--Read, but don't analyze.
         if not unpack:
-            self.data = ins.read(self.size-self.header.__class__.size,type)
+            self.data = ins.read(self.size - self.header.__class__.size,type)
         #--Analyze ins.
         elif ins is not None:
             self.loadData(ins,
@@ -157,7 +157,7 @@ class MobObjects(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+u' Top Block'
+        errLabel = expType + u' Top Block'
         records = self.records
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -168,7 +168,7 @@ class MobObjects(MobBase):
             recType = header.recType
             if recType != expType:
                 raise ModError(ins.inName,u'Unexpected %s record in %s group.'
-                    % (recType,expType))
+                               % (recType,expType))
             record = recClass(header,ins,True)
             recordsAppend(record)
         self.setChanged()
@@ -286,7 +286,7 @@ class MobDials(MobObjects):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+u' Top Block'
+        errLabel = expType + u' Top Block'
         records = self.records
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
@@ -360,12 +360,12 @@ class MobCell(MobBase):
 
     def __init__(self,header,loadFactory,cell,ins=None,unpack=False):
         """Initialize."""
-        self.cell=cell
-        self.persistent=[]
-        self.distant=[]
-        self.temp=[]
-        self.land=None
-        self.pgrd=None
+        self.cell = cell
+        self.persistent = []
+        self.distant = []
+        self.temp = []
+        self.land = None
+        self.pgrd = None
         MobBase.__init__(self,header,loadFactory,ins,unpack)
 
     def loadData(self,ins,endPos):
@@ -380,12 +380,12 @@ class MobCell(MobBase):
         distantAppend = distant.append
         insSeek = ins.seek
         while not insAtEnd(endPos,'Cell Block'):
-            subgroupLoaded=[False,False,False]
-            header=insRecHeader()
-            recType=header.recType
+            subgroupLoaded = [False,False,False]
+            header = insRecHeader()
+            recType = header.recType
             recClass = cellGet(recType)
             if recType == 'GRUP':
-                groupType=header.groupType
+                groupType = header.groupType
                 if groupType not in (8, 9, 10):
                     raise ModError(self.inName,
                                    u'Unexpected subgroup %d in cell children '
@@ -408,9 +408,9 @@ class MobCell(MobBase):
                 elif groupType ==  9: tempAppend(record)
                 elif groupType == 10: distantAppend(record)
             elif recType == 'LAND':
-                self.land=recClass(header,ins,False)
+                self.land = recClass(header,ins,False)
             elif recType == 'PGRD':
-                self.pgrd=recClass(header,ins,False)
+                self.pgrd = recClass(header,ins,False)
         self.setChanged()
 
     def getSize(self):
@@ -439,9 +439,9 @@ class MobCell(MobBase):
         children group."""
         size = sum(ModReader.recHeader.size + x.getSize() for x in
                    self.temp)  #@UndefinedVariable
-        if self.pgrd: size+=ModReader.recHeader.size + self.pgrd.getSize()
+        if self.pgrd: size += ModReader.recHeader.size + self.pgrd.getSize()
         #@UndefinedVariable
-        if self.land: size+=ModReader.recHeader.size + self.land.getSize()
+        if self.land: size += ModReader.recHeader.size + self.land.getSize()
         #@UndefinedVariable
         return size + ModReader.recHeader.size * bool(
             size)  #@UndefinedVariable
@@ -561,7 +561,7 @@ class MobCell(MobBase):
             for record in srcGetter(attr):
                 if not record.flags1.ignored and mapper(record.fid) in fids:
                     record = record.getTypeCopy(mapper)
-                    recordList[fids[record.fid]]=record
+                    recordList[fids[record.fid]] = record
                     mergeDiscard(record.fid)
 
     def keepRecords(self,keepIds):
@@ -719,7 +719,7 @@ class MobICells(MobCells):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recCellClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType+u' Top Block'
+        errLabel = expType + u' Top Block'
         cellBlocks = self.cellBlocks
         cell = None
         endBlockPos = endSubblockPos = 0
@@ -746,11 +746,11 @@ class MobICells(MobCells):
             elif recType == 'GRUP':
                 size,groupFid,groupType = header.size,header.label, \
                                           header.groupType
-                delta = size-header.__class__.size
+                delta = size - header.__class__.size
                 if groupType == 2: # Block number
-                    endBlockPos = insTell()+delta
+                    endBlockPos = insTell() + delta
                 elif groupType == 3: # Sub-block number
-                    endSubblockPos = insTell()+delta
+                    endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
                     if cell:
                         if groupFid != cell.fid:
@@ -1038,7 +1038,7 @@ class MobWorlds(MobBase):
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD
                     # group.' % groupType)
                     #--Orphaned world records. Skip over.
-                    insSeek(header.size-header.__class__.size,1)
+                    insSeek(header.size - header.__class__.size,1)
                     self.orphansSkipped += 1
                     continue
                 if groupFid != world.fid:
@@ -1079,7 +1079,7 @@ class MobWorlds(MobBase):
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
         count = sum(x.getNumRecords(includeGroups) for x in self.worldBlocks)
-        return count + includeGroups*bool(count)
+        return count + includeGroups * bool(count)
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
