@@ -10121,7 +10121,7 @@ class Installer_CopyConflicts(InstallerLink):
                                 curFile += 1
                     else:
                         srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
-                        srcInstaller.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
+                        srcInstaller.getTempDir().moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
                     curFile = len(srcConflicts)
                     for order, installer, package, curConflicts in packConflicts:
                         if isinstance(installer,bosh.InstallerProject):
@@ -10134,7 +10134,7 @@ class Installer_CopyConflicts(InstallerLink):
                                     curFile += 1
                         else:
                             installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
-                            installer.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(u"%03d - %s" % (order, package.s))))
+                            installer.getTempDir().moveTo(bosh.dirs['installers'].join(destDir,GPath(u"%03d - %s" % (order, package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
                     if project not in self.data:
