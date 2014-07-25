@@ -10083,14 +10083,14 @@ class Installer_CopyConflicts(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installers_dir = self.data.dir
-        data = self.data
+        data = self.data # bosh.InstallersData instance
+        installers_dir = data.dir
         srcConflicts = set()
         packConflicts = []
         with balt.Progress(_(u"Copying Conflicts..."),
                            u'\n' + u' ' * 60) as progress:
             srcArchive = self.selected[0]
-            srcInstaller = self.data[srcArchive]
+            srcInstaller = data[srcArchive]
             src_sizeCrc = srcInstaller.data_sizeCrc
             mismatched = set(src_sizeCrc)
             if mismatched:
@@ -10157,16 +10157,15 @@ class Installer_CopyConflicts(InstallerLink):
                                     u"%03d - %s" % (order,package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
-                    if project not in self.data:
-                        self.data[project] = bosh.InstallerProject(project)
-                    iProject = self.data[project]
+                    if project not in data:
+                        data[project] = bosh.InstallerProject(project)
+                    iProject = data[project]
                     pProject = installers_dir.join(project)
                     iProject.refreshed = False
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
-                        self.data.moveArchives([project],
-                                               srcInstaller.order + 1)
-                    self.data.refresh(what='I')
+                        data.moveArchives([project],srcInstaller.order + 1)
+                    data.refresh(what='I')
                     self.gTank.RefreshUI()
 
 # InstallerDetails Espm Links -------------------------------------------------
