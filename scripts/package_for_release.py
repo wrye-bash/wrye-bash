@@ -75,7 +75,7 @@ mopy = os.path.join(root, u'Mopy')
 if sys.platform.lower().startswith('linux'):
     exe7z = u'7z'
 else:
-    exe7z = os.path.join(mopy, u'bash', u'compiled', u'7za.exe')
+    exe7z = os.path.join(mopy, u'bash', u'compiled', u'7z.exe')
 dest = os.path.join(scripts, u'dist')
 
 

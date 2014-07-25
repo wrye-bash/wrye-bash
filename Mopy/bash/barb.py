@@ -425,7 +425,7 @@ def pack7z(dstFile, srcDir, progress=None):
     #--Used solely for the progress bar
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
-    app7z = dirs['compiled'].join(u'7za.exe').s
+    app7z = dirs['compiled'].join(u'7z.exe').s
     command = u'"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
     progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
@@ -466,7 +466,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     # count the files in the archive
     length = 0
     reList = re.compile(u'Path = (.*?)(?:\r\n|\n)',re.U)
-    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7za.exe').s, srcFile.s)
+    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
     ins = StringIO.StringIO(ins)
     for line in ins: length += 1
@@ -477,7 +477,7 @@ def unpack7z(srcFile, dstDir, progress=None):
         progress.setFull(1+length)
     #end if
 
-    app7z = dirs['compiled'].join(u'7za.exe').s
+    app7z = dirs['compiled'].join(u'7z.exe').s
     command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files

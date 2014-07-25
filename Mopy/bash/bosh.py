@@ -100,7 +100,7 @@ settingDefaults = {
     }
 
 #--Unicode
-exe7z = u'7za.exe'
+exe7z = u'7z.exe'
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
