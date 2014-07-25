@@ -10087,7 +10087,8 @@ class Installer_CopyConflicts(InstallerLink):
         data = self.data
         srcConflicts = set()
         packConflicts = []
-        with balt.Progress(_(u"Copying Conflicts..."),u'\n'+u' '*60) as progress:
+        with balt.Progress(_(u"Copying Conflicts..."),
+                           u'\n' + u' ' * 60) as progress:
             srcArchive = self.selected[0]
             srcInstaller = self.data[srcArchive]
             src_sizeCrc = srcInstaller.data_sizeCrc
@@ -10097,44 +10098,63 @@ class Installer_CopyConflicts(InstallerLink):
                 curFile = 1
                 srcOrder = srcInstaller.order
                 destDir = GPath(u"%03d - Conflicts" % (srcOrder))
-                getArchiveOrder =  lambda y: data[y].order
+                getArchiveOrder = lambda y: data[y].order
                 for package in sorted(data.data,key=getArchiveOrder):
                     installer = data[package]
                     curConflicts = set()
                     for z,y in installer.refreshDataSizeCrc().iteritems():
-                        if z in mismatched and installer.data_sizeCrc[z] != src_sizeCrc[z]:
+                        if z in mismatched and installer.data_sizeCrc[z] != \
+                                src_sizeCrc[z]:
                             curConflicts.add(y)
                             srcConflicts.add(src_sizeCrc[z])
                     numFiles += len(curConflicts)
-                    if curConflicts: packConflicts.append((installer.order,installer,package,curConflicts))
-                srcConflicts = set(src for src, size, crc in srcInstaller.fileSizeCrcs if (size,crc) in srcConflicts)
+                    if curConflicts: packConflicts.append(
+                        (installer.order,installer,package,curConflicts))
+                srcConflicts = set(
+                    src for src,size,crc in srcInstaller.fileSizeCrcs if
+                    (size,crc) in srcConflicts)
                 numFiles += len(srcConflicts)
                 if numFiles:
                     progress.setFull(numFiles)
                     if isinstance(srcInstaller,bosh.InstallerProject):
                         for src in srcConflicts:
                             srcFull = installers_dir.join(srcArchive,src)
-                            destFull = installers_dir.join(destDir,GPath(srcArchive.s),src)
+                            destFull = installers_dir.join(destDir,
+                                                           GPath(srcArchive.s),
+                                                           src)
                             if srcFull.exists():
-                                progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'+src)
+                                progress(curFile,srcArchive.s + u'\n' + _(
+                                    u'Copying files...') + u'\n' + src)
                                 srcFull.copyTo(destFull)
                                 curFile += 1
                     else:
-                        srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
-                        srcInstaller.getTempDir().moveTo(installers_dir.join(destDir,GPath(srcArchive.s)))
+                        srcInstaller.unpackToTemp(srcArchive,srcConflicts,
+                                                  SubProgress(progress,0,len(
+                                                      srcConflicts),numFiles))
+                        srcInstaller.getTempDir().moveTo(
+                            installers_dir.join(destDir,GPath(srcArchive.s)))
                     curFile = len(srcConflicts)
-                    for order, installer, package, curConflicts in packConflicts:
+                    for order,installer,package,curConflicts in packConflicts:
                         if isinstance(installer,bosh.InstallerProject):
                             for src in curConflicts:
                                 srcFull = installers_dir.join(package,src)
-                                destFull = installers_dir.join(destDir,GPath(u"%03d - %s" % (order, package.s)),src)
+                                destFull = installers_dir.join(destDir,GPath(
+                                    u"%03d - %s" % (order,package.s)),src)
                                 if srcFull.exists():
-                                    progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'+src)
+                                    progress(curFile,srcArchive.s + u'\n' + _(
+                                        u'Copying files...') + u'\n' + src)
                                     srcFull.copyTo(destFull)
                                     curFile += 1
                         else:
-                            installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
-                            installer.getTempDir().moveTo(installers_dir.join(destDir,GPath(u"%03d - %s" % (order, package.s))))
+                            installer.unpackToTemp(package,curConflicts,
+                                                   SubProgress(progress,
+                                                               curFile,
+                                                               curFile + len(
+                                                                 curConflicts),
+                                                               numFiles))
+                            installer.getTempDir().moveTo(
+                                installers_dir.join(destDir,GPath(
+                                    u"%03d - %s" % (order,package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
                     if project not in self.data:
@@ -10144,11 +10164,12 @@ class Installer_CopyConflicts(InstallerLink):
                     iProject.refreshed = False
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
-                        self.data.moveArchives([project],srcInstaller.order+1)
+                        self.data.moveArchives([project],
+                                               srcInstaller.order + 1)
                     self.data.refresh(what='I')
                     self.gTank.RefreshUI()
 
-# InstallerDetails Espm Links ------------------------------------------------------
+# InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installer_Espm_SelectAll(InstallerLink):
