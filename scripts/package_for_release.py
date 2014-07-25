@@ -286,7 +286,7 @@ def PackStandaloneVersion(version, all_files, pipe=None):
     rm(listFile)
 
 
-def BuildInstallerVersion(version, file_version, nsis=None, pipe=None):
+def BuildInstallerVersion(version, all_files, file_version, nsis=None, pipe=None):
     """Compiles the NSIS script, creating the installer version"""
     if not have_winreg and nsis is None:
         msg = " Could not find python module '_winreg', aborting installer creation."
@@ -593,26 +593,30 @@ def main():
         if args.manual:
             msg = 'Creating Python archive distributable...'
             print msg
-            print >> pipe, msg
+            if pipe:
+                print >> pipe, msg
             BuildManualVersion(args.release, all_files, pipe)
 
         exe_made = False
         if args.exe or args.wbsa or args.installer:
             msg = 'Building standalone exe...'
             print msg
-            print >> pipe, msg
+            if pipe:
+                print >> pipe, msg
             exe_made = CreateStandaloneExe(args.release, file_version, pipe)
 
         if args.wbsa and exe_made:
             msg = 'Creating standalone distributable...'
             print msg
-            print >> pipe, msg
+            if pipe:
+                print >> pipe, msg
             PackStandaloneVersion(args.release, all_files, pipe)
 
         if args.installer:
             msg = 'Creating installer distributable...'
             print msg
-            print >> pipe, msg
+            if pipe:
+                print >> pipe, msg
             if exe_made:
                 BuildInstallerVersion(args.release, all_files, file_version, args.nsis, pipe)
             else:

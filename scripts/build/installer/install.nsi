@@ -148,161 +148,31 @@
         ${If} $CheckState_OB == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_OB != $Empty
-                SetOutPath $Path_OB\Mopy
-                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath $Path_OB\Data
-                File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
-                SetOutPath "$Path_OB\Mopy\Bash Patches\Oblivion"
-                File /r "Mopy\Bash Patches\Oblivion\*.*"
-                SetOutPath $Path_OB\Data\Docs
-                SetOutPath "$Path_OB\Mopy\INI Tweaks\Oblivion"
-                File /r "Mopy\INI Tweaks\Oblivion\*.*"
-                ; Write the installation path into the registry
-                WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Path" "$Path_OB"
-                ${If} $CheckState_OB_Py == ${BST_CHECKED}
-                    SetOutPath "$Path_OB\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_OB_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version" ""
-                    ${EndIf}
-                ${EndIf}
-                ${If} $CheckState_OB_Exe == ${BST_CHECKED}
-                    SetOutPath "$Path_OB\Mopy"
-                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_OB_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version" ""
-                    ${EndIf}
-                ${EndIf}
+                !insertmacro InstallBashFiles "Oblivion" "Oblivion" "$Path_OB" $Reg_Value_OB_Py $Reg_Value_OB_Exe "Oblivion Path" $CheckState_OB_Py $CheckState_OB_Exe true
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Nehrim != $Empty
-                SetOutPath $Path_Nehrim\Mopy
-                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath $Path_Nehrim\Data
-                File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
-                SetOutPath "$Path_Nehrim\Mopy\Bash Patches\Oblivion"
-                File /r "Mopy\Bash Patches\Oblivion\*.*"
-                SetOutPath $Path_Nehrim\Data\Docs
-                SetOutPath "$Path_Nehrim\Mopy\INI Tweaks\Oblivion"
-                File /r "Mopy\INI Tweaks\Oblivion\*.*"
-                ; Write the installation path into the registry
-                WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Path" "$Path_Nehrim"
-                ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-                    SetOutPath "$Path_Nehrim\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Nehrim_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version" ""
-                    ${EndIf}
-                ${EndIf}
-                ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                    SetOutPath "$Path_Nehrim\Mopy"
-                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Nehrim_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version" ""
-                    ${EndIf}
-                ${EndIf}
+                !insertmacro InstallBashFiles "Nehrim" "Oblivion" "$Path_Nehrim" $Reg_Value_Nehrim_Py $Reg_Value_Nehrim_Exe "Nehrim Path" $CheckState_Nehrim_Py $CheckState_Nehrim_Exe true
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Skyrim != $Empty
-                SetOutPath $Path_Skyrim\Mopy
-                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                SetOutPath "$Path_Skyrim\Mopy\Bash Patches\Skyrim"
-                File /r "Mopy\Bash Patches\Skyrim\*.*"
-                SetOutPath $Path_Skyrim\Data\Docs
-                SetOutPath "$Path_Skyrim\Mopy\INI Tweaks\Skyrim"
-                File /r "Mopy\INI Tweaks\Skyrim\*.*"
-                ; Write the installation path into the registry
-                WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Path" "$Path_Skyrim"
-                ${If} $CheckState_Skyrim == ${BST_CHECKED}
-                    SetOutPath "$Path_Skyrim\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" "True"
-                ${ElseIf} $Reg_Value_Skyrim_Py == $Empty ; id don't overwrite it if it is installed but just not being installed that way this time.
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version" ""
-                ${EndIf}
-                ${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
-                    SetOutPath "$Path_Skyrim\Mopy"
-                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version" "True"
-                ${ElseIf} $Reg_Value_Skyrim_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalond Version" ""
-                ${EndIf}
+                !insertmacro InstallBashFiles "Skyrim" "Skyrim" "$Path_Skyrim" $Reg_Value_Skyrim_Py $Reg_Value_Skyrim_Exe "Skyrim Path" $CheckState_Skyrim_Py $CheckState_Skyrim_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex1 != $Empty
-                SetOutPath $Path_Ex1\Mopy
-                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                ; Write the installation path into the registry
-                WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1" "$Path_Ex1"
-                ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
-                    SetOutPath "$Path_Ex1\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Ex1_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version" ""
-                    ${EndIf}
-                ${EndIf}
-                ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
-                    SetOutPath "$Path_Ex1\Mopy"
-                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Ex1_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version" ""
-                    ${EndIf}
-                ${EndIf}
+                !insertmacro InstallBashFiles "Extra Path 1" "" $Path_Ex1 $Reg_Value_Ex1_Py $Reg_Value_Ex1_Exe "Extra Path 1" $CheckState_Ex1_Py $CheckState_Ex1_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex2 != $Empty
-                SetOutPath $Path_Ex2\Mopy
-                File /r /x "*.svn*" /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
-                ; Write the installation path into the registry
-                WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2" "$Path_Ex2"
-                ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
-                    SetOutPath "$Path_Ex2\Mopy"
-                    File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Ex2_Py == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version" ""
-                    ${EndIf}
-                ${EndIf}
-                ${If} $CheckState_Ex2_Exe == ${BST_CHECKED}
-                    SetOutPath "$Path_Ex2\Mopy"
-                    File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
-                    ; Write the installation path into the registry
-                    WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" "True"
-                ${Else}
-                    ${If} $Reg_Value_Ex2_Exe == $Empty ; ie don't overwrite it if it is installed but just not being installed that way this time.
-                        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version" ""
-                    ${EndIf}
-                ${EndIf}
+                !insertmacro InstallBashFiles "Extra Path 2" "" $Path_Ex2 $Reg_Value_Ex2_Py $Reg_Value_Ex2_Exe "Extra Path 2" $CheckState_Ex2_Py $CheckState_Ex2_Exe false
             ${EndIf}
         ${EndIf}
         ; Write the uninstall keys for Windows
