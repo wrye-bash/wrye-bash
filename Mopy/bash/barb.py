@@ -79,15 +79,12 @@ class BaseBackupSettings:
 
     def PromptFile(self):
         raise AbstractError
-        return False
 
     def PromptConfirm(self,msg=None):
         raise AbstractError
-        return False
 
     def PromptMismatch(self):
         raise AbstractError
-        return False
 
     def CmpDataVersion(self):
         return cmp(self.verDat, basher.settings['bash.version'])
@@ -204,7 +201,6 @@ class BackupSettings(BaseBackupSettings):
             pack7z(self.dir.join(self.archive),self.tmp)
         except StateError, e:
             raise
-            return
         #end try
         basher.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
@@ -275,7 +271,6 @@ class RestoreSettings(BaseBackupSettings):
 
         if not self.PromptFile():
             raise BackupCancelled()
-            return
         #end if
 
         try:
@@ -295,7 +290,6 @@ class RestoreSettings(BaseBackupSettings):
             return
         elif not self.PromptMismatch():
             raise BackupCancelled()
-            return
 
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)

@@ -476,7 +476,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = button(dialog,id=id,lable=lable)
+            but = button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
@@ -1064,24 +1064,19 @@ class ListEditorData:
         pass
     def getItemList(self):
         """Returns item list in correct order."""
-        raise AbstractError
-        return []
+        raise AbstractError # return []
     def add(self):
         """Peforms add operation. Return new item on success."""
-        raise AbstractError
-        return None
+        raise AbstractError # return None
     def edit(self,item=None):
         """Edits specified item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def close(self):
         """Called when dialog window closes."""
         pass
@@ -1097,16 +1092,13 @@ class ListEditorData:
     #--Checklist
     def getChecks(self):
         """Returns checked state of items as array of True/False values matching Item list."""
-        raise AbstractError
-        return []
+        raise AbstractError # return []
     def check(self,item):
         """Checks items. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def uncheck(self,item):
         """Unchecks item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
 
     #--Save/Cancel
     def save(self):
