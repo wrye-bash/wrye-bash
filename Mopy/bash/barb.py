@@ -426,7 +426,7 @@ def pack7z(dstFile, srcDir, progress=None):
     progress.setFull(1+length)
 
     #--Pack the files
-    ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
     #--Error checking and progress feedback
     reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
     regMatch = reCompressing.match
