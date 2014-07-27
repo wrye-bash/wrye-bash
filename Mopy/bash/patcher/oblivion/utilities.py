@@ -1711,7 +1711,7 @@ class ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
         patches folder."""
-        eid_data,aliases = self.eid_data,self.aliases
+        eid_data = self.eid_data
         textPath = GPath(textPath)
         with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
@@ -1839,7 +1839,7 @@ class CBash_ScriptText:
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
         patches folder."""
-        eid_data,aliases = self.eid_data,self.aliases
+        eid_data = self.eid_data
         textPath = GPath(textPath)
         with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
@@ -2938,7 +2938,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         """Reads stats from specified text file."""
         class_fid_attr_value,aliases = self.class_fid_attr_value,self.aliases
         with bolt.CsvReader(textPath) as ins:
-            attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[:3]
@@ -2946,7 +2945,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                 modName = GPath(_coerce(modName,unicode))
                 longid = FormID(GPath(aliases.get(modName,modName)),
                                 _coerce(objectStr,int,16))
-                attrs = self.class_attrs[group]
                 if group == 'ALCH':
                     pass
                 elif group == 'AMMO':
