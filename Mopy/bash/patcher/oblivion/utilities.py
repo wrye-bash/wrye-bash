@@ -38,9 +38,9 @@ from bash import bolt, bush, balt
 from bash.bolt import GPath, _unicode, deprint
 from bash.bosh import LoadFactory, ModFile, dirs, inisettings
 from bash.brec import MreRecord, MelObject, _coerce, genFid, ModReader
-from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
-    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict, IUNICODE, \
-    getattr_deep, setattr_deep
+from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, \
+    MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
+    ValidateDict, IUNICODE, getattr_deep, setattr_deep
 
 class ActorFactions:
     """Factions for npcs and creatures with functions for
@@ -187,7 +187,7 @@ class CBash_ActorFactions:
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,\
                                                  self.fid_eid,self.gotFactions
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            importFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
+            importFile = Current.addMod(modInfo.getPath().stail,Saveable=False)
             Current.load()
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
@@ -2299,8 +2299,8 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
             outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0]):
-                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = \
-                fid_stats[fid]
+                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,\
+                effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
@@ -2448,7 +2448,8 @@ class CBash_ItemPrices:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
                 mmod = GPath(_coerce(mmod, unicode))
-                longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                longid = FormID(GPath(aliases.get(mmod,mmod)),
+                                _coerce(mobj,int,16))
                 value = _coerce(value, int)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 name = _coerce(name, unicode, AllowNone=True)
@@ -3106,7 +3107,8 @@ class SpellRecords(_UsesEffectsMixin):
         modFile.load(True)
         modFile.convertToLongFids(['SPEL'])
         for record in modFile.SPEL.getActiveRecords():
-            fid_stats[record.fid] = [getattr_deep(record, attr) for attr in attrs]
+            fid_stats[record.fid] = [getattr_deep(record,attr) for attr in
+                                     attrs]
             if detailed:
                 effects = []
                 for effect in record.effects:
