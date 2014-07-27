@@ -34,18 +34,21 @@ from bash.brec import MreRecord, MelObject, _coerce
 from bash.cint import ObCollection, FormID
 
 class ActorFactions:
-    """Factions for npcs and creatures with functions for importing/exporting from/to mod/text file."""
+    """Factions for npcs and creatures with functions for
+    importing/exporting from/to mod/text file."""
+
     def __init__(self,aliases=None):
         """Initialize."""
         self.types = tuple([MreRecord.type_class[x] for x in ('CREA','NPC_')])
-        self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions = type_id_factions[type][longid]
+        self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions =
+        # type_id_factions[type][longid]
         self.id_eid = {}
         self.aliases = aliases or {}
         self.gotFactions = set()
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
-        loadFactory= LoadFactory(False,MreRecord.type_class['FACT'])
+        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
         from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in self.gotFactions: continue
@@ -59,8 +62,9 @@ class ActorFactions:
     def readFromMod(self,modInfo):
         """Imports faction data from specified mod."""
         self.readFactionEids(modInfo)
-        type_id_factions,types,id_eid = self.type_id_factions,self.types,self.id_eid
-        loadFactory= LoadFactory(False,*types)
+        type_id_factions,types,id_eid = self.type_id_factions,self.types,\
+                                        self.id_eid
+        loadFactory = LoadFactory(False,*types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -72,12 +76,13 @@ class ActorFactions:
                 longid = mapper(record.fid)
                 if record.factions:
                     id_eid[longid] = record.eid
-                    id_factions[longid] = [(mapper(x.faction),x.rank) for x in record.factions]
+                    id_factions[longid] = [(mapper(x.faction),x.rank) for x in
+                                           record.factions]
 
     def writeToMod(self,modInfo):
         """Exports faction data to specified mod."""
         type_id_factions,types = self.type_id_factions,self.types
-        loadFactory= LoadFactory(True,*types)
+        loadFactory = LoadFactory(True,*types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -91,7 +96,8 @@ class ActorFactions:
                 longid = mapper(record.fid)
                 if longid not in id_factions: continue
                 newFactions = set(id_factions[longid])
-                curFactions = set((mapper(x.faction),x.rank) for x in record.factions)
+                curFactions = set(
+                    (mapper(x.faction),x.rank) for x in record.factions)
                 changes = newFactions - curFactions
                 if not changes: continue
                 for faction,rank in changes:
@@ -114,7 +120,7 @@ class ActorFactions:
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        type_id_factions,id_eid = self.type_id_factions,self.id_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -129,35 +135,48 @@ class ActorFactions:
                 factions = id_factions.get(aid)
                 factiondict = dict(factions or [])
                 factiondict.update({fid:rank})
-                id_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
+                id_factions[aid] = [(fid,rank) for fid,rank in
+                                    factiondict.iteritems()]
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
-        type_id_factions,id_eid = self.type_id_factions, self.id_eid
+        type_id_factions,id_eid = self.type_id_factions,self.id_eid
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),_(u'Rank')))
+            out.write(headFormat % (
+                _(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),
+                _(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),
+                _(u'Rank')))
             for type_ in sorted(type_id_factions):
                 id_factions = type_id_factions[type_]
-                for id_ in sorted(id_factions,key = lambda x: id_eid.get(x).lower()):
+                for id_ in sorted(id_factions,
+                                  key=lambda x:id_eid.get(x).lower()):
                     actorEid = id_eid.get(id_,u'Unknown')
-                    for faction, rank in sorted(id_factions[id_],key=lambda x: id_eid.get(x[0]).lower()):
+                    for faction,rank in sorted(id_factions[id_],
+                                               key=lambda x:id_eid.get(
+                                                       x[0]).lower()):
                         factionEid = id_eid.get(faction,u'Unknown')
-                        out.write(rowFormat % (type_,actorEid,id_[0].s,id_[1],factionEid,faction[0].s,faction[1],rank))
+                        out.write(rowFormat % (
+                            type_,actorEid,id_[0].s,id_[1],factionEid,
+                            faction[0].s,faction[1],rank))
 
 class CBash_ActorFactions:
-    """Factions for npcs and creatures with functions for importing/exporting from/to mod/text file."""
+    """Factions for npcs and creatures with functions for
+    importing/exporting from/to mod/text file."""
+
     def __init__(self,aliases=None):
         """Initialize."""
-        self.group_fid_factions = {'CREA':{},'NPC_':{}} #--factions = group_fid_factions[group][longid]
+        self.group_fid_factions = {'CREA':{},'NPC_':{}} #--factions =
+        # group_fid_factions[group][longid]
         self.fid_eid = {}
         self.aliases = aliases or {}
         self.gotFactions = set()
 
     def readFromMod(self,modInfo):
         """Imports faction data from specified mod."""
-        group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,self.fid_eid,self.gotFactions
+        group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,\
+                                                 self.fid_eid,self.gotFactions
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             importFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
@@ -185,7 +204,7 @@ class CBash_ActorFactions:
         """Exports faction data to specified mod."""
         group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = {'CREA':0,'NPC_':0}
@@ -193,12 +212,17 @@ class CBash_ActorFactions:
             for group,block in types.iteritems():
                 fid_factions = group_fid_factions.get(group,None)
                 if fid_factions is not None:
-                    fid_factions = FormID.FilterValidDict(fid_factions, modFile, True, False)
+                    fid_factions = FormID.FilterValidDict(fid_factions,modFile,
+                                                          True,False)
                     for record in block:
                         fid = record.fid
                         if fid not in fid_factions: continue
-                        newFactions = set([(faction, rank) for faction, rank in fid_factions[fid] if faction.ValidateFormID(modFile)])
-                        curFactions = set([(faction, rank) for faction, rank in record.factions_list if faction.ValidateFormID(modFile)])
+                        newFactions = set([(faction,rank) for faction,rank in
+                                           fid_factions[fid] if
+                                           faction.ValidateFormID(modFile)])
+                        curFactions = set([(faction,rank) for faction,rank in
+                                           record.factions_list if
+                                           faction.ValidateFormID(modFile)])
                         changes = newFactions - curFactions
                         if not changes: continue
                         for faction,rank in changes:
@@ -233,7 +257,8 @@ class CBash_ActorFactions:
                 factions = fid_factions.get(aid)
                 factiondict = dict(factions or [])
                 factiondict.update({fid:rank})
-                fid_factions[aid] = [(fid,rank) for fid,rank in factiondict.iteritems()]
+                fid_factions[aid] = [(fid,rank) for fid,rank in
+                                     factiondict.iteritems()]
 
     def writeToText(self,textPath):
         """Exports faction data to specified text file."""
@@ -241,18 +266,25 @@ class CBash_ActorFactions:
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),_(u'Rank')))
+            out.write(headFormat % (
+                _(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),
+                _(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),
+                _(u'Rank')))
             for group in sorted(group_fid_factions):
                 fid_factions = group_fid_factions[group]
                 for fid in sorted(fid_factions,key = lambda x: fid_eid.get(x)):
                     actorEid = fid_eid.get(fid,u'Unknown')
-                    for faction, rank in sorted(fid_factions[fid],key=lambda x: fid_eid.get(x[0])):
+                    for faction,rank in sorted(fid_factions[fid],
+                                               key=lambda x:fid_eid.get(x[0])):
                         factionEid = fid_eid.get(faction,u'Unknown')
-                        out.write(rowFormat % (group,actorEid,fid[0].s,fid[1],factionEid,faction[0].s,faction[1],rank))
+                        out.write(rowFormat % (
+                            group,actorEid,fid[0].s,fid[1],factionEid,
+                            faction[0].s,faction[1],rank))
 
 #------------------------------------------------------------------------------
 class ActorLevels:
     """Package: Functions for manipulating actor levels."""
+
     def __init__(self,aliases=None):
         """Initialize."""
         self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
@@ -262,7 +294,7 @@ class ActorLevels:
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
-        loadFactory= LoadFactory(False,MreRecord.type_class['NPC_'])
+        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
         from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in gotLevels: continue
@@ -270,31 +302,36 @@ class ActorLevels:
             modFile.load(True)
             mapper = modFile.getLongMapper()
             for record in modFile.NPC_.getActiveRecords():
-                id_levels = mod_id_levels.setdefault(modName, {})
-                id_levels[mapper(record.fid)] = (record.eid, record.flags.pcLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
+                id_levels = mod_id_levels.setdefault(modName,{})
+                id_levels[mapper(record.fid)] = (
+                    record.eid,record.flags.pcLevelOffset and 1 or 0,
+                    record.level,record.calcMin,record.calcMax)
             gotLevels.add(modName)
 
     def writeToMod(self,modInfo):
         """Exports actor levels to specified mod."""
         mod_id_levels = self.mod_id_levels
-        loadFactory= LoadFactory(True,MreRecord.type_class['NPC_'])
+        loadFactory = LoadFactory(True,MreRecord.type_class['NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
 
         changed = 0
-        id_levels = mod_id_levels.get(modInfo.name,mod_id_levels.get(GPath(u'Unknown'),None))
+        id_levels = mod_id_levels.get(modInfo.name,
+                                      mod_id_levels.get(GPath(u'Unknown'),
+                                                        None))
         if id_levels:
             for record in modFile.NPC_.records:
                 fid = mapper(record.fid)
                 if fid in id_levels:
-                    eid, isOffset, level, calcMin, calcMax = id_levels[fid]
-                    if((record.level, record.calcMin, record.calcMax) != (level, calcMin, calcMax)):
-                        (record.level, record.calcMin, record.calcMax) = (level, calcMin, calcMax)
+                    eid,isOffset,level,calcMin,calcMax = id_levels[fid]
+                    if ((record.level,record.calcMin,record.calcMax) != (
+                            level,calcMin,calcMax)):
+                        (record.level,record.calcMin,record.calcMax) = (
+                            level,calcMin,calcMax)
                         record.setChanged()
                         changed += 1
-        #else:
-            #print mod_id_levels
+                    # else: print mod_id_levels
         #--Done
         if changed: modFile.safeSave()
         return changed
@@ -316,7 +353,8 @@ class ActorLevels:
                     calcMax = _coerce(calcMax, int)
                 else:
                     if len(fields) < 7 or fields[3][:2] != u'0x': continue
-                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
+                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
+                        fields[:7]
                     source = _coerce(source, unicode)
                     if source.lower() in (u'none', u'oblivion.esm'): continue
                     source = GPath(source)
@@ -335,32 +373,43 @@ class ActorLevels:
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
         mod_id_levels = self.mod_id_levels
-        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
+                     u'"%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
         with textPath.open('w',encoding='utf') as out:
-            out.write(headFormat % (_(u'Source Mod'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Offset'),_(u'CalcMin'),_(u'CalcMax'),_(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),_(u'Old CalcMax')))
+            out.write(headFormat % (
+                _(u'Source Mod'),_(u'Actor Eid'),_(u'Actor Mod'),
+                _(u'Actor Object'),_(u'Offset'),_(u'CalcMin'),_(u'CalcMax'),
+                _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
+                _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
             obId_levels = mod_id_levels[GPath(u'Oblivion.esm')]
             for mod in sorted(mod_id_levels):
                 if mod.s.lower() == u'oblivion.esm': continue
                 id_levels = mod_id_levels[mod]
-                for id_ in sorted(id_levels,key=lambda k: (k[0].s.lower(),id_levels[k][0].lower())):
-                    eid, isOffset, offset, calcMin, calcMax = id_levels[id_]
+                for id_ in sorted(id_levels,key=lambda k:(
+                        k[0].s.lower(),id_levels[k][0].lower())):
+                    eid,isOffset,offset,calcMin,calcMax = id_levels[id_]
                     if isOffset:
                         source = mod.s
                         fidMod, fidObject = id_[0].s,id_[1]
-                        out.write(rowFormat % (source, eid, fidMod, fidObject, offset, calcMin, calcMax))
+                        out.write(rowFormat % (
+                            source,eid,fidMod,fidObject,offset,calcMin,
+                            calcMax))
                         oldLevels = obId_levels.get(id_,None)
                         if oldLevels:
-                            oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = oldLevels
-                            out.write(extendedRowFormat % (wasOffset, oldOffset, oldCalcMin, oldCalcMax))
+                            oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax\
+                                = oldLevels
+                            out.write(extendedRowFormat % (
+                                wasOffset,oldOffset,oldCalcMin,oldCalcMax))
                         else:
                             out.write(blankExtendedRow)
 
 class CBash_ActorLevels:
     """Package: Functions for manipulating actor levels."""
+
     def __init__(self,aliases=None):
         """Initialize."""
         self.mod_fid_levels = {} #--levels = mod_id_levels[mod][longid]
@@ -380,7 +429,9 @@ class CBash_ActorLevels:
                 if modName in gotLevels: continue
                 fid_levels = mod_fid_levels.setdefault(modName, {})
                 for record in modFile.NPC_:
-                    fid_levels[record.fid] = (record.eid, record.IsPCLevelOffset and 1 or 0, record.level, record.calcMin, record.calcMax)
+                    fid_levels[record.fid] = (
+                        record.eid,record.IsPCLevelOffset and 1 or 0,
+                        record.level,record.calcMin,record.calcMax)
                 modFile.Unload()
                 gotLevels.add(modName)
 
@@ -388,18 +439,21 @@ class CBash_ActorLevels:
         """Exports actor levels to specified mod."""
         mod_fid_levels = self.mod_fid_levels
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = 0
-            fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(GPath(u'Unknown'),None))
+            fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(
+                GPath(u'Unknown'),None))
             if fid_levels:
                 for record in modFile.NPC_:
                     fid = record.fid
                     if fid not in fid_levels: continue
-                    eid, isOffset, level, calcMin, calcMax = fid_levels[fid]
-                    if((record.level, record.calcMin, record.calcMax) != (level, calcMin, calcMax)):
-                        (record.level, record.calcMin, record.calcMax) = (level, calcMin, calcMax)
+                    eid,isOffset,level,calcMin,calcMax = fid_levels[fid]
+                    if ((record.level,record.calcMin,record.calcMax) != (
+                            level,calcMin,calcMax)):
+                        (record.level,record.calcMin,record.calcMax) = (
+                            level,calcMin,calcMax)
                         changed += 1
             #--Done
             if changed: modFile.save()
@@ -422,7 +476,8 @@ class CBash_ActorLevels:
                     calcMax = _coerce(calcMax, int)
                 else:
                     if len(fields) < 7 or fields[3][:2] != u'0x': continue
-                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = fields[:7]
+                    source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
+                        fields[:7]
                     source = _coerce(source, unicode)
                     if source.lower() in (u'none', u'oblivion.esm'): continue
                     source = GPath(source)
@@ -441,27 +496,37 @@ class CBash_ActorLevels:
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
         mod_fid_levels = self.mod_fid_levels
-        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n'
+        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
+                     u'"%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Source Mod'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),_(u'Offset'),_(u'CalcMin'),_(u'CalcMax'),_(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),_(u'Old CalcMax')))
+            out.write(headFormat % (
+                _(u'Source Mod'),_(u'Actor Eid'),_(u'Actor Mod'),
+                _(u'Actor Object'),_(u'Offset'),_(u'CalcMin'),_(u'CalcMax'),
+                _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
+                _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
             obfid_levels = mod_fid_levels[GPath(u'Oblivion.esm')]
             for mod in sorted(mod_fid_levels):
                 if mod.s.lower() == u'oblivion.esm': continue
                 fid_levels = mod_fid_levels[mod]
-                for fid in sorted(fid_levels,key=lambda k: (k[0].s,fid_levels[k][0])):
+                for fid in sorted(fid_levels,
+                                  key=lambda k:(k[0].s,fid_levels[k][0])):
                     eid, isOffset, offset, calcMin, calcMax = fid_levels[fid]
                     if isOffset:
                         source = mod.s
-                        fidMod, fidObject = fid[0].s,fid[1]
-                        out.write(rowFormat % (source, eid, fidMod, fidObject, offset, calcMin, calcMax))
+                        fidMod,fidObject = fid[0].s,fid[1]
+                        out.write(rowFormat % (
+                            source,eid,fidMod,fidObject,offset,calcMin,
+                            calcMax))
                         oldLevels = obfid_levels.get(fid,None)
                         if oldLevels:
-                            oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = oldLevels
-                            out.write(extendedRowFormat % (wasOffset, oldOffset, oldCalcMin, oldCalcMax))
+                            oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax\
+                                = oldLevels
+                            out.write(extendedRowFormat % (
+                                wasOffset,oldOffset,oldCalcMin,oldCalcMax))
                         else:
                             out.write(blankExtendedRow)
 
