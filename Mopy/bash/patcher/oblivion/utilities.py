@@ -184,11 +184,9 @@ class CBash_ActorFactions:
         """Imports faction data from specified mod."""
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,\
                                                  self.fid_eid,self.gotFactions
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             importFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
-
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotFactions: continue
@@ -321,7 +319,6 @@ class ActorLevels:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-
         changed = 0
         id_levels = mod_id_levels.get(modInfo.name,
                                       mod_id_levels.get(GPath(u'Unknown'),
@@ -429,7 +426,6 @@ class CBash_ActorLevels:
             Current.addMod(u'Oblivion.esm', Saveable=False)
             Current.addMod(modInfo.getPath().stail, Saveable=False)
             Current.load()
-
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotLevels: continue
@@ -447,7 +443,6 @@ class CBash_ActorLevels:
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = 0
             fid_levels = mod_fid_levels.get(modFile.GName,mod_fid_levels.get(
                 GPath(u'Unknown'),None))
@@ -699,12 +694,10 @@ class CBash_EditorIds:
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
         group_fid_eid,groups = self.group_fid_eid,self.groups
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for group in groups:
                 fid_eid = group_fid_eid.setdefault(group[:4], {})
                 for record in getattr(modFile, group):
@@ -715,11 +708,9 @@ class CBash_EditorIds:
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         group_fid_eid = self.group_fid_eid
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = []
             for group,block in modFile.aggregates.iteritems():
                 fid_eid = group_fid_eid.get(group[:4],None)
@@ -957,11 +948,9 @@ class CBash_FactionRelations:
         fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,\
                                               self.fid_eid,self.gotFactions
         importFile = modInfo.getPath().tail
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             importFile = Current.addMod(importFile.s, Saveable=False)
             Current.load()
-
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
                 if modName in gotFactions: continue
@@ -1000,7 +989,6 @@ class CBash_FactionRelations:
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -1186,9 +1174,7 @@ class CBash_FidReplacer:
                                Saveable=False)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.load()
-
             counts = modFile.UpdateReferences(old_new)
-
             #--Done
             if not sum(counts): return False
             modFile.save()
@@ -1311,12 +1297,10 @@ class CBash_FullNames:
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
         group_fid_name = self.group_fid_name
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for group in self.types:
                 fid_name = group_fid_name.setdefault(group[:4],{})
                 for record in getattr(modFile,group):
@@ -1330,11 +1314,9 @@ class CBash_FullNames:
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         group_fid_name = self.group_fid_name
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = {}
             for group in self.types:
                 fid_name = group_fid_name.get(group,None)
@@ -1430,7 +1412,6 @@ class ItemStats:
                           'uses':self.sint,
                           'reach':self.sfloat,
                           'armorRating':self.sint,}
-
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
 
@@ -1570,18 +1551,15 @@ class CBash_ItemStats:
                           'quality':self.sfloat,
                           'uses':self.sint,
                           'reach':self.sfloat,}
-
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             for group, attrs in self.class_attrs.iteritems():
                 for record in getattr(modFile,group):
                     class_fid_attr_value[group].setdefault(record.fid,
@@ -1591,11 +1569,9 @@ class CBash_ItemStats:
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = {} #--changed[modName] = numChanged
             for group, fid_attr_value in class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
@@ -1686,7 +1662,6 @@ class ScriptText:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-
         with balt.Progress(_(u"Export Scripts")) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
@@ -1704,7 +1679,6 @@ class ScriptText:
         loadFactory = LoadFactory(True,MreRecord.type_class['SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-
         for record in modFile.SCPT.getActiveRecords():
             eid = record.eid
             data = eid_data.get(eid,None)
@@ -1817,11 +1791,9 @@ class CBash_ScriptText:
     def readFromMod(self, modInfo, file_):
         """Reads stats from specified mod."""
         eid_data = self.eid_data
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             with balt.Progress(_(u"Export Scripts")) as progress:
                 records = modFile.SCPT
                 y = len(records)
@@ -1837,11 +1809,9 @@ class CBash_ScriptText:
         eid_data = self.eid_data
         changed = []
         added = []
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             for record in modFile.SCPT:
                 eid = record.eid
                 data = eid_data.get(eid,None)
@@ -2252,12 +2222,10 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for record in modFile.SGST:
                 fid_stats[record.fid] = [record.eid,record.full,record.modPath,
                                          record.modb,record.iconPath,
@@ -2269,11 +2237,9 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             fid_stats = FormID.FilterValidDict(fid_stats,modFile,True,False)
             for record in modFile.SGST:
                 newStats = fid_stats.get(record.fid,None)
@@ -2383,7 +2349,6 @@ class ItemPrices:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-
         changed = {} #--changed[modName] = numChanged
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
@@ -2450,11 +2415,9 @@ class CBash_ItemPrices:
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             for group, fid_stats in class_fid_stats.iteritems():
                 for record in getattr(modFile,group):
                     fid_stats[record.fid] = map(record.__getattribute__,attrs)
@@ -2462,11 +2425,9 @@ class CBash_ItemPrices:
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = {} #--changed[modName] = numChanged
             for group,fid_stats in class_fid_stats.iteritems():
                 fid_stats = FormID.FilterValidDict(fid_stats,modFile,True,
@@ -2871,11 +2832,9 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         class_fid_values = self.class_fid_values
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             for group in pickupables:
                 for record in getattr(modFile,group):
                     values = ExtractExportList(record)
@@ -2888,11 +2847,9 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = {} #--changed[modName] = numChanged
             for group,fid_attr_value in class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
@@ -3177,7 +3134,6 @@ class SpellRecords(_UsesEffectsMixin):
         modFile.load(True)
         mapper = modFile.getLongMapper()
         shortMapper = modFile.getShortMapper()
-
         changed = [] #eids
         for record in modFile.SPEL.getActiveRecords():
             newStats = fid_stats.get(mapper(record.fid), None)
@@ -3261,7 +3217,6 @@ class SpellRecords(_UsesEffectsMixin):
                 saa = _coerce(saa, bool)
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
-
                 effects = self.readEffects(fields, aliases, False)
                 fid_stats[mid] = [eid,full,cost,levelType,spellType,mc,ss,its,
                                   aeil,saa,daar,tewt,effects]
@@ -3283,9 +3238,7 @@ class SpellRecords(_UsesEffectsMixin):
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
             rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
-
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,
@@ -3349,22 +3302,18 @@ class CBash_SpellRecords(_UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             for record in modFile.SPEL:
                 fid_stats[record.fid] = map(record.__getattribute__, attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             changed = []
             for record in modFile.SPEL:
                 newStats = fid_stats.get(record.fid, None)
@@ -3374,7 +3323,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
                 if oldStats != newStats:
                     changed.append(oldStats[0]) #eid
                     map(record.__setattr__,attrs,newStats)
-
             #--Done
             if changed: modFile.save()
             return changed
@@ -3418,7 +3366,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
                 saa = _coerce(saa, bool)
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
-
                 effects = self.readEffects(fields, aliases, True)
                 fid_stats[mid] = [eid,full,cost,levelType,spellType,mc,ss,its,
                                   aeil,saa,daar,tewt,effects]
@@ -3440,9 +3387,7 @@ class CBash_SpellRecords(_UsesEffectsMixin):
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
             rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
-
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:(fid_stats[x][0],x[0])):
@@ -3595,7 +3540,6 @@ class IngredientDetails(_UsesEffectsMixin):
                     u'"%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
                        u'"%d","%f"'
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
@@ -3626,12 +3570,10 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for record in modFile.INGR:
                 fid_stats[record.fid] = [record.eid,record.full,record.modPath,
                                          record.modb,record.iconPath,
@@ -3642,11 +3584,9 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
         changed = []
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-
             fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
             for record in modFile.INGR:
                 newStats = fid_stats.get(record.fid, None)
@@ -3703,7 +3643,6 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
                     u'"%d","%f"'
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
                        u'"%d","%f"'
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             outWrite = out.write
             outWrite(headFormat % header)
@@ -3782,7 +3721,6 @@ class CBash_MapMarkers:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for record in modFile.REFRS:
                 if record.base == markerFid:
                     fid_markerdata[record.fid] = [getattr(record,attr) for attr
@@ -3794,7 +3732,6 @@ class CBash_MapMarkers:
         fid_markerdata,markerFid,attrs = self.fid_markerdata,self.markerFid,\
                                          self.attrs
         changed = []
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -3815,7 +3752,6 @@ class CBash_MapMarkers:
                 changed.append(oldValues[0]) #eid
                 for attr, value in zip(attrs, newValues):
                     setattr(record, attr, value)
-
             if changed: modFile.save()
             return changed
 
@@ -3888,12 +3824,10 @@ class CBash_CellBlockInfo:
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
         celldata = self.celldata
-
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
                                      LoadMasters=False)
             Current.load()
-
             for record in modFile.CELLS:
                 celldata[record.eid] = record.bsb
                 record.UnloadRecord()
