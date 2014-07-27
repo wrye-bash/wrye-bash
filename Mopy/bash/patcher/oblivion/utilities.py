@@ -2931,7 +2931,7 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         uses = _coerce(uses,int)
         value = _coerce(value,int)
         weight = _coerce(weight,float)
-        effects = self.readEffectsFromText(self,fields)
+        effects = self.readEffectsFromText(fields)
         return [eid,full,weight,value,uses,iconPath,modPath,modb,sid,effects]
 
     def readFromText(self,textPath):
