@@ -534,7 +534,9 @@ class CBash_ActorLevels:
 
 #------------------------------------------------------------------------------
 class EditorIds:
-    """Editor ids for records, with functions for importing/exporting from/to mod/text file."""
+    """Editor ids for records, with functions for importing/exporting
+    from/to mod/text file."""
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.type_id_eid = {} #--eid = eids[type][longid]
@@ -550,7 +552,7 @@ class EditorIds:
         """Imports eids from specified mod."""
         type_id_eid,types = self.type_id_eid,self.types
         classes = [MreRecord.type_class[x] for x in types]
-        loadFactory= LoadFactory(False,*classes)
+        loadFactory = LoadFactory(False,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -567,7 +569,7 @@ class EditorIds:
         """Exports eids to specified mod."""
         type_id_eid,types = self.type_id_eid,self.types
         classes = [MreRecord.type_class[x] for x in types]
-        loadFactory= LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True,*classes)
         loadFactory.addClass(MreRecord.type_class['SCPT'])
         loadFactory.addClass(MreRecord.type_class['QUST'])
         modFile = ModFile(modInfo,loadFactory)
@@ -588,7 +590,8 @@ class EditorIds:
                     changed.append((oldEid,newEid))
         #--Update scripts
         old_new = dict(self.old_new)
-        old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+        old_new.update(
+            dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
         changed.extend(self.changeScripts(modFile,old_new))
         #--Done
         if changed: modFile.safeSave()
@@ -599,6 +602,7 @@ class EditorIds:
         changed = []
         if not old_new: return changed
         reWord = re.compile('\w+')
+
         def subWord(match):
             word = match.group(0)
             newWord = old_new.get(word.lower())
@@ -606,12 +610,14 @@ class EditorIds:
                 return word
             else:
                 return newWord
+
         #--Scripts
         for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
             if not script.scriptText: continue
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
-                header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-'*(77-len(script.eid)))
+                header = u'\r\n\r\n; %s %s\r\n' % (
+                    script.eid,u'-' * (77 - len(script.eid)))
                 script.scriptText = newText
                 script.setChanged()
                 changed.append((_(u"Script"),script.eid))
@@ -650,7 +656,8 @@ class EditorIds:
                     if badEidsList is not None:
                         badEidsList.append(eid)
                     continue
-                if questionableEidsSet is not None and not reGoodEid.match(eid):
+                if questionableEidsSet is not None and not reGoodEid.match(
+                        eid):
                     questionableEidsSet.add(eid)
                 id_eid = type_id_eid.setdefault(group, {})
                 id_eid[longid] = eid
@@ -664,14 +671,17 @@ class EditorIds:
         headFormat = u'"%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
+            out.write(headFormat % (
+                _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
             for type_ in sorted(type_id_eid):
                 id_eid = type_id_eid[type_]
                 for id_ in sorted(id_eid,key = lambda a: id_eid[a].lower()):
                     out.write(rowFormat % (type_,id_[0].s,id_[1],id_eid[id_]))
 
 class CBash_EditorIds:
-    """Editor ids for records, with functions for importing/exporting from/to mod/text file."""
+    """Editor ids for records, with functions for importing/exporting
+    from/to mod/text file."""
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.group_fid_eid = {} #--eid = group_fid_eid[group][longid]
@@ -687,7 +697,8 @@ class CBash_EditorIds:
         group_fid_eid,groups = self.group_fid_eid,self.groups
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
+                                     LoadMasters=False)
             Current.load()
 
             for group in groups:
@@ -702,7 +713,7 @@ class CBash_EditorIds:
         group_fid_eid = self.group_fid_eid
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = []
@@ -715,11 +726,14 @@ class CBash_EditorIds:
                     oldEid = record.eid
                     if newEid and newEid != oldEid:
                         record.eid = newEid
-                        if record.eid == newEid: #Can silently fail if a record keyed by editorID (GMST,MGEF) already has the value
+                        if record.eid == newEid: #Can silently fail if a
+                            # record keyed by editorID (GMST,MGEF) already has
+                            # the value
                             changed.append((oldEid or u'',newEid or u''))
             #--Update scripts
             old_new = dict(self.old_new)
-            old_new.update(dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
+            old_new.update(
+                dict([(oldEid.lower(),newEid) for oldEid,newEid in changed]))
             changed.extend(self.changeScripts(modFile,old_new))
             #--Done
             if changed: modFile.save()
@@ -773,13 +787,15 @@ class CBash_EditorIds:
                 group = _coerce(group,unicode)[:4]
                 if group not in validTypes: continue
                 mod = GPath(_coerce(mod,unicode))
-                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                longid = FormID(aliases.get(mod,mod),
+                                _coerce(objectIndex[2:],int,16))
                 eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
                         badEidsList.append(eid)
                     continue
-                if questionableEidsSet is not None and not reGoodEid.match(eid):
+                if questionableEidsSet is not None and not reGoodEid.match(
+                        eid):
                     questionableEidsSet.add(eid)
                 fid_eid = group_fid_eid.setdefault(group, {})
                 fid_eid[longid] = eid
@@ -793,7 +809,8 @@ class CBash_EditorIds:
         headFormat = u'"%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
+            out.write(headFormat % (
+                _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
             for group in sorted(group_fid_eid):
                 fid_eid = group_fid_eid[group]
                 for fid in sorted(fid_eid,key = lambda a: fid_eid[a]):
