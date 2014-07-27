@@ -819,6 +819,7 @@ class CBash_EditorIds:
 #------------------------------------------------------------------------------
 class FactionRelations:
     """Faction relations."""
+
     def __init__(self,aliases=None):
         """Initialize."""
         self.id_relations = {} #--(otherLongid,otherDisp) = id_relation[longid]
@@ -828,7 +829,7 @@ class FactionRelations:
 
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
-        loadFactory= LoadFactory(False,MreRecord.type_class['FACT'])
+        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
         from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in self.gotFactions: continue
@@ -842,13 +843,13 @@ class FactionRelations:
     def readFromMod(self,modInfo):
         """Imports faction relations from specified mod."""
         self.readFactionEids(modInfo)
-        loadFactory= LoadFactory(False,MreRecord.type_class['FACT'])
+        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         modFile.convertToLongFids(('FACT',))
         for record in modFile.FACT.getActiveRecords():
-            #--Following is a bit messy. If already have relations for a given mod,
-            #  want to do an in-place update. Otherwise do an append.
+            #--Following is a bit messy. If already have relations for a
+            # given mod, want to do an in-place update. Otherwise do an append.
             relations = self.id_relations.get(record.fid)
             if relations == None:
                 relations = self.id_relations[record.fid] = []
@@ -896,7 +897,8 @@ class FactionRelations:
             longid = mapper(record.fid)
             if longid not in id_relations: continue
             newRelations = set(id_relations[longid])
-            curRelations = set((mapper(x.faction),x.mod) for x in record.relations)
+            curRelations = set(
+                (mapper(x.faction),x.mod) for x in record.relations)
             changes = newRelations - curRelations
             if not changes: continue
             for faction,mod in changes:
@@ -922,15 +924,23 @@ class FactionRelations:
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),_(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
-            for main in sorted(id_relations,key = lambda x: id_eid.get(x).lower()):
+            out.write(headFormat % (
+                _(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),
+                _(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
+            for main in sorted(id_relations,
+                               key=lambda x:id_eid.get(x).lower()):
                 mainEid = id_eid.get(main,u'Unknown')
-                for other, disp in sorted(id_relations[main],key=lambda x: id_eid.get(x[0]).lower()):
+                for other,disp in sorted(id_relations[main],
+                                         key=lambda x:id_eid.get(
+                                                 x[0]).lower()):
                     otherEid = id_eid.get(other,u'Unknown')
-                    out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
+                    out.write(rowFormat % (
+                        mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],
+                        disp))
 
 class CBash_FactionRelations:
     """Faction relations."""
+
     def __init__(self,aliases=None):
         """Initialize."""
         self.fid_faction_mod = {}
@@ -940,7 +950,8 @@ class CBash_FactionRelations:
 
     def readFromMod(self,modInfo):
         """Imports faction relations from specified mod."""
-        fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,self.fid_eid,self.gotFactions
+        fid_faction_mod,fid_eid,gotFactions = self.fid_faction_mod,\
+                                              self.fid_eid,self.gotFactions
         importFile = modInfo.getPath().tail
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
@@ -972,11 +983,13 @@ class CBash_FactionRelations:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
-                mmod = _coerce(mmod, unicode)
-                omod = _coerce(omod, unicode)
-                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
-                oid = FormID(GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
-                disp = _coerce(disp, int)
+                mmod = _coerce(mmod,unicode)
+                omod = _coerce(omod,unicode)
+                mid = FormID(GPath(aliases.get(mmod,mmod)),
+                             _coerce(mobj[2:],int,16))
+                oid = FormID(GPath(aliases.get(omod,omod)),
+                             _coerce(oobj[2:],int,16))
+                disp = _coerce(disp,int)
                 faction_mod = fid_faction_mod.setdefault(mid,{})
                 faction_mod[oid] = disp
 
@@ -985,15 +998,21 @@ class CBash_FactionRelations:
         fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
             changed = 0
             for record in modFile.FACT:
                 fid = record.fid
                 if fid not in fid_faction_mod: continue
-                faction_mod = FormID.FilterValidDict(fid_faction_mod[fid], modFile, True, False)
-                newRelations = set([(faction, mod) for faction, mod in FormID.FilterValidDict(faction_mod, modFile, True, False).iteritems()])
-                curRelations = set([(faction, mod) for faction, mod in record.relations_list if faction.ValidateFormID(modFile)])
+                faction_mod = FormID.FilterValidDict(fid_faction_mod[fid],
+                                                     modFile,True,False)
+                newRelations = set([(faction,mod) for faction,mod in
+                                    FormID.FilterValidDict(faction_mod,modFile,
+                                                           True,
+                                                           False).iteritems()])
+                curRelations = set(
+                    [(faction,mod) for faction,mod in record.relations_list if
+                     faction.ValidateFormID(modFile)])
                 changes = newRelations - curRelations
                 if not changes: continue
                 for faction,mod in changes:
@@ -1016,12 +1035,17 @@ class CBash_FactionRelations:
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),_(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
-            for main in sorted(fid_faction_mod,key = lambda x: fid_eid.get(x)):
+            out.write(headFormat % (
+                _(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),
+                _(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
+            for main in sorted(fid_faction_mod, key=lambda x: fid_eid.get(x)):
                 mainEid = fid_eid.get(main,u'Unknown')
                 faction_mod = fid_faction_mod[main]
-                for other, disp in sorted(faction_mod.items(),key=lambda x: fid_eid.get(x[0])):
+                for other,disp in sorted(faction_mod.items(),
+                                         key=lambda x:fid_eid.get(x[0])):
                     otherEid = fid_eid.get(other,u'Unknown')
-                    out.write(rowFormat % (mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],disp))
+                    out.write(rowFormat % (
+                        mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],
+                        disp))
 
 #------------------------------------------------------------------------------
