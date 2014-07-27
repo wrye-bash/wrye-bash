@@ -3467,7 +3467,8 @@ class CBash_SpellRecords(UsesEffectsMixin):
 
 #------------------------------------------------------------------------------
 class IngredientDetails(UsesEffectsMixin):
-    """Details on Ingredients, with functions for importing/exporting from/to mod/text file."""
+    """Details on Ingredients, with functions for importing/exporting
+    from/to mod/text file."""
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.fid_stats = {}
@@ -3483,13 +3484,23 @@ class IngredientDetails(UsesEffectsMixin):
         for record in modFile.INGR.getActiveRecords():
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                effectlist = [effect.name,effect.magnitude,effect.area,
+                              effect.duration,effect.recipient,
+                              effect.actorValue]
                 if effect.scriptEffect:
-                    effectlist.append([effect.scriptEffect.script, effect.scriptEffect.school, effect.scriptEffect.visual,
-                                       effect.scriptEffect.flags.hostile, effect.scriptEffect.full])
+                    effectlist.append(
+                        [effect.scriptEffect.script,effect.scriptEffect.school,
+                         effect.scriptEffect.visual,
+                         effect.scriptEffect.flags.hostile,
+                         effect.scriptEffect.full])
                 else: effectlist.append([])
                 effects.append(effectlist)
-            fid_stats[record.fid] = [record.eid, record.full, record.model.modPath, round(record.model.modb,6), record.iconPath, record.script, record.value, round(record.weight,6), effects]
+            fid_stats[record.fid] = [record.eid,record.full,
+                                     record.model.modPath,
+                                     round(record.model.modb,6),
+                                     record.iconPath,record.script,
+                                     record.value,round(record.weight,6),
+                                     effects]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -3505,24 +3516,39 @@ class IngredientDetails(UsesEffectsMixin):
             if not newStats: continue
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name, effect.magnitude, effect.area, effect.duration, effect.recipient, effect.actorValue]
+                effectlist = [effect.name,effect.magnitude,effect.area,
+                              effect.duration,effect.recipient,
+                              effect.actorValue]
                 if effect.scriptEffect:
-                    effectlist.append([mapper(effect.scriptEffect.script), effect.scriptEffect.school, effect.scriptEffect.visual,
-                                       effect.scriptEffect.flags.hostile, effect.scriptEffect.full])
+                    effectlist.append([mapper(effect.scriptEffect.script),
+                                       effect.scriptEffect.school,
+                                       effect.scriptEffect.visual,
+                                       effect.scriptEffect.flags.hostile,
+                                       effect.scriptEffect.full])
                 else: effectlist.append([])
                 effects.append(effectlist)
-            oldStats = [record.eid, record.full, record.model.modPath, round(record.model.modb,6), record.iconPath, mapper(record.script), record.value, round(record.weight,6), effects]
+            oldStats = [record.eid,record.full,record.model.modPath,
+                        round(record.model.modb,6),record.iconPath,
+                        mapper(record.script),record.value,
+                        round(record.weight,6),effects]
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
-                record.eid, record.full, record.model.modPath, record.model.modb, record.iconPath, script, record.value, record.weight, effects = newStats
+                record.eid,record.full,record.model.modPath,\
+                record.model.modb,record.iconPath,script,record.value,\
+                record.weight,effects = newStats
                 record.script = shortMapper(script)
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault('effects')
-                    neweffect.name, neweffect.magnitude, neweffect.area, neweffect.duration, neweffect.recipient, neweffect.actorValue, scripteffect = effect
+                    neweffect.name,neweffect.magnitude,neweffect.area,\
+                    neweffect.duration,neweffect.recipient,\
+                    neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
-                        scriptEffect = record.getDefault('effects.scriptEffect')
-                        script, scriptEffect.school, scriptEffect.visual, scriptEffect.flags.hostile.hostile, scriptEffect.full = scripteffect
+                        scriptEffect = record.getDefault(
+                            'effects.scriptEffect')
+                        script,scriptEffect.school,scriptEffect.visual,\
+                        scriptEffect.flags.hostile.hostile,scriptEffect.full\
+                            = scripteffect
                         scriptEffect.script = shortMapper(script)
                         neweffect.scriptEffect = scriptEffect
                     record.effects.append(neweffect)
@@ -3536,12 +3562,14 @@ class IngredientDetails(UsesEffectsMixin):
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
-                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
+                weight = fields[:11]
                 mmod = _coerce(mmod, unicode)
                 mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
                 smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = None
-                else: sid = (GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                else: sid = (
+                    GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
                 modPath = _coerce(modPath, unicode, AllowNone=True)
@@ -3550,34 +3578,44 @@ class IngredientDetails(UsesEffectsMixin):
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
                 effects = self.readEffects(fields[11:], aliases, False)
-                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
+                fid_stats[mid] = [eid,full,modPath,modb,iconPath,sid,value,
+                                  weight,effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
         fid_stats = self.fid_stats
-        header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
-                  _(u'Name'),_(u'Model Path'),_(u'Bound Radius'),
-                  _(u'Icon Path'),_(u'Script Mod Name'),_(u'Script ObjectIndex'),
-                  _(u'Value'),_(u'Weight'),) + UsesEffectsMixin.headers * 2 + (_(u'Additional Effects (Same format)'),)
+        header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
+                  _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
+                  _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Value'),
+                  _(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
+                     _(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%f"'
-        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
+        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
+                    u'"%d","%f"'
+        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
+                       u'"%d","%f"'
 
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
-            for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0].lower()):
-                eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
+            for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
+                eid,name,modpath,modb,iconpath,scriptfid,value,weight,\
+                effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
-                    output = rowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                    output = rowFormat % (
+                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0].s,scriptfid[1],value,weight)
                 except TypeError:
-                    output = altrowFormat % (fid[0].s,fid[1],eid,name,modpath,modb,iconpath,scriptfid[0].s,scriptfid[1],value,weight)
+                    output = altrowFormat % (
+                        fid[0].s,fid[1],eid,name,modpath,modb,iconpath,
+                        scriptfid[0].s,scriptfid[1],value,weight)
                 output += self.writeEffects(effects, False)
                 output += u'\n'
                 out.write(output)
 
 class CBash_IngredientDetails(UsesEffectsMixin):
-    """Details on SigilStones, with functions for importing/exporting from/to mod/text file."""
+    """Details on SigilStones, with functions for importing/exporting
+    from/to mod/text file."""
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.fid_stats = {}
@@ -3588,11 +3626,15 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         fid_stats = self.fid_stats
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
+                                     LoadMasters=False)
             Current.load()
 
             for record in modFile.INGR:
-                fid_stats[record.fid] = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
+                fid_stats[record.fid] = [record.eid,record.full,record.modPath,
+                                         record.modb,record.iconPath,
+                                         record.script,record.value,
+                                         record.weight,record.effects_list]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -3600,7 +3642,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         changed = []
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
@@ -3608,10 +3650,14 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                 newStats = fid_stats.get(record.fid, None)
                 if not newStats: continue
                 if not ValidateList(newStats, modFile): continue
-                oldStats = [record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, record.effects_list]
+                oldStats = [record.eid,record.full,record.modPath,record.modb,
+                            record.iconPath,record.script,record.value,
+                            record.weight,record.effects_list]
                 if oldStats != newStats:
                     changed.append(oldStats[0]) #eid
-                    record.eid, record.full, record.modPath, record.modb, record.iconPath, record.script, record.value, record.weight, effects = newStats
+                    record.eid,record.full,record.modPath,record.modb,\
+                    record.iconPath,record.script,record.value,\
+                    record.weight,effects = newStats
                     record.effects_list = effects
             if changed: modFile.save()
             return changed
@@ -3622,12 +3668,15 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
-                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,weight = fields[:11]
+                mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
+                weight = fields[:11]
                 mmod = _coerce(mmod, unicode)
-                mid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                mid = FormID(GPath(aliases.get(mmod,mmod)),
+                             _coerce(mobj,int,16))
                 smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = FormID(None,None)
-                else: sid = FormID(GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                else: sid = FormID(GPath(aliases.get(smod,smod)),
+                                   _coerce(sobj,int,16))
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
                 modPath = _coerce(modPath, unicode, AllowNone=True)
@@ -3636,29 +3685,38 @@ class CBash_IngredientDetails(UsesEffectsMixin):
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
                 effects = self.readEffects(fields[11:], aliases, True)
-                fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, value, weight, effects]
+                fid_stats[mid] = [eid,full,modPath,modb,iconPath,sid,value,
+                                  weight,effects]
 
     def writeToText(self,textPath):
         """Exports stats to specified text file."""
         fid_stats = self.fid_stats
-        header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
-                  _(u'Name'),_(u'Model Path'),_(u'Bound Radius'),
-                  _(u'Icon Path'),_(u'Script Mod Name'),_(u'Script ObjectIndex'),
-                  _(u'Value'),_(u'Weight'),) + UsesEffectsMixin.headers * 2 + (_(u'Additional Effects (Same format)'),)
+        header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
+                  _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
+                  _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Value'),
+                  _(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
+                     _(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X","%d","%f"'
-        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s","%d","%f"'
+        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
+                    u'"%d","%f"'
+        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
+                       u'"%d","%f"'
 
         with textPath.open('w',encoding='utf-8-sig') as out:
             outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key = lambda x: fid_stats[x][0]):
-                eid,name,modpath,modb,iconpath,scriptfid,value,weight,effects = fid_stats[fid]
+                eid,name,modpath,modb,iconpath,scriptfid,value,weight,\
+                effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
-                    output = rowFormat % (fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],scriptfid[1],value,weight)
+                    output = rowFormat % (
+                    fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],
+                    scriptfid[1],value,weight)
                 except TypeError:
-                    output = altrowFormat % (fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],scriptfid[1],value,weight)
+                    output = altrowFormat % (
+                    fid[0],fid[1],eid,name,modpath,modb,iconpath,scriptfid[0],
+                    scriptfid[1],value,weight)
                 output += self.writeEffects(effects, True)
                 output += u'\n'
                 outWrite(output)
