@@ -1285,11 +1285,11 @@ class FullNames:
 class CBash_FullNames:
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
-    defaultTypes = set(
-        ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN","ACTI",
-         "APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH","MISC","FLOR",
-         "FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH","SGST","WRLD",
-         "CELLS","DIAL","QUST"])
+    defaultTypes = {"CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL",
+                    "BSGN","ACTI","APPA","ARMO","BOOK","CLOT","CONT","DOOR",
+                    "INGR","LIGH","MISC","FLOR","FURN","WEAP","AMMO","NPC_",
+                    "CREA","SLGM","KEYM","ALCH","SGST","WRLD","CELLS","DIAL",
+                    "QUST"}
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
@@ -1307,7 +1307,7 @@ class CBash_FullNames:
             for group in self.types:
                 fid_name = group_fid_name.setdefault(group[:4],{})
                 for record in getattr(modFile,group):
-                    if(hasattr(record, 'full')):
+                    if hasattr(record, 'full'):
                         full = record.full or (group == 'LIGH' and u'NO NAME')
                         eid = record.eid
                         if eid and full:
@@ -1671,7 +1671,7 @@ class ScriptText:
             z = 0
             for record in records:
                 z += 1
-                progress((0.5 / y * z),_(u"Reading scripts in %s.") % (file_))
+                progress((0.5/y*z),_(u"Reading scripts in %s.")% file_)
                 eid_data[record.eid] = (record.scriptText,mapper(record.fid))
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -1706,7 +1706,7 @@ class ScriptText:
                 modFile.SCPT.records.append(newScript)
                 added.append(eid)
         if changed or added: modFile.safeSave()
-        return (changed, added)
+        return changed, added
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
@@ -1719,9 +1719,8 @@ class ScriptText:
                 z = 0
                 for name in files:
                     z += 1
-                    if (name.cext != inisettings['ScriptFileExt']):
-                        progress(((1 / y) * z),
-                                 _(u"Skipping file %s.") % name.s)
+                    if name.cext != inisettings['ScriptFileExt']:
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
                     with root.join(name).open('r',
@@ -1765,8 +1764,7 @@ class ScriptText:
                             tmp += line[:pos] + u'\n'
                     text = tmp
                 z += 1
-                progress((0.5 + 0.5 / y * z),
-                         _(u"Exporting script %s.") % (eid))
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % eid)
                 if x == 0 or skip.lower() != eid[:x].lower():
                     fileName = eid
                     if r >= 1 and deprefix == fileName[:r]:
@@ -1803,8 +1801,7 @@ class CBash_ScriptText:
                 z = 0
                 for record in records:
                     z += 1
-                    progress((0.5 / y * z),
-                             _(u"Reading scripts in %s.") % (file_))
+                    progress((0.5/y*z),_(u"Reading scripts in %s.") % file_)
                     eid_data[record.eid] = (record.scriptText,record.fid)
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -1834,7 +1831,7 @@ class CBash_ScriptText:
                         newScript.scriptText = newText
                         added.append(eid)
             if changed or added: modFile.save()
-            return (changed, added)
+            return changed, added
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
@@ -1847,9 +1844,8 @@ class CBash_ScriptText:
                 z = 0
                 for name in files:
                     z += 1
-                    if (name.cext != inisettings['ScriptFileExt']):
-                        progress(((1 / y) * z),
-                                 _(u"Skipping file %s.") % name.s)
+                    if name.cext != inisettings['ScriptFileExt']:
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
                     with root.join(name).open('r',
@@ -2953,6 +2949,7 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                     class_fid_attr_value[group][
                         longid] = self.readSGSTFromText(fields)
 
+    # noinspection PyUnreachableCode
     def writeToText(self,textPath):
         return
         """Writes stats to specified text file."""
@@ -3238,7 +3235,7 @@ class SpellRecords(_UsesEffectsMixin):
                 _(u'Touch Explodes Without Target'),
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+            rowFormat += u',"%s","%s","%s","%s","%s","%s","%s"'
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
@@ -3387,7 +3384,7 @@ class CBash_SpellRecords(_UsesEffectsMixin):
                 _(u'Touch Explodes Without Target'),
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+            rowFormat += u',"%s","%s","%s","%s","%s","%s","%s"'
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
