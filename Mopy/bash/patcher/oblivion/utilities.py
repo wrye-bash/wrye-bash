@@ -1068,38 +1068,49 @@ class FidReplacer:
         with bolt.CsvReader(textPath) as ins:
             pack,unpack = struct.pack,struct.unpack
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x'\
+                        or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
                 oldMod = _coerce(oldMod, unicode)
                 oldEid = _coerce(oldEid, unicode, AllowNone=True)
                 newEid = _coerce(newEid, unicode, AllowNone=True)
                 newMod = _coerce(newMod, unicode)
                 oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = (GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-                newId = (GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
+                oldId = (
+                    GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
+                newId = (
+                    GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
                 old_new[oldId] = newId
                 old_eid[oldId] = oldEid
                 new_eid[newId] = newEid
 
-    def updateMod(self, modInfo,changeBase=False):
+    def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
         types = self.types
         classes = [MreRecord.type_class[type_] for type_ in types]
-        loadFactory= LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         #--Create  filtered versions of mappers.
         mapper = modFile.getShortMapper()
-        masters = modFile.tes4.masters+[modFile.fileInfo.name]
-        short = dict((oldId,mapper(oldId)) for oldId in self.old_eid if oldId[0] in masters)
-        short.update((newId,mapper(newId)) for newId in self.new_eid if newId[0] in masters)
-        old_eid = dict((short[oldId],eid) for oldId,eid in self.old_eid.iteritems() if oldId in short)
-        new_eid = dict((short[newId],eid) for newId,eid in self.new_eid.iteritems() if newId in short)
-        old_new = dict((short[oldId],short[newId]) for oldId,newId in self.old_new.iteritems()
-            if (oldId in short and newId in short))
+        masters = modFile.tes4.masters + [modFile.fileInfo.name]
+        short = dict((oldId,mapper(oldId)) for oldId in self.old_eid if
+                     oldId[0] in masters)
+        short.update((newId,mapper(newId)) for newId in self.new_eid if
+                     newId[0] in masters)
+        old_eid = dict(
+            (short[oldId],eid) for oldId,eid in self.old_eid.iteritems() if
+            oldId in short)
+        new_eid = dict(
+            (short[newId],eid) for newId,eid in self.new_eid.iteritems() if
+            newId in short)
+        old_new = dict((short[oldId],short[newId]) for oldId,newId in
+                       self.old_new.iteritems() if
+                       (oldId in short and newId in short))
         if not old_new: return False
         #--Swapper function
         old_count = {}
+
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             if newId:
@@ -1108,6 +1119,7 @@ class FidReplacer:
                 return newId
             else:
                 return oldId
+
         #--Do swap on all records
         for type_ in types:
             for record in getattr(modFile,type_).getActiveRecords():
@@ -1117,8 +1129,8 @@ class FidReplacer:
         #--Done
         if not old_count: return False
         modFile.safeSave()
-        entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for oldId,count in
-                old_count.iteritems()]
+        entries = [(count,old_eid[oldId],new_eid[old_new[oldId]]) for
+                   oldId,count in old_count.iteritems()]
         entries.sort(key=itemgetter(1))
         return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
 
@@ -1139,31 +1151,36 @@ class CBash_FidReplacer:
         with bolt.CsvReader(textPath) as ins:
             pack,unpack = struct.pack,struct.unpack
             for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
+                if len(fields) < 7 or fields[2][:2] != u'0x'\
+                        or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
                 oldMod = _coerce(oldMod, unicode)
                 oldEid = _coerce(oldEid, unicode)
                 newEid = _coerce(newEid, unicode, AllowNone=True)
                 newMod = _coerce(newMod, unicode, AllowNone=True)
                 oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = FormID(GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-                newId = FormID(GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
+                oldId = FormID(GPath(aliases.get(oldMod,oldMod)),
+                               _coerce(oldObj,int,16))
+                newId = FormID(GPath(aliases.get(newMod,newMod)),
+                               _coerce(newObj,int,16))
                 old_new[oldId] = newId
                 old_eid[oldId] = oldEid
                 new_eid[newId] = newEid
 
-    def updateMod(self, modInfo,changeBase=False):
+    def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         #Filter the fid replacements to only include existing mods
         from bash.bosh import modInfos
         existing = modInfos.keys()
-        old_new = dict((oldId, newId) for oldId, newId in old_new.iteritems() if oldId[0] in existing and newId[0] in existing)
+        old_new = dict((oldId,newId) for oldId,newId in old_new.iteritems() if
+                       oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
         old_count = {}
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
-                Current.addMod(modInfos[newId[0]].getPath().stail, Saveable=False)
+                Current.addMod(modInfos[newId[0]].getPath().stail,
+                               Saveable=False)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.load()
 
@@ -1172,7 +1189,9 @@ class CBash_FidReplacer:
             #--Done
             if not sum(counts): return False
             modFile.save()
-            entries = [(count,old_eid[oldId],new_eid[newId]) for count, oldId, newId in zip(counts, old_new.keys(), old_new.values())]
+            entries = [(count,old_eid[oldId],new_eid[newId]) for
+                       count,oldId,newId in
+                       zip(counts,old_new.keys(),old_new.values())]
             entries.sort(key=itemgetter(1))
             return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
 
