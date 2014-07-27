@@ -615,7 +615,7 @@ class ModFile:
         gLong = self.getLongMapper()
         def mapper(fid):
             if fid == None: return None
-            if isinstance(fid,long):
+            if isinstance(fid, (long, int)):
                 fid = gLong(fid)
             modName,object = fid
             mod = indices[modName]
