@@ -603,7 +603,6 @@ class EditorIds:
         changed = []
         if not old_new: return changed
         reWord = re.compile('\w+')
-
         def subWord(match):
             word = match.group(0)
             newWord = old_new.get(word.lower())
@@ -611,15 +610,13 @@ class EditorIds:
                 return word
             else:
                 return newWord
-
         #--Scripts
         for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
             if not script.scriptText: continue
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
-                # FIXME header below is unused
-                header = u'\r\n\r\n; %s %s\r\n' % (
-                    script.eid,u'-' * (77 - len(script.eid)))
+                # header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-' * (77 -
+                # len(script.eid))) # unused - bug ?
                 script.scriptText = newText
                 script.setChanged()
                 changed.append((_(u"Script"),script.eid))
@@ -1060,7 +1057,7 @@ class FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack   # FIXME BOTH unused
+            # pack,unpack = struct.pack,struct.unpack   # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1104,7 +1101,6 @@ class FidReplacer:
         if not old_new: return False
         #--Swapper function
         old_count = {}
-
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             if newId:
@@ -1113,7 +1109,6 @@ class FidReplacer:
                 return newId
             else:
                 return oldId
-
         #--Do swap on all records
         for type_ in types:
             for record in getattr(modFile,type_).getActiveRecords():
@@ -1143,7 +1138,7 @@ class CBash_FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack  # FIXME BOTH unused
+            # pack,unpack = struct.pack,struct.unpack  # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1170,7 +1165,7 @@ class CBash_FidReplacer:
         old_new = dict((oldId,newId) for oldId,newId in old_new.iteritems() if
                        oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
-        old_count = {} # FIXME unused
+        # old_count = {} # unused - was meant to be used ?
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
                 Current.addMod(modInfos[newId[0]].getPath().stail,
@@ -2379,11 +2374,6 @@ class ItemPrices:
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_stats = self.class_fid_stats
-        def getSortedIds(stats):
-            longids = stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
         with textPath.open('w',encoding='utf-8-sig') as out:
             format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
@@ -2459,11 +2449,6 @@ class CBash_ItemPrices:
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_stats = self.class_fid_stats
-        def getSortedIds(stats):
-            longids = stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
         with textPath.open('w',encoding='utf-8-sig') as out:
             format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
@@ -2654,13 +2639,11 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a:stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             for type_,format_,header in (
                     #--Alch
@@ -2956,12 +2939,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         with textPath.open('w',encoding='utf-8-sig') as out:
-            def getSortedIds(fid_attr_value):
-                longids = fid_attr_value.keys()
-                longids.sort(key=lambda a:fid_attr_value[a]['eid'])
-                longids.sort(key=itemgetter(0))
-                return longids
-
             def write(out,attrs,values):
                 attr_type = self.attr_type
                 csvFormat = u''
@@ -2980,7 +2957,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-
             for group,header in (
                     #--Alch
                     ('ALCH',(u'"' + u'","'.join((
@@ -3087,7 +3063,6 @@ class SpellRecords(_UsesEffectsMixin):
         self.spellTypeName_Number = dict(
             [(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if
              x is not None])
-
         self.levelTypeNumber_Name = {None : 'NONE',
                                      0 : 'Novice',
                                      1 : 'Apprentice',
@@ -3288,7 +3263,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
         self.spellTypeName_Number = dict(
             [(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if
              x is not None])
-
         self.levelTypeNumber_Name = {None : u'NONE',
                                      0 : u'Novice',
                                      1 : u'Apprentice',
