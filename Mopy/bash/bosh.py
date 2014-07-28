@@ -11609,6 +11609,10 @@ class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
             patchFile.setMods(None,self.srcs)
 
 #------------------------------------------------------------------------------
+# TODO: MI for UpdateReferences - notice self.srcFiles =self.getConfigChecked()
+# vs self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
+# plus unused vars, commented out code etc etc
+
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
@@ -11763,10 +11767,7 @@ class UpdateReferences(ListPatcher):
         count = CountDict()
         def swapper(oldId):
             newId = old_new.get(oldId,None)
-            if newId:
-                return newId
-            else:
-                return oldId
+            return newId if newId else oldId
 ##        for type in self.types:
 ##            for record in getattr(self.patchFile,type).getActiveRecords():
 ##                if record.fid in self.old_new:
