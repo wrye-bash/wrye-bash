@@ -1197,7 +1197,8 @@ class CBash_FidReplacer:
 
 #------------------------------------------------------------------------------
 class FullNames:
-    """Names for records, with functions for importing/exporting from/to mod/text file."""
+    """Names for records, with functions for importing/exporting from/to
+    mod/text file."""
     defaultTypes = bush.game.namesTypes # PYDEV ERROR
 
     def __init__(self,types=None,aliases=None):
@@ -1210,7 +1211,7 @@ class FullNames:
         """Imports type_id_name from specified mod."""
         type_id_name,types = self.type_id_name, self.types
         classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory= LoadFactory(False,*classes)
+        loadFactory = LoadFactory(False,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -1229,7 +1230,7 @@ class FullNames:
         """Exports type_id_name to specified mod."""
         type_id_name,types = self.type_id_name,self.types
         classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory= LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True,*classes)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -1275,7 +1276,9 @@ class FullNames:
         headFormat = u'"%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
+            out.write(headFormat % (
+                _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
+                _(u'Name')))
             for type_ in sorted(type_id_name):
                 id_name = type_id_name[type_]
                 longids = id_name.keys()
@@ -1283,14 +1286,18 @@ class FullNames:
                 longids.sort(key=itemgetter(0))
                 for longid in longids:
                     eid,name = id_name[longid]
-                    out.write(rowFormat % (type_,longid[0].s,longid[1],eid,name.replace(u'"',u'""')))
+                    out.write(rowFormat % (
+                        type_,longid[0].s,longid[1],eid,
+                        name.replace(u'"',u'""')))
 
 class CBash_FullNames:
-    """Names for records, with functions for importing/exporting from/to mod/text file."""
-    defaultTypes = set(["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN",
-                        "ACTI","APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH",
-                        "MISC","FLOR","FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM",
-                        "ALCH","SGST","WRLD","CELLS","DIAL","QUST"])
+    """Names for records, with functions for importing/exporting from/to
+    mod/text file."""
+    defaultTypes = set(
+        ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN","ACTI",
+         "APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH","MISC","FLOR",
+         "FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH","SGST","WRLD",
+         "CELLS","DIAL","QUST"])
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
@@ -1303,7 +1310,8 @@ class CBash_FullNames:
         group_fid_name = self.group_fid_name
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, Saveable=False, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,Saveable=False,
+                                     LoadMasters=False)
             Current.load()
 
             for group in self.types:
@@ -1321,14 +1329,14 @@ class CBash_FullNames:
         group_fid_name = self.group_fid_name
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = {}
             for group in self.types:
                 fid_name = group_fid_name.get(group,None)
                 if not fid_name: continue
-                fid_name = FormID.FilterValidDict(fid_name, modFile, True, False)
+                fid_name = FormID.FilterValidDict(fid_name,modFile,True,False)
                 for record in getattr(modFile,group):
                     fid = record.fid
                     full = record.full
@@ -1348,12 +1356,13 @@ class CBash_FullNames:
             for fields in ins:
                 if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid,full = fields[:5]
-                group = _coerce(group, unicode)
-                mod = GPath(_coerce(mod, unicode))
-                longid = FormID(aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
-                eid = _coerce(eid, unicode, AllowNone=True)
-                full = _coerce(full, unicode, AllowNone=True)
-                group_fid_name.setdefault(group, {})[longid] = (eid,full)
+                group = _coerce(group,unicode)
+                mod = GPath(_coerce(mod,unicode))
+                longid = FormID(aliases.get(mod,mod),
+                                _coerce(objectIndex[2:],int,16))
+                eid = _coerce(eid,unicode,AllowNone=True)
+                full = _coerce(full,unicode,AllowNone=True)
+                group_fid_name.setdefault(group,{})[longid] = (eid,full)
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
@@ -1363,7 +1372,9 @@ class CBash_FullNames:
         rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
             outWrite = out.write
-            outWrite(headFormat % (_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name')))
+            outWrite(headFormat % (
+                _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
+                _(u'Name')))
             for group in sorted(group_fid_name):
                 fid_name = group_fid_name[group]
                 longids = fid_name.keys()
@@ -1371,6 +1382,8 @@ class CBash_FullNames:
                 longids.sort(key=itemgetter(0))
                 for longid in longids:
                     eid,name = fid_name[longid]
-                    outWrite(rowFormat % (group,longid[0],longid[1],eid,name.replace(u'"',u'""')))
+                    outWrite(rowFormat % (
+                        group,longid[0],longid[1],eid,
+                        name.replace(u'"',u'""')))
 
 #------------------------------------------------------------------------------
