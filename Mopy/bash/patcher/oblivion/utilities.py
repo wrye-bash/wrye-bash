@@ -2087,7 +2087,8 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
 
 #------------------------------------------------------------------------------
 class ItemPrices:
-    """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
+    """Function for importing/exporting from/to mod/text file only the
+    value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
@@ -2106,13 +2107,14 @@ class ItemPrices:
         attrs = self.attrs
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                fid_stats[mapper(record.fid)] = map(record.__getattribute__,attrs)
+                fid_stats[mapper(record.fid)] = map(record.__getattribute__,
+                                                    attrs)
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
         typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
-        loadFactory= LoadFactory(True,*typeClasses)
+        loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -2130,7 +2132,6 @@ class ItemPrices:
                     record.setChanged()
         if changed: modFile.safeSave()
         return changed
-
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
@@ -2156,21 +2157,29 @@ class ItemPrices:
             longids.sort(key=itemgetter(0))
             return longids
         with textPath.open('w',encoding='utf-8-sig') as out:
-            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
+            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
+                _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
+                _(u'Name'),_(u'Type'))) + u'"\n')
             for group, fid_stats in sorted(class_fid_stats.iteritems()):
                 if not fid_stats: continue
                 out.write(header)
-                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1].lower(),fid_stats[x][0])):
+                for fid in sorted(fid_stats,key=lambda x:(
+                        fid_stats[x][1].lower(),fid_stats[x][0])):
                     out.write(u'"%s","0x%06X",' % (fid[0].s,fid[1]))
-                    out.write(format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
+                    out.write(
+                        format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
 class CBash_ItemPrices:
-    """Function for importing/exporting from/to mod/text file only the value, name and eid of records."""
+    """Function for importing/exporting from/to mod/text file only the
+    value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
         """Initialize."""
-        self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
-        self.attrs = ('value', 'eid', 'full')
+        self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},
+                                'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},
+                                'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},
+                                'WEAP':{}}
+        self.attrs = ('value','eid','full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -2178,7 +2187,7 @@ class CBash_ItemPrices:
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             for group, fid_stats in class_fid_stats.iteritems():
@@ -2190,13 +2199,14 @@ class CBash_ItemPrices:
         class_fid_stats, attrs = self.class_fid_stats, self.attrs
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = {} #--changed[modName] = numChanged
-            for group, fid_stats in class_fid_stats.iteritems():
-                fid_stats = FormID.FilterValidDict(fid_stats, modFile, True, False)
-                for fid, stats in fid_stats.iteritems():
+            for group,fid_stats in class_fid_stats.iteritems():
+                fid_stats = FormID.FilterValidDict(fid_stats,modFile,True,
+                                                   False)
+                for fid,stats in fid_stats.iteritems():
                     record = modFile.LookupRecord(fid)
                     if record and record._Type == group:
                         value = stats[0]
@@ -2230,12 +2240,16 @@ class CBash_ItemPrices:
             longids.sort(key=itemgetter(0))
             return longids
         with textPath.open('w',encoding='utf-8-sig') as out:
-            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((_(u'Mod Name'),_(u'ObjectIndex'), _(u'Value'),_(u'Editor Id'),_(u'Name'),_(u'Type'))) + u'"\n')
-            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
+                _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
+                _(u'Name'),_(u'Type'))) + u'"\n')
+            for group,fid_stats in sorted(class_fid_stats.iteritems()):
                 if not fid_stats: continue
                 out.write(header)
-                for fid in sorted(fid_stats,key=lambda x: (fid_stats[x][1],fid_stats[x][0])):
+                for fid in sorted(fid_stats,key=lambda x:(
+                        fid_stats[x][1],fid_stats[x][0])):
                     out.write(u'"%s","0x%06X",' % (fid[0],fid[1]))
-                    out.write(format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
+                    out.write(
+                        format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
 #------------------------------------------------------------------------------
