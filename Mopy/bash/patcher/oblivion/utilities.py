@@ -1672,63 +1672,74 @@ class CBash_ItemStats:
 #------------------------------------------------------------------------------
 class UsesEffectsMixin(object):
     """Mixin class to support reading/writing effect data to/from csv files"""
-    headers =(_(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),_(u'Range'),_(u'Actor Value'),
-              _(u'SE Mod Name'),_(u'SE ObjectIndex'),_(u'SE school'),_(u'SE visual'),_(u'SE Is Hostile'),_(u'SE Name'))
-    headerFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"'
-    recipientTypeNumber_Name = {
-        None : u'NONE',
-        0 : u'Self',
-        1 : u'Touch',
-        2 : u'Target',}
-    recipientTypeName_Number = dict([(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if x is not None])
-    actorValueNumber_Name = dict([(x, y) for x,y in enumerate(bush.actorValues)])
+    headers = (
+        _(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),
+        _(u'Range'),_(u'Actor Value'),_(u'SE Mod Name'),_(u'SE ObjectIndex'),
+        _(u'SE school'),_(u'SE visual'),_(u'SE Is Hostile'),_(u'SE Name'))
+    headerFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
+                   u'"%s","%s"'
+    recipientTypeNumber_Name = {None:u'NONE',0:u'Self',1:u'Touch',2:u'Target',}
+    recipientTypeName_Number = dict(
+        [(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if
+         x is not None])
+    actorValueNumber_Name = dict(
+        [(x,y) for x,y in enumerate(bush.actorValues)])
     actorValueNumber_Name[None] = u'NONE'
-    actorValueName_Number = dict([(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if x is not None])
-    schoolTypeNumber_Name = {
-        None : u'NONE',
-        0 : u'Alteration',
-        1 : u'Conjuration',
-        2 : u'Destruction',
-        3 : u'Illusion',
-        4 : u'Mysticism',
-        5 : u'Restoration',}
-    schoolTypeName_Number = dict([(y.lower(),x) for x,y in schoolTypeNumber_Name.iteritems() if x is not None])
+    actorValueName_Number = dict(
+        [(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if
+         x is not None])
+    schoolTypeNumber_Name = {None:u'NONE',0:u'Alteration',1:u'Conjuration',
+                             2:u'Destruction',3:u'Illusion',4:u'Mysticism',
+                             5:u'Restoration',}
+    schoolTypeName_Number = dict(
+        [(y.lower(),x) for x,y in schoolTypeNumber_Name.iteritems() if
+         x is not None])
 
-    def readEffects(self, _effects, aliases, doCBash):
+    def readEffects(self,_effects,aliases,doCBash):
         schoolTypeName_Number = UsesEffectsMixin.schoolTypeName_Number
         recipientTypeName_Number = UsesEffectsMixin.recipientTypeName_Number
         actorValueName_Number = UsesEffectsMixin.actorValueName_Number
         schoolTypeNumber_Name = UsesEffectsMixin.schoolTypeNumber_Name
         effects = []
         while len(_effects) >= 13:
-            _effect, _effects = _effects[1:13], _effects[13:]
-            name,magnitude,area,duration,range_,actorvalue,semod,seobj,seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name, unicode, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
-            magnitude = _coerce(magnitude, int, AllowNone=True)
-            area = _coerce(area, int, AllowNone=True)
-            duration = _coerce(duration, int, AllowNone=True)
-            range_ = _coerce(range_, unicode, AllowNone=True)
+            _effect,_effects = _effects[1:13],_effects[13:]
+            name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
+            seschool,sevisual,seflags,sename = tuple(_effect)
+            name = _coerce(name,unicode,AllowNone=True) #OBME not supported
+            # (support requires adding a mod/objectid format to the
+            # csv, this assumes all MGEFCodes are raw)
+            magnitude = _coerce(magnitude,int,AllowNone=True)
+            area = _coerce(area,int,AllowNone=True)
+            duration = _coerce(duration,int,AllowNone=True)
+            range_ = _coerce(range_,unicode,AllowNone=True)
             if range_:
-                range_ = recipientTypeName_Number.get(range_.lower(),_coerce(range_,int))
+                range_ = recipientTypeName_Number.get(range_.lower(),
+                                                      _coerce(range_,int))
             actorvalue = _coerce(actorvalue, unicode, AllowNone=True)
             if actorvalue:
-                actorvalue = actorValueName_Number.get(actorvalue.lower(),_coerce(actorvalue,int))
+                actorvalue = actorValueName_Number.get(actorvalue.lower(),
+                                                       _coerce(actorvalue,int))
             if None in (name,magnitude,area,duration,range_,actorvalue):
                 continue
             if doCBash:
-                effect = [MGEFCode(name),magnitude,area,duration,range_,ActorValue(actorvalue)]
+                effect = [MGEFCode(name),magnitude,area,duration,range_,
+                          ActorValue(actorvalue)]
             else:
                 effect = [name,magnitude,area,duration,range_,actorvalue]
             semod = _coerce(semod, unicode, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
             seschool = _coerce(seschool, unicode, AllowNone=True)
             if seschool:
-                seschool = schoolTypeName_Number.get(seschool.lower(),_coerce(seschool,int))
-            sevisuals = _coerce(sevisual, int, AllowNone=True) #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
+                seschool = schoolTypeName_Number.get(seschool.lower(),
+                                                     _coerce(seschool,int))
+            sevisuals = _coerce(sevisual,int,AllowNone=True) #OBME not
+            # supported (support requires adding a mod/objectid format to
+            # the csv, this assumes visual MGEFCode is raw)
             if sevisuals is None:
                 sevisuals = _coerce(sevisual, unicode, AllowNone=True)
             else:
-                sevisuals = ctypes.cast(ctypes.byref(ctypes.c_ulong(sevisuals)), ctypes.POINTER(ctypes.c_char *4)).contents.value
+                sevisuals = ctypes.cast(ctypes.byref(ctypes.c_ulong(sevisuals))
+                    ,ctypes.POINTER(ctypes.c_char * 4)).contents.value
             if doCBash:
                 if sevisuals == '':
                     sevisuals = 0
@@ -1740,21 +1751,26 @@ class UsesEffectsMixin(object):
             sename = _coerce(sename, unicode, AllowNone=True)
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
                 if doCBash:
-                    effect.extend([FormID(None,None),None,MGEFCode(None,None),None,None])
+                    effect.extend(
+                        [FormID(None,None),None,MGEFCode(None,None),None,None])
                 else:
                     effect.append([])
             else:
                 if doCBash:
-                    effect.extend([FormID(GPath(aliases.get(semod,semod)),seobj), seschool, MGEFCode(sevisual),seflags, sename])
+                    effect.extend(
+                        [FormID(GPath(aliases.get(semod,semod)),seobj),
+                         seschool,MGEFCode(sevisual),seflags,sename])
                 else:
-                    effect.append([(GPath(aliases.get(semod,semod)),seobj), seschool, sevisual,seflags, sename])
+                    effect.append(
+                        [(GPath(aliases.get(semod,semod)),seobj),seschool,
+                         sevisual,seflags,sename])
             if doCBash:
                 effects.append(tuple(effect))
             else:
                 effects.append(effect)
         return effects
 
-    def writeEffects(self, effects, doCBash):
+    def writeEffects(self,effects,doCBash):
         schoolTypeNumber_Name = UsesEffectsMixin.schoolTypeNumber_Name
         recipientTypeNumber_Name = UsesEffectsMixin.recipientTypeNumber_Name
         actorValueNumber_Name = UsesEffectsMixin.actorValueNumber_Name
@@ -1765,8 +1781,12 @@ class UsesEffectsMixin(object):
         for effect in effects:
             if doCBash:
                 efname,magnitude,area,duration,range_,actorvalue = effect[:6]
-                efname = efname[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all MGEFCodes are raw)
-                actorvalue = actorvalue[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes all ActorValues are raw)
+                efname = efname[1] # OBME not supported (support requires
+                # adding a mod/objectid format to the csv, this assumes all
+                # MGEFCodes are raw)
+                actorvalue = actorvalue[1] # OBME not supported (support
+                # requires adding a mod/objectid format to the csv,
+                # this assumes all ActorValues are raw)
             else:
                 efname,magnitude,area,duration,range_,actorvalue = effect[:-1]
             range_ = recipientTypeNumber_Name.get(range_,range_)
@@ -1775,24 +1795,32 @@ class UsesEffectsMixin(object):
                 scripteffect = effect[6:]
             else:
                 scripteffect = effect[-1]
-            output.append(effectFormat % (efname,magnitude,area,duration,range_,actorvalue))
+            output.append(effectFormat % (
+                efname,magnitude,area,duration,range_,actorvalue))
             if doCBash:
                 if None in scripteffect:
                     output.append(noscriptEffectFiller)
                 else:
-                    semod,seobj,seschool,sevisual,seflags,sename = scripteffect[0][0], scripteffect[0][1], scripteffect[1], scripteffect[2], scripteffect[3], scripteffect[4]
+                    semod,seobj,seschool,sevisual,seflags,sename = \
+                        scripteffect[0][0],scripteffect[0][1],scripteffect[1],\
+                        scripteffect[2],scripteffect[3],scripteffect[4]
                     seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                    sevisual = sevisual[1] #OBME not supported (support requires adding a mod/objectid format to the csv, this assumes visual MGEFCode is raw)
+                    sevisual = sevisual[1] # OBME not supported (support
+                    #  requires adding a mod/objectid format to the csv,
+                    # this assumes visual MGEFCode is raw)
                     if sevisual in (None, 0, ''):
                         sevisual = u'NONE'
-                    output.append(scriptEffectFormat % (semod,seobj,seschool,sevisual,seflags,sename))
+                    output.append(scriptEffectFormat % (
+                        semod,seobj,seschool,sevisual,seflags,sename))
             else:
                 if len(scripteffect):
                     longid,seschool,sevisual,seflags,sename = scripteffect
                     if sevisual == '\x00\x00\x00\x00':
                         sevisual = u'NONE'
                     seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                    output.append(scriptEffectFormat % (longid[0].s,longid[1],seschool,sevisual,seflags,sename))
+                    output.append(scriptEffectFormat % (
+                        longid[0].s,longid[1],seschool,sevisual,seflags,
+                        sename))
                 else:
                     output.append(noscriptEffectFiller)
         return u''.join(output)
