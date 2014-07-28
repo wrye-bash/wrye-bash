@@ -22828,7 +22828,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         if not (set(modFile.tops) & self.scanTypes): return
-        modFile.convertToLongFids(('RACE','EYES','NPC_'))
+        modFile.convertToLongFids(('RACE','EYES','HAIR','NPC_'))
         srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
         #--Eyes, Hair
         for type in ('EYES','HAIR'):
