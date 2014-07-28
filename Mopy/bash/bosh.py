@@ -602,7 +602,7 @@ class ModFile:
         masters = self.tes4.masters+[self.fileInfo.name]
         maxMaster = len(masters)-1
         def mapper(fid):
-            if fid == None: return None
+            if fid is None: return None
             if isinstance(fid,tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
             return (masters[min(mod,maxMaster)],object)
@@ -614,7 +614,7 @@ class ModFile:
         indices = dict([(name,index) for index,name in enumerate(masters)])
         gLong = self.getLongMapper()
         def mapper(fid):
-            if fid == None: return None
+            if fid is None: return None
             if isinstance(fid, (long, int)):
                 fid = gLong(fid)
             modName,object = fid
@@ -625,7 +625,7 @@ class ModFile:
     def convertToLongFids(self,types=None):
         """Convert fids to long format (modname,objectindex)."""
         mapper = self.getLongMapper()
-        if types == None: types = self.tops.keys()
+        if types is None: types = self.tops.keys()
         selfTops = self.tops
         for type in types:
             if type in selfTops:
@@ -787,7 +787,8 @@ class SreNPC(object):
         """Returns current flags set."""
         flags = SreNPC.flags()
         for attr in SreNPC.__slots__:
-            if attr != 'unused2': flags.__setattr__(attr,self.__getattribute__(attr) != None)
+            if attr != 'unused2':
+                flags.__setattr__(attr,self.__getattribute__(attr) is not None)
         return int(flags)
 
     def getData(self):
@@ -796,43 +797,43 @@ class SreNPC(object):
             def pack(format,*args):
                 out.write(struct.pack(format,*args))
             #--Form
-            if self.form != None:
+            if self.form is not None:
                 pack('I',self.form)
             #--Attributes
-            if self.attributes != None:
+            if self.attributes is not None:
                 pack('8B',*self.attributes)
             #--Acbs
-            if self.acbs != None:
+            if self.acbs is not None:
                 acbs = self.acbs
                 pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                     acbs.calcMin, acbs.calcMax)
             #--Factions
-            if self.factions != None:
+            if self.factions is not None:
                 pack('H',len(self.factions))
                 for faction in self.factions:
                     pack('=Ib',*faction)
             #--Spells
-            if self.spells != None:
+            if self.spells is not None:
                 num = len(self.spells)
                 pack('H',num)
                 pack('%dI' % num,*self.spells)
             #--AI Data
-            if self.ai != None:
+            if self.ai is not None:
                 out.write(self.ai)
             #--Health
-            if self.health != None:
+            if self.health is not None:
                 pack('H2s',self.health,self.unused2)
             #--Modifiers
-            if self.modifiers != None:
+            if self.modifiers is not None:
                 pack('H',len(self.modifiers))
                 for modifier in self.modifiers:
                     pack('=Bf',*modifier)
             #--Full
-            if self.full != None:
+            if self.full is not None:
                 pack('B',len(self.full))
                 out.write(self.full)
             #--Skills
-            if self.skills != None:
+            if self.skills is not None:
                 pack('21B',*self.skills)
             #--Done
             return out.getvalue()
@@ -845,34 +846,34 @@ class SreNPC(object):
         """Returns informal string representation of data."""
         with sio() as buff:
             fids = saveFile.fids
-            if self.form != None:
+            if self.form is not None:
                 buff.write(u'Form:\n  %d' % self.form)
-            if self.attributes != None:
+            if self.attributes is not None:
                 buff.write(u'Attributes\n  strength %3d\n  intelligence %3d\n  willpower %3d\n  agility %3d\n  speed %3d\n  endurance %3d\n  personality %3d\n  luck %3d\n' % tuple(self.attributes))
-            if self.acbs != None:
+            if self.acbs is not None:
                 buff.write(u'ACBS:\n')
                 for attr in SreNPC.ACBS.__slots__:
                     buff.write(u'  %s %s\n' % (attr,getattr(self.acbs,attr)))
-            if self.factions != None:
+            if self.factions is not None:
                 buff.write(u'Factions:\n')
                 for faction in self.factions:
                     buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
-            if self.spells != None:
+            if self.spells is not None:
                 buff.write(u'Spells:\n')
                 for spell in self.spells:
                     buff.write(u'  %8X\n' % fids[spell])
-            if self.ai != None:
+            if self.ai is not None:
                 buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
-            if self.health != None:
+            if self.health is not None:
                 buff.write(u'Health\n  %s\n' % self.health)
                 buff.write(u'Unused2\n  %s\n' % self.unused2)
-            if self.modifiers != None:
+            if self.modifiers is not None:
                 buff.write(u'Modifiers:\n')
                 for modifier in self.modifiers:
                     buff.write(u'  %s\n' % modifier)
-            if self.full != None:
+            if self.full is not None:
                 buff.write(u'Full:\n  %s\n' % self.full)
-            if self.skills != None:
+            if self.skills is not None:
                 buff.write(u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n  block %3d\n  blunt %3d\n  handToHand %3d\n  heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  conjuration %3d\n  destruction %3d\n  illusion %3d\n  mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(self.skills))
             return buff.getvalue()
 
@@ -1373,9 +1374,9 @@ class SaveFile:
 
     def removeCreated(self,fid):
         """Removes created if it exists. Returns True if record existed, false if not."""
-        if self.fid_createdNum == None: self.indexCreated()
+        if self.fid_createdNum is None: self.indexCreated()
         recNum = self.fid_createdNum.get(fid)
-        if recNum == None:
+        if recNum is None:
             return False
         else:
             del self.created[recNum]
@@ -1388,16 +1389,16 @@ class SaveFile:
 
     def getRecord(self,fid,default=None):
         """Returns recNum and record with corresponding fid."""
-        if self.fid_recNum == None: self.indexRecords()
+        if self.fid_recNum is None: self.indexRecords()
         recNum = self.fid_recNum.get(fid)
-        if recNum == None:
+        if recNum is None:
             return default
         else:
             return self.records[recNum]
 
     def setRecord(self,record):
         """Sets records where record = (fid,recType,flags,version,data)."""
-        if self.fid_recNum == None: self.indexRecords()
+        if self.fid_recNum is None: self.indexRecords()
         fid = record[0]
         recNum = self.fid_recNum.get(fid,-1)
         if recNum == -1:
@@ -1408,9 +1409,9 @@ class SaveFile:
 
     def removeRecord(self,fid):
         """Removes record if it exists. Returns True if record existed, false if not."""
-        if self.fid_recNum == None: self.indexRecords()
+        if self.fid_recNum is None: self.indexRecords()
         recNum = self.fid_recNum.get(fid)
-        if recNum == None:
+        if recNum is None:
             return False
         else:
             del self.records[recNum]
@@ -1421,7 +1422,7 @@ class SaveFile:
         """Returns a mapping function to map long fids to short fids."""
         indices = dict([(name,index) for index,name in enumerate(self.masters)])
         def mapper(fid):
-            if fid == None: return None
+            if fid is None: return None
             modName,object = fid
             mod = indices[modName]
             return (long(mod) << 24 ) | long(object)
@@ -1571,7 +1572,7 @@ class SaveFile:
         log(_(u'  OBSE version:     %u.%u') % (obseFile.obseVersion,obseFile.obseMinorVersion,))
         log(_(u'  Oblivion version: %08X') % (obseFile.oblivionVersion,))
         #--Plugins
-        if obseFile.plugins != None:
+        if obseFile.plugins is not None:
             for (opcodeBase,chunks) in obseFile.plugins:
                 log.setHeader(_(u'Plugin opcode=%08X chunkNum=%u') % (opcodeBase,len(chunks),))
                 log(u'=' * 80)
@@ -2179,7 +2180,7 @@ class IniFile(object):
                     section = LString(maSection.group(1))
                     sectionSettings = ini_settings.setdefault(section,{})
                 elif maSetting:
-                    if sectionSettings == None:
+                    if sectionSettings is None:
                         sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
                         if setCorrupted: self.isCorrupted = True
                     sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
@@ -3722,7 +3723,7 @@ class ModInfo(FileInfo):
         self.setmtime()
         #--Merge info
         size,canMerge = modInfos.table.getItem(self.name,'mergeInfo',(None,None))
-        if size != None:
+        if size is not None:
             modInfos.table.setItem(self.name,'mergeInfo',(filePath.size,canMerge))
 
     def writeDescription(self,description):
@@ -4947,7 +4948,7 @@ class ModInfos(FileInfos):
             if fileName in children[:-1]:
                 raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
             #--Select masters
-            if modSet == None: modSet = set(self.keys())
+            if modSet is None: modSet = set(self.keys())
             #--Check for bad masternames:
             #  Disabled for now
             ##if self.hasBadMasterNames(fileName):
@@ -5417,7 +5418,7 @@ class ModRuleSet:
                 return
             curBlockId = self.curBlockId
             group = self.group
-            if curBlockId != None:
+            if curBlockId is not None:
                 if curBlockId == u'HEADER':
                     self.ruleSet.header = self.ruleSet.header.rstrip()
                 elif curBlockId == u'ONLYONE':
@@ -6137,7 +6138,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
     def getColumns(self,item=None):
         """Returns text labels for item or for row header if item == None."""
         columns = self.getParam('columns',self.tankColumns)
-        if item == None: return columns[:]
+        if item is None: return columns[:]
         labels,itemData = [],self.data[item]
         for column in columns:
             if column == 'Name': labels.append(item)
@@ -6535,7 +6536,7 @@ class Installer(object):
         """Used by unpickler to recreate object."""
         self.initDefault()
         map(self.__setattr__,self.persistent,values)
-        if self.dirty_sizeCrc == None:
+        if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
         if hasattr(self,'fileSizeCrcs'):
             # Older pickle files didn't store filenames in unicode,
@@ -7104,7 +7105,7 @@ class InstallerConverter(object):
         self.convertedFiles = []
         self.dupeCount = {}
         #--Cheap init overloading...
-        if data != None:
+        if data is not None:
             #--Build a BCF from scratch
             self.fullPath = dirs['converters'].join(BCFArchive)
             self.build(srcArchives, data, destArchive, BCFArchive, blockSize, progress)
@@ -7252,7 +7253,7 @@ class InstallerConverter(object):
             destFile = destJoin(destFile)
             if not srcFile.exists():
                 raise StateError(u"%s: Missing source file:\n%s" % (self.fullPath.stail, srcFile.s))
-            if destFile == None:
+            if destFile is None:
                 raise StateError(u"%s: Unable to determine file destination for:\n%s" % (self.fullPath.stail, srcFile.s))
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by convertedFiles
@@ -8163,7 +8164,7 @@ class InstallersData(bolt.TankData, DataDict):
     def getColumns(self,item=None):
         """Returns text labels for item or for row header if item == None."""
         columns = self.getParam('columns')
-        if item == None: return columns[:]
+        if item is None: return columns[:]
         labels,installer = [],self.data[item]
         marker = isinstance(installer, InstallerMarker)
         for column in columns:
@@ -8524,7 +8525,7 @@ class InstallersData(bolt.TankData, DataDict):
             if bcfPath.isdir(): continue
             if self.validConverterName(archive):
                 size,crc,modified = self.bcfPath_sizeCrcDate.get(bcfPath,(None,None,None))
-                if crc == None or (size,modified) != (bcfPath.size,bcfPath.mtime):
+                if crc is None or (size,modified) != (bcfPath.size,bcfPath.mtime):
                     crc = bcfPath.crc
                     (size,modified) = (bcfPath.size,bcfPath.mtime)
                     if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[crc].fullPath:
@@ -9266,7 +9267,7 @@ class PCFaces:
             face.fatigue = npc.acbs.fatigue
         for attr in ('attributes','skills','health','unused2'):
             value = getattr(npc,attr)
-            if value != None:
+            if value is not None:
                 setattr(face,attr,value)
         #--Iref >> fid
         getFid = saveFile.getFid
@@ -9367,7 +9368,7 @@ class PCFaces:
 
         #--Change record?
         changeRecord = saveFile.getRecord(npc.fid)
-        if changeRecord == None: return
+        if changeRecord is None: return
         fid,recType,recFlags,version,data = changeRecord
         npc = SreNPC(recFlags,data)
         if not npc.acbs: npc.acbs = npc.getDefault('acbs')
@@ -10406,8 +10407,8 @@ class PatchFile(ModFile):
 
     def setMods(self,loadMods=None,mergeMods=None):
         """Sets mod lists and sets."""
-        if loadMods != None: self.loadMods = loadMods
-        if mergeMods != None: self.mergeMods = mergeMods
+        if loadMods is not None: self.loadMods = loadMods
+        if mergeMods is not None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
         self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet)
@@ -10776,8 +10777,8 @@ class CBash_PatchFile(ObModFile):
 
     def setMods(self,loadMods=None,mergeMods=None):
         """Sets mod lists and sets."""
-        if loadMods != None: self.loadMods = loadMods
-        if mergeMods != None: self.mergeMods = mergeMods
+        if loadMods is not None: self.loadMods = loadMods
+        if mergeMods is not None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
         self.allMods = modInfos.getOrdered(self.loadSet|self.mergeSet)
@@ -13250,7 +13251,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                     except:
                         newMergedPackages = []
                         for pkg in mergedPackages:
-                            if not pkg[0] == None: newMergedPackages.append(pkg)
+                            if not pkg[0] is None: newMergedPackages.append(pkg)
                         override.aiPackages = newMergedPackages
                     mod_count = self.mod_count
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
@@ -21317,7 +21318,7 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def scanModFile(self, modFile, progress):
         """Add lists from modFile."""
         #--Level Masters (complete initialization)
-        if self.levelers == None:
+        if self.levelers is None:
             allMods = set(self.patchFile.allMods)
             self.levelers = [leveler for leveler in self.getConfigChecked() if leveler in allMods]
             self.delevMasters = set()
