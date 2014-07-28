@@ -11121,7 +11121,7 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-class Abstract_Patcher(object):
+class _Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO, just before object"""
     scanOrder = 10
@@ -11172,7 +11172,7 @@ class Abstract_Patcher(object):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         pass  # TODO raise AbstractError ?
 
-class Patcher(Abstract_Patcher):
+class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
     #--Patch Phase ------------------------------------------------------------
@@ -11193,7 +11193,7 @@ class Patcher(Abstract_Patcher):
         """Edits patch file as desired. Should write to log."""
         pass  # TODO raise AbstractError ?
 
-class CBash_Patcher(Abstract_Patcher):
+class CBash_Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
     unloadedText = u""
@@ -11226,7 +11226,7 @@ class CBash_Patcher(Abstract_Patcher):
         pass  # TODO raise AbstractError ?
 
 #------------------------------------------------------------------------------
-class AListPatcher(Abstract_Patcher):
+class AListPatcher(_Abstract_Patcher):
     """Subclass for patchers that have GUI lists of objects (TODO better docs)."""
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
@@ -11439,7 +11439,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AMultiTweaker(Abstract_Patcher):
+class AMultiTweaker(_Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     group = _(u'Tweakers')
@@ -11516,7 +11516,7 @@ class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class AAliasesPatcher(Abstract_Patcher):
+class AAliasesPatcher(_Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
