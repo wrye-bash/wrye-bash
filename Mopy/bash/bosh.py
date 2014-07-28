@@ -9267,9 +9267,6 @@ class CBash_CellBlockInfo:
                 out.write(rowFormat % (eid, block, subblock))
 
 #------------------------------------------------------------------------------
-
-from bash.patcher.oblivion.utilities import UsesEffectsMixin
-
 class ModDetails:
     """Details data for a mods file. Similar to TesCS Details view."""
     def __init__(self,modInfo=None,progress=None):

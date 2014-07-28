@@ -1935,7 +1935,7 @@ class CBash_ScriptText:
             num,esp) + u'\n'.join(exportedScripts)
 
 #------------------------------------------------------------------------------
-class UsesEffectsMixin(object):
+class _UsesEffectsMixin(object):
     """Mixin class to support reading/writing effect data to/from csv files"""
     headers = (
         _(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),
@@ -1961,10 +1961,10 @@ class UsesEffectsMixin(object):
          x is not None])
 
     def readEffects(self,_effects,aliases,doCBash):
-        schoolTypeName_Number = UsesEffectsMixin.schoolTypeName_Number
-        recipientTypeName_Number = UsesEffectsMixin.recipientTypeName_Number
-        actorValueName_Number = UsesEffectsMixin.actorValueName_Number
-        schoolTypeNumber_Name = UsesEffectsMixin.schoolTypeNumber_Name
+        schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
+        recipientTypeName_Number = _UsesEffectsMixin.recipientTypeName_Number
+        actorValueName_Number = _UsesEffectsMixin.actorValueName_Number
+        schoolTypeNumber_Name = _UsesEffectsMixin.schoolTypeNumber_Name
         effects = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
@@ -2036,9 +2036,9 @@ class UsesEffectsMixin(object):
         return effects
 
     def writeEffects(self,effects,doCBash):
-        schoolTypeNumber_Name = UsesEffectsMixin.schoolTypeNumber_Name
-        recipientTypeNumber_Name = UsesEffectsMixin.recipientTypeNumber_Name
-        actorValueNumber_Name = UsesEffectsMixin.actorValueNumber_Name
+        schoolTypeNumber_Name = _UsesEffectsMixin.schoolTypeNumber_Name
+        recipientTypeNumber_Name = _UsesEffectsMixin.recipientTypeNumber_Name
+        actorValueNumber_Name = _UsesEffectsMixin.actorValueNumber_Name
         effectFormat = u',,"%s","%d","%d","%d","%s","%s"'
         scriptEffectFormat = u',"%s","0x%06X","%s","%s","%s","%s"'
         noscriptEffectFiller = u',"None","None","None","None","None","None"'
@@ -2091,7 +2091,7 @@ class UsesEffectsMixin(object):
         return u''.join(output)
 
 #------------------------------------------------------------------------------
-class SigilStoneDetails(UsesEffectsMixin):
+class SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
 
@@ -2214,8 +2214,8 @@ class SigilStoneDetails(UsesEffectsMixin):
         header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
                   _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
                   _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Uses'),
-                  _(u'Value'),_(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
-                     _(u'Additional Effects (Same format)'),)
+                  _(u'Value'),_(u'Weight'),) + _UsesEffectsMixin.headers * 2 +\
+                     (_(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
                     u'"%d","%d","%f"'
@@ -2240,7 +2240,7 @@ class SigilStoneDetails(UsesEffectsMixin):
                 output += u'\n'
                 outWrite(output)
 
-class CBash_SigilStoneDetails(UsesEffectsMixin):
+class CBash_SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
 
@@ -2324,8 +2324,8 @@ class CBash_SigilStoneDetails(UsesEffectsMixin):
         header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
                   _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
                   _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Uses'),
-                  _(u'Value'),_(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
-                     _(u'Additional Effects (Same format)'),)
+                  _(u'Value'),_(u'Weight'),) + _UsesEffectsMixin.headers * 2 +\
+                     (_(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
                     u'"%d","%d","%f"'
@@ -2518,7 +2518,7 @@ class CBash_ItemPrices:
                         format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
 #------------------------------------------------------------------------------
-class CompleteItemData(UsesEffectsMixin): #Needs work
+class CompleteItemData(_UsesEffectsMixin): #Needs work
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
 
@@ -2837,7 +2837,7 @@ class CompleteItemData(UsesEffectsMixin): #Needs work
                     finalstats = tuple(tempstats)
                     out.write(format_ % finalstats)
 
-class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
+class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
 
@@ -2912,8 +2912,8 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
     def readEffectsFromText(self,fields):
         effects = []
         _effects = fields[12:]
-        actorValueName_Number = UsesEffectsMixin.actorValueName_Number
-        recipientTypeName_Number = UsesEffectsMixin.recipientTypeName_Number
+        actorValueName_Number = _UsesEffectsMixin.actorValueName_Number
+        recipientTypeName_Number = _UsesEffectsMixin.recipientTypeName_Number
         aliases = self.aliases
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
@@ -3104,7 +3104,7 @@ class CBash_CompleteItemData(UsesEffectsMixin): #Needs work
                     write(out,attrs,map(attr_value.get,attrs))
 
 #------------------------------------------------------------------------------
-class SpellRecords(UsesEffectsMixin):
+class SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
 
@@ -3280,7 +3280,7 @@ class SpellRecords(UsesEffectsMixin):
                 _(u'Area Effect Ignores LOS'),_(u'Script Always Applies'),
                 _(u'Disallow Absorb and Reflect'),
                 _(u'Touch Explodes Without Target'),
-            ) + UsesEffectsMixin.headers * 2 + (
+            ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
             rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
 
@@ -3309,7 +3309,7 @@ class SpellRecords(UsesEffectsMixin):
                 output += u'\n'
                 out.write(output)
 
-class CBash_SpellRecords(UsesEffectsMixin):
+class CBash_SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
 
@@ -3437,7 +3437,7 @@ class CBash_SpellRecords(UsesEffectsMixin):
                 _(u'Area Effect Ignores LOS'),_(u'Script Always Applies'),
                 _(u'Disallow Absorb and Reflect'),
                 _(u'Touch Explodes Without Target'),
-            ) + UsesEffectsMixin.headers * 2 + (
+            ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
             rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
 
@@ -3466,9 +3466,10 @@ class CBash_SpellRecords(UsesEffectsMixin):
                 out.write(output)
 
 #------------------------------------------------------------------------------
-class IngredientDetails(UsesEffectsMixin):
+class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
     from/to mod/text file."""
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.fid_stats = {}
@@ -3587,7 +3588,7 @@ class IngredientDetails(UsesEffectsMixin):
         header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
                   _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
                   _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Value'),
-                  _(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
+                  _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
                      _(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
@@ -3613,9 +3614,10 @@ class IngredientDetails(UsesEffectsMixin):
                 output += u'\n'
                 out.write(output)
 
-class CBash_IngredientDetails(UsesEffectsMixin):
+class CBash_IngredientDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
+
     def __init__(self,types=None,aliases=None):
         """Initialize."""
         self.fid_stats = {}
@@ -3694,7 +3696,7 @@ class CBash_IngredientDetails(UsesEffectsMixin):
         header = (_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),_(u'Name'),
                   _(u'Model Path'),_(u'Bound Radius'),_(u'Icon Path'),
                   _(u'Script Mod Name'),_(u'Script ObjectIndex'),_(u'Value'),
-                  _(u'Weight'),) + UsesEffectsMixin.headers * 2 + (
+                  _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
                      _(u'Additional Effects (Same format)'),)
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
