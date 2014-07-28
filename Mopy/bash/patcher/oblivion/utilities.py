@@ -47,7 +47,6 @@ class ActorFactions:
     importing/exporting from/to mod/text file."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.types = tuple([MreRecord.type_class[x] for x in ('CREA','NPC_')])
         self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions =
         # type_id_factions[type][longid]
@@ -175,7 +174,6 @@ class CBash_ActorFactions:
     importing/exporting from/to mod/text file."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.group_fid_factions = {'CREA':{},'NPC_':{}} #--factions =
         # group_fid_factions[group][longid]
         self.fid_eid = {}
@@ -292,7 +290,6 @@ class ActorLevels:
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
@@ -416,7 +413,6 @@ class CBash_ActorLevels:
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.mod_fid_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
@@ -539,7 +535,6 @@ class EditorIds:
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_id_eid = {} #--eid = eids[type][longid]
         self.old_new = {}
         if types:
@@ -682,7 +677,6 @@ class CBash_EditorIds:
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.group_fid_eid = {} #--eid = group_fid_eid[group][longid]
         self.old_new = {}
         if types:
@@ -816,7 +810,6 @@ class FactionRelations:
     """Faction relations."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.id_relations = {} #--(otherLongid,otherDisp) = id_relation[longid]
         self.id_eid = {} #--For all factions.
         self.aliases = aliases or {}
@@ -937,7 +930,6 @@ class CBash_FactionRelations:
     """Faction relations."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.fid_faction_mod = {}
         self.fid_eid = {} #--For all factions.
         self.aliases = aliases or {}
@@ -1045,7 +1037,6 @@ class FidReplacer:
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.types = types or MreRecord.simpleTypes
         self.aliases = aliases or {} #--For aliasing mod names
         self.old_new = {} #--Maps old fid to new fid
@@ -1127,7 +1118,6 @@ class CBash_FidReplacer:
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.aliases = aliases or {} #--For aliasing mod names
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
@@ -1189,7 +1179,6 @@ class FullNames:
     defaultTypes = bush.game.namesTypes # PYDEV ERROR
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
         self.types = types or FullNames.defaultTypes
         self.aliases = aliases or {}
@@ -1287,7 +1276,6 @@ class CBash_FullNames:
                     "QUST"}
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.group_fid_name = {} #--(eid,name) = group_fid_name[group][longid]
         self.types = types or CBash_FullNames.defaultTypes
         self.aliases = aliases or {}
@@ -1394,7 +1382,6 @@ class ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
@@ -1534,7 +1521,6 @@ class CBash_ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
@@ -1649,7 +1635,6 @@ class ScriptText:
     """import & export functions for script text."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -1780,7 +1765,6 @@ class CBash_ScriptText:
     """import & export functions for script text."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2059,7 +2043,6 @@ class SigilStoneDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2208,7 +2191,6 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2315,7 +2297,6 @@ class ItemPrices:
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_stats = bush.game.pricesTypes
         self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
@@ -2392,7 +2373,6 @@ class CBash_ItemPrices:
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},
                                 'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},
                                 'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},
@@ -2468,7 +2448,6 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
     importing/exporting from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},
                            'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},
                            'SGST':{},'SLGM':{},'WEAP':{}}
@@ -2808,7 +2787,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         return _coerce(value,bool)
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_values = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -3041,7 +3019,6 @@ class SpellRecords(_UsesEffectsMixin):
     mod/text file."""
 
     def __init__(self,types=None,aliases=None,detailed=False):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
@@ -3242,7 +3219,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
     mod/text file."""
 
     def __init__(self,types=None,aliases=None,detailed=False):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
@@ -3390,7 +3366,6 @@ class IngredientDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -3537,7 +3512,6 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -3644,7 +3618,6 @@ class CBash_MapMarkers:
     mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_markerdata = {}
         self.aliases = aliases or {}
         self.markerFid = FormID(GPath(u'Oblivion.esm'), 0x000010)
@@ -3791,7 +3764,6 @@ class CBash_CellBlockInfo:
     mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.celldata = {}
         self.aliases = aliases or {}
 

@@ -176,7 +176,6 @@ class CountDict(dict):
 class PickleDict(bolt.PickleDict):
     """Dictionary saved in a pickle file. Supports older bash pickle file formats."""
     def __init__(self,path,oldPath=None,readOnly=False):
-        """Initialize."""
         bolt.PickleDict.__init__(self,path,readOnly)
         self.oldPath = oldPath or GPath(u'')
 
@@ -391,7 +390,6 @@ class MasterSet(set):
 class LoadFactory:
     """Factory for mod representation objects."""
     def __init__(self,keepAll,*recClasses):
-        """Initialize."""
         self.keepAll = keepAll
         self.recTypes = set()
         self.topTypes = set()
@@ -465,7 +463,6 @@ class LoadFactory:
 class ModFile:
     """TES4 file representation."""
     def __init__(self, fileInfo,loadFactory=None):
-        """Initialize."""
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
@@ -734,7 +731,6 @@ class SreNPC(object):
         __slots__ = ['flags','baseSpell','fatigue','barterGold','level','calcMin','calcMax']
 
     def __init__(self,flags=0,data=None):
-        """Initialize."""
         for attr in self.__slots__:
             self.__setattr__(attr,None)
         if data: self.load(flags,data)
@@ -1095,7 +1091,6 @@ class ObseFile:
 class SaveHeader:
     """Represents selected info from a Tes4SaveGame file."""
     def __init__(self,path=None):
-        """Initialize."""
         self.pcName = None
         self.pcLocation = None
         self.gameDays = 0
@@ -1150,7 +1145,6 @@ class SaveHeader:
 class BSAHeader:
     """Represents selected info from a Tes4BSA file."""
     def __init__(self,path=None):
-        """Initialize."""
         self.folderCount = 0
         self.fileCount = 0
         self.lenFolderNames = 0
@@ -1181,7 +1175,6 @@ class SaveFile:
         'script','inventory','created','unk29','enabled'))
 
     def __init__(self,saveInfo=None,canSave=True):
-        """Initialize."""
         self.fileInfo = saveInfo
         self.canSave = canSave
         #--File Header, Save Game Header
@@ -1958,7 +1951,6 @@ class BsaFile:
 
     #--Instance Methods ------------------------------------------------------
     def __init__(self,path):
-        """Initialize."""
         self.path = path
         self.folderInfos = None
 
@@ -2119,7 +2111,6 @@ class IniFile(object):
     encoding = 'utf-8'
 
     def __init__(self,path,defaultSection=u'General'):
-        """Initialize."""
         self.path = path
         self.defaultSection = defaultSection
         self.isCorrupted = False
@@ -2659,7 +2650,6 @@ class OblivionIni(IniFile):
     encoding = 'cp1252'
 
     def __init__(self,name):
-        """Initialize."""
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
             IniFile.__init__(self,dirs['app'].join(name),u'General')
@@ -2986,7 +2976,6 @@ class Plugins:
        class now only really is used to detect if a refresh from libloadorder
        is required."""
     def __init__(self):
-        """Initialize."""
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
             self.dir = dirs['app']
         else:
@@ -3161,7 +3150,6 @@ class Plugins:
                     if dirs['mods'].join(line.strip()).exists():
                         f.write(line)
                 f.close()
-
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4257,7 +4245,6 @@ class ModInfos(FileInfos):
         self.plugins.refresh(True)
 
     def __init__(self):
-        """Initialize."""
         FileInfos.__init__(self,dirs['mods'],ModInfo)
         #--MTime resetting
         self.lockLO = settings['bosh.modInfos.resetMTimes'] # Lock Load Order (previously Lock Times
@@ -5862,7 +5849,6 @@ class PickleTankData:
 class Messages(DataDict):
     """PM message archive."""
     def __init__(self):
-        """Initialize."""
         self.dictFile = PickleDict(dirs['saveBase'].join(u'Messages.dat'))
         self.data = self.dictFile.data #--data[hash] = (subject,author,date,text)
         self.hasChanged = False
@@ -6075,7 +6061,6 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
     The idea for this is to provide a mod database. However, I might not finish this."""
 
     def __init__(self):
-        """Initialize."""
         bolt.TankData.__init__(self,settings)
         PickleTankData.__init__(self,dirs['saveBase'].join(u'ModBase.dat'))
         #--Default settings. Subclasses should define these.
@@ -6123,7 +6108,6 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
     """Data for a People Tank."""
     def __init__(self):
-        """Initialize."""
         bolt.TankData.__init__(self,settings)
         PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
         #--Default settings. Subclasses should define these.
@@ -6207,7 +6191,6 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
 #------------------------------------------------------------------------------
 class ScreensData(DataDict):
     def __init__(self):
-        """Initialize."""
         self.dir = dirs['app']
         self.data = {} #--data[Path] = (ext,mtime)
 
@@ -6540,7 +6523,6 @@ class Installer(object):
         return self.getEspmName(currentName) != currentName
 
     def __init__(self,archive):
-        """Initialize."""
         self.initDefault()
         self.archive = archive.stail
 
@@ -7524,7 +7506,6 @@ class InstallerMarker(Installer):
     __slots__ = tuple() #--No new slots
 
     def __init__(self,archive):
-        """Initialize."""
         Installer.__init__(self,archive)
         self.modified = time.time()
 
@@ -7538,6 +7519,7 @@ class InstallerMarker(Installer):
 
 #------------------------------------------------------------------------------
 class InstallerArchiveError(bolt.BoltError): pass
+
 #------------------------------------------------------------------------------
 class InstallerArchive(Installer):
     """Represents an archive installer entry."""
@@ -8050,7 +8032,6 @@ class InstallersData(bolt.TankData, DataDict):
     type_textKey = {1:'default.text',2:'installers.text.complex'}
 
     def __init__(self):
-        """Initialize."""
         self.dir = dirs['installers']
         self.bashDir = dirs['bainData']
         #--Tank Stuff
@@ -9105,12 +9086,10 @@ class InstallersData(bolt.TankData, DataDict):
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
-# Utilities -------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ModDetails:
     """Details data for a mods file. Similar to TesCS Details view."""
     def __init__(self,modInfo=None,progress=None):
-        """Initialize."""
         self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]
 
     def readFromMod(self,modInfo,progress=None):
@@ -9164,7 +9143,6 @@ class ModGroups:
         return [x for x in mods if not reGroupHeader.match(x.s)]
 
     def __init__(self):
-        """Initialize."""
         self.mod_group = {}
 
     def readFromModInfos(self,mods=None):
@@ -10200,7 +10178,6 @@ class SaveSpells:
     """Player spells of a savegame."""
 
     def __init__(self,saveInfo):
-        """Initialize."""
         self.saveInfo = saveInfo
         self.saveFile = None
         self.allSpells = {} #--spells[(modName,objectIndex)] = (name,type)
@@ -10288,7 +10265,6 @@ class SaveEnchantments:
     """Player enchantments of a savegame."""
 
     def __init__(self,saveInfo):
-        """Initialize."""
         self.saveInfo = saveInfo
         self.saveFile = None
         self.createdEnchantments = []
@@ -10329,7 +10305,6 @@ class Save_NPCEdits:
     """General editing of NPCs/player in savegame."""
 
     def __init__(self,saveInfo):
-        """Initialize."""
         self.saveInfo = saveInfo
         self.saveFile = SaveFile(saveInfo)
 
@@ -11417,7 +11392,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     def __init__(self,label,tip,key,*choices,**kwargs):
-        """Initialize."""
         self.label = label
         self.tip = tip
         self.key = key
