@@ -12054,8 +12054,7 @@ class CellImporter(ImportPatcher):
         cachedMasters = {}
         for srcMod in self.sourceMods:
             if srcMod not in modInfos: continue
-            tempCellData = {}
-            tempCellData['Maps'] = {}
+            tempCellData = {'Maps':{}}
             srcInfo = modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
@@ -24009,11 +24008,11 @@ except ImportError:
             return GPath(path)
 
 def testPermissions(path,permissions='rwcd'):
-    '''Test file permissions for a path:
+    """Test file permissions for a path:
         r = read permission
         w = write permission
         c = file creation permission
-        d = file deletion permission'''
+        d = file deletion permission"""
     return True # Temporarily disabled, for testing purposes
     path = GPath(path)
     permissions = permissions.lower()
