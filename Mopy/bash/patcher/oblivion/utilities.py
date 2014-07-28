@@ -1388,8 +1388,10 @@ class CBash_FullNames:
 
 #------------------------------------------------------------------------------
 class ItemStats:
-    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+    """Statistics for armor and weapons, with functions for
+    importing/exporting from/to mod/text file."""
     class_attrs = bush.game.statsTypes
+
     @staticmethod
     def sstr(value):
         return _coerce(value, unicode, AllowNone=True)
@@ -1433,19 +1435,20 @@ class ItemStats:
         """Reads stats from specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
         typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
-        loadFactory= LoadFactory(False,*typeClasses)
+        loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                class_fid_attr_value[group].setdefault(mapper(record.fid), {}).update(zip(attrs,map(record.__getattribute__,attrs)))
+                class_fid_attr_value[group].setdefault(mapper(record.fid),
+                    {}).update(zip(attrs,map(record.__getattribute__,attrs)))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
         typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
-        loadFactory= LoadFactory(True,*typeClasses)
+        loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
@@ -1475,12 +1478,14 @@ class ItemStats:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[0:3]
                 modName = GPath(_coerce(modName,unicode))
-                longid = (GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+                longid = (GPath(aliases.get(modName,modName)),
+                    _coerce(objectStr,int,16))
                 attrs = self.class_attrs[group]
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
+                class_fid_attr_value[group].setdefault(longid,{}).update(
+                    attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1504,9 +1509,11 @@ class ItemStats:
                     else:
                         stype = attr_type[attr]
                     values[index] = stype(values[index]) #sanitize output
-                    if values[index] is None: csvFormat += u',"{0[%d]}"' % index
+                    if values[index] is None:
+                        csvFormat += u',"{0[%d]}"' % index
                     elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sint or stype is snoneint: csvFormat += u',"{0[%d]:d}"' % index
+                    elif stype is sint or stype is snoneint: csvFormat += \
+                        u',"{0[%d]:d}"' % index
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
@@ -1516,12 +1523,14 @@ class ItemStats:
                 attrs = self.class_attrs[group]
                 out.write(header)
                 for longid in getSortedIds(fid_attr_value):
-                    out.write(u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
+                    out.write(
+                        u'"%s","%s","0x%06X",' % (group,longid[0].s,longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 
 class CBash_ItemStats:
-    """Statistics for armor and weapons, with functions for importing/exporting from/to mod/text file."""
+    """Statistics for armor and weapons, with functions for
+    importing/exporting from/to mod/text file."""
     class_attrs = bush.game.statsTypes
 
     @staticmethod
@@ -1567,29 +1576,33 @@ class CBash_ItemStats:
         class_fid_attr_value = self.class_fid_attr_value
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             for group, attrs in self.class_attrs.iteritems():
                 for record in getattr(modFile,group):
-                    class_fid_attr_value[group].setdefault(record.fid, {}).update(zip(attrs,map(record.__getattribute__,attrs)))
+                    class_fid_attr_value[group].setdefault(record.fid,
+                        {}).update(
+                        zip(attrs,map(record.__getattribute__,attrs)))
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         class_fid_attr_value = self.class_fid_attr_value
 
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            modFile = Current.addMod(modInfo.getPath().stail, LoadMasters=False)
+            modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
 
             changed = {} #--changed[modName] = numChanged
             for group, fid_attr_value in class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
-                fid_attr_value = FormID.FilterValidDict(fid_attr_value, modFile, True, False)
+                fid_attr_value = FormID.FilterValidDict(fid_attr_value,modFile,
+                                                        True,False)
                 for fid, attr_value in fid_attr_value.iteritems():
                     record = modFile.LookupRecord(fid)
                     if record and record._Type == group:
-                        oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
+                        oldValues = dict(
+                            zip(attrs,map(record.__getattribute__,attrs)))
                         if oldValues != attr_value:
                             for attr, value in attr_value.iteritems():
                                 setattr(record,attr,value)
@@ -1607,12 +1620,14 @@ class CBash_ItemStats:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[0:3]
                 modName = GPath(_coerce(modName,unicode))
-                longid = FormID(GPath(aliases.get(modName,modName)),_coerce(objectStr,int,16))
+                longid = FormID(GPath(aliases.get(modName,modName)),
+                                _coerce(objectStr,int,16))
                 attrs = self.class_attrs[group]
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                class_fid_attr_value[group].setdefault(longid, {}).update(attr_value)
+                class_fid_attr_value[group].setdefault(longid,{}).update(
+                    attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1633,9 +1648,11 @@ class CBash_ItemStats:
                 for index, attr in enumerate(attrs):
                     stype = attr_type[attr]
                     values[index] = stype(values[index]) #sanitize output
-                    if values[index] is None: csvFormat += u',"{0[%d]}"' % index
+                    if values[index] is None:
+                        csvFormat += u',"{0[%d]}"' % index
                     elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sint or stype is snoneint: csvFormat += u',"{0[%d]:d}"' % index
+                    elif stype is sint or stype is snoneint: csvFormat += \
+                        u',"{0[%d]:d}"' % index
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
@@ -1645,7 +1662,8 @@ class CBash_ItemStats:
                 attrs = self.class_attrs[group]
                 out.write(header)
                 for longid in getSortedIds(fid_attr_value):
-                    out.write(u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
+                    out.write(
+                        u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 
