@@ -248,7 +248,7 @@ def exit():
 def dump_environment():
     import locale
     print u"Wrye Bash starting"
-    print u"Using Wrye Bash Version 305"
+    print u"Using Wrye Bash Version", bass.AppVersion
     print u"Python version: %d.%d.%d" % (sys.version_info[0], sys.version_info[1], sys.version_info[2])
     try:
         import wx
@@ -302,7 +302,7 @@ def main():
             if len(ret) == 0:
                 msgtext = _(u"Wrye Bash could not find a game to manage. Please use -o command line argument to specify the game path")
             else:
-                msgtext = _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.") 
+                msgtext = _(u"Wrye Bash could not determine which game to manage.  The following games have been detected, please select one to manage.")
                 msgtext += u'\n\n'
                 msgtext += _(u'To prevent this message in the future, use the -g command line argument to specify the game')
             try:
@@ -383,7 +383,7 @@ def main():
                     button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
                     button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
                 w = Tkinter.Text(frame)
-                
+
                 w.insert(Tkinter.END,msgtext)
                 w.config(state=Tkinter.DISABLED)
                 w.pack()
