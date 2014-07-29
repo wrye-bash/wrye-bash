@@ -15200,6 +15200,8 @@ class Mod_SpellRecords_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import IngredientDetails, CBash_IngredientDetails
+
 class Mod_IngredientDetails_Export(Link):
     """Export Ingredient details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15222,9 +15224,9 @@ class Mod_IngredientDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15267,9 +15269,9 @@ class Mod_IngredientDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
             progress(0.2,_(u'Applying to %s.') % fileName.s)
