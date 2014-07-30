@@ -38,16 +38,15 @@ from bash import bolt, bush, balt
 from bash.bolt import GPath, _unicode, deprint
 from bash.bosh import LoadFactory, ModFile, dirs, inisettings
 from bash.brec import MreRecord, MelObject, _coerce, genFid, ModReader
-from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, MGEFCode, \
-    ActorValue, ValidateList, pickupables, ExtractExportList, ValidateDict, IUNICODE, \
-    getattr_deep, setattr_deep
+from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, \
+    MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
+    ValidateDict, IUNICODE, getattr_deep, setattr_deep
 
 class ActorFactions:
     """Factions for npcs and creatures with functions for
     importing/exporting from/to mod/text file."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.types = tuple([MreRecord.type_class[x] for x in ('CREA','NPC_')])
         self.type_id_factions = {'CREA':{},'NPC_':{}} #--factions =
         # type_id_factions[type][longid]
@@ -129,7 +128,7 @@ class ActorFactions:
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        type_id_factions,id_eid = self.type_id_factions,self.id_eid
+        type_id_factions = self.type_id_factions
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -175,7 +174,6 @@ class CBash_ActorFactions:
     importing/exporting from/to mod/text file."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.group_fid_factions = {'CREA':{},'NPC_':{}} #--factions =
         # group_fid_factions[group][longid]
         self.fid_eid = {}
@@ -187,7 +185,7 @@ class CBash_ActorFactions:
         group_fid_factions,fid_eid,gotFactions = self.group_fid_factions,\
                                                  self.fid_eid,self.gotFactions
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
-            importFile = Current.addMod(modInfo.getPath().stail, Saveable=False)
+            importFile = Current.addMod(modInfo.getPath().stail,Saveable=False)
             Current.load()
             for modFile in Current.LoadOrderMods:
                 modName = modFile.GName
@@ -209,7 +207,7 @@ class CBash_ActorFactions:
 
     def writeToMod(self,modInfo):
         """Exports faction data to specified mod."""
-        group_fid_factions,fid_eid = self.group_fid_factions,self.fid_eid
+        group_fid_factions = self.group_fid_factions
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -247,7 +245,7 @@ class CBash_ActorFactions:
 
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
-        group_fid_factions,fid_eid = self.group_fid_factions, self.fid_eid
+        group_fid_factions = self.group_fid_factions
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -292,7 +290,6 @@ class ActorLevels:
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
@@ -416,7 +413,6 @@ class CBash_ActorLevels:
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.mod_fid_levels = {} #--levels = mod_id_levels[mod][longid]
         self.aliases = aliases or {}
         self.gotLevels = set()
@@ -539,7 +535,6 @@ class EditorIds:
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_id_eid = {} #--eid = eids[type][longid]
         self.old_new = {}
         if types:
@@ -603,7 +598,6 @@ class EditorIds:
         changed = []
         if not old_new: return changed
         reWord = re.compile('\w+')
-
         def subWord(match):
             word = match.group(0)
             newWord = old_new.get(word.lower())
@@ -611,14 +605,13 @@ class EditorIds:
                 return word
             else:
                 return newWord
-
         #--Scripts
         for script in sorted(modFile.SCPT.records,key=attrgetter('eid')):
             if not script.scriptText: continue
             newText = reWord.sub(subWord,script.scriptText)
             if newText != script.scriptText:
-                header = u'\r\n\r\n; %s %s\r\n' % (
-                    script.eid,u'-' * (77 - len(script.eid)))
+                # header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-' * (77 -
+                # len(script.eid))) # unused - bug ?
                 script.scriptText = newText
                 script.setChanged()
                 changed.append((_(u"Script"),script.eid))
@@ -684,7 +677,6 @@ class CBash_EditorIds:
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.group_fid_eid = {} #--eid = group_fid_eid[group][longid]
         self.old_new = {}
         if types:
@@ -818,7 +810,6 @@ class FactionRelations:
     """Faction relations."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.id_relations = {} #--(otherLongid,otherDisp) = id_relation[longid]
         self.id_eid = {} #--For all factions.
         self.aliases = aliases or {}
@@ -860,7 +851,7 @@ class FactionRelations:
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        id_relations,id_eid = self.id_relations, self.id_eid
+        id_relations = self.id_relations
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -883,7 +874,7 @@ class FactionRelations:
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
-        id_relations,id_eid = self.id_relations, self.id_eid
+        id_relations = self.id_relations
         loadFactory= LoadFactory(True,MreRecord.type_class['FACT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -939,7 +930,6 @@ class CBash_FactionRelations:
     """Faction relations."""
 
     def __init__(self,aliases=None):
-        """Initialize."""
         self.fid_faction_mod = {}
         self.fid_eid = {} #--For all factions.
         self.aliases = aliases or {}
@@ -972,7 +962,7 @@ class CBash_FactionRelations:
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
+        fid_faction_mod = self.fid_faction_mod
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
@@ -990,7 +980,7 @@ class CBash_FactionRelations:
 
     def writeToMod(self,modInfo):
         """Exports faction relations to specified mod."""
-        fid_faction_mod,fid_eid = self.fid_faction_mod, self.fid_eid
+        fid_faction_mod = self.fid_faction_mod
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -1047,7 +1037,6 @@ class FidReplacer:
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.types = types or MreRecord.simpleTypes
         self.aliases = aliases or {} #--For aliasing mod names
         self.old_new = {} #--Maps old fid to new fid
@@ -1059,7 +1048,7 @@ class FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
+            # pack,unpack = struct.pack,struct.unpack   # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1103,7 +1092,6 @@ class FidReplacer:
         if not old_new: return False
         #--Swapper function
         old_count = {}
-
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             if newId:
@@ -1112,7 +1100,6 @@ class FidReplacer:
                 return newId
             else:
                 return oldId
-
         #--Do swap on all records
         for type_ in types:
             for record in getattr(modFile,type_).getActiveRecords():
@@ -1131,7 +1118,6 @@ class CBash_FidReplacer:
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.aliases = aliases or {} #--For aliasing mod names
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
@@ -1142,7 +1128,7 @@ class CBash_FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with bolt.CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
+            # pack,unpack = struct.pack,struct.unpack  # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1169,7 +1155,7 @@ class CBash_FidReplacer:
         old_new = dict((oldId,newId) for oldId,newId in old_new.iteritems() if
                        oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
-        old_count = {}
+        # old_count = {} # unused - was meant to be used ?
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
                 Current.addMod(modInfos[newId[0]].getPath().stail,
@@ -1193,7 +1179,6 @@ class FullNames:
     defaultTypes = bush.game.namesTypes # PYDEV ERROR
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
         self.types = types or FullNames.defaultTypes
         self.aliases = aliases or {}
@@ -1284,14 +1269,13 @@ class FullNames:
 class CBash_FullNames:
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
-    defaultTypes = set(
-        ["CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL","BSGN","ACTI",
-         "APPA","ARMO","BOOK","CLOT","CONT","DOOR","INGR","LIGH","MISC","FLOR",
-         "FURN","WEAP","AMMO","NPC_","CREA","SLGM","KEYM","ALCH","SGST","WRLD",
-         "CELLS","DIAL","QUST"])
+    defaultTypes = {"CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL",
+                    "BSGN","ACTI","APPA","ARMO","BOOK","CLOT","CONT","DOOR",
+                    "INGR","LIGH","MISC","FLOR","FURN","WEAP","AMMO","NPC_",
+                    "CREA","SLGM","KEYM","ALCH","SGST","WRLD","CELLS","DIAL",
+                    "QUST"}
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.group_fid_name = {} #--(eid,name) = group_fid_name[group][longid]
         self.types = types or CBash_FullNames.defaultTypes
         self.aliases = aliases or {}
@@ -1306,7 +1290,7 @@ class CBash_FullNames:
             for group in self.types:
                 fid_name = group_fid_name.setdefault(group[:4],{})
                 for record in getattr(modFile,group):
-                    if(hasattr(record, 'full')):
+                    if hasattr(record, 'full'):
                         full = record.full or (group == 'LIGH' and u'NO NAME')
                         eid = record.eid
                         if eid and full:
@@ -1398,7 +1382,6 @@ class ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
@@ -1538,7 +1521,6 @@ class CBash_ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
@@ -1653,7 +1635,6 @@ class ScriptText:
     """import & export functions for script text."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -1670,7 +1651,7 @@ class ScriptText:
             z = 0
             for record in records:
                 z += 1
-                progress((0.5 / y * z),_(u"Reading scripts in %s.") % (file_))
+                progress((0.5/y*z),_(u"Reading scripts in %s.")% file_)
                 eid_data[record.eid] = (record.scriptText,mapper(record.fid))
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -1705,12 +1686,12 @@ class ScriptText:
                 modFile.SCPT.records.append(newScript)
                 added.append(eid)
         if changed or added: modFile.safeSave()
-        return (changed, added)
+        return changed, added
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
         patches folder."""
-        eid_data,aliases = self.eid_data,self.aliases
+        eid_data = self.eid_data
         textPath = GPath(textPath)
         with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
@@ -1718,9 +1699,8 @@ class ScriptText:
                 z = 0
                 for name in files:
                     z += 1
-                    if (name.cext != inisettings['ScriptFileExt']):
-                        progress(((1 / y) * z),
-                                 _(u"Skipping file %s.") % name.s)
+                    if name.cext != inisettings['ScriptFileExt']:
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
                     with root.join(name).open('r',
@@ -1764,8 +1744,7 @@ class ScriptText:
                             tmp += line[:pos] + u'\n'
                     text = tmp
                 z += 1
-                progress((0.5 + 0.5 / y * z),
-                         _(u"Exporting script %s.") % (eid))
+                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % eid)
                 if x == 0 or skip.lower() != eid[:x].lower():
                     fileName = eid
                     if r >= 1 and deprefix == fileName[:r]:
@@ -1786,7 +1765,6 @@ class CBash_ScriptText:
     """import & export functions for script text."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -1802,8 +1780,7 @@ class CBash_ScriptText:
                 z = 0
                 for record in records:
                     z += 1
-                    progress((0.5 / y * z),
-                             _(u"Reading scripts in %s.") % (file_))
+                    progress((0.5/y*z),_(u"Reading scripts in %s.") % file_)
                     eid_data[record.eid] = (record.scriptText,record.fid)
 
     def writeToMod(self, modInfo, makeNew=False):
@@ -1833,12 +1810,12 @@ class CBash_ScriptText:
                         newScript.scriptText = newText
                         added.append(eid)
             if changed or added: modFile.save()
-            return (changed, added)
+            return changed, added
 
     def readFromText(self,textPath,modInfo):
         """Reads scripts from files in specified mods' directory in bashed
         patches folder."""
-        eid_data,aliases = self.eid_data,self.aliases
+        eid_data = self.eid_data
         textPath = GPath(textPath)
         with balt.Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
@@ -1846,9 +1823,8 @@ class CBash_ScriptText:
                 z = 0
                 for name in files:
                     z += 1
-                    if (name.cext != inisettings['ScriptFileExt']):
-                        progress(((1 / y) * z),
-                                 _(u"Skipping file %s.") % name.s)
+                    if name.cext != inisettings['ScriptFileExt']:
+                        progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
                     with root.join(name).open('r',
@@ -1936,7 +1912,6 @@ class _UsesEffectsMixin(object):
         schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
         recipientTypeName_Number = _UsesEffectsMixin.recipientTypeName_Number
         actorValueName_Number = _UsesEffectsMixin.actorValueName_Number
-        schoolTypeNumber_Name = _UsesEffectsMixin.schoolTypeNumber_Name
         effects = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
@@ -2068,7 +2043,6 @@ class SigilStoneDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2217,7 +2191,6 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2303,8 +2276,8 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
             outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0]):
-                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,effects = \
-                fid_stats[fid]
+                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,\
+                effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
@@ -2324,14 +2297,13 @@ class ItemPrices:
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_stats = bush.game.pricesTypes
         self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
@@ -2345,7 +2317,7 @@ class ItemPrices:
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
@@ -2382,12 +2354,7 @@ class ItemPrices:
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        def getSortedIds(stats):
-            longids = stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
+        class_fid_stats = self.class_fid_stats
         with textPath.open('w',encoding='utf-8-sig') as out:
             format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
@@ -2406,7 +2373,6 @@ class CBash_ItemPrices:
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},
                                 'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},
                                 'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},
@@ -2426,7 +2392,7 @@ class CBash_ItemPrices:
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats = self.class_fid_stats
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -2452,7 +2418,8 @@ class CBash_ItemPrices:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
                 mmod = GPath(_coerce(mmod, unicode))
-                longid = FormID(GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                longid = FormID(GPath(aliases.get(mmod,mmod)),
+                                _coerce(mobj,int,16))
                 value = _coerce(value, int)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 name = _coerce(name, unicode, AllowNone=True)
@@ -2461,12 +2428,7 @@ class CBash_ItemPrices:
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
-        def getSortedIds(stats):
-            longids = stats.keys()
-            longids.sort(key=lambda a: stats[a][0])
-            longids.sort(key=itemgetter(0))
-            return longids
+        class_fid_stats = self.class_fid_stats
         with textPath.open('w',encoding='utf-8-sig') as out:
             format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
@@ -2486,7 +2448,6 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
     importing/exporting from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.type_stats = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},
                            'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},
                            'SGST':{},'SLGM':{},'WEAP':{}}
@@ -2657,13 +2618,11 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-
         def getSortedIds(stats):
             longids = stats.keys()
             longids.sort(key=lambda a:stats[a][0])
             longids.sort(key=itemgetter(0))
             return longids
-
         with textPath.open('w',encoding='utf-8-sig') as out:
             for type_,format_,header in (
                     #--Alch
@@ -2828,7 +2787,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         return _coerce(value,bool)
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.class_fid_values = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -2938,7 +2896,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         """Reads stats from specified text file."""
         class_fid_attr_value,aliases = self.class_fid_attr_value,self.aliases
         with bolt.CsvReader(textPath) as ins:
-            attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[:3]
@@ -2946,7 +2903,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                 modName = GPath(_coerce(modName,unicode))
                 longid = FormID(GPath(aliases.get(modName,modName)),
                                 _coerce(objectStr,int,16))
-                attrs = self.class_attrs[group]
                 if group == 'ALCH':
                     pass
                 elif group == 'AMMO':
@@ -2955,17 +2911,12 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                     class_fid_attr_value[group][
                         longid] = self.readSGSTFromText(fields)
 
+    # noinspection PyUnreachableCode
     def writeToText(self,textPath):
         return
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         with textPath.open('w',encoding='utf-8-sig') as out:
-            def getSortedIds(fid_attr_value):
-                longids = fid_attr_value.keys()
-                longids.sort(key=lambda a:fid_attr_value[a]['eid'])
-                longids.sort(key=itemgetter(0))
-                return longids
-
             def write(out,attrs,values):
                 attr_type = self.attr_type
                 csvFormat = u''
@@ -2984,7 +2935,6 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-
             for group,header in (
                     #--Alch
                     ('ALCH',(u'"' + u'","'.join((
@@ -3069,7 +3019,6 @@ class SpellRecords(_UsesEffectsMixin):
     mod/text file."""
 
     def __init__(self,types=None,aliases=None,detailed=False):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
@@ -3091,7 +3040,6 @@ class SpellRecords(_UsesEffectsMixin):
         self.spellTypeName_Number = dict(
             [(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if
              x is not None])
-
         self.levelTypeNumber_Name = {None : 'NONE',
                                      0 : 'Novice',
                                      1 : 'Apprentice',
@@ -3111,7 +3059,8 @@ class SpellRecords(_UsesEffectsMixin):
         modFile.load(True)
         modFile.convertToLongFids(['SPEL'])
         for record in modFile.SPEL.getActiveRecords():
-            fid_stats[record.fid] = [getattr_deep(record, attr) for attr in attrs]
+            fid_stats[record.fid] = [getattr_deep(record,attr) for attr in
+                                     attrs]
             if detailed:
                 effects = []
                 for effect in record.effects:
@@ -3240,7 +3189,7 @@ class SpellRecords(_UsesEffectsMixin):
                 _(u'Touch Explodes Without Target'),
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+            rowFormat += u',"%s","%s","%s","%s","%s","%s","%s"'
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
@@ -3270,7 +3219,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
     mod/text file."""
 
     def __init__(self,types=None,aliases=None,detailed=False):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
@@ -3291,7 +3239,6 @@ class CBash_SpellRecords(_UsesEffectsMixin):
         self.spellTypeName_Number = dict(
             [(y.lower(),x) for x,y in self.spellTypeNumber_Name.iteritems() if
              x is not None])
-
         self.levelTypeNumber_Name = {None : u'NONE',
                                      0 : u'Novice',
                                      1 : u'Apprentice',
@@ -3389,7 +3336,7 @@ class CBash_SpellRecords(_UsesEffectsMixin):
                 _(u'Touch Explodes Without Target'),
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-            rowFormat = rowFormat + u',"%s","%s","%s","%s","%s","%s","%s"'
+            rowFormat += u',"%s","%s","%s","%s","%s","%s","%s"'
         headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(headFormat % header)
@@ -3419,7 +3366,6 @@ class IngredientDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -3566,7 +3512,6 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
     from/to mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_stats = {}
         self.aliases = aliases or {} #--For aliasing mod names
 
@@ -3673,7 +3618,6 @@ class CBash_MapMarkers:
     mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.fid_markerdata = {}
         self.aliases = aliases or {}
         self.markerFid = FormID(GPath(u'Oblivion.esm'), 0x000010)
@@ -3820,7 +3764,6 @@ class CBash_CellBlockInfo:
     mod/text file."""
 
     def __init__(self,types=None,aliases=None):
-        """Initialize."""
         self.celldata = {}
         self.aliases = aliases or {}
 
