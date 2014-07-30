@@ -5,9 +5,9 @@ Wrye Bash
 Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
  of features. This is a fork of the Wrye Bash related code from
  [the SVN repository](http://sourceforge.net/p/oblivionworks/code/HEAD/tree/).
- We are in the process of finalizing the move and then we aim to refactor the
- code to eventually support more games, offering the same feature set for all of
- them. Please read the [Contributing](#contributing) section below if interested in
+ We are in the process of refactoring the code to eventually support more games,
+ offering the same feature set for all of them (currently working on bosh.py).
+ Please read the [Contributing](#contributing) section below if interested in
  contributing.
 
 Docs are included in the download but we are setting them up also online

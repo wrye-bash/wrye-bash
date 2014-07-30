@@ -12099,6 +12099,8 @@ class StatusBar_Hide(Link):
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorLevels, CBash_ActorLevels
+
 class Mod_ActorLevels_Export(Link):
     """Export actor levels from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -12129,9 +12131,9 @@ class Mod_ActorLevels_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -12178,9 +12180,9 @@ class Mod_ActorLevels_Import(Link):
         changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorLevels.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13118,6 +13120,8 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FactionRelations, CBash_FactionRelations
+
 class Mod_FactionRelations_Export(Link):
     """Export faction relations from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13140,9 +13144,9 @@ class Mod_FactionRelations_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13187,9 +13191,9 @@ class Mod_FactionRelations_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             factionRelations.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13208,6 +13212,8 @@ class Mod_FactionRelations_Import(Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorFactions, CBash_ActorFactions
+
 class Mod_Factions_Export(Link):
     """Export factions from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13230,9 +13236,9 @@ class Mod_Factions_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13278,9 +13284,9 @@ class Mod_Factions_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13726,6 +13732,8 @@ class Mod_Groups_Import(Link):
             _(u"Import Groups"))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import EditorIds, CBash_EditorIds
+
 class Mod_EditorIds_Export(Link):
     """Export editor ids from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13747,9 +13755,9 @@ class Mod_EditorIds_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Editor Ids")) as progress:
             if CBash:
-                editorIds = bosh.CBash_EditorIds()
+                editorIds = CBash_EditorIds()
             else:
-                editorIds = bosh.EditorIds()
+                editorIds = EditorIds()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13794,9 +13802,9 @@ class Mod_EditorIds_Import(Link):
             changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 if CBash:
-                    editorIds = bosh.CBash_EditorIds()
+                    editorIds = CBash_EditorIds()
                 else:
-                    editorIds = bosh.EditorIds()
+                    editorIds = EditorIds()
                 progress(0.1,_(u"Reading %s.") % (textName.s,))
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_(u"Applying to %s.") % (fileName.s,))
@@ -13891,6 +13899,8 @@ class Mod_DecompileAll(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FidReplacer, CBash_FidReplacer
+
 class Mod_Fids_Replace(Link):
     """Replace fids according to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13920,9 +13930,9 @@ class Mod_Fids_Replace(Link):
         changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             if CBash:
-                replacer = bosh.CBash_FidReplacer()
+                replacer = CBash_FidReplacer()
             else:
-                replacer = bosh.FidReplacer()
+                replacer = FidReplacer()
             progress(0.1,_(u"Reading %s.") % textName.s)
             replacer.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -13935,6 +13945,8 @@ class Mod_Fids_Replace(Link):
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FullNames, CBash_FullNames
+
 class Mod_FullNames_Export(Link):
     """Export full names from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13957,9 +13969,9 @@ class Mod_FullNames_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14002,9 +14014,9 @@ class Mod_FullNames_Import(Link):
         renamed = None
         with balt.Progress(_(u"Import Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             progress(0.1,_(u"Reading %s.") % textName.s)
             if ext == u'.csv':
                 fullNames.readFromText(textPath)
@@ -14465,6 +14477,8 @@ class Mod_ShowReadme(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ScriptText, CBash_ScriptText
+
 class Mod_Scripts_Export(Link):
     """Export scripts from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14525,9 +14539,9 @@ class Mod_Scripts_Export(Link):
         #--Export
         #try:
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
@@ -14563,9 +14577,9 @@ class Mod_Scripts_Import(Link):
                    )
         makeNew = balt.askYes(self.window,message,_(u'Import Scripts'),icon=wx.ICON_QUESTION)
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromText(textDir.s,fileInfo)
         changed, added = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log
@@ -14592,6 +14606,8 @@ class Mod_Scripts_Import(Link):
             balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
+
 class Mod_Stats_Export(Link):
     """Export armor and weapon stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14614,9 +14630,9 @@ class Mod_Stats_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14659,9 +14675,9 @@ class Mod_Stats_Import(Link):
         changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             progress(0.1,_(u"Reading %s.") % textName.s)
             itemStats.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -14681,6 +14697,8 @@ class Mod_Stats_Import(Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CompleteItemData, CBash_CompleteItemData
+
 class Mod_ItemData_Export(Link):
     """Export pretty much complete item data from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14703,9 +14721,9 @@ class Mod_ItemData_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Item Data")) as progress:
             if CBash:
-                itemStats = bosh.CBash_CompleteItemData()
+                itemStats = CBash_CompleteItemData()
             else:
-                itemStats = bosh.CompleteItemData()
+                itemStats = CompleteItemData()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14747,7 +14765,7 @@ class Mod_ItemData_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = bosh.CompleteItemData()
+            itemStats = CompleteItemData() # FIXME - why not if CBash: ?
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemStats.readFromText(textPath)
@@ -14770,6 +14788,8 @@ class Mod_ItemData_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ItemPrices, CBash_ItemPrices
+
 class Mod_Prices_Export(Link):
     """Export item prices from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14792,9 +14812,9 @@ class Mod_Prices_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14837,9 +14857,9 @@ class Mod_Prices_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemPrices.readFromText(textPath)
@@ -14863,6 +14883,8 @@ class Mod_Prices_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_MapMarkers
+
 class CBash_Mod_MapMarkers_Export(Link):
     """Export map marker stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14884,7 +14906,7 @@ class CBash_Mod_MapMarkers_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u'Export Map Markers')) as progress:
-            mapMarkers = bosh.CBash_MapMarkers()
+            mapMarkers = CBash_MapMarkers()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14926,7 +14948,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Map Markers')) as progress:
-            MapMarkers = bosh.CBash_MapMarkers()
+            MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)
             MapMarkers.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s)
@@ -14947,6 +14969,8 @@ class CBash_Mod_MapMarkers_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_CellBlockInfo
+
 class CBash_Mod_CellBlockInfo(Link):
     """Export Cell Block Info to text file.
     (in the form of Cell, block, subblock"""
@@ -14969,7 +14993,7 @@ class CBash_Mod_CellBlockInfo(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u"Export Cell Block Info")) as progress:
-            cellblocks = bosh.CBash_CellBlockInfo()
+            cellblocks = CBash_CellBlockInfo()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14981,6 +15005,8 @@ class CBash_Mod_CellBlockInfo(Link):
             progress(1.0,_(u"Done."))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+
 class Mod_SigilStoneDetails_Export(Link):
     """Export Sigil Stone details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15004,9 +15030,9 @@ class Mod_SigilStoneDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15051,9 +15077,9 @@ class Mod_SigilStoneDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             sigilStones.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -15075,6 +15101,8 @@ class Mod_SigilStoneDetails_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SpellRecords, CBash_SpellRecords
+
 class Mod_SpellRecords_Export(Link):
     """Export Spell details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15101,9 +15129,9 @@ class Mod_SpellRecords_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15153,9 +15181,9 @@ class Mod_SpellRecords_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             spellRecords.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -15176,6 +15204,8 @@ class Mod_SpellRecords_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import IngredientDetails, CBash_IngredientDetails
+
 class Mod_IngredientDetails_Export(Link):
     """Export Ingredient details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15198,9 +15228,9 @@ class Mod_IngredientDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15243,9 +15273,9 @@ class Mod_IngredientDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
             progress(0.2,_(u'Applying to %s.') % fileName.s)
