@@ -615,7 +615,7 @@ class ModFile:
         gLong = self.getLongMapper()
         def mapper(fid):
             if fid == None: return None
-            if isinstance(fid,long):
+            if isinstance(fid, (long, int)):
                 fid = gLong(fid)
             modName,object = fid
             mod = indices[modName]
@@ -22693,6 +22693,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
+        self.races_data = {'EYES':[],'HAIR':[]}
         self.raceData = {} #--Race eye meshes, hair,eyes
         self.tempRaceData = {}
         #--Restrict srcMods to active/merged mods.
@@ -22828,7 +22829,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         if not (set(modFile.tops) & self.scanTypes): return
-        modFile.convertToLongFids(('RACE','EYES','NPC_'))
+        modFile.convertToLongFids(('RACE','EYES','HAIR','NPC_'))
         srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
         #--Eyes, Hair
         for type in ('EYES','HAIR'):
