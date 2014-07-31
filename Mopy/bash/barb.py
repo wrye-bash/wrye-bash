@@ -461,7 +461,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     length = 0
     reList = re.compile(u'Path = (.*?)(?:\r\n|\n)',re.U)
     command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
-    ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
     ins = StringIO.StringIO(ins)
     for line in ins: length += 1
     ins.close()
@@ -475,7 +475,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files
-    ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
     #--Error Checking, and progress feedback
     #--Note subArchives for recursive unpacking
     reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
