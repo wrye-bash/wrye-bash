@@ -340,6 +340,7 @@ Unicode true
 
 ;-------------------------------- Include Local Script Files
 
+    !include "macros.nsh"
     !include "pages.nsi"
     !include "install.nsi"
     !include "uninstall.nsi"
