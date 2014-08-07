@@ -547,8 +547,7 @@ class Parser(object):
     def StripOuterParens(self, tokens=None):
         tokens = tokens or self.tokens
         while len(tokens) > 2 and tokens[0].type == OPEN_PARENS and tokens[-1].type == CLOSE_PARENS:
-            tokens.pop()
-            tokens.pop(0)
+            tokens = tokens[1:-1]
         return tokens
 
     # Split a string into tokens
