@@ -144,6 +144,7 @@ if __name__ == "__main__":
         elif '7' == char: seven(_lines)
         elif '8' == char: eight(_lines)
         elif '9' == char: nine(_lines)
+        elif '0' == char: zero(_lines)
         elif '.' == char: dot(_lines)
         else: print "unhandled character: '%s'" % char
 
