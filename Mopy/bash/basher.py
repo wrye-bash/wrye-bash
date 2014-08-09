@@ -564,6 +564,7 @@ settingDefaults = {
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,
+    'BOSS.UseGUI':False,
     }
 
 # Exceptions ------------------------------------------------------------------
@@ -11562,31 +11563,13 @@ class Mods_BOSSDisableLockTimes(BoolLink):
                                           )
 
 #------------------------------------------------------------------------------
-class Mods_BOSSLaunchGUI(Link):
+class Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then BOSS GUI.exe should be too."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Launch BOSS GUI'),
-            help=_(u"Launch BOSS GUI to change settings or update the user rules list."))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        if not bosh.tooldirs['boss'].exists(): return
-        args = [bosh.tooldirs['boss'].s]
-        statusBar.SetStatusText(u' '.join(args[1:]),1)
-        cwd = bolt.Path.getcwd()
-        bosh.tooldirs['boss'].head.setcwd()
-        try:
-            subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-        except Exception as error:
-            balt.showError(
-                bashFrame,
-                (u'%s'%error + u'\n\n' +
-                 _(u'Used Path: ') + bosh.tooldirs['boss'].s + u'\n' +
-                 _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
-                 _(u"Could not launch '%s'") % bosh.tooldirs['boss'].stail)
-        finally:
-            cwd.setcwd()
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Launch using GUI'),
+                                          'BOSS.UseGUI',
+                                          _(u"If selected, Bash will run BOSS's GUI.")
+                                          )
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -16988,7 +16971,7 @@ class App_Button(StatusBar_Button):
                         _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
-    def Execute(self,event,extraArgs=None):
+    def Execute(self,event,extraArgs=None,wait=False):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
                 webbrowser.open(self.exePath.s)
@@ -17035,7 +17018,9 @@ class App_Button(StatusBar_Button):
                 else:
                     exePath.head.setcwd()
                 try:
-                    subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    popen = subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    if wait:
+                        popen.wait()
                 except UnicodeError:
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
@@ -17201,49 +17186,32 @@ class App_BOSS(App_Button):
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
 
     def Execute(self,event,extraArgs=None):
-        if self.IsPresent():
-            exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-            exeArgs = self.exeArgs
-            if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
-                exePath = exeObse
-                if self.obseArg != u'': exeArgs += (self.obseArg,)
-            else:
-                exePath = self.exePath
-            exeArgs = (exePath.stail,)+exeArgs
-            if extraArgs: exeArgs += extraArgs
-            statusBar.SetStatusText(u' '.join(exeArgs),1)
-            cwd = bolt.Path.getcwd()
-            exePath.head.setcwd()
-            with balt.Progress(_(u"Executing BOSS")) as progress:
-                if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                    exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
-                elif wx.GetKeyState(82):
-                    exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
-                if wx.GetKeyState(83):
-                    exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
-                if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
-                    exeArgs += (u'-c',)
-                if bosh.dirs['boss'].join(u'BOSS.exe').version >= (2,0,0,0):
-                    # After version 2.0, need to pass in the -g argument
-                    exeArgs += (u'-g%s' % bush.game.name,)
-                progress(0.05,_(u"Processing... launching BOSS."))
-                try:
-                    subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo, close_fds=bolt.close_fds)
-                    if settings['BOSS.ClearLockTimes']:
-                        # Clear the saved times from before
-                        bosh.modInfos.mtimes.clear()
-                        # And refresh to get the new times so WB will keep the order that BOSS specifies
-                        bosh.modInfos.refresh(doInfos=False)
-                        # Refresh UI, so WB is made aware of the changes to loadorder.txt
-                        modList.RefreshUI('ALL')
-                except Exception as error:
-                    self.ShowError(error)
-                finally:
-                    cwd.setcwd()
+        if settings['BOSS.UseGUI']:
+            self.exePath = self.exePath.head.join(u'BOSS GUI.exe')
+        if settings['BOSS.ClearLockTimes']:
+            wait = True
         else:
-            bolt.showError(bashFrame,
-                           _(u'Application missing: %s') % self.exePath.s,
-                           _(u'Could not launch BOSS'))
+            wait = False
+        extraArgs = []
+        if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+            extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
+        elif wx.GetKeyState(82):
+            extraArgs.append(u'-r 1',) # Revert level 1 - BOSS version 1.6+
+        if wx.GetKeyState(83):
+            extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
+        if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+            extraArgs.append(u'-c',)
+        if bosh.tooldirs['boss'].version >= (2,0,0,0):
+            # After version 2.0, need to pass in the -g argument
+            extraArgs.append(u'-g%s' % bush.game.name,)
+        App_Button.Execute(self,event,tuple(extraArgs), wait)
+        if settings['BOSS.ClearLockTimes']:
+            # Clear the saved times from before
+            bosh.modInfos.mtimes.clear()
+            # And refresh to get the new times so WB will keep the order that BOSS specifies
+            bosh.modInfos.refresh(doInfos=False)
+            # Refresh UI, so WB is made aware of the changes to loadorder.txt
+            modList.RefreshUI('ALL')
 
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
