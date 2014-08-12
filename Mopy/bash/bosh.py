@@ -8775,35 +8775,23 @@ class InstallersData(bolt.TankData, DataDict):
             data_sizeCrcDate_removesAdd(file)
             emptyDirsAdd(path.head)
         #--Now add in directories
+        #--Now add in directories that are/are going to be empty
+        allRemoves = set(removedFiles)
+        allRemovesAdd = allRemoves.add
         while emptyDirs:
             testDirs = set(emptyDirs)
             emptyDirsClear()
-            for dir in testDirs:
-                if dir.isdir():
-                    remove = False
-                    items = dir.list()
-                    if not items:
-                        # Already empty, so remove this dir
-                        remove = True
-                    else:
-                        # Has files/folders in it
-                        dirJoin = dir.join
-                        for item in items:
-                            if dirJoin(item) not in removedFiles:
-                                # One of the files in it won't be removed,
-                                # don't remove the dir
-                                break
-                        else:
-                            # All items are going to be removed, remove this dir
-                            remove = True
-                    if remove:
-                        # Directory should be removed, pull out all files that are subdirs/files of this one
-                        removedFiles ^= set(x for x in removedFiles if x.cs.startswith(dir.cs))
-                        # Add in this directory
-                        removedFilesAdd(dir)
-                        # Add in this directory's head for testing, if it's not the mods dir
-                        if dir.head != modsDir:
-                            emptyDirsAdd(dir.head)
+            for dir in sorted(testDirs, key=len, reverse=True):
+                items = set(map(dir.join, dir.list()))
+                remaining = items - allRemoves
+                if not remaining:
+                    # If there are no items in this directory that aren't
+                    # going to be removed, update the "real" list of which
+                    # files are to be removed
+                    removedFiles -= items
+                    removedFilesAdd(dir)
+                    allRemovesAdd(dir)
+                    emptyDirsAdd(dir.head)
         #--Do the deletion
         balt.shellDelete(removedFiles,progress.getParent(),False,False)
         #--Update InstallersData
