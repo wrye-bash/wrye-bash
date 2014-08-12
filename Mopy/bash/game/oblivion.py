@@ -3582,6 +3582,7 @@ class MreRefr(MelRecord):
         MelOptStruct('XCNT','i','count'),
         MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1)), ####Map Marker Start Marker, wbEmpty
         MelBase('ONAM','onam_p'), ####Open by Default, wbEmpty
+        MelBase('XRGD','xrgd_p'),
         MelOptStruct('XSCL','f',('scale',1.0)),
         MelOptStruct('XSOL','B',('soul',None)), ####Was entirely missing. Confirmed by creating a test mod...it isn't present in any of the official esps
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
