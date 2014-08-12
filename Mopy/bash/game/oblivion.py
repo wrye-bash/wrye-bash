@@ -3094,6 +3094,8 @@ class MreMisc(MelRecord):
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
+        # DATA can have a FormID in it, this
+        # should be rewriten
         MelStruct('DATA','if','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
