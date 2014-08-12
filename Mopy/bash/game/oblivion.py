@@ -2850,7 +2850,7 @@ class MreInfo(MelRecord):
                 MelStruct.dumpData(self,record,out)
     #--MelSet
     melSet = MelSet(
-        MelInfoData('DATA','HB','dialType',(_flags,'flags')),
+        MelInfoData('DATA','3B','dialType','nextSpeaker',(_flags,'flags')),
         MelFid('QSTI','quests'),
         MelFid('TPIC','topic'),
         MelFid('PNAM','prevInfo'),
@@ -2863,8 +2863,9 @@ class MreInfo(MelRecord):
         MelConditions(),
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
-        MelBase('SCHD','schd_p'), #--Old format script header?
         MelInfoSchr('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+        # Old format script header would need dumpExtra to handle it
+        MelBase('SCHD','schd_p'),
         MelBase('SCDA','compiled_p'),
         MelString('SCTX','scriptText'),
         MelScrxen('SCRV/SCRO','references')
