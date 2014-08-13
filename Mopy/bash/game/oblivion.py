@@ -3378,6 +3378,7 @@ class MreRace(MelRecord):
             MelGroup.__init__(self,attr,
                 MelString('MODL','modPath'),
                 MelBase('MODB','modb_p'),
+                MelBase('MODT','modt_p'),
                 MelString('ICON','iconPath'),)
             self.index = index
 
