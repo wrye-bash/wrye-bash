@@ -8774,7 +8774,6 @@ class InstallersData(bolt.TankData, DataDict):
                 removedFilesAdd(path+u'.ghost')
             data_sizeCrcDate_removesAdd(file)
             emptyDirsAdd(path.head)
-        #--Now add in directories
         #--Now add in directories that are/are going to be empty
         allRemoves = set(removedFiles)
         allRemovesAdd = allRemoves.add
@@ -8793,7 +8792,8 @@ class InstallersData(bolt.TankData, DataDict):
                     allRemovesAdd(dir)
                     emptyDirsAdd(dir.head)
         #--Do the deletion
-        balt.shellDelete(removedFiles,progress.getParent(),False,False)
+        if removedFiles:
+            balt.shellDelete(removedFiles,progress.getParent(),False,False)
         #--Update InstallersData
         InstallersData.updateTable(removes,u'')
         for file in data_sizeCrcDate_removes:
@@ -8855,28 +8855,33 @@ class InstallersData(bolt.TankData, DataDict):
         emptyDirsAdd = emptyDirs.add
         modsDir = dirs['mods']
         modsDirJoin = modsDir.join
-        removeFiles = []
-        removeFilesAppend = removeFiles.append
+        removeFiles = set()
+        removeFilesAdd = removeFiles.add
         for file in removes:
             path = modsDirJoin(file)
             if path.exists():
-                removeFilesAppend(path)
+                removeFilesAdd(path)
             ghostPath = path+u'.ghost'
             if ghostPath.exists():
-                removeFilesAppend(ghostPath)
+                removeFilesAdd(ghostPath)
             emptyDirsAdd(path.head)
         #--Add in empty (or to be empty) directories
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir():
-                items = set(emptyDir.list())
-                if not items:
-                    # Directory is empty
-                    removeFilesAppend(emptyDir)
-                else:
-                    # ...or will be empty
-                    items = set(emptyDir.join(x) for x in items)
-                    if not items - set(removeFiles):
-                        removeFilesAppend(emptyDir)
+        allRemoves = set(removedFiles)
+        allRemovesAdd = allRemoves.add
+        while emptyDirs:
+            testDirs = set(emptyDirs)
+            emptyDirsClear()
+            for dir in sorted(testDirs, key=len, reverse=True):
+                items = set(map(dir.join, dir.list()))
+                remaining = items - allRemoves
+                if not remaining:
+                    # If there are no items in this directory that aren't
+                    # going to be removed, update the "real" list of which
+                    # files are to be removed
+                    removedFiles -= items
+                    removedFilesAdd(dir)
+                    allRemovesAdd(dir)
+                    emptyDirsAdd(dir.head)
         #--Shell Delete
         if removeFiles:
             balt.shellDelete(removeFiles,progress.getParent(),False,False)
