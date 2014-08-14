@@ -2304,20 +2304,20 @@ class MreCell(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelStruct('DATA','B',(cellFlags,'flags',0L)),
+        MelCoordinates('XCLC','ii',('posX',None),('posY',None)),
         MelOptStruct('XCLL','=3Bs3Bs3Bs2f2i2f','ambientRed','ambientGreen','ambientBlue',
             ('unused1',null1),'directionalRed','directionalGreen','directionalBlue',
             ('unused2',null1),'fogRed','fogGreen','fogBlue',
             ('unused3',null1),'fogNear','fogFar','directionalXY','directionalZ',
             'directionalFade','fogClip'),
+        MelFidList('XCLR','regions'),
         MelOptStruct('XCMT','B','music'),
-        MelOwnership(),
-        MelFid('XCCM','climate'),
         #--CS default for water is -2147483648, but by setting default here to -2147483649,
         #  we force the bashed patch to retain the value of the last mod.
         MelOptStruct('XCLW','f',('waterHeight',-2147483649)),
-        MelFidList('XCLR','regions'),
-        MelCoordinates('XCLC','ii',('posX',None),('posY',None)),
+        MelFid('XCCM','climate'),
         MelFid('XCWT','water'),
+        MelOwnership(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
