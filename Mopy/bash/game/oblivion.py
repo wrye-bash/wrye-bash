@@ -3434,7 +3434,7 @@ class MreRace(MelRecord):
                 index, = ins.unpack('I',4,readId)
                 attr = record._loadAttrs[index]
             element = self.loaders[attr]
-            for type in ('MODL','MODB','ICON'):
+            for type in ('MODL', 'MODB', 'MODT', 'ICON'):
                 self.melSet.loaders[type] = element
 
     #--Mel Set
