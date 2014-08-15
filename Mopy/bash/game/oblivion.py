@@ -2304,20 +2304,20 @@ class MreCell(MelRecord):
         MelString('EDID','eid'),
         MelString('FULL','full'),
         MelStruct('DATA','B',(cellFlags,'flags',0L)),
+        MelCoordinates('XCLC','ii',('posX',None),('posY',None)),
         MelOptStruct('XCLL','=3Bs3Bs3Bs2f2i2f','ambientRed','ambientGreen','ambientBlue',
             ('unused1',null1),'directionalRed','directionalGreen','directionalBlue',
             ('unused2',null1),'fogRed','fogGreen','fogBlue',
             ('unused3',null1),'fogNear','fogFar','directionalXY','directionalZ',
             'directionalFade','fogClip'),
+        MelFidList('XCLR','regions'),
         MelOptStruct('XCMT','B','music'),
-        MelOwnership(),
-        MelFid('XCCM','climate'),
         #--CS default for water is -2147483648, but by setting default here to -2147483649,
         #  we force the bashed patch to retain the value of the last mod.
         MelOptStruct('XCLW','f',('waterHeight',-2147483649)),
-        MelFidList('XCLR','regions'),
-        MelCoordinates('XCLC','ii',('posX',None),('posY',None)),
+        MelFid('XCCM','climate'),
         MelFid('XCWT','water'),
+        MelOwnership(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -2850,7 +2850,7 @@ class MreInfo(MelRecord):
                 MelStruct.dumpData(self,record,out)
     #--MelSet
     melSet = MelSet(
-        MelInfoData('DATA','HB','dialType',(_flags,'flags')),
+        MelInfoData('DATA','3B','dialType','nextSpeaker',(_flags,'flags')),
         MelFid('QSTI','quests'),
         MelFid('TPIC','topic'),
         MelFid('PNAM','prevInfo'),
@@ -2863,8 +2863,9 @@ class MreInfo(MelRecord):
         MelConditions(),
         MelFids('TCLT','choices'),
         MelFids('TCLF','linksFrom'),
-        MelBase('SCHD','schd_p'), #--Old format script header?
         MelInfoSchr('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+        # Old format script header would need dumpExtra to handle it
+        MelBase('SCHD','schd_p'),
         MelBase('SCDA','compiled_p'),
         MelString('SCTX','scriptText'),
         MelScrxen('SCRV/SCRO','references')
@@ -3093,6 +3094,8 @@ class MreMisc(MelRecord):
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
+        # DATA can have a FormID in it, this
+        # should be rewriten
         MelStruct('DATA','if','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -3375,6 +3378,7 @@ class MreRace(MelRecord):
             MelGroup.__init__(self,attr,
                 MelString('MODL','modPath'),
                 MelBase('MODB','modb_p'),
+                MelBase('MODT','modt_p'),
                 MelString('ICON','iconPath'),)
             self.index = index
 
@@ -3430,7 +3434,7 @@ class MreRace(MelRecord):
                 index, = ins.unpack('I',4,readId)
                 attr = record._loadAttrs[index]
             element = self.loaders[attr]
-            for type in ('MODL','MODB','ICON'):
+            for type in ('MODL', 'MODB', 'MODT', 'ICON'):
                 self.melSet.loaders[type] = element
 
     #--Mel Set
@@ -3579,6 +3583,7 @@ class MreRefr(MelRecord):
         MelOptStruct('XCNT','i','count'),
         MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1)), ####Map Marker Start Marker, wbEmpty
         MelBase('ONAM','onam_p'), ####Open by Default, wbEmpty
+        MelBase('XRGD','xrgd_p'),
         MelOptStruct('XSCL','f',('scale',1.0)),
         MelOptStruct('XSOL','B',('soul',None)), ####Was entirely missing. Confirmed by creating a test mod...it isn't present in any of the official esps
         MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
@@ -3794,7 +3799,7 @@ class MreSoun(MelRecord):
         MelString('FNAM','soundFile'),
         MelSounSndd('SNDD','=2BbsH2s','minDistance', 'maxDistance', 'freqAdjustment', ('unused1',null1),
             (_flags,'flags'), ('unused2',null2)),
-        MelOptStruct('SNDX','=2BbsH2sh2B',('minDistance',None), ('maxDistance',None), ('freqAdjustment',None), ('unused1',null1),
+        MelOptStruct('SNDX','=2BbsH2sH2B',('minDistance',None), ('maxDistance',None), ('freqAdjustment',None), ('unused1',null1),
             (_flags,'flags',None), ('unused2',null2), ('staticAtten',None),('stopTime',None),('startTime',None),)
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
