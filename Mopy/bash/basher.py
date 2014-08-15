@@ -6307,7 +6307,7 @@ class DocBrowser(wx.Frame):
             elif bashTemplate.exists():
                 template = u''.join(bashTemplate.open().readlines())
             else:
-                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath
+                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath.s
             defaultText = string.Template(template).substitute(modName=modName.s)
             self.plainText.SetValue(defaultText)
             self.SetDocType('txt')
