@@ -480,7 +480,7 @@ def ShowTutorial():
                   ' due to the Python website using redirects that the built '
                   'in NSISdl plugin can not handle.  Get it from:'),
         '',
-        '   http://nsis.sourceforge.net/Inetc_plugin-in',
+        '   http://nsis.sourceforge.net/Inetc_plug-in',
         '',
         listExt.fill('And install by copying the provided unicode dll into '
                      'your NSIS/Plugins/x86-unicode directory.'),
