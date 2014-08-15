@@ -6185,8 +6185,13 @@ class DocBrowser(wx.Frame):
     def DoOpen(self,event):
         """Handle "Open Doc" button."""
         docPath = self.data.get(self.modName)
-        if not docPath: return bell()
-        docPath.start()
+        if not docPath:
+            return bell()
+        if not docPath.isfile():
+            balt.showWarning(self, _(u'The assigned document is not present:')
+                             + '\n  ' + docPath.s)
+        else:
+            docPath.start()
 
     def DoEdit(self,event):
         """Handle "Edit Doc" button click."""
