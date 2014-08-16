@@ -18251,9 +18251,11 @@ def InitStatusBar():
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 target.cext)
-                            filedata = _winreg.QueryValue(
+                            pathKey = _winreg.OpenKey(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
+                            filedata = _winreg.EnumValue(pathKey, 0)[1]
+                            _winreg.CloseKey(pathKey)
                         icon,idex = filedata.split(u',')
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll
