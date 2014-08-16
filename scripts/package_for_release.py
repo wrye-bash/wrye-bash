@@ -513,7 +513,7 @@ def ShowTutorial():
     print(*lines, sep='\n')
 
 
-def GetGitFiles(gitDir):
+def GetGitFiles(gitDir, version):
     """Using git.exe, parses the repository information to get a list of all
        files that belong in the repository.  Returns a dict of files with paths
        relative to the Mopy directory, which can be used to ensure no non-repo
@@ -570,6 +570,15 @@ def GetGitFiles(gitDir):
         if repo.is_dirty():
             lprint('WARNING: Your wrye-bash repository is dirty (you have '
                    'uncommitted changes).')
+        branchName = repo.active_branch.name.lower()
+        if (not branchName.startswith('rel-') or
+            not branchName.startswith('release-') or
+            not version in branchName):
+            lprint('WARNING: You are building off branch "%s", which does not'
+                   ' appear to be a release branch for %s.'
+                   % (branchName, version))
+        else:
+            lprint('Building from branch "%s".' % branchName)
         files = [os.path.normpath(os.path.normcase(x.path))
                  for x in repo.tree().traverse()
                  if x.path.lower().startswith(u'mopy')
@@ -771,7 +780,7 @@ def main():
             os.makedirs(apps)
 
         # Get repository files
-        all_files = GetGitFiles(args.git)
+        all_files = GetGitFiles(args.git, args.version)
         if all_files is False:
             lprint('GitPython is not set up correctly, aborting.')
             return
