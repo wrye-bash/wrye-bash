@@ -6398,7 +6398,6 @@ class ModChecker(wx.Frame):
     """Mod Checker frame."""
     def __init__(self):
         """Intialize."""
-        import wx.lib.iewin
         #--Singleton
         global modChecker
         modChecker = self
@@ -6415,12 +6414,17 @@ class ModChecker(wx.Frame):
         self.merged = None
         self.imported = None
         #--Text
-        self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Buttons
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        if bHaveComTypes:
+            self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+            #--Buttons
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+            gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+            gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        else:
+            self.gTextCtrl = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+            gBackButton = None
+            gForwardButton = None
         gUpdateButton = button(self,_(u'Update'),onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self,_(u'Mod List'),onClick=self.CheckMods)
         self.gShowRuleSets = toggleButton(self,_(u'Rule Sets'),onClick=self.CheckMods)
@@ -6507,12 +6511,16 @@ class ModChecker(wx.Frame):
             settings['bash.modChecker.showVersion'],
             scanDirty=(None,modChecker)[self.gScanDirty.GetValue()]
             )
-        logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
-        cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
-        ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf-8-sig') as out:
-            bolt.WryeText.genHtml(ins,out,cssDir)
-        self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        if bHaveComTypes:
+            logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
+            cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
+            ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
+            with logPath.open('w',encoding='utf-8-sig') as out:
+                bolt.WryeText.genHtml(ins,out,cssDir)
+            self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        else:
+            self.gTextCtrl.SetValue(self.text)
+
 
     def OnActivate(self,event):
         """Handle window activate/deactive. Use for auto-updating list."""
