@@ -251,6 +251,16 @@ def CreateStandaloneExe(args, file_version):
     includes = u','.join(includes)
 
     try:
+        # Ensure comtypes is generated, so the required files for wx.lib.iewin
+        # will get pulled in by py2exe
+        lprint(' Generating comtypes...')
+        try:
+            import wx
+            import wx.lib.iewin
+        except ImportError:
+            lprint(' ERROR: Could not import comtypes.  Aborting Standalone '
+                   'creation.')
+            return False
         # Write the setup script
         with open(script, 'r') as ins:
             script = ins.read()
