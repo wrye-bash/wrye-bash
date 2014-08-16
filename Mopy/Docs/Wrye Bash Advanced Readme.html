@@ -168,10 +168,16 @@
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.
 <p style="font-style:italic;font-weight:bold;font-size:1em;color:red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
 <ul>
-    <li><a href="https://www.python.org/ftp/python/2.7.8/python-2.7.8.msi">Python 2.7.8</a>
-    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 unicode for Python 2.7</a>
+    <li><a href="https://www.python.org/ftp/python/2.7.8/python-2.7.8.msi">Python 2.7.8</a>.  If you are already using 2.7.3 or higher, updating to the latest version is not required.  Versions prior to 2.7.3 may work with Wrye Bash, but have not been tested.  Updating is recommended for bug and security fixes.
+    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a>
     <li><a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
-    <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, only required for users of the PM Archives tab. If Comtypes is not installed, the PM Archives tab will not be visible.
+    <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, it is used to enable rendering of HTML via an ActiveX control.  The  following features are affected if comtypes is not installed:
+        <ul>
+            <li>The PM Archives tab will be disabled.
+            <li>The DocBrowser will display raw text when displaying an HTML readme.
+            <li>The ModChecker report will be text instead of HTML.
+            <li>The Bashed Patch build report will be displayed by opening the file in your default browser.
+        </ul>
 </ul>
 
 <h2 id="bain">Installers Tab</h2>
