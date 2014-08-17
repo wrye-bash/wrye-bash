@@ -96,6 +96,15 @@ except ImportError:
     bEnableWizard = False
     deprint(_(u"Error initializing installer wizards:"),traceback=True)
 
+# If comtypes is not installed, he IE ActiveX control cannot be imported
+try:
+    import wx.lib.iewin
+    bHaveComTypes = True
+except ImportError:
+    bHaveComTypes = False
+    deprint(_(u'Comtypes is missing, features utilizing HTML will be disabled'))
+
+
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
     os.environ['PATH'] += ';'+sys.prefix
@@ -6077,7 +6086,6 @@ class DocBrowser(wx.Frame):
     def __init__(self,modName=None):
         """Intialize.
         modName -- current modname (or None)."""
-        import wx.lib.iewin
         #--Data
         self.modName = GPath(modName or u'')
         self.data = bosh.modInfos.table.getColumn('doc')
@@ -6115,17 +6123,22 @@ class DocBrowser(wx.Frame):
         self.editButton = wx.ToggleButton(self,ID_EDIT,_(u'Edit Doc...'))
         wx.EVT_TOGGLEBUTTON(self.editButton,ID_EDIT,self.DoEdit)
         self.openButton = button(self,_(u'Open Doc...'),onClick=self.DoOpen,tip=_(u'Open doc in external editor.'))
-        #--Html Back
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
-        #--Html Forward
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
         #--Doc Name
         self.docNameBox = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY)
         #--Doc display
         self.plainText = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
-        self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        if bHaveComTypes:
+            self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+            #--Html Back
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+            self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
+            #--Html Forward
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+            self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
+        else:
+            self.htmlText = None
+            self.prevButton = None
+            self.nextButton = None
         #--Events
         wx.EVT_CLOSE(self, self.OnCloseWindow)
         #--Layout
@@ -6170,10 +6183,6 @@ class DocBrowser(wx.Frame):
         except UnicodeDecodeError:
             return False
 
-    def DoHome(self, event):
-        """Handle "Home" button click."""
-        self.htmlText.GoHome()
-
     def DoPrevPage(self, event):
         """Handle "Back" button click."""
         self.htmlText.GoBack()
@@ -6185,8 +6194,13 @@ class DocBrowser(wx.Frame):
     def DoOpen(self,event):
         """Handle "Open Doc" button."""
         docPath = self.data.get(self.modName)
-        if not docPath: return bell()
-        docPath.start()
+        if not docPath:
+            return bell()
+        if not docPath.isfile():
+            balt.showWarning(self, _(u'The assigned document is not present:')
+                             + '\n  ' + docPath.s)
+        else:
+            docPath.start()
 
     def DoEdit(self,event):
         """Handle "Edit Doc" button click."""
@@ -6307,7 +6321,7 @@ class DocBrowser(wx.Frame):
             elif bashTemplate.exists():
                 template = u''.join(bashTemplate.open().readlines())
             else:
-                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath
+                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath.s
             defaultText = string.Template(template).substitute(modName=modName.s)
             self.plainText.SetValue(defaultText)
             self.SetDocType('txt')
@@ -6318,7 +6332,7 @@ class DocBrowser(wx.Frame):
                 self.editButton.SetValue(editing)
                 self.plainText.SetEditable(editing)
             self.docIsWtxt = (docExt == u'.txt')
-        elif docExt in (u'.htm',u'.html',u'.mht'):
+        elif docExt in (u'.htm',u'.html',u'.mht') and bHaveComTypes:
             self.htmlText.Navigate(docPath.s,0x2) #--0x2: Clear History
             self.SetDocType('html')
         else:
@@ -6332,7 +6346,7 @@ class DocBrowser(wx.Frame):
             if htmlPath and (not htmlPath.exists() or (docPath.mtime > htmlPath.mtime)):
                 docsDir = bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(docPath,None,docsDir)
-            if not editing and htmlPath and htmlPath.exists():
+            if not editing and htmlPath and htmlPath.exists() and bHaveComTypes:
                 self.htmlText.Navigate(htmlPath.s,0x2) #--0x2: Clear History
                 self.SetDocType('html')
             else:
@@ -6353,16 +6367,17 @@ class DocBrowser(wx.Frame):
         if docType == self.docType:
             return
         sizer = self.mainSizer
-        if docType == 'html':
+        if docType == 'html' and bHaveComTypes:
             sizer.Show(self.plainText,False)
             sizer.Show(self.htmlText,True)
             self.prevButton.Enable(True)
             self.nextButton.Enable(True)
         else:
             sizer.Show(self.plainText,True)
-            sizer.Show(self.htmlText,False)
-            self.prevButton.Enable(False)
-            self.nextButton.Enable(False)
+            if bHaveComTypes:
+                sizer.Show(self.htmlText,False)
+                self.prevButton.Enable(False)
+                self.nextButton.Enable(False)
         self.Layout()
 
     #--Window Closing
@@ -6383,7 +6398,6 @@ class ModChecker(wx.Frame):
     """Mod Checker frame."""
     def __init__(self):
         """Intialize."""
-        import wx.lib.iewin
         #--Singleton
         global modChecker
         modChecker = self
@@ -6400,12 +6414,17 @@ class ModChecker(wx.Frame):
         self.merged = None
         self.imported = None
         #--Text
-        self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Buttons
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        if bHaveComTypes:
+            self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+            #--Buttons
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+            gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+            gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        else:
+            self.gTextCtrl = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+            gBackButton = None
+            gForwardButton = None
         gUpdateButton = button(self,_(u'Update'),onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self,_(u'Mod List'),onClick=self.CheckMods)
         self.gShowRuleSets = toggleButton(self,_(u'Rule Sets'),onClick=self.CheckMods)
@@ -6492,12 +6511,16 @@ class ModChecker(wx.Frame):
             settings['bash.modChecker.showVersion'],
             scanDirty=(None,modChecker)[self.gScanDirty.GetValue()]
             )
-        logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
-        cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
-        ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf-8-sig') as out:
-            bolt.WryeText.genHtml(ins,out,cssDir)
-        self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        if bHaveComTypes:
+            logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
+            cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
+            ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
+            with logPath.open('w',encoding='utf-8-sig') as out:
+                bolt.WryeText.genHtml(ins,out,cssDir)
+            self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        else:
+            self.gTextCtrl.SetValue(self.text)
+
 
     def OnActivate(self,event):
         """Handle window activate/deactive. Use for auto-updating list."""
