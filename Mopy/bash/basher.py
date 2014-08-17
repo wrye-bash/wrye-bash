@@ -18243,7 +18243,6 @@ def InitStatusBar():
                                 filedata = _winreg.EnumValue(
                                     iconkey,0)
                                 filedata = filedata[1]
-                                filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
                                 folderIcon = filedata
                             else:
                                 filedata = folderIcon
@@ -18256,10 +18255,8 @@ def InitStatusBar():
                                 u'%s\\DefaultIcon' % icon_path)
                             filedata = _winreg.EnumValue(pathKey, 0)[1]
                             _winreg.CloseKey(pathKey)
-                            filedata = re.sub(u'%SystemRoot%',
-                                os.environ['SYSTEMROOT'], filedata,
-                                flags=re.I|re.U)
                         icon,idex = filedata.split(u',')
+                        icon = os.path.expandvars(icon)
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll
                             for dir in os.environ['PATH'].split(u';'):
