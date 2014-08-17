@@ -39,7 +39,11 @@
         ${If} ${DoExe} == ${BST_CHECKED}
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
-            File "Mopy\w9xpopen.exe" "Mopy\Wrye Bash.exe"
+            File "Mopy\Wrye Bash.exe"
+            ${IfNot} ${AtLeastWinXP}
+                # Running earlier than WinXP, need w9xpopen
+                File "Mopy\w9xpopen.exe"
+            ${EndIf}
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
@@ -194,6 +198,10 @@
         RMDir /r "${Path}\Mopy\bash\compiled\Microsoft.VC80.CRT"
         Delete "${Path}\Mopy\bash\compiled\7zUnicode.exe"
         Delete "${Path}\Mopy\bash\compiled\7zCon.sfx"
+        ${If} ${AtLeastWinXP}
+            # Running XP or later, w9xpopen is only for 95/98/ME
+            Delete "${Path}\Mopy\w9xpopen.exe"
+        ${EndIf}
     !macroend
 
 
