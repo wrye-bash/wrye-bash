@@ -150,6 +150,7 @@
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
 <p>Manual Python Version Install:
+<p style="font-style:italic;font-weight:bold;font-size:1em;color:red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
 <ol>
 	<li>Download and install the Wrye Python package from the location Wrye Bash was downloaded from. This package contains all the required Python libraries. If you have previously installed Python and any Python libraries, or the Wrye Python package itself, you may not need to install it again. See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install">Advanced Installation</a> section for the list of included libraries and their versions to check if you need to install any of the libraries bundled in the Wrye Python package.
 	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>skyrim</q> depending on the game) so that the Mopy directory appears in your game folder.
@@ -351,6 +352,11 @@
 </ul>
 <p>When running Wrye Bash for Oblivion, you can also lock your load order in place to prevent unintended changes to it by selecting the <a href="#modsLockLoadOrder">Lock Load Order</a> option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
 <p>The <q>Lock Load Order</q> feature is not implemented for Skyrim as Wrye Bash will automatically undo any changes to load order done made by the Skyrim launcher or any utility that does not follow the textfile-based load order standard in order to maintain a fully coherent load order. This effectively means that unintended changes are prevented.
+<figure>
+<img src="../bash/images/readme/toolbar-12-rclick-hide-boss.png" alt="toolbar hide launcher"/>
+<figcaption>BOSS's Launch Using GUI option.</figcaption>
+</figure>
+<p>The <q>Launch Using GUI</q> toggles the use of the command line interface for BOSS with the BOSS GUI. Giving quick and easy access to the additional features the GUI provides such as the <q>Edit User Rules</q> option.
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean</h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.
@@ -625,39 +631,39 @@
 	<tbody>
 		<tr><td><img src="../bash/images/obmm32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/2097">Oblivion Mod Manager</a>
 			<td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://skyrim.nexusmods.com/mods/6">BOSS</a>
-		<tr><td><img src="../bash/images/isobl32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
+		<tr><td><img src="../bash/images/tools/isobl32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
 			<td><td>
-		<tr><td><img src="../bash/images/insanity'sreadmegenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
+		<tr><td><img src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/insanity'srng32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
+		<tr><td><img src="../bash/images/tools/insanity'srng32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/randomnpc32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
+		<tr><td><img src="../bash/images/tools/randomnpc32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/oblivionfaceexchangerlite32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/7808">Oblivion Face Exchange Lite</a>
+		<tr><td><img src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/7808">Oblivion Face Exchange Lite</a>
 			<td><td>
-		<tr><td><img src="../bash/images/modlistgenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
+		<tr><td><img src="../bash/images/tools/modlistgenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/oblivionbookcreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258">Oblivion Book Creator</a>
+		<tr><td><img src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258">Oblivion Book Creator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/bsacommander32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3311">BSA Commander</a>
+		<tr><td><img src="../bash/images/tools/bsacommander32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3311">BSA Commander</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tabula32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/33486">Tabula</a>
+		<tr><td><img src="../bash/images/tools/tabula32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/33486">Tabula</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4files32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8489">Tes4Files</a>
+		<tr><td><img src="../bash/images/tools/tes4files32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8489">Tes4Files</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4gecko32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8665">Tes4Gecko</a>
+		<tr><td><img src="../bash/images/tools/tes4gecko32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/8665">Tes4Gecko</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4view32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4View</a>
+		<tr><td><img src="../bash/images/tools/tes4view32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4View</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4edit32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Edit</a>
+		<tr><td><img src="../bash/images/tools/tes4edit32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Edit</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4trans32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Trans</a>
+		<tr><td><img src="../bash/images/tools/tes4trans32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/11536">Tes4Trans</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tes4lodgen32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/15781">Tes4LodGen</a>
+		<tr><td><img src="../bash/images/tools/tes4lodgen32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/15781">Tes4LodGen</a>
 			<td><td>
 		<tr><td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/20516">BOSS</a>
 			<td><td>
-		<tr><td><img src="../bash/images/interactivemapofcyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
+		<tr><td><img src="../bash/images/tools/interactivemapofcyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
 			<td><td>
 </table>
 <h3 id="launchers-apps">Other Applications</h3>
@@ -666,128 +672,128 @@
 		<tr><th colspan="2">Model Tools<th colspan="2">Texture Tools<th colspan="2">Audio Tools<th colspan="2">Misc
 		<tr><th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application
 	<tbody>
-		<tr><td><img src="../bash/images/artofillusion32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
-			<td><img src="../bash/images/anifx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/anifx/index.html">AniFX</a>
-				<td><img src="../bash/images/audacity32.png" width="32" height="32" alt="tool image"/><td><a href="http://audacity.sourceforge.net/">Audacity</a>
-					<td><img src="../bash/images/fraps32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.fraps.com/download.php">Fraps</a>
-		<tr><td><img src="../bash/images/autocad32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652">AutoCad</a>
-			<td><img src="../bash/images/artweaver32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artweaver.de/">Artweaver</a>
-				<td><img src="../bash/images/abcamberaudioconverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.processtext.com/abcmp3wav.html">ABC Amber Audio Converter</a>
-					<td><img src="../bash/images/logitechkeyboard32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.logitech.com/index.cfm/434/285&amp;cl=za">Logitech G11 Keyboard Profiler</a>
-		<tr><td><img src="../bash/images/blender32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.blender.org">Blender</a>
-			<td><img src="../bash/images/crazybump32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.crazybump.com/">CrazyBump</a>
-				<td><img src="../bash/images/switch32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nch.com.au/switch/index.html">Switch</a>
-					<td><img src="../bash/images/mediamonkey32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediamonkey.com/">Media Monkey</a>
-		<tr><td><img src="../bash/images/gmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.turbosquid.com/gmax">GMax</a>
-			<td><img src="../bash/images/ddsconverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://eliteforce2.filefront.com/file/DDS_Converter;29412">DDSConverter</a>
+		<tr><td><img src="../bash/images/tools/artofillusion32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
+			<td><img src="../bash/images/tools/anifx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/anifx/index.html">AniFX</a>
+				<td><img src="../bash/images/tools/audacity32.png" width="32" height="32" alt="tool image"/><td><a href="http://audacity.sourceforge.net/">Audacity</a>
+					<td><img src="../bash/images/tools/fraps32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.fraps.com/download.php">Fraps</a>
+		<tr><td><img src="../bash/images/tools/autocad32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652">AutoCad</a>
+			<td><img src="../bash/images/tools/artweaver32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artweaver.de/">Artweaver</a>
+				<td><img src="../bash/images/tools/abcamberaudioconverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.processtext.com/abcmp3wav.html">ABC Amber Audio Converter</a>
+					<td><img src="../bash/images/tools/logitechkeyboard32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.logitech.com/index.cfm/434/285&amp;cl=za">Logitech G11 Keyboard Profiler</a>
+		<tr><td><img src="../bash/images/tools/blender32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.blender.org">Blender</a>
+			<td><img src="../bash/images/tools/crazybump32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.crazybump.com/">CrazyBump</a>
+				<td><img src="../bash/images/tools/switch32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nch.com.au/switch/index.html">Switch</a>
+					<td><img src="../bash/images/tools/mediamonkey32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediamonkey.com/">Media Monkey</a>
+		<tr><td><img src="../bash/images/tools/gmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.turbosquid.com/gmax">GMax</a>
+			<td><img src="../bash/images/tools/ddsconverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://eliteforce2.filefront.com/file/DDS_Converter;29412">DDSConverter</a>
 				<td><td>
-					<td><img src="../bash/images/notepad++32.png" width="32" height="32" alt="tool image"/><td><a href="http://notepad-plus.sourceforge.net/">Notepad++</a>
-		<tr><td><img src="../bash/images/maya32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897">Maya</a>
-			<td><img src="../bash/images/deeppaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://download.chip.eu/en/Deep-Paint-2.0_132831.html">DeepPaint</a>
+					<td><img src="../bash/images/tools/notepad++32.png" width="32" height="32" alt="tool image"/><td><a href="http://notepad-plus.sourceforge.net/">Notepad++</a>
+		<tr><td><img src="../bash/images/tools/maya32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897">Maya</a>
+			<td><img src="../bash/images/tools/deeppaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://download.chip.eu/en/Deep-Paint-2.0_132831.html">DeepPaint</a>
 				<td><td>
 					<td><img src="../bash/images/steam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.steampowered.com/">Steam</a>
-		<tr><td><img src="../bash/images/3dsmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410">3ds Max</a>
-			<td><img src="../bash/images/dogwaffle32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
+		<tr><td><img src="../bash/images/tools/3dsmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410">3ds Max</a>
+			<td><img src="../bash/images/tools/dogwaffle32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
 				<td><td>
-					<td><img src="../bash/images/evgaprecision32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.evga.com/">EVGA Precision</a>
-		<tr><td><img src="../bash/images/milkshape3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://chumbalum.swissquake.ch/">MilkShape 3D</a>
-			<td><img src="../bash/images/genetica32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/genetica.htm">Genetica</a>
+					<td><img src="../bash/images/tools/evgaprecision32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.evga.com/">EVGA Precision</a>
+		<tr><td><img src="../bash/images/tools/milkshape3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://chumbalum.swissquake.ch/">MilkShape 3D</a>
+			<td><img src="../bash/images/tools/genetica32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/genetica.htm">Genetica</a>
 				<td><td>
-					<td><img src="../bash/images/winmerge32.png" width="32" height="32" alt="tool image"/><td><a href="http://winmerge.org/">WinMerge</a>
-		<tr><td><img src="../bash/images/mudbox32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063">Mudbox</a>
-			<td><img src="../bash/images/geneticaviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/viewer/">Genetica Viewer</a>
+					<td><img src="../bash/images/tools/winmerge32.png" width="32" height="32" alt="tool image"/><td><a href="http://winmerge.org/">WinMerge</a>
+		<tr><td><img src="../bash/images/tools/mudbox32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063">Mudbox</a>
+			<td><img src="../bash/images/tools/geneticaviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/viewer/">Genetica Viewer</a>
 				<td><td>
-					<td><img src="../bash/images/freemind32.png" width="32" height="32" alt="tool image"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
-		<tr><td><img src="../bash/images/sculptris32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.sculptris.com">Sculptris</a>
-			<td><img src="../bash/images/gimp32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimp.org/downloads/">GIMP</a>
+					<td><img src="../bash/images/tools/freemind32.png" width="32" height="32" alt="tool image"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
+		<tr><td><img src="../bash/images/tools/sculptris32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.sculptris.com">Sculptris</a>
+			<td><img src="../bash/images/tools/gimp32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimp.org/downloads/">GIMP</a>
 				<td><td>
-					<td><img src="../bash/images/freeplane32.png" width="32" height="32" alt="tool image"/><td><a href="http://freeplane.sourceforge.net/wiki/index.php/Main_Page">Freeplane</a>
-		<tr><td><img src="../bash/images/softimagemodtool32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112">Softimage Mod Tool</a>
-			<td><img src="../bash/images/gimpshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimpshop.com/">Gimp Shop</a>
+					<td><img src="../bash/images/tools/freeplane32.png" width="32" height="32" alt="tool image"/><td><a href="http://freeplane.sourceforge.net/wiki/index.php/Main_Page">Freeplane</a>
+		<tr><td><img src="../bash/images/tools/softimagemodtool32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112">Softimage Mod Tool</a>
+			<td><img src="../bash/images/tools/gimpshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.gimpshop.com/">Gimp Shop</a>
 				<td><td>
-					<td><img src="../bash/images/filezilla32.png" width="32" height="32" alt="tool image"/><td><a href="http://filezilla-project.org/">Filezilla</a>
-		<tr><td><img src="../bash/images/speedtree32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.speedtree.com/">SpeedTree</a>
-			<td><img src="../bash/images/icofx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/index.html">IcoFX</a>
+					<td><img src="../bash/images/tools/filezilla32.png" width="32" height="32" alt="tool image"/><td><a href="http://filezilla-project.org/">Filezilla</a>
+		<tr><td><img src="../bash/images/tools/speedtree32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.speedtree.com/">SpeedTree</a>
+			<td><img src="../bash/images/tools/icofx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/index.html">IcoFX</a>
 				<td><td>
-					<td><img src="../bash/images/eggtranslator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825">Egg Translator</a>
-		<tr><td><img src="../bash/images/treed32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.frecle.net/index.php?show=treed.about">Treed</a>
-			<td><img src="../bash/images/inkscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.inkscape.org/">Inkscape</a>
+					<td><img src="../bash/images/tools/eggtranslator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825">Egg Translator</a>
+		<tr><td><img src="../bash/images/tools/treed32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.frecle.net/index.php?show=treed.about">Treed</a>
+			<td><img src="../bash/images/tools/inkscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.inkscape.org/">Inkscape</a>
 				<td><td>
-					<td><img src="../bash/images/radvideotools32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
-		<tr><td><img src="../bash/images/wings3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.wings3d.com/">Wings3D</a>
-			<td><img src="../bash/images/irfanview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.irfanview.com/">Irfan View</a>
+					<td><img src="../bash/images/tools/radvideotools32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
+		<tr><td><img src="../bash/images/tools/wings3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.wings3d.com/">Wings3D</a>
+			<td><img src="../bash/images/tools/irfanview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.irfanview.com/">Irfan View</a>
 				<td><td>
-					<td><img src="../bash/images/winsnap32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.filehippo.com/download_winsnap/">WinSnap</a>
-		<tr><td><img src="../bash/images/nifskope32.png" width="32" height="32" alt="tool image"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
-			<td><img src="../bash/images/faststoneimageviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.faststone.org/">FastStone Image Viewer</a>
-				<td><td>
-					<td><td>
-		<tr><td><td>
-			<td><img src="../bash/images/mapzone32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mapzoneeditor.com/">MaPZone</a>
+					<td><img src="../bash/images/tools/winsnap32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.filehippo.com/download_winsnap/">WinSnap</a>
+		<tr><td><img src="../bash/images/tools/nifskope32.png" width="32" height="32" alt="tool image"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
+			<td><img src="../bash/images/tools/faststoneimageviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.faststone.org/">FastStone Image Viewer</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/mypaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://mypaint.intilinux.com/">MyPaint</a>
+			<td><img src="../bash/images/tools/mapzone32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mapzoneeditor.com/">MaPZone</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/nvidiamelody32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
+			<td><img src="../bash/images/tools/mypaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://mypaint.intilinux.com/">MyPaint</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/paint.net32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.getpaint.net/download.html">Paint.NET</a>
+			<td><img src="../bash/images/tools/nvidiamelody32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/paintshopprox332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
+			<td><img src="../bash/images/tools/paint.net32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.getpaint.net/download.html">Paint.NET</a>
+				<td><td>
+					<td><td>
+		<tr><td><td>
+			<td><img src="../bash/images/tools/paintshopprox332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
 				<td><td>
 					<td><td>
 			<tr><td><td>
-			<td><img src="../bash/images/photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
+			<td><img src="../bash/images/tools/photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/photofiltre32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
+			<td><img src="../bash/images/tools/photofiltre32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/photoscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
+			<td><img src="../bash/images/tools/photoscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/photoseam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediachance.com/pseam/">PhotoSEAM</a>
+			<td><img src="../bash/images/tools/photoseam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediachance.com/pseam/">PhotoSEAM</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/photoshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.adobe.com/">Photoshop</a>
+			<td><img src="../bash/images/tools/photoshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.adobe.com/">Photoshop</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/pixelstudiopro32.png" width="32" height="32" alt="tool image"/><td><a href="http://pixelstudiopro.com/">Pixel Studio Pro</a>
+			<td><img src="../bash/images/tools/pixelstudiopro32.png" width="32" height="32" alt="tool image"/><td><a href="http://pixelstudiopro.com/">Pixel Studio Pro</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/pixia32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
+			<td><img src="../bash/images/tools/pixia32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/texturemaker32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
+			<td><img src="../bash/images/tools/texturemaker32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/twistedbrush32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.pixarra.com/">Twisted Brush</a>
+			<td><img src="../bash/images/tools/twistedbrush32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.pixarra.com/">Twisted Brush</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/wtv32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/windows_texture_viewer.html">Windows Texture Viewer</a>
+			<td><img src="../bash/images/tools/wtv32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/windows_texture_viewer.html">Windows Texture Viewer</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/xnormal32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnormal.net/">xNormal</a>
+			<td><img src="../bash/images/tools/xnormal32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnormal.net/">xNormal</a>
 				<td><td>
 					<td><td>
 		<tr><td><td>
-			<td><img src="../bash/images/xnview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnview.com/">XnView</a>
+			<td><img src="../bash/images/tools/xnview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnview.com/">XnView</a>
 				<td><td>
 					<td><td>
 </table>
@@ -798,7 +804,7 @@
 		<tr><td><img src="../bash/images/bashmon32.png" width="32" height="32" alt="tool image"/><td>BashMon<td><i>Oblivion only.</i> This launches bashmon.py in a command shell window, for use with <a href="http://oblivion.nexusmods.com/mods/28563">Wrye Morph</a>.
 		<tr><td><img src="../bash/images/docbrowser32.png" width="32" height="32" alt="tool image"/><td>Doc Browser<td>Show the <a href="#DocBrowser">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
 		<tr><td id="launchersModChecker"><img src="../bash/images/modchecker32.png" width="32" height="32" alt="tool image"/><td>Mod Checker<td>Show the <a href="#ModChecker">Mod Checker</a>.
-		<tr><td id="launchersSettingsMenu"><img src="../bash/images/tes4gecko32.png" width="32" height="32" alt="tool image"/><td>Settings<td>Brings up the <a href="#BashSettingsMenu">Settings Menu</a>.
+		<tr><td id="launchersSettingsMenu"><img src="../bash/images/settingsbutton32.png" width="32" height="32" alt="tool image"/><td>Settings<td>Brings up the <a href="#BashSettingsMenu">Settings Menu</a>.
 		<tr><td><img src="../bash/images/help32.png" width="32" height="32" alt="tool image"/><td>Help<td>Show this help file in the default web browser.
 </table>
 
