@@ -198,10 +198,15 @@
         Delete "${Path}\Mopy\bash\compiled\libloadorder32.dll"
         Delete "${Path}\Mopy\bash\compiled\boss32.dll"
         Delete "${Path}\Mopy\bash\bapi.p*"
+        Delete "${Path}\Mopy\bash\compiled\boss64.dll"
+        Delete "${Path}\Mopy\bash\compiled\libloadorder64.dll"
         ; As of 305, the following are obsolete:
         RMDir /r "${Path}\Mopy\bash\compiled\Microsoft.VC80.CRT"
+        Delete "${Path}\Mopy\bash\images\WryeSplash_Original.png"
         Delete "${Path}\Mopy\bash\compiled\7zUnicode.exe"
         Delete "${Path}\Mopy\bash\compiled\7zCon.sfx"
+        Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.txt"
+        Delete "${Path}\Mopy\Bash Patches\Skyrim\taglist.txt"
         ${If} ${AtLeastWinXP}
             # Running XP or later, w9xpopen is only for 95/98/ME
             Delete "${Path}\Mopy\w9xpopen.exe"
