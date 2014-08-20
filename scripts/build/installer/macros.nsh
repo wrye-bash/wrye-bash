@@ -65,6 +65,10 @@
 
     !macro RemoveOldFiles Path
         ; Old old files to delete (from before 294, the directory restructure)
+        Delete "${Path}\Mopy\BashBugDump.log"
+        Delete "${Path}\Mopy\DebugLog(Python2.7).bat"
+        Delete "${Path}\Mopy\7zUnicode.exe"
+        Delete "${Path}\Mopy\Wizard Images\Thumbs.db"
         Delete "${Path}\Data\Bashed Lists.txt"
         Delete "${Path}\Data\Bashed Lists.html"
         Delete "${Path}\Data\Ini Tweaks\Autosave, Never [Oblivion].ini"
