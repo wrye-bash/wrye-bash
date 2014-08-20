@@ -160,7 +160,7 @@
         Delete "${Path}\Mopy\wizards.txt"
         Delete "${Path}\Mopy\patch_option_reference.txt"
         RMDir /r "${Path}\Mopy\Data"
-        RMDir /r "${Path}\Mopy\Extra"
+        RMDir /r "${Path}\Mopy\Extras"
         RMDir /r "${Path}\Mopy\images"
         ; Some files from an older version of the Standalone that made non-standard
         ; compiled python file names (when loading python files present)
@@ -186,9 +186,9 @@
         Delete "${Path}\Mopy\bash\wizSTCo"
         Delete "${Path}\Mopy\bash\wizSTC.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAINo"
-        Delete "${Path}\Mopy\bash\kwywordWIZBAIN.p*"
+        Delete "${Path}\Mopy\bash\keywordWIZBAIN.p*"
         Delete "${Path}\Mopy\bash\keywordWIZBAIN2o"
-        Delete "${Path}\Mopy\bash\kwywordWIZBAIN2.p*"
+        Delete "${Path}\Mopy\bash\keywordWIZBAIN2.p*"
         Delete "${Path}\Mopy\bash\settingsModuleo"
         Delete "${Path}\Mopy\bash\settingsModule.p*"
         RMDir /r "${Path}\Mopy\bash\images\stc"
