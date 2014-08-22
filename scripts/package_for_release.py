@@ -133,18 +133,37 @@ def lprint(*args, **kwdargs):
 
 
 def VerifyPy2Exe():
-    """Checks for presense of the modified zipextimporter.py, which is required
-       for building the WBSA"""
+    """Checks for presense of the modified zipextimporter.py.  We no longer want
+       the modified version, and need the original."""
+    # CRCs of the correct version, from both 'r', and 'rb' mode
+    crcGood = [0xA56E66A6, 0x57925DA8]
     path = os.path.join(sys.prefix, u'Lib', u'site-packages',
                         u'zipextimporter.py')
+    # First we'll test using 'r' mode, this way if the line endings differ,
+    # but the contents are the same, the crc will still be equal
     with open(os.path.join(scripts, u'zipextimporter.py'), 'r') as ins:
-        # 'r' vice 'rb', so line endings don't interfere
-        crcGood = binascii.crc32(ins.read())
-        crcGood &= 0xFFFFFFFFL
+        crcBad = binascii.crc32(ins.read())
+    crcBad &= 0xFFFFFFFFL
     with open(path, 'r') as ins:
         crcTest = binascii.crc32(ins.read())
-        crcTest &= 0xFFFFFFFFL
-    return crcGood == crcTest
+    crcTest &= 0xFFFFFFFFL
+    if crcTest == crcBad:
+        # Definitely using the old modified version, need to reinstall
+        return False
+    if crcTest in crcGood:
+        # Definitely using the un-modified version, good to go
+        return True
+    # Now check if the current file's crc in 'rb' mode matches a known "good"
+    # crc.
+    with open(path, 'rb') as ins:
+        crcTest = binascii.crc32(ins.read())
+    crcTest &= 0xFFFFFFFFL
+    if crcTest in crcGood:
+        # Definitely using the un-modified version
+        return True
+    # Last test: see if the modified lines are present
+    with open(path, 'r') as ins:
+        return 'filename = fullname.replace(".","\\")' in ins.read()
 
 
 def BuildManualVersion(args, all_files):
@@ -184,32 +203,10 @@ def CreateStandaloneExe(args, file_version):
                "creation.")
         return False
     if not VerifyPy2Exe():
-        lprint(" You have not installed the replacement zipextimporter.py "
-               "file.  Would you like this script to attempt to install it "
-               "now?")
-        install = raw_input("[Y/N]: ")
-        if install.lower() in ('y', 'yes'):
-            try:
-                src = os.path.join(scripts, u'zipextimporter.py')
-                dst = os.path.join(sys.prefix, u'Lib', u'site-packages',
-                                   u'zipextimporter.py')
-                if os.path.exists(dst+u'.bak'):
-                    os.remove(dst+u'.bak')
-                os.rename(dst, dst+u'.bak')
-                shutil.copy(src, dst)
-                lprint(" Modified zipextimporter.py installed.")
-            except:
-                lprint(" Installing the modified zipextimporter.py failed.  "
-                       "You will need to manually install it to:")
-                lprint("  <Python Path>\\Lib\\site-packages")
-                lprint(" Aborting standalone creation.")
-                return False
-        else:
-            lprint(" Please manually install the modified zipextimporter.py "
-                   "to:")
-            lprint("  <Python Path>\\Lib\\site-packages")
-            lprint(" Aborting standalone creation.")
-            return False
+        lprint(" You have the replacement zipextimporter.py installed.  The "
+               "replacement is not longer used.  Please re-install py2exe to"
+               " get the original file back.")
+        return False
     # Some paths we'll use
     wbsa = os.path.join(scripts, u'build', u'standalone')
     reshacker = os.path.join(wbsa, u'Reshacker.exe')
