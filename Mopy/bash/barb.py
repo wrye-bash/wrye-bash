@@ -79,15 +79,12 @@ class BaseBackupSettings:
 
     def PromptFile(self):
         raise AbstractError
-        return False
 
     def PromptConfirm(self,msg=None):
         raise AbstractError
-        return False
 
     def PromptMismatch(self):
         raise AbstractError
-        return False
 
     def CmpDataVersion(self):
         return cmp(self.verDat, basher.settings['bash.version'])
@@ -204,7 +201,6 @@ class BackupSettings(BaseBackupSettings):
             pack7z(self.dir.join(self.archive),self.tmp)
         except StateError, e:
             raise
-            return
         #end try
         basher.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
@@ -275,7 +271,6 @@ class RestoreSettings(BaseBackupSettings):
 
         if not self.PromptFile():
             raise BackupCancelled()
-            return
         #end if
 
         try:
@@ -295,7 +290,6 @@ class RestoreSettings(BaseBackupSettings):
             return
         elif not self.PromptMismatch():
             raise BackupCancelled()
-            return
 
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
@@ -425,14 +419,14 @@ def pack7z(dstFile, srcDir, progress=None):
     #--Used solely for the progress bar
     length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
 
-    app7z = dirs['compiled'].join(u'7zUnicode.exe').s
+    app7z = dirs['compiled'].join(u'7z.exe').s
     command = u'"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
 
     progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
     progress.setFull(1+length)
 
     #--Pack the files
-    ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
     #--Error checking and progress feedback
     reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
     regMatch = reCompressing.match
@@ -466,8 +460,8 @@ def unpack7z(srcFile, dstDir, progress=None):
     # count the files in the archive
     length = 0
     reList = re.compile(u'Path = (.*?)(?:\r\n|\n)',re.U)
-    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7zUnicode.exe').s, srcFile.s)
-    ins, err = Popen(command, stdout=PIPE, startupinfo=startupinfo).communicate()
+    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
+    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
     ins = StringIO.StringIO(ins)
     for line in ins: length += 1
     ins.close()
@@ -477,11 +471,11 @@ def unpack7z(srcFile, dstDir, progress=None):
         progress.setFull(1+length)
     #end if
 
-    app7z = dirs['compiled'].join(u'7zUnicode.exe').s
+    app7z = dirs['compiled'].join(u'7z.exe').s
     command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
 
     #--Extract files
-    ins = Popen(command, stdout=PIPE, startupinfo=startupinfo).stdout
+    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
     #--Error Checking, and progress feedback
     #--Note subArchives for recursive unpacking
     reExtracting = re.compile(u'Extracting\s+(.+)',re.U)

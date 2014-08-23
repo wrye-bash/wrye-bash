@@ -36,6 +36,29 @@
 
 <p style="font-style:italic;font-weight:bold;">All versions by Wrye unless otherwise noted.
 
+<h2>305 Bug fixes and enhancements [2014/08/23] [Various community members]</h2>
+<ul>
+<li>Due to the change from the BOSS API to the LOOT API, and due to internal changes in the way the Standalone is created, <strong>no</strong> MSVC redistributables are required for either Python or Standalone Wrye Bash.</li>
+<li>Corrected the "Cannot load plugins before masters" error that many users were experiencing. [WrinklyNinja]</li>
+<li>Corrected the "'int' object has no attribute 'startswith'" error that often happened when using the Race Patcher. [jfpelland]</li>
+<li>The Standalone no longer reads loose Python files.  This was originally a method to allow small updates, however it ends up causing problems if you have Python files from an older Wrye Bash along side a newer Stadnalone. [lojack5]</li>
+<li>Corrected an error when adding a shortcut to a batch script to the Apps folder. [jfpelland]</li>
+<li>Corrected errors with the DocBrowser when the set document file was missing. [lojack5]</li>
+<li>Corrected BAIN Regression: BAIN was not uninstalling all files.  This was affecting both uninstalling and annealling. [lojack5]</li>
+<li>Corrected a few rare Wizard exceptions. [lojack5]</li>
+<li>Corrected an error for some users with Backup Bash Settings. [jfpelland]</li>
+<li>Corrected an error in the Installers Tab after deleting a Save Game. [lojack5]</li>
+<li>Corrected an issue that caused the Bashed Patch Tweak Settings to be non-persistent. [lojack5]</li>
+<li>Fixed "Copy Conflicts to Project" [Utumno]</li>
+<li>Includes bluesky404's updates for Chinese Traditional and Simplified. [bluesky404/Sharlikran]</li>
+<li>Various Readme Updates. [Sharlikran]</li>
+<li>Updated taglist.yaml files (bundled Bash Tags list). [Sharlikran]</li>
+<li>Updated Oblivion record definitions. [Shalikran]</li>
+<li>BOSS launcher fixes. [WrinklyNinja]</li>
+<li>Updated SplashScreen so it no longer has a version number. [Sharlikran]</li>
+<li>Replaced BOSS API with LOOT API. [WrinklyNinja]</li>
+</ul>
+
 <h2>304.4 Move to git  [2014/07/06] [Various community members]</h2>
 <ul>
 <li>Moved to GitHub from Sourceforge: <a href="https://github.com/wrye-bash">https://github.com/wrye-bash</a>. [Lojack, Utumno, Wrinklyninja]

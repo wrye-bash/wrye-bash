@@ -42,7 +42,7 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
-import bapi
+import loot
 import barb
 import bass
 import bweb
@@ -95,6 +95,15 @@ try:
 except ImportError:
     bEnableWizard = False
     deprint(_(u"Error initializing installer wizards:"),traceback=True)
+
+# If comtypes is not installed, he IE ActiveX control cannot be imported
+try:
+    import wx.lib.iewin
+    bHaveComTypes = True
+except ImportError:
+    bHaveComTypes = False
+    deprint(_(u'Comtypes is missing, features utilizing HTML will be disabled'))
+
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
 if sys.prefix not in set(os.environ['PATH'].split(';')):
@@ -564,6 +573,7 @@ settingDefaults = {
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,
+    'BOSS.UseGUI':False,
     }
 
 # Exceptions ------------------------------------------------------------------
@@ -1089,7 +1099,7 @@ class List(wx.Panel):
             self.colWidths[colName] = width
             self.checkcol = []
         event.Skip()
-        
+
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1124,7 +1134,7 @@ class List(wx.Panel):
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
         event.Skip()
-        
+
     #--Item Sort
     def DoItemSort(self, event):
         self.PopulateItems(self.cols[event.GetColumn()],-1)
@@ -1985,7 +1995,7 @@ class ModList(List):
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
-        try: 
+        try:
             try: self.list.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
             if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
@@ -3727,7 +3737,7 @@ class InstallersPanel(SashTankPanel):
             event = wx.CommandEvent()
             event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
             wx.PostEvent(self.GetEventHandler(), event)
-            
+
             settings['bash.installers.isFirstRun'] = False
             message = (_(u'Do you want to enable Installers?')
                        + u'\n\n\t' +
@@ -3842,7 +3852,10 @@ class InstallersPanel(SashTankPanel):
             data = self.data.data_sizeCrcDate
             refresh = False
             for file in changed:
-                path = file.relpath(bosh.dirs['mods'])
+                if file.cs.startswith(bosh.dirs['mods'].cs):
+                    path = file.relpath(bosh.dirs['mods'])
+                else:
+                    path = file
                 if file.exists():
                     data[path] = (file.size,file.crc,file.mtime)
                     refresh = True
@@ -3877,15 +3890,15 @@ class InstallersPanel(SashTankPanel):
         splitter = event.GetEventObject()
         sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
         settings['bash.installers.commentsSplitterSashPos'] = sashPos
-    
+
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
-        
+
         Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
-        
+
         """
         pass
-    
+
     #--Details view (if it exists)
     def SaveDetails(self):
         """Saves details if they need saving."""
@@ -5151,7 +5164,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             bolt.GPathPurge()
             self.GetPage(event.GetSelection()).OnShow()
             event.Skip()
- 
+
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
         Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
@@ -5567,7 +5580,7 @@ class BashFrame(wx.Frame):
         self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
-        ## Not applicable now with BOSS API - perhaps find a way to simulate this warning
+        ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
         #if bosh.modInfos.plugins.selectedBad:
         #    message = [u'',_(u'Missing files have been removed from load list:')]
         #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
@@ -5579,7 +5592,7 @@ class BashFrame(wx.Frame):
         #    del bosh.modInfos.plugins.selectedBad[:]
         #    bosh.modInfos.plugins.save()
         #--Was load list too long? or bad filenames?
-        ## Net to recode this with the BOSS API as well
+        ## Net to recode this with libloadorder as well
         #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
         #    message = []
         #    ## Disable this message for now, until we're done testing if
@@ -6073,7 +6086,6 @@ class DocBrowser(wx.Frame):
     def __init__(self,modName=None):
         """Intialize.
         modName -- current modname (or None)."""
-        import wx.lib.iewin
         #--Data
         self.modName = GPath(modName or u'')
         self.data = bosh.modInfos.table.getColumn('doc')
@@ -6111,17 +6123,22 @@ class DocBrowser(wx.Frame):
         self.editButton = wx.ToggleButton(self,ID_EDIT,_(u'Edit Doc...'))
         wx.EVT_TOGGLEBUTTON(self.editButton,ID_EDIT,self.DoEdit)
         self.openButton = button(self,_(u'Open Doc...'),onClick=self.DoOpen,tip=_(u'Open doc in external editor.'))
-        #--Html Back
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
-        #--Html Forward
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
         #--Doc Name
         self.docNameBox = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY)
         #--Doc display
         self.plainText = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
-        self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        if bHaveComTypes:
+            self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+            #--Html Back
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+            self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
+            #--Html Forward
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+            self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
+        else:
+            self.htmlText = None
+            self.prevButton = None
+            self.nextButton = None
         #--Events
         wx.EVT_CLOSE(self, self.OnCloseWindow)
         #--Layout
@@ -6157,7 +6174,7 @@ class DocBrowser(wx.Frame):
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.data.get(self.modName,u''))
-        if not docPath.exists(): 
+        if not docPath.exists():
             return False
         try:
             with docPath.open('r',encoding='utf-8-sig') as textFile:
@@ -6165,10 +6182,6 @@ class DocBrowser(wx.Frame):
             return (maText != None)
         except UnicodeDecodeError:
             return False
-
-    def DoHome(self, event):
-        """Handle "Home" button click."""
-        self.htmlText.GoHome()
 
     def DoPrevPage(self, event):
         """Handle "Back" button click."""
@@ -6181,8 +6194,13 @@ class DocBrowser(wx.Frame):
     def DoOpen(self,event):
         """Handle "Open Doc" button."""
         docPath = self.data.get(self.modName)
-        if not docPath: return bell()
-        docPath.start()
+        if not docPath:
+            return bell()
+        if not docPath.isfile():
+            balt.showWarning(self, _(u'The assigned document is not present:')
+                             + '\n  ' + docPath.s)
+        else:
+            docPath.start()
 
     def DoEdit(self,event):
         """Handle "Edit Doc" button click."""
@@ -6303,7 +6321,7 @@ class DocBrowser(wx.Frame):
             elif bashTemplate.exists():
                 template = u''.join(bashTemplate.open().readlines())
             else:
-                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath
+                template = u'= $modName '+(u'='*(74-len(modName)))+u'#\n'+docPath.s
             defaultText = string.Template(template).substitute(modName=modName.s)
             self.plainText.SetValue(defaultText)
             self.SetDocType('txt')
@@ -6314,7 +6332,7 @@ class DocBrowser(wx.Frame):
                 self.editButton.SetValue(editing)
                 self.plainText.SetEditable(editing)
             self.docIsWtxt = (docExt == u'.txt')
-        elif docExt in (u'.htm',u'.html',u'.mht'):
+        elif docExt in (u'.htm',u'.html',u'.mht') and bHaveComTypes:
             self.htmlText.Navigate(docPath.s,0x2) #--0x2: Clear History
             self.SetDocType('html')
         else:
@@ -6328,7 +6346,7 @@ class DocBrowser(wx.Frame):
             if htmlPath and (not htmlPath.exists() or (docPath.mtime > htmlPath.mtime)):
                 docsDir = bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(docPath,None,docsDir)
-            if not editing and htmlPath and htmlPath.exists():
+            if not editing and htmlPath and htmlPath.exists() and bHaveComTypes:
                 self.htmlText.Navigate(htmlPath.s,0x2) #--0x2: Clear History
                 self.SetDocType('html')
             else:
@@ -6349,16 +6367,17 @@ class DocBrowser(wx.Frame):
         if docType == self.docType:
             return
         sizer = self.mainSizer
-        if docType == 'html':
+        if docType == 'html' and bHaveComTypes:
             sizer.Show(self.plainText,False)
             sizer.Show(self.htmlText,True)
             self.prevButton.Enable(True)
             self.nextButton.Enable(True)
         else:
             sizer.Show(self.plainText,True)
-            sizer.Show(self.htmlText,False)
-            self.prevButton.Enable(False)
-            self.nextButton.Enable(False)
+            if bHaveComTypes:
+                sizer.Show(self.htmlText,False)
+                self.prevButton.Enable(False)
+                self.nextButton.Enable(False)
         self.Layout()
 
     #--Window Closing
@@ -6379,7 +6398,6 @@ class ModChecker(wx.Frame):
     """Mod Checker frame."""
     def __init__(self):
         """Intialize."""
-        import wx.lib.iewin
         #--Singleton
         global modChecker
         modChecker = self
@@ -6396,12 +6414,17 @@ class ModChecker(wx.Frame):
         self.merged = None
         self.imported = None
         #--Text
-        self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Buttons
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        if bHaveComTypes:
+            self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+            #--Buttons
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+            gBackButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoBack())
+            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+            gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
+        else:
+            self.gTextCtrl = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+            gBackButton = None
+            gForwardButton = None
         gUpdateButton = button(self,_(u'Update'),onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self,_(u'Mod List'),onClick=self.CheckMods)
         self.gShowRuleSets = toggleButton(self,_(u'Rule Sets'),onClick=self.CheckMods)
@@ -6488,12 +6511,16 @@ class ModChecker(wx.Frame):
             settings['bash.modChecker.showVersion'],
             scanDirty=(None,modChecker)[self.gScanDirty.GetValue()]
             )
-        logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
-        cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
-        ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf-8-sig') as out:
-            bolt.WryeText.genHtml(ins,out,cssDir)
-        self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        if bHaveComTypes:
+            logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
+            cssDir = settings.get('balt.WryeLog.cssDir', GPath(u''))
+            ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
+            with logPath.open('w',encoding='utf-8-sig') as out:
+                bolt.WryeText.genHtml(ins,out,cssDir)
+            self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
+        else:
+            self.gTextCtrl.SetValue(self.text)
+
 
     def OnActivate(self,event):
         """Handle window activate/deactive. Use for auto-updating list."""
@@ -7262,10 +7289,10 @@ class PatchDialog(wx.Dialog):
             self.gPatchers.Check(index,False)
             patcher.isEnabled = False
             if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'): 
+            if hasattr(patcher, 'gList'):
                 patcher.gList.SetChecked([])
                 patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'): 
+            if hasattr(patcher, 'gTweakList'):
                 patcher.gTweakList.SetChecked([])
         self.gExecute.Enable(False)
 
@@ -7881,7 +7908,7 @@ class TweakPatcher(Patcher):
         try:
             for index, item in enumerate(self.tweaks):
                 self.gTweakList.Check(index,True)
-            self.OnListCheck()
+            self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
@@ -7890,7 +7917,7 @@ class TweakPatcher(Patcher):
         """'Deselect All' Button was pressed, update all configChecks states."""
         try:
             self.gTweakList.SetChecked([])
-            self.OnListCheck()
+            self.TweakOnListCheck()
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
@@ -7953,7 +7980,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.SetItems(self.getAutoItems())
         self.SetTweaks()
         return gConfigPanel
-       
+
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(bosh.PatchMerger,ListPatcher):
@@ -9104,7 +9131,7 @@ class Installers_ConflictsReportShowBSAConflicts(BoolLink):
                           _(u'Show BSA Conflicts'),
                           'bash.installers.conflictsReport.showBSAConflicts',
                           )
-        
+
     def Execute(self,event):
         BoolLink.Execute(self, event)
         self.gTank.RefreshUI()
@@ -10080,13 +10107,14 @@ class Installer_CopyConflicts(InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
-        data = self.data
+        data = self.data # bosh.InstallersData instance
+        installers_dir = data.dir
         srcConflicts = set()
         packConflicts = []
-        with balt.Progress(_(u"Copying Conflicts..."),u'\n'+u' '*60) as progress:
+        with balt.Progress(_(u"Copying Conflicts..."),
+                           u'\n' + u' ' * 60) as progress:
             srcArchive = self.selected[0]
-            srcInstaller = self.data[srcArchive]
+            srcInstaller = data[srcArchive]
             src_sizeCrc = srcInstaller.data_sizeCrc
             mismatched = set(src_sizeCrc)
             if mismatched:
@@ -10094,58 +10122,77 @@ class Installer_CopyConflicts(InstallerLink):
                 curFile = 1
                 srcOrder = srcInstaller.order
                 destDir = GPath(u"%03d - Conflicts" % (srcOrder))
-                getArchiveOrder =  lambda x: data[x].order
+                getArchiveOrder = lambda y: data[y].order
                 for package in sorted(data.data,key=getArchiveOrder):
                     installer = data[package]
                     curConflicts = set()
-                    for x,y in installer.refreshDataSizeCrc().iteritems():
-                        if x in mismatched and installer.data_sizeCrc[x] != src_sizeCrc[x]:
+                    for z,y in installer.refreshDataSizeCrc().iteritems():
+                        if z in mismatched and installer.data_sizeCrc[z] != \
+                                src_sizeCrc[z]:
                             curConflicts.add(y)
-                            srcConflicts.add(src_sizeCrc[x])
+                            srcConflicts.add(src_sizeCrc[z])
                     numFiles += len(curConflicts)
-                    if curConflicts: packConflicts.append((installer.order,installer,package,curConflicts))
-                srcConflicts = set(src for src, size, crc in srcInstaller.fileSizeCrcs if (size,crc) in srcConflicts)
+                    if curConflicts: packConflicts.append(
+                        (installer.order,installer,package,curConflicts))
+                srcConflicts = set(
+                    src for src,size,crc in srcInstaller.fileSizeCrcs if
+                    (size,crc) in srcConflicts)
                 numFiles += len(srcConflicts)
                 if numFiles:
                     progress.setFull(numFiles)
                     if isinstance(srcInstaller,bosh.InstallerProject):
                         for src in srcConflicts:
-                            srcFull = bosh.dirs['installers'].join(srcArchive,src)
-                            destFull = bosh.dirs['installers'].join(destDir,GPath(srcArchive.s),src)
+                            srcFull = installers_dir.join(srcArchive,src)
+                            destFull = installers_dir.join(destDir,
+                                                           GPath(srcArchive.s),
+                                                           src)
                             if srcFull.exists():
-                                progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'+src)
+                                progress(curFile,srcArchive.s + u'\n' + _(
+                                    u'Copying files...') + u'\n' + src)
                                 srcFull.copyTo(destFull)
                                 curFile += 1
                     else:
-                        srcInstaller.unpackToTemp(srcArchive, srcConflicts,SubProgress(progress,0,len(srcConflicts),numFiles))
-                        srcInstaller.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(srcArchive.s)))
+                        srcInstaller.unpackToTemp(srcArchive,srcConflicts,
+                                                  SubProgress(progress,0,len(
+                                                      srcConflicts),numFiles))
+                        srcInstaller.getTempDir().moveTo(
+                            installers_dir.join(destDir,GPath(srcArchive.s)))
                     curFile = len(srcConflicts)
-                    for order, installer, package, curConflicts in packConflicts:
+                    for order,installer,package,curConflicts in packConflicts:
                         if isinstance(installer,bosh.InstallerProject):
                             for src in curConflicts:
-                                srcFull = bosh.dirs['installers'].join(package,src)
-                                destFull = bosh.dirs['installers'].join(destDir,GPath(u"%03d - %s" % (order, package.s)),src)
+                                srcFull = installers_dir.join(package,src)
+                                destFull = installers_dir.join(destDir,GPath(
+                                    u"%03d - %s" % (order,package.s)),src)
                                 if srcFull.exists():
-                                    progress(curFile,srcArchive.s+u'\n'+_(u'Copying files...')+u'\n'+src)
+                                    progress(curFile,srcArchive.s + u'\n' + _(
+                                        u'Copying files...') + u'\n' + src)
                                     srcFull.copyTo(destFull)
                                     curFile += 1
                         else:
-                            installer.unpackToTemp(package, curConflicts,SubProgress(progress,curFile,curFile+len(curConflicts),numFiles))
-                            installer.tempDir.moveTo(bosh.dirs['installers'].join(destDir,GPath(u"%03d - %s" % (order, package.s))))
+                            installer.unpackToTemp(package,curConflicts,
+                                                   SubProgress(progress,
+                                                               curFile,
+                                                               curFile + len(
+                                                                 curConflicts),
+                                                               numFiles))
+                            installer.getTempDir().moveTo(
+                                installers_dir.join(destDir,GPath(
+                                    u"%03d - %s" % (order,package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
-                    if project not in self.data:
-                        self.data[project] = bosh.InstallerProject(project)
-                    iProject = self.data[project]
-                    pProject = bosh.dirs['installers'].join(project)
+                    if project not in data:
+                        data[project] = bosh.InstallerProject(project)
+                    iProject = data[project]
+                    pProject = installers_dir.join(project)
                     iProject.refreshed = False
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
-                        self.data.moveArchives([project],srcInstaller.order+1)
-                    self.data.refresh(what='I')
+                        data.moveArchives([project],srcInstaller.order + 1)
+                    data.refresh(what='I')
                     self.gTank.RefreshUI()
 
-# InstallerDetails Espm Links ------------------------------------------------------
+# InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installer_Espm_SelectAll(InstallerLink):
@@ -10718,7 +10765,7 @@ class InstallerConverter_Apply(InstallerLink):
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
-            if not self.converter.hasBCF:
+            if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
                 deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
                 balt.showWarning(self.gTank,
                     _(u'%s: An error occured while applying an Auto-BCF.' %
@@ -11539,32 +11586,13 @@ class Mods_BOSSDisableLockTimes(BoolLink):
                                           )
 
 #------------------------------------------------------------------------------
-class Mods_BOSSLaunchGUI(Link):
+class Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then BOSS GUI.exe should be too."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Launch BOSS GUI'),
-            help=_(u"Launch BOSS GUI to change settings or update the user rules list."))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        exePath = bosh.dirs['boss'].join(u'BOSS GUI.exe')
-        if not exePath.exists(): return
-        args = [exePath.s]
-        statusBar.SetStatusText(u' '.join(args[1:]),1)
-        cwd = bolt.Path.getcwd()
-        exePath.head.setcwd()
-        try:
-            subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-        except Exception as error:
-            balt.showError(
-                bashFrame,
-                (u'%s'%error + u'\n\n' +
-                 _(u'Used Path: ') + self.exePath.s + u'\n' +
-                 _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
-                 _(u"Could not launch '%s'") % self.exePath.stail)
-        finally:
-            cwd.setcwd()
+    def __init__(self): BoolLink.__init__(self,
+                                          _(u'Launch using GUI'),
+                                          'BOSS.UseGUI',
+                                          _(u"If selected, Bash will run BOSS's GUI.")
+                                          )
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -11887,7 +11915,7 @@ class Settings_Language(Link):
         u'russian': _(u'Russian') + u' (ру́сский язы́к)',
         u'english': _(u'English') + u' (English)',
         }
-        
+
     def __init__(self,language):
         Link.__init__(self)
         self.language = language
@@ -12077,6 +12105,8 @@ class StatusBar_Hide(Link):
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorLevels, CBash_ActorLevels
+
 class Mod_ActorLevels_Export(Link):
     """Export actor levels from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -12107,9 +12137,9 @@ class Mod_ActorLevels_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -12156,9 +12186,9 @@ class Mod_ActorLevels_Import(Link):
         changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             if CBash:
-                actorLevels = bosh.CBash_ActorLevels()
+                actorLevels = CBash_ActorLevels()
             else:
-                actorLevels = bosh.ActorLevels()
+                actorLevels = ActorLevels()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorLevels.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -12871,9 +12901,9 @@ class Mod_SkipDirtyCheckAll(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if self.skip:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
         menu.AppendItem(menuItem)
         for fileName in self.data:
             if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
@@ -12891,7 +12921,7 @@ class Mod_SkipDirtyCheckAll(Link):
 class Mod_SkipDirtyCheckInvert(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Invert checking against BOSS's dirty mod list"))
+        menuItem = wx.MenuItem(menu,self.id,_(u"Invert checking against LOOT's dirty mod list"))
         menu.AppendItem(menuItem)
 
     def Execute(self,event):
@@ -12908,7 +12938,7 @@ class Mod_SkipDirtyCheck(Link):
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against BOSS's dirty mod list"),kind=wx.ITEM_CHECK)
+            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
             menu.AppendItem(menuItem)
             self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
             menuItem.Check(self.ignoreDirty)
@@ -13096,6 +13126,8 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FactionRelations, CBash_FactionRelations
+
 class Mod_FactionRelations_Export(Link):
     """Export faction relations from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13118,9 +13150,9 @@ class Mod_FactionRelations_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13165,9 +13197,9 @@ class Mod_FactionRelations_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
             if CBash:
-                factionRelations = bosh.CBash_FactionRelations()
+                factionRelations = CBash_FactionRelations()
             else:
-                factionRelations = bosh.FactionRelations()
+                factionRelations = FactionRelations()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             factionRelations.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13186,6 +13218,8 @@ class Mod_FactionRelations_Import(Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ActorFactions, CBash_ActorFactions
+
 class Mod_Factions_Export(Link):
     """Export factions from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13208,9 +13242,9 @@ class Mod_Factions_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13256,9 +13290,9 @@ class Mod_Factions_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
             if CBash:
-                actorFactions = bosh.CBash_ActorFactions()
+                actorFactions = CBash_ActorFactions()
             else:
-                actorFactions = bosh.ActorFactions()
+                actorFactions = ActorFactions()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -13704,6 +13738,8 @@ class Mod_Groups_Import(Link):
             _(u"Import Groups"))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import EditorIds, CBash_EditorIds
+
 class Mod_EditorIds_Export(Link):
     """Export editor ids from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13725,9 +13761,9 @@ class Mod_EditorIds_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Editor Ids")) as progress:
             if CBash:
-                editorIds = bosh.CBash_EditorIds()
+                editorIds = CBash_EditorIds()
             else:
-                editorIds = bosh.EditorIds()
+                editorIds = EditorIds()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13772,9 +13808,9 @@ class Mod_EditorIds_Import(Link):
             changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 if CBash:
-                    editorIds = bosh.CBash_EditorIds()
+                    editorIds = CBash_EditorIds()
                 else:
-                    editorIds = bosh.EditorIds()
+                    editorIds = EditorIds()
                 progress(0.1,_(u"Reading %s.") % (textName.s,))
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_(u"Applying to %s.") % (fileName.s,))
@@ -13869,6 +13905,8 @@ class Mod_DecompileAll(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FidReplacer, CBash_FidReplacer
+
 class Mod_Fids_Replace(Link):
     """Replace fids according to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13898,9 +13936,9 @@ class Mod_Fids_Replace(Link):
         changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             if CBash:
-                replacer = bosh.CBash_FidReplacer()
+                replacer = CBash_FidReplacer()
             else:
-                replacer = bosh.FidReplacer()
+                replacer = FidReplacer()
             progress(0.1,_(u"Reading %s.") % textName.s)
             replacer.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -13913,6 +13951,8 @@ class Mod_Fids_Replace(Link):
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import FullNames, CBash_FullNames
+
 class Mod_FullNames_Export(Link):
     """Export full names from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -13935,9 +13975,9 @@ class Mod_FullNames_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -13980,9 +14020,9 @@ class Mod_FullNames_Import(Link):
         renamed = None
         with balt.Progress(_(u"Import Names")) as progress:
             if CBash:
-                fullNames = bosh.CBash_FullNames()
+                fullNames = CBash_FullNames()
             else:
-                fullNames = bosh.FullNames()
+                fullNames = FullNames()
             progress(0.1,_(u"Reading %s.") % textName.s)
             if ext == u'.csv':
                 fullNames.readFromText(textPath)
@@ -14443,6 +14483,8 @@ class Mod_ShowReadme(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ScriptText, CBash_ScriptText
+
 class Mod_Scripts_Export(Link):
     """Export scripts from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14503,9 +14545,9 @@ class Mod_Scripts_Export(Link):
         #--Export
         #try:
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = ScriptText.writeToText(fileInfo,settings['bash.mods.export.skip'],textDir,settings['bash.mods.export.deprefix'],fileName.s,settings['bash.mods.export.skipcomments'])
         #finally:
@@ -14541,9 +14583,9 @@ class Mod_Scripts_Import(Link):
                    )
         makeNew = balt.askYes(self.window,message,_(u'Import Scripts'),icon=wx.ICON_QUESTION)
         if CBash:
-            ScriptText = bosh.CBash_ScriptText()
+            ScriptText = CBash_ScriptText()
         else:
-            ScriptText = bosh.ScriptText()
+            ScriptText = ScriptText()
         ScriptText.readFromText(textDir.s,fileInfo)
         changed, added = ScriptText.writeToMod(fileInfo,makeNew)
     #--Log
@@ -14570,6 +14612,8 @@ class Mod_Scripts_Import(Link):
             balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
+
 class Mod_Stats_Export(Link):
     """Export armor and weapon stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14592,9 +14636,9 @@ class Mod_Stats_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14637,9 +14681,9 @@ class Mod_Stats_Import(Link):
         changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             if CBash:
-                itemStats = bosh.CBash_ItemStats()
+                itemStats = CBash_ItemStats()
             else:
-                itemStats = bosh.ItemStats()
+                itemStats = ItemStats()
             progress(0.1,_(u"Reading %s.") % textName.s)
             itemStats.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -14659,6 +14703,8 @@ class Mod_Stats_Import(Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CompleteItemData, CBash_CompleteItemData
+
 class Mod_ItemData_Export(Link):
     """Export pretty much complete item data from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14681,9 +14727,9 @@ class Mod_ItemData_Export(Link):
         #--Export
         with balt.Progress(_(u"Export Item Data")) as progress:
             if CBash:
-                itemStats = bosh.CBash_CompleteItemData()
+                itemStats = CBash_CompleteItemData()
             else:
-                itemStats = bosh.CompleteItemData()
+                itemStats = CompleteItemData()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14725,7 +14771,7 @@ class Mod_ItemData_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = bosh.CompleteItemData()
+            itemStats = CompleteItemData() # FIXME - why not if CBash: ?
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemStats.readFromText(textPath)
@@ -14748,6 +14794,8 @@ class Mod_ItemData_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import ItemPrices, CBash_ItemPrices
+
 class Mod_Prices_Export(Link):
     """Export item prices from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14770,9 +14818,9 @@ class Mod_Prices_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14815,9 +14863,9 @@ class Mod_Prices_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Prices')) as progress:
             if CBash:
-                itemPrices = bosh.CBash_ItemPrices()
+                itemPrices = CBash_ItemPrices()
             else:
-                itemPrices = bosh.ItemPrices()
+                itemPrices = ItemPrices()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemPrices.readFromText(textPath)
@@ -14841,6 +14889,8 @@ class Mod_Prices_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_MapMarkers
+
 class CBash_Mod_MapMarkers_Export(Link):
     """Export map marker stats from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14862,7 +14912,7 @@ class CBash_Mod_MapMarkers_Export(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u'Export Map Markers')) as progress:
-            mapMarkers = bosh.CBash_MapMarkers()
+            mapMarkers = CBash_MapMarkers()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14904,7 +14954,7 @@ class CBash_Mod_MapMarkers_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Map Markers')) as progress:
-            MapMarkers = bosh.CBash_MapMarkers()
+            MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)
             MapMarkers.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s)
@@ -14925,6 +14975,8 @@ class CBash_Mod_MapMarkers_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import CBash_CellBlockInfo
+
 class CBash_Mod_CellBlockInfo(Link):
     """Export Cell Block Info to text file.
     (in the form of Cell, block, subblock"""
@@ -14947,7 +14999,7 @@ class CBash_Mod_CellBlockInfo(Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u"Export Cell Block Info")) as progress:
-            cellblocks = bosh.CBash_CellBlockInfo()
+            cellblocks = CBash_CellBlockInfo()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -14959,6 +15011,8 @@ class CBash_Mod_CellBlockInfo(Link):
             progress(1.0,_(u"Done."))
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+
 class Mod_SigilStoneDetails_Export(Link):
     """Export Sigil Stone details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -14982,9 +15036,9 @@ class Mod_SigilStoneDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15029,9 +15083,9 @@ class Mod_SigilStoneDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
             if CBash:
-                sigilStones = bosh.CBash_SigilStoneDetails()
+                sigilStones = CBash_SigilStoneDetails()
             else:
-                sigilStones = bosh.SigilStoneDetails()
+                sigilStones = SigilStoneDetails()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             sigilStones.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -15053,6 +15107,8 @@ class Mod_SigilStoneDetails_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import SpellRecords, CBash_SpellRecords
+
 class Mod_SpellRecords_Export(Link):
     """Export Spell details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15079,9 +15135,9 @@ class Mod_SpellRecords_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15131,9 +15187,9 @@ class Mod_SpellRecords_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
             if CBash:
-                spellRecords = bosh.CBash_SpellRecords(detailed=doDetailed)
+                spellRecords = CBash_SpellRecords(detailed=doDetailed)
             else:
-                spellRecords = bosh.SpellRecords(detailed=doDetailed)
+                spellRecords = SpellRecords(detailed=doDetailed)
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             spellRecords.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -15154,6 +15210,8 @@ class Mod_SpellRecords_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
+from patcher.oblivion.utilities import IngredientDetails, CBash_IngredientDetails
+
 class Mod_IngredientDetails_Export(Link):
     """Export Ingredient details from mod to text file."""
     def AppendToMenu(self,menu,window,data):
@@ -15176,9 +15234,9 @@ class Mod_IngredientDetails_Export(Link):
         #--Export
         with balt.Progress(_(u'Export Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -15221,9 +15279,9 @@ class Mod_IngredientDetails_Import(Link):
         changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
             if CBash:
-                Ingredients = bosh.CBash_IngredientDetails()
+                Ingredients = CBash_IngredientDetails()
             else:
-                Ingredients = bosh.IngredientDetails()
+                Ingredients = IngredientDetails()
             progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
             progress(0.2,_(u'Applying to %s.') % fileName.s)
@@ -16936,7 +16994,7 @@ class App_Button(StatusBar_Button):
                         _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
-    def Execute(self,event,extraArgs=None):
+    def Execute(self,event,extraArgs=None,wait=False):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
                 webbrowser.open(self.exePath.s)
@@ -16983,7 +17041,9 @@ class App_Button(StatusBar_Button):
                 else:
                     exePath.head.setcwd()
                 try:
-                    subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    popen = subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
+                    if wait:
+                        popen.wait()
                 except UnicodeError:
                     balt.showError(bashFrame,
                                    _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
@@ -17149,59 +17209,32 @@ class App_BOSS(App_Button):
         self.mainMenu.append(Mods_BOSSDisableLockTimes())
 
     def Execute(self,event,extraArgs=None):
-        if self.IsPresent():
-            if bosh.dirs['boss'].join(u'BOSS.exe').version >= (3,0,0,0):
-                App_Button.Execute(self,event,tuple([]))
-                if settings['BOSS.ClearLockTimes']:
-                    # Clear the saved times from before
-                    bosh.modInfos.mtimes.clear()
-                    # And refresh to get the new times so WB will keep the order that BOSS specifies
-                    bosh.modInfos.refresh(doInfos=False)
-                    # Refresh UI, so WB is made aware of the changes to loadorder.txt
-                    modList.RefreshUI('ALL')
-                return
-            exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-            exeArgs = self.exeArgs
-            if self.obseArg != None and settings.get('bash.obse.on',False) and exeObse.exists():
-                exePath = exeObse
-                if self.obseArg != u'': exeArgs += (self.obseArg,)
-            else:
-                exePath = self.exePath
-            exeArgs = (exePath.stail,)+exeArgs
-            if extraArgs: exeArgs += extraArgs
-            statusBar.SetStatusText(u' '.join(exeArgs),1)
-            cwd = bolt.Path.getcwd()
-            exePath.head.setcwd()
-            with balt.Progress(_(u"Executing BOSS")) as progress:
-                if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
-                    exeArgs += (u'-r 2',) # Revert level 2 - BOSS version 1.6+
-                elif wx.GetKeyState(82):
-                    exeArgs += (u'-r 1',) # Revert level 1 - BOSS version 1.6+
-                if wx.GetKeyState(83):
-                    exeArgs += (u'-s',) # Silent Mode - BOSS version 1.6+
-                if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
-                    exeArgs += (u'-c',)
-                if bosh.dirs['boss'].join(u'BOSS.exe').version >= (2,0,0,0):
-                    # After version 2.0, need to pass in the -g argument
-                    exeArgs += (u'-g%s' % bush.game.name,)
-                progress(0.05,_(u"Processing... launching BOSS."))
-                try:
-                    subprocess.call((exePath.s,) + exeArgs[1:], startupinfo=bosh.startupinfo, close_fds=bolt.close_fds)
-                    if settings['BOSS.ClearLockTimes']:
-                        # Clear the saved times from before
-                        bosh.modInfos.mtimes.clear()
-                        # And refresh to get the new times so WB will keep the order that BOSS specifies
-                        bosh.modInfos.refresh(doInfos=False)
-                        # Refresh UI, so WB is made aware of the changes to loadorder.txt
-                        modList.RefreshUI('ALL')
-                except Exception as error:
-                    self.ShowError(error)
-                finally:
-                    cwd.setcwd()
+        if settings['BOSS.UseGUI']:
+            self.exePath = self.exePath.head.join(u'BOSS GUI.exe')
+        if settings['BOSS.ClearLockTimes']:
+            wait = True
         else:
-            bolt.showError(bashFrame,
-                           _(u'Application missing: %s') % self.exePath.s,
-                           _(u'Could not launch BOSS'))
+            wait = False
+        extraArgs = []
+        if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+            extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
+        elif wx.GetKeyState(82):
+            extraArgs.append(u'-r 1',) # Revert level 1 - BOSS version 1.6+
+        if wx.GetKeyState(83):
+            extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
+        if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+            extraArgs.append(u'-c',)
+        if bosh.tooldirs['boss'].version >= (2,0,0,0):
+            # After version 2.0, need to pass in the -g argument
+            extraArgs.append(u'-g%s' % bush.game.name,)
+        App_Button.Execute(self,event,tuple(extraArgs), wait)
+        if settings['BOSS.ClearLockTimes']:
+            # Clear the saved times from before
+            bosh.modInfos.mtimes.clear()
+            # And refresh to get the new times so WB will keep the order that BOSS specifies
+            bosh.modInfos.refresh(doInfos=False)
+            # Refresh UI, so WB is made aware of the changes to loadorder.txt
+            modList.RefreshUI('ALL')
 
 #------------------------------------------------------------------------------
 class Oblivion_Button(App_Button):
@@ -17876,7 +17909,7 @@ def InitStatusBar():
             uid=u'TES4LODGen'))
     BashStatusBar.buttons.append( #BOSS
         App_BOSS(
-            (bosh.dirs['boss'].join(u'BOSS.exe')),
+            (bosh.tooldirs['boss']),
             imageList(u'boss%s.png'),
             _(u"Launch BOSS"),
             uid=u'BOSS'))
@@ -18233,7 +18266,6 @@ def InitStatusBar():
                                 filedata = _winreg.EnumValue(
                                     iconkey,0)
                                 filedata = filedata[1]
-                                filedata = re.sub(u'%SystemRoot%',os.environ['SYSTEMROOT'],filedata,flags=re.I|re.U)
                                 folderIcon = filedata
                             else:
                                 filedata = folderIcon
@@ -18241,10 +18273,13 @@ def InitStatusBar():
                             icon_path = _winreg.QueryValue(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 target.cext)
-                            filedata = _winreg.QueryValue(
+                            pathKey = _winreg.OpenKey(
                                 _winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
+                            filedata = _winreg.EnumValue(pathKey, 0)[1]
+                            _winreg.CloseKey(pathKey)
                         icon,idex = filedata.split(u',')
+                        icon = os.path.expandvars(icon)
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll
                             for dir in os.environ['PATH'].split(u';'):

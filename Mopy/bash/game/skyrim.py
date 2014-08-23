@@ -1481,7 +1481,7 @@ GlobalsTweaks = [
 #  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
 #  fix for an example of this (in the GMST Tweaks)
 GmstTweaks = [
-    (_(u'Msg: Soul Captured!'),_(u'Message upon capturing a sould in a Soul Gem.'),
+    (_(u'Msg: Soul Captured!'),_(u'Message upon capturing a soul in a Soul Gem.'),
      u'sSoulCaptured',
      (_(u'[None]'),          u' '),
      (u'.',                  u'.'),

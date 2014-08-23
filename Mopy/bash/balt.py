@@ -476,7 +476,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = button(dialog,id=id,lable=lable)
+            but = button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
@@ -1064,24 +1064,19 @@ class ListEditorData:
         pass
     def getItemList(self):
         """Returns item list in correct order."""
-        raise AbstractError
-        return []
+        raise AbstractError # return []
     def add(self):
         """Peforms add operation. Return new item on success."""
-        raise AbstractError
-        return None
+        raise AbstractError # return None
     def edit(self,item=None):
         """Edits specified item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def close(self):
         """Called when dialog window closes."""
         pass
@@ -1097,16 +1092,13 @@ class ListEditorData:
     #--Checklist
     def getChecks(self):
         """Returns checked state of items as array of True/False values matching Item list."""
-        raise AbstractError
-        return []
+        raise AbstractError # return []
     def check(self,item):
         """Checks items. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
     def uncheck(self,item):
         """Unchecks item. Return true on success."""
-        raise AbstractError
-        return False
+        raise AbstractError # return False
 
     #--Save/Cancel
     def save(self):
@@ -1444,51 +1436,6 @@ class BusyCursor(object):
         wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
-class Progress2(bolt.Progress):
-    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
-            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
-            abort=False,onAbort=None):
-        self.parent = parent
-        buttons = [(wx.CANCEL,'cancel')] if abort else []
-        self.dialog = windows.TaskDialog(parenthwnd=parent.GetHandle() if parent else None,
-                                         title=title,
-                                         content=message,
-                                         buttons=buttons,
-                                         heading=u'')
-        self.dialog.set_progress_bar(None)
-        self.dialog.show()
-        self.message = message
-        self.prevState = -1
-        self.prevTime = 0
-
-    def __enter__(self): return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
-
-    def getParent():
-        return self.parent
-
-    def setCancel(self,enabled=True):
-        print 'setCancel not implemented'
-        pass
-
-    def doProgress(self,state,message):
-        if not self.dialog:
-            raise StateError(u'Dialog already destroyed.')
-        elif (state == 0 or state == 1 or (message != self.prevMessage) or
-              (state != self.prevState or (time.time() - self.prevTime) > 0.5)):
-            if message != self.prevMessage:
-                self.dialog.set_content(message)
-            self.dialog.set_progress_bar(None,pos=int(state*100))
-            self.prevMessage = message
-            self.prevState = state
-            self.prevTime = time.time()
-
-    def Destroy(self):
-        if self.dialog:
-            self.dialog.close()
-            self.dialog = None
-
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
     def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,

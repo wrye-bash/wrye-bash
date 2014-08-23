@@ -931,7 +931,7 @@ class WryeParser(ScriptParser.Parser):
             except Exception:
                 o = StringIO.StringIO()
                 o.write(_(u'An unhandled error occurred while parsing the wizard:') + '\n'
-                        + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')))+ '\n\n'
+                        + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n\n')
                 traceback.print_exc(file=o)
                 msg = o.getvalue()
                 o.close()

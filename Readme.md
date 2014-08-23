@@ -5,9 +5,9 @@ Wrye Bash
 Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
  of features. This is a fork of the Wrye Bash related code from
  [the SVN repository](http://sourceforge.net/p/oblivionworks/code/HEAD/tree/).
- We are in the process of finalizing the move and then we aim to refactor the
- code to eventually support more games, offering the same feature set for all of
- them. Please read the _Contributing_ section below if interested in
+ We are in the process of refactoring the code to eventually support more games,
+ offering the same feature set for all of them (currently working on bosh.py).
+ Please read the [Contributing](#contributing) section below if interested in
  contributing.
 
 Docs are included in the download but we are setting them up also online
@@ -40,22 +40,9 @@ Refer to the readmes for [detailed instructions][1]. In short:
 
 Please read at least:
 
-<ul>
-    <li> <strong><a
-	href="/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&amp;-Using-The-Repository">
-	[github] Branching Model &amp; Using The Repository</a></strong>
-    </li>
-    <li>
-      <strong><a
-	  href="/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase">
-	  [github] Branching and merging to dev using rebase</a></strong>
-    </li>
-    <li>
-      <strong><a
-	  href="/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style">
-	  [dev] Coding Style</a></strong>
-    </li>
-  </ul>
+* **[[github] Branching Model & Using The Repository] (https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository)**
+* **[[github] Branching and merging to dev using rebase] (https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase)**
+* **[[dev] Coding Style](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style)**
 
 The `dev` branch forks at the [SVN 3177 trunk revision]
 (http://sourceforge.net/p/oblivionworks/code/3177/tree/).

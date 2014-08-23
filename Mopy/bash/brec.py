@@ -144,7 +144,7 @@ class ModSizeError(ModError):
 class ModUnknownSubrecord(ModError):
     """TES4 Error: Unknown subrecord."""
     def __init__(self,inName,subType,recType):
-        ModError.__init__(self,u'Extraneous subrecord (%s) in %s record.'
+        ModError.__init__(self,inName,u'Extraneous subrecord (%s) in %s record.'
                           % (subType,recType))
 
 # Mod I/O ----------------------------------------------------------------------
