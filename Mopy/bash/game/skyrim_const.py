@@ -46,8 +46,10 @@ bethDataFiles = set((
     u'skyrim - voicesextra.bsa',
     u'highrestexturepack01.esp',
     u'highrestexturepack02.esp',
+    u'highrestexturepack03.esp',
     u'highrestexturepack01.bsa',
     u'highrestexturepack02.bsa',
+    u'highrestexturepack03.bsa',
     ))
 
 #--Every file in the Data directory from Bethsoft
