@@ -1688,6 +1688,15 @@ GmstTweaks = [
         (u'10',       10),
         (_(u'Custom'), 5),
         ),
+    (_(u'NPC Vertical Object Detection'),_(u'Change the vertical range in which NPCs detect objects. For custom values, fSandboxCylinderTop must be >= 0 and fSandboxCylinderBottom must be <= 0.'),
+        (u'fSandboxCylinderTop',u'fSandboxCylinderBottom',),
+        (u'[x 1.0]',   150,         -100),
+        (u'x 2.0',     150*2.0, -100*2.0),
+        (u'x 3.0',     150*3.0, -100*3.0),
+        (u'x 4.0',     150*4.0, -100*4.0),
+        (u'x 5.0',     150*5.0, -100*5.0),
+        (_(u'Custom'), 150,         -100),
+        ),
     ]
 
 #--Patchers available when building a Bashed Patch
