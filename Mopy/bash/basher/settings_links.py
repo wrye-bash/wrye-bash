@@ -307,7 +307,8 @@ class Settings_PluginEncodings(MenuLink):
         'gbk': _(u'Chinese (Simplified)'),
         'big5': _(u'Chinese (Traditional)'),
         'cp1251': _(u'Russian'),
-        'cp932': _(u'Japanese'),
+        'cp932': _(u'Japanese (Shift_JIS)'),
+        'utf-8': _(u'UTF-8'),
         'cp1252': _(u'Western European (English, French, German, etc)'),
         }
     def __init__(self):
