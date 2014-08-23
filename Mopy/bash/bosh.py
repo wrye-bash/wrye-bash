@@ -18531,7 +18531,7 @@ class GmstTweak(MultiTweakItem):
         isOblivion = bush.game.name.lower() == u'oblivion'
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if isOblivion and value < 0:
-                deprint(_(u"GMST float value can't be a negative number - currently %s - skipping setting GMST.") % value)
+                deprint(_(u"GMST values can't be negative - currently %s - skipping setting GMST.") % value)
                 return
             eidLower = eid.lower()
             for record in patchFile.GMST.records:
@@ -18580,7 +18580,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
         if record.value != newValue:
             self.eid_count[eid] = 1
             if newValue < 0:
-                deprint(_(u"GMST float value can't be a negative number - currently %s - skipping setting GMST") % newValue)
+                deprint(_(u"GMST values can't be negative - currently %s - skipping setting GMST.") % newValue)
                 return
             override = record.CopyAsOverride(self.patchFile)
             if override:
