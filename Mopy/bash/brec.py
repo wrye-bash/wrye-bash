@@ -952,9 +952,9 @@ class MelStruct(MelBase):
 class MelStructs(MelStruct):
     """Represents array of structured records."""
 
-    def __init__(self,type,format,attr,*elements):
+    def __init__(self,type,format,attr,*elements,**kwdargs):
         """Initialize."""
-        MelStruct.__init__(self,type,format,*elements)
+        MelStruct.__init__(self,type,format,*elements,**kwdargs)
         self.attr = attr
 
     def getSlotsUsed(self):
