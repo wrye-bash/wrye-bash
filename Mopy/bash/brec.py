@@ -875,11 +875,19 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self,type,format,*elements):
+    def __init__(self,type,format,*elements,**kwdargs):
         """Initialize."""
+        dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = type,format
         self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
         self._debug = False
+        if dumpExtra:
+            self.attrs += (dumpExtra,)
+            self.defaults += ('',)
+            self.actions += (None,)
+            self.formatLen = struct.calcsize(format)
+        else:
+            self.formatLen = -1
 
     def getSlotsUsed(self):
         return self.attrs
@@ -902,6 +910,9 @@ class MelStruct(MelBase):
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)
             setter(attr,value)
+        if self.formatLen >= 0:
+            # Dump remaining subrecord data into an attribute
+            setter(self.attrs[-1], ins.read(size-self.formatLen))
         if self._debug:
             print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
@@ -916,8 +927,13 @@ class MelStruct(MelBase):
             value = getter(attr)
             if action: value = value.dump()
             valuesAppend(value)
+        if self.formatLen >= 0:
+            extraLen = len(values[-1])
+            format = self.format + `extraLen` + 's'
+        else:
+            format = self.format
         try:
-            out.packSub(self.subType,self.format,*values)
+            out.packSub(self.subType,format,*values)
         except struct.error:
             print self.subType,self.format,values
             raise
@@ -930,6 +946,7 @@ class MelStruct(MelBase):
         for attr in self.formAttrs:
             result = function(getter(attr))
             if save: setter(attr,result)
+
 
 #------------------------------------------------------------------------------
 class MelStructs(MelStruct):
