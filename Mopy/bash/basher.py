@@ -1723,7 +1723,7 @@ class INILineCtrl(wx.ListCtrl):
             if warn:
                 balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")
                                  % {'ini':bosh.iniInfos.ini.path,
-                                    'game':bush.game.name})
+                                    'game':bush.game.displayName})
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
@@ -2362,7 +2362,7 @@ class ModDetails(SashPanel):
             #--Bad name?
             if (bosh.modInfos.isBadFileName(newName.s) and
                 not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
-                                     % (newName.s,bush.game.name),
+                                     % (newName.s,bush.game.displayName),
                                      'bash.rename.isBadFileName')
                 ):
                 return
@@ -3165,7 +3165,7 @@ class SavePanel(SashPanel):
     """Savegames tab."""
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
-            raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.name)
+            raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
         SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
         left,right = self.left, self.right
         global saveList
@@ -5439,9 +5439,9 @@ class BashFrame(wx.Frame):
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
-            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.name
+            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.displayName
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
-                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.name
+                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
             balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
 
     def Restart(self,args=True,uac=False):
@@ -5479,7 +5479,7 @@ class BashFrame(wx.Frame):
             if bush.game.altName and settings['bash.useAltName']:
                 title = bush.game.altName + u' %s%s'
             else:
-                title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.name
+                title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
             title = title % (settings['bash.version'],
                 _(u'(Standalone)') if settings['bash.standalone'] else u'')
             if CBash:
@@ -5532,7 +5532,7 @@ class BashFrame(wx.Frame):
             else:
                 if bosh.modInfos.mtimesReset[0] == 'FAILED':
                     balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
-                                            + bush.game.name+u'\\Data.\n' +
+                                            + bush.game.fsName+u'\\Data.\n' +
                                             _(u"Specifically had permission denied to change the time on:")
                                             + u'\n' + bosh.modInfos.mtimesReset[1].s)
                 if not bosh.inisettings['SkipResetTimeNotifications']:
@@ -5564,7 +5564,7 @@ class BashFrame(wx.Frame):
         if bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
-        if( bush.game.name != 'Skyrim' ):
+        if( bush.game.fsName != 'Skyrim' ):
             if bosh.inisettings['ResetBSATimestamps']:
                 if bosh.bsaInfos.refresh():
                     bosh.bsaInfos.resetMTimes()
@@ -5682,7 +5682,7 @@ class BashFrame(wx.Frame):
             message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
                        + u'\n\n' +
                        _(u'Correct installation will create %s\\Mopy and %s\\Data\\Docs directories.')
-                       % (bush.game.name,bush.game.name)
+                       % (bush.game.fsName,bush.game.fsName)
                        )
             balt.showWarning(self,message,_(u'Incomplete Installation'))
         #--Merge info
@@ -7608,7 +7608,7 @@ class ListPatcher(Patcher):
     def OnAdd(self,event):
         """Add button clicked."""
         srcDir = bosh.modInfos.dir
-        wildcard = bush.game.name+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
         srcPaths = balt.askOpenMulti(self.gConfigPanel,title,srcDir, u'', wildcard)
@@ -8245,15 +8245,15 @@ class Files_Unhide(Link):
     def Execute(self,event):
         srcDir = bosh.dirs['modsBash'].join(u'Hidden')
         if self.type == 'mod':
-            wildcard = bush.game.name+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
+            wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
             destDir = self.window.data.dir
         elif self.type == 'save':
-            wildcard = bush.game.name+u' '+_(u'Save files')+u' (*.ess)|*.ess'
+            wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
             srcDir = self.window.data.bashDir.join(u'Hidden')
             destDir = self.window.data.dir
         elif self.type == 'installer':
             window = self.gTank
-            wildcard = bush.game.name+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
+            wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
             srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'.Folder Selection.', wildcard)
         else:
@@ -12005,11 +12005,11 @@ class Settings_Game(Link):
         menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO,
             help=_("Restart Wrye Bash to manage %(game)s.") % ({'game':self.game}))
         menu.AppendItem(menuItem)
-        if self.game.lower() == bush.game.name.lower():
+        if self.game.lower() == bush.game.fsName.lower():
             menuItem.Check(True)
 
     def Execute(self,event):
-        if self.game.lower() == bush.game.name.lower(): return
+        if self.game.lower() == bush.game.fsName.lower(): return
         bashFrame.Restart(('--game',self.game))
 
 #------------------------------------------------------------------------------
@@ -12217,7 +12217,7 @@ class MasterList_AddMasters(Link):
         if not balt.askContinue(self.window,message,'bash.addMaster.continue',_(u'Add Masters')):
             return
         modInfo = self.window.fileInfo
-        wildcard = bush.game.name+u' '+_(u'Masters')+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = bush.game.displayName+u' '+_(u'Masters')+u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = balt.askOpenMulti(self.window,_(u'Add masters:'),
                         modInfo.dir, u'', wildcard)
         if not masterPaths: return
@@ -12227,7 +12227,7 @@ class MasterList_AddMasters(Link):
             if dir != modInfo.dir:
                 return balt.showError(self.window,
                     _(u"File must be selected from %s Data Files directory.")
-                    % bush.game.name)
+                    % bush.game.fsName)
             if name in modInfo.header.masters:
                 return balt.showError(self.window,
                     name.s+u' '+_(u"is already a master."))
@@ -12330,7 +12330,7 @@ class Mod_AddMaster(Link):
             return
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
-        wildcard = _(u'%s Masters')%bush.game.name+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = _(u'%s Masters')%bush.game.displayName+u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = balt.askOpenMulti(self.window,_(u'Add master:'),fileInfo.dir, u'', wildcard)
         if not masterPaths: return
         names = []
@@ -12338,7 +12338,7 @@ class Mod_AddMaster(Link):
             (dir,name) = masterPath.headTail
             if dir != fileInfo.dir:
                 return balt.showError(self.window,
-                    _(u"File must be selected from %s Data Files directory.") % bush.game.name)
+                    _(u"File must be selected from %s Data Files directory.") % bush.game.fsName)
             if name in fileInfo.header.masters:
                 return balt.showError(self.window,_(u"%s is already a master!") % name.s)
             names.append(name)
@@ -13428,7 +13428,7 @@ class Mod_Face_Import(Link):
     def Execute(self,event):
         #--Select source face file
         srcDir = bosh.saveInfos.dir
-        wildcard = _(u'%s Files')%bush.game.name+u' (*.ess;*.esr)|*.ess;*.esr'
+        wildcard = _(u'%s Files')%bush.game.displayName+u' (*.ess;*.esr)|*.ess;*.esr'
         #--File dialog
         srcPath = balt.askOpen(self.window,_(u'Face Source:'),srcDir, u'', wildcard,mustExist=True)
         if not srcPath: return
@@ -15530,8 +15530,8 @@ class Saves_ProfilesData(balt.ListEditorData):
             if not balt.askYes(self.parent,message,_(u'Delete Profile')):
                 return False
         #--Remove directory
-        if GPath(bush.game.name).join(u'Saves').s not in profileDir.s:
-            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.name,profileDir.s))
+        if GPath(bush.game.fsName).join(u'Saves').s not in profileDir.s:
+            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir.s))
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
         return True
@@ -15647,7 +15647,7 @@ class Save_ImportFace(Link):
         fileInfo = self.window.data[fileName]
         #--Select source face file
         srcDir = fileInfo.dir
-        wildcard = _(u'%s Files')%bush.game.name+u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
+        wildcard = _(u'%s Files')%bush.game.displayName+u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
         #--File dialog
         srcPath = balt.askOpen(self.window,_(u'Face Source:'),srcDir, u'', wildcard,mustExist=True)
         if not srcPath: return
@@ -16771,7 +16771,7 @@ class Master_ChangeTo(Link):
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
         #--File Dialog
-        wildcard = _(u'%s Mod Files')%bush.game.name+u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = _(u'%s Mod Files')%bush.game.displayName+u' (*.esp;*.esm)|*.esp;*.esm'
         newPath = balt.askOpen(self.window,_(u'Change master name to:'),
             bosh.modInfos.dir, masterName, wildcard,mustExist=True)
         if not newPath: return
@@ -17172,9 +17172,9 @@ class App_Tes4View(App_Button):
 #  or name ends with Trans.exe
     def __init__(self,*args,**kwdargs):
         App_Button.__init__(self,*args,**kwdargs)
-        if( bush.game.name == 'Skyrim' ):
+        if( bush.game.fsName == 'Skyrim' ):
             self.mainMenu.append(Mods_Tes5ViewExpert())
-        elif( bush.game.name == 'Oblivion' or bush.game.name == 'Nehrim' ):
+        elif( bush.game.fsName == 'Oblivion' or bush.game.fsName == 'Nehrim' ):
             self.mainMenu.append(Mods_Tes4ViewExpert())
 
     def IsPresent(self):
@@ -17192,10 +17192,10 @@ class App_Tes4View(App_Button):
             extraArgs.append(u'-FixupPGRD')
         if wx.GetKeyState(wx.WXK_SHIFT):
             extraArgs.append(u'-skipbsa')
-        if( bush.game.name == 'Oblivion' or bush.game.name == 'Nehrim' ):
+        if( bush.game.fsName == 'Oblivion' or bush.game.fsName == 'Nehrim' ):
             if settings['tes4View.iKnowWhatImDoing']:
                 extraArgs.append(u'-IKnowWhatImDoing')
-        if( bush.game.name == 'Skyrim' ):
+        if( bush.game.fsName == 'Skyrim' ):
             if settings['tes5View.iKnowWhatImDoing']:
                 extraArgs.append(u'-IKnowWhatImDoing')
         App_Button.Execute(self,event,tuple(extraArgs))
@@ -17226,7 +17226,7 @@ class App_BOSS(App_Button):
             extraArgs.append(u'-c',)
         if bosh.tooldirs['boss'].version >= (2,0,0,0):
             # After version 2.0, need to pass in the -g argument
-            extraArgs.append(u'-g%s' % bush.game.name,)
+            extraArgs.append(u'-g%s' % bush.game.fsName,)
         App_Button.Execute(self,event,tuple(extraArgs), wait)
         if settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
@@ -17643,10 +17643,10 @@ class CreateNewProject(wx.Dialog):
         # Shell commands (UAC workaround)
         tempDir = bolt.Path.tempDir(u'WryeBash_')
         tempProject = tempDir.join(projectName)
-        extrasDir = bosh.dirs['templates'].join(bush.game.name)
+        extrasDir = bosh.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
             # Copy blank esp into project
-            fileName = u'Blank, %s.esp' % bush.game.name
+            fileName = u'Blank, %s.esp' % bush.game.fsName
             extrasDir.join(fileName).copyTo(tempProject.join(fileName))
         if self.checkWizard.IsChecked():
             # Create empty wizard.txt
@@ -17796,9 +17796,9 @@ def InitStatusBar():
     BashStatusBar.buttons.append( # Game
         Oblivion_Button(
             bosh.dirs['app'].join(bush.game.exe),
-            imageList(u'%s%%s.png' % bush.game.name.lower()),
-            u' '.join((_(u"Launch"),bush.game.name)),
-            u' '.join((_(u"Launch"),bush.game.name,u'%(version)s')),
+            imageList(u'%s%%s.png' % bush.game.fsName.lower()),
+            u' '.join((_(u"Launch"),bush.game.displayName)),
+            u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s')),
             u'',
             uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
@@ -18527,7 +18527,7 @@ def InitModLinks():
         sortMenu.links.append(Files_SortBy('CRC'))
         sortMenu.links.append(Files_SortBy('Mod Status'))
         ModList.mainMenu.append(sortMenu)
-    if bush.game.name == u'Oblivion': #--Versions
+    if bush.game.fsName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1'))
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1b'))
@@ -18558,7 +18558,7 @@ def InitModLinks():
     if bosh.inisettings['EnableBalo']:
         ModList.mainMenu.append(Mods_AutoGroup())
         ModList.mainMenu.append(Mods_FullBalo())
-    if bush.game.name != u'Skyrim':
+    if bush.game.fsName != u'Skyrim':
         ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
 
@@ -18623,7 +18623,7 @@ def InitModLinks():
             exportMenu.links.append(Mod_EditorIds_Export())
             exportMenu.links.append(Mod_Groups_Export())
     ##        exportMenu.links.append(Mod_ItemData_Export())
-            if bush.game.name == u'Skyrim':
+            if bush.game.fsName == u'Skyrim':
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
                 exportMenu.links.append(Mod_Stats_Export())
@@ -18645,7 +18645,7 @@ def InitModLinks():
             importMenu.links.append(Mod_EditorIds_Import())
             importMenu.links.append(Mod_Groups_Import())
     ##        importMenu.links.append(Mod_ItemData_Import())
-            if bush.game.name == u'Skyrim':
+            if bush.game.fsName == u'Skyrim':
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
                 importMenu.links.append(Mod_Stats_Import())
@@ -18676,11 +18676,11 @@ def InitModLinks():
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
-        if bush.game.name != u'Skyrim':
+        if bush.game.fsName != u'Skyrim':
             ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipSelf())
         ModList.itemMenu.append(Mod_FlipMasters())
-        if bush.game.name == u'Oblivion':
+        if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_SetVersion())
 #    if bosh.inisettings['showadvanced'] == 1:
 #        advmenu = MenuLink(_(u"Advanced Scripts"))
@@ -18699,7 +18699,7 @@ def InitSaveLinks():
         sortMenu.links.append(Files_SortBy('Player'))
         sortMenu.links.append(Files_SortBy('Status'))
         SaveList.mainMenu.append(sortMenu)
-    if bush.game.name == u'Oblivion': #--Versions
+    if bush.game.fsName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1',True))
         versionsMenu.links.append(Mods_OblivionVersion(u'1.1b',True))

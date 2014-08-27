@@ -43,8 +43,13 @@ null3 = null1*3
 null4 = null1*4
 
 #--Name of the game
-name = u'Skyrim'
+displayName = u'Skyrim'
+#--Name of the game's filesystem folder.
+fsName = u'Skyrim'
+#--Alternate display name to use instead of "Wrye Bash for ***"'
 altName = u'Wrye Smash'
+#--Name of game's default ini file.
+defaultIniFile = u'Skyrim_default.ini'
 
 #--exe to look for to see if this is the right game
 exe = u'TESV.exe'

@@ -541,10 +541,10 @@ class PageVersions(PageInstaller):
 
         # Game
         if bush.game.patchURL != u'':
-            linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.name, bush.game.patchURL)
+            linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
-            linkGame = wx.StaticText(self, wx.ID_ANY, bush.game.name)
+            linkGame = wx.StaticText(self, wx.ID_ANY, bush.game.displayName)
         linkGame.SetToolTip(wx.ToolTip(bush.game.patchTip))
         sizerVersions.Add(linkGame)
         sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameNeed))

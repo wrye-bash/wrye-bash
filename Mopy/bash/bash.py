@@ -643,7 +643,7 @@ def main():
                 u"to the %(gameName)s directory.  If you do not start Wrye "
                 u"Bash with elevated privileges, you will be prompted at "
                 u"each operation that requires elevated privileges.") % {
-                      'gameName':bush.game.name}
+                      'gameName':bush.game.displayName}
             title=_(u'UAC Protection')
             if balt.canVista:
                 admin = _(u'Run with Administrator Privileges')

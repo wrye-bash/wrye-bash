@@ -57,8 +57,8 @@ def detectGames(workingDir=u''):
             deprint(u'Error in game support file:', modname, traceback=True)
             continue
         submod = getattr(module,modname)
-        if not hasattr(submod,'name') or not hasattr(submod,'exe'): continue
-        allGames[submod.name.lower()] = submod
+        if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
+        allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
         for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):
@@ -73,7 +73,7 @@ def detectGames(workingDir=u''):
                     if not installPath.exists(): continue
                     exePath = installPath.join(submod.exe)
                     if not exePath.exists(): continue
-                    foundGames[submod.name.lower()] = installPath
+                    foundGames[submod.fsName.lower()] = installPath
         del module
     # unload some modules
     del pkgutil

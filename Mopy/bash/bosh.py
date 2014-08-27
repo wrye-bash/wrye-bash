@@ -2664,7 +2664,7 @@ class OblivionIni(IniFile):
     def ensureExists(self):
         """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
         if self.path.exists(): return
-        srcPath = dirs['app'].join(u'%s_default.ini' % bush.game.name)
+        srcPath = dirs['app'].join(bush.game.defaultIniFile)
         if srcPath.exists():
             srcPath.copyTo(self.path)
 
@@ -2701,7 +2701,7 @@ class OblivionIni(IniFile):
         if doRedirect == self.getBsaRedirection():
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs['templates'].join(bush.game.name,u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 balt.shellCopy(source,aiBsa,askOverwrite=False)
@@ -5548,18 +5548,18 @@ class ConfigHelpers:
         deprint(u'Using LOOT API version:', loot.version)
 
         global lootDb
-        lootDb = loot.LootDb(dirs['app'].s,bush.game.name)
+        lootDb = loot.LootDb(dirs['app'].s,bush.game.fsName)
 
         global lo
-        lo = liblo.LibloHandle(dirs['app'].s,bush.game.name)
-        if bush.game.name == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
+        lo = liblo.LibloHandle(dirs['app'].s,bush.game.fsName)
+        if bush.game.fsName == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
             lo.SetGameMaster(u'Nehrim.esm')
         liblo.RegisterCallback(liblo.LIBLO_WARN_LO_MISMATCH,
                               ConfigHelpers.libloLOMismatchCallback)
 
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-        self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.name,u'masterlist.yaml')
-        self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.name,u'userlist.yaml')
+        self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'masterlist.yaml')
+        self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
         #--Bash Tags
@@ -5601,7 +5601,7 @@ class ConfigHelpers:
         #--No masterlist, use the taglist
         taglist = dirs['defaultPatches'].join(u'taglist.yaml')
         if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.name+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.fsName+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
         try:
             self.tagCache = {}
             lootDb.Load(taglist.s)
@@ -18053,7 +18053,7 @@ class AssortedTweaker(MultiTweaker):
     name = _(u'Tweak Assorted')
     text = _(u"Tweak various records in miscellaneous ways.")
     defaultConfig = {'isEnabled':True}
-    if bush.game.name == u'Oblivion':
+    if bush.game.fsName == u'Oblivion':
         tweaks = sorted([
             AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
                 _(u"Prevents armor from hiding amulets."),
@@ -18528,7 +18528,7 @@ class GmstTweak(MultiTweakItem):
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
-        isOblivion = bush.game.name.lower() == u'oblivion'
+        isOblivion = bush.game.fsName.lower() == u'oblivion'
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if isOblivion and value < 0:
                 deprint(_(u"GMST values can't be negative - currently %s - skipping setting GMST.") % value)
@@ -24089,12 +24089,12 @@ def getOblivionPath(bashIni, path):
     elif bashIni and bashIni.has_option(u'General', u'sOblivionPath') and not bashIni.get(u'General', u'sOblivionPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
         # Validate it:
-        oldMode = bush.game.name
+        oldMode = bush.game.displayName
         ret = bush.setGame('',path.s)
         if ret != False:
-            deprint(u'Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.name)
-        elif oldMode != bush.game.name:
-            deprint(u'Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.name)
+            deprint(u'Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.displayName)
+        elif oldMode != bush.game.displayName:
+            deprint(u'Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.displayName)
     path = bush.gamePath
     #--If path is relative, make absolute
     if not path.isabs(): path = dirs['mopy'].join(path)
@@ -24157,7 +24157,7 @@ def getOblivionModsPath(bashIni):
         path = GPath(bashIni.get(u'General',u'sOblivionMods').strip())
         src = [u'[General]', u'sOblivionMods']
     else:
-        path = GPath(u'..\\%s Mods' % bush.game.name)
+        path = GPath(u'..\\%s Mods' % bush.game.fsName)
         src = u'Relative Path'
     if not path.isabs(): path = dirs['app'].join(path)
     return path, src
@@ -24236,17 +24236,17 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['builds'] = dirs['app'].join(u'Builds')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.name)
+    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
-    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.name)
+    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.fsName)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join(u'My Games',bush.game.name)
+    dirs['saveBase'] = personal.join(u'My Games',bush.game.fsName)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
-    dirs['userApp'] = localAppData.join(bush.game.name)
+    dirs['userApp'] = localAppData.join(bush.game.fsName)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
     global gameInis

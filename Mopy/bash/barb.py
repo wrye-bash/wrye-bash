@@ -104,7 +104,7 @@ class BaseBackupSettings:
 class BackupSettings(BaseBackupSettings):
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
-        game = bush.game.name
+        game = bush.game.fsName
         for path, name, tmpdir in (
               (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
               (dirs['mods'].join(u'Bash'),        u'Table',                game+u'\\Data\\Bash'),
@@ -210,7 +210,7 @@ class BackupSettings(BaseBackupSettings):
         #returns False if user cancels
         if self.archive == None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
-            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (bush.game.name,dt.strftime(u'%Y-%m-%d %H.%M.%S'),self.verDat,self.verApp)
+            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (bush.game.fsName,dt.strftime(u'%Y-%m-%d %H.%M.%S'),self.verDat,self.verApp)
             if not self.quit:
                 path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
                 if not path: return False
@@ -295,7 +295,7 @@ class RestoreSettings(BaseBackupSettings):
         deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
-        game = bush.game.name
+        game = bush.game.fsName
         tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 
