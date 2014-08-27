@@ -18627,7 +18627,7 @@ def InitModLinks():
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
                 exportMenu.links.append(Mod_Stats_Export())
-            else: #Oblivion
+            elif bush.game.fsName == u'Oblivion':
                 exportMenu.links.append(Mod_Factions_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_ActorLevels_Export())
@@ -18649,7 +18649,7 @@ def InitModLinks():
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
                 importMenu.links.append(Mod_Stats_Import())
-            else: #Oblivion
+            elif bush.game.fsName == u'Oblivion':
                 importMenu.links.append(Mod_Factions_Import())
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_ActorLevels_Import())
