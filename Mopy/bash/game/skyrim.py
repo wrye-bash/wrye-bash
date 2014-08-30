@@ -3231,6 +3231,84 @@ class MreLvsp(MreLeveledList):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
+class MreMgef(MelRecord):
+    """Mgef Item"""
+    classType = 'MGEF'
+
+    # MGEF has many wbEnum in TES5Edit
+    # 'magicSkill', 'resistValue', 'mgefArchtype',
+    # 'actorValue', 'castingType', 'delivery', 'secondActorValue'
+    # 'castingSoundLevel', 'soundType'
+    # refer to TES5Edit for values
+
+    MgefGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'hostile'),
+            (1, 'recover'),
+            (2, 'detrimental'),
+            (3, 'snaptoNavmesh'),
+            (4, 'noHitEvent'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'dispellwithKeywords'),
+            (9, 'noDuration'),
+            (10, 'noMagnitude'),
+            (11, 'noArea'),
+            (12, 'fXPersist'),
+            (13, 'unknown14'),
+            (14, 'goryVisuals'),
+            (15, 'hideinUI'),
+            (16, 'unknown17'),
+            (17, 'noRecast'),
+            (18, 'unknown19'),
+            (19, 'unknown20'),
+            (20, 'unknown21'),
+            (21, 'powerAffectsMagnitude'),
+            (22, 'powerAffectsDuration'),
+            (23, 'unknown24'),
+            (24, 'unknown25'),
+            (25, 'unknown26'),
+            (26, 'painless'),
+            (27, 'noHitEffect'),
+            (28, 'noDeathDispel'),
+            (29, 'unknown30'),
+            (30, 'unknown31'),
+            (31, 'unknown32'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelLString('FULL','full'),
+        MelFid('MDOB','harvestIngredient'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','IfIiiH2sIfIIIIffffIiIIIIiIIIfIfI4s4sIIIIff',
+            (MgefGeneralFlags,'flags',0L),'baseCost',(FID,'assocItem'),
+            'magicSkill','resistValue',
+            # 'counterEffectCount' is a count of ESCE records
+            'counterEffectCount',
+            'unknown1',(FID,'castingLight'),'taperWeight',(FID,'hitShader'),
+            (FID,'enchantShader'),'minimumSkillLevel','spellmakingArea',
+            'spellmakingCastingTime','taperCurve','taperDuration',
+            'secondAvWeight','mgefArchtype','actorValue',(FID,'projectile'),
+            (FID,'explosion'),'castingType','delivery','secondActorValue',
+            (FID,'castingArt'),(FID,'hitEffectArt'),(FID,'impactData'),
+            'skillUsageMultiplier',(FID,'dualCastingArt'),'dualCastingScale',
+            (FID,'enchantArt'),'unknown2','unknown3',(FID,'equipAbility'),
+            (FID,'imageSpaceModifier'),(FID,'perkToApply'),'castingSoundLevel',
+            'scriptEffectAiScore','scriptEffectAiDelayTime',),
+        MelGroups('counterEffects',
+            MelOptStruct('ESCE','I',(FID,'counterEffectCode',0)),),
+        MelStructA('SNDD','2I','sounds','soundType',(FID,'sound')),
+        MelLString('DNAM','magicItemDescription'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+# DATA needs an updating counter
+#------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
