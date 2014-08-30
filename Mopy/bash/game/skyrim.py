@@ -1714,15 +1714,20 @@ patchers = (
 # For ListsMerger
 listTypes = ('LVLI','LVLN','LVSP',)
 
-namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
+namesTypes = set(('ACTI', 'ALCH', 'AMMO', 'ARMO', 'APPA', 'MISC',))
+pricesTypes = {'ALCH':{},'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
 statsTypes = {
+            'ALCH':('eid', 'weight', 'value'),
             'AMMO':('eid', 'value', 'damage'),
             'ARMO':('eid', 'weight', 'value', 'armorRating'),
             'APPA':('eid', 'weight', 'value'),
             'MISC':('eid', 'weight', 'value'),
             }
 statsHeaders = (
+                #--Alch
+                (u'ALCH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Ammo
                 (u'AMMO',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
@@ -3340,7 +3345,7 @@ class MreMisc(MelRecord):
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
         MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreLvsp, MreMisc, MreAlch, MreMgef,
     )
 
 #--Extra read/write classes
@@ -3359,7 +3364,7 @@ def init():
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
         MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreLvsp, MreMisc, MreAlch, MreMgef,
         MreHeader,
         ))
 
