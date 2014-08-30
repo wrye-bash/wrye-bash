@@ -2765,6 +2765,77 @@ class MreAddn(MelRecord):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
+class MreAlch(MelRecord,MreHasEffects):
+    """Ingestible"""
+    classType = 'ALCH'
+
+    # {0x00000001} 'No Auto-Calc (Unused)',
+    # {0x00000002} 'Food Item',
+    # {0x00000004} 'Unknown 3',
+    # {0x00000008} 'Unknown 4',
+    # {0x00000010} 'Unknown 5',
+    # {0x00000020} 'Unknown 6',
+    # {0x00000040} 'Unknown 7',
+    # {0x00000080} 'Unknown 8',
+    # {0x00000100} 'Unknown 9',
+    # {0x00000200} 'Unknown 10',
+    # {0x00000400} 'Unknown 11',
+    # {0x00000800} 'Unknown 12',
+    # {0x00001000} 'Unknown 13',
+    # {0x00002000} 'Unknown 14',
+    # {0x00004000} 'Unknown 15',
+    # {0x00008000} 'Unknown 16',
+    # {0x00010000} 'Medicine',
+    # {0x00020000} 'Poison'
+    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noAutoCalcUnused'),
+        (1, 'foodItem'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'unknown7'),
+        (7, 'unknown8'),
+        (8, 'unknown9'),
+        (9, 'unknown10'),
+        (10, 'unknown11'),
+        (11, 'unknown12'),
+        (12, 'unknown13'),
+        (13, 'unknown14'),
+        (14, 'unknown15'),
+        (15, 'unknown16'),
+        (16, 'medicine'),
+        (17, 'poison'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ETYP','I',(FID,'equipType')),
+        MelStruct('DATA','f','weight'),
+        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0L),
+                  'addiction','addictionChance','soundConsume',),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
     BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
