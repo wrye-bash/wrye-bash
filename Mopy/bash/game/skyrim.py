@@ -782,7 +782,7 @@ allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
 # Skip 3 and 4 because it needs to be set per runOn
-fid5Conditions = set(entry[0] for entry in conditionFunctionData if entry[6] == 2)
+fid5Conditions = set(entry[0] for entry in conditionFunctionData if entry[4] == 2)
 
 # Magic Info ------------------------------------------------------------------
 weaponTypes = (
@@ -2566,7 +2566,7 @@ class MelCTDAHandler(MelStructs):
         """Initialize."""
         MelStructs.__init__(self,'CTDA','=B3sfH2siiIIi','conditions',
             'operFlag',('unused1',null3),'compValue','ifunc',('unused2',null2),
-			'param1','param2','runOn','reference','param3')
+            'param1','param2','runOn','reference','param3')
 
     def getDefault(self):
         """Returns a default copy of object."""
@@ -2593,16 +2593,21 @@ class MelCTDAHandler(MelStructs):
         #--Get parameters
         if ifunc not in allConditions:
             raise bolt.BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
+        # Form1 is Param1
         form1 = 'I' if ifunc in fid1Conditions else 'i'
+        # Form2 is Param2
         form2 = 'I' if ifunc in fid2Conditions else 'i'
-        form3 = 'I' if ifunc in fid3Conditions else 'i'
-        form4 = 'I' if ifunc in fid4Conditions else 'i'
+        # Form3 is runOn
+        form3 = 'I'
+        # Form4 is reference, this is a formID when runOn = 2
+        form4 = 'I'
+        # Form5 is Param3
         form5 = 'I' if ifunc in fid5Conditions else 'i'
         if size == 32:
             form12345 = form1+form2+form3+form4+form5
             unpacked2 = ins.unpack(form12345,20,readId)
             (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
-        if size == 28:
+        elif size == 28:
             form12345 = form1+form2+form3+form4
             unpacked2 = ins.unpack(form1234,16,readId)
             (target.param1,target.param2,target.runOn,target.reference) = unpacked2
@@ -2639,8 +2644,8 @@ class MelCTDAHandler(MelStructs):
             ##format = '=B3sfH2s'+target.form12345,
             out.packSub('CTDA','=B3sfH2s'+target.form12345,
                 target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.unused2, target.param1, target.param2, 
-				target.runOn, target.reference, target.param3)
+                target.ifunc, target.unused2, target.param1, target.param2,
+                target.runOn, target.reference, target.param3)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is true, then fid is set
@@ -2662,7 +2667,7 @@ class MelCTDAHandler(MelStructs):
             if len(form12345) > 4 and form12345[4] == 'I':
                 result = function(target.param3)
                 if save: target.param3 = result
-                
+
 class MelConditions(MelGroups):
     """Represents a set of quest/dialog/etc conditions"""
 
