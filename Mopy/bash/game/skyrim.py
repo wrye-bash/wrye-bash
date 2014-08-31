@@ -2658,10 +2658,10 @@ class MelCTDAHandler(MelStructs):
             if form12345[1] == 'I':
                 result = function(target.param2)
                 if save: target.param2 = result
-            if len(form12345) > 2 and form12345[2] == 'I':
-                result = function(target.runOn)
-                if save: target.runOn = result
-            if len(form12345) > 3 and form12345[3] == 'I':
+            # runOn is intU32, never FID, and Enum in TES5Edit
+			#0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
+			#5:Quest Alias,6:Package Data,7:Event Data'
+            if len(form12345) > 3 and form12345[3] == 'I' and target.runOn == 2:
                 result = function(target.reference)
                 if save: target.reference = result
             if len(form12345) > 4 and form12345[4] == 'I':
