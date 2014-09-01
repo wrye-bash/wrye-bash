@@ -11919,7 +11919,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
 
 # Patchers: 20 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ImportPatcher(ListPatcher):
+class AImportPatcher(AListPatcher):
     """Subclass for patchers in group Importer."""
     group = _(u'Importers')
     scanOrder = 20
@@ -11929,35 +11929,28 @@ class ImportPatcher(ListPatcher):
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
-        ListPatcher.saveConfig(self,configs)
+        super(AImportPatcher, self).saveConfig(configs)
         if self.isEnabled:
-            importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
+            importedMods = [item for item,value in
+                            self.configChecks.iteritems() if
+                            value and reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
+
+class ImportPatcher(AImportPatcher, ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
 
-class CBash_ImportPatcher(CBash_ListPatcher):
-    """Subclass for patchers in group Importer."""
-    group = _(u'Importers')
-    scanOrder = 20
-    editOrder = 20
-    masters = {}
+class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        CBash_ListPatcher.saveConfig(self,configs)
-        if self.isEnabled:
-            importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
-            configs['ImportedMods'].update(importedMods)
 
     def scan_more(self,modFile,record,bashTags):
         if modFile.GName in self.srcs:
