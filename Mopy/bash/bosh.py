@@ -11562,7 +11562,7 @@ class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
         self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
 
 #------------------------------------------------------------------------------
-class PatchMerger(ListPatcher):
+class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
@@ -11570,52 +11570,41 @@ class PatchMerger(ListPatcher):
     name = _(u'Merge Patches')
     text = _(u"Merge patch mods into Bashed Patch.")
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = u'Merge'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and bush.fullLoadOrder[modInfo.name] < bush.fullLoadOrder[PatchFile.patchName]:
+            if modInfo.name in modInfos.mergeable and u'NoMerge' not in \
+                    modInfo.getBashTags() and \
+                            bush.fullLoadOrder[modInfo.name] < \
+                            bush.fullLoadOrder[self._patchFile().patchName]:
                 autoItems.append(modInfo.name)
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        #--WARNING: Since other patchers may rely on the following update during
-        #  their initPatchFile section, it's important that PatchMerger first or near first.
+        super(APatchMerger,self).initPatchFile(patchFile,loadMods)
+        #--WARNING: Since other patchers may rely on the following update
+        # during their initPatchFile section, it's important that PatchMerger
+        # runs first or near first.
+        self._setMods(patchFile)
+
+    def _setMods(self, patchFile): raise AbstractError # override in subclasses
+
+class PatchMerger(APatchMerger, ListPatcher):
+    autoKey = u'Merge'
+
+    def _setMods(self,patchFile):
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.getConfigChecked())
 
-class CBash_PatchMerger(CBash_ListPatcher):
-    """Merges specified patches into Bashed Patch."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-    name = _(u'Merge Patches')
-    text = _(u"Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
     autoKey = set((u'Merge',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    unloadedText = ""
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and bush.fullLoadOrder[modInfo.name] <  bush.fullLoadOrder[CBash_PatchFile.patchName]:
-                autoItems.append(modInfo.name)
-        return autoItems
+    unloadedText = "" # Cbash only
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+    def _setMods(self,patchFile):
         if not self.isActive: return
-        #--WARNING: Since other patchers may rely on the following update during
-        #  their initPatchFile section, it's important that PatchMerger runs first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcs)
 
