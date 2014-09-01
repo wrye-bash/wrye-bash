@@ -11227,11 +11227,13 @@ class CBash_Patcher(_Abstract_Patcher):
 
 #------------------------------------------------------------------------------
 class AListPatcher(_Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects (TODO better docs)."""
+    """Subclass for patchers that have GUI lists of objects.""" # TODO: docs
     #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
+    choiceMenu = None #--List of possible choices for each config item. Item
+    #  0 is default.
+    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],
+                     'configChecks':{},'configChoices':{}}
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
     autoKey = None
@@ -11248,13 +11250,15 @@ class AListPatcher(_Abstract_Patcher):
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
         for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+            if autoRe.match(modInfo.name.s) or (
+                autoKey & modInfo.getBashTags()):
                 if bush.fullLoadOrder[modInfo.name] >\
                    bush.fullLoadOrder[self._patchFile().patchName]: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
+        for fileName in sorted(set(dirs['patches'].list()) | set(
+                dirs['defaultPatches'].list())):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems
@@ -11307,8 +11311,12 @@ class AListPatcher(_Abstract_Patcher):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
         listSet = set(self.configItems)
-        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
-        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
+        self.configChecks = dict(
+            [(key,value) for key,value in self.configChecks.iteritems() if
+             key in listSet])
+        self.configChoices = dict(
+            [(key,value) for key,value in self.configChoices.iteritems() if
+             key in listSet])
         super(AListPatcher,self).saveConfig(configs)
 
     #--Patch Phase ------------------------------------------------------------
@@ -11325,7 +11333,8 @@ class ListPatcher(AListPatcher,Patcher):
         return PatchFile
 
 class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the following list will be IGNORED.')
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
+                             u' following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
     def _patchesList(self):
@@ -11336,7 +11345,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
         self.srcs = self.getConfigChecked()
         self.isActive = bool(self.srcs)
@@ -11344,9 +11352,13 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         if self.allowUnloaded:
-            return [item for item in self.configItems if self.configChecks[item]]
+            return [item for item in self.configItems if
+                    self.configChecks[item]]
         else:
-            return [item for item in self.configItems if self.configChecks[item] and (item in self.patchFile.allMods or not reModExt.match(item.s))]
+            return [item for item in self.configItems if
+                    self.configChecks[item] and (
+                        item in self.patchFile.allMods or not reModExt.match(
+                            item.s))]
 
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
@@ -15266,7 +15278,6 @@ class SoundPatcher(ImportPatcher):
         log(u'\n=== '+_(u'Modified Records'))
         for type,count in sorted(type_count.iteritems()):
             if count: log(u'* %s: %d' % (type,count))
-
 
 class CBash_SoundPatcher(CBash_ImportPatcher):
     """Imports sounds from source mods into patch."""
