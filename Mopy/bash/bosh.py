@@ -15384,8 +15384,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
 
 # Patchers: 30 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-from patcher.oblivion.patchers.multitweak_assorted import MultiTweakItem, \
-    CBash_MultiTweakItem
+from patcher.oblivion.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 
 class GlobalsTweak(MultiTweakItem):
     """set a global to specified value"""

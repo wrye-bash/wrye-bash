@@ -27,11 +27,13 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO:DOCS
 # TODO: common logging pattern ! Superclass _AMultiTweakItem_Names!
 import re
+import bash # had to do this so bash.bosh.modInfos is resolved (DUH)
 from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.patcher.base import AMultiTweakItem
-from bash.patcher.oblivion.patchers.multitweak_assorted import MultiTweakItem, \
+from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
 
+# Patchers: 30 ----------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -843,7 +845,7 @@ class TextReplacer(ATextReplacer,MultiTweakItem):
                     count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
+        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):

@@ -27,41 +27,17 @@ to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
 # TODO:DOCS
 import random
 import re
+
 from bash.bolt import GPath
 from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.brec import MreRecord
 import bash.bush
 from bash.cint import MGEFCode
 from bash.patcher.base import AMultiTweakItem
-
-class MultiTweakItem(AMultiTweakItem): pass
-
-class CBash_MultiTweakItem(AMultiTweakItem):
-    # extra CBash_MultiTweakItem class variables
-    iiMode = False
-    scanRequiresChecked = False
-    applyRequiresChecked = False
-    # the default scan and edit orders - override as needed
-    scanOrder = 32
-    editOrder = 32
-
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        super(CBash_MultiTweakItem, self).__init__(label, tip, key, *choices,
-                                                   **kwargs)
-        self.mod_count = {} # extra CBash_MultiTweakItem instance variable
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+    CBash_MultiTweakItem
 
 # Patchers: 30 ----------------------------------------------------------------
-#------------------------------------------------------------------------------
 class AssortedTweak_ArmorShows(MultiTweakItem):
     """Fix armor to show amulets/rings."""
 
