@@ -74,11 +74,11 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ARMO',)
+        return 'ARMO',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ARMO',)
+        return 'ARMO',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -122,7 +122,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         if record.IsNonPlayable:
             return
 
-        if (getattr(record, self.hideFlag)):
+        if getattr(record, self.hideFlag):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
@@ -144,11 +144,11 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -191,7 +191,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         """Edits patch file as desired."""
         if record.IsNonPlayable:
             return
-        if (getattr(record, self.hideFlag)):
+        if getattr(record, self.hideFlag):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
@@ -218,11 +218,11 @@ class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -255,7 +255,7 @@ class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        if (record.IsBow and record.reach <= 0):
+        if record.IsBow and record.reach <= 0:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1.0
@@ -281,11 +281,11 @@ class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -354,11 +354,11 @@ class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -405,7 +405,7 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
 rePlayableSkips = re.compile(
     ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
     ur'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
-    ur'?:ghostly immobility)|(?:corspe)', re.I)
+    ur'?:ghostly immobility)|(?:corspe)', re.I) # FIXME: should this be corpse?
 
 class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
     """Sets all clothes to playable"""
@@ -425,11 +425,11 @@ class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('CLOT',)
+        return 'CLOT',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -514,11 +514,11 @@ class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ARMO',)
+        return 'ARMO',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ARMO',)
+        return 'ARMO',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -612,15 +612,15 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('BOOK',)
+        return 'BOOK',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('BOOK',)
+        return 'BOOK',
 
     def scanModFile(self,modFile,progress,patchFile):
         # maxWeight = self.choiceValues[self.chosen][0] # TODO: is this
-        # suposed to be used ?
+        # supposed to be used ?
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.BOOK
         id_records = patchBlock.id_records
@@ -775,11 +775,11 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD',)
+        return 'CELL','WRLD',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD',)
+        return 'CELL','WRLD',
 
     def scanModFile(self, modFile, progress,patchFile):
         """Add lists from modFile."""
@@ -867,11 +867,11 @@ class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('LIGH',)
+        return 'LIGH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('LIGH',)
+        return 'LIGH',
 
     def scanModFile(self,modFile,progress,patchFile):
         flickerFlags = self.flags
@@ -930,7 +930,7 @@ class AMultiTweakItem_Weight(AMultiTweakItem):
         self.weight = self.choiceValues[self.chosen][0]
 
     def _patchLog(self,log,count,weight):
-        # TODO: maybe overide _patchLog and call self.weight instead of
+        # TODO: maybe override _patchLog and call self.weight instead of
         # passing it ?
         log.setHeader(self.logHeader)
         log(self.logWeightValue % weight)
@@ -973,11 +973,11 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def scanModFile(self,modFile,progress,patchFile):
         maxWeight = self.weight
@@ -986,7 +986,7 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
         id_records = patchBlock.id_records
         for record in modFile.ALCH.getActiveRecords():
             if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight and record.weight < 1:
+            if maxWeight < record.weight < 1:
                 record = record.getTypeCopy(mapper)
                 patchBlock.setRecord(record)
 
@@ -1025,7 +1025,7 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.weight
-        if (record.weight > maxWeight and record.weight < 1.0):
+        if maxWeight < record.weight < 1.0:
             for effect in record.effects:
                 if effect.name == self.SEFF:
                     return
@@ -1061,11 +1061,11 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('INGR',)
+        return 'INGR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('INGR',)
+        return 'INGR',
 
     def scanModFile(self,modFile,progress,patchFile):
         maxWeight = self.weight
@@ -1144,11 +1144,11 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def scanModFile(self,modFile,progress,patchFile):
         minWeight = self.weight
@@ -1188,7 +1188,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         minWeight = self.weight
-        if (record.weight < minWeight):
+        if record.weight < minWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = minWeight
@@ -1224,11 +1224,11 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('WEAP',)
+        return 'WEAP',
 
     def scanModFile(self,modFile,progress,patchFile):
         maxWeight = self.weight
@@ -1267,7 +1267,7 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
         """Edits patch file as desired. """
         maxWeight = self.weight
 
-        if (record.IsStaff and record.weight > maxWeight):
+        if record.IsStaff and record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
@@ -1299,11 +1299,11 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('AMMO',)
+        return 'AMMO',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('AMMO',)
+        return 'AMMO',
 
     def scanModFile(self,modFile,progress,patchFile):
         maxWeight = self.weight
@@ -1375,11 +1375,11 @@ class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('MGEF',)
+        return 'MGEF',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('MGEF',)
+        return 'MGEF',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -1430,7 +1430,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(
                           None, None, True]
         self.SEFF = MGEFCode('SEFF')
         # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
-        # should call the contructor directly ? (space overhead but very small)
+        # should call the constructor directly instead of super() ?
         self.buildPatchLog=self._patchLog # TODO : maybe a simple override ?
 
     def getTypes(self):
@@ -1479,11 +1479,11 @@ class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('FLOR',)
+        return 'FLOR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('FLOR',)
+        return 'FLOR',
 
     def scanModFile(self,modFile,progress,patchFile):
         chance = self.choiceValues[self.chosen][0]
@@ -1556,11 +1556,11 @@ class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('WTHR',)
+        return 'WTHR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('WTHR',)
+        return 'WTHR',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -1624,11 +1624,11 @@ class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('GRAS',)
+        return 'GRAS',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('GRAS',)
+        return 'GRAS',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -1708,11 +1708,11 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ENCH',)
+        return 'ENCH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ENCH',)
+        return 'ENCH',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -1753,7 +1753,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
 
-        if (record.IsStaff or record.IsWeapon):
+        if record.IsStaff or record.IsWeapon:
             uses = self.choiceValues[self.chosen][0]
             cost = uses
             if uses != 0:
@@ -1869,7 +1869,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                         record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
                         changed = True
                 elif type_ in ['BOOK', 'BSGN', 'CLAS']:  # just a random book
-                    # iconfor class/birthsign as well.
+                    # icon for class/birthsign as well.
                     record.iconPath = u"Clutter\\iconbook%d.dds" % (
                         random.randint(1, 13))
                     changed = True
@@ -1956,7 +1956,6 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
                 'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
                 'AMMO': u"Weapons\\IronArrow.dds",
                 'APPA': u"Clutter\\IconMortarPestle.dds",
-                'AMMO': u"Weapons\\IronArrow.dds",
                 'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",u"Armor\\Iron\\F\\Cuirass.dds"),
                          (u"Armor\\Iron\\M\\Greaves.dds",u"Armor\\Iron\\F\\Greaves.dds"),
                          (u"Armor\\Iron\\M\\Helmet.dds",),
@@ -2100,11 +2099,11 @@ class AssortedTweak_SetSoundAttenuationLevels(
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('SOUN',)
+        return 'SOUN',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('SOUN',)
+        return 'SOUN',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -2148,7 +2147,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
         if record.staticAtten:
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.staticAtten = override.staticAtten * choice
+                override.staticAtten *= choice
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -2181,11 +2180,11 @@ class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('SOUN',)
+        return 'SOUN',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('SOUN',)
+        return 'SOUN',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -2230,7 +2229,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
         if record.staticAtten and u'nirnroot' in record.eid.lower() :
             override = record.CopyAsOverride(self.patchFile)
             if override:
-                override.staticAtten = override.staticAtten * choice
+                override.staticAtten *= choice
                 mod_count = self.mod_count
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
@@ -2257,11 +2256,11 @@ class AssortedTweak_FactioncrimeGoldMultiplier(
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('FACT',)
+        return 'FACT',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('FACT',)
+        return 'FACT',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -2323,11 +2322,11 @@ class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('LIGH',)
+        return 'LIGH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('LIGH',)
+        return 'LIGH',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -2386,11 +2385,11 @@ class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('LSCR',)
+        return 'LSCR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('LSCR',)
+        return 'LSCR',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
