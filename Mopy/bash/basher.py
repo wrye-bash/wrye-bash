@@ -53,6 +53,8 @@ from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
     CBash_AssortedTweaker
+from patcher.oblivion.patchers.multitweak_names import NamesTweaker, \
+    CBash_NamesTweaker
 
 startupinfo = bolt.startupinfo
 
@@ -8061,8 +8063,8 @@ class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
 class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
 class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
 
-class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
-class CBash_NamesTweaker(bosh.CBash_NamesTweaker,TweakPatcher): pass
+class NamesTweaker(NamesTweaker,TweakPatcher): pass
+class CBash_NamesTweaker(CBash_NamesTweaker,TweakPatcher): pass
 
 class TweakActors(bosh.TweakActors,TweakPatcher): pass
 class CBash_TweakActors(bosh.CBash_TweakActors,TweakPatcher): pass
