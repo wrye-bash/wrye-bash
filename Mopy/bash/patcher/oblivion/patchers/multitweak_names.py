@@ -74,11 +74,11 @@ class NamesTweak_Body(MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return (self.key,)
+        return self.key,
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return (self.key,)
+        return self.key,
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -199,11 +199,11 @@ class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('ALCH',)
+        return 'ALCH',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -353,11 +353,11 @@ class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('BOOK','ENCH',)
+        return 'BOOK','ENCH',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('BOOK','ENCH',)
+        return 'BOOK','ENCH',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -492,11 +492,11 @@ class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('SPEL',)
+        return 'SPEL',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('SPEL',)
+        return 'SPEL',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -613,11 +613,11 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('AMMO','WEAP',)
+        return 'AMMO','WEAP',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('AMMO','WEAP',)
+        return 'AMMO','WEAP',
 
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
@@ -1003,7 +1003,7 @@ class NamesTweaker(MultiTweaker):
     scanOrder = 32
     editOrder = 32
     name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendlyness or"
+    text = _(u"Tweak object names in various ways such as lore friendliness or"
              u" show type/quality.")
     tweaks = sorted([
         NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
@@ -1031,26 +1031,26 @@ class NamesTweaker(MultiTweaker):
         TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
             ur'\1wemer',
             _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" '
+            _(u'Replace any occurrences of the words "Dwarf" or "Dwarven" '
               u'with "Dwemer" to better follow lore.'),
             u'Dwemer',
-            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
+            (u'Lore Friendly Text: Dwarven -> Dwemer',  u'Dwemer'),
             ),
         TextReplacer(ur'\b(d|D)(?:warfs)\b',
             ur'\1warves',
             _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurences of the words "Dwarfs" with '
+            _(u'Replace any occurrences of the words "Dwarfs" with '
               u'"Dwarves" to better follow proper English.'),
             u'Dwarfs',
-            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
+            (u'Proper English Text: Dwarfs -> Dwarves',  u'Dwarves'),
             ),
         TextReplacer(ur'\b(s|S)(?:taffs)\b',
             ur'\1taves',
             _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurences of the words "Staffs" with "Staves" '
+            _(u'Replace any occurrences of the words "Staffs" with "Staves" '
               u'to better follow proper English.'),
             u'Staffs',
-            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
+            (u'Proper English Text: Staffs -> Staves',  u'Staves'),
             ),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,NamesTweak_BodyTags())
@@ -1078,7 +1078,7 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
     scanOrder = 32
     editOrder = 32
     name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendlyness or"
+    text = _(u"Tweak object names in various ways such as lore friendliness or"
              u" show type/quality.")
     tweaks = sorted([
         CBash_NamesTweak_Body(_(u"Armor"),
@@ -1107,26 +1107,26 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
         CBash_TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
             ur'\1wemer',
             _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" '
+            _(u'Replace any occurrences of the words "Dwarf" or "Dwarven" '
               u'with "Dwemer" to better follow lore.'),
             u'Dwemer',
-            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
+            (u'Lore Friendly Text: Dwarven -> Dwemer',  u'Dwemer'),
             ),
         CBash_TextReplacer(ur'\b(d|D)(?:warfs)\b',
             ur'\1warves',
             _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurences of the words "Dwarfs" with '
+            _(u'Replace any occurrences of the words "Dwarfs" with '
               u'"Dwarves" to better follow proper English.'),
             u'Dwarfs',
-            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
+            (u'Proper English Text: Dwarfs -> Dwarves',  u'Dwarves'),
             ),
         CBash_TextReplacer(ur'\b(s|S)(?:taffs)\b',
             ur'\1taves',
             _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurences of the words "Staffs" with "Staves" '
+            _(u'Replace any occurrences of the words "Staffs" with "Staves" '
               u'to better follow proper English.'),
             u'Staffs',
-            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
+            (u'Proper English Text: Staffs -> Staves',  u'Staves'),
             ),
         ],key=lambda a: a.label.lower())
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
@@ -1144,8 +1144,8 @@ class CBash_NamesTweaker(CBash_MultiTweaker):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                group_patchers.setdefault(type,[]).append(tweak)
+            for type_ in tweak.getTypes():
+                group_patchers.setdefault(type_,[]).append(tweak)
             tweak.format = tweak.choiceValues[tweak.chosen][0]
             if isinstance(tweak, CBash_NamesTweak_Body):
                 tweak.showStat = u'%02d' in tweak.format
