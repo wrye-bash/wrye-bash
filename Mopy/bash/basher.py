@@ -51,6 +51,9 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
+from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
+    CBash_AssortedTweaker
+
 startupinfo = bolt.startupinfo
 
 #--Python
@@ -8049,8 +8052,8 @@ class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
 class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
-class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
-class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
+class AssortedTweaker(AssortedTweaker,TweakPatcher): pass
+class CBash_AssortedTweaker(CBash_AssortedTweaker,TweakPatcher): pass
 
 class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
 class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
