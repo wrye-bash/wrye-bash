@@ -28,7 +28,8 @@ to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 import bash # FIXME - why ?
 from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.patcher.base import AMultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+    CBash_MultiTweakItem
 
 # Patchers: 30 ----------------------------------------------------------------
 class AClothesTweak(AMultiTweakItem):
@@ -58,8 +59,8 @@ class AClothesTweak(AMultiTweakItem):
         """Returns true to save record for late processing."""
         recTypeFlags = int(record.flags) & 0xFFFF
         myTypeFlags = self.typeFlags
-        return ((recTypeFlags == myTypeFlags) or
-                (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
+        return ((recTypeFlags == myTypeFlags) or (
+            self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
 
 
 class ClothesTweak(AClothesTweak,MultiTweakItem):
@@ -82,7 +83,7 @@ class ClothesTweak_MaxWeight(ClothesTweak):
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
         for record in patchFile.CLOT.records:
             weight = record.weight
-            if self.isMyType(record) and weight > maxWeight and weight < superWeight:
+            if self.isMyType(record) and maxWeight < weight < superWeight:
                 record.weight = maxWeight
                 keep(record.fid)
                 tweakCount += 1
@@ -94,7 +95,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
-        super(CBash_ClothesTweak_MaxWeight,self).__init__(label,tip,key,*choices)
+        super(CBash_ClothesTweak_MaxWeight, self).__init__(label, tip, key,
+                                                           *choices)
         self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
@@ -112,7 +114,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
 
-        if (record.weight > maxWeight) and self.isMyType(record) and (record.weight < superWeight):
+        if (record.weight > maxWeight) and self.isMyType(record) and (
+                    record.weight < superWeight):
             for attr in self.matchFlags:
                 if(getattr(record, attr)):
                     break
@@ -134,7 +137,8 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
         for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
+            log(u'  * %s: [%4.2f]: %d' % (
+                srcMod.s, maxWeight, mod_count[srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -196,6 +200,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+# TODO: eliminate duplicate strings (here and elsewhere in multitweakers)
 class ClothesTweaker(MultiTweaker):
     """Patches clothes in miscellaneous ways."""
     scanOrder = 31
@@ -256,8 +261,6 @@ class ClothesTweaker(MultiTweaker):
         return ('CLOT',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         if not self.isActive or 'CLOT' not in modFile.tops: return
         mapper = modFile.getLongMapper()
         patchRecords = self.patchFile.CLOT
@@ -330,7 +333,6 @@ class CBash_ClothesTweaker(CBash_MultiTweaker):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
