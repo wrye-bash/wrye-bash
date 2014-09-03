@@ -53,6 +53,8 @@ from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
     CBash_AssortedTweaker
+from patcher.oblivion.patchers.multitweak_clothes import ClothesTweaker, \
+    CBash_ClothesTweaker
 from patcher.oblivion.patchers.multitweak_names import NamesTweaker, \
     CBash_NamesTweaker
 from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
@@ -8059,8 +8061,8 @@ class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 class AssortedTweaker(AssortedTweaker,TweakPatcher): pass
 class CBash_AssortedTweaker(CBash_AssortedTweaker,TweakPatcher): pass
 
-class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
-class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
+class ClothesTweaker(ClothesTweaker,TweakPatcher): pass
+class CBash_ClothesTweaker(CBash_ClothesTweaker,TweakPatcher): pass
 
 class GmstTweaker(GmstTweaker,TweakPatcher): pass
 class CBash_GmstTweaker(CBash_GmstTweaker,TweakPatcher): pass
