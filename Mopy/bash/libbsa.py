@@ -146,15 +146,12 @@ def Init(path):
         'Morrowind':LIBBSA_VERSION_TES3,
         LIBBSA_VERSION_TES3:LIBBSA_VERSION_TES3,
         'Oblivion':LIBBSA_VERSION_TES4,
-        LIBBSA_VERSION_TES4:LIBBSA_VERSION_TES4,
         'Fallout 3':LIBBSA_VERSION_TES5,
         LIBBSA_VERSION_TES5:LIBBSA_VERSION_TES5,
         'Fallout: New Vegas':LIBBSA_VERSION_TES5,
-        LIBBSA_VERSION_TES5:LIBBSA_VERSION_TES5,
         'Nehrim':LIBBSA_VERSION_TES4,
         LIBBSA_VERSION_TES4:LIBBSA_VERSION_TES4,
         'Skyrim':LIBBSA_VERSION_TES5,
-        LIBBSA_VERSION_TES5:LIBBSA_VERSION_TES5,
         }
 
     # =========================================================================
