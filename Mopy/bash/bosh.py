@@ -11121,7 +11121,7 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-class Abstract_Patcher(object):
+class _Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO, just before object"""
     scanOrder = 10
@@ -11172,7 +11172,7 @@ class Abstract_Patcher(object):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         pass  # TODO raise AbstractError ?
 
-class Patcher(Abstract_Patcher):
+class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
     #--Patch Phase ------------------------------------------------------------
@@ -11193,7 +11193,7 @@ class Patcher(Abstract_Patcher):
         """Edits patch file as desired. Should write to log."""
         pass  # TODO raise AbstractError ?
 
-class CBash_Patcher(Abstract_Patcher):
+class CBash_Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
     unloadedText = u""
@@ -11226,12 +11226,14 @@ class CBash_Patcher(Abstract_Patcher):
         pass  # TODO raise AbstractError ?
 
 #------------------------------------------------------------------------------
-class AListPatcher(Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects (TODO better docs)."""
+class AListPatcher(_Abstract_Patcher):
+    """Subclass for patchers that have GUI lists of objects.""" # TODO: docs
     #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item 0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
+    choiceMenu = None #--List of possible choices for each config item. Item
+    #  0 is default.
+    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],
+                     'configChecks':{},'configChoices':{}}
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
     autoKey = None
@@ -11248,13 +11250,15 @@ class AListPatcher(Abstract_Patcher):
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
         for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & modInfo.getBashTags()):
+            if autoRe.match(modInfo.name.s) or (
+                autoKey & modInfo.getBashTags()):
                 if bush.fullLoadOrder[modInfo.name] >\
                    bush.fullLoadOrder[self._patchFile().patchName]: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())):
+        for fileName in sorted(set(dirs['patches'].list()) | set(
+                dirs['defaultPatches'].list())):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems
@@ -11307,8 +11311,12 @@ class AListPatcher(Abstract_Patcher):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
         listSet = set(self.configItems)
-        self.configChecks = dict([(key,value) for key,value in self.configChecks.iteritems() if key in listSet])
-        self.configChoices = dict([(key,value) for key,value in self.configChoices.iteritems() if key in listSet])
+        self.configChecks = dict(
+            [(key,value) for key,value in self.configChecks.iteritems() if
+             key in listSet])
+        self.configChoices = dict(
+            [(key,value) for key,value in self.configChoices.iteritems() if
+             key in listSet])
         super(AListPatcher,self).saveConfig(configs)
 
     #--Patch Phase ------------------------------------------------------------
@@ -11325,7 +11333,8 @@ class ListPatcher(AListPatcher,Patcher):
         return PatchFile
 
 class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the following list will be IGNORED.')
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
+                             u' following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
     def _patchesList(self):
@@ -11336,7 +11345,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
         self.srcs = self.getConfigChecked()
         self.isActive = bool(self.srcs)
@@ -11344,9 +11352,13 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         if self.allowUnloaded:
-            return [item for item in self.configItems if self.configChecks[item]]
+            return [item for item in self.configItems if
+                    self.configChecks[item]]
         else:
-            return [item for item in self.configItems if self.configChecks[item] and (item in self.patchFile.allMods or not reModExt.match(item.s))]
+            return [item for item in self.configItems if
+                    self.configChecks[item] and (
+                        item in self.patchFile.allMods or not reModExt.match(
+                            item.s))]
 
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
@@ -11439,7 +11451,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class AMultiTweaker(Abstract_Patcher):
+class AMultiTweaker(_Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
     configured through a choice menu."""
     group = _(u'Tweakers')
@@ -11516,7 +11528,7 @@ class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class AAliasesPatcher(Abstract_Patcher):
+class AAliasesPatcher(_Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
     editOrder = 10
@@ -11550,7 +11562,7 @@ class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
         self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
 
 #------------------------------------------------------------------------------
-class PatchMerger(ListPatcher):
+class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10
     editOrder = 10
@@ -11558,56 +11570,49 @@ class PatchMerger(ListPatcher):
     name = _(u'Merge Patches')
     text = _(u"Merge patch mods into Bashed Patch.")
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = u'Merge'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and bush.fullLoadOrder[modInfo.name] < bush.fullLoadOrder[PatchFile.patchName]:
+            if modInfo.name in modInfos.mergeable and u'NoMerge' not in \
+                    modInfo.getBashTags() and \
+                            bush.fullLoadOrder[modInfo.name] < \
+                            bush.fullLoadOrder[self._patchFile().patchName]:
                 autoItems.append(modInfo.name)
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        #--WARNING: Since other patchers may rely on the following update during
-        #  their initPatchFile section, it's important that PatchMerger first or near first.
+        super(APatchMerger,self).initPatchFile(patchFile,loadMods)
+        #--WARNING: Since other patchers may rely on the following update
+        # during their initPatchFile section, it's important that PatchMerger
+        # runs first or near first.
+        self._setMods(patchFile)
+
+    def _setMods(self, patchFile): raise AbstractError # override in subclasses
+
+class PatchMerger(APatchMerger, ListPatcher):
+    autoKey = u'Merge'
+
+    def _setMods(self,patchFile):
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.getConfigChecked())
 
-class CBash_PatchMerger(CBash_ListPatcher):
-    """Merges specified patches into Bashed Patch."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-    name = _(u'Merge Patches')
-    text = _(u"Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
     autoKey = set((u'Merge',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
-    unloadedText = ""
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in modInfo.getBashTags() and bush.fullLoadOrder[modInfo.name] <  bush.fullLoadOrder[CBash_PatchFile.patchName]:
-                autoItems.append(modInfo.name)
-        return autoItems
+    unloadedText = "" # Cbash only
 
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+    def _setMods(self,patchFile):
         if not self.isActive: return
-        #--WARNING: Since other patchers may rely on the following update during
-        #  their initPatchFile section, it's important that PatchMerger runs first or near first.
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.srcs)
 
 #------------------------------------------------------------------------------
+# TODO: MI for UpdateReferences - notice self.srcFiles =self.getConfigChecked()
+# vs self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
+# plus unused vars, commented out code etc etc
+
 class UpdateReferences(ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     scanOrder = 15
@@ -11762,10 +11767,7 @@ class UpdateReferences(ListPatcher):
         count = CountDict()
         def swapper(oldId):
             newId = old_new.get(oldId,None)
-            if newId:
-                return newId
-            else:
-                return oldId
+            return newId if newId else oldId
 ##        for type in self.types:
 ##            for record in getattr(self.patchFile,type).getActiveRecords():
 ##                if record.fid in self.old_new:
@@ -11918,7 +11920,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
 
 # Patchers: 20 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ImportPatcher(ListPatcher):
+class AImportPatcher(AListPatcher):
     """Subclass for patchers in group Importer."""
     group = _(u'Importers')
     scanOrder = 20
@@ -11928,35 +11930,28 @@ class ImportPatcher(ListPatcher):
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
-        ListPatcher.saveConfig(self,configs)
+        super(AImportPatcher, self).saveConfig(configs)
         if self.isEnabled:
-            importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
+            importedMods = [item for item,value in
+                            self.configChecks.iteritems() if
+                            value and reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
+
+class ImportPatcher(AImportPatcher, ListPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return tuple(x.classType for x in self.srcClasses) if self.isActive else ()
+        return tuple(
+            x.classType for x in self.srcClasses) if self.isActive else ()
 
-class CBash_ImportPatcher(CBash_ListPatcher):
-    """Subclass for patchers in group Importer."""
-    group = _(u'Importers')
-    scanOrder = 20
-    editOrder = 20
-    masters = {}
+class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        CBash_ListPatcher.saveConfig(self,configs)
-        if self.isEnabled:
-            importedMods = [item for item,value in self.configChecks.iteritems() if value and reModExt.search(item.s)]
-            configs['ImportedMods'].update(importedMods)
 
     def scan_more(self,modFile,record,bashTags):
         if modFile.GName in self.srcs:
@@ -11981,7 +11976,6 @@ class CellImporter(ImportPatcher):
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12178,7 +12172,6 @@ class CBash_CellImporter(CBash_ImportPatcher):
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13465,7 +13458,6 @@ class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Factions'
 
     #--Patch Phase ------------------------------------------------------------
@@ -13576,7 +13568,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Factions',))
 
     #--Config Phase -----------------------------------------------------------
@@ -13684,7 +13675,6 @@ class ImportRelations(ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Relations'
 
     #--Patch Phase ------------------------------------------------------------
@@ -13790,7 +13780,6 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Relations',))
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14074,7 +14063,6 @@ class ImportInventory(ImportPatcher):
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = (u'Invent',u'InventOnly')
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Patch Phase ------------------------------------------------------------
@@ -14203,7 +14191,6 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = set((u'Invent',u'InventOnly'))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
@@ -14556,7 +14543,6 @@ class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
     autoKey = u'Names'
 
@@ -14673,7 +14659,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
     autoKey = set((u'Names',))
 
@@ -14976,7 +14961,6 @@ class RoadImporter(ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = u'Roads'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15056,7 +15040,6 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = set((u'Roads',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -15132,7 +15115,6 @@ class SoundPatcher(ImportPatcher):
     text = _(u"Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
     tip = text
     autoKey = u'Sound'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15267,14 +15249,12 @@ class SoundPatcher(ImportPatcher):
         for type,count in sorted(type_count.iteritems()):
             if count: log(u'* %s: %d' % (type,count))
 
-
 class CBash_SoundPatcher(CBash_ImportPatcher):
     """Imports sounds from source mods into patch."""
     name = _(u'Import Sounds')
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
     autoKey = set((u'Sound',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15351,7 +15331,6 @@ class StatsPatcher(ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Stats'
 
     #--Patch Phase ------------------------------------------------------------
@@ -15474,7 +15453,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Stats',))
 
     #--Config Phase -----------------------------------------------------------
@@ -15568,7 +15546,6 @@ class SpellsPatcher(ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = (u'Spells',u'SpellStats')
 
     #--Patch Phase ------------------------------------------------------------
@@ -15668,7 +15645,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Spells',u'SpellStats'))
 
     #--Config Phase -----------------------------------------------------------
