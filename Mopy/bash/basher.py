@@ -61,6 +61,8 @@ from patcher.oblivion.patchers.multitweak_names import NamesTweaker, \
     CBash_NamesTweaker
 from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
     CBash_GmstTweaker
+from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
+    CBash_RacePatcher
 
 startupinfo = bolt.startupinfo
 
@@ -8039,9 +8041,9 @@ class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
 class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
-class RacePatcher(bosh.RacePatcher,DoublePatcher):
+class RacePatcher(RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
-class CBash_RacePatcher(bosh.CBash_RacePatcher,DoublePatcher):
+class CBash_RacePatcher(CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
