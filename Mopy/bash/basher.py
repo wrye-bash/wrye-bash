@@ -27,7 +27,7 @@ Bash application is actually launched by the bash module.)
 
 The module is generally organized starting with lower level elements, working
 up to higher level elements (up the BashApp). This is followed by definition
-of menus and buttons classes, and finally by a several initialization functions.
+of menus and buttons classes, and finally by several initialization functions.
 
 Non-GUI objects and functions are provided by the bosh module. Of those, the
 primary objects used are the plugins, modInfos and saveInfos singletons -- each
