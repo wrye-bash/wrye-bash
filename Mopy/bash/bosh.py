@@ -11975,7 +11975,6 @@ class CellImporter(ImportPatcher):
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12172,7 +12171,6 @@ class CBash_CellImporter(CBash_ImportPatcher):
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13459,7 +13457,6 @@ class ImportFactions(ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Factions'
 
     #--Patch Phase ------------------------------------------------------------
@@ -13570,7 +13567,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Factions',))
 
     #--Config Phase -----------------------------------------------------------
@@ -13678,7 +13674,6 @@ class ImportRelations(ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Relations'
 
     #--Patch Phase ------------------------------------------------------------
@@ -13784,7 +13779,6 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Relations',))
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14068,7 +14062,6 @@ class ImportInventory(ImportPatcher):
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = (u'Invent',u'InventOnly')
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Patch Phase ------------------------------------------------------------
@@ -14197,7 +14190,6 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = set((u'Invent',u'InventOnly'))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
@@ -14550,7 +14542,6 @@ class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
     autoKey = u'Names'
 
@@ -14667,7 +14658,6 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
     autoKey = set((u'Names',))
 
@@ -14970,7 +14960,6 @@ class RoadImporter(ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = u'Roads'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15050,7 +15039,6 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = set((u'Roads',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -15126,7 +15114,6 @@ class SoundPatcher(ImportPatcher):
     text = _(u"Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods.")
     tip = text
     autoKey = u'Sound'
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15267,7 +15254,6 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
     autoKey = set((u'Sound',))
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15344,7 +15330,6 @@ class StatsPatcher(ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = u'Stats'
 
     #--Patch Phase ------------------------------------------------------------
@@ -15467,7 +15452,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Stats',))
 
     #--Config Phase -----------------------------------------------------------
@@ -15561,7 +15545,6 @@ class SpellsPatcher(ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = (u'Spells',u'SpellStats')
 
     #--Patch Phase ------------------------------------------------------------
@@ -15661,7 +15644,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default or not.
     autoKey = set((u'Spells',u'SpellStats'))
 
     #--Config Phase -----------------------------------------------------------
