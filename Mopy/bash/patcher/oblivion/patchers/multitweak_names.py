@@ -47,25 +47,12 @@ class ANamesTweak_BodyTags(AMultiTweakItem):
             (u'ABGHINOPSL',u'ABGHINOPSL'),)
 
 class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple()
-
-    def scanModFile(self,modFile,progress,patchFile):
-        return
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         patchFile.bodyTags = self.choiceValues[self.chosen][0]
 
 class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return []
 
     def buildPatchLog(self,log):
         """Will write to log."""
