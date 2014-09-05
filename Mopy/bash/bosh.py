@@ -80,9 +80,9 @@ tooldirs = {}
 inisettings = {}
 defaultExt = u'.7z'
 writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
-readExts = set((u'.rar',u'.7z.001',u'.001'))
+readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
-noSolidExts = set((u'.zip',))
+noSolidExts = {u'.zip'}
 settings = None
 installersWindow = None
 
@@ -94,7 +94,7 @@ oldTagsSet = set(oldTags)
 reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
-undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
+undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Default settings
 settingDefaults = {
@@ -225,7 +225,8 @@ class PickleDict(bolt.PickleDict):
     def updatePaths(self):
         """Updates paths from bosh.Path to bolt.Path."""
         import wx
-        basicTypes = set((NoneType,FloatType,IntType,LongType,BooleanType,StringType,UnicodeType))
+        basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
+                      StringType, UnicodeType}
         SetType = type(set())
         done = {}
         changed = set()
@@ -445,7 +446,7 @@ class LoadFactory:
         if CELL and WRLD top types are expanded."""
         return (
             self.keepAll or
-            (self.recTypes & set(('REFR','ACHR','ACRE','PGRD','LAND'))) or
+            (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
             (topType == 'WRLD' and 'LAND' in self.recTypes))
 
     def getTopClass(self,type):
@@ -2647,8 +2648,8 @@ class OBSEIniFile(IniFile):
 #--------------------------------------------------------------------------------
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
-    bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
-                          u'..\\obmm\\bsaredirection.bsa'))
+    bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
+                      u'..\\obmm\\bsaredirection.bsa'}
     encoding = 'cp1252'
 
     def __init__(self,name):
@@ -6242,21 +6243,21 @@ class Installer(object):
         'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
-    docDirs = set((u'screenshots',))
-    dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
+    docDirs = {u'screenshots'}
+    dataDirsMinus = {u'bash', u'replacers',
+                     u'--'}  #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
     reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
-    skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
-                    u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
-                    u'.tb2',u'.lzma',u'.bsl',
-                    ))
+    skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
+                u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
+                u'.fomod', u'.tb2', u'.lzma', u'.bsl'}
     skipExts.update(set(readExts))
-    docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
-                   u'.mht',u'.pdf',u'.css',u'.xls',u'.xlsx',u'.ods',u'.odp',
-                   u'.ppt',u'.pptx'))
-    imageExts = set((u'.gif',u'.jpg',u'.png',u'.jpeg',u'.bmp'))
-    scriptExts = set((u'.txt',u'.ini',u'.cfg'))
-    commonlyEditedExts = scriptExts | set((u'.xml',))
+    docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
+               u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
+               u'.ppt', u'.pptx'}
+    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
+    scriptExts = {u'.txt', u'.ini', u'.cfg'}
+    commonlyEditedExts = scriptExts | {u'.xml'}
     #--Needs to be called after bush.game has been set
     @staticmethod
     def initData():
@@ -6572,7 +6573,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        packageFiles = set((u'package.txt',u'package.jpg'))
+        packageFiles = {u'package.txt', u'package.jpg'}
         unSize = 0
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
@@ -10484,7 +10485,7 @@ class PatchFile(ModFile):
                 isMerged = modName in self.mergeSet
                 doFilter = isMerged and u'Filter' in bashTags
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-                iiMode = isMerged and bool(set((u'InventOnly',u'IIM')) & bashTags)
+                iiMode = isMerged and bool({u'InventOnly', u'IIM'} & bashTags)
                 if isMerged:
                     progress(pstate,modName.s+u'\n'+_(u'Merging...'))
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
@@ -10680,7 +10681,7 @@ class CBash_PatchFile(ObModFile):
 
     @staticmethod
     def modIsMergeableLoad(modInfo,verbose):
-        allowMissingMasters = set([u'Filter',u'IIM',u'InventOnly'])
+        allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
         tags = modInfos[modInfo.name].getBashTags()
         reasons = []
 
@@ -10850,8 +10851,8 @@ class CBash_PatchFile(ObModFile):
                       'ROADS','CELL','CELLS','PGRDS','LANDS','ACHRS',
                       'ACRES','REFRS']
 
-        iiModeSet = set((u'InventOnly',u'IIM'))
-        levelLists = set(('LVLC','LVLI','LVSP'))
+        iiModeSet = {u'InventOnly', u'IIM'}
+        levelLists = {'LVLC', 'LVLI', 'LVSP'}
         nullProgress = bolt.Progress()
 
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])
@@ -11262,7 +11263,7 @@ class PatchMerger(APatchMerger, ListPatcher):
             patchFile.setMods(None,self.getConfigChecked())
 
 class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
-    autoKey = set((u'Merge',))
+    autoKey = {u'Merge'}
     unloadedText = "" # Cbash only
 
     def _setMods(self,patchFile):
@@ -11293,7 +11294,8 @@ class UpdateReferences(ListPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.types = MreRecord.simpleTypes
-        self.classes = self.types.union(set(('CELL','WRLD','REFR','ACHR','ACRE')))
+        self.classes = self.types.union(
+            {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -11492,7 +11494,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports FormId replacers from csv files into the Bashed Patch.")
-    autoKey = set((u'Formids',))
+    autoKey = {u'Formids'}
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
@@ -11833,7 +11835,8 @@ class CBash_CellImporter(CBash_ImportPatcher):
     name = _(u'Import Cells')
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
+    autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
+               u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -11948,7 +11951,11 @@ class GraphicsPatcher(ImportPatcher):
                                         'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
                                         'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
         #--Needs Longs
-        self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
+        self.longTypes = {'BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN', 'ACTI',
+                          'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT', 'ALCH',
+                          'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH',
+                          'MISC', 'SGST', 'SLGM', 'WEAP', 'TREE', 'ARMO',
+                          'CLOT', 'CREA', 'MGEF', 'EFSH'}
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -12087,7 +12094,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     name = _(u'Import Graphics')
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoKey = set((u'Graphics',))
+    autoKey = {u'Graphics'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12249,7 +12256,7 @@ class ActorImporter(ImportPatcher):
                 u'Actors.Skeleton': ('model',),
                 }
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -12381,7 +12388,9 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoKey = set((u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',u'Actors.Skeleton'))
+    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
+               u'Actors.Skeleton'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12497,7 +12506,7 @@ class KFFZPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('animations',)
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get actor animation lists from source files."""
@@ -12611,7 +12620,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Animations')
     text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoKey = set((u'Actors.Anims',))
+    autoKey = {u'Actors.Anims'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12669,7 +12678,7 @@ class NPCAIPackagePatcher(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = len(self.srcMods) != 0
         self.data = {}
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get data from source files."""
@@ -12838,7 +12847,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: AI Packages')
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
-    autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
+    autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
     scanRequiresChecked = False
 
     #--Patch Phase ------------------------------------------------------------
@@ -12945,7 +12954,7 @@ class DeathItemPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('deathItem',)
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get actor death items from source files."""
@@ -13061,7 +13070,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Death Items')
     text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoKey = set((u'Actors.DeathItem',))
+    autoKey = {u'Actors.DeathItem'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13230,7 +13239,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    autoKey = set((u'Factions',))
+    autoKey = {u'Factions'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13442,7 +13451,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    autoKey = set((u'Relations',))
+    autoKey = {u'Relations'}
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -13535,7 +13544,10 @@ class ImportScripts(ImportPatcher):
         self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
-        self.longTypes = set(('WEAP','ACTI','ALCH','APPA','ARMO','BOOK','CLOT','CONT','CREA','DOOR','FLOR','FURN','INGR','KEYM','LIGH','MISC','NPC_','QUST','SGST','SLGM'))
+        self.longTypes = {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK',
+                          'CLOT', 'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN',
+                          'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'QUST',
+                          'SGST', 'SLGM'}
         for recClass in (MreRecord.type_class[x] for x in self.longTypes):
             recAttrs_class[recClass] = ('script',)
 
@@ -13655,7 +13667,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     name = _(u'Import Scripts')
     text = _(u"Import Scripts on containers, plants, misc, weapons etc from source mods.")
     tip = text
-    autoKey = set((u'Scripts',))
+    autoKey = {u'Scripts'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13735,7 +13747,7 @@ class ImportInventory(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and {u'InventOnly', u'IIM'} & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.masters = set()
         for srcMod in self.srcMods:
@@ -13852,7 +13864,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
-    autoKey = set((u'Invent',u'InventOnly'))
+    autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
@@ -13864,7 +13876,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #should be redundant since this patcher doesn't allow unloaded
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcs if
-            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and {u'InventOnly', u'IIM'} & modInfos[x].getBashTags()))
         self.class_mod_count = {}
 
     def getTypes(self):
@@ -13959,7 +13971,7 @@ class ImportActorsSpells(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = len(self.srcMods) != 0
         self.data = {}
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get data from source files."""
@@ -14129,7 +14141,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     name = _(u'Import Actors: Spells')
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoKey = set((u'Actors.Spells',u'Actors.SpellsForceAdd'))
+    autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14322,7 +14334,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
-    autoKey = set((u'Names',))
+    autoKey = {u'Names'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14527,7 +14539,8 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     name = _(u'Import NPC Faces')
     text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
-    autoKey = set((u'NpcFaces',u'NpcFacesForceFullImport',u'Npc.HairOnly',u'Npc.EyesOnly'))
+    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
+               u'Npc.EyesOnly'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14701,7 +14714,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     name = _(u'Import Roads')
     text = _(u"Import roads from source mods.")
     tip = text
-    autoKey = set((u'Roads',))
+    autoKey = {u'Roads'}
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -14800,7 +14813,7 @@ class SoundPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('DOOR',)):
             recAttrs_class[recClass] = ('soundOpen','soundClose','soundLoop')
         #--Needs Longs
-        self.longTypes = set(('MGEF','ACTI','LIGH','WTHR','CONT','DOOR'))
+        self.longTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR'}
 
     def initData(self,progress):
         """Get sounds from source files."""
@@ -14916,7 +14929,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     name = _(u'Import Sounds')
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    autoKey = set((u'Sound',))
+    autoKey = {u'Sound'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15114,7 +15127,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    autoKey = set((u'Stats',))
+    autoKey = {u'Stats'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15306,7 +15319,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = set((u'Spells',u'SpellStats'))
+    autoKey = {u'Spells', u'SpellStats'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15791,7 +15804,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             u'\n\n' +
             _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
             )
-    autoKey = set((u'Exhaust',))
+    autoKey = {u'Exhaust'}
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 
@@ -15913,11 +15926,11 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set((u'Auto',))
+        if not isinstance(choice,set): choice = {u'Auto'}
         if u'Auto' in choice:
             if item in modInfos:
                 bashTags = modInfos[item].getBashTags()
-                choice = set((u'Auto',)) | (set((u'Delev',u'Relev')) & bashTags)
+                choice = {u'Auto'} | ({u'Delev', u'Relev'} & bashTags)
         self.configChoices[item] = choice
         return choice
 
@@ -15942,10 +15955,13 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         self.levelers = None #--Will initialize later
         self.empties = set()
         OverhaulCompat = False
-        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
-        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath(u"TIE.esp")])
+        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
+                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
+        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
+                     GPath(u"Francesco.esp")}
+        WCMods = {GPath(u"Oblivion Warcry.esp"),
+                  GPath(u"Oblivion Warcry EV.esp")}
+        TIEMods = {GPath(u"TIE.esp")}
         if GPath(u"Unofficial Oblivion Patch.esp") in self.srcMods:
             if (OOOMods|WCMods) & self.srcMods:
                 OverhaulCompat = True
@@ -16126,7 +16142,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             )
     tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = (u'Auto',u'----',u'Delev',u'Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = set((u'Delev',u'Relev'))
+    autoKey = {u'Delev', u'Relev'}
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -16153,10 +16169,10 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set((u'Auto',))
+        if not isinstance(choice,set): choice = {u'Auto'}
         if u'Auto' in choice:
             if item in modInfos:
-                choice = set((u'Auto',))
+                choice = {u'Auto'}
                 bashTags = modInfos[item].getBashTags()
                 for key in (u'Delev',u'Relev'):
                     if key in bashTags: choice.add(key)
@@ -16183,10 +16199,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.empties = set()
         importMods = set(self.srcs) & set(loadMods)
         OverhaulCompat = False
-        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
-        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath(u"TIE.esp")])
+        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
+                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
+        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
+                     GPath(u"Francesco.esp")}
+        WCMods = {GPath(u"Oblivion Warcry.esp"),
+                  GPath(u"Oblivion Warcry EV.esp")}
+        TIEMods = {GPath(u"TIE.esp")}
         if GPath(u"Unofficial Oblivion Patch.esp") in importMods:
             if (OOOMods|WCMods) & importMods:
                 OverhaulCompat = True
@@ -16507,7 +16526,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = set(('MFact',))
+    autoKey = {'MFact'}
     unloadedText = u""
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
@@ -16876,14 +16895,26 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.isActive = True
-        self.type_validEntries = {'LVSP':set(['LVSP','SPEL']),
-                                'LVLC':set(['LVLC','NPC_','CREA']),
-                                'LVLI':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'CONT':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'CREA':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'NPC_':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP'])}
-        self.listTypes = set(['LVSP','LVLC','LVLI'])
-        self.containerTypes = set(['CONT','CREA','NPC_'])
+        self.type_validEntries = {'LVSP': {'LVSP', 'SPEL'},
+                                'LVLC': {'LVLC', 'NPC_', 'CREA'},
+                                'LVLI': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'CONT': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'CREA': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'NPC_': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'}}
+        self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
+        self.containerTypes = {'CONT', 'CREA', 'NPC_'}
         self.mod_type_id_badEntries = {}
         self.knownGood = set()
 
