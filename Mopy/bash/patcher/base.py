@@ -22,18 +22,24 @@
 #
 # =============================================================================
 
-"""This module contains the base patcher classes - must be game independent."""
+"""This module contains the base patcher classes - must be game independent.
+'A' in the names of the classes stands for 'Abstract'."""
+# FIXME: DETAILED docs - for the patcher attributes, the patcher methods and
+# classes and the patching process. Once this is done we should delete the (
+# unhelpful) docs from overriding methods to save some (100s) lines. We must
+#  also document which methods MUST be overridden by raising AbstractError. For
+# instance Patcher.buildPatch() apparently is NOT always overridden
+
 import copy
 import re
 import bash.bolt
 from bash.bolt import AbstractError, GPath
 from bash.bosh import reModExt, dirs, reCsvExt
 import bash.bush
-# from cint import _ # added by PyCharm, and again
 
 class _Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
-     in MRO, just before object"""
+     in MRO (method resolution order), just before object"""
     scanOrder = 10
     editOrder = 10
     group = u'UNDEFINED'
@@ -79,36 +85,38 @@ class _Abstract_Patcher(object):
         after this."""
         self.patchFile = patchFile
 
-    def initData(self,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as
-        necessary."""
-        pass  # TODO raise AbstractError ?
-
 class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
+    be just before Abstract_Patcher in MRO.""" # TODO: "performing" ? how ?
+    # would make any sense to make getRead/WriteClasses() into classmethods
+    # would it make any sense to make getRead/WriteClasses() into classmethods
+    # and just define an attribute in the classes - so getReadClasses(cls):
+    # return cls.READ and have in subclasses just READ = 'AMMO' (say)
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ()  # TODO raise AbstractError ?
+        return ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ()  # TODO raise AbstractError ?
+        return ()
+
+    def initData(self,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as
+        necessary."""
 
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it. If adds record, should first convert it to
         long fids."""
-        pass  # TODO raise AbstractError ?
 
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
-        pass  # TODO raise AbstractError ?
 
 class CBash_Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a CBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
+    be just before Abstract_Patcher in MRO.""" # TODO: "performing" ? how ?
+    # would it make any sense to make getTypes into classmethod ?
     unloadedText = u""
     allowUnloaded = True
     scanRequiresChecked = False
@@ -118,12 +126,12 @@ class CBash_Patcher(_Abstract_Patcher):
     def __init__(self):
         super(CBash_Patcher, self).__init__()
         if not self.allowUnloaded:
-            self.text = self.text + self.unloadedText
+            self.text += self.unloadedText
 
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return []  # TODO raise AbstractError ?
+        return []
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as
@@ -138,7 +146,7 @@ class CBash_Patcher(_Abstract_Patcher):
 
     def buildPatchLog(self,log):
         """Write to log."""
-        pass  # TODO raise AbstractError ?
+        pass
 
 class AListPatcher(_Abstract_Patcher):
     """Subclass for patchers that have GUI lists of objects.""" # TODO: docs
@@ -298,6 +306,7 @@ class AAliasesPatcher(_Abstract_Patcher):
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     def __init__(self,label,tip,key,*choices,**kwargs):
+        # TODO: docs for attributes !
         self.label = label
         self.tip = tip
         self.key = key
@@ -317,6 +326,7 @@ class AMultiTweakItem(object):
         self.logHeader = u'=== '+ label
 
     #--Config Phase -----------------------------------------------------------
+    # Methods present in _Abstract_Patcher too
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
@@ -335,6 +345,13 @@ class AMultiTweakItem(object):
             if self.default:
                 self.chosen = self.default
 
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        if self.choiceValues: value = self.choiceValues[self.chosen]
+        else: value = None
+        configs[self.key] = self.isEnabled,value
+
+    # Methods particular to AMultiTweakItem
     def isNew(self):
         """returns whether this tweak is new (i.e. whether the value was not
         loaded from a saved config"""
@@ -346,12 +363,6 @@ class AMultiTweakItem(object):
         if len(self.choiceLabels) > 1:
             label += u' [' + self.choiceLabels[self.chosen] + u']'
         return label
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        if self.choiceValues: value = self.choiceValues[self.chosen]
-        else: value = None
-        configs[self.key] = self.isEnabled,value
 
     def _patchLog(self,log,count):
         #--Log - must define self.logMsg in subclasses - TODO: move up ? down ?
