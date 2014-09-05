@@ -70,7 +70,10 @@ class ClothesTweak(AClothesTweak,MultiTweakItem):
         if record.flags.notPlayable: return False #--Ignore non-playable items.
         return super(ClothesTweak,self).isMyType(record)
 
-class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem): pass
+class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem):
+
+    def getTypes(self):
+        return ['CLOT']
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):
@@ -103,8 +106,6 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          }[key]
         self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
 
-    def getTypes(self):
-        return ['CLOT']
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -174,8 +175,6 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                          }[key]
         self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
 
-    def getTypes(self):
-        return ['CLOT']
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
