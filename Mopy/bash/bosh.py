@@ -24495,6 +24495,7 @@ def initDefaultSettings():
     inisettings['SoundSuccess'] = GPath(u'')
     inisettings['SoundError'] = GPath(u'')
     inisettings['EnableSplashScreen'] = True
+    inisettings['PromptActivateBashedPatch'] = True
 
 def initOptions(bashIni):
     initDefaultTools()

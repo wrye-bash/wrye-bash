@@ -6924,7 +6924,7 @@ class PatchDialog(wx.Dialog):
         progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
         ###Remove from Bash after CBash integrated
         patchFile = None
-        if self.doCBash:
+        if self.doCBash: # TODO: factor out duplicated code in this if/else!!
             try:
                 from datetime import timedelta
                 timer1 = time.clock()
@@ -6994,7 +6994,9 @@ class PatchDialog(wx.Dialog):
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
                 #--Select?
                 message = _(u'Activate %s?') % patchName.s
-                if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
+                if bosh.inisettings['PromptActivateBashedPatch'] \
+                         and (bosh.modInfos.isSelected(patchName) or
+                         balt.askYes(self.parent,message,patchName.s)):
                     try:
                         oldFiles = bosh.modInfos.ordered[:]
                         bosh.modInfos.select(patchName)
@@ -7101,7 +7103,9 @@ class PatchDialog(wx.Dialog):
                 balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
                 #--Select?
                 message = _(u'Activate %s?') % patchName.s
-                if bosh.modInfos.isSelected(patchName) or balt.askYes(self.parent,message,patchName.s):
+                if bosh.inisettings['PromptActivateBashedPatch'] \
+                         and (bosh.modInfos.isSelected(patchName) or
+                          balt.askYes(self.parent,message,patchName.s)):
                     try:
                         # Note to the regular WB devs:
                         #  The bashed patch wasn't activating when it had been manually deleting. So, on
