@@ -25,7 +25,6 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO:DOCS
-# TODO: common logging pattern ! Superclass _AMultiTweakItem_Names!
 import re
 import bash # had to do this so bash.bosh.modInfos is resolved (DUH)
 from bash.patcher.base import AMultiTweakItem
@@ -33,6 +32,18 @@ from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
+
+class _AMultiTweakItem_Names(MultiTweakItem):
+
+    def _patchLog(self, log, count):
+        # --Log - Notice self.logMsg is not used - so (apart from
+        # NamesTweak_BodyTags and NamesTweak_Body where it is not defined in
+        # the ANamesTweakXX common superclass) self.logMsg wastes space and the
+        # CBash implementations which _do_ use it produce different logs. TODO:
+        # unify C/P logs by using self.logMsg (mind the classes mentioned)
+        log(u'* %s: %d' % (self.label,sum(count.values())))
+        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):
@@ -59,7 +70,7 @@ class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
         pass
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body(MultiTweakItem):
+class NamesTweak_Body(_AMultiTweakItem_Names):
     """Names tweaker for armor and clothes."""
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -113,14 +124,17 @@ class NamesTweak_Body(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
+
     #--Config Phase -----------------------------------------------------------
+    def __init__(self, label, tip, key, *choices, **kwargs):
+        super(CBash_NamesTweak_Body, self).__init__(label, tip, key, *choices,
+                                                    **kwargs)
+        self.logMsg = u'* '+_(u'%s Renamed:') % self.key + u' %d'
+
     def getTypes(self):
         return [self.key]
 
@@ -158,16 +172,6 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ANamesTweak_Potions(AMultiTweakItem):
     """Names tweaker for potions."""
@@ -184,8 +188,9 @@ class ANamesTweak_Potions(AMultiTweakItem):
             (_(u'XD - Illness'),u'%s - '),
             (_(u'(XD) Illness'),u'(%s) '),
             )
+        self.logMsg = u'* '+_(u'%s Renamed:') % self.key + u' %d'
 
-class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
+class NamesTweak_Potions(ANamesTweak_Potions,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -243,10 +248,7 @@ class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -295,16 +297,6 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once (TODO:
 #  should be faster ? name ?)
@@ -337,7 +329,7 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
         self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
 
-class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
+class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -398,10 +390,7 @@ class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
@@ -475,7 +464,7 @@ class ANamesTweak_Spells(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Spells Renamed: %d')
 
-class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
+class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -526,10 +515,7 @@ class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -596,7 +582,7 @@ class ANamesTweak_Weapons(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Items Renamed: %d')
 
-class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
+class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -644,10 +630,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -695,7 +678,7 @@ class ATextReplacer(AMultiTweakItem):
         self.reReplace = reReplace
         self.logMsg = u'* '+_(u'Items Renamed: %d')
 
-class TextReplacer(ATextReplacer,MultiTweakItem):
+class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
     #--Config Phase -----------------------------------------------------------
     def __init__(self, reMatch, reReplace, label, tip, key, choices):
         super(TextReplacer, self).__init__(reMatch, reReplace, label, tip, key,
@@ -828,10 +811,7 @@ class TextReplacer(ATextReplacer,MultiTweakItem):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
