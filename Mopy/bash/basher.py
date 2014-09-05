@@ -51,6 +51,8 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
+from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
+    CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
     CBash_AssortedTweaker
 from patcher.oblivion.patchers.multitweak_clothes import ClothesTweaker, \
@@ -8070,8 +8072,8 @@ class CBash_GmstTweaker(CBash_GmstTweaker,TweakPatcher): pass
 class NamesTweaker(NamesTweaker,TweakPatcher): pass
 class CBash_NamesTweaker(CBash_NamesTweaker,TweakPatcher): pass
 
-class TweakActors(bosh.TweakActors,TweakPatcher): pass
-class CBash_TweakActors(bosh.CBash_TweakActors,TweakPatcher): pass
+class TweakActors(TweakActors,TweakPatcher): pass
+class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
