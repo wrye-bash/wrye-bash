@@ -32,7 +32,7 @@ import random
 import re
 from bash.bolt import SubProgress, BoltError, GPath, deprint
 from bash.bosh import SpecialPatcher, PatchFile, LoadFactory, \
-    ModFile, CBash_ListPatcher
+    ModFile
 from bash.brec import MreRecord, MelObject, strFid
 import bash.bush
 from bash.cint import ValidateDict, FormID
@@ -40,7 +40,7 @@ from bash.patcher.base import AMultiTweakItem, Patcher
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
 from bash.patcher.oblivion.patchers.base import DoublePatcher, \
-    CBash_DoublePatcher
+    CBash_DoublePatcher, CBash_ListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):

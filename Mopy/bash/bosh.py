@@ -11128,42 +11128,7 @@ class CBash_PatchFile(ObModFile):
 
 #------------------------------------------------------------------------------
 from patcher.base import Patcher, CBash_Patcher, AListPatcher
-
-class ListPatcher(AListPatcher,Patcher):
-
-    def _patchesList(self):
-        return dirs['patches'].list()
-
-    def _patchFile(self):
-        return PatchFile
-
-class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
-                             u' following list will be IGNORED.')
-
-    #--Config Phase -----------------------------------------------------------
-    def _patchesList(self):
-        return getPatchesList()
-
-    def _patchFile(self):
-        return CBash_PatchFile
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
-        self.srcs = self.getConfigChecked()
-        self.isActive = bool(self.srcs)
-
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        if self.allowUnloaded:
-            return [item for item in self.configItems if
-                    self.configChecks[item]]
-        else:
-            return [item for item in self.configItems if
-                    self.configChecks[item] and (
-                        item in self.patchFile.allMods or not reModExt.match(
-                            item.s))]
+from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -25,8 +25,8 @@
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import bash
 from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher, ADoublePatcher, AAliasesPatcher
-from bash.bosh import ListPatcher, CBash_ListPatcher
+    CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher
+from bash.bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt
 
 class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
 #  Patcher ? Should I define the  getWriteClasses, getReadClasses here ?
@@ -81,6 +81,42 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+
+class ListPatcher(AListPatcher,Patcher):
+
+    def _patchesList(self):
+        return bash.bosh.dirs['patches'].list()
+
+    def _patchFile(self):
+        return PatchFile
+
+class CBash_ListPatcher(AListPatcher,CBash_Patcher):
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
+                             u' following list will be IGNORED.')
+
+    #--Config Phase -----------------------------------------------------------
+    def _patchesList(self):
+        return getPatchesList()
+
+    def _patchFile(self):
+        return CBash_PatchFile
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
+        self.srcs = self.getConfigChecked()
+        self.isActive = bool(self.srcs)
+
+    def getConfigChecked(self):
+        """Returns checked config items in list order."""
+        if self.allowUnloaded:
+            return [item for item in self.configItems if
+                    self.configChecks[item]]
+        else:
+            return [item for item in self.configItems if
+                    self.configChecks[item] and (
+                        item in self.patchFile.allMods or not reModExt.match(
+                            item.s))]
 
 class DoublePatcher(ADoublePatcher, ListPatcher): pass
 
