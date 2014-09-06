@@ -5906,7 +5906,7 @@ class Messages(DataDict):
         dates = {'today':None,'yesterday':None,'previous':None}
         if maPathDate:
             year,month,day = map(int,maPathDate.groups())
-            if year < 100: year = 2000+year
+            if year < 100: year += 2000
             dates['today'] = datetime.datetime(year,month,day)
             dates['yesterday'] = dates['today'] - datetime.timedelta(1)
         reRelDate = re.compile(ur'(Today|Yesterday), (\d+):(\d+) (AM|PM)',re.U)
@@ -7691,7 +7691,7 @@ class InstallerArchive(Installer):
                 # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
                 # install a mod for Obilivon.
                 destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir = stageDataDir + u'\\*'
+                stageDataDir += u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean up staging dir
@@ -7850,7 +7850,7 @@ class InstallerProject(Installer):
         try:
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir = stageDataDir + u'\\*'
+                stageDataDir += u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean out staging dir
@@ -10831,7 +10831,7 @@ class CBash_PatchFile(ObModFile):
                     override = record.CopyAsOverride(self, UseWinningParents=True)
                 if override:
                     if undelete:
-                        override.posZ = override.posZ - 1000
+                        override.posZ -= 1000
                         override.IsInitiallyDisabled = True
                     mergeIds.add(override.fid)
 
