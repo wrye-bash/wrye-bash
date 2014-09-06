@@ -24,7 +24,8 @@
 
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import bash
-from bash.patcher.base import AMultiTweakItem
+from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
+    CBash_Patcher
 
 class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
 #  Patcher ? Should I define the  getWriteClasses, getReadClasses here ?
@@ -53,3 +54,29 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
+class MultiTweaker(AMultiTweaker,Patcher):
+
+    def buildPatch(self,log,progress):
+        """Applies individual tweaks."""
+        if not self.isActive: return
+        log.setHeader(u'= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatch(log,progress,self.patchFile)
+
+class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
+    #--Config Phase -----------------------------------------------------------
+    def initData(self,group_patchers,progress):
+        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
+        if not self.isActive: return
+        for tweak in self.enabledTweaks:
+            for type_ in tweak.getTypes():
+                group_patchers.setdefault(type_,[]).append(tweak)
+
+    #--Patch Phase ------------------------------------------------------------
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        log.setHeader(u'= '+self.__class__.name,True)
+        for tweak in self.enabledTweaks:
+            tweak.buildPatchLog(log)

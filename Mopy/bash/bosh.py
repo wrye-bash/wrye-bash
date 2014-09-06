@@ -11127,8 +11127,7 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-from patcher.base import Patcher, CBash_Patcher, AListPatcher, AMultiTweaker, \
-    AAliasesPatcher
+from patcher.base import Patcher, CBash_Patcher, AListPatcher, AAliasesPatcher
 
 class ListPatcher(AListPatcher,Patcher):
 
@@ -11167,31 +11166,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
                             item.s))]
 
 #------------------------------------------------------------------------------
-class MultiTweaker(AMultiTweaker,Patcher):
-
-    def buildPatch(self,log,progress):
-        """Applies individual tweaks."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
-
-class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type_ in tweak.getTypes():
-                group_patchers.setdefault(type_,[]).append(tweak)
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
 
 class ADoublePatcher(AListPatcher):
     """docs - what's this about ?""" # TODO

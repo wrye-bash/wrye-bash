@@ -51,6 +51,7 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
+from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -14299,7 +14300,7 @@ class Mod_ListPatchConfig(Link):
             log.setHeader(u'== '+humanName)
             clip.write(u'\n')
             clip.write(u'== '+humanName+u'\n')
-            if isinstance(patcher, (bosh.CBash_MultiTweaker, bosh.MultiTweaker)):
+            if isinstance(patcher, (CBash_MultiTweaker, MultiTweaker)):
                 # Tweak patcher
                 patcher.getConfig(config)
                 for tweak in patcher.tweaks:

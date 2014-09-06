@@ -29,13 +29,14 @@ import random
 import re
 
 from bash.bolt import GPath
-from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.brec import MreRecord
 import bash.bush
 from bash.cint import MGEFCode
 from bash.patcher.base import AMultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+    CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class AssortedTweak_ArmorShows(MultiTweakItem):

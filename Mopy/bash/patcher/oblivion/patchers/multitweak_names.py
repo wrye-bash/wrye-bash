@@ -28,10 +28,11 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO: common logging pattern ! Superclass _AMultiTweakItem_Names!
 import re
 import bash # had to do this so bash.bosh.modInfos is resolved (DUH)
-from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.patcher.base import AMultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+    CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):

@@ -26,11 +26,12 @@
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings, said the oracle at Delphi.""" # TODO:DOCS
 from bash.bolt import SubProgress, StateError, deprint
-from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.brec import MreRecord, ModReader
 import bash.bush
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+    CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class GlobalsTweak(MultiTweakItem):

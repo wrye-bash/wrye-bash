@@ -26,10 +26,11 @@
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 # TODO:DOCS
 import bash # FIXME - why ?
-from bash.bosh import MultiTweaker, CBash_MultiTweaker
 from bash.patcher.base import AMultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+    CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class AClothesTweak(AMultiTweakItem):

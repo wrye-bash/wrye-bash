@@ -29,11 +29,12 @@ import random
 import re
 import bash
 from bash.bolt import AbstractError, GPath
-from bash.bosh import  CBash_MultiTweaker,MultiTweaker
 from bash.cint import FormID
 from bash.patcher.base import AMultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
+from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+    CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
