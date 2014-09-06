@@ -182,7 +182,7 @@ class PickleDict(bolt.PickleDict):
 
     def exists(self):
         """See if pickle file exists."""
-        return (bolt.PickleDict.exists(self) or self.oldPath.exists())
+        return bolt.PickleDict.exists(self) or self.oldPath.exists()
 
     def load(self):
         """Loads vdata and data from file or backup file.
@@ -313,11 +313,11 @@ reSplitModGroup = re.compile(ur'^(.+?)([-+]\d+)?$',re.U)
 def splitModGroup(offGroup):
     """Splits a full group name into a group name and an integer offset.
     E.g. splits 'Overhaul+1' into ('Overhaul',1)."""
-    if not offGroup: return (u'',0)
+    if not offGroup: return u'',0
     maSplitModGroup = reSplitModGroup.match(offGroup)
     group = maSplitModGroup.group(1)
     offset = int(maSplitModGroup.group(2) or 0)
-    return (group,offset)
+    return group,offset
 
 def joinModGroup(group,offset):
     """Combines a group and offset into a full group name."""
@@ -585,7 +585,7 @@ class ModFile:
     def save(self,outPath=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.loadFactory.keepAll): raise StateError(u"Insufficient data to write file.")
+        if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with ModWriter(outPath.open('wb')) as out:
             #--Mod Record
@@ -607,7 +607,7 @@ class ModFile:
             if fid is None: return None
             if isinstance(fid,tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
-            return (masters[min(mod,maxMaster)],object)
+            return masters[min(mod,maxMaster)],object
         return mapper
 
     def getShortMapper(self):
@@ -842,7 +842,7 @@ class SreNPC(object):
 
     def getTuple(self,fid,version):
         """Returns record as a change record tuple."""
-        return (fid,35,self.getFlags(),version,self.getData())
+        return fid,35,self.getFlags(),version,self.getData()
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
@@ -1062,17 +1062,17 @@ class ObseFile:
         newPlugins = []
         for (opcodeBase,chunks) in self.plugins:
             newChunks = []
-            if (opcodeBase == 0x2330):
+            if opcodeBase == 0x2330:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
-                    if (chunkTypeNum == 1):
+                    if chunkTypeNum == 1:
                         with sio(chunkBuff) as ins:
                             with sio() as buff:
                                 def unpack(format,size):
                                     return struct.unpack(format,ins.read(size))
                                 def pack(format,*args):
                                     buff.write(struct.pack(format,*args))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     espId,modId,modNameLen, = unpack('=BBI',6)
                                     modName = GPath(ins.read(modNameLen))
                                     modName = masterMap.get(modName,modName)
@@ -1290,7 +1290,7 @@ class SaveFile:
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.canSave): raise StateError(u"Insufficient data to write file.")
+        if not self.canSave: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open('wb') as out:
             def pack(format,*data):
@@ -1531,7 +1531,7 @@ class SaveFile:
         #--Fids log
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
-        log(u'  %d\t\t     Lost Refs (Fid == 0)' % (lostRefs))
+        log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
         for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
             if irefed or changed:
                 log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
@@ -1583,14 +1583,14 @@ class SaveFile:
                 espMap = {}
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
-                    if (chunkType[0] >= ' ' and chunkType[3] >= ' '):
+                    if chunkType[0] >= ' ' and chunkType[3] >= ' ':
                         log(u'  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
                         log(u'  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
                     with sio(chunkBuff) as ins:
                         def unpack(format,size):
                             return struct.unpack(format,ins.read(size))
-                        if (opcodeBase == 0x1400):  # OBSE
+                        if opcodeBase == 0x1400:  # OBSE
                             if chunkType == 'RVTS':
                                 #--OBSE String
                                 modIndex,stringID,stringLength, = unpack('=BIH',7)
@@ -1602,7 +1602,7 @@ class SaveFile:
                                 #--OBSE Array
                                 modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
                                 if modIndex == 255:
-                                    log(_(u'    Mod :  %02X (Save File)') % (modIndex))
+                                    log(_(u'    Mod :  %02X (Save File)') % modIndex)
                                 else:
                                     log(_(u'    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
                                 log(_(u'    ID  :  %u') % arrayID)
@@ -1622,7 +1622,7 @@ class SaveFile:
                                         for x in range(numRefs):
                                             refModID, = unpack('=B',1)
                                             if refModID == 255:
-                                                log(_(u'      %02X (Save File)') % (refModID))
+                                                log(_(u'      %02X (Save File)') % refModID)
                                             else:
                                                 log(u'      %02X (%s)' % (refModID, self.masters[refModID].s))
                                 numElements, = unpack('=I',4)
@@ -1652,12 +1652,12 @@ class SaveFile:
                                         data, = unpack('=I',4)
                                         dataStr = u'%u' % data
                                     log(u'    [%s]:%s = %s' % (keyStr,(u'BAD',u'NUM',u'REF',u'STR',u'ARR')[dataType],dataStr))
-                        elif (opcodeBase == 0x2330):    # Pluggy
-                            if (chunkTypeNum == 1):
+                        elif opcodeBase == 0x2330:    # Pluggy
+                            if chunkTypeNum == 1:
                                 #--Pluggy TypeESP
                                 log(_(u'    Pluggy ESPs'))
                                 log(_(u'    EID   ID    Name'))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     if chunkVersion == 2:
                                         espId,modId, = unpack('=BB', 2)
                                         log(u'    %02X    %02X' % (espId,modId))
@@ -1667,7 +1667,7 @@ class SaveFile:
                                         modName = ins.read(modNameLen)
                                         log(u'    %02X    %02X    %s' % (espId,modId,modName))
                                         espMap[modId] = modName # was [espId]
-                            elif (chunkTypeNum == 2):
+                            elif chunkTypeNum == 2:
                                 #--Pluggy TypeSTR
                                 log(_(u'    Pluggy String'))
                                 strId,modId,strFlags, = unpack('=IBB',6)
@@ -1676,7 +1676,7 @@ class SaveFile:
                                 log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags :')+u' %u' % strFlags)
                                 log(u'      '+_(u'Data  :')+u' %s' % strData)
-                            elif (chunkTypeNum == 3):
+                            elif chunkTypeNum == 3:
                                 #--Pluggy TypeArray
                                 log(_(u'    Pluggy Array'))
                                 arrId,modId,arrFlags,arrSize, = unpack('=IBBI',10)
@@ -1684,19 +1684,19 @@ class SaveFile:
                                 log(_(u'      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(_(u'      Flags : %u') % (arrFlags,))
                                 log(_(u'      Size  : %u') % (arrSize,))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     elemIdx,elemType, = unpack('=IB',5)
                                     elemStr = ins.read(4)
-                                    if (elemType == 0): #--Integer
+                                    if elemType == 0: #--Integer
                                         elem, = struct.unpack('=i',elemStr)
                                         log(u'        [%u]  INT  %d' % (elemIdx,elem,))
-                                    elif (elemType == 1): #--Ref
+                                    elif elemType == 1: #--Ref
                                         elem, = struct.unpack('=I',elemStr)
                                         log(u'        [%u]  REF  %08X' % (elemIdx,elem,))
-                                    elif (elemType == 2): #--Float
+                                    elif elemType == 2: #--Float
                                         elem, = struct.unpack('=f',elemStr)
                                         log(u'        [%u]  FLT  %08X' % (elemIdx,elem,))
-                            elif (chunkTypeNum == 4):
+                            elif chunkTypeNum == 4:
                                 #--Pluggy TypeName
                                 log(_(u'    Pluggy Name'))
                                 refId, = unpack('=I',4)
@@ -1707,7 +1707,7 @@ class SaveFile:
                                     newName = newName + ch
                                 log(_(u'      RefID : %08X') % refId)
                                 log(_(u'      Name  : %s') % _unicode(newName))
-                            elif (chunkTypeNum == 5):
+                            elif chunkTypeNum == 5:
                                 #--Pluggy TypeScr
                                 log(_(u'    Pluggy ScreenSize'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1715,7 +1715,7 @@ class SaveFile:
                                 scrW,scrH, = unpack('=II',8)
                                 log(_(u'      Width  : %u') % scrW)
                                 log(_(u'      Height : %u') % scrH)
-                            elif (chunkTypeNum == 6):
+                            elif chunkTypeNum == 6:
                                 #--Pluggy TypeHudS
                                 log(u'    '+_(u'Pluggy HudS'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1734,7 +1734,7 @@ class SaveFile:
                                 log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
                                 log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
                                 log(u'      '+_(u'File   :')+u' %s' % hudFileName)
-                            elif (chunkTypeNum == 7):
+                            elif chunkTypeNum == 7:
                                 #--Pluggy TypeHudT
                                 log(_(u'    Pluggy HudT'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1799,7 +1799,7 @@ class SaveFile:
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
-        return (createdCounts,nullRefCount)
+        return createdCounts,nullRefCount
 
     def removeBloating(self,uncreateKeys,removeNullRefs=True,progress=None):
         """Removes duplicated created items and null refs."""
@@ -1841,7 +1841,7 @@ class SaveFile:
                 kept.append(record)
             progress.plus()
         self.records = kept
-        return (numUncreated,numUnCreChanged,numUnNulled)
+        return numUncreated,numUnCreChanged,numUnNulled
 
     def getCreated(self,*types):
         """Return created items of specified type(s)."""
@@ -1858,7 +1858,7 @@ class SaveFile:
         abombBytes = data[2+tesClassSize-4:2+tesClassSize]
         abombCounter, = struct.unpack('I',abombBytes)
         abombFloat, = struct.unpack('f',abombBytes)
-        return (tesClassSize,abombCounter,abombFloat)
+        return tesClassSize,abombCounter,abombFloat
 
     def setAbomb(self,value=0x41000000):
         """Resets abomb counter to specified value."""
@@ -1922,7 +1922,7 @@ class CoSaves:
             cPluggy = u'XP'[abs(pluggy.mtime - save.mtime) < 10]
         if obse.exists():
             cObse = u'XO'[abs(obse.mtime - save.mtime) < 10]
-        return (cObse,cPluggy)
+        return cObse,cPluggy
 
 # File System -----------------------------------------------------------------
 #--------------------------------------------------------------------------------
@@ -2102,7 +2102,7 @@ class BsaFile:
         self.resetMTimes()
         self.updateAIText(intxt)
         #--Done
-        return (reset,inval,intxt)
+        return reset,inval,intxt
 
 #--------------------------------------------------------------------------------
 class IniFile(object):
@@ -2162,7 +2162,7 @@ class IniFile(object):
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         if lineNumbers:
-            def makeSetting(match,lineNo): return (match.group(2).strip(),lineNo)
+            def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
@@ -3182,7 +3182,7 @@ class MasterInfo:
             self.masterNames = tuple()
 
     def hasChanged(self):
-        return (self.name != self.oldName)
+        return self.name != self.oldName
 
     def isEsm(self):
         if self.modInfo:
@@ -3415,7 +3415,7 @@ class FileInfo:
         #--New
         snapLast[-1] = (u'%0'+unicode(len(snapLast[-1]))+u'd') % (int(snapLast[-1])+1,)
         destName = root+separator+(u'.'.join(snapLast))+ext
-        return (destDir,destName,(root+u'*'+ext).s)
+        return destDir,destName,(root+u'*'+ext).s
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
@@ -3676,7 +3676,7 @@ class ModInfo(FileInfo):
     def getDirtyMessage(self):
         """Returns a dirty message from LOOT."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
-            return (False,u'')
+            return False,u''
         return configHelpers.getDirtyMessage(self.name)
 
     #--Header Editing ---------------------------------------------------------
@@ -4784,7 +4784,7 @@ class ModInfos(FileInfos):
                     if configChecks[modName]:
                         merged.add(modName)
             imported.update(patchConfigs.get('ImportedMods',tuple()))
-        return (merged,imported)
+        return merged,imported
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
@@ -4859,7 +4859,7 @@ class ModInfos(FileInfos):
             if not wtxt: log(u'[spoiler][xml]\n', False)
             for name in allMods:
                 if name in masters:
-                    prefix = bul+u'%02X' % (modIndex)
+                    prefix = bul+u'%02X' % modIndex
                     modIndex += 1
                 elif name in headers:
                     match = re.match(u'^[\.+= ]*(.*?)\.es[pm]',name.s,flags=re.U)
@@ -4876,7 +4876,7 @@ class ModInfos(FileInfos):
                 text = u'%s  %s' % (prefix,name.s,)
                 if showVersion:
                     version = self.getVersion(name)
-                    if version: text += _(u'  [Version %s]') % (version)
+                    if version: text += _(u'  [Version %s]') % version
                 if showCRC:
                     text +=_(u'  [CRC: %08X]') % (self[name].cachedCrc())
                 log(text)
@@ -4940,7 +4940,7 @@ class ModInfos(FileInfos):
 
     def isSelected(self,modFile):
         """True if modFile is selected (active)."""
-        return (modFile in self.ordered)
+        return modFile in self.ordered
 
     def select(self,fileName,doSave=True,modSet=None,children=None):
         """Adds file to selected."""
@@ -5317,7 +5317,7 @@ class SaveInfos(FileInfos):
     #--Enabled ----------------------------------------------------------------
     def isEnabled(self,fileName):
         """True if fileName is enabled)."""
-        return (fileName.cext == u'.ess')
+        return fileName.cext == u'.ess'
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
@@ -5633,7 +5633,7 @@ class ConfigHelpers:
     def getDirtyMessage(self,modName):
         message,clean = lootDb.GetDirtyMessage(modName)
         cleanIt = clean == loot.loot_needs_cleaning_yes
-        return (cleanIt,message)
+        return cleanIt,message
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
@@ -6095,7 +6095,7 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
             return self.tankColumns[:]
         else:
             author,version,karma,tags = self.data[item][1:5]
-            return (item,author,version,tags)
+            return item,author,version,tags
 
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
@@ -6105,7 +6105,7 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
         iconKey = u'karma%+d' % self.data[item][1]
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
 #------------------------------------------------------------------------------
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
@@ -6160,7 +6160,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
         iconKey = u'karma%+d' % self.data[item][1]
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
     #--Operations
     def loadText(self,path):
@@ -6679,7 +6679,7 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
                         continue
-                    elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                    elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         ## Disabling Auto-BCF's for now, until the code for them can be updated to the latest
                         ## tempDir stuff
                         ## TODO: DO THIS!
@@ -6738,7 +6738,7 @@ class Installer(object):
             elif fileLower == u'wizard.txt':
                 self.hasWizard = full
                 continue
-            elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+            elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                 self.hasBCF = full
                 continue
             elif skipImages and fileExt in imageExts:
@@ -7067,7 +7067,7 @@ class Installer(object):
         #--Done
         (self.status,oldStatus) = (status,self.status)
         (self.underrides,oldUnderrides) = (underrides,self.underrides)
-        return (self.status != oldStatus or self.underrides != oldUnderrides)
+        return self.status != oldStatus or self.underrides != oldUnderrides
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
@@ -7492,7 +7492,7 @@ class InstallerConverter(object):
         result = ins.close()
         tempList.remove()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % (subTempDir.s)
+        cmd = ur'attrib -R "%s\*" /S /D' % subTempDir.s
         ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
         if result or errorLine:
             raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
@@ -7621,7 +7621,7 @@ class InstallerArchive(Installer):
             result = ins.close()
             self.tempList.remove()
             # Clear ReadOnly flag if set
-            cmd = ur'attrib -R "%s\*" /S /D' % (self.getTempDir().s)
+            cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
             ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
             if result or errorLine:
                 if len(errorLine) > 10:
@@ -7716,7 +7716,7 @@ class InstallerArchive(Installer):
         count = 0
         tempDir = self.getTempDir()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % (tempDir.s)
+        cmd = ur'attrib -R "%s\*" /S /D' % tempDir.s
         ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
         tempDirJoin = tempDir.join
         destDirJoin = destDir.join
@@ -7752,7 +7752,7 @@ class InstallerArchive(Installer):
                             file = value.decode('utf8')
                         elif key == u'Attributes':
                             isdir = (value[0] == u'D')
-                            text.append((u'%s' % (file), isdir))
+                            text.append((u'%s' % file, isdir))
                         elif key == u'Method':
                             file = u''
                             isdir = False
@@ -7864,7 +7864,7 @@ class InstallerProject(Installer):
         srcDir = dirs['mods']
         projFiles = set(projFiles)
         srcProj = tuple((x,y) for x,y in self.refreshDataSizeCrc().iteritems() if x in projFiles)
-        if not srcProj: return (0,0)
+        if not srcProj: return 0,0
         #--Sync Files
         updated = removed = 0
         norm_ghost = Installer.getGhosted()
@@ -7879,7 +7879,7 @@ class InstallerProject(Installer):
                 srcFull.copyTo(projFull)
                 updated += 1
         self.removeEmpties(package)
-        return (updated,removed)
+        return updated,removed
 
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
         """Packs project to build directory. Release filters out developement material from the archive"""
@@ -8217,7 +8217,7 @@ class InstallersData(bolt.TankData, DataDict):
             iconKey += '.dir'
         if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
             iconKey += '.wiz'
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
     def getMouseText(self,iconKey,textKey,backKey):
         """Returns mouse text to use, given the iconKey,textKey, and backKey."""
@@ -8508,7 +8508,7 @@ class InstallersData(bolt.TankData, DataDict):
         return changed
 
     def validConverterName(self,path):
-        return path.cext in (defaultExt) and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
+        return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
 
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
@@ -9038,7 +9038,7 @@ class InstallersData(bolt.TankData, DataDict):
             modIndex,header = 0, None
             log(u'[spoiler][xml]\n',False)
             for package in allPackages:
-                prefix = u'%03d' % (self.data[package].order)
+                prefix = u'%03d' % self.data[package].order
                 if isinstance(self.data[package],InstallerMarker):
                     log(u'%s - %s' % (prefix,package.s))
                 elif self.data[package].isActive:
@@ -9059,7 +9059,7 @@ class ModDetails:
         def getRecordReader(ins,flags,size):
             """Decompress record data as needed."""
             if not MreRecord._flags1(flags).compressed:
-                return (ins,ins.tell()+size)
+                return ins,ins.tell()+size
             else:
                 import zlib
                 sizeCheck, = struct.unpack('I',ins.read(4))
@@ -9068,7 +9068,7 @@ class ModDetails:
                     raise ModError(self.inName,
                         u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
                 reader = ModReader(modInfo.name,sio(decomp))
-                return (reader,sizeCheck)
+                return reader,sizeCheck
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
         records = group_records[bush.game.MreHeader.classType] = []
@@ -9728,7 +9728,7 @@ class ModCleaner:
             self.itm = itm
         if what & ModCleaner.FOG:
             self.fog = fog
-        return (udr,itm,fog)
+        return udr,itm,fog
 
     @staticmethod
     def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress(),detailed=False):
@@ -10361,7 +10361,7 @@ class PatchFile(ModFile):
         #--Empty mod
         elif not modFile.tops:
             if not verbose: return False
-            reasons += u'\n.    '+(u'Empty mod.')
+            reasons += u'\n.    '+ u'Empty mod.'
         #--New record
         lenMasters = len(modFile.tes4.masters)
         newblocks = []
@@ -10910,7 +10910,7 @@ class CBash_PatchFile(ObModFile):
                 for record in modFile.MGEF:
                     full = record.full
                     eid = record.eid
-                    if (full and eid):
+                    if full and eid:
                         eidRaw = eid.encode('cp1252')
                         mgefId = MGEFCode(eidRaw) if record.recordVersion is None else record.mgefCode
                         self.mgef_school[mgefId] = record.schoolType
@@ -11572,7 +11572,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         log(u'\n')
         for mod in modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
-            log(u'\n=== %s' % (mod.s))
+            log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
             log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
             log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
@@ -12643,7 +12643,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
+        if recordId in self.id_animations and record.animations != self.id_animations[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.animations = self.id_animations[recordId]
@@ -12907,7 +12907,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         recordId = record.fid
         if recordId in self.mergedPackageList:
             mergedPackages = list(self.mergedPackageList[recordId])
-            if(record.aiPackages != mergedPackages):
+            if record.aiPackages != mergedPackages:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     try:
@@ -13099,7 +13099,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]):
+        if recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.deathItem = self.id_deathItem[recordId]
@@ -13300,9 +13300,9 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
-        if(fid in self.csvId_factions):
+        if fid in self.csvId_factions:
             newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid] if faction.ValidateFormID(self.patchFile)])
-        elif(fid in self.id_factions):
+        elif fid in self.id_factions:
             newFactions = set([(faction,rank) for faction, rank in self.id_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
         else:
             return
@@ -13491,9 +13491,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
-        if(fid in self.csvFid_faction_mod):
+        if fid in self.csvFid_faction_mod:
             newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
-        elif(fid in self.fid_faction_mod):
+        elif fid in self.fid_faction_mod:
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
         else:
             return
@@ -13706,7 +13706,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_script and record.script != self.id_script[recordId]):
+        if recordId in self.id_script and record.script != self.id_script[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.script = self.id_script[recordId]
@@ -14387,7 +14387,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         recordId = record.fid
         full = self.id_full.get(recordId, None)
         full = self.csvId_full.get(recordId, full)
-        if(full and record.full != full):
+        if full and record.full != full:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.full = full
@@ -16751,7 +16751,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         if modFile.GName in self.srcs: return
 
         recordId = record.fid
-        if(recordId in self.cyrodiilQuests):
+        if recordId in self.cyrodiilQuests:
             for condition in record.conditions:
                 if condition.ifunc == 365: return #--365: playerInSeWorld
             else:
@@ -16776,7 +16776,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         for mod,eids in mod_eids.iteritems():
             log(u'* %s: %d' % (mod.s,len(eids)))
             for eid in sorted(eids):
-                log(u'  * %s' % (eid))
+                log(u'  * %s' % eid)
         self.mod_eids = {}
 
 #------------------------------------------------------------------------------
@@ -16977,7 +16977,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         mod_type_id_badEntries = self.mod_type_id_badEntries
         log.setHeader(u'= ' +self.__class__.name)
         for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
-            log(u'\n=== %s' % (mod.s))
+            log(u'\n=== %s' % mod.s)
             for type,id_badEntries in type_id_badEntries.iteritems():
                 log(u'  * '+_(u'Cleaned %s: %d') % (type,len(id_badEntries)))
                 for id, badEntries in id_badEntries.iteritems():
@@ -17128,7 +17128,7 @@ def getPersonalPath(bashIni, path):
         sErrorInfo = _(u"Folder path specified on command line (-p)")
     elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
         path = GPath(bashIni.get('General', 'sPersonalPath').strip())
-        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sPersonalPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_PERSONAL)
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
@@ -17152,7 +17152,7 @@ def getLocalAppDataPath(bashIni, path):
         sErrorInfo = _(u"Folder path specified on command line (-l)")
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
-        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sLocalAppDataPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
