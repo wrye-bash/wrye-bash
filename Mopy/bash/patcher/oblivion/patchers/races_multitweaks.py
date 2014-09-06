@@ -31,16 +31,16 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 import random
 import re
 from bash.bolt import SubProgress, BoltError, GPath, deprint
-from bash.bosh import SpecialPatcher, DoublePatcher, PatchFile, LoadFactory, \
-    ModFile, CBash_DoublePatcher, CBash_ListPatcher
+from bash.bosh import SpecialPatcher, PatchFile, LoadFactory, \
+    ModFile, CBash_ListPatcher
 from bash.brec import MreRecord, MelObject, strFid
 import bash.bush
 from bash.cint import ValidateDict, FormID
 from bash.patcher.base import AMultiTweakItem, Patcher
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-# FIXME : move SpecialPatcher, DoublePatcher, CBash_DoublePatcher,
-# CBash_ListPatcher outta bosh
+from bash.patcher.oblivion.patchers.base import DoublePatcher, \
+    CBash_DoublePatcher
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):

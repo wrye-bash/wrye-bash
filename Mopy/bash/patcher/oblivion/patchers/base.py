@@ -25,7 +25,8 @@
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import bash
 from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher
+    CBash_Patcher, ADoublePatcher
+from bash.bosh import ListPatcher, CBash_ListPatcher
 
 class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
 #  Patcher ? Should I define the  getWriteClasses, getReadClasses here ?
@@ -80,3 +81,7 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
+
+class DoublePatcher(ADoublePatcher, ListPatcher): pass
+
+class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass

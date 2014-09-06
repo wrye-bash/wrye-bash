@@ -359,3 +359,23 @@ class AMultiTweakItem(object):
         log(self.logMsg % sum(count.values()))
         for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class ADoublePatcher(AListPatcher):
+    """docs - what's this about ?""" # TODO
+
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        super(ADoublePatcher, self).getConfig(configs)
+        self.tweaks = copy.deepcopy(self.__class__.tweaks)
+        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
+        for tweak in self.tweaks:
+            tweak.getConfig(config)
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        super(ADoublePatcher, self).saveConfig(configs)
+        config = configs[self.__class__.__name__]
+        for tweak in self.tweaks:
+            tweak.saveConfig(config)
+        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
