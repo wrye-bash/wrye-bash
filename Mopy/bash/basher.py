@@ -51,7 +51,8 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
-from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker
+from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
+    AliasesPatcher, CBash_AliasesPatcher
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -7425,7 +7426,7 @@ class Patcher:
             self.gConfigPanel.Layout()
 
 #------------------------------------------------------------------------------
-class AliasesPatcher(Patcher,bosh.AliasesPatcher):
+class AliasesPatcher(Patcher, AliasesPatcher):
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -7465,7 +7466,7 @@ class AliasesPatcher(Patcher,bosh.AliasesPatcher):
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
 
-class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
+class CBash_AliasesPatcher(Patcher, CBash_AliasesPatcher):
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -14319,7 +14320,8 @@ class Mod_ListPatchConfig(Link):
                 for item in conf.get('configItems',[]):
                     log(u'. __%s__' % patcher.getItemLabel(item))
                     clip.write(u'    %s\n' % patcher.getItemLabel(item))
-            elif isinstance(patcher, (bosh.CBash_AliasesPatcher,bosh.AliasesPatcher)):
+            elif isinstance(patcher, (CBash_AliasesPatcher,
+                                      AliasesPatcher)):
                 # Alias mod names
                 aliases = conf.get('aliases',{})
                 for mod in aliases:

@@ -11127,7 +11127,7 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-from patcher.base import Patcher, CBash_Patcher, AListPatcher, AAliasesPatcher
+from patcher.base import Patcher, CBash_Patcher, AListPatcher
 
 class ListPatcher(AListPatcher,Patcher):
 
@@ -11166,16 +11166,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
                             item.s))]
 
 # Patchers: 10 ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class AliasesPatcher(AAliasesPatcher,Patcher): pass
-
-class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(CBash_AliasesPatcher,self).getConfig(configs)
-        self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
-
 #------------------------------------------------------------------------------
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""

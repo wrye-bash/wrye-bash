@@ -25,7 +25,7 @@
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import bash
 from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher, ADoublePatcher
+    CBash_Patcher, ADoublePatcher, AAliasesPatcher
 from bash.bosh import ListPatcher, CBash_ListPatcher
 
 class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
@@ -85,3 +85,13 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
 class DoublePatcher(ADoublePatcher, ListPatcher): pass
 
 class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
+
+class AliasesPatcher(AAliasesPatcher,Patcher): pass
+
+class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        super(CBash_AliasesPatcher,self).getConfig(configs)
+        self.srcs = [] #so as not to fail screaming when determining load
+        # mods - but with the least processing required.
