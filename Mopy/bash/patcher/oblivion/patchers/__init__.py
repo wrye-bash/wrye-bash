@@ -22,5 +22,4 @@
 #
 # =============================================================================
 
-"""This module contains the oblivion specific code. WIP - detailed docs when
- done"""
+"""This module contains the oblivion patcher classes"""
