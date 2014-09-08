@@ -157,6 +157,7 @@ class DoublePatcher(ADoublePatcher, ListPatcher): pass
 
 class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
+# Patchers: 10 ----------------------------------------------------------------
 class AliasesPatcher(AAliasesPatcher,Patcher): pass
 
 class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):

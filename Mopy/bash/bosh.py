@@ -12017,7 +12017,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
-        self.class_mod_count = {}
+        self.mod_count = {}
         class_attrs = self.class_attrs = {}
         model = ('modPath','modb','modt_p')
         icon = ('iconPath',)
@@ -12097,22 +12097,23 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.class_mod_count
+                    class_mod_count = self.mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 1
-        class_mod_count = self.class_mod_count
-        log(u'=== '+_(u'Source Mods'))
+    def _clog(self, log):  # type 1
+        mod_count = self.mod_count
+        log(u'=== ' + _(u'Source Mods'))
         for mod in self.srcs:
-            log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type in class_mod_count.keys():
-            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Modified Records'))
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
@@ -12303,7 +12304,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
-        self.class_mod_count = {}
+        self.mod_count = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
                 u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -12368,22 +12369,23 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.class_mod_count
+                    class_mod_count = self.mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 1
-        class_mod_count = self.class_mod_count
-        log(u'=== '+_(u'Source Mods'))
+    def _clog(self, log):  # type 1
+        mod_count = self.mod_count
+        log(u'=== ' + _(u'Source Mods'))
         for mod in self.srcs:
-            log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type in class_mod_count.keys():
-            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Modified Records'))
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
@@ -13555,16 +13557,17 @@ class CBash_ImportScripts(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log):
+    def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== '+_(u'Source Mods'))
+        log(u'=== ' + _(u'Source Mods'))
         for mod in self.srcs:
-            log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Modified Records'))
         for type in mod_count.keys():
-            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(mod_count[type].values())))
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
             for srcMod in modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -13713,7 +13716,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcs if
             (x in patchFile.mergeSet and {u'InventOnly', u'IIM'} & modInfos[x].getBashTags()))
-        self.class_mod_count = {}
+        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -13775,7 +13778,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.items_list = items
-                class_mod_count = self.class_mod_count
+                class_mod_count = self.mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
@@ -13784,13 +13787,13 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        class_mod_count = self.class_mod_count
+        mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        for type in class_mod_count.keys():
-            log(u'* '+ self.__class__.logMsg % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+        for type in mod_count.keys():
+            log(u'* '+ self.__class__.logMsg % (type,sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
@@ -14173,7 +14176,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         self.id_full = {}
         self.csvId_full = {}
-        self.class_mod_count = {}
+        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -14221,7 +14224,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.full = full
-                class_mod_count = self.class_mod_count
+                class_mod_count = self.mod_count
                 class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
@@ -14234,13 +14237,13 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         log(u'=== '+_(u'Source Mods/Files'))
         for mod in self.srcs:
             log(u'* ' + mod.s)
-        class_mod_count = self.class_mod_count
+        mod_count = self.mod_count
         log(u'\n=== ' + _(u'Renamed Items'))
-        for type in class_mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (type,sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class NpcFacePatcher(ImportPatcher):
@@ -14750,7 +14753,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
-        self.class_mod_count = {}
+        self.mod_count = {}
         class_attrs = self.class_attrs = {}
         class_attrs['ACTI'] = ('sound',)
         class_attrs['CONT'] = ('soundOpen','soundClose')
@@ -14788,22 +14791,23 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.class_mod_count
+                    class_mod_count = self.mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 1
-        class_mod_count = self.class_mod_count
-        log(u'=== '+_(u'Source Mods'))
+    def _clog(self, log):  # type 1
+        mod_count = self.mod_count
+        log(u'=== ' + _(u'Source Mods'))
         for mod in self.srcs:
-            log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type in class_mod_count.keys():
-            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Modified Records'))
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
@@ -14947,7 +14951,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         self.fid_attr_value = {}
         self.csvFid_attr_value = {}
         self.class_attrs = CBash_ItemStats.class_attrs
-        self.class_mod_count = {}
+        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -15000,22 +15004,23 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.class_mod_count
+                    class_mod_count = self.mod_count
                     class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 1
-        class_mod_count = self.class_mod_count
-        log(u'=== ' + _(u'Source Mods/Files')) # peculiarity 1
+    def _clog(self, log):  # type 1
+        mod_count = self.mod_count
+        log(u'=== ' + _(u'Source Mods/Files'))
         for mod in self.srcs:
-            log(u'* '+mod.s)
-        log(u'\n=== ' + _(u'Imported Stats')) # peculiarity 2
-        for type in class_mod_count.keys():
-            log(u'* '+_(u'Modified %s Records: %d') % (type,sum(class_mod_count[type].values())))
-            for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
-        self.class_mod_count = {}
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Imported Stats'))  # peculiarity 2
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+            type, sum(mod_count[type].values())))
+            for srcMod in modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 from patcher.oblivion.utilities import SpellRecords, CBash_SpellRecords
