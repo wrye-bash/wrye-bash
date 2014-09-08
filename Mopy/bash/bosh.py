@@ -11566,6 +11566,13 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
+    def _srcMods(self,log,header=u'=== ' + _(u'Source Mods')):
+        """Logs the Source mods for this patcher - patcher must have `srcs`
+        attribute otherwise an AttributeError will be raised."""
+        log(header)
+        for mod in self.srcs:
+            log(u'* ' + mod.s)
+
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -12104,9 +12111,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== ' + _(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
@@ -12376,9 +12381,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
 
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== ' + _(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
@@ -12981,9 +12984,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
                 record._RecordID = override._RecordID
 
     def _clog(self,log): # type 2
-        log(u'=== ' + _(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         super(CBash_DeathItemPatcher, self)._clog(log)
 
 #------------------------------------------------------------------------------
@@ -13559,9 +13560,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
 
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== ' + _(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
@@ -14039,9 +14038,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* '+mod.s)
+        self._srcMods(log)
         log(u'* '+_(u'Imported Spell Lists: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -14234,9 +14231,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         if not self.isActive: return
         #--Log
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods/Files'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log,header=u'=== '+_(u'Source Mods/Files'))
         mod_count = self.mod_count
         log(u'\n=== ' + _(u'Renamed Items'))
         for type in mod_count.keys():
@@ -14453,9 +14448,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' +mod.s)
+        self._srcMods(log)
         log(u'* '+_(u'Faces Patched: %d') % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
@@ -14798,9 +14791,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
 
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== ' + _(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
@@ -15011,9 +15002,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
 
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
-        log(u'=== ' + _(u'Source Mods/Files'))
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
+        self._srcMods(log, header=u'=== ' + _(u'Source Mods/Files'))
         log(u'\n=== ' + _(u'Imported Stats'))  # peculiarity 2
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
