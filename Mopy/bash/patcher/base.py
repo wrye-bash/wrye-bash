@@ -383,3 +383,20 @@ class ADoublePatcher(AListPatcher):
         for tweak in self.tweaks:
             tweak.saveConfig(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
+
+class AImportPatcher(AListPatcher):
+    """Subclass for patchers in group Importer."""
+    group = _(u'Importers')
+    scanOrder = 20
+    editOrder = 20
+    masters = {}
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        super(AImportPatcher, self).saveConfig(configs)
+        if self.isEnabled:
+            importedMods = [item for item,value in
+                            self.configChecks.iteritems() if
+                            value and reModExt.search(item.s)]
+            configs['ImportedMods'].update(importedMods)
