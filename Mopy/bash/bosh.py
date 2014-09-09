@@ -10640,7 +10640,7 @@ class PatchFile(ModFile):
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (_(u'Updated: ')+formatDate(time.time())
                                  + u'\n\n' +
-                                 _(u'Records Changed: %d') % numRecords
+                                 _(u'Records Changed') + u': %d' % numRecords
                                  )
 
 class CBash_PatchFile(ObModFile):
@@ -11123,7 +11123,7 @@ class CBash_PatchFile(ObModFile):
         numRecords = sum([len(x) for x in self.aggregates.values()])
         self.TES4.description = (_(u"Updated: %s") % formatDate(time.time()) +
                                  u'\n\n' +
-                                 _(u'Records Changed: %d') % numRecords
+                                 _(u'Records Changed') + u': %d' % numRecords
                                  )
 
 #------------------------------------------------------------------------------
@@ -11481,7 +11481,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
             entries = mod_count_old_new[mod]
             log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
-            log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
+            log(u'  * '+_(u'Updated References') + u': %d' % sum([count for count, old, new in entries]))
             log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
 
         self.old_new = {} #--Maps old fid to new fid
@@ -11775,7 +11775,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     tip = text
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
-    logMsg = u'* ' + _(u'Cells/Worlds Patched: %d')
+    logMsg = u'* ' + _(u'Cells/Worlds Patched') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12521,7 +12521,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor animations from source mods.")
     tip = text
     autoKey = {u'Actors.Anims'}
-    logMsg = u'* ' + _(u'Imported Animations: %d')
+    logMsg = u'* ' + _(u'Imported Animations') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12560,7 +12560,7 @@ class NPCAIPackagePatcher(ImportPatcher):
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
-    logMsg = _(u'AI Package Lists Changed: %d')
+    logMsg = _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12738,7 +12738,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     tip = text
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
     scanRequiresChecked = False
-    logMsg = u'* ' + _(u'AI Package Lists Changed: %d')
+    logMsg = u'* ' + _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12945,7 +12945,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor death items from source mods.")
     tip = text
     autoKey = {u'Actors.DeathItem'}
-    logMsg = u'* ' + _(u'Imported Death Items: %d')
+    logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13302,7 +13302,7 @@ class ImportRelations(ImportPatcher):
                         keep(fid)
         self._patchLog(log, type_count,
                        modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=u'\n=== ' + _(u'Modified Factions: %d'))
+                       logMsg=u'\n=== ' + _(u'Modified Factions') + u': %d')
 
     def _plog(self,log,logMsg,type_count):
         log(logMsg % type_count['FACT'])
@@ -13312,7 +13312,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
     autoKey = {u'Relations'}
-    logMsg = u'* ' + _(u'Re-Relationed Records: %d')
+    logMsg = u'* ' + _(u'Re-Relationed Records') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13577,7 +13577,7 @@ class ImportInventory(ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = (u'Invent',u'InventOnly')
     iiMode = True
-    logMsg = _(u'Inventories Changed: %d')
+    logMsg = _(u'Inventories Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13799,7 +13799,7 @@ class ImportActorsSpells(ImportPatcher):
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
     autoKey = (u'Actors.Spells',u'Actors.SpellsForceAdd')
-    logMsg = _(u'Spell Lists Changed: %d')
+    logMsg = _(u'Spell Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13977,7 +13977,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
-    logMsg = u'* '+_(u'Imported Spell Lists: %d')
+    logMsg = u'* '+_(u'Imported Spell Lists') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14344,7 +14344,7 @@ class NpcFacePatcher(ImportPatcher):
                     npc.setChanged()
                     keep(npc.fid)
                     count += 1
-        self._patchLog(log,count, logMsg=u'\n=== '+_(u'Faces Patched: %d'))
+        self._patchLog(log,count,logMsg=u'\n=== '+_(u'Faces Patched')+ u': %d')
 
     def _plog(self,log,logMsg,count):
         log(logMsg % count)
@@ -14356,7 +14356,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
     autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
                u'Npc.EyesOnly'}
-    logMsg = u'* '+_(u'Faces Patched: %d')
+    logMsg = u'* '+_(u'Faces Patched') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14521,7 +14521,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = {u'Roads'}
-    logMsg = u'* ' + _(u'Roads Imported: %d')
+    logMsg = u'* ' + _(u'Roads Imported') + u': %d'
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -15102,7 +15102,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = {u'Spells', u'SpellStats'}
-    logMsg = u'* ' + _(u'Modified SPEL Stats: %d')
+    logMsg = u'* ' + _(u'Modified SPEL Stats') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15297,8 +15297,8 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Log
         log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Ingredients Cataloged: %d') % len(id_ingred))
-        log(u'* '+_(u'Effects Cataloged: %d') % len(effect_ingred))
+        log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
+        log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
     """Updates COBL alchemical catalogs."""
@@ -15461,8 +15461,8 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         id_ingred = self.id_ingred
         effect_ingred = self.effect_ingred
         log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Ingredients Cataloged: %d') % len(id_ingred))
-        log(u'* '+_(u'Effects Cataloged: %d') % len(effect_ingred))
+        log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
+        log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
 class CoblExhaustion(SpecialPatcher,ListPatcher):
@@ -15565,7 +15565,7 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
         log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Powers Tweaked: %d') % sum(count.values()))
+        log(u'* '+_(u'Powers Tweaked') + u': %d' % sum(count.values()))
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -15657,7 +15657,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Powers Tweaked: %d') % (sum(mod_count.values()),))
+        log(u'* '+_(u'Powers Tweaked') + u': %d' % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -16166,7 +16166,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Modified LVL: %d') % (sum(mod_count.values()),))
+        log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -16489,7 +16489,7 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
                 keep(record.fid)
                 patched.append(record.eid)
         log.setHeader('= '+self.__class__.name)
-        log(u'==='+_(u'Quests Patched: %d') % (len(patched),))
+        log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
 
 class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
