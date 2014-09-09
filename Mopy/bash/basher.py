@@ -53,6 +53,8 @@ from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
     AliasesPatcher, CBash_AliasesPatcher
+from patcher.oblivion.patchers.importers import CellImporter, \
+    CBash_CellImporter
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8022,8 +8024,8 @@ class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
 class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
 class CBash_DeathItemPatcher(bosh.CBash_DeathItemPatcher,ListPatcher): pass
 
-class CellImporter(bosh.CellImporter,ListPatcher): pass
-class CBash_CellImporter(bosh.CBash_CellImporter,ListPatcher): pass
+class CellImporter(CellImporter,ListPatcher): pass
+class CBash_CellImporter(CBash_CellImporter,ListPatcher): pass
 
 class ImportFactions(bosh.ImportFactions,ListPatcher): pass
 class CBash_ImportFactions(bosh.CBash_ImportFactions,ListPatcher): pass
