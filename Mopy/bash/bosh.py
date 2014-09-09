@@ -11561,7 +11561,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     def _clog(self,log):
         """Most common logging pattern - override as needed"""
         mod_count = self.mod_count
-        log(u'* ' + self.__class__.logMsg % sum(mod_count.values()))
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -11775,7 +11775,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     tip = text
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
-    logMsg = _(u'Cells/Worlds Patched: %d')
+    logMsg = u'* ' + _(u'Cells/Worlds Patched: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12521,7 +12521,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor animations from source mods.")
     tip = text
     autoKey = {u'Actors.Anims'}
-    logMsg = _(u'Imported Animations: %d')
+    logMsg = u'* ' + _(u'Imported Animations: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12738,7 +12738,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     tip = text
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
     scanRequiresChecked = False
-    logMsg = _(u'AI Package Lists Changed: %d')
+    logMsg = u'* ' + _(u'AI Package Lists Changed: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12945,7 +12945,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor death items from source mods.")
     tip = text
     autoKey = {u'Actors.DeathItem'}
-    logMsg = _(u'Imported Death Items: %d')
+    logMsg = u'* ' + _(u'Imported Death Items: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13311,7 +13311,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
     autoKey = {u'Relations'}
-    logMsg = _(u'Re-Relationed Records: %d')
+    logMsg = u'* ' + _(u'Re-Relationed Records: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13703,7 +13703,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
-    logMsg = _(u'%s Inventories Changed: %d')
+    logMsg = _(u'%s Inventories Changed: %d') # NOPE: see unicode guidelines
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14527,7 +14527,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = {u'Roads'}
-    logMsg = _(u'Roads Imported: %d')
+    logMsg = u'* ' + _(u'Roads Imported: %d')
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -15108,7 +15108,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = {u'Spells', u'SpellStats'}
-    logMsg = _(u'Modified SPEL Stats: %d')
+    logMsg = u'* ' + _(u'Modified SPEL Stats: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
