@@ -623,3 +623,285 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                     mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
+
+class ActorImporter(ImportPatcher):
+    """Merges changes to actors."""
+    name = _(u'Import Actors')
+    text = _(u"Import Actor components from source mods.")
+    tip = text
+    autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race', u'Actors.Skeleton')
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        self.actorClasses = (MreRecord.type_class['NPC_'],MreRecord.type_class['CREA'])
+        for recClass in (MreRecord.type_class[x] for x in ('NPC_',)):
+            self.recAttrs_class[recClass] = {
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('skills','health','attributes'),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.autoCalc','flags.pcLevelOffset'),
+                                'barterGold','flags.female','flags.essential','flags.respawn','flags.noLowLevel',
+                                'flags.noRumors','flags.summonable','flags.noPersuasion','flags.canCorpseCheck',
+                                ),
+                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                u'NPC.Class': ('iclass',),
+                u'NPC.Race': ('race',),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': (),
+                u'Actors.Skeleton': ('model',),
+                }
+        for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
+            self.recAttrs_class[recClass] = {
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.pcLevelOffset',),
+                                'barterGold','flags.biped','flags.essential','flags.weaponAndShield',
+                                'flags.respawn','flags.swims','flags.flies','flags.walks','flags.noLowLevel',
+                                'flags.noBloodSpray','flags.noBloodDecal','flags.noHead','flags.noRightArm',
+                                'flags.noLeftArm','flags.noCombatInWater','flags.noShadow','flags.noCorpseCheck',
+                                ),
+                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
+                u'NPC.Class': (),
+                u'NPC.Race': (),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                u'Actors.Skeleton': ('model',),
+                }
+        #--Needs Longs
+        self.longTypes = {'CREA', 'NPC_'}
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'],
+                                        MreRecord.type_class['CREA'])
+        longTypes =self.longTypes & set(x.classType for x in self.actorClasses)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in bash.bosh.modInfos: continue
+            srcInfo = bash.bosh.modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for actorClass in self.actorClasses:
+                if actorClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(actorClass)
+                self.classestemp.add(actorClass)
+                attrs = set(reduce(operator.add,
+                               (self.recAttrs_class[actorClass][bashKey]
+                                for bashKey in srcInfo.getBashTags() if
+                                bashKey in self.recAttrs_class[actorClass])))
+                for record in srcFile.tops[
+                    actorClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    temp_id_data[fid] = dict()
+                    for attr in attrs:
+                        if isinstance(attr,basestring):
+                            temp_id_data[fid][attr] = \
+                                reduce(getattr,attr.split('.'),record)
+                        elif isinstance(attr,(list,tuple,set)):
+                            temp_id_data[fid][attr] = dict(
+                            (subattr,reduce(getattr,subattr.split('.'),record))
+                                    for subattr in attr)
+            for master in masters:
+                if not master in bash.bosh.modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = bash.bosh.modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for actorClass in self.actorClasses:
+                    if actorClass.classType not in masterFile.tops: continue
+                    if actorClass not in self.classestemp: continue
+                    for record in masterFile.tops[
+                        actorClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if isinstance(attr,basestring):
+                                if value == reduce(getattr, attr.split('.'),
+                                                   record):
+                                    continue
+                                else:
+                                    if fid not in id_data: id_data[
+                                        fid] = dict()
+                                    try:
+                                        id_data[fid][attr] = temp_id_data[fid][
+                                            attr]
+                                    except KeyError:
+                                        id_data[fid].setdefault(attr,value)
+                            elif isinstance(attr,(list,tuple,set)):
+                                temp_values = {}
+                                keep = False
+                                for subattr in attr:
+                                    if value[subattr] != reduce(
+                                            getattr,subattr.split('.'),record):
+                                        keep = True
+                                    temp_values[subattr] = value[subattr]
+                                if keep:
+                                    id_data.setdefault(fid, {})
+                                    id_data[fid].update(temp_values)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(
+            x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if reduce(getattr,attr.split('.'),record) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if reduce(getattr,attr.split('.'),record) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    setattr(reduce(getattr,attr.split('.')[:-1],record),attr.split('.')[-1], value)
+                keep(fid)
+                type_count[type] += 1
+        self._patchLog(log,type_count)
+
+class CBash_ActorImporter(CBash_ImportPatcher):
+    """Merges changes to actors."""
+    name = _(u'Import Actors')
+    text = _(u"Import Actor components from source mods.")
+    tip = text
+    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
+               u'Actors.Skeleton'}
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.fid_attr_value = {}
+        self.mod_count = {}
+        class_tag_attrs = self.class_tag_attrs = {}
+        class_tag_attrs['NPC_'] = {
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('armorer','athletics','blade','block','blunt','h2h','heavyArmor','alchemy',
+                                 'alteration','conjuration','destruction','illusion','mysticism','restoration',
+                                 'acrobatics','lightArmor','marksman','mercantile','security','sneak','speechcraft',
+                                 'health',
+                                 'strength','intelligence','willpower','agility','speed','endurance','personality','luck',),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset','IsAutoCalc',),
+                                'barterGold','IsFemale','IsEssential','IsRespawn','IsNoLowLevel','IsNoRumors',
+                                'IsSummonable','IsNoPersuasion','IsCanCorpseCheck',
+                                ),
+                u'NPC.Class': ('iclass',),
+                u'NPC.Race': ('race',),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': (),
+                u'Actors.Skeleton': ('modPath','modb','modt_p'),
+                }
+        class_tag_attrs['CREA'] = {
+                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
+                u'Actors.Stats': ('combat','magic','stealth','soulType','health','attackDamage','strength','intelligence','willpower',
+                                 'agility','speed','endurance','personality','luck'),
+                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','IsPCLevelOffset',),
+                                'barterGold','IsBiped','IsEssential','IsWeaponAndShield','IsRespawn',
+                                'IsSwims','IsFlies','IsWalks','IsNoLowLevel','IsNoBloodSpray','IsNoBloodDecal',
+                                'IsNoHead','IsNoRightArm','IsNoLeftArm','IsNoCombatInWater','IsNoShadow',
+                                'IsNoCorpseCheck',
+                                ),
+                u'NPC.Class': (),
+                u'NPC.Race': (),
+                u'Actors.CombatStyle': ('combatStyle',),
+                u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                u'Actors.Skeleton': ('modPath','modb','modt_p',),
+                }
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        if modFile.GName == record.fid[0]: return
+        for bashKey in bashTags & self.autoKey:
+            attrs = self.class_tag_attrs[record._Type].get(bashKey, None)
+            if attrs:
+                attr_value = record.ConflictDetails(attrs)
+                if not ValidateDict(attr_value, self.patchFile):
+                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    continue
+                self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan_more(modFile,record,bashTags)
+        recordId = record.fid
+        prev_attr_value = self.fid_attr_value.get(recordId,None)
+        if prev_attr_value:
+            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            if cur_attr_value != prev_attr_value:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for attr, value in prev_attr_value.iteritems():
+                        setattr(override,attr,value)
+                    class_mod_count = self.mod_count
+                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def _clog(self, log):  # type 11
+        mod_count = self.mod_count
+        self._srcMods(log)
+        log(u'\n=== ' + _(u'Modified Records'))
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
+            for srcMod in bash.bosh.modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}

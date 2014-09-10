@@ -54,7 +54,8 @@ from cint import *
 from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
     AliasesPatcher, CBash_AliasesPatcher
 from patcher.oblivion.patchers.importers import CellImporter, \
-    CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher
+    CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
+    CBash_ActorImporter
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8018,8 +8019,8 @@ class CBash_KFFZPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
 class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
 class CBash_NPCAIPackagePatcher(bosh.CBash_NPCAIPackagePatcher,ListPatcher): pass
 
-class ActorImporter(bosh.ActorImporter,ListPatcher): pass
-class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
+class ActorImporter(ActorImporter,ListPatcher): pass
+class CBash_ActorImporter(CBash_ActorImporter,ListPatcher): pass
 
 class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
 class CBash_DeathItemPatcher(bosh.CBash_DeathItemPatcher,ListPatcher): pass
