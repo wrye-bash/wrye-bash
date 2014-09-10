@@ -48,7 +48,6 @@ class CellImporter(ACellImporter, ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         super(CellImporter, self).initPatchFile(patchFile,loadMods)
         self.cellData = {}
         self.sourceMods = self.getConfigChecked()
@@ -96,9 +95,11 @@ class CellImporter(ACellImporter, ImportPatcher):
                     tempCellData[fid] = {}
                     tempCellData[fid+('flags',)] = {}
                 for attr in attrs:
-                    tempCellData[fid][attr] = cellBlock.cell.__getattribute__(attr)
+                    tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
+                        attr)
                 for flag in flags:
-                    tempCellData[fid+('flags',)][flag] = cellBlock.cell.flags.__getattr__(flag)
+                    tempCellData[fid + ('flags',)][
+                        flag] = cellBlock.cell.flags.__getattr__(flag)
         def checkMasterCellBlockData(cellBlock):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
@@ -107,11 +108,14 @@ class CellImporter(ACellImporter, ImportPatcher):
                     cellData[fid] = {}
                     cellData[fid+('flags',)] = {}
                 for attr in attrs:
-                    if tempCellData[fid][attr] != cellBlock.cell.__getattribute__(attr):
+                    if tempCellData[fid][
+                        attr] != cellBlock.cell.__getattribute__(attr):
                         cellData[fid][attr] = tempCellData[fid][attr]
                 for flag in flags:
-                    if tempCellData[fid+('flags',)][flag] != cellBlock.cell.flags.__getattr__(flag):
-                        cellData[fid+('flags',)][flag] = tempCellData[fid+('flags',)][flag]
+                    if tempCellData[fid + ('flags',)][flag] != \
+                            cellBlock.cell.flags.__getattr__(flag):
+                        cellData[fid + ('flags',)][flag] = \
+                            tempCellData[fid + ('flags',)][flag]
         cellData = self.cellData
         # cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
@@ -129,8 +133,9 @@ class CellImporter(ACellImporter, ImportPatcher):
             bashTags = srcInfo.getBashTags()
             # print bashTags
             try:
-                attrs = set(reduce(operator.add, (self.recAttrs[bashKey] for bashKey in bashTags if
-                    bashKey in self.recAttrs)))
+                attrs = set(reduce(operator.add,
+                                   (self.recAttrs[bashKey] for bashKey in
+                                    bashTags if bashKey in self.recAttrs)))
             except: attrs = set()
             flags = tuple(self.recFlags[bashKey] for bashKey in bashTags if
                 bashKey in self.recAttrs and self.recFlags[bashKey] != u'')
@@ -145,7 +150,8 @@ class CellImporter(ACellImporter, ImportPatcher):
                     #     if worldBlock.world.mapPath:
                     #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
-                if not master in bash.bosh.modInfos: continue # or break filter mods
+                if not master in bash.bosh.modInfos: continue  # or break
+                # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -170,7 +176,8 @@ class CellImporter(ACellImporter, ImportPatcher):
     def scanModFile(self, modFile, progress):
         """Add lists from modFile."""
         modName = modFile.fileInfo.name
-        if not self.isActive or ('CELL' not in modFile.tops and 'WRLD' not in modFile.tops):
+        if not self.isActive or (
+                'CELL' not in modFile.tops and 'WRLD' not in modFile.tops):
             return
         cellData = self.cellData
         patchCells = self.patchFile.CELL
@@ -185,8 +192,8 @@ class CellImporter(ACellImporter, ImportPatcher):
                 for cellBlock in worldBlock.cellBlocks:
                     if cellBlock.cell.fid in cellData:
                         patchWorlds.setWorld(worldBlock.world)
-                        patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(
-                            cellBlock.cell)
+                        patchWorlds.id_worldBlocks[
+                            worldBlock.world.fid].setCell(cellBlock.cell)
                 # if worldBlock.world.fid in cellData['Maps']:
                     # patchWorlds.setWorld(worldBlock.world)
 
@@ -198,7 +205,8 @@ class CellImporter(ACellImporter, ImportPatcher):
                 if cellBlock.cell.__getattribute__(attr) != value:
                     cellBlock.cell.__setattr__(attr,value)
                     modified=True
-            for flag,value in cellData[cellBlock.cell.fid+('flags',)].iteritems():
+            for flag, value in cellData[
+                        cellBlock.cell.fid + ('flags',)].iteritems():
                 if cellBlock.cell.flags.__getattr__(flag) != value:
                     cellBlock.cell.flags.__setattr__(flag,value)
                     modified=True
@@ -215,7 +223,8 @@ class CellImporter(ACellImporter, ImportPatcher):
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
+                if cellBlock.cell.fid in cellData and handleCellBlock(
+                        cellBlock):
                     count.increment(cellBlock.cell.fid[0])
                     keepWorld = True
             # if worldBlock.world.fid in cellData['Maps']:
@@ -241,7 +250,6 @@ class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
@@ -270,8 +278,11 @@ class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
         for bashKey in bashTags & self.autoKey:
             attr_value = record.ConflictDetails(self.tag_attrs[bashKey])
             if not ValidateDict(attr_value, self.patchFile):
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                mod_skipcount = \
+                    self.patchFile.patcher_mod_skipcount.setdefault(
+                    self.name, {})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                    modFile.GName, 0) + 1
                 continue
             self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
 
@@ -282,14 +293,16 @@ class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
 
         prev_attr_value = self.fid_attr_value.get(recordId,None)
         if prev_attr_value:
-            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            cur_attr_value = dict(
+                (attr, getattr(record, attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
                     mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -303,10 +316,10 @@ class GraphicsPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.srcClasses = set()  # --Record classes actually provided by src
+        #  mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
         self.classestemp = set()
@@ -353,7 +366,8 @@ class GraphicsPatcher(ImportPatcher):
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+        longTypes = self.longTypes & set(
+            x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.sourceMods))
         cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
@@ -370,23 +384,37 @@ class GraphicsPatcher(ImportPatcher):
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
                 recFidAttrs = self.recFidAttrs_class.get(recClass, None)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                for record in srcFile.tops[
+                    recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     if recFidAttrs:
-                        attr_fidvalue = dict((attr,record.__getattribute__(attr)) for attr in recFidAttrs)
+                        attr_fidvalue = dict(
+                            (attr, record.__getattribute__(attr)) for attr in
+                            recFidAttrs)
                         for fidvalue in attr_fidvalue.values():
-                            if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                                mod_skipcount[srcMod] = mod_skipcount.setdefault(srcMod, 0) + 1
+                            if fidvalue and (fidvalue[0] is None or fidvalue[
+                                0] not in self.patchFile.loadSet):
+                                # Ignore the record. Another option would be
+                                # to just ignore the attr_fidvalue result
+                                mod_skipcount = self.patchFile\
+                                    .patcher_mod_skipcount.setdefault(
+                                    self.name, {})
+                                mod_skipcount[
+                                    srcMod] = mod_skipcount.setdefault(srcMod,
+                                                                       0) + 1
                                 break
                         else:
-                            temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                            temp_id_data[fid] = dict(
+                                (attr, record.__getattribute__(attr)) for attr
+                                in recAttrs)
                             temp_id_data[fid].update(attr_fidvalue)
                     else:
-                        temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                        temp_id_data[fid] = dict(
+                            (attr, record.__getattribute__(attr)) for attr in
+                            recAttrs)
             for master in masters:
-                if not master in bash.bosh.modInfos: continue # or break filter mods
+                if not master in bash.bosh.modInfos: continue  # or break
+                # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -399,7 +427,8 @@ class GraphicsPatcher(ImportPatcher):
                 for recClass,recAttrs in recAttrs_class.iteritems():
                     if recClass.classType not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                    for record in masterFile.tops[
+                        recClass.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -407,12 +436,14 @@ class GraphicsPatcher(ImportPatcher):
                             else:
                                 if fid not in id_data: id_data[fid] = dict()
                                 try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                    id_data[fid][attr] = temp_id_data[fid][
+                                        attr]
                                 except KeyError:
                                     id_data[fid].setdefault(attr,value)
             progress.plus()
         temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.longTypes = self.longTypes & set(
+            x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
@@ -437,7 +468,8 @@ class GraphicsPatcher(ImportPatcher):
                         break
 
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
+        """Merge last version of record with patched graphics data as
+        needed."""
         if not self.isActive: return
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
@@ -451,17 +483,23 @@ class GraphicsPatcher(ImportPatcher):
                 fid = record.fid
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
-                    if isinstance(record.__getattribute__(attr),basestring) and isinstance(value,basestring):
-                        if record.__getattribute__(attr).lower() != value.lower():
+                    if isinstance(record.__getattribute__(attr),
+                                  basestring) and isinstance(value,
+                                                             basestring):
+                        if record.__getattribute__(
+                                attr).lower() != value.lower():
                             break
                         continue
                     elif attr == 'model':
                         try:
-                            if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
+                            if record.__getattribute__(
+                                    attr).modPath.lower() != \
+                                    value.modPath.lower():
                                 break
                             continue
                         except:
-                            break #assume they are not equal (ie they aren't __both__ NONE)
+                            break  # assume they are not equal (ie they
+                            # aren't __both__ NONE)
                     if record.__getattribute__(attr) != value:
                         break
                 else:
@@ -482,7 +520,6 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
@@ -549,8 +586,10 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         attr_value = record.ConflictDetails(self.class_attrs[record._Type])
         if not ValidateDict(attr_value, self.patchFile):
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
+                self.name, {})
+            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                modFile.GName, 0) + 1
             return
         self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
 
@@ -559,14 +598,17 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         self.scan_more(modFile,record,bashTags)
         prev_attr_value = self.fid_attr_value.get(record.fid,None)
         if prev_attr_value:
-            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            cur_attr_value = dict(
+                (attr, getattr(record, attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
                     class_mod_count = self.mod_count
-                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    class_mod_count.setdefault(record._Type, {})[
+                        modFile.GName] = class_mod_count.setdefault(
+                        record._Type, {}).get(modFile.GName, 0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -577,6 +619,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
                 type, sum(mod_count[type].values())))
-            for srcMod in bash.bosh.modInfos.getOrdered(mod_count[type].keys()):
+            for srcMod in bash.bosh.modInfos.getOrdered(
+                    mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
