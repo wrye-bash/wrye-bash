@@ -7435,6 +7435,74 @@ class MreSoun(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSpel(MelRecord,MreHasEffects):
+    """Spell record."""
+    classType = 'SPEL'
+
+    # currently not used for Skyrim needs investigated to see if TES5Edit does this
+    # class SpellFlags(Flags):
+    #     """For SpellFlags, immuneSilence activates bits 1 AND 3."""
+    #     def __setitem__(self,index,value):
+    #         setter = Flags.__setitem__
+    #         setter(self,index,value)
+    #         if index == 1:
+    #             setter(self,3,value)
+
+    # SPIT has several wbEnum refer to wbSPIT in TES5Edit
+
+    # flags = SpellFlags(0L,Flags.getNames
+    SpelTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        ( 0,'manualCostCalc'),
+        ( 1,'unknown2'),
+        ( 2,'unknown3'),
+        ( 3,'unknown4'),
+        ( 4,'unknown5'),
+        ( 5,'unknown6'),
+        ( 6,'unknown7'),
+        ( 7,'unknown8'),
+        ( 8,'unknown9'),
+        ( 9,'unknown10'),
+        (10,'unknown11'),
+        (11,'unknown12'),
+        (12,'unknown13'),
+        (13,'unknown14'),
+        (14,'unknown15'),
+        (15,'unknown16'),
+        (16,'unknown17'),
+        (17,'pcStartSpell'),
+        (18,'unknown19'),
+        (19,'areaEffectIgnoresLOS'),
+        (20,'ignoreResistance'),
+        (21,'noAbsorbReflect'),
+        (22,'unknown23'),
+        (23,'noDualCastModification'),
+        (24,'unknown25'),
+        (25,'unknown26'),
+        (26,'unknown27'),
+        (27,'unknown28'),
+        (28,'unknown29'),
+        (29,'unknown30'),
+        (30,'unknown31'),
+        (31,'unknown32'),
+         ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFid('MDOB', 'menuDisplayObject'),
+        MelFid('ETYP', 'equipmentType'),
+        MelLString('DESC','description'),
+        MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0L),
+                  'scrollType','chargeTime','castType','targetType',
+                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
