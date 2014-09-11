@@ -5954,6 +5954,23 @@ class MreMust(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreNavi(MelRecord):
+    """Navigation Mesh Info Map"""
+    classType = 'NAVI'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('NVER','I','version'),
+        # NVMI and NVPP would need special routines to handle them
+        # If no mitigation is needed, then leave it as MelBase
+        MelBase('NVMI','navigationMapInfos',),
+        MelBase('NVPP','preferredPathing',),
+        MelFidList('NVSI','navigationMesh'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, Not Mergable - FormIDs unaccounted for
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
