@@ -4186,6 +4186,34 @@ class MreDobj(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDoor(MelRecord):
+    """Door Record"""
+    classType = 'DOOR'
+
+    DoorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'automatic'),
+        (2, 'hidden'),
+        (3, 'minimalUse'),
+        (4, 'slidingDoor'),
+        (5, 'doNotOpenInCombatSearch'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelFid('SNAM','soundOpen'),
+        MelFid('ANAM','soundClose'),
+        MelFid('BNAM','soundLoop'),
+        MelStruct('FNAM','B',(DoorTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
