@@ -4009,6 +4009,45 @@ class MreCsty(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDebr(MelRecord):
+    """Debris record."""
+    classType = 'DEBR'
+
+    dataFlags = bolt.Flags(0L,bolt.Flags.getNames('hasCollissionData'))
+    class MelDebrData(MelStruct):
+        subType = 'DATA'
+        _elements = (('percentage',0),('modPath',null1),('flags',0),)
+        def __init__(self):
+            """Initialize."""
+            self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*self._elements)
+            self._debug = False
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            data = ins.read(size,readId)
+            (record.percentage,) = struct.unpack('B',data[0:1])
+            record.modPath = data[1:-2]
+            if data[-2] != null1:
+                raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
+            (record.flags,) = struct.unpack('B',data[-1])
+        def dumpData(self,record,out):
+            """Dumps data from record to outstream."""
+            data = ''
+            data += struct.pack('B',record.percentage)
+            data += record.modPath
+            data += null1
+            data += struct.pack('B',record.flags)
+            out.packSub('DATA',data)
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('models',
+            MelDebrData(),
+            MelBase('MODT','modt_p'),
+        ),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
