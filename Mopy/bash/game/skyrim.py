@@ -7379,6 +7379,46 @@ class MreSndr(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MelSopmData(MelStruct):
+    def __init__(self,type='ONAM'):
+        MelStruct.__init__(self,type,'=24B',
+                           'ch0_l','ch0_r','ch0_c','ch0_lFE','ch0_rL','ch0_rR','ch0_bL','ch0_bR',
+                           'ch1_l','ch1_r','ch1_c','ch1_lFE','ch1_rL','ch1_rR','ch1_bL','ch1_bR',
+                           'ch2_l','ch2_r','ch2_c','ch2_lFE','ch2_rL','ch2_rR','ch2_bL','ch2_bR',
+                           )
+
+class MreSopm(MelRecord):
+    """Sound Output Model"""
+    classType = 'SOPM'
+
+    # MNAM has wbEnum in TES5Edit
+    # Assigned to 'outputType' for WB
+    # 0 :'Uses HRTF'
+    # 1 :'Defined Speaker Output'
+
+    # 'Attenuates With Distance',
+    # 'Allows Rumble'
+    SopmFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'attenuatesWithDistance'),
+            (1, 'allowsRumble'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown','reverbSendpct',),
+        MelBase('FNAM','fnam_p'),
+        MelStruct('MNAM','I','outputType',),
+        MelBase('CNAM','cnam_p'),
+        MelBase('SNAM','snam_p'),
+        MelSopmData(),
+        MelStruct('ANAM','4s2f5B','unknown','minDistance','maxDistance',
+                  'curve1','curve2','curve3','curve4','curve5',
+                   dumpExtra='extraData',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
