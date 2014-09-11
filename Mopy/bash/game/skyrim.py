@@ -6805,6 +6805,20 @@ class MreQust(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Needs Updating
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# RACE ------------------------------------------------------------------------
+class MreRace(MelRecord):
+    """Quest"""
+    classType = 'RACE'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
