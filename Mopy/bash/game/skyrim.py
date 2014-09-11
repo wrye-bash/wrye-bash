@@ -3479,6 +3479,82 @@ class MreAvif(MelRecord):
             MelGroup.dumpData(self,record,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MelBookData(MelStruct):
+    """Determines if the book teaches the player a Skill or Spell.
+    skillOrSpell is FID when flag teachesSpell is set."""
+    # {0x01} 'Teaches Skill',
+    # {0x02} 'Can''t be Taken',
+    # {0x04} 'Teaches Spell',
+    bookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'teachesSkill'),
+        (1, 'cantBeTaken'),
+        (2, 'teachesSpell'),
+    ))
+
+    # DATA Book Type is wbEnum in TES5Edit
+    # Assigned to 'bookType' for WB
+    # 0, 'Book/Tome',
+    # 255, 'Note/Scroll'
+
+    # DATA has wbSkillEnum in TES5Edit
+    # Assigned to 'skillOrSpell' for WB
+    # -1 :'None',
+    #  7 :'One Handed',
+    #  8 :'Two Handed',
+    #  9 :'Archery',
+    #  10:'Block',
+    #  11:'Smithing',
+    #  12:'Heavy Armor',
+    #  13:'Light Armor',
+    #  14:'Pickpocket',
+    #  15:'Lockpicking',
+    #  16:'Sneak',
+    #  17:'Alchemy',
+    #  18:'Speech',
+    #  19:'Alteration',
+    #  20:'Conjuration',
+    #  21:'Destruction',
+    #  22:'Illusion',
+    #  23:'Restoration',
+    #  24:'Enchanting',
+
+    def __init__(self,type='DATA'):
+        """Initialize."""
+        MelStruct.__init__(self,type,'2B2siIf',(MelBookData.bookTypeFlags,'flags',0L),
+            ('bookType',0),('unused',null2),('skillOrSpell',0),'value','weight'),
+
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def mapFids(self,record,function,save=False):
+        if record.flags.teachesSpell:
+            result = function(record.skillOrSpell)
+            if save: record.skillOrSpell = result
+
+class MreBook(MelRecord):
+    """Book Item"""
+    classType = 'BOOK'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelIcons(),
+        MelLString('DESC','description'),
+        MelDestructible(),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBookData(),
+        MelFid('INAM','inventoryArt'),
+        MelLString('CNAM','text'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['modb']
+
+# Verified for 305
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
