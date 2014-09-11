@@ -4476,11 +4476,400 @@ class MreExpl(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreEyes(MelRecord):
+    """Eyes Item"""
+    classType = 'EYES'
+
+    # {0x01}'Playable',
+    # {0x02}'Not Male',
+    # {0x04}'Not Female',
+    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playable'),
+            (1, 'notMale'),
+            (2, 'notFemale'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelString('ICON','iconPath'),
+        MelStruct('DATA','B',(EyesTypeFlags,'flags',0L)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFact(MelRecord):
+    """Fact Faction Records"""
+    classType = 'FACT'
+
+    # {0x00000001}'Hidden From NPC',
+    # {0x00000002}'Special Combat',
+    # {0x00000004}'Unknown 3',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Unknown 5',
+    # {0x00000020}'Unknown 6',
+    # {0x00000040}'Track Crime',
+    # {0x00000080}'Ignore Crimes: Murder',
+    # {0x00000100}'Ignore Crimes: Assault',
+    # {0x00000200}'Ignore Crimes: Stealing',
+    # {0x00000400}'Ignore Crimes: Trespass',
+    # {0x00000800}'Do Not Report Crimes Against Members',
+    # {0x00001000}'Crime Gold - Use Defaults',
+    # {0x00002000}'Ignore Crimes: Pickpocket',
+    # {0x00004000}'Vendor',
+    # {0x00008000}'Can Be Owner',
+    # {0x00010000}'Ignore Crimes: Werewolf',
+    FactGeneralTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'hiddenFromPC'),
+        (1, 'specialCombat'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'trackCrime'),
+        (7, 'ignoreCrimesMurder'),
+        (8, 'ignoreCrimesAssult'),
+        (9, 'ignoreCrimesStealing'),
+        (10, 'ignoreCrimesTrespass'),
+        (11, 'doNotReportCrimesAgainstMembers'),
+        (12, 'crimeGold-UseDefaults'),
+        (13, 'ignoreCrimesPickpocket'),
+        (14, 'allowSell'), # vendor
+        (15, 'canBeOwner'),
+        (16, 'ignoreCrimesWerewolf'),
+    ))
+
+    # ENIT has wbEnum in TES5Edit
+    # Assigned to 'combatReaction' for WB
+    # 0 :'Neutral',
+    # 1 :'Enemy',
+    # 2 :'Ally',
+    # 3 :'Friend'
+
+#   wbPLVD := wbStruct(PLVD, 'Location', [
+#     wbInteger('Type', itS32, wbLocationEnum),
+#     wbUnion('Location Value', wbTypeDecider, [
+#       {0} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#       {1} wbFormIDCkNoReach('Cell', [NULL, CELL]),
+#       {2} wbByteArray('Near Package Start Location', 4, cpIgnore),
+#       {3} wbByteArray('Near Editor Location', 4, cpIgnore),
+#       {4} wbFormIDCkNoReach('Object ID', [NULL, ACTI, DOOR, STAT, FURN, SPEL, SCRL, NPC_, CONT, ARMO, AMMO, MISC, WEAP, BOOK, KEYM, ALCH, INGR, LIGH, FACT, FLST, IDLM, SHOU]),
+#       {5} wbInteger('Object Type', itU32, wbObjectTypeEnum),
+#       {6} wbFormIDCk('Keyword', [NULL, KYWD]),
+#       {7} wbByteArray('Unknown', 4, cpIgnore),
+#       {8} wbInteger('Alias ID', itU32),
+#       {9} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#      {10} wbByteArray('Unknown', 4, cpIgnore),
+#      {11} wbByteArray('Unknown', 4, cpIgnore),
+#      {12} wbByteArray('Unknown', 4, cpIgnore)
+#     ]),
+#     wbInteger('Radius', itS32)
+#   ]);
+
+    class MelFactCrva(MelStruct):
+        """Handle older truncated CRVA for FACT subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 20:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 16:
+                unpacked = ins.unpack('2B5Hf',size,readId)
+            elif size == 12:
+                unpacked = ins.unpack('2B5H',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','combatReaction',),
+        MelStruct('DATA','I',(FactGeneralTypeFlags,'flags',0L),),
+        MelFid('JAIL','exteriorJailMarker'),
+        MelFid('WAIT','followerWaitMarker'),
+        MelFid('STOL','stolenGoodsContainer'),
+        MelFid('PLCN','playerInventoryContainer'),
+        MelFid('CRGR','sharedCrimeFactionList'),
+        MelFid('JOUT','jailOutfit'),
+        # These are Boolean values
+        # 'arrest', 'attackOnSight',
+        MelFactCrva('CRVA','2B5Hf2H','arrest','attackOnSight','murder','assult',
+        'trespass','pickpocket','unknown','stealMultiplier','escape','werewolf'),
+        MelGroups('ranks',
+            MelStruct('RNAM','I','rank'),
+            MelLString('MNAM','maleTitle'),
+            MelLString('FNAM','femaleTitle'),
+            MelString('INAM','insigniaPath'),
+        ),
+        MelFid('VEND','vendorBuySellList'),
+        MelFid('VENC','merchantContainer'),
+        MelStruct('VENV','3H2s2B2s','startHour','endHour','radius','unknownOne',
+                  'onlyBuysStolenItems','notSellBuy','UnknownTwo'),
+        MelOptStruct('PLVD','iIi','type',(FID,'locationValue'),'radius',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        if conditions:
+            self.conditionCount = len(conditions) if conditions else 0
+            MelRecord.dumpData(self,out)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFlor(MelRecord):
+    """Flor Item"""
+    classType = 'FLOR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','unknown01'),
+        MelLString('RNAM','activateTextOverride'),
+        MelBase('FNAM','unknown02'),
+        MelFid('PFIG','ingredient'),
+        MelFid('SNAM','harvestSound'),
+        MelStruct('PFPC','4B','spring','summer','fall','winter',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFlst(MelRecord):
+    """FormID list record."""
+    classType = 'FLST'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFids('LNAM','formIDInList'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFstp(MelRecord):
+    """Footstep"""
+    classType = 'FSTP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('DATA','impactSet'),
+        MelString('ANAM','tag'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFsts(MelRecord):
+    """Footstep Set."""
+    classType = 'FSTS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('XCNT','5I','walkForward','runForward','walkForwardAlt',
+                  'runForwardAlt','walkForwardAlternate2',
+            ),
+        MelFidList('DATA','footstepSets'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreFurn(MelRecord):
+    """Furniture"""
+    classType = 'FURN'
+
+    # {0x0001} 'Unknown 0',
+    # {0x0002} 'Ignored By Sandbox'
+    FurnGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'ignoredBySandbox'),
+    ))
+
+    # {0x00000001} 'Sit 0',
+    # {0x00000002} 'Sit 1',
+    # {0x00000004} 'Sit 2',
+    # {0x00000008} 'Sit 3',
+    # {0x00000010} 'Sit 4',
+    # {0x00000020} 'Sit 5',
+    # {0x00000040} 'Sit 6',
+    # {0x00000080} 'Sit 7',
+    # {0x00000100} 'Sit 8',
+    # {0x00000200} 'Sit 9',
+    # {0x00000400} 'Sit 10',
+    # {0x00000800} 'Sit 11',
+    # {0x00001000} 'Sit 12',
+    # {0x00002000} 'Sit 13',
+    # {0x00004000} 'Sit 14',
+    # {0x00008000} 'Sit 15',
+    # {0x00010000} 'Sit 16',
+    # {0x00020000} 'Sit 17',
+    # {0x00040000} 'Sit 18',
+    # {0x00080000} 'Sit 19',
+    # {0x00100000} 'Sit 20',
+    # {0x00200000} 'Sit 21',
+    # {0x00400000} 'Sit 22',
+    # {0x00800000} 'Sit 23',
+    # {0x01000000} 'Unknown 25',
+    # {0x02000000} 'Disables Activation',
+    # {0x04000000} 'Is Perch',
+    # {0x08000000} 'Must Exit to Talk',
+    # {0x10000000} 'Unknown 29',
+    # {0x20000000} 'Unknown 30',
+    # {0x40000000} 'Unknown 31',
+    # {0x80000000} 'Unknown 32'
+    FurnActiveMarkerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'sit0'),
+        (1, 'sit1'),
+        (2, 'sit2'),
+        (3, 'sit3'),
+        (4, 'sit4'),
+        (5, 'sit5'),
+        (6, 'sit6'),
+        (7, 'sit7'),
+        (8, 'sit8'),
+        (9, 'sit9'),
+        (10, 'sit10'),
+        (11, 'sit11'),
+        (12, 'sit12'),
+        (13, 'sit13'),
+        (14, 'sit14'),
+        (15, 'sit15'),
+        (16, 'sit16'),
+        (17, 'sit17'),
+        (18, 'sit18'),
+        (19, 'sit19'),
+        (20, 'sit20'),
+        (21, 'Sit21'),
+        (22, 'Sit22'),
+        (23, 'sit23'),
+        (24, 'unknown25'),
+        (25, 'disablesActivation'),
+        (26, 'isPerch'),
+        (27, 'mustExittoTalk'),
+        (28, 'unknown29'),
+        (29, 'unknown30'),
+        (30, 'unknown31'),
+        (31, 'unknown32'),
+    ))
+
+    # {0x01} 'Front',
+    # {0x02} 'Behind',
+    # {0x04} 'Right',
+    # {0x08} 'Left',
+    # {0x10} 'Up'
+    MarkerEntryPointFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'front'),
+            (1, 'behind'),
+            (2, 'right'),
+            (3, 'left'),
+            (4, 'up'),
+        ))
+
+    # FNPR has wbEnum in TES5Edit
+    # Assigned to 'MarkerType' for WB
+    # 0 :'',
+    # 1 :'Sit',
+    # 2 :'Lay',
+    # 3 :'',
+    # 4 :'Lean'
+
+    # WBDT has wbEnum in TES5Edit
+    # Assigned to 'benchType' for WB
+    # 0 :'None',
+    # 1 :'Create object',
+    # 2 :'Smithing Weapon',
+    # 3 :'Enchanting',
+    # 4 :'Enchanting Experiment',
+    # 5 :'Alchemy',
+    # 6 :'Alchemy Experiment',
+    # 7 :'Smithing Armor'
+
+    # WBDT has wbEnum in TES5Edit
+    # Assigned to 'usesSkill' for WB
+    # Refer to wbSkillEnum is TES5Edit for values
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','pnam_p'),
+        MelStruct('FNAM','H',(FurnGeneralFlags,'general_f',None),),
+        MelFid('KNAM','interactionKeyword'),
+        MelStruct('MNAM','I',(FurnActiveMarkerFlags,'activeMarkers',None)),
+        MelStruct('WBDT','Bb','benchType','usesSkill',),
+        MelFid('NAM1','associatedSpell'),
+        MelGroups('markers',
+            MelStruct('ENAM','I','markerIndex',),
+            MelStruct('NAM0','2sH','unknown',(MarkerEntryPointFlags,'disabledPoints_f',None),),
+            MelFid('FNMK','markerKeyword',),
+            ),
+        MelStructs('FNPR','2H','entryPoints','markerType',(MarkerEntryPointFlags,'entryPointsFlags',None),),
+        MelString('XMRK','modelFilename'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# GLOB ------------------------------------------------------------------------
+# Defined in brec.py as class MreGlob(MelRecord) ------------------------------
+#------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreGras(MelRecord):
+    """Grass record."""
+    classType = 'GRAS'
+
+    GrasTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'vertexLighting'),
+            (1, 'uniformScaling'),
+            (2, 'fitToSlope'),
+        ))
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'unitsFromWaterType' for WB
+    # 0 :'Above - At Least',
+    # 1 :'Above - At Most',
+    # 2 :'Below - At Least',
+    # 3 :'Below - At Most',
+    # 4 :'Either - At Least',
+    # 5 :'Either - At Most',
+    # 6 :'Either - At Most Above',
+    # 7 :'Either - At Most Below'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DATA','3BsH2sI4fB3s','density','minSlope','maxSlope',
+                  'unknown','unitsFromWater','unknown','unitsFromWaterType',
+                  'positionRange','heightRange','colorRange','wavePeriod',
+                  (GrasTypeFlags,'flags',0L),'unknown',
+                  ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
