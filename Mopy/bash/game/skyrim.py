@@ -274,6 +274,8 @@ nonDeactivatableFiles = [
     u'Update.esm',
     ]
 
+namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
+
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = r'bash\db\Skyrim_ids.pkl'
 

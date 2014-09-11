@@ -224,6 +224,8 @@ masterFiles = [
 #--Plugin files that can't be deactivated
 nonDeactivatableFiles = []
 
+namesPatcherMaster = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = ur'bash\db\Oblivion_ids.pkl'
 
