@@ -7738,6 +7738,111 @@ class MreWatr(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreWeap(MelRecord):
+    """Weapon"""
+    classType = 'WEAP'
+
+    # 'On Death'
+    WeapFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'onDeath'),
+    ))
+
+    # {0x00000001}'Player Only',
+    # {0x00000002}'NPCs Use Ammo',
+    # {0x00000004}'No Jam After Reload (unused)',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Minor Crime',
+    # {0x00000020}'Range Fixed',
+    # {0x00000040}'Not Used in Normal Combat',
+    # {0x00000080}'Unknown 8',
+    # {0x00000100}'Don''t Use 3rd Person IS Anim (unused)',
+    # {0x00000200}'Unknown 10',
+    # {0x00000400}'Rumble - Alternate',
+    # {0x00000800}'Unknown 12',
+    # {0x00001000}'Non-hostile',
+    # {0x00002000}'Bound Weapon'
+    WeapFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playerOnly'),
+            (1, 'nPCsUseAmmo'),
+            (2, 'noJamAfterReloadunused'),
+            (3, 'unknown4'),
+            (4, 'minorCrime'),
+            (5, 'rangeFixed'),
+            (6, 'notUsedinNormalCombat'),
+            (7, 'unknown8'),
+            (8, 'don'),
+            (9, 'unknown10'),
+            (10, 'rumbleAlternate'),
+            (11, 'unknown12'),
+            (12, 'nonhostile'),
+            (13, 'boundWeapon'),
+        ))
+
+    # {0x0001}'Ignores Normal Weapon Resistance',
+    # {0x0002}'Automatic (unused)',
+    # {0x0004}'Has Scope (unused)',
+    # {0x0008}'Can''t Drop',
+    # {0x0010}'Hide Backpack (unused)',
+    # {0x0020}'Embedded Weapon (unused)',
+    # {0x0040}'Don''t Use 1st Person IS Anim (unused)',
+    # {0x0080}'Non-playable'
+    WeapFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'ignoresNormalWeaponResistance'),
+            (1, 'automaticunused'),
+            (2, 'hasScopeunused'),
+            (3, 'can'),
+            (4, 'hideBackpackunused'),
+            (5, 'embeddedWeaponunused'),
+            (6, 'don'),
+            (7, 'nonplayable'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel('model1','MODL'),
+        MelIcons(),
+        MelFid('EITM','enchantment',),
+        MelOptStruct('EAMT','H','enchantPoints'),
+        MelDestructible(),
+        MelFid('ETYP','equipmentType',),
+        MelFid('BIDS','blockBashImpactDataSet',),
+        MelFid('BAMT','alternateBlockMaterial',),
+        MelFid('YNAM','pickupSound',),
+        MelFid('ZNAM','dropSound',),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelLString('DESC','description'),
+        MelModel('model2','MOD3'),
+        MelBase('NNAM','unused1'),
+        MelFid('INAM','impactDataSet',),
+        MelFid('WNAM','firstPersonModelObject',),
+        MelFid('SNAM','attackSound',),
+        MelFid('XNAM','attackSound2D',),
+        MelFid('NAM7','attackLoopSound',),
+        MelFid('TNAM','attackFailSound',),
+        MelFid('UNAM','idleSound',),
+        MelFid('NAM9','equipSound',),
+        MelFid('NAM8','unequipSound',),
+        MelStruct('DATA','IfH','value','weight','damage',),
+        MelStruct('DNAM','B3s2fH2sf4s4B2f2I5f12si8si4sf','animationType','unknown1',
+                  'speed','reach',(WeapFlags1,'dnamFlags1',0L),'unknown2','sightFOV',
+                  'unknown3','baseVATSToHitChance','attackAnimation',
+                  'numProjectiles','embeddedWeaponAVunused','minRange',
+                  'maxRange','onHit',(WeapFlags2,'dnamFlags2',0L),
+                  'animationAttackMultiplier','unknown4','rumbleLeftMotorStrength',
+                  'rumbleRightMotorStrength','rumbleDuration','unknown5',
+                  'skill','unknown6','resist','unknown7','stagger',),
+        MelStruct('CRDT','H2sfB3sI','critDamage','unused2','criticalMultiplier',
+                  (WeapFlags3,'criticalFlags',0L),'unused3',(FID,'criticalEffect'),),
+        MelStruct('VNAM','I','detectionSoundLevel'),
+        MelFid('CNAM','template',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
