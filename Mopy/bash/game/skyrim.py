@@ -7568,6 +7568,26 @@ class MreStat(MelRecord):
 
 # Verified for 305
 # MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
+#------------------------------------------------------------------------------
+class MreTact(MelRecord):
+    """Talking Activator"""
+    classType = 'TACT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','pnam_p'),
+        MelOptStruct('SNAM','I',(FID,'soundLoop')),
+        MelBase('FNAM','fnam_p'),
+        MelOptStruct('VNAM','I',(FID,'voiceType')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
