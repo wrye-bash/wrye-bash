@@ -6819,6 +6819,21 @@ class MreRace(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Needs Updating
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# REFR ------------------------------------------------------------------------
+class MreRefr(MelRecord):
+    """Placed Object"""
+    classType = 'REFR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
