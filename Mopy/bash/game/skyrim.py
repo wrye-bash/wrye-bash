@@ -5004,6 +5004,106 @@ class MreIdlm(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Dialog response"""
+    classType = 'INFO'
+
+    # TRDT has wbEnum in TES5Edit
+    # Assigned to 'emotionType' for WB
+    # {0} 'Neutral',
+    # {1} 'Anger',
+    # {2} 'Disgust',
+    # {3} 'Fear',
+    # {4} 'Sad',
+    # {5} 'Happy',
+    # {6} 'Surprise',
+    # {7} 'Puzzled'
+
+    # CNAM has wbEnum in TES5Edit
+    # Assigned to 'favorLevel' for WB
+    # 0 :'None',
+    # 1 :'Small',
+    # 2 :'Medium',
+    # 3 :'Large'
+
+    # 'Use Emotion Animation'
+    InfoResponsesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useEmotionAnimation'),
+        ))
+
+    # {0x0001} 'Goodbye',
+    # {0x0002} 'Random',
+    # {0x0004} 'Say once',
+    # {0x0008} 'Unknown 4',
+    # {0x0010} 'Unknown 5',
+    # {0x0020} 'Random end',
+    # {0x0040} 'Invisible continue',
+    # {0x0080} 'Walk Away',
+    # {0x0100} 'Walk Away Invisible in Menu',
+    # {0x0200} 'Force subtitle',
+    # {0x0400} 'Can move while greeting',
+    # {0x0800} 'No LIP File',
+    # {0x1000} 'Requires post-processing',
+    # {0x2000} 'Audio Output Override',
+    # {0x4000} 'Spends favor points',
+    # {0x8000} 'Unknown 16'
+    EnamResponseFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'goodbye'),
+            (1, 'random'),
+            (2, 'sayonce'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'randomend'),
+            (6, 'invisiblecontinue'),
+            (7, 'walkAway'),
+            (8, 'walkAwayInvisibleinMenu'),
+            (9, 'forcesubtitle'),
+            (10, 'canmovewhilegreeting'),
+            (11, 'noLIPFile'),
+            (12, 'requirespostprocessing'),
+            (13, 'audioOutputOverride'),
+            (14, 'spendsfavorpoints'),
+            (15, 'unknown16'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBase('DATA','data_p'),
+        MelStruct('ENAM','2H',(EnamResponseFlags,'flags',0L),'resetHours',),
+        MelFid('TPIC','topic',),
+        MelFid('PNAM','prevInfo',),
+        MelStruct('CNAM','I','favorLevel',),
+        MelFids('TCLT','response',),
+        MelFid('DNAM','responseData',),
+        # {>>> Unordered, CTDA can appear before or after LNAM <- REQUIRES CONFIRMATION <<<}
+        MelGroups('responses',
+            MelStruct('TRDT','II4sB3sIB3s','emotionType','emotionValue',
+                      'unused','responsenumber','unused',(FID,'sound'),
+                      (InfoResponsesFlags,'flags',0L),'unused',),
+            MelLString('NAM1','responseText'),
+            MelString('NAM2','scriptNotes'),
+            MelString('NAM3','edits'),
+            MelFid('SNAM','idleAnimationsSpeaker',),
+            MelFid('LNAM','idleAnimationsListener',),
+            ),
+
+        MelConditions(),
+
+        MelGroups('leftOver',
+            MelBase('SCHR','unknown1'),
+            MelFid('QNAM','unknown2'),
+            MelNull('NEXT'),
+            ),
+        MelLString('RNAM','prompt'),
+        MelFid('ANAM','speaker',),
+        MelFid('TWAT','walkAwayTopic',),
+        MelFid('ONAM','audioOutputOverride',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
