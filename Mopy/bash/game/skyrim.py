@@ -5382,6 +5382,27 @@ class MreIpds(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """KEYM Key records."""
+    classType = 'KEYM'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelStruct('DATA','if','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
