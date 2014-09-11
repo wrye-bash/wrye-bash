@@ -2317,6 +2317,23 @@ class MreHasEffects:
         return buff.getvalue()
 
 #-------------------------------------------------------------------------------
+class MelIcons(MelGroup):
+    """Handles ICON and MICO."""
+
+    def __init__(self,attr='iconsIaM'):
+        """Initialize."""
+        # iconsIaM = icons ICON and MICO
+        MelGroup.__init__(self,attr,
+            MelString('ICON','iconPath'),
+            MelString('MICO','smallIconPath'),
+        )
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.iconsIaM and record.iconsIaM.iconPath:
+            MelGroup.dumpData(self,record,out)
+        if record.iconsIaM and record.iconsIaM.smallIconPath:
+            MelGroup.dumpData(self,record,out)
+#-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
     def dumpData(self,record,out):
