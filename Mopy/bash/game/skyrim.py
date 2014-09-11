@@ -5425,7 +5425,66 @@ class MreLcrt(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
-# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreLctn(MelRecord):
+    """Location"""
+    classType = 'LCTN'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+
+        MelOptStructA('ACPR','2I2h','actorCellPersistentReference',
+                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        MelOptStructA('LCPR','2I2h','locationCellPersistentReference',
+                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        # From Danwguard.esm, Does not follow similar previous patterns
+        MelFidList('RCPR','referenceCellPersistentReference',),
+
+        MelOptStructA('ACUN','3I','actorCellUnique',
+                     (FID,'actor'),(FID,'eef'),(FID,'location'),),
+        MelOptStructA('LCUN','3I','locationCellUnique',
+                     (FID,'actor'),(FID,'ref'),(FID,'location'),),
+        # in Unofficial Skyrim patch
+        MelFidList('RCUN','referenceCellUnique',),
+
+        MelOptStructA('ACSR','3I2h','actorCellStaticReference',
+                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
+                     'gridX','gridY',),
+        MelOptStructA('LCSR','3I2h','locationCellStaticReference',
+                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
+                     'gridX','gridY',),
+        # Seen in Open Cities
+        MelFidList('RCSR','referenceCellStaticReference',),
+
+        MelStructs('ACEC','I','actorCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYAcec',),
+        MelStructs('LCEC','I','locationCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYLcec',),
+        # Seen in Open Cities
+        MelStructs('RCEC','I','referenceCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYRcec',),
+
+        MelFidList('ACID','actorCellMarkerReference',),
+        MelFidList('LCID','locationCellMarkerReference',),
+
+        MelOptStructA('ACEP','2I2h','actorCellEnablePoint',
+                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+        MelOptStructA('LCEP','2I2h','locationCellEnablePoint',
+                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFid('PNAM','parentLocation',),
+        MelFid('NAM1','music',),
+        MelFid('FNAM','unreportedCrimeFaction',),
+        MelFid('MNAM','worldLocationMarkerRef',),
+        MelStruct('RNAM','f','worldLocationRadius',),
+        MelFid('NAM0','horseMarkerRef',),
+        MelColorN(),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, not mergable
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
