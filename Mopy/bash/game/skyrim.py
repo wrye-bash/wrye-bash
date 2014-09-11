@@ -5875,6 +5875,28 @@ class MreMovt(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreMstt(MelRecord):
+    """Moveable static record."""
+    classType = 'MSTT'
+
+    MsttTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'onLocalMap'),
+        (1, 'unknown2'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelStruct('DATA','B',(MsttTypeFlags,'flags',0L),),
+        MelFid('SNAM','sound'),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
