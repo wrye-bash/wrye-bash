@@ -4214,6 +4214,26 @@ class MreDoor(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDual(MelRecord):
+    """Dual Cast Data"""
+    classType = 'DUAL'
+
+    DualCastDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'hitEffectArt'),
+        (1,'projectile'),
+        (2,'explosion'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('DATA','6I',(FID,'projectile'),(FID,'explosion'),(FID,'effectShader'),
+                  (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
