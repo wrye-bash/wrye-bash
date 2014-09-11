@@ -588,6 +588,26 @@ class MelFidList(MelFids):
         out.packSub(self.subType,`len(fids)`+'I',*fids)
 
 #------------------------------------------------------------------------------
+class MelSortedFidList(MelFidList):
+    """MelFidList that sorts the order of the Fids before writing them.  They are not sorted after modification, only just prior to writing."""
+
+    def __init__(self, type, attr, sortKeyFn = lambda x: x, default=None):
+        """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList
+           just prior to writing.  Since the FidList will already be converted to short Fids
+           at this point we're sorting 4-byte values,  not (FileName, 3-Byte) tuples."""
+        MelFidList.__init__(self, type, attr, default)
+        self.sortKeyFn = sortKeyFn
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        fids.sort(key=self.sortKeyFn)
+        # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
+        #       if it should be opposite, use this instead:
+        #  fids.sort(key=self.sortKeyFn, reverse=True)
+        out.packSub(self.subType, `len(fids)` + 'I', *fids)
+
+#------------------------------------------------------------------------------
 class MelGroup(MelBase):
     """Represents a group record."""
 
@@ -855,11 +875,19 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self,type,format,*elements):
+    def __init__(self,type,format,*elements,**kwdargs):
         """Initialize."""
+        dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = type,format
         self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
         self._debug = False
+        if dumpExtra:
+            self.attrs += (dumpExtra,)
+            self.defaults += ('',)
+            self.actions += (None,)
+            self.formatLen = struct.calcsize(format)
+        else:
+            self.formatLen = -1
 
     def getSlotsUsed(self):
         return self.attrs
@@ -882,6 +910,9 @@ class MelStruct(MelBase):
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)
             setter(attr,value)
+        if self.formatLen >= 0:
+            # Dump remaining subrecord data into an attribute
+            setter(self.attrs[-1], ins.read(size-self.formatLen))
         if self._debug:
             print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
@@ -896,8 +927,13 @@ class MelStruct(MelBase):
             value = getter(attr)
             if action: value = value.dump()
             valuesAppend(value)
+        if self.formatLen >= 0:
+            extraLen = len(values[-1])
+            format = self.format + `extraLen` + 's'
+        else:
+            format = self.format
         try:
-            out.packSub(self.subType,self.format,*values)
+            out.packSub(self.subType,format,*values)
         except struct.error:
             print self.subType,self.format,values
             raise
@@ -911,13 +947,14 @@ class MelStruct(MelBase):
             result = function(getter(attr))
             if save: setter(attr,result)
 
+
 #------------------------------------------------------------------------------
 class MelStructs(MelStruct):
     """Represents array of structured records."""
 
-    def __init__(self,type,format,attr,*elements):
+    def __init__(self,type,format,attr,*elements,**kwdargs):
         """Initialize."""
-        MelStruct.__init__(self,type,format,*elements)
+        MelStruct.__init__(self,type,format,*elements,**kwdargs)
         self.attr = attr
 
     def getSlotsUsed(self):
