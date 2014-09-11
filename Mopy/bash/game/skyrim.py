@@ -2224,6 +2224,30 @@ class MelDecalData(MelStruct):
                   'red','green','blue','unknown',
             )
 
+#------------------------------------------------------------------------------
+class MelDestructible(MelGroup):
+    """Represents a set of destruct record."""
+
+    MelDestStageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'capDamage'),
+        (1, 'disable'),
+        (2, 'destroy'),
+        (3, 'ignoreExternalDmg'),
+        ))
+
+    def __init__(self,attr='destructible'):
+        """Initialize elements."""
+        MelGroup.__init__(self,attr,
+            MelStruct('DEST','i2B2s','health','count','vatsTargetable','dest_unused'),
+            MelGroups('stages',
+                MelStruct('DSTD','=4Bi2Ii','health','index','damageStage',
+                         (MelDestructible.MelDestStageFlags,'flags',0L),'selfDamagePerSecond',
+                         (FID,'explosion',None),(FID,'debris',None),'debrisCount'),
+                MelModel('model','DMDL'),
+                MelBase('DSTF','footer'),
+            ),
+        )
+
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
