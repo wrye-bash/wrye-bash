@@ -965,7 +965,8 @@ class MelStruct(MelBase):
 
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
-        unpacked = ins.unpack(self.format,size,readId)
+        readsize = self.formatLen if self.formatLen >= 0 else size
+        unpacked = ins.unpack(self.format,readsize,readId)
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)
