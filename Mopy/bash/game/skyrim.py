@@ -2205,6 +2205,25 @@ class MelConditions(MelGroups):
         if record.conditions and record.conditions.param_cis2:
             MelGroup.dumpData(self,record,out)
 
+#------------------------------------------------------------------------------
+class MelDecalData(MelStruct):
+    """Represents Decal Data."""
+
+    DecalDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'parallax'),
+            (0, 'alphaBlending'),
+            (0, 'alphaTesting'),
+            (0, 'noSubtextures'),
+        ))
+
+    def __init__(self,attr='decals'):
+        """Initialize elements."""
+        MelStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
+                  'maxHeight','depth','shininess','parallaxScale',
+                  'passes',(MelDecalData.DecalDataFlags,'flags',0L),'unknown',
+                  'red','green','blue','unknown',
+            )
+
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
