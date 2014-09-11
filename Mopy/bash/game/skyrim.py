@@ -2014,8 +2014,8 @@ class MelBipedObjectData(MelStruct):
 class MelBounds(MelStruct):
     def __init__(self):
         MelStruct.__init__(self,'OBND','=6h',
-            'x1','y1','z1',
-            'x2','y2','z2')
+            'boundX1','boundY1','boundZ1',
+            'boundX2','boundY2','boundZ2')
 
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
