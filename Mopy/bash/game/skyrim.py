@@ -7568,6 +7568,381 @@ class MreStat(MelRecord):
 
 # Verified for 305
 # MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
+#------------------------------------------------------------------------------
+class MreTact(MelRecord):
+    """Talking Activator"""
+    classType = 'TACT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','pnam_p'),
+        MelOptStruct('SNAM','I',(FID,'soundLoop')),
+        MelBase('FNAM','fnam_p'),
+        MelOptStruct('VNAM','I',(FID,'voiceType')),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreTree(MelRecord):
+    """Tree Item"""
+    classType = 'TREE'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelFid('PFIG','harvestIngredient'),
+        MelFid('SNAM','harvestSound'),
+        MelStruct('PFPC','4B','spring','summer','fall','wsinter',),
+        MelLString('FULL','full'),
+        MelStruct('CNAM','ff32sff','trunkFlexibility','branchFlexibility',
+                  'unknown','leafAmplitude','leafFrequency',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreTxst(MelRecord):
+    """Texture Set"""
+    classType = 'TXST'
+
+    # {0x0001}'No Specular Map',
+    # {0x0002}'Facegen Textures',
+    # {0x0004}'Has Model Space Normal Map'
+    TxstTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noSpecularMap'),
+        (1, 'facegenTextures'),
+        (2, 'hasModelSpaceNormalMap'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelGroups('destructionData',
+            MelString('TX00','difuse'),
+            MelString('TX01','normalGloss'),
+            MelString('TX02','enviroMaskSubSurfaceTint'),
+            MelString('TX03','glowDetailMap'),
+            MelString('TX04','height'),
+            MelString('TX05','environment'),
+            MelString('TX06','multilayer'),
+            MelString('TX07','backlightMaskSpecular'),
+            ),
+        MelDecalData(),
+        MelStruct('DNAM','H',(TxstTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreVtyp(MelRecord):
+    """Vtyp Item"""
+    classType = 'VTYP'
+
+    # 'Allow Default Dialog',
+    # 'Female'
+    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'allowDefaultDialog'),
+            (1, 'female'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DNAM','B',(VtypTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreWatr(MelRecord):
+    """Water"""
+    classType = 'WATR'
+
+    WatrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'causesDamage'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelGroups('unused',
+            MelString('NNAM','noiseMap',),
+            ),
+        MelStruct('ANAM','B','opacity'),
+        MelStruct('FNAM','B',(WatrTypeFlags,'flags',0L),),
+        MelBase('MNAM','unused1'),
+        MelFid('TNAM','material',),
+        MelFid('SNAM','openSound',),
+        MelFid('XNAM','spell',),
+        MelFid('INAM','imageSpace',),
+        MelStruct('DATA','H','damagePerSecond'),
+        MelStruct('DNAM','7f4s2f3Bs3Bs3B5s43f','unknown1','unknown2','unknown3',
+                  'unknown4','specularPropertiesSunSpecularPower',
+                  'waterPropertiesReflectivityAmount',
+                  'waterPropertiesFresnelAmount','unknown5',
+                  'fogPropertiesAboveWaterFogDistanceNearPlane',
+                  'fogPropertiesAboveWaterFogDistanceFarPlane',
+                  # Shallow Color
+                  'red_sc','green_sc','blue_sc','unknown_sc',
+                  # Deep Color
+                  'red_dc','green_dc','blue_dc','unknown_dc',
+                  # Reflection Color
+                  'red_rc','green_rc','blue_rc','unknown_rc',
+                  'unknown6','unknown7','unknown8','unknown9','unknown10',
+                  'displacementSimulatorStartingSize',
+                  'displacementSimulatorForce','displacementSimulatorVelocity',
+                  'displacementSimulatorFalloff','displacementSimulatorDampner',
+                  'unknown11','noisePropertiesNoiseFalloff',
+                  'noisePropertiesLayerOneWindDirection',
+                  'noisePropertiesLayerTwoWindDirection',
+                  'noisePropertiesLayerThreeWindDirection',
+                  'noisePropertiesLayerOneWindSpeed',
+                  'noisePropertiesLayerTwoWindSpeed',
+                  'noisePropertiesLayerThreeWindSpeed',
+                  'unknown12','unknown13','fogPropertiesAboveWaterFogAmount',
+                  'unknown14','fogPropertiesUnderWaterFogAmount',
+                  'fogPropertiesUnderWaterFogDistanceNearPlane',
+                  'fogPropertiesUnderWaterFogDistanceFarPlane',
+                  'waterPropertiesRefractionMagnitude',
+                  'specularPropertiesSpecularPower',
+                  'unknown15','specularPropertiesSpecularRadius',
+                  'specularPropertiesSpecularBrightness',
+                  'noisePropertiesLayerOneUVScale',
+                  'noisePropertiesLayerTwoUVScale',
+                  'noisePropertiesLayerThreeUVScale',
+                  'noisePropertiesLayerOneAmplitudeScale',
+                  'noisePropertiesLayerTwoAmplitudeScale',
+                  'noisePropertiesLayerThreeAmplitudeScale',
+                  'waterPropertiesReflectionMagnitude',
+                  'specularPropertiesSunSparkleMagnitude',
+                  'specularPropertiesSunSpecularMagnitude',
+                  'depthPropertiesReflections','depthPropertiesRefraction',
+                  'depthPropertiesNormals','depthPropertiesSpecularLighting',
+                  'specularPropertiesSunSparklePower',
+                  ),
+        MelBase('GNAM','unused2'),
+        # Linear Velocity
+        MelStruct('NAM0','3f','linv_x','linv_y','linv_z',),
+        # Angular Velocity
+        MelStruct('NAM1','3f','andv_x','andv_y','andv_z',),
+        MelString('NAM2','noiseTexture'),
+        MelString('NAM3','unused3'),
+        MelString('NAM4','unused4'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreWeap(MelRecord):
+    """Weapon"""
+    classType = 'WEAP'
+
+    # 'On Death'
+    WeapFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'onDeath'),
+    ))
+
+    # {0x00000001}'Player Only',
+    # {0x00000002}'NPCs Use Ammo',
+    # {0x00000004}'No Jam After Reload (unused)',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Minor Crime',
+    # {0x00000020}'Range Fixed',
+    # {0x00000040}'Not Used in Normal Combat',
+    # {0x00000080}'Unknown 8',
+    # {0x00000100}'Don''t Use 3rd Person IS Anim (unused)',
+    # {0x00000200}'Unknown 10',
+    # {0x00000400}'Rumble - Alternate',
+    # {0x00000800}'Unknown 12',
+    # {0x00001000}'Non-hostile',
+    # {0x00002000}'Bound Weapon'
+    WeapFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'playerOnly'),
+            (1, 'nPCsUseAmmo'),
+            (2, 'noJamAfterReloadunused'),
+            (3, 'unknown4'),
+            (4, 'minorCrime'),
+            (5, 'rangeFixed'),
+            (6, 'notUsedinNormalCombat'),
+            (7, 'unknown8'),
+            (8, 'don'),
+            (9, 'unknown10'),
+            (10, 'rumbleAlternate'),
+            (11, 'unknown12'),
+            (12, 'nonhostile'),
+            (13, 'boundWeapon'),
+        ))
+
+    # {0x0001}'Ignores Normal Weapon Resistance',
+    # {0x0002}'Automatic (unused)',
+    # {0x0004}'Has Scope (unused)',
+    # {0x0008}'Can''t Drop',
+    # {0x0010}'Hide Backpack (unused)',
+    # {0x0020}'Embedded Weapon (unused)',
+    # {0x0040}'Don''t Use 1st Person IS Anim (unused)',
+    # {0x0080}'Non-playable'
+    WeapFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'ignoresNormalWeaponResistance'),
+            (1, 'automaticunused'),
+            (2, 'hasScopeunused'),
+            (3, 'can'),
+            (4, 'hideBackpackunused'),
+            (5, 'embeddedWeaponunused'),
+            (6, 'don'),
+            (7, 'nonplayable'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel('model1','MODL'),
+        MelIcons(),
+        MelFid('EITM','enchantment',),
+        MelOptStruct('EAMT','H','enchantPoints'),
+        MelDestructible(),
+        MelFid('ETYP','equipmentType',),
+        MelFid('BIDS','blockBashImpactDataSet',),
+        MelFid('BAMT','alternateBlockMaterial',),
+        MelFid('YNAM','pickupSound',),
+        MelFid('ZNAM','dropSound',),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelLString('DESC','description'),
+        MelModel('model2','MOD3'),
+        MelBase('NNAM','unused1'),
+        MelFid('INAM','impactDataSet',),
+        MelFid('WNAM','firstPersonModelObject',),
+        MelFid('SNAM','attackSound',),
+        MelFid('XNAM','attackSound2D',),
+        MelFid('NAM7','attackLoopSound',),
+        MelFid('TNAM','attackFailSound',),
+        MelFid('UNAM','idleSound',),
+        MelFid('NAM9','equipSound',),
+        MelFid('NAM8','unequipSound',),
+        MelStruct('DATA','IfH','value','weight','damage',),
+        MelStruct('DNAM','B3s2fH2sf4s4B2f2I5f12si8si4sf','animationType','unknown1',
+                  'speed','reach',(WeapFlags1,'dnamFlags1',0L),'unknown2','sightFOV',
+                  'unknown3','baseVATSToHitChance','attackAnimation',
+                  'numProjectiles','embeddedWeaponAVunused','minRange',
+                  'maxRange','onHit',(WeapFlags2,'dnamFlags2',0L),
+                  'animationAttackMultiplier','unknown4','rumbleLeftMotorStrength',
+                  'rumbleRightMotorStrength','rumbleDuration','unknown5',
+                  'skill','unknown6','resist','unknown7','stagger',),
+        MelStruct('CRDT','H2sfB3sI','critDamage','unused2','criticalMultiplier',
+                  (WeapFlags3,'criticalFlags',0L),'unused3',(FID,'criticalEffect'),),
+        MelStruct('VNAM','I','detectionSoundLevel'),
+        MelFid('CNAM','template',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreWoop(MelRecord):
+    """Word of Power"""
+    classType = 'WOOP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelLString('TNAM','translation'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreWrld(MelRecord):
+    """Worldspace"""
+    classType = 'WRLD'
+
+    # {0x01} 'Small World',
+    # {0x02} 'Can''t Fast Travel',
+    # {0x04} 'Unknown 3',
+    # {0x08} 'No LOD Water',
+    # {0x10} 'No Landscape',
+    # {0x20} 'Unknown 6',
+    # {0x40} 'Fixed Dimensions',
+    # {0x80} 'No Grass'
+    WrldFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'smallWorld'),
+            (1, 'can'),
+            (2, 'unknown3'),
+            (3, 'noLODWater'),
+            (4, 'noLandscape'),
+            (5, 'unknown6'),
+            (6, 'fixedDimensions'),
+            (7, 'noGrass'),
+        ))
+
+    # {0x0001}'Use Land Data',
+    # {0x0002}'Use LOD Data',
+    # {0x0004}'Don''t Use Map Data',
+    # {0x0008}'Use Water Data',
+    # {0x0010}'Use Climate Data',
+    # {0x0020}'Use Image Space Data (unused)',
+    # {0x0040}'Use Sky Cell'
+    WrldFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useLandData'),
+            (1, 'useLODData'),
+            (2, 'don'),
+            (3, 'useWaterData'),
+            (4, 'useClimateData'),
+            (5, 'useImageSpaceDataunused'),
+            (6, 'useSkyCell'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # {>>> BEGIN leftover from earlier CK versions <<<}
+        MelGroups('unusedRNAM',
+            MelBase('RNAM','unknown',),
+        ),
+        # {>>> END leftover from earlier CK versions <<<}
+        MelBase('MHDT','maxHeightData'),
+        MelLString('FULL','full'),
+        # Fixed Dimensions Center Cell
+        MelStruct('WCTR','2h','fixedX','fixedY',),
+        MelFid('LTMP','interiorLighting',),
+        MelFid('XEZN','encounterZone',),
+        MelFid('XLCN','location',),
+        MelGroup('parent',
+            MelFid('WNAM','worldspace',),
+            MelStruct('PNAM','Bs',(WrldFlags1,'parentFlags',0L),'unknown',),
+        ),
+        MelFid('CNAM','climate',),
+        MelFid('NAM2','water',),
+        MelFid('NAM3','lODWaterType',),
+        MelStruct('NAM4','f','lODWaterHeight',),
+        MelStruct('DNAM','2f','defaultLandHeight','defaultWaterHeight',),
+        MelString('ICON','mapImage'),
+        MelModel('cloudModel','MODL',),
+        MelStruct('MNAM','2i4h3f','usableDimensionsX','usableDimensionsY',
+                  'cellCoordinatesX','cellCoordinatesY','seCellX','seCellY',
+                  'cameraDataMinHeight','cameraDataMaxHeight',
+                  'cameraDataInitialPitch',),
+        MelStruct('ONAM','4f','worldMapScale','cellXOffset','cellYOffset',
+                  'cellZOffset',),
+        MelStruct('NAMA','f','distantLODMultiplier',),
+        MelStruct('DATA','B',(WrldFlags2,'dataFlags',0L),),
+        # {>>> Object Bounds doesn't show up in CK <<<}
+        MelStruct('NAM0','2f','minObjX','minObjY',),
+        MelStruct('NAM9','2f','maxObjX','maxObjY',),
+        MelFid('ZNAM','music',),
+        MelString('NNAM','canopyShadowunused'),
+        MelString('XNAM','waterNoiseTexture'),
+        MelString('TNAM','hDLODDiffuseTexture'),
+        MelString('UNAM','hDLODNormalTexture'),
+        MelString('XWEM','waterEnvironmentMapunused'),
+        MelBase('OFST','unknown'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# # Many Things Marked MelBase that need updated
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
