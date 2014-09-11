@@ -7419,6 +7419,22 @@ class MreSopm(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSoun(MelRecord):
+    """Soun Item"""
+    classType = 'SOUN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        # FNAM Leftover, Unused
+        MelString('FNAM','soundFileUnused'),
+        # SNDD Leftover, Unused
+        MelBase('SNDD','soundDataUnused'),
+        MelFid('SDSC','soundDescriptor'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
