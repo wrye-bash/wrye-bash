@@ -2248,7 +2248,7 @@ class MreClas(MelRecord):
         (16,'recharge'),
         (17,'repair'),))
     class MelClasData(MelStruct):
-        """Handle older trucated DATA for CLAS subrecords."""
+        """Handle older truncated DATA for CLAS subrecords."""
         def loadData(self,record,ins,type,size,readId):
             if size == 52:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -2423,7 +2423,7 @@ class MreCsty(MelRecord):
         ))
 
     class MelCstdData(MelStruct):
-        """Handle older trucated DATA for CSTD subrecord."""
+        """Handle older truncated DATA for CSTD subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 124:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -2565,7 +2565,7 @@ class MreEfsh(MelRecord):
         ))
 
     class MelEfshData(MelStruct):
-        """Handle older trucated DATA for EFSH subrecord."""
+        """Handle older truncated DATA for EFSH subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 224:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -2836,7 +2836,7 @@ class MreLigh(MelRecord):
         'unk1','offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow'))
     #--Mel NPC DATA
     class MelLighData(MelStruct):
-        """Handle older trucated DATA for LIGH subrecord."""
+        """Handle older truncated DATA for LIGH subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 32:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -2956,7 +2956,7 @@ class MreMgef(MelRecord):
 
     #--Mel NPC DATA
     class MelMgefData(MelStruct):
-        """Handle older trucated DATA for DARK subrecord."""
+        """Handle older truncated DATA for DARK subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 64:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -3409,7 +3409,7 @@ class MreRefr(MelRecord):
     _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     class MelRefrXloc(MelOptStruct):
-        """Handle older trucated XLOC for REFR subrecord."""
+        """Handle older truncated XLOC for REFR subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 16:
                 MelStruct.loadData(self,record,ins,type,size,readId)
@@ -3761,7 +3761,7 @@ class MreWatr(MelRecord):
     classType = 'WATR'
     _flags = Flags(0L,Flags.getNames('causesDmg','reflective'))
     class MelWatrData(MelStruct):
-        """Handle older trucated DATA for WATR subrecord."""
+        """Handle older truncated DATA for WATR subrecord."""
         def loadData(self,record,ins,type,size,readId):
             if size == 102:
                 MelStruct.loadData(self,record,ins,type,size,readId)
