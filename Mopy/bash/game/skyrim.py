@@ -5302,6 +5302,72 @@ class MreIngr(MelRecord,MreHasEffects):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreIpctData(MelStruct):
+    """Ipct Data Custom Unpacker"""
+
+    # DATA has wbEnums in TES5Edit
+    # 'effectDuration' is defined as follows
+    # 0 :'Surface Normal',
+    # 1 :'Projectile Vector',
+    # 2 :'Projectile Reflection'
+
+    # 'impactResult' is defined as follows
+    # 0 :'Default',
+    # 1 :'Destroy',
+    # 2 :'Bounce',
+    # 3 :'Impale',
+    # 4 :'Stick'
+
+    # for 'soundLevel' refer to wbSoundLevelEnum
+
+    # {0x01} 'No Decal Data'
+    IpctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noDecalData'),
+    ))
+
+    def __init__(self,type='DATA'):
+        MelStruct.__init__(self,type,'fI2fI2B2s','effectDuration','effectOrientation',
+                  'angleThreshold','placementRadius','soundLevel',
+                  (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unknown',),
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        if size == 16:
+            # 16 Bytes for legacy data post Skyrim 1.5 DATA is always 24 bytes
+            # fI2f + I2B2s
+            unpacked = ins.unpack('=fI2f',size,readId) + (0,0,0,0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
+        elif size != 24:
+            raise ModSizeError(ins.inName,readId,24,size,True)
+        else:
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
+class MreIpct(MelRecord):
+    """Impact record."""
+    classType = 'IPCT'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MreIpctData(),
+        MelDecalData(),
+        MelFid('DNAM','textureSet'),
+        MelFid('ENAM','secondarytextureSet'),
+        MelFid('SNAM','sound1'),
+        MelFid('NAM1','sound2'),
+        MelFid('NAM2','hazard'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
