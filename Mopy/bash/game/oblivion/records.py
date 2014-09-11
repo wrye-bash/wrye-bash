@@ -816,7 +816,7 @@ class MreCsty(MelRecord):
             elif size == 104:
                 # --104 byte record (skips flagsB, rushChance, unused6,
                 #  rushMult, rStand, groupStand
-                #-- only one occurence (AndragilTraining
+                #-- only one occurrence (AndragilTraining
                 unpacked = ins.unpack('2B2s8f2B2s3fB3s2f5B3s2f2B2s5f', size,
                                       readId)
             elif size == 92:
@@ -1230,8 +1230,11 @@ class MreKeym(MelRecord):
 class MreLigh(MelRecord):
     """Light source record."""
     classType = 'LIGH'
-    _flags = Flags(0L,Flags.getNames('dynamic','canTake','negative','flickers',
-        'unk1','offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow'))
+    _flags = Flags(0L,
+                   Flags.getNames('dynamic', 'canTake', 'negative', 'flickers',
+                                  'unk1', 'offByDefault', 'flickerSlow',
+                                  'pulse', 'pulseSlow', 'spotLight',
+                                  'spotShadow'))
     #--Mel NPC DATA
     class MelLighData(MelStruct):
         """Handle older truncated DATA for LIGH subrecord."""
@@ -1243,7 +1246,9 @@ class MreLigh(MelRecord):
                 #--Else 24 byte record (skips value and weight...
                 unpacked = ins.unpack('iI3BsIff',size,readId)
             else:
-                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: %i') % size)
+                raise ModError(ins.inName, _(
+                    'Unexpected size encountered for LIGH:DATA subrecord: '
+                    '%i') % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1256,8 +1261,9 @@ class MreLigh(MelRecord):
         MelFid('SCRI','script'),
         MelString('FULL','full'),
         MelString('ICON','iconPath'),
-        MelLighData('DATA','iI3BsIffIf','duration','radius','red','green','blue',('unused1',null1),
-            (_flags,'flags',0L),'falloff','fov','value','weight'),
+        MelLighData('DATA', 'iI3BsIffIf', 'duration', 'radius', 'red', 'green',
+                    'blue', ('unused1', null1), (_flags, 'flags', 0L),
+                    'falloff', 'fov', 'value', 'weight'),
         MelOptStruct('FNAM','f',('fade',None)),
         MelFid('SNAM','sound'),
         )
@@ -1270,7 +1276,8 @@ class MreLscr(MelRecord):
         MelString('EDID','eid'),
         MelString('ICON','iconPath'),
         MelString('DESC','text'),
-        MelStructs('LNAM','2I2h','Locations',(FID,'direct'),(FID,'indirect'),'gridy','gridx'),
+        MelStructs('LNAM', '2I2h', 'Locations', (FID, 'direct'),
+                   (FID, 'indirect'), 'gridy', 'gridx'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1296,7 +1303,8 @@ class MreLtex(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('ICON','iconPath'),
-        MelOptStruct('HNAM','3B',(_flags,'flags'),'friction','restitution'), ####flags are actually an enum....
+        MelOptStruct('HNAM', '3B', (_flags, 'flags'), 'friction',
+                     'restitution'), # ###flags are actually an enum....
         MelOptStruct('SNAM','B','specular'),
         MelFids('GNAM', 'grass'),
         )
@@ -1357,7 +1365,9 @@ class MreMgef(MelRecord):
                 #--Else is data for DARK record, read it all.
                 unpacked = ins.unpack('IfIiiH2sIfI',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for MGEF:DATA subrecord: %i' % size)
+                raise ModError(ins.inName,
+                               u'Unexpected size encountered for MGEF:DATA '
+                               u'subrecord: %i' % size)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1370,11 +1380,14 @@ class MreMgef(MelRecord):
         MelString('DESC','text'),
         MelString('ICON','iconPath'),
         MelModel(),
-        MelMgefData('DATA','IfIiiH2sIf6I2f',
-            (_flags,'flags'),'baseCost',(FID,'associated'),'school','resistValue','numCounters',
-            ('unused1',null2),(FID,'light'),'projectileSpeed',(FID,'effectShader'),(FID,'enchantEffect',0),
-            (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),(FID,'areaSound',0),
-            ('cefEnchantment',0.0),('cefBarter',0.0)),
+        MelMgefData('DATA', 'IfIiiH2sIf6I2f', (_flags, 'flags'), 'baseCost',
+                    (FID, 'associated'), 'school', 'resistValue',
+                    'numCounters', ('unused1', null2), (FID, 'light'),
+                    'projectileSpeed', (FID, 'effectShader'),
+                    (FID, 'enchantEffect', 0), (FID, 'castingSound', 0),
+                    (FID, 'boltSound', 0), (FID, 'hitSound', 0),
+                    (FID, 'areaSound', 0), ('cefEnchantment', 0.0),
+                    ('cefBarter', 0.0)),
         MelStructA('ESCE','4s','counterEffects','effect'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -1439,7 +1452,8 @@ class MreNpc(MreActor):
         def dumpData(self,record,out):
             """Dumps data from record to outstream."""
             recordGetAttr = record.__getattribute__
-            values = recordGetAttr('skills')+[recordGetAttr('health')]+[recordGetAttr('unused1')]+recordGetAttr('attributes')
+            values = recordGetAttr('skills') + [recordGetAttr('health')] + [
+                recordGetAttr('unused1')] + recordGetAttr('attributes')
             out.packSub(self.subType,'=21BH2s8B',*values)
     #--Mel Set
     melSet = MelSet(
@@ -1456,17 +1470,20 @@ class MreNpc(MreActor):
         MelFids('SPLO','spells'),
         MelFid('SCRI','script'),
         MelStructs('CNTO','Ii','items',(FID,'item',None),('count',1)),
-        MelStruct('AIDT','=4BIbB2s',
-            ('aggression',5),('confidence',50),('energyLevel',50),('responsibility',50),
-            (aiService,'services',0L),'trainSkill','trainLevel',('unused1',null2)),
+        MelStruct('AIDT', '=4BIbB2s', ('aggression', 5), ('confidence', 50),
+                  ('energyLevel', 50), ('responsibility', 50),
+                  (aiService, 'services', 0L), 'trainSkill', 'trainLevel',
+                  ('unused1', null2)),
         MelFids('PKID','aiPackages'),
         MelStrings('KFFZ','animations'),
         MelFid('CNAM','iclass'),
-        MelNpcData('DATA','',('skills',[0]*21),'health',('unused2',null2),('attributes',[0]*8)),
+        MelNpcData('DATA', '', ('skills', [0] * 21), 'health',
+                   ('unused2', null2), ('attributes', [0] * 8)),
         MelFid('HNAM','hair'),
         MelOptStruct('LNAM','f',('hairLength',None)),
         MelFid('ENAM','eye'), ####fid Array
-        MelStruct('HCLR','3Bs','hairRed','hairBlue','hairGreen',('unused3',null1)),
+        MelStruct('HCLR', '3Bs', 'hairRed', 'hairBlue', 'hairGreen',
+                  ('unused3', null1)),
         MelFid('ZNAM','combatStyle'),
         MelBase('FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
         MelBase('FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
@@ -1521,15 +1538,17 @@ class MrePack(MelRecord):
                 record.flags,record.aiType,junk = ins.unpack('HBs',4,readId)
                 record.flags = MrePack._flags(record.flags)
                 record.unused1 = null3
-                if self._debug: print (record.flags.getTrueAttrs(),record.aiType,record.unused1)
+                if self._debug: print (
+                    record.flags.getTrueAttrs(), record.aiType, record.unused1)
     class MelPackLT(MelStruct):
-        """For PLDT and PTDT. Second element of both may be either an FID or a long,
-        depending on value of first element."""
+        """For PLDT and PTDT. Second element of both may be either an FID or a
+        long, depending on value of first element."""
         def hasFids(self,formElements):
             formElements.add(self)
         def dumpData(self,record,out):
-            if ((self.subType == 'PLDT' and (record.locType or record.locId)) or
-                (self.subType == 'PTDT' and (record.targetType or record.targetId))):
+            if (self.subType == 'PLDT' and (record.locType or record.locId)) \
+                    or (self.subType == 'PTDT' and
+                            (record.targetType or record.targetId)):
                 MelStruct.dumpData(self,record,out)
         def mapFids(self,record,function,save=False):
             """Applies function to fids. If save is true, then fid is set
