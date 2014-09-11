@@ -2205,6 +2205,61 @@ class MelConditions(MelGroups):
         if record.conditions and record.conditions.param_cis2:
             MelGroup.dumpData(self,record,out)
 
+#------------------------------------------------------------------------------
+class MelDecalData(MelStruct):
+    """Represents Decal Data."""
+
+    DecalDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'parallax'),
+            (0, 'alphaBlending'),
+            (0, 'alphaTesting'),
+            (0, 'noSubtextures'),
+        ))
+
+    def __init__(self,attr='decals'):
+        """Initialize elements."""
+        MelStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
+                  'maxHeight','depth','shininess','parallaxScale',
+                  'passes',(MelDecalData.DecalDataFlags,'flags',0L),'unknown',
+                  'red','green','blue','unknown',
+            )
+
+#------------------------------------------------------------------------------
+class MelDestructible(MelGroup):
+    """Represents a set of destruct record."""
+
+    MelDestStageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'capDamage'),
+        (1, 'disable'),
+        (2, 'destroy'),
+        (3, 'ignoreExternalDmg'),
+        ))
+
+    def __init__(self,attr='destructible'):
+        """Initialize elements."""
+        MelGroup.__init__(self,attr,
+            MelStruct('DEST','i2B2s','health','count','vatsTargetable','dest_unused'),
+            MelGroups('stages',
+                MelStruct('DSTD','=4Bi2Ii','health','index','damageStage',
+                         (MelDestructible.MelDestStageFlags,'flags',0L),'selfDamagePerSecond',
+                         (FID,'explosion',None),(FID,'debris',None),'debrisCount'),
+                MelModel('model','DMDL'),
+                MelBase('DSTF','footer'),
+            ),
+        )
+
+#------------------------------------------------------------------------------
+class MelEffects(MelGroups):
+    """Represents ingredient/potion/enchantment/spell effects."""
+
+    def __init__(self,attr='effects'):
+        """Initialize elements."""
+        MelGroups.__init__(self,attr,
+            MelFid('EFID','baseEffect'),
+            MelStruct('EFIT','f2I','magnitude','area','duration',),
+            MelConditions(),
+            )
+
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
