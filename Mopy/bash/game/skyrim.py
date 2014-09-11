@@ -6849,6 +6849,42 @@ class MreRegn(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Needs Updating
+#------------------------------------------------------------------------------
+class MreRela(MelRecord):
+    """Relationship"""
+    classType = 'RELA'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'rankType' for WB
+    # 0 :'Lover'
+    # 1 :'Ally'
+    # 2 :'Confidant'
+    # 3 :'Friend'
+    # 4 :'Acquaitance'
+    # 5 :'Rival'
+    # 6 :'Foe'
+    # 7 :'Enemy'
+    # 8 :'Archnemesis'
+
+    RelationshipFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Unknown 1'),
+        (1,'Unknown 2'),
+        (2,'Unknown 3'),
+        (3,'Unknown 4'),
+        (4,'Unknown 5'),
+        (5,'Unknown 6'),
+        (6,'Unknown 7'),
+        (7,'Secret'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2IHsBI',(FID,'parent'),(FID,'child'),'rankType',
+                  'unknown',(RelationshipFlags,'relaFlags',0L),(FID,'associationType'),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
