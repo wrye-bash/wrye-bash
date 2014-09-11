@@ -4173,6 +4173,19 @@ class MreDlvw(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDobj(MelRecord):
+    """Default Object Manager"""
+    classType = 'DOBJ'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('objects',
+            MelStruct('DNAM','2I','objectUse',(FID,'objectID',None),),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
