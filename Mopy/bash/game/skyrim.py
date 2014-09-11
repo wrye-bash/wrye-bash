@@ -4354,6 +4354,53 @@ class MreEfsh(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreEnch(MelRecord,MreHasEffects):
+    """Enchants"""
+    classType = 'ENCH'
+
+    # ENIT has wbEnum in TES5Edit
+    # Assigned to 'enchantType' for WB
+    # $06, 'Enchantment',
+    # $0C, 'Staff Enchantment'
+
+    EnchGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noAutoCalc'),
+        (1, 'unknownTwo'),
+        (2, 'extendDurationOnRecast'),
+    ))
+
+    class MelEnchEnit(MelStruct):
+        """Handle older truncated ENIT for ENCH subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 36:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 32:
+                unpacked = ins.unpack('i2Ii2IfI',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelEnchEnit('ENIT','i2Ii2If2I','enchantmentCost',(EnchGeneralFlags,
+                  'generalFlags',0L),'castType','enchantmentAmount','targetType',
+                  'enchantType','chargeTime',(FID,'baseEnchantment'),
+                  (FID,'wornRestrictions'),
+            ),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
