@@ -4625,6 +4625,29 @@ class MreFact(MelRecord):
             MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreFlor(MelRecord):
+    """Flor Item"""
+    classType = 'FLOR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','unknown01'),
+        MelLString('RNAM','activateTextOverride'),
+        MelBase('FNAM','unknown02'),
+        MelFid('PFIG','ingredient'),
+        MelFid('SNAM','harvestSound'),
+        MelStruct('PFPC','4B','spring','summer','fall','winter',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
