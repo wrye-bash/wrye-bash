@@ -2449,6 +2449,15 @@ class MelOwnership(MelGroup):
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
 
+#------------------------------------------------------------------------------
+class MelPerks(MelStructs):
+    """Handle writing PRKZ subrecord for the PRKR subrecord"""
+    def dumpData(self,record,out):
+        perks = record.__getattribute__(self.attr)
+        if perks:
+            out.packSub('PRKZ','<I',len(perks))
+            MelStructs.dumpData(self,record,out)
+
 
 #------------------------------------------------------------------------------
 class MelString16(MelString):
