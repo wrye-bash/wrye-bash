@@ -1750,7 +1750,7 @@ class MelBipedFlags(bolt.Flags):
         if newNames: names.update(newNames)
         Flags.__init__(self,default,names)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelConditions(MelStructs):
     """Represents a set of quest/dialog conditions. Difficulty is that FID state
     of parameters depends on function index."""
@@ -2027,8 +2027,6 @@ class MreHeader(MreHeaderBase):
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-# Oblivion Records 1 -----------------------------------------------------------
-#-------------------------------------------------------------------------------
 class MreAchr(MelRecord): # Placed NPC
     classType = 'ACHR'
     _flags = bolt.Flags(0L,bolt.Flags.getNames('oppositeParent'))
@@ -2190,9 +2188,15 @@ class MreBsgn(MelRecord):
 class MreCell(MelRecord):
     """Cell record."""
     classType = 'CELL'
-    cellFlags = bolt.Flags(0L,bolt.Flags.getNames((0, 'isInterior'),
-        (1,'hasWater'),(2,'invertFastTravel'),(3,'forceHideLand'),
-        (5,'publicPlace'),(6,'handChanged'),(7,'behaveLikeExterior')))
+    cellFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'isInterior'),
+        (1,'hasWater'),
+        (2,'invertFastTravel'),
+        (3,'forceHideLand'),
+        (5,'publicPlace'),
+        (6,'handChanged'),
+        (7,'behaveLikeExterior')
+        ))
     class MelCoordinates(MelOptStruct):
         def dumpData(self,record,out):
             if not record.flags.isInterior:
@@ -2203,10 +2207,11 @@ class MreCell(MelRecord):
         MelString('FULL','full'),
         MelStruct('DATA','B',(cellFlags,'flags',0L)),
         MelCoordinates('XCLC','ii',('posX',None),('posY',None)),
-        MelOptStruct('XCLL','=3Bs3Bs3Bs2f2i2f','ambientRed','ambientGreen','ambientBlue',
-            ('unused1',null1),'directionalRed','directionalGreen','directionalBlue',
-            ('unused2',null1),'fogRed','fogGreen','fogBlue',
-            ('unused3',null1),'fogNear','fogFar','directionalXY','directionalZ',
+        MelOptStruct('XCLL','=3Bs3Bs3Bs2f2i2f',
+            'ambientRed','ambientGreen','ambientBlue',('unused1',null1),
+            'directionalRed','directionalGreen','directionalBlue',('unused2',null1),
+            'fogRed','fogGreen','fogBlue',('unused3',null1),
+            'fogNear','fogFar','directionalXY','directionalZ',
             'directionalFade','fogClip'),
         MelFidList('XCLR','regions'),
         MelOptStruct('XCMT','B','music'),
