@@ -5580,6 +5580,42 @@ class MreLigh(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreLscr(MelRecord):
+    """Load screen."""
+    classType = 'LSCR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelIcons(),
+        MelLString('DESC','description'),
+        MelConditions(),
+        MelFid('NNAM','loadingScreenNIF'),
+        MelStruct('SNAM','f','initialScale',),
+        MelStruct('RNAM','3h','rotGridY','rotGridX','rotGridZ',),
+        MelStruct('ONAM','2h','rotOffsetMin','rotOffsetMax',),
+        MelStruct('XNAM','3f','transGridY','transGridX','transGridZ',),
+        MelString('MOD2','cameraPath'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreLtex(MelRecord):
+    """Landscape Texture."""
+    classType = 'LTEX'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('TNAM','textureSet',),
+        MelFid('MNAM','materialType',),
+        MelStruct('HNAM','BB','friction','restitution',),
+        MelStruct('SNAM','B','textureSpecularExponent',),
+        MelFids('GNAM','grasses'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
 
