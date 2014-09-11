@@ -3113,31 +3113,31 @@ class MreAchr(MelRecord):
 class MreActi(MelRecord):
     """Activator."""
     classType = 'ACTI'
+
+    ActivatorFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noDisplacement'),
+        (0, 'ignoredBySandbox'),
+    ))
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        MelBase('PNAM','pnam_p'),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelStruct('PNAM','=4B','red','green','blue','unused'),
         MelOptStruct('SNAM','I',(FID,'dropSound')),
         MelOptStruct('VNAM','I',(FID,'pickupSound')),
         MelOptStruct('WNAM','I',(FID,'water')),
-        MelLString('RNAM','rnam'),
-        MelBase('FNAM','fnam_p'),
+        MelLString('RNAM','rnam_p'),
+        MelStruct('FNAM','H',(ActivatorFlags,'flags',0L),),
         MelOptStruct('KNAM','I',(FID,'keyword')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreAddn(MelRecord):
     """Addon"""
