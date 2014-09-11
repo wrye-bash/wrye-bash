@@ -5302,8 +5302,284 @@ class MreIngr(MelRecord,MreHasEffects):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
-# Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
+class MreIpctData(MelStruct):
+    """Ipct Data Custom Unpacker"""
+
+    # DATA has wbEnums in TES5Edit
+    # 'effectDuration' is defined as follows
+    # 0 :'Surface Normal',
+    # 1 :'Projectile Vector',
+    # 2 :'Projectile Reflection'
+
+    # 'impactResult' is defined as follows
+    # 0 :'Default',
+    # 1 :'Destroy',
+    # 2 :'Bounce',
+    # 3 :'Impale',
+    # 4 :'Stick'
+
+    # for 'soundLevel' refer to wbSoundLevelEnum
+
+    # {0x01} 'No Decal Data'
+    IpctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noDecalData'),
+    ))
+
+    def __init__(self,type='DATA'):
+        MelStruct.__init__(self,type,'fI2fI2B2s','effectDuration','effectOrientation',
+                  'angleThreshold','placementRadius','soundLevel',
+                  (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unknown',),
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        if size == 16:
+            # 16 Bytes for legacy data post Skyrim 1.5 DATA is always 24 bytes
+            # fI2f + I2B2s
+            unpacked = ins.unpack('=fI2f',size,readId) + (0,0,0,0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
+        elif size != 24:
+            raise ModSizeError(ins.inName,readId,24,size,True)
+        else:
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
+class MreIpct(MelRecord):
+    """Impact record."""
+    classType = 'IPCT'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MreIpctData(),
+        MelDecalData(),
+        MelFid('DNAM','textureSet'),
+        MelFid('ENAM','secondarytextureSet'),
+        MelFid('SNAM','sound1'),
+        MelFid('NAM1','sound2'),
+        MelFid('NAM2','hazard'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreIpds(MelRecord):
+    """Ipds Item"""
+    classType = 'IPDS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
+        MelGroups('data',
+            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreKeym(MelRecord):
+    """KEYM Key records."""
+    classType = 'KEYM'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelStruct('DATA','if','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreKywd(MelRecord):
+    """Keyword record."""
+    classType = 'KYWD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreLcrt(MelRecord):
+    """Location Reference Type record."""
+    classType = 'LCRT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreLctn(MelRecord):
+    """Location"""
+    classType = 'LCTN'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+
+        MelOptStructA('ACPR','2I2h','actorCellPersistentReference',
+                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        MelOptStructA('LCPR','2I2h','locationCellPersistentReference',
+                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        # From Danwguard.esm, Does not follow similar previous patterns
+        MelFidList('RCPR','referenceCellPersistentReference',),
+
+        MelOptStructA('ACUN','3I','actorCellUnique',
+                     (FID,'actor'),(FID,'eef'),(FID,'location'),),
+        MelOptStructA('LCUN','3I','locationCellUnique',
+                     (FID,'actor'),(FID,'ref'),(FID,'location'),),
+        # in Unofficial Skyrim patch
+        MelFidList('RCUN','referenceCellUnique',),
+
+        MelOptStructA('ACSR','3I2h','actorCellStaticReference',
+                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
+                     'gridX','gridY',),
+        MelOptStructA('LCSR','3I2h','locationCellStaticReference',
+                     (FID,'locRefType'),(FID,'marker'),(FID,'location'),
+                     'gridX','gridY',),
+        # Seen in Open Cities
+        MelFidList('RCSR','referenceCellStaticReference',),
+
+        MelStructs('ACEC','I','actorCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYAcec',),
+        MelStructs('LCEC','I','locationCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYLcec',),
+        # Seen in Open Cities
+        MelStructs('RCEC','I','referenceCellEncounterCell',
+                  (FID,'Actor'), dumpExtra='gridsXYRcec',),
+
+        MelFidList('ACID','actorCellMarkerReference',),
+        MelFidList('LCID','locationCellMarkerReference',),
+
+        MelOptStructA('ACEP','2I2h','actorCellEnablePoint',
+                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+        MelOptStructA('LCEP','2I2h','locationCellEnablePoint',
+                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFid('PNAM','parentLocation',),
+        MelFid('NAM1','music',),
+        MelFid('FNAM','unreportedCrimeFaction',),
+        MelFid('MNAM','worldLocationMarkerRef',),
+        MelStruct('RNAM','f','worldLocationRadius',),
+        MelFid('NAM0','horseMarkerRef',),
+        MelColorN(),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, not mergable
+#------------------------------------------------------------------------------
+class MelLgtmData(MelStruct):
+    def __init__(self,type='DALC'):
+        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
+            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+            'fresnelPower' # Fresnel Power
+        )
+
+class MreLgtm(MelRecord):
+    """Lgtm Item"""
+    classType = 'LGTM'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # 92 Bytes
+        # WindhelmLightingTemplate [LGTM:0007BA87] unknown1 only 24 Bytes
+        MelStruct('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+            'redLigh','greenLigh','blueLigh','unknownLigh',
+            'redDirect','greenDirect','blueDirect','unknownDirect',
+            'redFog','greenFog','blueFog','unknownFog',
+            'fogNear','fogFar',
+            'dirRotXY','dirRotZ',
+            'directionalFade','fogClipDist','fogPower',
+            'unknown1'
+            'redFogFar','greenFogFar','blueFogFar','unknownFogFar',
+            'fogMax',
+            'lightFaceStart','lightFadeEnd',
+            'unknown2',),
+        # 32 Bytes
+        MelLgtmData(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light"""
+    classType = 'LIGH'
+
+    # {0x00000001} 'Dynamic',
+    # {0x00000002} 'Can be Carried',
+    # {0x00000004} 'Negative',
+    # {0x00000008} 'Flicker',
+    # {0x00000010} 'Unknown',
+    # {0x00000020} 'Off By Default',
+    # {0x00000040} 'Flicker Slow',
+    # {0x00000080} 'Pulse',
+    # {0x00000100} 'Pulse Slow',
+    # {0x00000200} 'Spot Light',
+    # {0x00000400} 'Shadow Spotlight',
+    # {0x00000800} 'Shadow Hemisphere',
+    # {0x00001000} 'Shadow Omnidirectional',
+    # {0x00002000} 'Portal-strict'
+    LighTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'dynamic'),
+            (1, 'canbeCarried'),
+            (2, 'negative'),
+            (3, 'flicker'),
+            (4, 'unknown'),
+            (5, 'offByDefault'),
+            (6, 'flickerSlow'),
+            (7, 'pulse'),
+            (8, 'pulseSlow'),
+            (9, 'spotLight'),
+            (10, 'shadowSpotlight'),
+            (11, 'shadowHemisphere'),
+            (12, 'shadowOmnidirectional'),
+            (13, 'portalstrict'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelModel(),
+        MelDestructible(),
+        MelLString('FULL','full'),
+        MelIcons(),
+        # fe = 'Flicker Effect'
+        MelStruct('DATA','iI4BI6fIf','duration','radius','red','green','blue',
+                  'unknown',(LighTypeFlags,'flags',0L),'falloffExponent','fov',
+                  'nearClip','fePeriod','feIntensityAmplitude',
+                  'feMovementAmplitude','value','weight',),
+        MelStruct('FNAM','f','fadevalue',),
+        MelFid('SNAM','sound'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
 
