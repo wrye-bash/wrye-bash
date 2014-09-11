@@ -644,6 +644,36 @@ class MelFidList(MelFids):
         out.packSub(self.subType,`len(fids)`+'I',*fids)
 
 #------------------------------------------------------------------------------
+class MelCountedFidList(MelFidList):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, KSIZ holds an int telling how many KWDA elements there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the KSIZ/KWDA example, the NullLoader will handle "reading" the KSIZ
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the KSIZ/KWDA example, countedType is KWDA, counterType is KSIZ
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFidList.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        out.packSub(self.counterType, self.counterFormat, len(fids))
+        MelFidList.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
 class MelGroup(MelBase):
     """Represents a group record."""
 
