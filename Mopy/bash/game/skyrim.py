@@ -4048,6 +4048,92 @@ class MreDebr(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDial(MelRecord):
+    """Dialogue Records"""
+    classType = 'DIAL'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'subtype' for WB
+    # it has 102 different values, refer to
+    # wbStruct(DATA, 'Data', in TES5Edit
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'category' for WB
+    # {0} 'Topic',
+    # {1} 'Favor', // only in DA14 quest topics
+    # {2} 'Scene',
+    # {3} 'Combat',
+    # {4} 'Favors',
+    # {5} 'Detection',
+    # {6} 'Service',
+    # {7} 'Miscellaneous'
+
+    DialTopicFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'doAllBeforeRepeating'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStruct('PNAM','f','priority',),
+        MelFid('BNAM','branch',),
+        MelFid('QNAM','quest',),
+        MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0L),'category',
+                  'subtype',),
+        # SNAM is a 4 byte string no length byte
+        MelStruct('SNAM','4s','subtypeName',),
+        MelStruct('TIFC','I','infoCount',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['infoStamp','infoStamp2','infos']
+
+    def __init__(self,header,ins=None,unpack=False):
+        """Initialize."""
+        MelRecord.__init__(self,header,ins,unpack)
+        self.infoStamp = 0 #--Stamp for info GRUP
+        self.infoStamp2 = 0 #--Stamp for info GRUP
+        self.infos = []
+
+    def loadInfos(self,ins,endPos,infoClass):
+        """Load infos from ins. Called from MobDials."""
+        infos = self.infos
+        recHead = ins.unpackRecHeader
+        infosAppend = infos.append
+        while not ins.atEnd(endPos,'INFO Block'):
+            #--Get record info and handle it
+            header = recHead()
+            recType = header[0]
+            if recType == 'INFO':
+                info = infoClass(header,ins,True)
+                infosAppend(info)
+            else:
+                raise ModError(ins.inName, _('Unexpected %s record in %s group.')
+                    % (recType,"INFO"))
+
+    def dump(self,out):
+        """Dumps self., then group header and then records."""
+        MreRecord.dump(self,out)
+        if not self.infos: return
+        # Magic number '24': size of Skyrim's record header
+        # Magic format '4sIIIII': format for Skyrim's GRUP record
+        size = 24 + sum([24 + info.getSize() for info in self.infos])
+        out.pack('4sIIIII','GRUP',size,self.fid,7,self.infoStamp,self.infoStamp2)
+        for info in self.infos: info.dump(out)
+
+    def updateMasters(self,masters):
+        """Updates set of master names according to masters actually used."""
+        MelRecord.updateMasters(self,masters)
+        for info in self.infos:
+            info.updateMasters(masters)
+
+    def convertFids(self,mapper,toLong):
+        """Converts fids between formats according to mapper.
+        toLong should be True if converting to long format or False if converting to short format."""
+        MelRecord.convertFids(self,mapper,toLong)
+        for info in self.infos:
+            info.convertFids(mapper,toLong)
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
