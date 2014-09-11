@@ -4234,6 +4234,25 @@ class MreDual(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreEczn(MelRecord):
+    """Encounter Zone record."""
+    classType = 'ECZN'
+
+    EcznTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'neverResets'),
+            (1, 'matchPCBelowMinimumLevel'),
+            (2, 'disableCombatBoundary'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2I2bBb',(FID,'owner',None),(FID,'location',None),'rank','minimumLevel',
+                  (EcznTypeFlags,'flags',0L),('maxLevel',null1)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
