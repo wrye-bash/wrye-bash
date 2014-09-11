@@ -5428,44 +5428,44 @@ class MreLctn(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
 
-        MelOptStructA('ACPR','2I2h','actorCellPersistentReference',
-                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
-        MelOptStructA('LCPR','2I2h','locationCellPersistentReference',
+        MelStructA('ACPR','2I2h','actorCellPersistentReference',
+                   (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        MelStructA('LCPR','2I2h','locationCellPersistentReference',
                      (FID,'actor'),(FID,'location'),'gridX','gridY',),
         # From Danwguard.esm, Does not follow similar previous patterns
         MelFidList('RCPR','referenceCellPersistentReference',),
 
-        MelOptStructA('ACUN','3I','actorCellUnique',
+        MelStructA('ACUN','3I','actorCellUnique',
                      (FID,'actor'),(FID,'eef'),(FID,'location'),),
-        MelOptStructA('LCUN','3I','locationCellUnique',
+        MelStructA('LCUN','3I','locationCellUnique',
                      (FID,'actor'),(FID,'ref'),(FID,'location'),),
         # in Unofficial Skyrim patch
         MelFidList('RCUN','referenceCellUnique',),
 
-        MelOptStructA('ACSR','3I2h','actorCellStaticReference',
+        MelStructA('ACSR','3I2h','actorCellStaticReference',
                      (FID,'locRefType'),(FID,'marker'),(FID,'location'),
                      'gridX','gridY',),
-        MelOptStructA('LCSR','3I2h','locationCellStaticReference',
+        MelStructA('LCSR','3I2h','locationCellStaticReference',
                      (FID,'locRefType'),(FID,'marker'),(FID,'location'),
                      'gridX','gridY',),
         # Seen in Open Cities
         MelFidList('RCSR','referenceCellStaticReference',),
 
         MelStructs('ACEC','I','actorCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYAcec',),
+                  (FID,'actor'), dumpExtra='gridsXYAcec',),
         MelStructs('LCEC','I','locationCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYLcec',),
+                  (FID,'actor'), dumpExtra='gridsXYLcec',),
         # Seen in Open Cities
         MelStructs('RCEC','I','referenceCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYRcec',),
+                  (FID,'actor'), dumpExtra='gridsXYRcec',),
 
         MelFidList('ACID','actorCellMarkerReference',),
         MelFidList('LCID','locationCellMarkerReference',),
 
-        MelOptStructA('ACEP','2I2h','actorCellEnablePoint',
-                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
-        MelOptStructA('LCEP','2I2h','locationCellEnablePoint',
-                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+        MelStructA('ACEP','2I2h','actorCellEnablePoint',
+                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
+        MelStructA('LCEP','2I2h','locationCellEnablePoint',
+                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
 
         MelLString('FULL','full'),
         MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
