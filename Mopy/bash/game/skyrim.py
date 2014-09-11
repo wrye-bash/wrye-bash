@@ -4685,6 +4685,145 @@ class MreFsts(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreFurn(MelRecord):
+    """Furniture"""
+    classType = 'FURN'
+
+    # {0x0001} 'Unknown 0',
+    # {0x0002} 'Ignored By Sandbox'
+    FurnGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'ignoredBySandbox'),
+    ))
+
+    # {0x00000001} 'Sit 0',
+    # {0x00000002} 'Sit 1',
+    # {0x00000004} 'Sit 2',
+    # {0x00000008} 'Sit 3',
+    # {0x00000010} 'Sit 4',
+    # {0x00000020} 'Sit 5',
+    # {0x00000040} 'Sit 6',
+    # {0x00000080} 'Sit 7',
+    # {0x00000100} 'Sit 8',
+    # {0x00000200} 'Sit 9',
+    # {0x00000400} 'Sit 10',
+    # {0x00000800} 'Sit 11',
+    # {0x00001000} 'Sit 12',
+    # {0x00002000} 'Sit 13',
+    # {0x00004000} 'Sit 14',
+    # {0x00008000} 'Sit 15',
+    # {0x00010000} 'Sit 16',
+    # {0x00020000} 'Sit 17',
+    # {0x00040000} 'Sit 18',
+    # {0x00080000} 'Sit 19',
+    # {0x00100000} 'Sit 20',
+    # {0x00200000} 'Sit 21',
+    # {0x00400000} 'Sit 22',
+    # {0x00800000} 'Sit 23',
+    # {0x01000000} 'Unknown 25',
+    # {0x02000000} 'Disables Activation',
+    # {0x04000000} 'Is Perch',
+    # {0x08000000} 'Must Exit to Talk',
+    # {0x10000000} 'Unknown 29',
+    # {0x20000000} 'Unknown 30',
+    # {0x40000000} 'Unknown 31',
+    # {0x80000000} 'Unknown 32'
+    FurnActiveMarkerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'sit0'),
+        (1, 'sit1'),
+        (2, 'sit2'),
+        (3, 'sit3'),
+        (4, 'sit4'),
+        (5, 'sit5'),
+        (6, 'sit6'),
+        (7, 'sit7'),
+        (8, 'sit8'),
+        (9, 'sit9'),
+        (10, 'sit10'),
+        (11, 'sit11'),
+        (12, 'sit12'),
+        (13, 'sit13'),
+        (14, 'sit14'),
+        (15, 'sit15'),
+        (16, 'sit16'),
+        (17, 'sit17'),
+        (18, 'sit18'),
+        (19, 'sit19'),
+        (20, 'sit20'),
+        (21, 'Sit21'),
+        (22, 'Sit22'),
+        (23, 'sit23'),
+        (24, 'unknown25'),
+        (25, 'disablesActivation'),
+        (26, 'isPerch'),
+        (27, 'mustExittoTalk'),
+        (28, 'unknown29'),
+        (29, 'unknown30'),
+        (30, 'unknown31'),
+        (31, 'unknown32'),
+    ))
+
+    # {0x01} 'Front',
+    # {0x02} 'Behind',
+    # {0x04} 'Right',
+    # {0x08} 'Left',
+    # {0x10} 'Up'
+    MarkerEntryPointFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'front'),
+            (1, 'behind'),
+            (2, 'right'),
+            (3, 'left'),
+            (4, 'up'),
+        ))
+
+    # FNPR has wbEnum in TES5Edit
+    # Assigned to 'MarkerType' for WB
+    # 0 :'',
+    # 1 :'Sit',
+    # 2 :'Lay',
+    # 3 :'',
+    # 4 :'Lean'
+
+    # WBDT has wbEnum in TES5Edit
+    # Assigned to 'benchType' for WB
+    # 0 :'None',
+    # 1 :'Create object',
+    # 2 :'Smithing Weapon',
+    # 3 :'Enchanting',
+    # 4 :'Enchanting Experiment',
+    # 5 :'Alchemy',
+    # 6 :'Alchemy Experiment',
+    # 7 :'Smithing Armor'
+
+    # WBDT has wbEnum in TES5Edit
+    # Assigned to 'usesSkill' for WB
+    # Refer to wbSkillEnum is TES5Edit for values
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelBase('PNAM','pnam_p'),
+        MelStruct('FNAM','H',(FurnGeneralFlags,'general_f',None),),
+        MelFid('KNAM','interactionKeyword'),
+        MelStruct('MNAM','I',(FurnActiveMarkerFlags,'activeMarkers',None)),
+        MelStruct('WBDT','Bb','benchType','usesSkill',),
+        MelFid('NAM1','associatedSpell'),
+        MelGroups('markers',
+            MelStruct('ENAM','I','markerIndex',),
+            MelStruct('NAM0','2sH','unknown',(MarkerEntryPointFlags,'disabledPoints_f',None),),
+            MelFid('FNMK','markerKeyword',),
+            ),
+        MelStructs('FNPR','2H','entryPoints','markerType',(MarkerEntryPointFlags,'entryPointsFlags',None),),
+        MelString('XMRK','modelFilename'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
