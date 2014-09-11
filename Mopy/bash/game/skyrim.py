@@ -6710,6 +6710,87 @@ class MrePerk(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Needs Verification
+#------------------------------------------------------------------------------
+class MreProj(MelRecord):
+    """Projectile record."""
+    classType = 'PROJ'
+
+    # VNAM has wbEnum in TES5Edit
+    # Assigned to 'soundLevel' for WB
+    # 0 :'Loud',
+    # 1 :'Normal',
+    # 2 :'Silent',
+    # 3 :'Very Loud'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'projectileTypes' for WB
+    # $01 :'Missile',
+    # $02 :'Lobber',
+    # $04 :'Beam',
+    # $08 :'Flame',
+    # $10 :'Cone',
+    # $20 :'Barrier',
+    # $40 :'Arrow'
+
+    ProjTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'hitscan'),
+        (1, 'explosive'),
+        (2, 'altTriger'),
+        (3, 'muzzleFlash'),
+        (4, 'unknown4'),
+        (5, 'canbeDisable'),
+        (6, 'canbePickedUp'),
+        (7, 'superSonic'),
+        (8, 'pinsLimbs'),
+        (9, 'passThroughSmallTransparent'),
+        (10, 'disableCombatAimCorrection'),
+        (11, 'rotation'),
+    ))
+
+    class MelProjData(MelStruct):
+        """Handle older truncated DATA for PROJ subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 92:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 88:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4fI',size,readId)
+            elif size == 84:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelProjData('DATA','2H3f2I3f2I3f3I4f2I',(ProjTypeFlags,'flags',0L),'projectileTypes',
+                  ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
+                  (FID,'light',0),(FID,'muzzleFlash',0),('tracerChance',0.00000),
+                  ('explosionAltTrigerProximity',0.00000),('explosionAltTrigerTimer',0.00000),
+                  (FID,'explosion',0),(FID,'sound',0),('muzzleFlashDuration',0.00000),
+                  ('fadeDuration',0.00000),('impactForce',0.00000),
+                  (FID,'soundCountDown',0),(FID,'soundDisable',0),(FID,'defaultWeaponSource',0),
+                  ('coneSpread',0.00000),('collisionRadius',0.00000),('lifetime',0.00000),
+                  ('relaunchInterval',0.00000),(FID,'decalData',0),(FID,'collisionLayer',0),
+                  ),
+        MelGroup('models',
+            MelString('NAM1','muzzleFlashPath'),
+            MelBase('NAM2','nam2_p'),
+        ),
+        MelStruct('VNAM','I','soundLevel',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
