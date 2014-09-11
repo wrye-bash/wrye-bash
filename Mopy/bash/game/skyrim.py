@@ -4499,6 +4499,132 @@ class MreEyes(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreFact(MelRecord):
+    """Fact Faction Records"""
+    classType = 'FACT'
+
+    # {0x00000001}'Hidden From NPC',
+    # {0x00000002}'Special Combat',
+    # {0x00000004}'Unknown 3',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Unknown 5',
+    # {0x00000020}'Unknown 6',
+    # {0x00000040}'Track Crime',
+    # {0x00000080}'Ignore Crimes: Murder',
+    # {0x00000100}'Ignore Crimes: Assault',
+    # {0x00000200}'Ignore Crimes: Stealing',
+    # {0x00000400}'Ignore Crimes: Trespass',
+    # {0x00000800}'Do Not Report Crimes Against Members',
+    # {0x00001000}'Crime Gold - Use Defaults',
+    # {0x00002000}'Ignore Crimes: Pickpocket',
+    # {0x00004000}'Vendor',
+    # {0x00008000}'Can Be Owner',
+    # {0x00010000}'Ignore Crimes: Werewolf',
+    FactGeneralTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'hiddenFromPC'),
+        (1, 'specialCombat'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'trackCrime'),
+        (7, 'ignoreCrimesMurder'),
+        (8, 'ignoreCrimesAssult'),
+        (9, 'ignoreCrimesStealing'),
+        (10, 'ignoreCrimesTrespass'),
+        (11, 'doNotReportCrimesAgainstMembers'),
+        (12, 'crimeGold-UseDefaults'),
+        (13, 'ignoreCrimesPickpocket'),
+        (14, 'allowSell'), # vendor
+        (15, 'canBeOwner'),
+        (16, 'ignoreCrimesWerewolf'),
+    ))
+
+    # ENIT has wbEnum in TES5Edit
+    # Assigned to 'combatReaction' for WB
+    # 0 :'Neutral',
+    # 1 :'Enemy',
+    # 2 :'Ally',
+    # 3 :'Friend'
+
+#   wbPLVD := wbStruct(PLVD, 'Location', [
+#     wbInteger('Type', itS32, wbLocationEnum),
+#     wbUnion('Location Value', wbTypeDecider, [
+#       {0} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#       {1} wbFormIDCkNoReach('Cell', [NULL, CELL]),
+#       {2} wbByteArray('Near Package Start Location', 4, cpIgnore),
+#       {3} wbByteArray('Near Editor Location', 4, cpIgnore),
+#       {4} wbFormIDCkNoReach('Object ID', [NULL, ACTI, DOOR, STAT, FURN, SPEL, SCRL, NPC_, CONT, ARMO, AMMO, MISC, WEAP, BOOK, KEYM, ALCH, INGR, LIGH, FACT, FLST, IDLM, SHOU]),
+#       {5} wbInteger('Object Type', itU32, wbObjectTypeEnum),
+#       {6} wbFormIDCk('Keyword', [NULL, KYWD]),
+#       {7} wbByteArray('Unknown', 4, cpIgnore),
+#       {8} wbInteger('Alias ID', itU32),
+#       {9} wbFormIDCkNoReach('Reference', [NULL, DOOR, PLYR, ACHR, REFR, PGRE, PHZD, PARW, PBAR, PBEA, PCON, PFLA]),
+#      {10} wbByteArray('Unknown', 4, cpIgnore),
+#      {11} wbByteArray('Unknown', 4, cpIgnore),
+#      {12} wbByteArray('Unknown', 4, cpIgnore)
+#     ]),
+#     wbInteger('Radius', itS32)
+#   ]);
+
+    class MelFactCrva(MelStruct):
+        """Handle older truncated CRVA for FACT subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 20:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 16:
+                unpacked = ins.unpack('2B5Hf',size,readId)
+            elif size == 12:
+                unpacked = ins.unpack('2B5H',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStructs('XNAM','IiI','relations',(FID,'faction'),'mod','combatReaction',),
+        MelStruct('DATA','I',(FactGeneralTypeFlags,'flags',0L),),
+        MelFid('JAIL','exteriorJailMarker'),
+        MelFid('WAIT','followerWaitMarker'),
+        MelFid('STOL','stolenGoodsContainer'),
+        MelFid('PLCN','playerInventoryContainer'),
+        MelFid('CRGR','sharedCrimeFactionList'),
+        MelFid('JOUT','jailOutfit'),
+        # These are Boolean values
+        # 'arrest', 'attackOnSight',
+        MelFactCrva('CRVA','2B5Hf2H','arrest','attackOnSight','murder','assult',
+        'trespass','pickpocket','unknown','stealMultiplier','escape','werewolf'),
+        MelGroups('ranks',
+            MelStruct('RNAM','I','rank'),
+            MelLString('MNAM','maleTitle'),
+            MelLString('FNAM','femaleTitle'),
+            MelString('INAM','insigniaPath'),
+        ),
+        MelFid('VEND','vendorBuySellList'),
+        MelFid('VENC','merchantContainer'),
+        MelStruct('VENV','3H2s2B2s','startHour','endHour','radius','unknownOne',
+                  'onlyBuysStolenItems','notSellBuy','UnknownTwo'),
+        MelOptStruct('PLVD','iIi','type',(FID,'locationValue'),'radius',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        if conditions:
+            self.conditionCount = len(conditions) if conditions else 0
+            MelRecord.dumpData(self,out)
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
