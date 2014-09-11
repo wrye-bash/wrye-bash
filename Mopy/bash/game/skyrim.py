@@ -2999,7 +2999,116 @@ class MreAact(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreAchr(MelRecord):
+    """Placed NPC"""
+    classType = 'ACHR'
+    _flags = bolt.Flags(0L,bolt.Flags.getNames('oppositeParent','popIn'))
+
+    # 'Parent Activate Only'
+    ActivateParentsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'parentActivateOnly'),
+        ))
+
+    # XLCM Level Modifiers wbEnum in TES5Edit
+    # 'Easy',
+    # 'Medium',
+    # 'Hard',
+    # 'Very Hard'
+
+    # PDTO Topic Data wbEnum in TES5Edit
+    # 'Topic Ref',
+    # 'Topic Subtype'
+
+    # class MelACHRPDTOHandeler
+    # if 'type' in PDTO is equal to 1 then 'data' is '4s' not FID
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelFid('NAME','base'),
+        MelFid('XEZN','encounterZone'),
+
+        # {--- Ragdoll ---}
+
+        MelBase('XRGD','ragdollData'),
+        MelBase('XRGB','ragdollBipedData'),
+
+        # {--- Patrol Data ---}
+
+        MelGroup('patrolData',
+            MelStruct('XPRD','f','idleTime',),
+            MelNull('XPPA'),
+            MelFid('INAM','idle'),
+            MelGroup('patrolData',
+                MelBase('SCHR','schr_p'),
+                MelBase('SCDA','scda_p'),
+                MelBase('SCTX','sctx_p'),
+                MelBase('QNAM','qnam_p'),
+                MelBase('SCRO','scro_p'),
+            ),
+            # Should Be -> MelACHRPDTOHandeler(),
+            MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+            MelFid('TNAM','topic'),
+        ),
+
+        # {--- Leveled Actor ----}
+        MelStruct('XLCM','i','levelModifier'),
+
+        # {--- Merchant Container ----}
+        MelFid('XMRC','merchantContainer',),
+
+        # {--- Extra ---}
+        MelStruct('XCNT','i','count'),
+        MelStruct('XRDS','f','radius',),
+        MelStruct('XHLP','f','health',),
+        MelGroup('linkedReferences',
+            MelSortedFidList('XLKR', 'fids'),
+        ),
+
+        # {--- Activate Parents ---}
+        MelGroup('activateParents',
+            MelStruct('XAPD','I',(ActivateParentsFlags,'flags',0L),),
+            MelGroups('activateParentRefs',
+                MelStruct('XAPR','If',(FID,'reference'),'delay',),
+            ),
+        ),
+
+        # {--- Linked Ref ---}
+        MelStruct('XCLP','3Bs3Bs','startColorRed','startColorGreen','startColorBlue',
+                  'startColorUnknown','endColorRed','endColorGreen','endColorBlue',
+                  'endColorUnknown',),
+        MelFid('XLCN','persistentLocation',),
+        MelFid('XLRL','locationReference',),
+        MelNull('XIS2'),
+        MelFidList('XLRT','locationRefType',),
+        MelFid('XHOR','horse',),
+        MelStruct('XHTW','f','headTrackingWeight',),
+        MelStruct('XFVC','f','favorCost',),
+
+        # {--- Enable Parent ---}
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),'unused',),
+
+        # {--- Ownership ---}
+        MelOwnership(),
+
+        # {--- Emittance ---}
+        MelOptStruct('XEMI','I',(FID,'emittance')),
+
+        # {--- MultiBound ---}
+        MelFid('XMBR','multiBoundReference',),
+
+        # {--- Flags ---}
+        MelNull('XIBS'),
+
+        # {--- 3D Data ---}
+        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreActi(MelRecord):
     """Activator."""
