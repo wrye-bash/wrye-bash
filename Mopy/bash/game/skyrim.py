@@ -6885,6 +6885,405 @@ class MreRela(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreRevb(MelRecord):
+    """Reverb Parameters"""
+    classType = 'REVB'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2H4b6B','decayTimeMS','hfReferenceHZ','roomFilter',
+                  'hfRoomFilter','reflections','reverbAmp','decayHFRatio',
+                  'reflectDelayMS','reverbDelayMS','diffusion','density',
+                  'unknown',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreRfct(MelRecord):
+    """Rfct Item"""
+    classType = 'RFCT'
+
+    # {0x00000001}'Rotate to Face Target',
+    # {0x00000002}'Attach to Camera',
+    # {0x00000004}'Inherit Rotation'
+    RfctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'rotateToFaceTarget'),
+        (1, 'attachToCamera'),
+        (2, 'inheritRotation'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreScen(MelRecord):
+    """Scene"""
+    classType = 'SCEN'
+
+    # {0x00000001} 'Unknown 1',
+    # {0x00000002} 'Unknown 2',
+    # {0x00000004} 'Unknown 3',
+    # {0x00000008} 'Unknown 4',
+    # {0x00000010} 'Unknown 5',
+    # {0x00000020} 'Unknown 6',
+    # {0x00000040} 'Unknown 7',
+    # {0x00000080} 'Unknown 8',
+    # {0x00000100} 'Unknown 9',
+    # {0x00000200} 'Unknown 10',
+    # {0x00000400} 'Unknown 11',
+    # {0x00000800} 'Unknown 12',
+    # {0x00001000} 'Unknown 13',
+    # {0x00002000} 'Unknown 14',
+    # {0x00003000} 'Unknown 15',
+    # {0x00004000} 'Face Target',
+    # {0x00010000} 'Looping',
+    # {0x00020000} 'Headtrack Player'
+    ScenFlags5 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'unknown1'),
+            (1, 'unknown2'),
+            (2, 'unknown3'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'unknown9'),
+            (9, 'unknown10'),
+            (10, 'unknown11'),
+            (11, 'unknown12'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'faceTarget'),
+            (16, 'looping'),
+            (17, 'headtrackPlayer'),
+        ))
+
+    # ANAM has wbEnum in TES5Edit
+    # Assigned to 'actionType' for WB
+    # 0 :'dialogue'
+    # 1 :'package'
+    # 2 :'timer'
+
+    # DEMO has wbEnum in TES5Edit
+    # Assigned to 'emotionType' for WB
+    # 0 :'Neutral',
+    # 1 :'Anger',
+    # 2 :'Disgust',
+    # 3 :'Fear',
+    # 4 :'Sad',
+    # 5 :'Happy',
+    # 6 :'Surprise',
+    # 7 :'Puzzled'
+
+    # 'Death Pause (unsused)',
+    # 'Death End',
+    # 'Combat Pause',
+    # 'Combat End',
+    # 'Dialogue Pause',
+    # 'Dialogue End',
+    # 'OBS_COM Pause',
+    # 'OBS_COM End'
+    ScenFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'deathPauseunsused'),
+            (1, 'deathEnd'),
+            (2, 'combatPause'),
+            (3, 'combatEnd'),
+            (4, 'dialoguePause'),
+            (5, 'dialogueEnd'),
+            (6, 'oBS_COMPause'),
+            (7, 'oBS_COMEnd'),
+        ))
+
+    # 'No Player Activation',
+    # 'Optional'
+    ScenFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'noPlayerActivation'),
+            (1, 'optional'),
+        ))
+
+    # 'Begin on Quest Start',
+    # 'Stop on Quest End',
+    # 'Unknown 3',
+    # 'Repeat Conditions While True',
+    # 'Interruptible'
+    ScenFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'beginonQuestStart'),
+            (1, 'stoponQuestEnd'),
+            (2, 'unknown3'),
+            (3, 'repeatConditionsWhileTrue'),
+            (4, 'interruptible'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelStruct('FNAM','I',(ScenFlags1,'flags',0L),),
+        MelGroups('phases',
+            MelNull('HNAM'),
+            MelString('NAM0','name',),
+            MelGroup('startConditions',
+                MelConditions(),
+                ),
+            MelNull('NEXT'),
+            MelGroup('completionConditions',
+                MelConditions(),
+                ),
+            # BEGIN leftover from earlier CK versions
+            MelGroup('unused',
+                MelBase('SCHR','schr_p'),
+                MelBase('SCDA','scda_p'),
+                MelBase('SCTX','sctx_p'),
+                MelBase('QNAM','qnam_p'),
+                MelBase('SCRO','scro_p'),
+                ),
+            MelNull('NEXT'),
+            MelGroup('unused',
+                MelBase('SCHR','schr_p'),
+                MelBase('SCDA','scda_p'),
+                MelBase('SCTX','sctx_p'),
+                MelBase('QNAM','qnam_p'),
+                MelBase('SCRO','scro_p'),
+                ),
+            # End leftover from earlier CK versions
+        MelStruct('WNAM','I','editorWidth',),
+        # Marker Phase End
+        MelNull('HNAM'),
+        ),
+
+        MelGroups('actors',
+            MelStruct('ALID','I','actorID',),
+            MelStruct('LNAM','I',(ScenFlags2,'scenFlags2',0L),),
+            MelStruct('DNAM','I',(ScenFlags3,'flags3',0L),),
+            ),
+        MelGroups('actions',
+            MelStruct('ANAM','H','actionType'),
+            MelString('NAM0','name',),
+            MelStruct('ALID','I','actorID',),
+            MelBase('LNAM','lnam_p',),
+            MelStruct('INAM','I','index',),
+            MelStruct('FNAM','I',(ScenFlags5,'flags',0L),),
+            MelStruct('SNAM','I','startPhase',),
+            MelStruct('ENAM','I','endPhase',),
+            MelStruct('SNAM','f','timerSeconds',),
+            MelFids('PNAM','packages'),
+            MelFid('DATA','topic'),
+            MelStruct('HTID','I','headtrackActorID',),
+            MelStruct('DMAX','f','loopingMax',),
+            MelStruct('DMIN','f','loopingMin',),
+            MelStruct('DEMO','I','emotionType',),
+            MelStruct('DEVA','I','emotionValue',),
+            # BEGIN leftover from earlier CK versions
+            MelGroup('unused',
+                MelBase('SCHR','schr_p'),
+                MelBase('SCDA','scda_p'),
+                MelBase('SCTX','sctx_p'),
+                MelBase('QNAM','qnam_p'),
+                MelBase('SCRO','scro_p'),
+                ),
+            # End leftover from earlier CK versions
+            MelNull('ANAM'),
+        ),
+        # BEGIN leftover from earlier CK versions
+        MelGroup('unused',
+            MelBase('SCHR','schr_p'),
+            MelBase('SCDA','scda_p'),
+            MelBase('SCTX','sctx_p'),
+            MelBase('QNAM','qnam_p'),
+            MelBase('SCRO','scro_p'),
+            ),
+        MelNull('NEXT'),
+        MelGroup('unused',
+            MelBase('SCHR','schr_p'),
+            MelBase('SCDA','scda_p'),
+            MelBase('SCTX','sctx_p'),
+            MelBase('QNAM','qnam_p'),
+            MelBase('SCRO','scro_p'),
+            ),
+        # End leftover from earlier CK versions
+
+        MelFid('PNAM','quest',),
+        MelStruct('INAM','I','lastActionIndex'),
+        MelBase('VNAM','vnam_p'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreScrl(MelRecord,MreHasEffects):
+    """Scroll record."""
+    classType = 'SCRL'
+
+    # SPIT has several wbEnum refer to wbSPIT in TES5Edit
+
+    ScrollDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'manualCostCalc'),
+        (1,'unknown2'),
+        (2,'unknown3'),
+        (3,'unknown4'),
+        (4,'unknown5'),
+        (5,'unknown6'),
+        (6,'unknown7'),
+        (7,'unknown8'),
+        (8,'unknown9'),
+        (9,'unknown10'),
+        (10,'unknown11'),
+        (11,'unknown12'),
+        (12,'unknown13'),
+        (13,'unknown14'),
+        (14,'unknown15'),
+        (15,'unknown16'),
+        (16,'unknown17'),
+        (17,'pcStartSpell'),
+        (18,'unknown19'),
+        (19,'areaEffectIgnoresLOS'),
+        (20,'ignoreResistance'),
+        (21,'noAbsorbReflect'),
+        (22,'unknown23'),
+        (23,'noDualCastModification'),
+        (24,'unknown25'),
+        (25,'unknown26'),
+        (26,'unknown27'),
+        (27,'unknown28'),
+        (28,'unknown29'),
+        (29,'unknown30'),
+        (30,'unknown31'),
+        (31,'unknown32'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFids('MDOB','menuDisplayObject'),
+        MelFid('ETYP','equipmentType',),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound',),
+        MelFid('ZNAM','dropSound',),
+        MelStruct('DATA','If','itemValue','itemWeight',),
+        MelStruct('SPIT','IIIfIIffI','baseCost',(ScrollDataFlags,'dataFlags',0L),
+                  'scrollType','chargeTime','castType','targetType',
+                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreShou(MelRecord):
+    """Shout Records"""
+    classType = 'SHOU'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelFid('MDOB','menuDisplayObject'),
+        MelLString('DESC','description'),
+        # Don't sort
+        MelGroups('wordsOfPower',
+            MelStruct('SNAM','2If',(FID,'word',None),(FID,'spell',None),'recoveryTime',),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSlgm(MelRecord):
+    """Soul gem record."""
+    classType = 'SLGM'
+
+    # SOUL and SLCP have wbEnum in TES5Edit
+    # Assigned to 'soul' and 'capacity' for WB
+    # 0 :'None',
+    # 1 :'Petty',
+    # 2 :'Lesser',
+    # 3 :'Common',
+    # 4 :'Greater',
+    # 5 :'Grand'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelIcons(),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelStruct('DATA','If','value','weight'),
+        MelStruct('SOUL','B',('soul',0),),
+        MelStruct('SLCP','B',('capacity',1),),
+        MelFid('NAM0','linkedTo'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSmbn(MelRecord):
+    """Story Manager Branch Node"""
+    classType = 'SMBN'
+
+    SmbnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Random'),
+        (1,'noChildWarn'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM','parent',),
+        MelFid('SNAM','child',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelStruct('DNAM','I',(SmbnNodeFlags,'nodeFlags',0L),),
+        MelBase('XNAM','xnam_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSmen(MelRecord):
+    """Story Manager Event Node"""
+    classType = 'SMEN'
+
+    SmenNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Random'),
+        (1,'noChildWarn'),
+    ))
+
+    # ENAM is four chars with no length byte, like AIPL, or CHRR
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM','parent',),
+        MelFid('SNAM','child',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelStruct('DNAM','I',(SmenNodeFlags,'nodeFlags',0L),),
+        MelBase('XNAM','xnam_p'),
+        MelString('ENAM','type'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
