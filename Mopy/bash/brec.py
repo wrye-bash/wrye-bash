@@ -593,6 +593,36 @@ class MelNull(MelBase):
         pass
 
 #------------------------------------------------------------------------------
+class MelCountedFids(MelFids):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, SPCT holds an int telling how  many SPLO subrecord there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the SPCT/SPLO example, the NullLoader will handle "reading" the SPCT
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the SPCT/SPLO example, countedType is SPLO, counterType is SPCT
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFids.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        value = record.__getattribute__(self.attr)
+        if value:
+            out.packSub(self.counterType, self.counterFormat, len(value))
+            MelFids.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
