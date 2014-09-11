@@ -567,6 +567,32 @@ class MelFids(MelBase):
             if save: fids[index] = result
 
 #------------------------------------------------------------------------------
+class MelNull(MelBase):
+    """Represents an obsolete record. Reads bytes from instream, but then
+    discards them and is otherwise inactive."""
+
+    def __init__(self,type):
+        """Initialize."""
+        self.subType = type
+        self._debug = False
+
+    def getSlotsUsed(self):
+        return ()
+
+    def setDefault(self,record):
+        """Sets default value for record instance."""
+        pass
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        junk = ins.read(size,readId)
+        if self._debug: print u' ',record.fid,unicode(junk)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        pass
+
+#------------------------------------------------------------------------------
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
@@ -698,32 +724,6 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
-
-#------------------------------------------------------------------------------
-class MelNull(MelBase):
-    """Represents an obsolete record. Reads bytes from instream, but then
-    discards them and is otherwise inactive."""
-
-    def __init__(self,type):
-        """Initialize."""
-        self.subType = type
-        self._debug = False
-
-    def getSlotsUsed(self):
-        return ()
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        pass
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        junk = ins.read(size,readId)
-        if self._debug: print u' ',record.fid,unicode(junk)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        pass
 
 #------------------------------------------------------------------------------
 class MelXpci(MelNull):
