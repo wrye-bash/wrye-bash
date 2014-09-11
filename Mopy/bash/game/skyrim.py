@@ -5922,6 +5922,38 @@ class MreMusc(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreMust(MelRecord):
+    """Music Track"""
+    classType = 'MUST'
+
+    # CNAM has wbEnum in TES5Edit
+    # Assigned to 'trackType' for WB
+    # Int64($23F678C3) :'Palette',
+    # Int64($6ED7E048) :'Single Track',
+    # Int64($A1A9C4D5) :'Silent Track'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('CNAM','I','trackType'),
+        MelOptStruct('FLTV','f','duration'),
+        MelOptStruct('DNAM','I','fadeOut'),
+        MelString('ANAM','trackFilename'),
+        MelString('BNAM','finaleFilename'),
+        MelOptStructA('FNAM','f','cuePoints'),
+        MelOptStruct('LNAM','2fI','loopBegins','loopEnds','loopCount',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelFidList('SNAM','tracks',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
