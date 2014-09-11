@@ -1876,7 +1876,7 @@ class RecordHeader(brec.BaseRecordHeader):
 
     @staticmethod
     def unpack(ins):
-        """Returns a RecordHeader object by reading the niput stream."""
+        """Returns a RecordHeader object by reading the input stream."""
         type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
         #--Bad type?
         if type not in esp.recordTypes:
@@ -1917,6 +1917,18 @@ class RecordHeader(brec.BaseRecordHeader):
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
+class MreActor(MelRecord):
+    """Creatures and NPCs."""
+
+    def mergeFilter(self,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters spells, factions and items."""
+        if not self.longFids: raise StateError(_("Fids not in long format"))
+        self.spells = [x for x in self.spells if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction[0] in modSet]
+        self.items = [x for x in self.items if x.item[0] in modSet]
+
+#-------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
     BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
