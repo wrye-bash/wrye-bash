@@ -1071,6 +1071,23 @@ class MelOptStruct(MelStruct):
                 MelStruct.dumpData(self,record,out)
                 break
 
+#-----------------------------------------------------------------------------
+class MelOptStructA(MelStructA):
+    """Represents an optional array of repeating structured elements,
+    where if the values are null, is skipped."""
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        # TODO: Unfortunately, checking if the attribute is None is not
+        # really effective.  Checking it to be 0,empty,etc isn't effective either.
+        # It really just needs to check it against the default.
+        recordGetAttr = record.__getattribute__
+        for attr,default in zip(self.attrs,self.defaults):
+            oldValue=recordGetAttr(attr)
+            if oldValue is not None and oldValue is not default:
+                MelStruct.dumpData(self,record,out)
+                break
+
 # Mod Element Sets -------------------------------------------------------------
 #-------------------------------------------------------------------------------
 class MelSet:
