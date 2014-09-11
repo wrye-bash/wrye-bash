@@ -593,6 +593,36 @@ class MelNull(MelBase):
         pass
 
 #------------------------------------------------------------------------------
+class MelCountedFids(MelFids):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, SPCT holds an int telling how  many SPLO subrecord there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the SPCT/SPLO example, the NullLoader will handle "reading" the SPCT
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the SPCT/SPLO example, countedType is SPLO, counterType is SPCT
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFids.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        value = record.__getattribute__(self.attr)
+        if value:
+            out.packSub(self.counterType, self.counterFormat, len(value))
+            MelFids.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
@@ -612,6 +642,56 @@ class MelFidList(MelFids):
         fids = record.__getattribute__(self.attr)
         if not fids: return
         out.packSub(self.subType,`len(fids)`+'I',*fids)
+
+#------------------------------------------------------------------------------
+class MelCountedFidList(MelFidList):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, KSIZ holds an int telling how many KWDA elements there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the KSIZ/KWDA example, the NullLoader will handle "reading" the KSIZ
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the KSIZ/KWDA example, countedType is KWDA, counterType is KSIZ
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFidList.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        out.packSub(self.counterType, self.counterFormat, len(fids))
+        MelFidList.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
+class MelSortedFidList(MelFidList):
+    """MelFidList that sorts the order of the Fids before writing them.  They are not sorted after modification, only just prior to writing."""
+
+    def __init__(self, type, attr, sortKeyFn = lambda x: x, default=None):
+        """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList
+           just prior to writing.  Since the FidList will already be converted to short Fids
+           at this point we're sorting 4-byte values,  not (FileName, 3-Byte) tuples."""
+        MelFidList.__init__(self, type, attr, default)
+        self.sortKeyFn = sortKeyFn
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        fids.sort(key=self.sortKeyFn)
+        # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
+        #       if it should be opposite, use this instead:
+        #  fids.sort(key=self.sortKeyFn, reverse=True)
+        out.packSub(self.subType, `len(fids)` + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelGroup(MelBase):
