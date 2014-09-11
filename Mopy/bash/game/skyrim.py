@@ -7116,6 +7116,69 @@ class MreScen(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreScrl(MelRecord,MreHasEffects):
+    """Scroll record."""
+    classType = 'SCRL'
+
+    # SPIT has several wbEnum refer to wbSPIT in TES5Edit
+
+    ScrollDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'manualCostCalc'),
+        (1,'unknown2'),
+        (2,'unknown3'),
+        (3,'unknown4'),
+        (4,'unknown5'),
+        (5,'unknown6'),
+        (6,'unknown7'),
+        (7,'unknown8'),
+        (8,'unknown9'),
+        (9,'unknown10'),
+        (10,'unknown11'),
+        (11,'unknown12'),
+        (12,'unknown13'),
+        (13,'unknown14'),
+        (14,'unknown15'),
+        (15,'unknown16'),
+        (16,'unknown17'),
+        (17,'pcStartSpell'),
+        (18,'unknown19'),
+        (19,'areaEffectIgnoresLOS'),
+        (20,'ignoreResistance'),
+        (21,'noAbsorbReflect'),
+        (22,'unknown23'),
+        (23,'noDualCastModification'),
+        (24,'unknown25'),
+        (25,'unknown26'),
+        (26,'unknown27'),
+        (27,'unknown28'),
+        (28,'unknown29'),
+        (29,'unknown30'),
+        (30,'unknown31'),
+        (31,'unknown32'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFids('MDOB','menuDisplayObject'),
+        MelFid('ETYP','equipmentType',),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound',),
+        MelFid('ZNAM','dropSound',),
+        MelStruct('DATA','If','itemValue','itemWeight',),
+        MelStruct('SPIT','IIIfIIffI','baseCost',(ScrollDataFlags,'dataFlags',0L),
+                  'scrollType','chargeTime','castType','targetType',
+                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
