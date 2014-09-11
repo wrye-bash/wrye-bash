@@ -3888,6 +3888,291 @@ class MreCobj(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
+class MreColl(MelRecord):
+    """Collision Layer"""
+    classType = 'COLL'
+
+    CollisionLayerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'triggerVolume'),
+        (1,'sensor'),
+        (2,'navmeshObstacle'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('DESC','description'),
+        MelStruct('BNAM','I','layerID'),
+        MelStruct('FNAM','=4B','red','green','blue','unused'),
+        MelStruct('GNAM','I',(CollisionLayerFlags,'flags',0L),),
+        MelString('MNAM','name',),
+        MelStruct('INTV','I','interactablesCount'),
+        MelFidList('CNAM','collidesWith',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreCont(MelRecord):
+    """Container"""
+    classType = 'CONT'
+
+    class MelContCnto(MelGroups):
+        def __init__(self):
+            MelGroups.__init__(self,'items',
+                MelStruct('CNTO','Ii',(FID,'item',None),'count'),
+                MelCoed(),
+                )
+
+        def dumpData(self,record,out):
+            # Only write the COCT/CNTO/COED subrecords if count > 0
+            out.packSub('COCT','I',len(record.items))
+            MelGroups.dumpData(self,record,out)
+
+
+    # {0x01} 'Allow Sounds When Animation',
+    # {0x02} 'Respawns',
+    # {0x04} 'Show Owner'
+    ContTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'allowSoundsWhenAnimation'),
+        (1, 'respawns'),
+        (2, 'showOwner'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelNull('COCT'),
+        MelContCnto(),
+        MelDestructible(),
+        MelStruct('DATA','=Bf',(ContTypeFlags,'flags',0L),'weight'),
+        MelFid('SNAM','soundOpen'),
+        MelFid('QNAM','soundClose'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreCpth(MelRecord):
+    """Camera Path"""
+    classType = 'CPTH'
+
+    # DATA 'Camera Zoom' isn wbEnum
+    # 0, 'Default, Must Have Camera Shots',
+    # 1, 'Disable, Must Have Camera Shots',
+    # 2, 'Shot List, Must Have Camera Shots',
+    # 128, 'Default',
+    # 129, 'Disable',
+    # 130, 'Shot List'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelConditions(),
+        MelFidList('ANAM','relatedCameraPaths',),
+        MelStruct('DATA','B','cameraZoom',),
+        MelFids('SNAM','cameraShots',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreCsty(MelRecord):
+    """Csty Item"""
+    classType = 'CSTY'
+
+    # {0x01} 'Dueling',
+    # {0x02} 'Flanking',
+    # {0x04} 'Allow Dual Wielding'
+    CstyTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'dueling'),
+        (1, 'flanking'),
+        (2, 'allowDualWielding'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # esm = Equipment Score Mult
+        MelStruct('CSGD','10f','offensiveMult','defensiveMult','groupOffensiveMult',
+        'esmMelee','esmMagic','esmRanged','esmShout','esmUnarmed','esmStaff',
+        'avoidThreatChance',),
+        MelBase('CSMD','unknownValue'),
+        MelStruct('CSME','8f','atkStaggeredMult','powerAtkStaggeredMult','powerAtkBlockingMult',
+        'bashMult','bashRecoilMult','bashAttackMult','bashPowerAtkMult','specialAtkMult',),
+        MelStruct('CSCR','4f','circleMult','fallbackMult','flankDistance','stalkTime',),
+        MelStruct('CSLR','f','strafeMult'),
+        MelStruct('CSFL','8f','hoverChance','diveBombChance','groundAttackChance','hoverTime',
+        'groundAttackTime','perchAttackChance','perchAttackTime','flyingAttackChance',),
+        MelStruct('DATA','I',(CstyTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDebr(MelRecord):
+    """Debris record."""
+    classType = 'DEBR'
+
+    dataFlags = bolt.Flags(0L,bolt.Flags.getNames('hasCollissionData'))
+    class MelDebrData(MelStruct):
+        subType = 'DATA'
+        _elements = (('percentage',0),('modPath',null1),('flags',0),)
+        def __init__(self):
+            """Initialize."""
+            self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*self._elements)
+            self._debug = False
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            data = ins.read(size,readId)
+            (record.percentage,) = struct.unpack('B',data[0:1])
+            record.modPath = data[1:-2]
+            if data[-2] != null1:
+                raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
+            (record.flags,) = struct.unpack('B',data[-1])
+        def dumpData(self,record,out):
+            """Dumps data from record to outstream."""
+            data = ''
+            data += struct.pack('B',record.percentage)
+            data += record.modPath
+            data += null1
+            data += struct.pack('B',record.flags)
+            out.packSub('DATA',data)
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('models',
+            MelDebrData(),
+            MelBase('MODT','modt_p'),
+        ),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDial(MelRecord):
+    """Dialogue Records"""
+    classType = 'DIAL'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'subtype' for WB
+    # it has 102 different values, refer to
+    # wbStruct(DATA, 'Data', in TES5Edit
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'category' for WB
+    # {0} 'Topic',
+    # {1} 'Favor', // only in DA14 quest topics
+    # {2} 'Scene',
+    # {3} 'Combat',
+    # {4} 'Favors',
+    # {5} 'Detection',
+    # {6} 'Service',
+    # {7} 'Miscellaneous'
+
+    DialTopicFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'doAllBeforeRepeating'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStruct('PNAM','f','priority',),
+        MelFid('BNAM','branch',),
+        MelFid('QNAM','quest',),
+        MelStruct('DATA','2BH',(DialTopicFlags,'flags_dt',0L),'category',
+                  'subtype',),
+        # SNAM is a 4 byte string no length byte
+        MelStruct('SNAM','4s','subtypeName',),
+        MelStruct('TIFC','I','infoCount',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['infoStamp','infoStamp2','infos']
+
+    def __init__(self,header,ins=None,unpack=False):
+        """Initialize."""
+        MelRecord.__init__(self,header,ins,unpack)
+        self.infoStamp = 0 #--Stamp for info GRUP
+        self.infoStamp2 = 0 #--Stamp for info GRUP
+        self.infos = []
+
+    def loadInfos(self,ins,endPos,infoClass):
+        """Load infos from ins. Called from MobDials."""
+        infos = self.infos
+        recHead = ins.unpackRecHeader
+        infosAppend = infos.append
+        while not ins.atEnd(endPos,'INFO Block'):
+            #--Get record info and handle it
+            header = recHead()
+            recType = header[0]
+            if recType == 'INFO':
+                info = infoClass(header,ins,True)
+                infosAppend(info)
+            else:
+                raise ModError(ins.inName, _('Unexpected %s record in %s group.')
+                    % (recType,"INFO"))
+
+    def dump(self,out):
+        """Dumps self., then group header and then records."""
+        MreRecord.dump(self,out)
+        if not self.infos: return
+        # Magic number '24': size of Skyrim's record header
+        # Magic format '4sIIIII': format for Skyrim's GRUP record
+        size = 24 + sum([24 + info.getSize() for info in self.infos])
+        out.pack('4sIIIII','GRUP',size,self.fid,7,self.infoStamp,self.infoStamp2)
+        for info in self.infos: info.dump(out)
+
+    def updateMasters(self,masters):
+        """Updates set of master names according to masters actually used."""
+        MelRecord.updateMasters(self,masters)
+        for info in self.infos:
+            info.updateMasters(masters)
+
+    def convertFids(self,mapper,toLong):
+        """Converts fids between formats according to mapper.
+        toLong should be True if converting to long format or False if converting to short format."""
+        MelRecord.convertFids(self,mapper,toLong)
+        for info in self.infos:
+            info.convertFids(mapper,toLong)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDlbr(MelRecord):
+    """Dialog Branch"""
+    classType = 'DLBR'
+
+    DialogBranchFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'topLevel'),
+        (1,'blocking'),
+        (2,'exclusive'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('QNAM','quest',),
+        MelStruct('TNAM','I','unknown'),
+        MelStruct('DNAM','I',(DialogBranchFlags,'flags',0L),),
+        MelFid('SNAM','startingTopic',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDlvw(MelRecord):
+    """Dialog View"""
+    classType = 'DLVW'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('QNAM','quest',),
+        MelFids('BNAM','branches',),
+        MelGroups('unknownTNAM',
+            MelBase('TNAM','unknown',),
+            ),
+        MelBase('ENAM','unknownENAM'),
+        MelBase('DNAM','unknownDNAM'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
