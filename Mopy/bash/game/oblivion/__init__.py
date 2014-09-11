@@ -26,12 +26,12 @@
    TES IV: Oblivion is set at the active game."""
 
 import struct
-from .. import brec
-from ..brec import *
-from .. import bolt
-from ..bolt import Flags, DataDict, StateError
-from .. import bush
 from oblivion_const import bethDataFiles, allBethFiles
+from ... import brec
+from ... import bolt
+from ... import bush
+from ...brec import *
+from ...bolt import Flags, DataDict, StateError
 
 # Util Constants ---------------------------------------------------------------
 #--Null strings (for default empty byte arrays)
