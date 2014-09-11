@@ -5229,6 +5229,44 @@ class MreImad(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreImgs(MelRecord):
+    """Imgs Item"""
+    classType = 'IMGS'
+
+    # DNAM has wbEnum in TES5Edit
+    # Assigned to 'skyBlurRadius' for WB
+    # 16384 :'Radius 0',
+    # 16672 :'Radius 1',
+    # 16784 :'Radius 2',
+    # 16848 :'Radius 3',
+    # 16904 :'Radius 4',
+    # 16936 :'Radius 5',
+    # 16968 :'Radius 6',
+    # 17000 :'Radius 7',
+    # 16576 :'No Sky, Radius 0',
+    # 16736 :'No Sky, Radius 1',
+    # 16816 :'No Sky, Radius 2',
+    # 16880 :'No Sky, Radius 3',
+    # 16920 :'No Sky, Radius 4',
+    # 16952 :'No Sky, Radius 5',
+    # 16984 :'No Sky, Radius 6',
+    # 17016 :'No Sky, Radius 7'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('ENAM','eman_p'),
+        MelStruct('HNAM','9f','eyeAdaptSpeed','bloomBlurRadius','bloomThreshold','bloomScale',
+                  'receiveBloomThreshold','white','sunlightScale','skyScale',
+                  'eyeAdaptStrength',),
+        MelStruct('CNAM','3f','Saturation','Brightness','Contrast',),
+        MelStruct('TNAM','4f','tintAmount','tintRed','tintGreen','tintBlue',),
+        MelStruct('DNAM','3f2sH','dofStrength','dofDistance','dofRange','unknown',
+                  'skyBlurRadius',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
