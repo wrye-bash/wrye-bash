@@ -567,6 +567,62 @@ class MelFids(MelBase):
             if save: fids[index] = result
 
 #------------------------------------------------------------------------------
+class MelNull(MelBase):
+    """Represents an obsolete record. Reads bytes from instream, but then
+    discards them and is otherwise inactive."""
+
+    def __init__(self,type):
+        """Initialize."""
+        self.subType = type
+        self._debug = False
+
+    def getSlotsUsed(self):
+        return ()
+
+    def setDefault(self,record):
+        """Sets default value for record instance."""
+        pass
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        junk = ins.read(size,readId)
+        if self._debug: print u' ',record.fid,unicode(junk)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        pass
+
+#------------------------------------------------------------------------------
+class MelCountedFids(MelFids):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, SPCT holds an int telling how  many SPLO subrecord there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the SPCT/SPLO example, the NullLoader will handle "reading" the SPCT
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the SPCT/SPLO example, countedType is SPLO, counterType is SPCT
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFids.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        value = record.__getattribute__(self.attr)
+        if value:
+            out.packSub(self.counterType, self.counterFormat, len(value))
+            MelFids.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
 class MelFidList(MelFids):
     """Represents a listmod record fid elements. The only difference from
     MelFids is how the data is stored. For MelFidList, the data is stored
@@ -586,6 +642,56 @@ class MelFidList(MelFids):
         fids = record.__getattribute__(self.attr)
         if not fids: return
         out.packSub(self.subType,`len(fids)`+'I',*fids)
+
+#------------------------------------------------------------------------------
+class MelCountedFidList(MelFidList):
+    """Handle writing out a preceding 'count' subrecord for Fid subrecords.
+       For example, KSIZ holds an int telling how many KWDA elements there
+       are."""
+
+    # Used to ignore the count record on loading.  Writing is handled by dumpData
+    # In the KSIZ/KWDA example, the NullLoader will handle "reading" the KSIZ
+    # subrecord, where "reading" = ignoring
+    NullLoader = MelNull('ANY')
+
+    def __init__(self, countedType, attr, counterType, counterFormat='<I', default=None):
+        # In the KSIZ/KWDA example, countedType is KWDA, counterType is KSIZ
+        MelFids.__init__(self, countedType, attr, default)
+        self.counterType = counterType
+        self.counterFormat = counterFormat
+
+    def getLoaders(self, loaders):
+        """Register loaders for both the counted and counter subrecords"""
+        # Counted
+        MelFidList.getLoaders(self, loaders)
+        # Counter
+        loaders[self.counterType] = MelCountedFids.NullLoader
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        out.packSub(self.counterType, self.counterFormat, len(fids))
+        MelFidList.dumpData(self, record, out)
+
+#------------------------------------------------------------------------------
+class MelSortedFidList(MelFidList):
+    """MelFidList that sorts the order of the Fids before writing them.  They are not sorted after modification, only just prior to writing."""
+
+    def __init__(self, type, attr, sortKeyFn = lambda x: x, default=None):
+        """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList
+           just prior to writing.  Since the FidList will already be converted to short Fids
+           at this point we're sorting 4-byte values,  not (FileName, 3-Byte) tuples."""
+        MelFidList.__init__(self, type, attr, default)
+        self.sortKeyFn = sortKeyFn
+
+    def dumpData(self, record, out):
+        fids = record.__getattribute__(self.attr)
+        if not fids: return
+        fids.sort(key=self.sortKeyFn)
+        # NOTE: fids.sort sorts from lowest to highest, so lowest values FormID will sort first
+        #       if it should be opposite, use this instead:
+        #  fids.sort(key=self.sortKeyFn, reverse=True)
+        out.packSub(self.subType, `len(fids)` + 'I', *fids)
 
 #------------------------------------------------------------------------------
 class MelGroup(MelBase):
@@ -698,32 +804,6 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
-
-#------------------------------------------------------------------------------
-class MelNull(MelBase):
-    """Represents an obsolete record. Reads bytes from instream, but then
-    discards them and is otherwise inactive."""
-
-    def __init__(self,type):
-        """Initialize."""
-        self.subType = type
-        self._debug = False
-
-    def getSlotsUsed(self):
-        return ()
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        pass
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        junk = ins.read(size,readId)
-        if self._debug: print u' ',record.fid,unicode(junk)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        pass
 
 #------------------------------------------------------------------------------
 class MelXpci(MelNull):
@@ -855,11 +935,19 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self,type,format,*elements):
+    def __init__(self,type,format,*elements,**kwdargs):
         """Initialize."""
+        dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = type,format
         self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
         self._debug = False
+        if dumpExtra:
+            self.attrs += (dumpExtra,)
+            self.defaults += ('',)
+            self.actions += (None,)
+            self.formatLen = struct.calcsize(format)
+        else:
+            self.formatLen = -1
 
     def getSlotsUsed(self):
         return self.attrs
@@ -877,11 +965,15 @@ class MelStruct(MelBase):
 
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
-        unpacked = ins.unpack(self.format,size,readId)
+        readsize = self.formatLen if self.formatLen >= 0 else size
+        unpacked = ins.unpack(self.format,readsize,readId)
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)
             setter(attr,value)
+        if self.formatLen >= 0:
+            # Dump remaining subrecord data into an attribute
+            setter(self.attrs[-1], ins.read(size-self.formatLen))
         if self._debug:
             print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
@@ -896,8 +988,13 @@ class MelStruct(MelBase):
             value = getter(attr)
             if action: value = value.dump()
             valuesAppend(value)
+        if self.formatLen >= 0:
+            extraLen = len(values[-1])
+            format = self.format + `extraLen` + 's'
+        else:
+            format = self.format
         try:
-            out.packSub(self.subType,self.format,*values)
+            out.packSub(self.subType,format,*values)
         except struct.error:
             print self.subType,self.format,values
             raise
@@ -915,9 +1012,9 @@ class MelStruct(MelBase):
 class MelStructs(MelStruct):
     """Represents array of structured records."""
 
-    def __init__(self,type,format,attr,*elements):
+    def __init__(self,type,format,attr,*elements,**kwdargs):
         """Initialize."""
-        MelStruct.__init__(self,type,format,*elements)
+        MelStruct.__init__(self,type,format,*elements,**kwdargs)
         self.attr = attr
 
     def getSlotsUsed(self):
@@ -1068,6 +1165,23 @@ class MelOptStruct(MelStruct):
         for attr,default in zip(self.attrs,self.defaults):
             oldValue=recordGetAttr(attr)
             if oldValue is not None and oldValue != default:
+                MelStruct.dumpData(self,record,out)
+                break
+
+#-----------------------------------------------------------------------------
+class MelOptStructA(MelStructA):
+    """Represents an optional array of repeating structured elements,
+    where if the values are null, is skipped."""
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        # TODO: Unfortunately, checking if the attribute is None is not
+        # really effective.  Checking it to be 0,empty,etc isn't effective either.
+        # It really just needs to check it against the default.
+        recordGetAttr = record.__getattribute__
+        for attr,default in zip(self.attrs,self.defaults):
+            oldValue=recordGetAttr(attr)
+            if oldValue is not None and oldValue is not default:
                 MelStruct.dumpData(self,record,out)
                 break
 
