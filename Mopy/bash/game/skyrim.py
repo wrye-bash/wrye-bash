@@ -4671,6 +4671,20 @@ class MreFstp(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreFsts(MelRecord):
+    """Footstep Set."""
+    classType = 'FSTS'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('XCNT','5I','walkForward','runForward','walkForwardAlt',
+                  'runForwardAlt','walkForwardAlternate2',
+            ),
+        MelFidList('DATA','footstepSets'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
