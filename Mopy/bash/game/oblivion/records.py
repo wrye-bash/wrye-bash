@@ -32,7 +32,7 @@ from ...bolt import StateError, Flags, BoltError, sio
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, MelOptStruct, \
-    MelFids, MreHeaderBase, MelBase, MelUnicode
+    MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from oblivion_const import allConditions, fid1Conditions, fid2Conditions
 
@@ -378,3 +378,151 @@ class MreHeader(MreHeaderBase):
         MelNull('DATA'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+
+class MreAchr(MelRecord): # Placed NPC
+    classType = 'ACHR'
+    _flags = Flags(0L,Flags.getNames('oppositeParent'))
+    melSet=MelSet(
+        MelString('EDID','eid'),
+        MelFid('NAME','base'),
+        MelXpci('XPCI'),
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelFid('XMRC','merchantContainer'),
+        MelFid('XHRS','horse'),
+        MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
+        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreAcre(MelRecord): # Placed Creature
+    classType = 'ACRE'
+    _flags = Flags(0L,Flags.getNames('oppositeParent'))
+    melSet=MelSet(
+        MelString('EDID','eid'),
+        MelFid('NAME','base'),
+        MelOwnership(),
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
+        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreActi(MelRecord):
+    """Activator record."""
+    classType = 'ACTI'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelFid('SCRI','script'),
+        MelFid('SNAM','sound'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreAlch(MelRecord,MreHasEffects):
+    """ALCH (potion) record."""
+    classType = 'ALCH'
+    _flags = Flags(0L,Flags.getNames('autoCalc','isFood'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFull0(),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelFid('SCRI','script'),
+        MelStruct('DATA','f','weight'),
+        MelStruct('ENIT','iB3s','value',(_flags,'flags',0L),('unused1',null3)),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreAmmo(MelRecord):
+    """Ammo (arrow) record."""
+    classType = 'AMMO'
+    _flags = Flags(0L,Flags.getNames('notNormalWeapon'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelFid('ENAM','enchantment'),
+        MelOptStruct('ANAM','H','enchantPoints'),
+        MelStruct('DATA','fB3sIfH','speed',(_flags,'flags',0L),('unused1',null3),'value','weight','damage'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreAnio(MelRecord):
+    """Animation object record."""
+    classType = 'ANIO'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelFid('DATA','animationId'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreAppa(MelRecord):
+    """Alchemical apparatus record."""
+    classType = 'APPA'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelFid('SCRI','script'),
+        MelStruct('DATA','=BIff',('apparatus',0),('value',25),('weight',1),('quality',10)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreArmo(MelRecord):
+    """Armor record."""
+    classType = 'ARMO'
+    _flags = MelBipedFlags(0L,Flags.getNames((16,'hideRings'),(17,'hideAmulet'),(22,'notPlayable'),(23,'heavyArmor')))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelFid('SCRI','script'),
+        MelFid('ENAM','enchantment'),
+        MelOptStruct('ANAM','H','enchantPoints'),
+        MelStruct('BMDT','I',(_flags,'flags',0L)),
+        MelModel('maleBody',0),
+        MelModel('maleWorld',2),
+        MelString('ICON','maleIconPath'),
+        MelModel('femaleBody',3),
+        MelModel('femaleWorld',4),
+        MelString('ICO2','femaleIconPath'),
+        MelStruct('DATA','=HIIf','strength','value','health','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreBook(MelRecord):
+    """BOOK record."""
+    classType = 'BOOK'
+    _flags = Flags(0,Flags.getNames('isScroll','isFixed'))
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelString('DESC','text'),
+        MelFid('SCRI','script'),
+        MelFid('ENAM','enchantment'),
+        MelOptStruct('ANAM','H','enchantPoints'),
+        MelStruct('DATA', '=BbIf',(_flags,'flags',0L),('teaches',-1),'value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['modb']
+
+class MreBsgn(MelRecord):
+    """Birthsign record."""
+    classType = 'BSGN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelString('ICON','iconPath'),
+        MelString('DESC','text'),
+        MelFids('SPLO','spells'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
