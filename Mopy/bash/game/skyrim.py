@@ -2334,6 +2334,23 @@ class MelIcons(MelGroup):
         if record.iconsIaM and record.iconsIaM.smallIconPath:
             MelGroup.dumpData(self,record,out)
 #-------------------------------------------------------------------------------
+class MelIcons2(MelGroup):
+    """Handles ICON and MICO."""
+
+    def __init__(self,attr='iconsIaM2'):
+        """Initialize."""
+        # iconsIaM = icons ICON and MICO
+        MelGroup.__init__(self,attr,
+            MelString('ICO2','iconPath2'),
+            MelString('MIC2','smallIconPath2'),
+        )
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.iconsIaM and record.iconsIaM.iconPath2:
+            MelGroup.dumpData(self,record,out)
+        if record.iconsIaM and record.iconsIaM.smallIconPath2:
+            MelGroup.dumpData(self,record,out)
+#-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
     def dumpData(self,record,out):
