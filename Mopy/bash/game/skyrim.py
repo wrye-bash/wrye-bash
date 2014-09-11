@@ -3238,11 +3238,11 @@ class MreAnio(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
-        MelString('BNAM','unloadEvent'),
+        MelString('BNAM','animationId'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreAppa(MelRecord):
     """Appa record (Alchemical Apparatus)"""
