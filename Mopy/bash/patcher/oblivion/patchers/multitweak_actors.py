@@ -192,56 +192,64 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
         self.logHeader = u'=== '+_(u"VadersApp's Oblivion Real Bodies")
         self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
 
+    @staticmethod
+    def _initSkeletonCollections():
+        """ construct skeleton mesh collections
+            skeletonList gets files that match the pattern "skel_*.nif",
+            but not "skel_special_*.nif"
+            skeletonSetSpecial gets files that match "skel_special_*.nif" """
+        # Since bosh.dirs hasn't been populated when __init__ executes,
+        # we do this here
+        skeletonList = skeletonSetSpecial =[]
+        skeletonDir = bash.bosh.dirs['mods'].join(u'Meshes', u'Characters',
+                                                  u'_male')
+        if skeletonDir.exists():
+            skeletonList = [x for x in skeletonDir.list() if
+                                 x.csbody.startswith(
+                                     u'skel_') and not x.csbody.startswith(
+                                     u'skel_special_') and x.cext == u'.nif']
+            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if
+                                           x.csbody.startswith(
+                                               u'skel_special_') and x.cext
+                                           == u'.nif'))
+        return skeletonList, skeletonSetSpecial
+
 class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired.  Will write to log."""
         count = {}
         keep = patchFile.getKeeper()
         #--Some setup
-        skeletonDir = bash.bosh.dirs['mods'].join(u'Meshes', u'Characters',
-                                                  u'_male')
         modSkeletonDir = GPath(u'Characters').join(u'_male')
-        # TODO: common code with CBash - factor out!
-        if skeletonDir.exists():
-            # construct skeleton mesh collections skeletonList gets files
-            # that match the pattern "skel_*.nif", but not
-            # "skel_special_*.nif" skeletonSetSpecial gets files that match
-            # "skel_special_*.nif"
-            skeletonList = [x for x in skeletonDir.list() if
-                            x.csbody.startswith(
-                                u'skel_') and not x.csbody.startswith(
-                                u'skel_special_') and x.cext == u'.nif']
-            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if
-                                      x.csbody.startswith(
-                                          u'skel_special_') and x.cext ==
-                                      u'.nif'))
-            if len(skeletonList) > 0:
-                femaleOnly = self.choiceValues[self.chosen][0] == 1
-                maleOnly = self.choiceValues[self.chosen][0] == 2
-                playerFid = (GPath(u'Oblivion.esm'),0x000007)
-                for record in patchFile.NPC_.records:
-                    # skip records (male only, female only, player)
-                    if femaleOnly and not record.flags.female: continue
-                    elif maleOnly and record.flags.female: continue
-                    if record.fid == playerFid: continue
-                    try:
-                        oldModPath = record.model.modPath
-                    except AttributeError:  # for freaking weird esps with
-                        # NPC's with no skeleton assigned to them(!)
-                        continue
-                    specialSkelMesh = u"skel_special_%X.nif" % record.fid[1]
-                    if specialSkelMesh in skeletonSetSpecial:
-                        newModPath = modSkeletonDir.join(specialSkelMesh)
-                    else:
-                        random.seed(record.fid)
-                        randomNumber = random.randint(1, len(skeletonList))-1
-                        newModPath = modSkeletonDir.join(
-                            skeletonList[randomNumber])
-                    if newModPath != oldModPath:
-                        record.model.modPath = newModPath.s
-                        keep(record.fid)
-                        srcMod = record.fid[0]
-                        count[srcMod] = count.get(srcMod,0) + 1
+        skeletonList, skeletonSetSpecial = \
+            AVORB_NPCSkeletonPatcher._initSkeletonCollections()
+        if len(skeletonList) > 0:
+            femaleOnly = self.choiceValues[self.chosen][0] == 1
+            maleOnly = self.choiceValues[self.chosen][0] == 2
+            playerFid = (GPath(u'Oblivion.esm'),0x000007)
+            for record in patchFile.NPC_.records:
+                # skip records (male only, female only, player)
+                if femaleOnly and not record.flags.female: continue
+                elif maleOnly and record.flags.female: continue
+                if record.fid == playerFid: continue
+                try:
+                    oldModPath = record.model.modPath
+                except AttributeError:  # for freaking weird esps with
+                    # NPC's with no skeleton assigned to them(!)
+                    continue
+                specialSkelMesh = u"skel_special_%X.nif" % record.fid[1]
+                if specialSkelMesh in skeletonSetSpecial:
+                    newModPath = modSkeletonDir.join(specialSkelMesh)
+                else:
+                    random.seed(record.fid)
+                    randomNumber = random.randint(1, len(skeletonList))-1
+                    newModPath = modSkeletonDir.join(
+                        skeletonList[randomNumber])
+                if newModPath != oldModPath:
+                    record.model.modPath = newModPath.s
+                    keep(record.fid)
+                    srcMod = record.fid[0]
+                    count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log, count)
 
 class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
@@ -256,28 +264,6 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
         self.skeletonList = None
         self.skeletonSetSpecial = None
 
-    def initSkeletonCollections(self):
-        """ construct skeleton mesh collections
-            skeletonList gets files that match the pattern "skel_*.nif",
-            but not "skel_special_*.nif"
-            skeletonSetSpecial gets files that match "skel_special_*.nif" """
-        # Since bosh.dirs hasn't been populated when __init__ executes,
-        # we do this here
-        if not self.skeletonList is None:
-            return
-        self.skeletonList = []
-        skeletonDir = bash.bosh.dirs['mods'].join(u'Meshes', u'Characters',
-                                                  u'_male')
-        if skeletonDir.exists():
-            self.skeletonList = [x for x in skeletonDir.list() if
-                                 x.csbody.startswith(
-                                     u'skel_') and not x.csbody.startswith(
-                                     u'skel_special_') and x.cext == u'.nif']
-            self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if
-                                           x.csbody.startswith(
-                                               u'skel_special_') and x.cext
-                                           == u'.nif'))
-
     def getTypes(self):
         return ['NPC_']
 
@@ -289,7 +275,9 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
             choice = self.choiceValues[self.chosen][0]
             if choice == 1 and record.IsMale: return
             elif choice == 2 and record.IsFemale: return
-            self.initSkeletonCollections()
+            if self.skeletonList is None:
+                self.skeletonList, self.skeletonSetSpecial = \
+                    AVORB_NPCSkeletonPatcher._initSkeletonCollections()
             if len(self.skeletonList) == 0: return
             try:
                 oldModPath = record.modPath.lower()
