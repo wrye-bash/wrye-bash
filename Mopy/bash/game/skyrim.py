@@ -6900,6 +6900,27 @@ class MreRevb(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreRfct(MelRecord):
+    """Rfct Item"""
+    classType = 'RFCT'
+
+    # {0x00000001}'Rotate to Face Target',
+    # {0x00000002}'Attach to Camera',
+    # {0x00000004}'Inherit Rotation'
+    RfctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'rotateToFaceTarget'),
+        (1, 'attachToCamera'),
+        (2, 'inheritRotation'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','3I',(FID,'impactSet'),(FID,'impactSet'),(RfctTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
