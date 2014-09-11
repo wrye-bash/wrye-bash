@@ -4824,11 +4824,52 @@ class MreFurn(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# GLOB ------------------------------------------------------------------------
+# Defined in brec.py as class MreGlob(MelRecord) ------------------------------
+#------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreGras(MelRecord):
+    """Grass record."""
+    classType = 'GRAS'
+
+    GrasTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'vertexLighting'),
+            (1, 'uniformScaling'),
+            (2, 'fitToSlope'),
+        ))
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'unitsFromWaterType' for WB
+    # 0 :'Above - At Least',
+    # 1 :'Above - At Most',
+    # 2 :'Below - At Least',
+    # 3 :'Below - At Most',
+    # 4 :'Either - At Least',
+    # 5 :'Either - At Most',
+    # 6 :'Either - At Most Above',
+    # 7 :'Either - At Most Below'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DATA','3BsH2sI4fB3s','density','minSlope','maxSlope',
+                  'unknown','unitsFromWater','unknown','unitsFromWaterType',
+                  'positionRange','heightRange','colorRange','wavePeriod',
+                  (GrasTypeFlags,'flags',0L),'unknown',
+                  ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
