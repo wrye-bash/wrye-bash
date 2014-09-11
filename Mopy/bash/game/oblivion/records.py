@@ -29,7 +29,10 @@ import bash.brec
 from . import esp
 
 #--Mod I/O
-class RecordHeader(bash.brec.BaseRecordHeader):
+from ...bolt import StateError, Flags
+from ...brec import MelRecord, BaseRecordHeader, ModError
+
+class RecordHeader(BaseRecordHeader):
     size = 20
 
     def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
@@ -51,7 +54,7 @@ class RecordHeader(bash.brec.BaseRecordHeader):
         type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
         #--Bad?
         if type not in esp.recordTypes:
-            raise bash.brec.ModError(ins.inName,u'Bad header type: '+repr(type))
+            raise ModError(ins.inName,u'Bad header type: '+repr(type))
         #--Record
         if type != 'GRUP':
             pass
@@ -63,7 +66,7 @@ class RecordHeader(bash.brec.BaseRecordHeader):
             elif str0 in esp.topIgTypes:
                 uint0 = esp.topIgTypes[str0]
             else:
-                raise bash.brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
+                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         return RecordHeader(type,size,uint0,uint1,uint2)
 
     def pack(self):
@@ -78,3 +81,27 @@ class RecordHeader(bash.brec.BaseRecordHeader):
         else:
             return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
 
+#------------------------------------------------------------------------------
+# Record Elements    ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreActor(MelRecord):
+    """Creatures and NPCs."""
+
+    def mergeFilter(self,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters spells, factions and items."""
+        if not self.longFids: raise StateError(u"Fids not in long format")
+        self.spells = [x for x in self.spells if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction[0] in modSet]
+        self.items = [x for x in self.items if x.item[0] in modSet]
+
+#------------------------------------------------------------------------------
+class MelBipedFlags(bash.bolt.Flags):
+    """Biped flags element. Includes biped flag set by default."""
+    mask = 0xFFFF
+    def __init__(self,default=0L,newNames=None):
+        names = Flags.getNames('head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot', 'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon', 'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
+        if newNames: names.update(newNames)
+        Flags.__init__(self,default,names)
+
+#------------------------------------------------------------------------------
