@@ -7551,6 +7551,23 @@ class MreSpgd(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreStat(MelRecord):
+    """Static model record."""
+    classType = 'STAT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DNAM','fI','maxAngle30to120',(FID,'material'),),
+        # Contains null-terminated mesh filename followed by random data
+        # up to 260 bytes and repeats 4 times
+        MelBase('MNAM','distantLOD'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+# MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
