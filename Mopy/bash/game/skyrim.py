@@ -2077,21 +2077,20 @@ class MelComponents(MelStructs):
             out.packSub('COCT','I',len(components))
             MelStructs.dumpData(self,record,out)
 
-#-------------------------------------------------------------------------------
-class MelConditions(MelStructs):
-    """Represents a set of quest/dialog/etc conditions. Difficulty is that FID
+#------------------------------------------------------------------------------
+class MelCTDAHandler(MelStructs):
+    """Represents the CTDA subrecord and it components. Difficulty is that FID
     state of parameters depends on function index."""
     def __init__(self):
         """Initialize."""
-        MelStructs.__init__(self,'CTDA','=B3sfH2sii4sII','conditions',
-            'operFlag',('unused1',null3),'compValue',
-            'ifunc',('unused2',null2),'param1','param2',
-            ('unused3',null4),'reference','unknown')
+        MelStructs.__init__(self,'CTDA','=B3sfH2siiIIi','conditions',
+            'operFlag',('unused1',null3),'compValue','ifunc',('unused2',null2),
+            'param1','param2','runOn','reference','param3')
 
     def getDefault(self):
         """Returns a default copy of object."""
         target = MelStructs.getDefault(self)
-        target.form12 = 'ii'
+        target.form12345 = 'iiIIi'
         return target
 
     def hasFids(self,formElements):
@@ -2100,6 +2099,11 @@ class MelConditions(MelStructs):
 
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
+        if type == 'CTDA':
+            if size != 32 and size != 28 and size != 24 and size != 20:
+                raise ModSizeError(ins.inName,readId,32,size,False)
+        else:
+            raise ModError(ins.inName,_(u'Unexpected subrecord: ')+readId)
         target = MelObject()
         record.conditions.append(target)
         target.__slots__ = self.attrs
@@ -2108,13 +2112,45 @@ class MelConditions(MelStructs):
         #--Get parameters
         if ifunc not in allConditions:
             raise bolt.BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
+        # Form1 is Param1
         form1 = 'I' if ifunc in fid1Conditions else 'i'
+        # Form2 is Param2
         form2 = 'I' if ifunc in fid2Conditions else 'i'
-        form12 = form1+form2
-        unpacked2 = ins.unpack(form12,8,readId)
-        (target.param1,target.param2) = unpacked2
-        target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
-        (target.ifunc,target.form12) = (ifunc,form12)
+        # Form3 is runOn
+        form3 = 'I'
+        # Form4 is reference, this is a formID when runOn = 2
+        form4 = 'I'
+        # Form5 is Param3
+        form5 = 'I' if ifunc in fid5Conditions else 'i'
+        if size == 32:
+            form12345 = form1+form2+form3+form4+form5
+            unpacked2 = ins.unpack(form12345,20,readId)
+            (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
+        elif size == 28:
+            form12345 = form1+form2+form3+form4
+            unpacked2 = ins.unpack(form1234,16,readId)
+            (target.param1,target.param2,target.runOn,target.reference) = unpacked2
+            target.param3 = null4
+        elif size == 24:
+            form12345 = form1+form2+form3
+            unpacked2 = ins.unpack(form1234,12,readId)
+            (target.param1,target.param2,target.runOn) = unpacked2
+            target.reference = null4
+            target.param3 = null4
+        elif size == 20:
+            form12345 = form1+form2
+            unpacked2 = ins.unpack(form1234,8,readId)
+            (target.param1,target.param2) = unpacked2
+            target.runOn = null4
+            target.reference = null4
+            target.param3 = null4
+        # form12 = form1+form2
+        # unpacked2 = ins.unpack(form12,8,readId)
+        # (target.param1,target.param2) = unpacked2
+        # target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
+        else:
+            raise ModSizeError(ins.inName,readId,32,size,False)
+        (target.ifunc,target.form12345) = (ifunc,form12345)
         if self._debug:
             unpacked = unpacked1+unpacked2
             print u' ',zip(self.attrs,unpacked)
@@ -2124,26 +2160,50 @@ class MelConditions(MelStructs):
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         for target in record.conditions:
-            ##format = 'B3sfI'+target.form12+'4s'
-            out.packSub('CTDA','=B3sfH2s'+target.form12+'4s2I',
+            ##format = '=B3sfH2s'+target.form12345,
+            out.packSub('CTDA','=B3sfH2s'+target.form12345,
                 target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.unused2, target.param1,
-                target.param2, target.unused3, target.reference, target.unused4)
+                target.ifunc, target.unused2, target.param1, target.param2,
+                target.runOn, target.reference, target.param3)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is true, then fid is set
         to result of function."""
         for target in record.conditions:
-            form12 = target.form12
-            if form12[0] == 'I':
+            form12345 = target.form12345
+            if form12345[0] == 'I':
                 result = function(target.param1)
                 if save: target.param1 = result
-            if form12[1] == 'I':
+            if form12345[1] == 'I':
                 result = function(target.param2)
                 if save: target.param2 = result
-            if target.reference:
+            # runOn is intU32, never FID, and Enum in TES5Edit
+            #0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
+            #5:Quest Alias,6:Package Data,7:Event Data'
+            if len(form12345) > 3 and form12345[3] == 'I' and target.runOn == 2:
                 result = function(target.reference)
                 if save: target.reference = result
+            if len(form12345) > 4 and form12345[4] == 'I':
+                result = function(target.param3)
+                if save: target.param3 = result
+
+class MelConditions(MelGroups):
+    """Represents a set of quest/dialog/etc conditions"""
+
+    def __init__(self,attr='conditions'):
+        """Initialize elements."""
+        MelGroups.__init__(self,attr,
+            MelCTDAHandler(),
+            MelString('CIS1','param_cis1'),
+            MelString('CIS2','param_cis2'),
+            )
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.conditions and record.conditions.param_cis1:
+            MelGroup.dumpData(self,record,out)
+        if record.conditions and record.conditions.param_cis2:
+            MelGroup.dumpData(self,record,out)
 
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
