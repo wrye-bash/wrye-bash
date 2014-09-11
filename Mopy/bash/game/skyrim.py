@@ -7943,6 +7943,161 @@ class MreWrld(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # # Many Things Marked MelBase that need updated
+#------------------------------------------------------------------------------
+class MreWthr(MelRecord):
+    """Weather"""
+    classType = 'WTHR'
+
+    WthrFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'layer_0'),
+            (1, 'layer_1'),
+            (2, 'layer_2'),
+            (3, 'layer_3'),
+            (4, 'layer_4'),
+            (5, 'layer_5'),
+            (6, 'layer_6'),
+            (7, 'layer_7'),
+            (8, 'layer_8'),
+            (9, 'layer_9'),
+            (10, 'layer_10'),
+            (11, 'layer_11'),
+            (12, 'layer_12'),
+            (13, 'layer_13'),
+            (14, 'layer_14'),
+            (15, 'layer_15'),
+            (16, 'layer_16'),
+            (17, 'layer_17'),
+            (18, 'layer_18'),
+            (19, 'layer_19'),
+            (20, 'layer_20'),
+            (21, 'layer_21'),
+            (22, 'layer_22'),
+            (23, 'layer_23'),
+            (24, 'layer_24'),
+            (25, 'layer_25'),
+            (26, 'layer_26'),
+            (27, 'layer_27'),
+            (28, 'layer_28'),
+            (29, 'layer_29'),
+            (30, 'layer_30'),
+            (31, 'layer_31'),
+        ))
+
+    # {0x01} 'Weather - Pleasant',
+    # {0x02} 'Weather - Cloudy',
+    # {0x04} 'Weather - Rainy',
+    # {0x08} 'Weather - Snow',
+    # {0x10} 'Sky Statics - Always Visible',
+    # {0x20} 'Sky Statics - Follows Sun Position'
+    WthrFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'weatherPleasant'),
+            (1, 'weatherCloudy'),
+            (2, 'weatherRainy'),
+            (3, 'weatherSnow'),
+            (4, 'skyStaticsAlwaysVisible'),
+            (5, 'skyStaticsFollowsSunPosition'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('\x300TX','cloudTextureLayer_0'),
+        MelString('\x310TX','cloudTextureLayer_1'),
+        MelString('\x320TX','cloudTextureLayer_2'),
+        MelString('\x330TX','cloudTextureLayer_3'),
+        MelString('\x340TX','cloudTextureLayer_4'),
+        MelString('\x350TX','cloudTextureLayer_5'),
+        MelString('\x360TX','cloudTextureLayer_6'),
+        MelString('\x370TX','cloudTextureLayer_7'),
+        MelString('\x380TX','cloudTextureLayer_8'),
+        MelString('\x390TX','cloudTextureLayer_9'),
+        MelString('\x3A0TX','cloudTextureLayer_10'),
+        MelString('\x3B0TX','cloudTextureLayer_11'),
+        MelString('\x3C0TX','cloudTextureLayer_12'),
+        MelString('\x3D0TX','cloudTextureLayer_13'),
+        MelString('\x3E0TX','cloudTextureLayer_14'),
+        MelString('\x3F0TX','cloudTextureLayer_15'),
+        MelString('\x400TX','cloudTextureLayer_16'),
+        MelString('A0TX','cloudTextureLayer_17'),
+        MelString('B0TX','cloudTextureLayer_18'),
+        MelString('C0TX','cloudTextureLayer_19'),
+        MelString('D0TX','cloudTextureLayer_20'),
+        MelString('E0TX','cloudTextureLayer_21'),
+        MelString('F0TX','cloudTextureLayer_22'),
+        MelString('G0TX','cloudTextureLayer_23'),
+        MelString('H0TX','cloudTextureLayer_24'),
+        MelString('I0TX','cloudTextureLayer_25'),
+        MelString('J0TX','cloudTextureLayer_26'),
+        MelString('K0TX','cloudTextureLayer_27'),
+        MelString('L0TX','cloudTextureLayer_28'),
+        MelBase('DNAM','unused'),
+        MelBase('CNAM','unused'),
+        MelBase('ANAM','unused'),
+        MelBase('BNAM','unused'),
+        MelBase('LNAM','lnam_p'),
+        MelFid('MNAM','precipitationType',),
+        MelFid('NNAM','visualEffect',),
+        MelBase('ONAM','unused'),
+        MelBase('RNAM','ySpeed'),
+        MelBase('QNAM','xSpeed'),
+        MelBase('PNAM','cloudColors'),
+        MelBase('PNAM','cloudAlphas'),
+        MelBase('NAM0','weatherColors'),
+        MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
+                  'dayPower','nightPower','dayMax','nightMax',),
+        MelStruct('DATA','B2s16B','windSpeed','unknown','transDelta',
+                  'sunGlare','sunDamage','precipitationBeginFadeIn',
+                  'precipitationEndFadeOut','thunderLightningBeginFadeIn',
+                  'thunderLightningEndFadeOut','thunderLightningFrequency',
+                  (WthrFlags1,'flags',0L),'red','green','blue',
+                  'visualEffectBegin','visualEffectEnd',
+                  'windDirection','windDirectionRange',),
+        MelStruct('NAM1','I',(WthrFlags2,'flags',0L),),
+        MelGroups('sounds',
+            MelOptStruct('SNAM','2I',(FID,'weatherSound'),'weatherType'),
+            ),
+        MelFids('TNAM','skyStatics',),
+        MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
+                  (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),
+        MelBase('DALC','directionalAmbientLightingColors'),
+        MelBase('NAM2','unused'),
+        MelBase('NAM3','unused'),
+        MelModel('aurora','MODL'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+# Some things Marked MelBase could be updated if mitigation needed
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# CLDC ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# HAIR ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# PWAT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# RGDL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# SCOL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# SCPT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# These Are normally not mergable but added to brec.MreRecord.type_class
+#
+#       MreCell,
+#------------------------------------------------------------------------------
+# These have undefined FormIDs Do not merge them
+#
+#       MreNavi, MreNavm,
+#------------------------------------------------------------------------------
+# These need syntax revision but can be merged once that is corrected
+#
+#       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
+#------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
@@ -7950,7 +8105,8 @@ mergeClasses = (
         MreLvsp, MreMisc,
     )
 
-#--Extra read/write classes
+#--Extra read classes: these record types will always be loaded, even if patchers
+#  don't need them directly (for example, for MGEF info)
 readClasses = ()
 writeClasses = ()
 
