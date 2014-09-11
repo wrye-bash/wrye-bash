@@ -7327,6 +7327,27 @@ class MreSmqn(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSnct(MelRecord):
+    """Sound Category"""
+    classType = 'SNCT'
+
+    SoundCategoryFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'muteWhenSubmerged'),
+        (1,'shouldAppearOnMenu'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStruct('FNAM','I',(SoundCategoryFlags,'flags',0L),),
+        MelFid('PNAM','parent',),
+        MelStruct('VNAM','H','staticVolumeMultiplier'),
+        MelStruct('UNAM','H','defaultMenuValue'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
