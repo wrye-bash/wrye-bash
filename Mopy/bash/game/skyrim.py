@@ -3663,6 +3663,120 @@ class MreCams(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreCell(MelRecord):
+    """Cell"""
+    classType = 'CELL'
+
+    # {0x0001} 'Is Interior Cell',
+    # {0x0002} 'Has Water',
+    # {0x0004} 'Can''t Travel From Here',
+    # {0x0008} 'No LOD Water',
+    # {0x0010} 'Unknown 5',
+    # {0x0020} 'Public Area',
+    # {0x0040} 'Hand Changed',
+    # {0x0080} 'Show Sky',
+    # {0x0100} 'Use Sky Lighting'
+    CellDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'isInteriorCell'),
+        (1,'hasWater'),
+        (2,'cantFastTravel'),
+        (3,'noLODWater'),
+        (5,'publicPlace'),
+        (6,'handChanged'),
+        # showSky
+        (7,'behaveLikeExterior'),
+        # useSkyLighting
+        (8,'useSkyLighting'),
+        ))
+
+    # {0x00000001}'Ambient Color',
+    # {0x00000002}'Directional Color',
+    # {0x00000004}'Fog Color',
+    # {0x00000008}'Fog Near',
+    # {0x00000010}'Fog Far',
+    # {0x00000020}'Directional Rotation',
+    # {0x00000040}'Directional Fade',
+    # {0x00000080}'Clip Distance',
+    # {0x00000100}'Fog Power',
+    # {0x00000200}'Fog Max',
+    # {0x00000400}'Light Fade Distances'
+    CellInheritedFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'ambientColor'),
+            (1, 'directionalColor'),
+            (2, 'fogColor'),
+            (3, 'fogNear'),
+            (4, 'fogFar'),
+            (5, 'directionalRotation'),
+            (6, 'directionalFade'),
+            (7, 'clipDistance'),
+            (8, 'fogPower'),
+            (9, 'fogMax'),
+            (10, 'lightFadeDistances'),
+        ))
+
+    CellGridFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'quad1'),
+            (1, 'quad2'),
+            (2, 'quad3'),
+            (3, 'quad4'),
+        ))
+
+
+# Flags can be itU8, but CELL\DATA has a critical role in various wbImplementation.pas routines
+# and replacing it with wbUnion generates error when setting for example persistent flag in REFR.
+# So let it be always itU16
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStruct('DATA','H',(CellDataFlags,'flags',0L),),
+        MelStruct('XCLC','2iI','pos_x','pos_y',(CellGridFlags,'gridFlags',0L),),
+        MelStruct('XCLL','3Bs3Bs3Bs2f2i3f4B4B4B4B4B4B4BfBBBsfffI',
+                 'ambientRed','ambientGreen','ambientBlue',('unused1',null1),
+                 'directionalRed','directionalGreen','directionalBlue',('unused2',null1),
+                 'fogRed','fogGreen','fogBlue',('unused3',null1),
+                 'fogNear','fogFar','directionalXY','directionalZ',
+                 'directionalFade','fogClip','fogPower',
+                 'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+                 'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+                 'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+                 'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+                 'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+                 'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+                 'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+                 'fresnelPower' # Fresnel Power
+             ),
+        MelBase('TVDT','unknown_TVDT'),
+        MelBase('MHDT','unknown_MHDT'),
+        MelFid('LTMP','lightTemplate',),
+        # leftover flags, they are now in XCLC
+        MelBase('LNAM','unknown_LNAM'),
+        # XCLW sometimes has $FF7FFFFF and causes invalid floatation point
+        MelOptStruct('XCLW','f',('waterHeight',-2147483649)),
+        MelString('XNAM','waterNoiseTexture'),
+        MelFidList('XCLR','regions'),
+        MelFid('XLCN','location',),
+        MelBase('XWCN','unknown_XWCN'),
+        MelBase('XWCS','unknown_XWCS'),
+        MelStruct('XWCU','3f4s3f','xOffset','yOffset','zOffset','unknown','xAngle',
+                  'yAngle','zAngle',dumpExtra='unknown',),
+        MelFid('XCWT','water'),
+
+        # {--- Ownership ---}
+        MelOwnership(),
+        MelFid('XILL','lockList',),
+        MelString('XWEM','waterEnvironmentMap'),
+        # skyWeatherFromRegion
+        MelFid('XCCM','climate',),
+        MelFid('XCAS','acousticSpace',),
+        MelFid('XEZN','encounterZone',),
+        MelFid('XCMO','music',),
+        MelFid('XCIM','imageSpace',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+
+# Verified for 305
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
