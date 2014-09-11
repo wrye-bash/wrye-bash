@@ -4901,6 +4901,58 @@ class MreHazd(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreHdpt(MelRecord):
+    """Head Part"""
+    classType = 'HDPT'
+
+    # NAM0 has wbEnum in TES5Edit
+    # Assigned to 'headPartType' for WB
+    # 0 :'Race Morph',
+    # 1 :'Tri',
+    # 2 :'Chargen Morph'
+
+    # PNAM has wbEnum in TES5Edit
+    # Assigned to 'hdptTypes' for WB
+    # 0 :'Misc',
+    # 1 :'Face',
+    # 2 :'Eyes',
+    # 3 :'Hair',
+    # 4 :'Facial Hair',
+    # 5 :'Scar',
+    # 6 :'Eyebrows'
+
+    # {0x01} 'Playable',
+    # {0x02} 'Male',
+    # {0x04} 'Female',
+    # {0x10} 'Is Extra Part',
+    # {0x20} 'Use Solid Tint'
+    HdptTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'playable'),
+        (1, 'male'),
+        (2, 'female'),
+        (3, 'isExtraPart'),
+        (4, 'useSolidTint'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelStruct('DATA','B',(HdptTypeFlags,'flags',0L),),
+        MelStruct('PNAM','I','hdptTypes',),
+        MelFids('HNAM','extraParts'),
+        MelGroups('partsData',
+            MelStruct('NAM0','I','headPartType',),
+            MelString('NAM1','filename'),
+            ),
+        MelFid('TNAM','textureSet'),
+        MelFid('CNAM','color'),
+        MelFid('RNAM','validRaces'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
