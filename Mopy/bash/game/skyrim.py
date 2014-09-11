@@ -4401,6 +4401,19 @@ class MreEnch(MelRecord,MreHasEffects):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreEqup(MelRecord):
+    """Equp Item"""
+    classType = 'EQUP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFidList('PNAM','canBeEquipped'),
+        # DATA is either True Of False
+        MelStruct('DATA','I','useAllParents'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
