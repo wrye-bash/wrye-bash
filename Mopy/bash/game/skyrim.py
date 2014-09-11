@@ -4134,6 +4134,27 @@ class MreDial(MelRecord):
             info.convertFids(mapper,toLong)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDlbr(MelRecord):
+    """Dialog Branch"""
+    classType = 'DLBR'
+
+    DialogBranchFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'topLevel'),
+        (1,'blocking'),
+        (2,'exclusive'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('QNAM','quest',),
+        MelStruct('TNAM','I','unknown'),
+        MelStruct('DNAM','I',(DialogBranchFlags,'flags',0L),),
+        MelFid('SNAM','startingTopic',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
