@@ -7855,6 +7855,94 @@ class MreWoop(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreWrld(MelRecord):
+    """Worldspace"""
+    classType = 'WRLD'
+
+    # {0x01} 'Small World',
+    # {0x02} 'Can''t Fast Travel',
+    # {0x04} 'Unknown 3',
+    # {0x08} 'No LOD Water',
+    # {0x10} 'No Landscape',
+    # {0x20} 'Unknown 6',
+    # {0x40} 'Fixed Dimensions',
+    # {0x80} 'No Grass'
+    WrldFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'smallWorld'),
+            (1, 'can'),
+            (2, 'unknown3'),
+            (3, 'noLODWater'),
+            (4, 'noLandscape'),
+            (5, 'unknown6'),
+            (6, 'fixedDimensions'),
+            (7, 'noGrass'),
+        ))
+
+    # {0x0001}'Use Land Data',
+    # {0x0002}'Use LOD Data',
+    # {0x0004}'Don''t Use Map Data',
+    # {0x0008}'Use Water Data',
+    # {0x0010}'Use Climate Data',
+    # {0x0020}'Use Image Space Data (unused)',
+    # {0x0040}'Use Sky Cell'
+    WrldFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useLandData'),
+            (1, 'useLODData'),
+            (2, 'don'),
+            (3, 'useWaterData'),
+            (4, 'useClimateData'),
+            (5, 'useImageSpaceDataunused'),
+            (6, 'useSkyCell'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # {>>> BEGIN leftover from earlier CK versions <<<}
+        MelGroups('unusedRNAM',
+            MelBase('RNAM','unknown',),
+        ),
+        # {>>> END leftover from earlier CK versions <<<}
+        MelBase('MHDT','maxHeightData'),
+        MelLString('FULL','full'),
+        # Fixed Dimensions Center Cell
+        MelStruct('WCTR','2h','fixedX','fixedY',),
+        MelFid('LTMP','interiorLighting',),
+        MelFid('XEZN','encounterZone',),
+        MelFid('XLCN','location',),
+        MelGroup('parent',
+            MelFid('WNAM','worldspace',),
+            MelStruct('PNAM','Bs',(WrldFlags1,'parentFlags',0L),'unknown',),
+        ),
+        MelFid('CNAM','climate',),
+        MelFid('NAM2','water',),
+        MelFid('NAM3','lODWaterType',),
+        MelStruct('NAM4','f','lODWaterHeight',),
+        MelStruct('DNAM','2f','defaultLandHeight','defaultWaterHeight',),
+        MelString('ICON','mapImage'),
+        MelModel('cloudModel','MODL',),
+        MelStruct('MNAM','2i4h3f','usableDimensionsX','usableDimensionsY',
+                  'cellCoordinatesX','cellCoordinatesY','seCellX','seCellY',
+                  'cameraDataMinHeight','cameraDataMaxHeight',
+                  'cameraDataInitialPitch',),
+        MelStruct('ONAM','4f','worldMapScale','cellXOffset','cellYOffset',
+                  'cellZOffset',),
+        MelStruct('NAMA','f','distantLODMultiplier',),
+        MelStruct('DATA','B',(WrldFlags2,'dataFlags',0L),),
+        # {>>> Object Bounds doesn't show up in CK <<<}
+        MelStruct('NAM0','2f','minObjX','minObjY',),
+        MelStruct('NAM9','2f','maxObjX','maxObjY',),
+        MelFid('ZNAM','music',),
+        MelString('NNAM','canopyShadowunused'),
+        MelString('XNAM','waterNoiseTexture'),
+        MelString('TNAM','hDLODDiffuseTexture'),
+        MelString('UNAM','hDLODNormalTexture'),
+        MelString('XWEM','waterEnvironmentMapunused'),
+        MelBase('OFST','unknown'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# # Many Things Marked MelBase that need updated
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
