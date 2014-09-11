@@ -6306,6 +6306,17 @@ class MreNpc(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreOtft(MelRecord):
+    """Otft Item"""
+    classType = 'OTFT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFidList('INAM','items'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
