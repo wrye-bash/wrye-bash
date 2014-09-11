@@ -14543,7 +14543,7 @@ class NamesPatcher(ImportPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+    autoRe = bush.game.namesPatcherMaster
     autoKey = u'Names'
 
     #--Patch Phase ------------------------------------------------------------
