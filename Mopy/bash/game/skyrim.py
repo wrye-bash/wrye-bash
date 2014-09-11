@@ -7588,6 +7588,25 @@ class MreTact(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreTree(MelRecord):
+    """Tree Item"""
+    classType = 'TREE'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelFid('PFIG','harvestIngredient'),
+        MelFid('SNAM','harvestSound'),
+        MelStruct('PFPC','4B','spring','summer','fall','wsinter',),
+        MelLString('FULL','full'),
+        MelStruct('CNAM','ff32sff','trunkFlexibility','branchFlexibility',
+                  'unknown','leafAmplitude','leafFrequency',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
