@@ -4648,6 +4648,17 @@ class MreFlor(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreFlst(MelRecord):
+    """FormID list record."""
+    classType = 'FLST'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFids('LNAM','formIDInList'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
