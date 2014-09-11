@@ -3911,6 +3911,49 @@ class MreColl(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreCont(MelRecord):
+    """Container"""
+    classType = 'CONT'
+
+    class MelContCnto(MelGroups):
+        def __init__(self):
+            MelGroups.__init__(self,'items',
+                MelStruct('CNTO','Ii',(FID,'item',None),'count'),
+                MelCoed(),
+                )
+
+        def dumpData(self,record,out):
+            # Only write the COCT/CNTO/COED subrecords if count > 0
+            out.packSub('COCT','I',len(record.items))
+            MelGroups.dumpData(self,record,out)
+
+
+    # {0x01} 'Allow Sounds When Animation',
+    # {0x02} 'Respawns',
+    # {0x04} 'Show Owner'
+    ContTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'allowSoundsWhenAnimation'),
+        (1, 'respawns'),
+        (2, 'showOwner'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelNull('COCT'),
+        MelContCnto(),
+        MelDestructible(),
+        MelStruct('DATA','=Bf',(ContTypeFlags,'flags',0L),'weight'),
+        MelFid('SNAM','soundOpen'),
+        MelFid('QNAM','soundClose'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
