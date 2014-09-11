@@ -5709,6 +5709,28 @@ class MreMato(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreMatt(MelRecord):
+    """Material Type Record."""
+    classType = 'MATT'
+
+    MattTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'stairMaterial'),
+            (1, 'arrowsStick'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM', 'materialParent',),
+        MelString('MNAM','materialName'),
+        MelStruct('CNAM','3f','red','green','blue',),
+        MelStruct('BNAM','f','buoyancy',),
+        MelStruct('FNAM','I',(MattTypeFlags,'flags',0L),),
+        MelFid('HNAM', 'havokImpactDataSet',),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
