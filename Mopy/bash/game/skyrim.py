@@ -2198,13 +2198,6 @@ class MelConditions(MelGroups):
             MelString('CIS2','param_cis2'),
             )
 
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        if record.conditions and record.conditions.param_cis1:
-            MelGroup.dumpData(self,record,out)
-        if record.conditions and record.conditions.param_cis2:
-            MelGroup.dumpData(self,record,out)
-
 #------------------------------------------------------------------------------
 class MelDecalData(MelStruct):
     """Represents Decal Data."""
