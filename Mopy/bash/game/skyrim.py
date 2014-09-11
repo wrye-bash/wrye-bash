@@ -2248,6 +2248,18 @@ class MelDestructible(MelGroup):
             ),
         )
 
+#------------------------------------------------------------------------------
+class MelEffects(MelGroups):
+    """Represents ingredient/potion/enchantment/spell effects."""
+
+    def __init__(self,attr='effects'):
+        """Initialize elements."""
+        MelGroups.__init__(self,attr,
+            MelFid('EFID','baseEffect'),
+            MelStruct('EFIT','f2I','magnitude','area','duration',),
+            MelConditions(),
+            )
+
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
