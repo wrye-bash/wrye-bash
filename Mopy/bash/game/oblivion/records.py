@@ -26,16 +26,16 @@
 import re
 import struct
 from . import esp
-
-#--Mod I/O
 from ...bolt import StateError, Flags, BoltError, sio
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, MelOptStruct, \
-    MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0
+    MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
+    MelModel, MelFull0
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from oblivion_const import allConditions, fid1Conditions, fid2Conditions
 
+#--Mod I/O
 class RecordHeader(BaseRecordHeader):
     size = 20
 
@@ -74,16 +74,22 @@ class RecordHeader(BaseRecordHeader):
         return RecordHeader(type,size,uint0,uint1,uint2)
 
     def pack(self):
-        """Returns the record header packed into a string for writing to file."""
+        """Returns the record header packed into a string for writing to
+        file."""
         if self.recType == 'GRUP':
-            if isinstance(self.label,str):
-                return struct.pack('=4sI4sII',self.recType,self.size,self.label,self.groupType,self.stamp)
-            elif isinstance(self.label,tuple):
-                return struct.pack('=4sIhhII',self.recType,self.size,self.label[0],self.label[1],self.groupType,self.stamp)
+            if isinstance(self.label, str):
+                return struct.pack('=4sI4sII', self.recType, self.size,
+                                   self.label, self.groupType, self.stamp)
+            elif isinstance(self.label, tuple):
+                return struct.pack('=4sIhhII', self.recType, self.size,
+                                   self.label[0], self.label[1],
+                                   self.groupType, self.stamp)
             else:
-                return struct.pack('=4s4I',self.recType,self.size,self.label,self.groupType,self.stamp)
+                return struct.pack('=4s4I', self.recType, self.size,
+                                   self.label, self.groupType, self.stamp)
         else:
-            return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
+            return struct.pack('=4s4I', self.recType, self.size, self.flags1,
+                               self.fid, self.flags2)
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -104,18 +110,22 @@ class MelBipedFlags(Flags):
     """Biped flags element. Includes biped flag set by default."""
     mask = 0xFFFF
     def __init__(self,default=0L,newNames=None):
-        names = Flags.getNames('head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot', 'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon', 'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
+        names = Flags.getNames('head', 'hair', 'upperBody', 'lowerBody',
+                               'hand', 'foot', 'rightRing', 'leftRing',
+                               'amulet', 'weapon', 'backWeapon', 'sideWeapon',
+                               'quiver', 'shield', 'torch', 'tail')
         if newNames: names.update(newNames)
         Flags.__init__(self,default,names)
 
 #------------------------------------------------------------------------------
 class MelConditions(MelStructs):
-    """Represents a set of quest/dialog conditions. Difficulty is that FID state
-    of parameters depends on function index."""
+    """Represents a set of quest/dialog conditions. Difficulty is that FID
+    state of parameters depends on function index."""
     def __init__(self):
         """Initialize."""
         MelStructs.__init__(self,'CTDA','B3sfIii4s','conditions',
-            'operFlag',('unused1',null3),'compValue','ifunc','param1','param2',('unused2',null4))
+            'operFlag',('unused1',null3),'compValue','ifunc','param1','param2',
+            ('unused2',null4))
 
     def getLoaders(self,loaders):
         """Adds self as loader for type."""
@@ -190,8 +200,10 @@ class MelEffects(MelGroups):
     class MelEffectsScit(MelStruct):
         """Subclass to support alternate format."""
         def __init__(self):
-            MelStruct.__init__(self,'SCIT','II4sB3s',(FID,'script',None),('school',0),
-                ('visual','\x00\x00\x00\x00'),(MelEffects.seFlags,'flags',0x0L),('unused1',null3))
+            MelStruct.__init__(self, 'SCIT', 'II4sB3s', (FID, 'script', None),
+                               ('school', 0), ('visual', '\x00\x00\x00\x00'),
+                               (MelEffects.seFlags, 'flags', 0x0L),
+                               ('unused1', null3))
         def loadData(self,record,ins,type,size,readId):
             #--Alternate formats
             if size == 16:
@@ -202,7 +214,8 @@ class MelEffects(MelGroups):
                 unpacked = ins.unpack('II4s',size,readId)
                 record.unused1 = null3
             else: #--size == 4
-                #--The script fid for MS40TestSpell doesn't point to a valid script.
+                # --The script fid for MS40TestSpell doesn't point to a
+                # valid script.
                 #--But it's not used, so... Not a problem! It's also t
                 record.unused1 = null3
                 attrs,actions = ('script',),(0,)
@@ -222,7 +235,8 @@ class MelEffects(MelGroups):
         """Initialize elements."""
         MelGroups.__init__(self,attr,
             MelStruct('EFID','4s',('name','REHE')),
-            MelStruct('EFIT','4s4Ii',('name','REHE'),'magnitude','area','duration','recipient','actorValue'),
+            MelStruct('EFIT', '4s4Ii', ('name', 'REHE'), 'magnitude', 'area',
+                      'duration', 'recipient', 'actorValue'),
             MelGroup('scriptEffect',
                 MelEffects.MelEffectsScit(),
                 MelString('FULL','full'),
@@ -276,7 +290,9 @@ class MreHasEffects:
                 else:
                     effectName = mgef_name[effect.name]
                     if effect.name in avEffects:
-                        effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                        effectName = re.sub(_(u'(Attribute|Skill)'),
+                                            aValues[effect.actorValue],
+                                            effectName)
                 buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
                 if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
                 if effect.area: buffWrite(u' %sa'%effect.area)
@@ -303,7 +319,9 @@ class MreLeveledList(MreLeveledListBase):
             target = self.getDefault()
             record.__getattribute__(self.attr).append(target)
             target.__slots__ = self.attrs
-            format,attrs = ((self.format,self.attrs),('iI',('level','listId'),))[size==8]####might be h2sI
+            format, attrs = \
+                ((self.format, self.attrs), ('iI', ('level', 'listId'),))[
+                    size == 8]  # ###might be h2sI
             unpacked = ins.unpack(format,size,readId)
             setter = target.__setattr__
             map(setter,attrs,unpacked)
@@ -314,7 +332,8 @@ class MreLeveledList(MreLeveledListBase):
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
         MelFid('SCRI','script'),
         MelFid('TNAM','template'),
-        MelLevListLvlo('LVLO','h2sIh2s','entries','level',('unused1',null2),(FID,'listId',None),('count',1),('unused2',null2)),
+        MelLevListLvlo('LVLO','h2sIh2s','entries','level',('unused1',null2),
+                       (FID,'listId',None),('count',1),('unused2',null2)),
         MelNull('DATA'),
         )
     __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
@@ -360,16 +379,16 @@ class MelScrxen(MelFids):
                 result = function(value)
                 if save: scrxen[index] = (isFid,result)
 
-# Oblivion Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
+# Oblivion Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
 
     #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
+    melSet = MelSet(MelStruct('HEDR', 'f2I', ('version', 0.8), 'numRecords',
+                              ('nextObject', 0xCE6)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
@@ -386,13 +405,17 @@ class MreAchr(MelRecord): # Placed NPC
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelXpci('XPCI'),
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelOptStruct('XLOD', '3f', ('lod1', None), ('lod2', None),
+                     ('lod3', None)), # ###Distant LOD Data, unknown
+        MelOptStruct('XESP', 'IB3s', (FID, 'parent'), (_flags, 'parentFlags'),
+                     ('unused1', null3)),
         MelFid('XMRC','merchantContainer'),
         MelFid('XHRS','horse'),
         MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
         MelOptStruct('XSCL','f',('scale',1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptStruct('DATA', '=6f', ('posX', None), ('posY', None),
+                     ('posZ', None), ('rotX', None), ('rotY', None),
+                     ('rotZ', None)),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -403,11 +426,15 @@ class MreAcre(MelRecord): # Placed Creature
         MelString('EDID','eid'),
         MelFid('NAME','base'),
         MelOwnership(),
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_flags,'parentFlags'),('unused1',null3)),
+        MelOptStruct('XLOD', '3f', ('lod1', None), ('lod2', None),
+                     ('lod3', None)), # ###Distant LOD Data, unknown
+        MelOptStruct('XESP', 'IB3s', (FID, 'parent'), (_flags, 'parentFlags'),
+                     ('unused1', null3)),
         MelBase('XRGD','xrgd_p'), ###Ragdoll Data, ByteArray
         MelOptStruct('XSCL','f',('scale',1.0)),
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptStruct('DATA', '=6f', ('posX', None), ('posY', None),
+                     ('posZ', None), ('rotX', None), ('rotY', None),
+                     ('rotZ', None)),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -450,7 +477,8 @@ class MreAmmo(MelRecord):
         MelString('ICON','iconPath'),
         MelFid('ENAM','enchantment'),
         MelOptStruct('ANAM','H','enchantPoints'),
-        MelStruct('DATA','fB3sIfH','speed',(_flags,'flags',0L),('unused1',null3),'value','weight','damage'),
+        MelStruct('DATA', 'fB3sIfH', 'speed', (_flags, 'flags', 0L),
+                  ('unused1', null3), 'value', 'weight', 'damage'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -473,14 +501,18 @@ class MreAppa(MelRecord):
         MelModel(),
         MelString('ICON','iconPath'),
         MelFid('SCRI','script'),
-        MelStruct('DATA','=BIff',('apparatus',0),('value',25),('weight',1),('quality',10)),
+        MelStruct('DATA', '=BIff', ('apparatus', 0), ('value', 25),
+                  ('weight', 1), ('quality', 10)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 class MreArmo(MelRecord):
     """Armor record."""
     classType = 'ARMO'
-    _flags = MelBipedFlags(0L,Flags.getNames((16,'hideRings'),(17,'hideAmulet'),(22,'notPlayable'),(23,'heavyArmor')))
+    _flags = MelBipedFlags(0L, Flags.getNames((16, 'hideRings'),
+                                              (17, 'hideAmulet'),
+                                              (22, 'notPlayable'),
+                                              (23, 'heavyArmor')))
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -511,7 +543,8 @@ class MreBook(MelRecord):
         MelFid('SCRI','script'),
         MelFid('ENAM','enchantment'),
         MelOptStruct('ANAM','H','enchantPoints'),
-        MelStruct('DATA', '=BbIf',(_flags,'flags',0L),('teaches',-1),'value','weight'),
+        MelStruct('DATA', '=BbIf', (_flags, 'flags', 0L), ('teaches', -1),
+                  'value', 'weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['modb']
 
