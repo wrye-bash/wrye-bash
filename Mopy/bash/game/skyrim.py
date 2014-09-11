@@ -3865,14 +3865,14 @@ class MreCobj(MelRecord):
 
     class MelCobjCnto(MelGroups):
         def __init__(self):
-            MelGroups.__init__(self,'components',
+            MelGroups.__init__(self,'items',
                 MelStruct('CNTO','=2I',(FID,'item',None),'count'),
                 MelCoed(),
                 )
 
         def dumpData(self,record,out):
             # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(record.components))
+            out.packSub('COCT','I',len(record.items))
             MelGroups.dumpData(self,record,out)
 
     melSet = MelSet(
@@ -3886,7 +3886,7 @@ class MreCobj(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
