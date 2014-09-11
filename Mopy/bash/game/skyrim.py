@@ -3152,7 +3152,57 @@ class MreAddn(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreAlch(MelRecord,MreHasEffects):
+    """Ingestible"""
+    classType = 'ALCH'
+
+    # {0x00000001} 'No Auto-Calc (Unused)',
+    # {0x00000002} 'Food Item',
+    # {0x00000004} 'Unknown 3',
+    # {0x00000008} 'Unknown 4',
+    # {0x00000010} 'Unknown 5',
+    # {0x00000020} 'Unknown 6',
+    # {0x00000040} 'Unknown 7',
+    # {0x00000080} 'Unknown 8',
+    # {0x00000100} 'Unknown 9',
+    # {0x00000200} 'Unknown 10',
+    # {0x00000400} 'Unknown 11',
+    # {0x00000800} 'Unknown 12',
+    # {0x00001000} 'Unknown 13',
+    # {0x00002000} 'Unknown 14',
+    # {0x00004000} 'Unknown 15',
+    # {0x00008000} 'Unknown 16',
+    # {0x00010000} 'Medicine',
+    # {0x00020000} 'Poison'
+    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'autoCalc'),
+        (1, 'isFood'),
+        (16, 'medicine'),
+        (17, 'poison'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelDestructible(),
+        MelIcons(),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ETYP','I',(FID,'equipType')),
+        MelStruct('DATA','f','weight'),
+        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0L),
+                  'addiction','addictionChance','soundConsume',),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
