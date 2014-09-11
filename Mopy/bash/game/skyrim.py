@@ -6791,6 +6791,20 @@ class MreProj(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# QUST ------------------------------------------------------------------------
+class MreQust(MelRecord):
+    """Quest"""
+    classType = 'QUST'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
