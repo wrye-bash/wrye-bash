@@ -6317,6 +6317,574 @@ class MreOtft(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# PACK ------------------------------------------------------------------------
+class MrePack(MelRecord):
+    """Package"""
+    classType = 'PACK'
+
+    PackFlags10 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'successCompletesPackage'),
+        ))
+
+    # 'Repeat when Complete',
+    # 'Unknown 1'
+    PackFlags9 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'repeatwhenComplete'),
+            (1, 'unknown1'),
+        ))
+
+    # wbPKDTFlags
+    PackFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'offersServices'),
+            (1, 'unknown2'),
+            (2, 'mustcomplete'),
+            (3, 'maintainSpeedatGoal'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'unlockdoorsatpackagestart'),
+            (7, 'unlockdoorsatpackageend'),
+            (8, 'unknown9'),
+            (9, 'continueifPCNear'),
+            (10, 'onceperday'),
+            (11, 'unknown12'),
+            (12, 'unknown13'),
+            (13, 'preferredSpeed'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+            (16, 'unknown17'),
+            (17, 'alwaysSneak'),
+            (18, 'allowSwimming'),
+            (19, 'unknown20'),
+            (20, 'ignoreCombat'),
+            (21, 'weaponsUnequipped'),
+            (22, 'unknown23'),
+            (23, 'weaponDrawn'),
+            (24, 'unknown25'),
+            (25, 'unknown26'),
+            (26, 'unknown27'),
+            (27, 'noCombatAlert'),
+            (28, 'unknown29'),
+            (29, 'wearSleepOutfitunused'),
+            (30, 'unknown31'),
+            (31, 'unknown32'),
+        ))
+
+    # wbPKDTInterruptFlags
+    PackFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'hellostoplayer'),
+            (1, 'randomconversations'),
+            (2, 'observecombatbehavior'),
+            (3, 'greetcorpsebehavior'),
+            (4, 'reactiontoplayeractions'),
+            (5, 'friendlyfirecomments'),
+            (6, 'aggroRadiusBehavior'),
+            (7, 'allowIdleChatter'),
+            (8, 'unknown9'),
+            (9, 'worldInteractions'),
+            (10, 'unknown11'),
+            (11, 'unknown12'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    # UNAM, Data Inputs Flags
+    PackFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'public'),
+        ))
+
+    class MelPackLT(MelOptStruct):
+        """For PLDT and PTDT. Second element of both may be either an FID or a long,
+        depending on value of first element."""
+        def loadData(self,record,ins,type,size,readId):
+            if ((self.subType == 'PLDT' and size == 12) or
+                (self.subType == 'PLD2' and size == 12) or
+                (self.subType == 'PTDT' and size == 16) or
+                (self.subType == 'PTD2' and size == 16)):
+                MelOptStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif ((self.subType == 'PTDT' and size == 12) or
+                  (self.subType == 'PTD2' and size == 12)):
+                unpacked = ins.unpack('iIi',size,readId)
+            else:
+                raise "Unexpected size encountered for PACK:%s subrecord: %s" % (self.subType, size)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+        def hasFids(self,formElements):
+            formElements.add(self)
+        def dumpData(self,record,out):
+            if ((self.subType == 'PLDT' and (record.locType or record.locId)) or
+                (self.subType == 'PLD2' and (record.locType2 or record.locId2)) or
+                (self.subType == 'PTDT' and (record.targetType or record.targetId)) or
+                (self.subType == 'PTD2' and (record.targetType2 or record.targetId2))):
+                MelStruct.dumpData(self,record,out)
+        def mapFids(self,record,function,save=False):
+            """Applies function to fids. If save is true, then fid is set
+            to result of function."""
+            if self.subType == 'PLDT' and record.locType != 5:
+                result = function(record.locId)
+                if save: record.locId = result
+            elif self.subType == 'PLD2' and record.locType2 != 5:
+                result = function(record.locId2)
+                if save: record.locId2 = result
+            elif self.subType == 'PTDT' and record.targetType != 2:
+                result = function(record.targetId)
+                if save: record.targetId = result
+            elif self.subType == 'PTD2' and record.targetType2 != 2:
+                result = function(record.targetId2)
+                if save: record.targetId2 = result
+
+    class MelPackDistributor(MelNull):
+        """Handles embedded script records. Distributes load
+        duties to other elements as needed."""
+        def __init__(self):
+            self._debug = False
+        def getLoaders(self,loaders):
+            """Self as loader for structure types."""
+            for type in ('POBA','POEA','POCA'):
+                loaders[type] = self
+        def setMelSet(self,melSet):
+            """Set parent melset. Need this so that can reassign loaders later."""
+            self.melSet = melSet
+            self.loaders = {}
+            for element in melSet.elements:
+                attr = element.__dict__.get('attr',None)
+                if attr: self.loaders[attr] = element
+        def loadData(self,record,ins,type,size,readId):
+            if type == 'POBA':
+                element = self.loaders['onBegin']
+            elif type == 'POEA':
+                element = self.loaders['onEnd']
+            elif type == 'POCA':
+                element = self.loaders['onChange']
+            # 'SCHR','SCDA','SCTX','SLSD','SCVR','SCRV','SCRO',
+            # All older Script records chould be discarded if found
+            for subtype in ('INAM','TNAM'):
+                self.melSet.loaders[subtype] = element
+            element.loadData(record,ins,type,size,readId)
+
+    #--MelSet
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelStruct('PKDT','I3BsH2s',(PackFlags1,'generalFlags',0L),'type','interruptOverride',
+                  'preferredSpeed','unknown',(PackFlags2,'interruptFlags',0L),'unknown',),
+        MelStruct('PSDT','2bB2b3si','month','dayofweek','date','hour','minute',
+                  'unused','durationminutes',),
+        MelConditions(),
+        MelGroup('idleAnimations',
+            MelStruct('IDLF','I','type'),
+            MelStruct('IDLC','B3s','count','unknown',),
+            MelStruct('IDLT','f','timerSetting',),
+            MelFidList('IDLA','animation'),
+            MelBase('IDLB','unknown'),
+        ),
+        # End 'idleAnimations'
+        MelFid('CNAM','combatStyle',),
+        MelFid('QNAM','ownerQuest',),
+        MelStruct('PKCU','3I','dataInputCount',(FID,'packageTemplate'),
+                  'versionCount',),
+        MelGroup('packageData',
+            MelGroups('inputValues',
+                MelString('ANAM','type'),
+                # CNAM Needs Union Decider, No FormID
+                MelBase('CNAM','unknown',),
+                MelBase('BNAM','unknown',),
+                # PDTO Needs Union Decider
+                MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+                # PLDT Needs Union Decider, No FormID
+                MelStruct('PLDT','iIi','locationType','locationValue','radius',),
+                # PTDA Needs Union Decider
+                MelStruct('PTDA','iIi','targetDataType',(FID,'targetDataTarget'),
+                          'targetDataCountDist',),
+                MelBase('TPIC','unknown',),
+                ),
+                # End 'inputValues'
+            MelGroups('dataInputs',
+                MelStruct('UNAM','b','index'),
+                MelString('BNAM','name',),
+                MelStruct('PNAM','I',(PackFlags1,'flags',0L),),
+                ),
+                # End 'dataInputs' - wbUNAMs
+        ),
+        # End 'packageData'
+        MelBase('XNAM','marker',),
+
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
+#------------------------------------------------------------------------------
+class MrePerk(MelRecord):
+    """Perk Item"""
+    classType = 'PERK'
+
+    # EPFT has wbEnum in TES5Edit
+    # Assigned to 'functionParameterType' for WB
+    # {0} 'None',
+    # {1} 'Float',
+    # {2} 'Float/AV,Float',
+    # {3} 'LVLI',
+    # {4} 'SPEL,lstring,flags',
+    # {5} 'SPEL',
+    # {6} 'string',
+    # {7} 'lstring'
+
+    # DATA below PRKE needs union decider
+    # 3B definition has two wbEnum in TES5Edit
+    # Refer to wbEntryPointsEnum for 'entryPoint'
+    # 'function' is defined as follows
+    # {0} 'Unknown 0',
+    # {1} 'Set Value',  // EPFT=1
+    # {2} 'Add Value', // EPFT=1
+    # {3} 'Multiply Value', // EPFT=1
+    # {4} 'Add Range To Value', // EPFT=2
+    # {5} 'Add Actor Value Mult', // EPFT=2
+    # {6} 'Absolute Value', // no params
+    # {7} 'Negative Absolute Value', // no params
+    # {8} 'Add Leveled List', // EPFT=3
+    # {9} 'Add Activate Choice', // EPFT=4
+    # {10} 'Select Spell', // EPFT=5
+    # {11} 'Select Text', // EPFT=6
+    # {12} 'Set to Actor Value Mult', // EPFT=2
+    # {13} 'Multiply Actor Value Mult', // EPFT=2
+    # {14} 'Multiply 1 + Actor Value Mult', // EPFT=2
+    # {15} 'Set Text' // EPFT=7
+
+    # PRKE has wbEnum in TES5Edit
+    # Assigned to 'effectType' for WB
+    # 'Quest + Stage',
+    # 'Ability',
+    # 'Entry Point'
+
+    # 'Run Immediately',
+    # 'Replace Default'
+    PerkScriptFlagsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'runImmediately'),
+            (1, 'replaceDefault'),
+        ))
+
+    class MelPerkData(MelStruct):
+        """Handle older truncated DATA for PERK subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 5:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 4:
+                unpacked = ins.unpack('BBBB',size,readId)
+            else:
+                raise "Unexpected size encountered for DATA subrecord: %s" % size
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flagsA.getTrueAttrs()
+
+    class MelPerkEffectData(MelBase):
+        def hasFids(self,formElements):
+            formElements.add(self)
+        def loadData(self,record,ins,type,size,readId):
+            target = MelObject()
+            record.__setattr__(self.attr,target)
+            if record.type == 0:
+                format,attrs = ('II',('quest','queststage'))
+            elif record.type == 1:
+                format,attrs = ('I',('ability',))
+            elif record.type == 2:
+                format,attrs = ('HB',('entrypoint','function'))
+            else:
+                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+            unpacked = ins.unpack(format,size,readId)
+            setter = target.__setattr__
+            for attr,value in zip(attrs,unpacked):
+                setter(attr,value)
+            if self._debug: print unpacked
+        def dumpData(self,record,out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.type == 0:
+                format,attrs = ('II',('quest','queststage'))
+            elif record.type == 1:
+                format,attrs = ('I',('ability',))
+            elif record.type == 2:
+                format,attrs = ('HB',('entrypoint','function'))
+            else:
+                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+            values = []
+            valuesAppend = values.append
+            getter = target.__getattribute__
+            for attr in attrs:
+                value = getter(attr)
+                valuesAppend(value)
+            try:
+                out.packSub(self.subType,format,*values)
+            except struct.error:
+                print self.subType,format,values
+                raise
+        def mapFids(self,record,function,save=False):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.type == 0:
+                result = function(target.quest)
+                if save: target.quest = result
+            elif record.type == 1:
+                result = function(target.ability)
+                if save: target.ability = result
+
+    class MelPerkEffects(MelGroups):
+        def __init__(self,attr,*elements):
+            MelGroups.__init__(self,attr,*elements)
+        def setMelSet(self,melSet):
+            self.melSet = melSet
+            self.attrLoaders = {}
+            for element in melSet.elements:
+                attr = element.__dict__.get('attr',None)
+                if attr: self.attrLoaders[attr] = element
+        def loadData(self,record,ins,type,size,readId):
+            if type == 'DATA' or type == 'CTDA':
+                effects = record.__getattribute__(self.attr)
+                if not effects:
+                    if type == 'DATA':
+                        element = self.attrLoaders['_data']
+                    elif type == 'CTDA':
+                        element = self.attrLoaders['conditions']
+                    element.loadData(record,ins,type,size,readId)
+                    return
+            MelGroups.loadData(self,record,ins,type,size,readId)
+
+    class MelPerkEffectParams(MelGroups):
+        def loadData(self,record,ins,type,size,readId):
+            if type in ('EPFT','EPF2','EPF3','EPFD'):
+                target = self.getDefault()
+                record.__getattribute__(self.attr).append(target)
+            else:
+                target = record.__getattribute__(self.attr)[-1]
+            element = self.loaders[type]
+            slots = ['recordType']
+            slots.extend(element.getSlotsUsed())
+            target.__slots__ = slots
+            target.recordType = type
+            element.loadData(target,ins,type,size,readId)
+        def dumpData(self,record,out):
+            for target in record.__getattribute__(self.attr):
+                element = self.loaders[target.recordType]
+                if not element:
+                    raise ModError(ins.inName,_('Unexpected type: %d') % target.recordType)
+                element.dumpData(target,out)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelLString('FULL','full'),
+        MelLString('DESC','description'),
+        MelIcons(),
+        MelConditions(),
+        MelGroup('_data',
+            MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
+            ),
+        MelPerkEffects('effects',
+            MelStruct('PRKE', 'BBB', 'type', 'rank', 'priority'),
+            MelPerkEffectData('DATA','effectData'),
+            MelGroups('effectConditions',
+                MelStruct('PRKC', 'B', 'runOn'),
+                MelConditions(),
+            ),
+            MelPerkEffectParams('effectParams',
+                MelStruct('EPFT','B','_epft'),
+                MelString('EPF2','buttonLabel'),
+                MelStruct('EPF3','H','scriptFlag'),
+                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
+            ),
+            MelBase('PRKF','footer'),
+            ),
+        )
+    melSet.elements[-1].setMelSet(melSet)
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Verification
+#------------------------------------------------------------------------------
+class MreProj(MelRecord):
+    """Projectile record."""
+    classType = 'PROJ'
+
+    # VNAM has wbEnum in TES5Edit
+    # Assigned to 'soundLevel' for WB
+    # 0 :'Loud',
+    # 1 :'Normal',
+    # 2 :'Silent',
+    # 3 :'Very Loud'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'projectileTypes' for WB
+    # $01 :'Missile',
+    # $02 :'Lobber',
+    # $04 :'Beam',
+    # $08 :'Flame',
+    # $10 :'Cone',
+    # $20 :'Barrier',
+    # $40 :'Arrow'
+
+    ProjTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'hitscan'),
+        (1, 'explosive'),
+        (2, 'altTriger'),
+        (3, 'muzzleFlash'),
+        (4, 'unknown4'),
+        (5, 'canbeDisable'),
+        (6, 'canbePickedUp'),
+        (7, 'superSonic'),
+        (8, 'pinsLimbs'),
+        (9, 'passThroughSmallTransparent'),
+        (10, 'disableCombatAimCorrection'),
+        (11, 'rotation'),
+    ))
+
+    class MelProjData(MelStruct):
+        """Handle older truncated DATA for PROJ subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 92:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 88:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4fI',size,readId)
+            elif size == 84:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelProjData('DATA','2H3f2I3f2I3f3I4f2I',(ProjTypeFlags,'flags',0L),'projectileTypes',
+                  ('gravity',0.00000),('speed',10000.00000),('range',10000.00000),
+                  (FID,'light',0),(FID,'muzzleFlash',0),('tracerChance',0.00000),
+                  ('explosionAltTrigerProximity',0.00000),('explosionAltTrigerTimer',0.00000),
+                  (FID,'explosion',0),(FID,'sound',0),('muzzleFlashDuration',0.00000),
+                  ('fadeDuration',0.00000),('impactForce',0.00000),
+                  (FID,'soundCountDown',0),(FID,'soundDisable',0),(FID,'defaultWeaponSource',0),
+                  ('coneSpread',0.00000),('collisionRadius',0.00000),('lifetime',0.00000),
+                  ('relaunchInterval',0.00000),(FID,'decalData',0),(FID,'collisionLayer',0),
+                  ),
+        MelGroup('models',
+            MelString('NAM1','muzzleFlashPath'),
+            MelBase('NAM2','nam2_p'),
+        ),
+        MelStruct('VNAM','I','soundLevel',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# QUST ------------------------------------------------------------------------
+class MreQust(MelRecord):
+    """Quest"""
+    classType = 'QUST'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# RACE ------------------------------------------------------------------------
+class MreRace(MelRecord):
+    """Quest"""
+    classType = 'RACE'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# REFR ------------------------------------------------------------------------
+class MreRefr(MelRecord):
+    """Placed Object"""
+    classType = 'REFR'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
+#------------------------------------------------------------------------------
+# Marker for organization please don't remove ---------------------------------
+# REGN ------------------------------------------------------------------------
+class MreRegn(MelRecord):
+    """Placed Object"""
+    classType = 'REGN'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Needs Updating
+#------------------------------------------------------------------------------
+class MreRela(MelRecord):
+    """Relationship"""
+    classType = 'RELA'
+
+    # DATA has wbEnum in TES5Edit
+    # Assigned to 'rankType' for WB
+    # 0 :'Lover'
+    # 1 :'Ally'
+    # 2 :'Confidant'
+    # 3 :'Friend'
+    # 4 :'Acquaitance'
+    # 5 :'Rival'
+    # 6 :'Foe'
+    # 7 :'Enemy'
+    # 8 :'Archnemesis'
+
+    RelationshipFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Unknown 1'),
+        (1,'Unknown 2'),
+        (2,'Unknown 3'),
+        (3,'Unknown 4'),
+        (4,'Unknown 5'),
+        (5,'Unknown 6'),
+        (6,'Unknown 7'),
+        (7,'Secret'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2IHsBI',(FID,'parent'),(FID,'child'),'rankType',
+                  'unknown',(RelationshipFlags,'relaFlags',0L),(FID,'associationType'),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
