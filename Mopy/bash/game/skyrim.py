@@ -4414,6 +4414,68 @@ class MreEqup(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreExpl(MelRecord):
+    """Explosion record."""
+    classType = 'EXPL'
+
+    # 'Unknown 0',
+    # 'Always Uses World Orientation',
+    # 'Knock Down - Always',
+    # 'Knock Down - By Formula',
+    # 'Ignore LOS Check',
+    # 'Push Explosion Source Ref Only',
+    # 'Ignore Image Space Swap',
+    # 'Chain',
+    # 'No Controller Vibration'
+    ExplTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'alwaysUsesWorldOrientation'),
+        (2, 'knockDownAlways'),
+        (3, 'knockDownByFormular'),
+        (4, 'ignoreLosCheck'),
+        (5, 'pushExplosionSourceRefOnly'),
+        (6, 'ignoreImageSpaceSwap'),
+        (7, 'chain'),
+        (8, 'noControllerVibration'),
+    ))
+
+    class MelExplData(MelStruct):
+        """Handle older truncated DATA for EXPL subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 52:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 48:
+                unpacked = ins.unpack('6I5fI',size,readId)
+            elif size == 44:
+                unpacked = ins.unpack('6I5f',size,readId)
+            elif size == 40:
+                unpacked = ins.unpack('6I4f',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelFid('EITM','objectEffect'),
+        MelFid('MNAM','imageSpaceModifier'),
+        MelExplData('DATA','6I5f2I',(FID,'light',None),(FID,'sound1',None),(FID,'sound2',None),
+                  (FID,'impactDataset',None),(FID,'placedObject',None),(FID,'spawnProjectile',None),
+                  'force','damage','radius','isRadius','verticalOffsetMult',
+                  (ExplTypeFlags,'flags',0L),'soundLevel',
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
