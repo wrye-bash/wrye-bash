@@ -2020,7 +2020,7 @@ class MelBounds(MelStruct):
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
     def __init__(self):
-        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
+        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'), ('rank'))
 
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var
@@ -2043,9 +2043,10 @@ class MelCoed(MelOptStruct):
 #    else if MainRecord.Signature = 'FACT' then
 #      Result := 2;
 #end;
-#Basically the Idea is if it is it's an NPC_ then it's a FormID of a [GLOB]
-#if it is it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
-#If it's not NPC_ or FACT then it's unknown and just a 4Byte integer
+#Basically the Idea is this;
+#When it's an NPC_ then it's a FormID of a [GLOB]
+#When it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
+#When it's not an NPC_ or FACT then it's unknown and just a 4Byte integer
 
 #class MelCoed(MelStruct):
 # wbCOED := wbStructExSK(COED, [2], [0, 1], 'Extra Data', [
@@ -2057,6 +2058,9 @@ class MelCoed(MelOptStruct):
 #         ]),
 #    {08} wbFloat('Item Condition')
 #  ]);
+
+# When all of Skyrim's records are entered this needs to be updated
+# To more closly resemple the wbCOEDOwnerDecider from TES5Edit
 #------------------------------------------------------------------------------
 class MelColorN(MelStruct):
         def __init__(self):
