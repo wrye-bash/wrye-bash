@@ -7284,6 +7284,290 @@ class MreSmen(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSmqn(MelRecord):
+    """Story Manager Quest Node"""
+    classType = 'SMQN'
+
+    # "Do all" = "Do all before repeating"
+    SmqnQuestFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'doAll'),
+        (1,'sharesEvent'),
+        (2,'numQuestsToRun'),
+    ))
+
+    SmqnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Random'),
+        (1,'noChildWarn'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM','parent',),
+        MelFid('SNAM','child',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelStruct('DNAM','2H',(SmqnNodeFlags,'nodeFlags',0L),(SmqnQuestFlags,'questFlags',0L),),
+        MelStruct('XNAM','I','maxConcurrentQuests'),
+        MelStruct('MNAM','I','numQuestsToRun'),
+        MelStruct('QNAM','I','questCount'),
+        MelGroups('quests',
+            MelFid('NNAM','quest',),
+            MelBase('FNAM','fnam_p'),
+            MelStruct('RNAM','f','hoursUntilReset'),
+            )
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        quests = self.quests
+        self.questCount = len(quests) if quests else 0
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSnct(MelRecord):
+    """Sound Category"""
+    classType = 'SNCT'
+
+    SoundCategoryFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'muteWhenSubmerged'),
+        (1,'shouldAppearOnMenu'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelStruct('FNAM','I',(SoundCategoryFlags,'flags',0L),),
+        MelFid('PNAM','parent',),
+        MelStruct('VNAM','H','staticVolumeMultiplier'),
+        MelStruct('UNAM','H','defaultMenuValue'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSndr(MelRecord):
+    """Sound Descriptor"""
+    classType = 'SNDR'
+
+    # LNAM has wbEnum in TES5Edit
+    # Assigned to 'looping' for WB
+    # $00 , 'None',
+    # $08 , 'Loop',
+    # $10 , 'Envelope Fast',
+    # $20 , 'Envelope Slow'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('CNAM','cnam_p'),
+        MelFid('GNAM','category',),
+        MelFid('SNAM','alternateSoundFor',),
+        MelGroups('sounds',
+            MelString('ANAM','fileName',),
+            ),
+        MelFid('ONAM','outputModel',),
+        MelLString('FNAM','string'),
+        MelConditions(),
+        MelStruct('LNAM','sBsB','unknown1','looping','unknown2',
+                  'rumbleSendValue',),
+        MelStruct('BNAM','2b2BH','pctFrequencyShift','pctFrequencyVariance','priority',
+                  'dbVariance','staticAttenuation',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MelSopmData(MelStruct):
+    def __init__(self,type='ONAM'):
+        MelStruct.__init__(self,type,'=24B',
+                           'ch0_l','ch0_r','ch0_c','ch0_lFE','ch0_rL','ch0_rR','ch0_bL','ch0_bR',
+                           'ch1_l','ch1_r','ch1_c','ch1_lFE','ch1_rL','ch1_rR','ch1_bL','ch1_bR',
+                           'ch2_l','ch2_r','ch2_c','ch2_lFE','ch2_rL','ch2_rR','ch2_bL','ch2_bR',
+                           )
+
+class MreSopm(MelRecord):
+    """Sound Output Model"""
+    classType = 'SOPM'
+
+    # MNAM has wbEnum in TES5Edit
+    # Assigned to 'outputType' for WB
+    # 0 :'Uses HRTF'
+    # 1 :'Defined Speaker Output'
+
+    # 'Attenuates With Distance',
+    # 'Allows Rumble'
+    SopmFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'attenuatesWithDistance'),
+            (1, 'allowsRumble'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown','reverbSendpct',),
+        MelBase('FNAM','fnam_p'),
+        MelStruct('MNAM','I','outputType',),
+        MelBase('CNAM','cnam_p'),
+        MelBase('SNAM','snam_p'),
+        MelSopmData(),
+        MelStruct('ANAM','4s2f5B','unknown','minDistance','maxDistance',
+                  'curve1','curve2','curve3','curve4','curve5',
+                   dumpExtra='extraData',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSoun(MelRecord):
+    """Soun Item"""
+    classType = 'SOUN'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        # FNAM Leftover, Unused
+        MelString('FNAM','soundFileUnused'),
+        # SNDD Leftover, Unused
+        MelBase('SNDD','soundDataUnused'),
+        MelFid('SDSC','soundDescriptor'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreSpel(MelRecord,MreHasEffects):
+    """Spell record."""
+    classType = 'SPEL'
+
+    # currently not used for Skyrim needs investigated to see if TES5Edit does this
+    # class SpellFlags(Flags):
+    #     """For SpellFlags, immuneSilence activates bits 1 AND 3."""
+    #     def __setitem__(self,index,value):
+    #         setter = Flags.__setitem__
+    #         setter(self,index,value)
+    #         if index == 1:
+    #             setter(self,3,value)
+
+    # SPIT has several wbEnum refer to wbSPIT in TES5Edit
+
+    # flags = SpellFlags(0L,Flags.getNames
+    SpelTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        ( 0,'manualCostCalc'),
+        ( 1,'unknown2'),
+        ( 2,'unknown3'),
+        ( 3,'unknown4'),
+        ( 4,'unknown5'),
+        ( 5,'unknown6'),
+        ( 6,'unknown7'),
+        ( 7,'unknown8'),
+        ( 8,'unknown9'),
+        ( 9,'unknown10'),
+        (10,'unknown11'),
+        (11,'unknown12'),
+        (12,'unknown13'),
+        (13,'unknown14'),
+        (14,'unknown15'),
+        (15,'unknown16'),
+        (16,'unknown17'),
+        (17,'pcStartSpell'),
+        (18,'unknown19'),
+        (19,'areaEffectIgnoresLOS'),
+        (20,'ignoreResistance'),
+        (21,'noAbsorbReflect'),
+        (22,'unknown23'),
+        (23,'noDualCastModification'),
+        (24,'unknown25'),
+        (25,'unknown26'),
+        (26,'unknown27'),
+        (27,'unknown28'),
+        (28,'unknown29'),
+        (29,'unknown30'),
+        (30,'unknown31'),
+        (31,'unknown32'),
+         ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFid('MDOB', 'menuDisplayObject'),
+        MelFid('ETYP', 'equipmentType'),
+        MelLString('DESC','description'),
+        MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0L),
+                  'scrollType','chargeTime','castType','targetType',
+                  'castDuration','range',(FID,'halfCostPerk'),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+    # DATA has wbEnum in TES5Edit
+    # Assinged as 'type' in MelSpgdData
+    # 'Rain',
+    # 'Snow',
+class MelSpgdData(MelStruct):
+    def __init__(self,type='DATA'):
+        MelStruct.__init__(self,type,'=7f4If',
+                           'gravityVelocity','rotationVelocity','particleSizeX',
+                           'particleSizeY','centerOffsetMin','centerOffsetMax',
+                           'initialRotationRange','numSubtexturesX',
+                           'numSubtexturesY','type',('boxSize',0),
+                           ('particleDensity',0),
+                           )
+
+
+    def loadData(self,record,ins,type,size,readId):
+        """Reads data from ins into record attribute."""
+        if size == 40:
+            # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
+            # fffffffIIIIf
+            # Type is an Enum 0 = Rain; 1 = Snow
+            unpacked = ins.unpack('=7f3I',size,readId) + (0,0,)
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if action: value = action(value)
+                setter(attr,value)
+            if self._debug:
+                print u' ',zip(self.attrs,unpacked)
+                if len(unpacked) != len(self.attrs):
+                    print u' ',unpacked
+        elif size != 48:
+            raise ModSizeError(ins.inName,readId,48,size,True)
+        else:
+            MelStruct.loadData(self,record,ins,type,size,readId)
+
+class MreSpgd(MelRecord):
+    """Spgd Item"""
+    classType = 'SPGD'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelSpgdData(),
+        MelString('ICON','icon'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreStat(MelRecord):
+    """Static model record."""
+    classType = 'STAT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelModel(),
+        MelStruct('DNAM','fI','maxAngle30to120',(FID,'material'),),
+        # Contains null-terminated mesh filename followed by random data
+        # up to 260 bytes and repeats 4 times
+        MelBase('MNAM','distantLOD'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+# MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
