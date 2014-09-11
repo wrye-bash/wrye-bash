@@ -2260,6 +2260,96 @@ class MelEffects(MelGroups):
             MelConditions(),
             )
 
+#------------------------------------------------------------------------------
+class MreHasEffects:
+    """Mixin class for magic items."""
+    def getEffects(self):
+        """Returns a summary of effects. Useful for alchemical catalog."""
+        effects = []
+        avEffects = bush.genericAVEffects
+        effectsAppend = effects.append
+        for effect in self.effects:
+            mgef, actorValue = effect.name, effect.actorValue
+            if mgef not in avEffects:
+                actorValue = 0
+            effectsAppend((mgef,actorValue))
+        return effects
+
+    def getSpellSchool(self,mgef_school=bush.mgef_school):
+        """Returns the school based on the highest cost spell effect."""
+        spellSchool = [0,0]
+        for effect in self.effects:
+            school = mgef_school[effect.name]
+            effectValue = bush.mgef_basevalue[effect.name]
+            if effect.magnitude:
+                effectValue *=  effect.magnitude
+            if effect.area:
+                effectValue *=  (effect.area/10)
+            if effect.duration:
+                effectValue *=  effect.duration
+            if spellSchool[0] < effectValue:
+                spellSchool = [effectValue,school]
+        return spellSchool[1]
+
+    def getEffectsSummary(self,mgef_school=None,mgef_name=None):
+        """Return a text description of magic effects."""
+        mgef_school = mgef_school or bush.mgef_school
+        mgef_name = mgef_name or bush.mgef_name
+        with bolt.sio() as buff:
+            avEffects = bush.genericAVEffects
+            aValues = bush.actorValues
+            buffWrite = buff.write
+            if self.effects:
+                school = self.getSpellSchool(mgef_school)
+                buffWrite(bush.actorValues[20+school] + u'\n')
+        for index,effect in enumerate(self.effects):
+            if effect.scriptEffect:
+                effectName = effect.scriptEffect.full or u'Script Effect'
+            else:
+                effectName = mgef_name[effect.name]
+                if effect.name in avEffects:
+                    effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
+                if effect.area: buffWrite(u' %sa'%effect.area)
+                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
+                buffWrite(u'\n')
+        return buff.getvalue()
+
+#-------------------------------------------------------------------------------
+class MelIcons(MelGroup):
+    """Handles ICON and MICO."""
+
+    def __init__(self,attr='iconsIaM'):
+        """Initialize."""
+        # iconsIaM = icons ICON and MICO
+        MelGroup.__init__(self,attr,
+            MelString('ICON','iconPath'),
+            MelString('MICO','smallIconPath'),
+        )
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.iconsIaM and record.iconsIaM.iconPath:
+            MelGroup.dumpData(self,record,out)
+        if record.iconsIaM and record.iconsIaM.smallIconPath:
+            MelGroup.dumpData(self,record,out)
+#-------------------------------------------------------------------------------
+class MelIcons2(MelGroup):
+    """Handles ICON and MICO."""
+
+    def __init__(self,attr='iconsIaM2'):
+        """Initialize."""
+        # iconsIaM = icons ICON and MICO
+        MelGroup.__init__(self,attr,
+            MelString('ICO2','iconPath2'),
+            MelString('MIC2','smallIconPath2'),
+        )
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.iconsIaM and record.iconsIaM.iconPath2:
+            MelGroup.dumpData(self,record,out)
+        if record.iconsIaM and record.iconsIaM.smallIconPath2:
+            MelGroup.dumpData(self,record,out)
 #-------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
