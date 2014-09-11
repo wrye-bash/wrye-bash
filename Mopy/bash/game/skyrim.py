@@ -7255,6 +7255,35 @@ class MreSmbn(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSmen(MelRecord):
+    """Story Manager Event Node"""
+    classType = 'SMEN'
+
+    SmenNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Random'),
+        (1,'noChildWarn'),
+    ))
+
+    # ENAM is four chars with no length byte, like AIPL, or CHRR
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM','parent',),
+        MelFid('SNAM','child',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelStruct('DNAM','I',(SmenNodeFlags,'nodeFlags',0L),),
+        MelBase('XNAM','xnam_p'),
+        MelString('ENAM','type'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
