@@ -4173,6 +4173,309 @@ class MreDlvw(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreDobj(MelRecord):
+    """Default Object Manager"""
+    classType = 'DOBJ'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('objects',
+            MelStruct('DNAM','2I','objectUse',(FID,'objectID',None),),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDoor(MelRecord):
+    """Door Record"""
+    classType = 'DOOR'
+
+    DoorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'automatic'),
+        (2, 'hidden'),
+        (3, 'minimalUse'),
+        (4, 'slidingDoor'),
+        (5, 'doNotOpenInCombatSearch'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelFid('SNAM','soundOpen'),
+        MelFid('ANAM','soundClose'),
+        MelFid('BNAM','soundLoop'),
+        MelStruct('FNAM','B',(DoorTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreDual(MelRecord):
+    """Dual Cast Data"""
+    classType = 'DUAL'
+
+    DualCastDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'hitEffectArt'),
+        (1,'projectile'),
+        (2,'explosion'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('DATA','6I',(FID,'projectile'),(FID,'explosion'),(FID,'effectShader'),
+                  (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreEczn(MelRecord):
+    """Encounter Zone record."""
+    classType = 'ECZN'
+
+    EcznTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'neverResets'),
+            (1, 'matchPCBelowMinimumLevel'),
+            (2, 'disableCombatBoundary'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('DATA','2I2bBb',(FID,'owner',None),(FID,'location',None),'rank','minimumLevel',
+                  (EcznTypeFlags,'flags',0L),('maxLevel',null1)),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreEfsh(MelRecord):
+    """Efsh Record"""
+    classType = 'EFSH'
+
+    EfshGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noMembraneShader'),
+        (1, 'membraneGrayscaleColor'),
+        (2, 'membraneGrayscaleAlpha'),
+        (3, 'noParticleShader'),
+        (4, 'edgeEffectInverse'),
+        (5, 'affectSkinOnly'),
+        (6, 'ignoreAlpha'),
+        (7, 'projectUVs'),
+        (8, 'ignoreBaseGeometryAlpha'),
+        (9, 'lighting'),
+        (10, 'noWeapons'),
+        (11, 'unknown11'),
+        (12, 'unknown12'),
+        (13, 'unknown13'),
+        (14, 'unknown14'),
+        (15, 'particleAnimated'),
+        (16, 'particleGrayscaleColor'),
+        (17, 'particleGrayscaleAlpha'),
+        (18, 'unknown18'),
+        (19, 'unknown19'),
+        (20, 'unknown20'),
+        (21, 'unknown21'),
+        (22, 'unknown22'),
+        (23, 'unknown23'),
+        (24, 'useBloodGeometry'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('ICON','fillTexture'),
+        MelString('ICO2','particleShaderTexture'),
+        MelString('NAM7','holesTexture'),
+        MelString('NAM8','membranePaletteTexture'),
+        MelString('NAM9','particlePaletteTexture'),
+        MelStruct('DATA','4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2fI',
+                  'unknown','membraneShaderSourceBlendMode',
+                  'membraneShaderBlendOperation','membraneShaderZTestFunction',
+                  'red','green','blue','unknown',
+                  'fillTextureEffectAlphaFadeInTime','fillTextureEffectFullAlphaTime',
+                  'fillTextureEffectAlphaFadeOutTime','fillTextureEffectPresistentAlphaRatio',
+                  'fillTextureEffectAlphaPulseAmplitude','fillTextureEffectAlphaPulseFrequency',
+                  'fillTextureEffectTextureAnimationSpeedU','fillTextureEffectTextureAnimationSpeedV',
+                  'edgeEffectFallOff',
+                  'red','green','blue','unknown',
+                  'edgeEffectAlphaFadeInTime','edgeEffectFullAlphaTime',
+                  'edgeEffectAlphaFadeOutTime','edgeEffectPersistentAlphaRatio',
+                  'edgeEffectAlphaPulseAmplitude','edgeEffectAlphaPulseFrequency',
+                  'fillTextureEffectFullAlphaRatio','edgeEffectFullAlphaRatio',
+                  'membraneShaderDestBlendMode','particleShaderSourceBlendMode',
+                  'particleShaderBlendOperation','particleShaderZTestFunction',
+                  'particleShaderDestBlendMode','particleShaderParticleBirthRampUpTime',
+                  'particleShaderFullParticleBirthTime','particleShaderParticleBirthRampDownTime',
+                  'particleShaderFullParticleBirthRatio','particleShaderPersistantParticleCount',
+                  'particleShaderParticleLifetime','particleShaderParticleLifetime',
+                  'particleShaderInitialSpeedAlongNormal','particleShaderAccelerationAlongNormal',
+                  'particleShaderInitialVelocity1','particleShaderInitialVelocity2',
+                  'particleShaderInitialVelocity3','particleShaderAcceleration1',
+                  'particleShaderAcceleration2','particleShaderAcceleration3',
+                  'particleShaderScaleKey1','particleShaderScaleKey2',
+                  'particleShaderScaleKey1Time','particleShaderScaleKey2Time',
+                  'red','green','blue','unknown',
+                  'red','green','blue','unknown',
+                  'red','green','blue','unknown',
+                  'colorKey1ColorAlpha','colorKey2ColorAlpha',
+                  'colorKey3ColorAlpha','colorKey1ColorKeyTime',
+                  'colorKey2ColorKeyTime','colorKey3ColorKeyTime',
+                  'particleShaderInitialSpeedAlongNormal','particleShaderInitialRotationdeg',
+                  'particleShaderInitialRotationdeg','particleShaderRotationSpeeddegsec',
+                  'particleShaderRotationSpeeddegsec',(FID,'addonModels'),
+                  'holesStartTime','holesEndTime','holesStartVal','holesEndVal',
+                  'edgeWidthalphaunits',
+                  'red','green','blue','unknown',
+                  'explosionWindSpeed','textureCountU','textureCountV',
+                  'addonModelsFadeInTime','addonModelsFadeOutTime',
+                  'addonModelsScaleStart','addonModelsScaleEnd',
+                  'addonModelsScaleInTime','addonModelsScaleOutTime',
+                  (FID,'ambientSound'),
+                  'red','green','blue','unknown',
+                  'red','green','blue','unknown',
+                  'fillTextureEffectColorKeyScaleTimecolorKey1Scale',
+                  'fillTextureEffectColorKeyScaleTimecolorKey2Scale',
+                  'fillTextureEffectColorKeyScaleTimecolorKey3Scale',
+                  'fillTextureEffectColorKeyScaleTimecolorKey1Time',
+                  'fillTextureEffectColorKeyScaleTimecolorKey2Time',
+                  'fillTextureEffectColorKeyScaleTimecolorKey3Time',
+                  'colorScale','birthPositionOffset','birthPositionOffsetRange',
+                  'startFrame','startFrameVariation','endFrame','loopStartFrame',
+                  'loopStartVariation','frameCount','frameCountVariation',
+                  (EfshGeneralFlags,'flags',0L),'fillTextureEffectTextureScaleU',
+                  'fillTextureEffectTextureScaleV','sceneGraphEmitDepthLimitunused',
+                  ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreEnch(MelRecord,MreHasEffects):
+    """Enchants"""
+    classType = 'ENCH'
+
+    # ENIT has wbEnum in TES5Edit
+    # Assigned to 'enchantType' for WB
+    # $06, 'Enchantment',
+    # $0C, 'Staff Enchantment'
+
+    EnchGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noAutoCalc'),
+        (1, 'unknownTwo'),
+        (2, 'extendDurationOnRecast'),
+    ))
+
+    class MelEnchEnit(MelStruct):
+        """Handle older truncated ENIT for ENCH subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 36:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 32:
+                unpacked = ins.unpack('i2Ii2IfI',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelEnchEnit('ENIT','i2Ii2If2I','enchantmentCost',(EnchGeneralFlags,
+                  'generalFlags',0L),'castType','enchantmentAmount','targetType',
+                  'enchantType','chargeTime',(FID,'baseEnchantment'),
+                  (FID,'wornRestrictions'),
+            ),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreEqup(MelRecord):
+    """Equp Item"""
+    classType = 'EQUP'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFidList('PNAM','canBeEquipped'),
+        # DATA is either True Of False
+        MelStruct('DATA','I','useAllParents'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreExpl(MelRecord):
+    """Explosion record."""
+    classType = 'EXPL'
+
+    # 'Unknown 0',
+    # 'Always Uses World Orientation',
+    # 'Knock Down - Always',
+    # 'Knock Down - By Formula',
+    # 'Ignore LOS Check',
+    # 'Push Explosion Source Ref Only',
+    # 'Ignore Image Space Swap',
+    # 'Chain',
+    # 'No Controller Vibration'
+    ExplTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (1, 'alwaysUsesWorldOrientation'),
+        (2, 'knockDownAlways'),
+        (3, 'knockDownByFormular'),
+        (4, 'ignoreLosCheck'),
+        (5, 'pushExplosionSourceRefOnly'),
+        (6, 'ignoreImageSpaceSwap'),
+        (7, 'chain'),
+        (8, 'noControllerVibration'),
+    ))
+
+    class MelExplData(MelStruct):
+        """Handle older truncated DATA for EXPL subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 52:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 48:
+                unpacked = ins.unpack('6I5fI',size,readId)
+            elif size == 44:
+                unpacked = ins.unpack('6I5f',size,readId)
+            elif size == 40:
+                unpacked = ins.unpack('6I4f',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelFid('EITM','objectEffect'),
+        MelFid('MNAM','imageSpaceModifier'),
+        MelExplData('DATA','6I5f2I',(FID,'light',None),(FID,'sound1',None),(FID,'sound2',None),
+                  (FID,'impactDataset',None),(FID,'placedObject',None),(FID,'spawnProjectile',None),
+                  'force','damage','radius','isRadius','verticalOffsetMult',
+                  (ExplTypeFlags,'flags',0L),'soundLevel',
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
