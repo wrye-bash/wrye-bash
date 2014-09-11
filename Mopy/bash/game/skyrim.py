@@ -3839,6 +3839,25 @@ class MreClfm(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreClmt(MelRecord):
+    """Climate"""
+    classType = 'CLMT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelGroups('weatherTypes',
+            MelStruct('WLST','IiI',(FID,'weather',None),'chance',(FID,'global',None),),
+            ),
+        MelLString('FNAM','sunPath'),
+        MelLString('GNAM','glarePath'),
+        MelModel(),
+        MelStruct('TNAM','6B','riseBegin','riseEnd','setBegin','setEnd',
+                  'volatility','phaseLength',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
