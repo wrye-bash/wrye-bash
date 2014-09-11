@@ -5839,6 +5839,7 @@ class MreMgef(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
@@ -5848,23 +5849,16 @@ class MreMisc(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelIcons(),
+        MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
         MelStruct('DATA','=If','value','weight'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# If VMAD correct then Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
