@@ -5684,8 +5684,31 @@ class MreLvsp(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
+class MreMato(MelRecord):
+    """Material Object Records"""
+    classType = 'MATO'
+
+    MatoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'singlePass'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelGroups('wordsOfPower',
+            MelBase('DNAM','propertyData',),
+            ),
+        MelStruct('DATA','11fI','falloffScale','falloffBias','noiseUVScale',
+                  'materialUVScale','projectionVectorX','projectionVectorY',
+                  'projectionVectorZ','normalDampener',
+                  'singlePassColor','singlePassColor',
+                  'singlePassColor',(MatoTypeFlags,'flags',0L),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
