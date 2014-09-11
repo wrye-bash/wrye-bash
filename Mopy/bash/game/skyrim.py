@@ -27,9 +27,10 @@
 
 import struct
 from .. import brec
-from .. import bolt
-from ..bolt import _encode
 from ..brec import *
+from .. import bolt
+from ..bolt import Flags, DataDict, StateError, _unicode, _encode
+from .. import bush
 from skyrim_const import bethDataFiles, allBethFiles
 
 import itertools
