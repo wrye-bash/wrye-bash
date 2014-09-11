@@ -32,7 +32,7 @@ from ...bolt import StateError, Flags, BoltError, sio
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, MelOptStruct, \
-    MelFids
+    MelFids, MreHeaderBase, MelBase, MelUnicode
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from oblivion_const import allConditions, fid1Conditions, fid2Conditions
 
@@ -359,3 +359,22 @@ class MelScrxen(MelFids):
             if isFid:
                 result = function(value)
                 if save: scrxen[index] = (isFid,result)
+
+# Oblivion Records ------------------------------------------------------------
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreHeader(MreHeaderBase):
+    """TES4 Record.  File header."""
+    classType = 'TES4'
+
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelBase('DELE','dele_p',),  #--Obsolete?
+        MelUnicode('CNAM','author',u'',512),
+        MelUnicode('SNAM','description',u'',512),
+        MreHeaderBase.MelMasterName('MAST','masters'),
+        MelNull('DATA'),
+        )
+    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()

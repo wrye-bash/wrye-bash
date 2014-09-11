@@ -1508,25 +1508,6 @@ from records import * # MUST BE HERE otherwise all hell breaks loose
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Oblivion Records ------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MreHeader(MreHeaderBase):
-    """TES4 Record.  File header."""
-    classType = 'TES4'
-
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',),  #--Obsolete?
-        MelBase('DELE','dele_p',),  #--Obsolete?
-        MelUnicode('CNAM','author',u'',512),
-        MelUnicode('SNAM','description',u'',512),
-        MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'),
-        )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreAchr(MelRecord): # Placed NPC
     classType = 'ACHR'
     _flags = bolt.Flags(0L,bolt.Flags.getNames('oppositeParent'))
