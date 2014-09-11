@@ -5486,6 +5486,45 @@ class MreLctn(MelRecord):
 
 # Verified for 305, not mergable
 #------------------------------------------------------------------------------
+class MelLgtmData(MelStruct):
+    def __init__(self,type='DALC'):
+        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
+            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+            'fresnelPower' # Fresnel Power
+        )
+
+class MreLgtm(MelRecord):
+    """Lgtm Item"""
+    classType = 'LGTM'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # 92 Bytes
+        # WindhelmLightingTemplate [LGTM:0007BA87] unknown1 only 24 Bytes
+        MelStruct('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+            'redLigh','greenLigh','blueLigh','unknownLigh',
+            'redDirect','greenDirect','blueDirect','unknownDirect',
+            'redFog','greenFog','blueFog','unknownFog',
+            'fogNear','fogFar',
+            'dirRotXY','dirRotZ',
+            'directionalFade','fogClipDist','fogPower',
+            'unknown1'
+            'redFogFar','greenFogFar','blueFogFar','unknownFogFar',
+            'fogMax',
+            'lightFaceStart','lightFadeEnd',
+            'unknown2',),
+        # 32 Bytes
+        MelLgtmData(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
 
