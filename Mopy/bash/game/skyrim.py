@@ -3555,6 +3555,72 @@ class MreBook(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['modb']
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreBptd(MelRecord):
+    """Body part data record."""
+    classType = 'BPTD'
+
+    # BPND has two wbEnum in TES5Edit
+    # for 'actorValue' refer to wbActorValueEnum
+    # 'bodyPartType' is defined as follows
+    # 0 :'Torso',
+    # 1 :'Head',
+    # 2 :'Eye',
+    # 3 :'LookAt',
+    # 4 :'Fly Grab',
+    # 5 :'Saddle'
+
+    _flags = Flags(0L,Flags.getNames('severable','ikData','ikBipedData',
+        'explodable','ikIsHead','ikHeadtracking','toHitChanceAbsolute'))
+    class MelBptdGroups(MelGroups):
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            if type == self.type0:
+                target = self.getDefault()
+                record.__getattribute__(self.attr).append(target)
+            else:
+                targets = record.__getattribute__(self.attr)
+                if targets:
+                    target = targets[-1]
+                elif type == 'BPNN': # for NVVoidBodyPartData, NVraven02
+                    target = self.getDefault()
+                    record.__getattribute__(self.attr).append(target)
+            slots = []
+            for element in self.elements:
+                slots.extend(element.getSlotsUsed())
+            target.__slots__ = slots
+            self.loaders[type].loadData(target,ins,type,size,readId)
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelBptdGroups('bodyParts',
+            MelString('BPTN','partName'),
+            MelString('PNAM','poseMatching'),
+            MelString('BPNN','nodeName'),
+            MelString('BPNT','vatsTarget'),
+            MelString('BPNI','ikDataStartNode'),
+            MelStruct('BPND','f3Bb2BH2I2fi2I7f2I2B2sf','damageMult',
+                      (_flags,'flags'),'partType','healthPercent','actorValue',
+                      'toHitChance','explodableChancePercent',
+                      'explodableDebrisCount',(FID,'explodableDebris',0L),
+                      (FID,'explodableExplosion',0L),'trackingMaxAngle',
+                      'explodableDebrisScale','severableDebrisCount',
+                      (FID,'severableDebris',0L),(FID,'severableExplosion',0L),
+                      'severableDebrisScale','goreEffectPosTransX',
+                      'goreEffectPosTransY','goreEffectPosTransZ',
+                      'goreEffectPosRotX','goreEffectPosRotY','goreEffectPosRotZ',
+                      (FID,'severableImpactDataSet',0L),
+                      (FID,'explodableImpactDataSet',0L),'severableDecalCount',
+                      'explodableDecalCount',('unused',null2),
+                      'limbReplacementScale'),
+            MelString('NAM1','limbReplacementModel'),
+            MelString('NAM4','goreEffectsTargetBone'),
+            MelBase('NAM5','textureFilesHashes'),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
