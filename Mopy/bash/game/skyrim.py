@@ -3825,6 +3825,20 @@ class MreClas(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreClfm(MelRecord):
+    """Clfm Item"""
+    classType = 'CLFM'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelColorN(),
+        # 'playable' is a Boolean value
+        MelStruct('FNAM','I','playable'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
