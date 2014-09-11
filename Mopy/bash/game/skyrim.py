@@ -5731,6 +5731,34 @@ class MreMatt(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreMesg(MelRecord):
+    """Message Record."""
+    classType = 'MESG'
+
+    MesgTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'messageBox'),
+            (1, 'autoDisplay'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('DESC','description'),
+        MelLString('FULL','full'),
+        # 'INAM' leftover
+        MelFid('INAM','iconUnused'),
+        MelFid('QNAM','materialParent'),
+        MelStruct('DNAM','I',(MesgTypeFlags,'flags',0L),),
+        # Don't Show
+        MelStruct('TNAM','I','displayTime',),
+        MelGroups('menuButtons',
+            MelLString('ITXT','buttonText'),
+            MelConditions(),
+            ),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
