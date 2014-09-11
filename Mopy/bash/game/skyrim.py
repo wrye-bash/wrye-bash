@@ -28,6 +28,7 @@
 import struct
 from .. import brec
 from .. import bolt
+from .. import bush
 from ..bolt import _encode
 from ..brec import *
 from skyrim_const import bethDataFiles, allBethFiles
@@ -1713,15 +1714,20 @@ patchers = (
 # For ListsMerger
 listTypes = ('LVLI','LVLN','LVSP',)
 
-namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
+namesTypes = set(('ACTI', 'ALCH', 'AMMO', 'ARMO', 'APPA', 'MISC',))
+pricesTypes = {'ALCH':{},'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
 statsTypes = {
+            'ALCH':('eid', 'weight', 'value'),
             'AMMO':('eid', 'value', 'damage'),
             'ARMO':('eid', 'weight', 'value', 'armorRating'),
             'APPA':('eid', 'weight', 'value'),
             'MISC':('eid', 'weight', 'value'),
             }
 statsHeaders = (
+                #--Alch
+                (u'ALCH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Ammo
                 (u'AMMO',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
@@ -2524,9 +2530,6 @@ class MelMODS(MelBase):
             if save: record.__setattr__(attr,data)
 
 #-------------------------------------------------------------------------------
-
-# Verified Correct for Skyrim
-#-------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
     typeSets = {
@@ -2550,6 +2553,18 @@ class MelModel(MelGroup):
         """Sets debug flag on self."""
         for element in self.elements[:2]: element.debug(on)
         return self
+
+#------------------------------------------------------------------------------
+class MelEffects(MelGroups):
+    """Represents ingredient/potion/enchantment/spell effects."""
+
+    def __init__(self,attr='effects'):
+        """Initialize elements."""
+        MelGroups.__init__(self,attr,
+            MelFid('EFID','baseEffect'),
+            MelStruct('EFIT','f2I','magnitude','area','duration',),
+            MelConditions(),
+            )
 
 #-------------------------------------------------------------------------------
 class MelConditions(MelStructs):
@@ -2619,6 +2634,63 @@ class MelConditions(MelStructs):
                 result = function(target.reference)
                 if save: target.reference = result
 
+#-------------------------------------------------------------------------------
+class MreHasEffects:
+    """Mixin class for magic items."""
+    def getEffects(self):
+        """Returns a summary of effects. Useful for alchemical catalog."""
+        effects = []
+        avEffects = bush.genericAVEffects
+        effectsAppend = effects.append
+        for effect in self.effects:
+            mgef, actorValue = effect.name, effect.actorValue
+            if mgef not in avEffects:
+                actorValue = 0
+            effectsAppend((mgef,actorValue))
+        return effects
+
+    def getSpellSchool(self,mgef_school=bush.mgef_school):
+        """Returns the school based on the highest cost spell effect."""
+        spellSchool = [0,0]
+        for effect in self.effects:
+            school = mgef_school[effect.name]
+            effectValue = bush.mgef_basevalue[effect.name]
+            if effect.magnitude:
+                effectValue *=  effect.magnitude
+            if effect.area:
+                effectValue *=  (effect.area/10)
+            if effect.duration:
+                effectValue *=  effect.duration
+            if spellSchool[0] < effectValue:
+                spellSchool = [effectValue,school]
+        return spellSchool[1]
+
+    def getEffectsSummary(self,mgef_school=None,mgef_name=None):
+        """Return a text description of magic effects."""
+        mgef_school = mgef_school or bush.mgef_school
+        mgef_name = mgef_name or bush.mgef_name
+        with bolt.sio() as buff:
+            avEffects = bush.genericAVEffects
+            aValues = bush.actorValues
+            buffWrite = buff.write
+            if self.effects:
+                school = self.getSpellSchool(mgef_school)
+                buffWrite(bush.actorValues[20+school] + u'\n')
+        for index,effect in enumerate(self.effects):
+            if effect.scriptEffect:
+                effectName = effect.scriptEffect.full or u'Script Effect'
+            else:
+                effectName = mgef_name[effect.name]
+                if effect.name in avEffects:
+                    effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
+                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
+                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
+                if effect.area: buffWrite(u' %sa'%effect.area)
+                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
+                buffWrite(u'\n')
+        return buff.getvalue()
+
+#-------------------------------------------------------------------------------
 # Skyrim Records ---------------------------------------------------------------
 #-------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
@@ -2693,6 +2765,77 @@ class MreAddn(MelRecord):
         MelBase('DATA','data_p'),
         MelOptStruct('SNAM','I',(FID,'ambientSound')),
         MelBase('DNAM','addnFlags'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+#------------------------------------------------------------------------------
+class MreAlch(MelRecord,MreHasEffects):
+    """Ingestible"""
+    classType = 'ALCH'
+
+    # {0x00000001} 'No Auto-Calc (Unused)',
+    # {0x00000002} 'Food Item',
+    # {0x00000004} 'Unknown 3',
+    # {0x00000008} 'Unknown 4',
+    # {0x00000010} 'Unknown 5',
+    # {0x00000020} 'Unknown 6',
+    # {0x00000040} 'Unknown 7',
+    # {0x00000080} 'Unknown 8',
+    # {0x00000100} 'Unknown 9',
+    # {0x00000200} 'Unknown 10',
+    # {0x00000400} 'Unknown 11',
+    # {0x00000800} 'Unknown 12',
+    # {0x00001000} 'Unknown 13',
+    # {0x00002000} 'Unknown 14',
+    # {0x00004000} 'Unknown 15',
+    # {0x00008000} 'Unknown 16',
+    # {0x00010000} 'Medicine',
+    # {0x00020000} 'Poison'
+    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'noAutoCalcUnused'),
+        (1, 'foodItem'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'unknown7'),
+        (7, 'unknown8'),
+        (8, 'unknown9'),
+        (9, 'unknown10'),
+        (10, 'unknown11'),
+        (11, 'unknown12'),
+        (12, 'unknown13'),
+        (13, 'unknown14'),
+        (14, 'unknown15'),
+        (15, 'unknown16'),
+        (16, 'medicine'),
+        (17, 'poison'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelLString('DESC','description'),
+        MelModel(),
+        MelBase('DEST','dest_p'),
+        MelGroups('destructionData',
+            MelBase('DSTD','dstd_p'),
+            MelModel('model','DMDL'),
+            ),
+        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelString('ICON','icon'),
+        MelString('MICO','mico_n'),
+        MelOptStruct('YNAM','I',(FID,'pickupSound')),
+        MelOptStruct('ZNAM','I',(FID,'dropSound')),
+        MelOptStruct('ETYP','I',(FID,'equipType')),
+        MelStruct('DATA','f','weight'),
+        MelStruct('ENIT','i2IfI','value',(IngestibleFlags,'flags',0L),
+                  'addiction','addictionChance','soundConsume',),
+        MelEffects(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -3093,6 +3236,84 @@ class MreLvsp(MreLeveledList):
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
+class MreMgef(MelRecord):
+    """Mgef Item"""
+    classType = 'MGEF'
+
+    # MGEF has many wbEnum in TES5Edit
+    # 'magicSkill', 'resistValue', 'mgefArchtype',
+    # 'actorValue', 'castingType', 'delivery', 'secondActorValue'
+    # 'castingSoundLevel', 'soundType'
+    # refer to TES5Edit for values
+
+    MgefGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'hostile'),
+            (1, 'recover'),
+            (2, 'detrimental'),
+            (3, 'snaptoNavmesh'),
+            (4, 'noHitEvent'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'dispellwithKeywords'),
+            (9, 'noDuration'),
+            (10, 'noMagnitude'),
+            (11, 'noArea'),
+            (12, 'fXPersist'),
+            (13, 'unknown14'),
+            (14, 'goryVisuals'),
+            (15, 'hideinUI'),
+            (16, 'unknown17'),
+            (17, 'noRecast'),
+            (18, 'unknown19'),
+            (19, 'unknown20'),
+            (20, 'unknown21'),
+            (21, 'powerAffectsMagnitude'),
+            (22, 'powerAffectsDuration'),
+            (23, 'unknown24'),
+            (24, 'unknown25'),
+            (25, 'unknown26'),
+            (26, 'painless'),
+            (27, 'noHitEffect'),
+            (28, 'noDeathDispel'),
+            (29, 'unknown30'),
+            (30, 'unknown31'),
+            (31, 'unknown32'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelLString('FULL','full'),
+        MelFid('MDOB','harvestIngredient'),
+        MelNull('KSIZ'),
+        MelKeywords('KWDA','keywords'),
+        MelStruct('DATA','IfIiiH2sIfIIIIffffIiIIIIiIIIfIfI4s4sIIIIff',
+            (MgefGeneralFlags,'flags',0L),'baseCost',(FID,'assocItem'),
+            'magicSkill','resistValue',
+            # 'counterEffectCount' is a count of ESCE records
+            'counterEffectCount',
+            'unknown1',(FID,'castingLight'),'taperWeight',(FID,'hitShader'),
+            (FID,'enchantShader'),'minimumSkillLevel','spellmakingArea',
+            'spellmakingCastingTime','taperCurve','taperDuration',
+            'secondAvWeight','mgefArchtype','actorValue',(FID,'projectile'),
+            (FID,'explosion'),'castingType','delivery','secondActorValue',
+            (FID,'castingArt'),(FID,'hitEffectArt'),(FID,'impactData'),
+            'skillUsageMultiplier',(FID,'dualCastingArt'),'dualCastingScale',
+            (FID,'enchantArt'),'unknown2','unknown3',(FID,'equipAbility'),
+            (FID,'imageSpaceModifier'),(FID,'perkToApply'),'castingSoundLevel',
+            'scriptEffectAiScore','scriptEffectAiDelayTime',),
+        MelGroups('counterEffects',
+            MelOptStruct('ESCE','I',(FID,'counterEffectCode',0)),),
+        MelStructA('SNDD','2I','sounds','soundType',(FID,'sound')),
+        MelLString('DNAM','magicItemDescription'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified Correct for Skyrim 1.8
+# DATA needs an updating counter
+#------------------------------------------------------------------------------
 class MreMisc(MelRecord):
     """Misc. Item"""
     classType = 'MISC'
@@ -3124,7 +3345,7 @@ class MreMisc(MelRecord):
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
         MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreLvsp, MreMisc, MreAlch, MreMgef,
     )
 
 #--Extra read/write classes
@@ -3143,7 +3364,7 @@ def init():
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
         MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreLvsp, MreMisc, MreAlch, MreMgef,
         MreHeader,
         ))
 
