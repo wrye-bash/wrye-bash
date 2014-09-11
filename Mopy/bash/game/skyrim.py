@@ -5971,6 +5971,93 @@ class MreNavi(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305, Not Mergable - FormIDs unaccounted for
+#------------------------------------------------------------------------------
+class MreNavm(MelRecord):
+    """Navigation Mesh"""
+    classType = 'NAVM'
+
+    # 'Edge 0-1 link',
+    # 'Edge 1-2 link',
+    # 'Edge 2-0 link',
+    # 'Unknown 4',
+    # 'Unknown 5',
+    # 'Unknown 6',
+    # 'Preferred',
+    # 'Unknown 8',
+    # 'Unknown 9',
+    # 'Water',
+    # 'Door',
+    # 'Found',
+    # 'Unknown 13',
+    # 'Unknown 14',
+    # 'Unknown 15',
+    # 'Unknown 16'
+    NavmTrianglesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'edge01link'),
+            (1, 'edge12link'),
+            (2, 'edge20link'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'preferred'),
+            (7, 'unknown8'),
+            (8, 'unknown9'),
+            (9, 'water'),
+            (10, 'door'),
+            (11, 'found'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    # 'Edge 0-1 wall',
+    # 'Edge 0-1 ledge cover',
+    # 'Unknown 3',
+    # 'Unknown 4',
+    # 'Edge 0-1 left',
+    # 'Edge 0-1 right',
+    # 'Edge 1-2 wall',
+    # 'Edge 1-2 ledge cover',
+    # 'Unknown 9',
+    # 'Unknown 10',
+    # 'Edge 1-2 left',
+    # 'Edge 1-2 right',
+    # 'Unknown 13',
+    # 'Unknown 14',
+    # 'Unknown 15',
+    # 'Unknown 16'
+    NavmCoverFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'edge01wall'),
+            (1, 'edge01ledgecover'),
+            (2, 'unknown3'),
+            (3, 'unknown4'),
+            (4, 'edge01left'),
+            (5, 'edge01right'),
+            (6, 'edge12wall'),
+            (7, 'edge12ledgecover'),
+            (8, 'unknown9'),
+            (9, 'unknown10'),
+            (10, 'edge12left'),
+            (11, 'edge12right'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # NVNM, ONAM, PNAM, NNAM would need special routines to handle them
+        # If no mitigation is needed, then leave it as MelBase
+        MelBase('NVNM','navMeshGeometry'),
+        MelBase('ONAM','onam_p'),
+        MelBase('PNAM','pnam_p'),
+        MelBase('NNAM','nnam_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, Not Mergable - FormIDs unaccounted for
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
