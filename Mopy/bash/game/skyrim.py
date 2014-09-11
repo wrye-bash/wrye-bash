@@ -3275,14 +3275,24 @@ class MreAppa(MelRecord):
 # Verified for 305
 #------------------------------------------------------------------------------
 class MreArma(MelRecord):
-    """Armor addon?"""
+    """Armor addon record."""
     classType = 'ARMA'
+
+    # {0x01} 'Unknown 0',
+    # {0x02} 'Enabled'
+    WeightSliderFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'unknown0'),
+            (1, 'enabled'),
+        ))
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBipedObjectData(),
         MelFid('RNAM','race'),
-        MelBase('DNAM','dnam_p'),
+        MelStruct('DNAM','4B2sBsf','malePriority','femalePriority',
+                  (WeightSliderFlags,'maleFlags',0L),
+                  (WeightSliderFlags,'femaleFlags',0L),
+                  'unknown','detectionSoundValue','unknown','weaponAdjust',),
         MelModel('male_model','MOD2'),
         MelModel('female_model','MOD3'),
         MelModel('male_model_1st','MOD4'),
@@ -3297,7 +3307,7 @@ class MreArma(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreArmo(MelRecord):
     """Armor"""
