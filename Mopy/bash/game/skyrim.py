@@ -5104,6 +5104,131 @@ class MreInfo(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreImad(MelRecord):
+    """Image Space Adapter"""
+    classType = 'IMAD'
+
+    # {0x00000001}'Use Target',
+    # {0x00000002}'Unknown 2',
+    # {0x00000004}'Unknown 3',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Unknown 5',
+    # {0x00000020}'Unknown 6',
+    # {0x00000040}'Unknown 7',
+    # {0x00000080}'Unknown 8',
+    # {0x00000100}'Mode - Front',
+    # {0x00000200}'Mode - Back',
+    # {0x00000400}'No Sky',
+    # {0x00000800}'Blur Radius Bit 2',
+    # {0x00001000}'Blur Radius Bit 1',
+    # {0x00002000}'Blur Radius Bit 0'
+    ImadDoFFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useTarget'),
+            (1, 'unknown2'),
+            (2, 'unknown3'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'modeFront'),
+            (9, 'modeBack'),
+            (10, 'noSky'),
+            (11, 'blurRadiusBit2'),
+            (12, 'blurRadiusBit1'),
+            (13, 'blurRadiusBit0'),
+        ))
+
+    ImadUseTargetFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useTarget'),
+        ))
+
+    ImadAnimatableFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'animatable'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # 'unknown1' is 192 bytes in TES5Edit
+        # 'unknown2' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
+        # MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
+        #           'unknown1',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
+        #           'radialBlurCenterY','unknown2',(ImadDoFFlags,'dofFlags',0L),),
+        MelBase('DNAM','data',),
+        # Blur
+        MelStruct('BNAM','2f','blurUnknown','blurRadius',dumpExtra='unknownExtra2',),
+        # Double Vision
+        MelStruct('VNAM','2f','dvUnknown','dvStrength',dumpExtra='unknownExtra3',),
+        # Cinematic Colors
+        MelStruct('TNAM','5f','unknown','tintRed','tintGreen','tintBlue',
+                  'tintAlpha',dumpExtra='unknownExtra4',),
+        MelStruct('NAM3','5f','unknown','fadeRed','fadeGreen','fadeBlue',
+                  'fadeAlpha',dumpExtra='unknownExtra5',),
+        # {<<<< Begin Radial Blur >>>>}
+        MelStruct('RNAM','2f','unknown','strength',dumpExtra='unknownExtra6',),
+        MelStruct('SNAM','2f','unknown','rampup',dumpExtra='unknownExtra7',),
+        MelStruct('UNAM','2f','unknown','start',dumpExtra='unknownExtra8',),
+        MelStruct('NAM1','2f','unknown','rampdown',dumpExtra='unknownExtra9',),
+        MelStruct('NAM2','2f','unknown','downstart',dumpExtra='unknownExtra10',),
+        # {<<<< End Radial Blur >>>>}
+        # {<<<< Begin Depth of Field >>>>}
+        MelStruct('WNAM','2f','unknown','strength',dumpExtra='unknownExtra11',),
+        MelStruct('XNAM','2f','unknown','distance',dumpExtra='unknownExtra12',),
+        MelStruct('YNAM','2f','unknown','range',dumpExtra='unknownExtra13',),
+        # {<<<< FullScreen Motion Blur >>>>}
+        MelStruct('NAM4','2f','unknown','strength',dumpExtra='unknownExtra14',),
+        # {<<<< End Depth of Field >>>>}
+        # {<<<< Begin HDR >>>>}
+        MelStruct('\x00IAD','2f','unknown','multiply',dumpExtra='unknownExtra15',),
+        MelStruct('\x40IAD','2f','unknown','add',dumpExtra='unknownExtra16',),
+        MelStruct('\x01IAD','2f','unknown','multiply',dumpExtra='unknownExtra17',),
+        MelStruct('\x41IAD','2f','unknown','add',dumpExtra='unknownExtra18',),
+        MelStruct('\x02IAD','2f','unknown','multiply',dumpExtra='unknownExtra19',),
+        MelStruct('\x42IAD','2f','unknown','add',dumpExtra='unknownExtra20',),
+        MelStruct('\x03IAD','2f','unknown','multiply',dumpExtra='unknownExtra21',),
+        MelStruct('\x43IAD','2f','unknown','add',dumpExtra='unknownExtra22',),
+        MelStruct('\x04IAD','2f','unknown','multiply',dumpExtra='unknownExtra23',),
+        MelStruct('\x44IAD','2f','unknown','add',dumpExtra='unknownExtra24',),
+        MelStruct('\x05IAD','2f','unknown','multiply',dumpExtra='unknownExtra25',),
+        MelStruct('\x45IAD','2f','unknown','add',dumpExtra='unknownExtra26',),
+        MelStruct('\x06IAD','2f','unknown','multiply',dumpExtra='unknownExtra27',),
+        MelStruct('\x46IAD','2f','unknown','add',dumpExtra='unknownExtra28',),
+        MelStruct('\x07IAD','2f','unknown','multiply',dumpExtra='unknownExtra29',),
+        MelStruct('\x47IAD','2f','unknown','add',dumpExtra='unknownExtra30',),
+        # {<<<< End HDR >>>>}
+        MelBase('\x08IAD','isd08IAD_p'),
+        MelBase('\x48IAD','isd48IAD_p'),
+        MelBase('\x09IAD','isd09IAD_p'),
+        MelBase('\x49IAD','isd49IAD_p'),
+        MelBase('\x0AIAD','isd0aIAD_p'),
+        MelBase('\x4AIAD','isd4aIAD_p'),
+        MelBase('\x0BIAD','isd0bIAD_p'),
+        MelBase('\x4BIAD','isd4bIAD_p'),
+        MelBase('\x0CIAD','isd0cIAD_p'),
+        MelBase('\x4CIAD','isd4cIAD_p'),
+        MelBase('\x0DIAD','isd0dIAD_p'),
+        MelBase('\x4DIAD','isd4dIAD_p'),
+        MelBase('\x0EIAD','isd0eIAD_p'),
+        MelBase('\x4EIAD','isd4eIAD_p'),
+        MelBase('\x0FIAD','isd0fIAD_p'),
+        MelBase('\x4FIAD','isd4fIAD_p'),
+        MelBase('\x10IAD','isd10IAD_p'),
+        MelBase('\x50IAD','isd50IAD_p'),
+        # {<<<< Begin Cinematic >>>>}
+        MelStruct('\x11IAD','2f','unknown','multiply',dumpExtra='unknownExtra31',),
+        MelStruct('\x51IAD','2f','unknown','add',dumpExtra='unknownExtra32',),
+        MelStruct('\x12IAD','2f','unknown','multiply',dumpExtra='unknownExtra33',),
+        MelStruct('\x52IAD','2f','unknown','add',dumpExtra='unknownExtra34',),
+        MelStruct('\x13IAD','2f','unknown','multiply',dumpExtra='unknownExtra35',),
+        MelStruct('\x53IAD','2f','unknown','add',dumpExtra='unknownExtra36',),
+        # {<<<< End Cinematic >>>>}
+        MelBase('\x14IAD','isd14IAD_p'),
+        MelBase('\x54IAD','isd54IAD_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
