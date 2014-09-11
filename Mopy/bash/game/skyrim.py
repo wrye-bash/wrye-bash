@@ -5616,8 +5616,9 @@ class MreLtex(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
-    """Skryim Leveled item/creature/spell list."""
+    """Skyrim Leveled item/creature/spell list."""
 
     class MelLevListLvlo(MelGroups):
         def __init__(self):
@@ -5648,7 +5649,7 @@ class MreLvli(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     classType = 'LVLN'
@@ -5659,6 +5660,7 @@ class MreLvln(MreLeveledList):
         MelBounds(),
         MelStruct('LVLD','B','chanceNone'),
         MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelOptStruct('LVLG','I',(FID,'glob')),
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
         MelString('MODL','model'),
@@ -5666,7 +5668,7 @@ class MreLvln(MreLeveledList):
         )
     __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     classType = 'LVSP'
