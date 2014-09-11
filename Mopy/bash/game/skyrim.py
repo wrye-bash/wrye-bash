@@ -3367,7 +3367,7 @@ class MreArto(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreAspc(MelRecord):
     """Aspc record (Acoustic Space)"""
@@ -3381,7 +3381,7 @@ class MreAspc(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreAstp(MelRecord):
     """Astp record (Association type)"""
@@ -3401,8 +3401,84 @@ class MreAstp(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
+class MreAvif(MelRecord):
+    """ActorValue Information record."""
+    classType = 'AVIF'
+
+    #--CNAM loader
+    class MelCnamLoaders(DataDict):
+        """Since CNAM subrecords occur in two different places, we need
+        to replace ordinary 'loaders' dictionary with a 'dictionary' that will
+        return the correct element to handle the CNAM subrecord. 'Correct'
+        element is determined by which other subrecords have been encountered."""
+        def __init__(self,loaders,actorinfo,perks):
+            self.data = loaders
+            self.type_cnam = {'EDID':actorinfo, 'SNAM':perks}
+            self.cnam = actorinfo #--Which cnam element loader to use next.
+        def __getitem__(self,key):
+            if key == 'CNAM': return self.cnam
+            self.cnam = self.type_cnam.get(key, self.cnam)
+            return self.data[key]
+
+    # unpack requires a string argument of length 16
+    # Error loading 'AVIF' record and/or subrecord: 00000450
+    # eid = u'AVSmithing'
+    # subrecord = 'CNAM'
+    # subrecord size = 4
+    # file pos = 1437112
+    # Error in Update.esm
+
+    # TypeError: __init__() takes exactly 4 arguments (5 given)
+
+    class MelAvifCnam(MelStructs):
+        """Handle older truncated CNAM for AVIF subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 16:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 4:
+                unpacked = ins.unpack('I',size,readId)
+            else:
+                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelLString('DESC','description'),
+        MelString('ANAM','abbreviation'),
+        MelBase('CNAM','cnam_p'),
+        MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult',
+                  'skillImproveOffset',),
+        MelGroups('perkTree',
+            MelFid('PNAM', 'perk',),
+            MelBase('FNAM','fnam_p'),
+            MelStruct('XNAM','I','perkGridX'),
+            MelStruct('YNAM','I','perkGridY'),
+            MelStruct('HNAM','f','horizontalPosition'),
+            MelStruct('VNAM','f','verticalPosition'),
+            MelFid('SNAM','associatedSkill',),
+            MelAvifCnam('CNAM','I','connections',
+                       'lineToIndex',),
+            MelStruct('INAM','I','index',),
+        ),
+    )
+    # melSet.loaders = MelCnamLoaders(melSet.loaders,*melSet.elements[4:7])
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.iconsIaM and record.cnam_p:
+            MelGroup.dumpData(self,record,out)
+
+# Verified for 305
 class MreCobj(MelRecord):
     """Constructible Object record (recipies)"""
     classType = 'COBJ'
