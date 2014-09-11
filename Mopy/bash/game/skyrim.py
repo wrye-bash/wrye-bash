@@ -7284,6 +7284,49 @@ class MreSmen(MelRecord):
         MelRecord.dumpData(self,out)
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreSmqn(MelRecord):
+    """Story Manager Quest Node"""
+    classType = 'SMQN'
+
+    # "Do all" = "Do all before repeating"
+    SmqnQuestFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'doAll'),
+        (1,'sharesEvent'),
+        (2,'numQuestsToRun'),
+    ))
+
+    SmqnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'Random'),
+        (1,'noChildWarn'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFid('PNAM','parent',),
+        MelFid('SNAM','child',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelStruct('DNAM','2H',(SmqnNodeFlags,'nodeFlags',0L),(SmqnQuestFlags,'questFlags',0L),),
+        MelStruct('XNAM','I','maxConcurrentQuests'),
+        MelStruct('MNAM','I','numQuestsToRun'),
+        MelStruct('QNAM','I','questCount'),
+        MelGroups('quests',
+            MelFid('NNAM','quest',),
+            MelBase('FNAM','fnam_p'),
+            MelStruct('RNAM','f','hoursUntilReset'),
+            )
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        quests = self.quests
+        self.questCount = len(quests) if quests else 0
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
