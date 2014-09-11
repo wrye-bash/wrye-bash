@@ -4870,6 +4870,438 @@ class MreGras(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreHazd(MelRecord):
+    """Hazard"""
+    classType = 'HAZD'
+
+    # {0x01} 'Affects Player Only',
+    # {0x02} 'Inherit Duration from Spawn Spell',
+    # {0x04} 'Align to Impact Normal',
+    # {0x08} 'Inherit Radius from Spawn Spell',
+    # {0x10} 'Drop to Ground'
+    HazdTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'affectsPlayerOnly'),
+        (1, 'inheritDurationFromSpawnSpell'),
+        (2, 'alignToImpactNormal'),
+        (3, 'inheritRadiusFromSpawnSpell'),
+        (4, 'dropToGround'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelFid('MNAM','imageSpaceModifier'),
+        MelStruct('DATA','I4f5I','limit','radius','lifetime',
+                  'imageSpaceRadius','targetInterval',(HazdTypeFlags,'flags',0L),
+                  (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreHdpt(MelRecord):
+    """Head Part"""
+    classType = 'HDPT'
+
+    # NAM0 has wbEnum in TES5Edit
+    # Assigned to 'headPartType' for WB
+    # 0 :'Race Morph',
+    # 1 :'Tri',
+    # 2 :'Chargen Morph'
+
+    # PNAM has wbEnum in TES5Edit
+    # Assigned to 'hdptTypes' for WB
+    # 0 :'Misc',
+    # 1 :'Face',
+    # 2 :'Eyes',
+    # 3 :'Hair',
+    # 4 :'Facial Hair',
+    # 5 :'Scar',
+    # 6 :'Eyebrows'
+
+    # {0x01} 'Playable',
+    # {0x02} 'Male',
+    # {0x04} 'Female',
+    # {0x10} 'Is Extra Part',
+    # {0x20} 'Use Solid Tint'
+    HdptTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'playable'),
+        (1, 'male'),
+        (2, 'female'),
+        (3, 'isExtraPart'),
+        (4, 'useSolidTint'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelStruct('DATA','B',(HdptTypeFlags,'flags',0L),),
+        MelStruct('PNAM','I','hdptTypes',),
+        MelFids('HNAM','extraParts'),
+        MelGroups('partsData',
+            MelStruct('NAM0','I','headPartType',),
+            MelString('NAM1','filename'),
+            ),
+        MelFid('TNAM','textureSet'),
+        MelFid('CNAM','color'),
+        MelFid('RNAM','validRaces'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreIdle(MelRecord):
+    """Idle record."""
+    classType = 'IDLE'
+
+    IdleTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'parent'),
+            (1, 'sequence'),
+            (2, 'noAttacking'),
+            (3, 'blocking'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelConditions(),
+        MelString('DNAM','filename'),
+        MelString('ENAM','animationEvent'),
+        MelGroups('idleAnimations',
+            MelStruct('ANAM','II',(FID,'parent'),(FID,'prevId'),),
+            ),
+        MelStruct('DATA','4BH','loopMin','loopMax',(IdleTypeFlags,'flags',0L),
+                  'animationGroupSection','replayDelay',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreIdlm(MelRecord):
+    """Idle marker record."""
+    classType = 'IDLM'
+
+    IdlmTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'runInSequence'),
+        (1, 'unknown1'),
+        (2, 'doOnce'),
+        (3, 'unknown3'),
+        (4, 'ignoredBySandbox'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('IDLF','B',(IdlmTypeFlags,'flags',0L),),
+        MelStruct('IDLC','B','animationCount',),
+        MelStruct('IDLT','f','idleTimerSetting'),
+        MelFidList('IDLA','animations'),
+        MelModel(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreInfo(MelRecord):
+    """Dialog response"""
+    classType = 'INFO'
+
+    # TRDT has wbEnum in TES5Edit
+    # Assigned to 'emotionType' for WB
+    # {0} 'Neutral',
+    # {1} 'Anger',
+    # {2} 'Disgust',
+    # {3} 'Fear',
+    # {4} 'Sad',
+    # {5} 'Happy',
+    # {6} 'Surprise',
+    # {7} 'Puzzled'
+
+    # CNAM has wbEnum in TES5Edit
+    # Assigned to 'favorLevel' for WB
+    # 0 :'None',
+    # 1 :'Small',
+    # 2 :'Medium',
+    # 3 :'Large'
+
+    # 'Use Emotion Animation'
+    InfoResponsesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useEmotionAnimation'),
+        ))
+
+    # {0x0001} 'Goodbye',
+    # {0x0002} 'Random',
+    # {0x0004} 'Say once',
+    # {0x0008} 'Unknown 4',
+    # {0x0010} 'Unknown 5',
+    # {0x0020} 'Random end',
+    # {0x0040} 'Invisible continue',
+    # {0x0080} 'Walk Away',
+    # {0x0100} 'Walk Away Invisible in Menu',
+    # {0x0200} 'Force subtitle',
+    # {0x0400} 'Can move while greeting',
+    # {0x0800} 'No LIP File',
+    # {0x1000} 'Requires post-processing',
+    # {0x2000} 'Audio Output Override',
+    # {0x4000} 'Spends favor points',
+    # {0x8000} 'Unknown 16'
+    EnamResponseFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'goodbye'),
+            (1, 'random'),
+            (2, 'sayonce'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'randomend'),
+            (6, 'invisiblecontinue'),
+            (7, 'walkAway'),
+            (8, 'walkAwayInvisibleinMenu'),
+            (9, 'forcesubtitle'),
+            (10, 'canmovewhilegreeting'),
+            (11, 'noLIPFile'),
+            (12, 'requirespostprocessing'),
+            (13, 'audioOutputOverride'),
+            (14, 'spendsfavorpoints'),
+            (15, 'unknown16'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBase('DATA','data_p'),
+        MelStruct('ENAM','2H',(EnamResponseFlags,'flags',0L),'resetHours',),
+        MelFid('TPIC','topic',),
+        MelFid('PNAM','prevInfo',),
+        MelStruct('CNAM','I','favorLevel',),
+        MelFids('TCLT','response',),
+        MelFid('DNAM','responseData',),
+        # {>>> Unordered, CTDA can appear before or after LNAM <- REQUIRES CONFIRMATION <<<}
+        MelGroups('responses',
+            MelStruct('TRDT','II4sB3sIB3s','emotionType','emotionValue',
+                      'unused','responsenumber','unused',(FID,'sound'),
+                      (InfoResponsesFlags,'flags',0L),'unused',),
+            MelLString('NAM1','responseText'),
+            MelString('NAM2','scriptNotes'),
+            MelString('NAM3','edits'),
+            MelFid('SNAM','idleAnimationsSpeaker',),
+            MelFid('LNAM','idleAnimationsListener',),
+            ),
+
+        MelConditions(),
+
+        MelGroups('leftOver',
+            MelBase('SCHR','unknown1'),
+            MelFid('QNAM','unknown2'),
+            MelNull('NEXT'),
+            ),
+        MelLString('RNAM','prompt'),
+        MelFid('ANAM','speaker',),
+        MelFid('TWAT','walkAwayTopic',),
+        MelFid('ONAM','audioOutputOverride',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreImad(MelRecord):
+    """Image Space Adapter"""
+    classType = 'IMAD'
+
+    # {0x00000001}'Use Target',
+    # {0x00000002}'Unknown 2',
+    # {0x00000004}'Unknown 3',
+    # {0x00000008}'Unknown 4',
+    # {0x00000010}'Unknown 5',
+    # {0x00000020}'Unknown 6',
+    # {0x00000040}'Unknown 7',
+    # {0x00000080}'Unknown 8',
+    # {0x00000100}'Mode - Front',
+    # {0x00000200}'Mode - Back',
+    # {0x00000400}'No Sky',
+    # {0x00000800}'Blur Radius Bit 2',
+    # {0x00001000}'Blur Radius Bit 1',
+    # {0x00002000}'Blur Radius Bit 0'
+    ImadDoFFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useTarget'),
+            (1, 'unknown2'),
+            (2, 'unknown3'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'modeFront'),
+            (9, 'modeBack'),
+            (10, 'noSky'),
+            (11, 'blurRadiusBit2'),
+            (12, 'blurRadiusBit1'),
+            (13, 'blurRadiusBit0'),
+        ))
+
+    ImadUseTargetFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useTarget'),
+        ))
+
+    ImadAnimatableFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'animatable'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # 'unknown1' is 192 bytes in TES5Edit
+        # 'unknown2' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
+        # MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
+        #           'unknown1',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
+        #           'radialBlurCenterY','unknown2',(ImadDoFFlags,'dofFlags',0L),),
+        MelBase('DNAM','data',),
+        # Blur
+        MelStruct('BNAM','2f','blurUnknown','blurRadius',dumpExtra='unknownExtra2',),
+        # Double Vision
+        MelStruct('VNAM','2f','dvUnknown','dvStrength',dumpExtra='unknownExtra3',),
+        # Cinematic Colors
+        MelStruct('TNAM','5f','unknown','tintRed','tintGreen','tintBlue',
+                  'tintAlpha',dumpExtra='unknownExtra4',),
+        MelStruct('NAM3','5f','unknown','fadeRed','fadeGreen','fadeBlue',
+                  'fadeAlpha',dumpExtra='unknownExtra5',),
+        # {<<<< Begin Radial Blur >>>>}
+        MelStruct('RNAM','2f','unknown','strength',dumpExtra='unknownExtra6',),
+        MelStruct('SNAM','2f','unknown','rampup',dumpExtra='unknownExtra7',),
+        MelStruct('UNAM','2f','unknown','start',dumpExtra='unknownExtra8',),
+        MelStruct('NAM1','2f','unknown','rampdown',dumpExtra='unknownExtra9',),
+        MelStruct('NAM2','2f','unknown','downstart',dumpExtra='unknownExtra10',),
+        # {<<<< End Radial Blur >>>>}
+        # {<<<< Begin Depth of Field >>>>}
+        MelStruct('WNAM','2f','unknown','strength',dumpExtra='unknownExtra11',),
+        MelStruct('XNAM','2f','unknown','distance',dumpExtra='unknownExtra12',),
+        MelStruct('YNAM','2f','unknown','range',dumpExtra='unknownExtra13',),
+        # {<<<< FullScreen Motion Blur >>>>}
+        MelStruct('NAM4','2f','unknown','strength',dumpExtra='unknownExtra14',),
+        # {<<<< End Depth of Field >>>>}
+        # {<<<< Begin HDR >>>>}
+        MelStruct('\x00IAD','2f','unknown','multiply',dumpExtra='unknownExtra15',),
+        MelStruct('\x40IAD','2f','unknown','add',dumpExtra='unknownExtra16',),
+        MelStruct('\x01IAD','2f','unknown','multiply',dumpExtra='unknownExtra17',),
+        MelStruct('\x41IAD','2f','unknown','add',dumpExtra='unknownExtra18',),
+        MelStruct('\x02IAD','2f','unknown','multiply',dumpExtra='unknownExtra19',),
+        MelStruct('\x42IAD','2f','unknown','add',dumpExtra='unknownExtra20',),
+        MelStruct('\x03IAD','2f','unknown','multiply',dumpExtra='unknownExtra21',),
+        MelStruct('\x43IAD','2f','unknown','add',dumpExtra='unknownExtra22',),
+        MelStruct('\x04IAD','2f','unknown','multiply',dumpExtra='unknownExtra23',),
+        MelStruct('\x44IAD','2f','unknown','add',dumpExtra='unknownExtra24',),
+        MelStruct('\x05IAD','2f','unknown','multiply',dumpExtra='unknownExtra25',),
+        MelStruct('\x45IAD','2f','unknown','add',dumpExtra='unknownExtra26',),
+        MelStruct('\x06IAD','2f','unknown','multiply',dumpExtra='unknownExtra27',),
+        MelStruct('\x46IAD','2f','unknown','add',dumpExtra='unknownExtra28',),
+        MelStruct('\x07IAD','2f','unknown','multiply',dumpExtra='unknownExtra29',),
+        MelStruct('\x47IAD','2f','unknown','add',dumpExtra='unknownExtra30',),
+        # {<<<< End HDR >>>>}
+        MelBase('\x08IAD','isd08IAD_p'),
+        MelBase('\x48IAD','isd48IAD_p'),
+        MelBase('\x09IAD','isd09IAD_p'),
+        MelBase('\x49IAD','isd49IAD_p'),
+        MelBase('\x0AIAD','isd0aIAD_p'),
+        MelBase('\x4AIAD','isd4aIAD_p'),
+        MelBase('\x0BIAD','isd0bIAD_p'),
+        MelBase('\x4BIAD','isd4bIAD_p'),
+        MelBase('\x0CIAD','isd0cIAD_p'),
+        MelBase('\x4CIAD','isd4cIAD_p'),
+        MelBase('\x0DIAD','isd0dIAD_p'),
+        MelBase('\x4DIAD','isd4dIAD_p'),
+        MelBase('\x0EIAD','isd0eIAD_p'),
+        MelBase('\x4EIAD','isd4eIAD_p'),
+        MelBase('\x0FIAD','isd0fIAD_p'),
+        MelBase('\x4FIAD','isd4fIAD_p'),
+        MelBase('\x10IAD','isd10IAD_p'),
+        MelBase('\x50IAD','isd50IAD_p'),
+        # {<<<< Begin Cinematic >>>>}
+        MelStruct('\x11IAD','2f','unknown','multiply',dumpExtra='unknownExtra31',),
+        MelStruct('\x51IAD','2f','unknown','add',dumpExtra='unknownExtra32',),
+        MelStruct('\x12IAD','2f','unknown','multiply',dumpExtra='unknownExtra33',),
+        MelStruct('\x52IAD','2f','unknown','add',dumpExtra='unknownExtra34',),
+        MelStruct('\x13IAD','2f','unknown','multiply',dumpExtra='unknownExtra35',),
+        MelStruct('\x53IAD','2f','unknown','add',dumpExtra='unknownExtra36',),
+        # {<<<< End Cinematic >>>>}
+        MelBase('\x14IAD','isd14IAD_p'),
+        MelBase('\x54IAD','isd54IAD_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreImgs(MelRecord):
+    """Imgs Item"""
+    classType = 'IMGS'
+
+    # DNAM has wbEnum in TES5Edit
+    # Assigned to 'skyBlurRadius' for WB
+    # 16384 :'Radius 0',
+    # 16672 :'Radius 1',
+    # 16784 :'Radius 2',
+    # 16848 :'Radius 3',
+    # 16904 :'Radius 4',
+    # 16936 :'Radius 5',
+    # 16968 :'Radius 6',
+    # 17000 :'Radius 7',
+    # 16576 :'No Sky, Radius 0',
+    # 16736 :'No Sky, Radius 1',
+    # 16816 :'No Sky, Radius 2',
+    # 16880 :'No Sky, Radius 3',
+    # 16920 :'No Sky, Radius 4',
+    # 16952 :'No Sky, Radius 5',
+    # 16984 :'No Sky, Radius 6',
+    # 17016 :'No Sky, Radius 7'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBase('ENAM','eman_p'),
+        MelStruct('HNAM','9f','eyeAdaptSpeed','bloomBlurRadius','bloomThreshold','bloomScale',
+                  'receiveBloomThreshold','white','sunlightScale','skyScale',
+                  'eyeAdaptStrength',),
+        MelStruct('CNAM','3f','Saturation','Brightness','Contrast',),
+        MelStruct('TNAM','4f','tintAmount','tintRed','tintGreen','tintBlue',),
+        MelStruct('DNAM','3f2sH','dofStrength','dofDistance','dofRange','unknown',
+                  'skyBlurRadius',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreIngr(MelRecord,MreHasEffects):
+    """INGR (ingredient) record."""
+    classType = 'INGR'
+
+    IngrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'No auto-calculation'),
+            (1, 'Food item'),
+            (2, 'Unknown 3'),
+            (3, 'Unknown 4'),
+            (4, 'Unknown 5'),
+            (5, 'Unknown 6'),
+            (6, 'Unknown 7'),
+            (7, 'Unknown 8'),
+            (8, 'References Persist'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelModel(),
+        MelIcons(),
+        MelFid('ETYP','equipmentType',),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelStruct('DATA','if','value','weight'),
+        MelStruct('ENIT','iI','ingrValue',(IngrTypeFlags,'flags',0L),),
+        MelEffects(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
