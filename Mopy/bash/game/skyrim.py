@@ -5403,6 +5403,17 @@ class MreKeym(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreKywd(MelRecord):
+    """Keyword record."""
+    classType = 'KYWD'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelColorN(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
