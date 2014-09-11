@@ -5525,6 +5525,61 @@ class MreLgtm(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light"""
+    classType = 'LIGH'
+
+    # {0x00000001} 'Dynamic',
+    # {0x00000002} 'Can be Carried',
+    # {0x00000004} 'Negative',
+    # {0x00000008} 'Flicker',
+    # {0x00000010} 'Unknown',
+    # {0x00000020} 'Off By Default',
+    # {0x00000040} 'Flicker Slow',
+    # {0x00000080} 'Pulse',
+    # {0x00000100} 'Pulse Slow',
+    # {0x00000200} 'Spot Light',
+    # {0x00000400} 'Shadow Spotlight',
+    # {0x00000800} 'Shadow Hemisphere',
+    # {0x00001000} 'Shadow Omnidirectional',
+    # {0x00002000} 'Portal-strict'
+    LighTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'dynamic'),
+            (1, 'canbeCarried'),
+            (2, 'negative'),
+            (3, 'flicker'),
+            (4, 'unknown'),
+            (5, 'offByDefault'),
+            (6, 'flickerSlow'),
+            (7, 'pulse'),
+            (8, 'pulseSlow'),
+            (9, 'spotLight'),
+            (10, 'shadowSpotlight'),
+            (11, 'shadowHemisphere'),
+            (12, 'shadowOmnidirectional'),
+            (13, 'portalstrict'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelVmad(),
+        MelBounds(),
+        MelModel(),
+        MelDestructible(),
+        MelLString('FULL','full'),
+        MelIcons(),
+        # fe = 'Flicker Effect'
+        MelStruct('DATA','iI4BI6fIf','duration','radius','red','green','blue',
+                  'unknown',(LighTypeFlags,'flags',0L),'falloffExponent','fov',
+                  'nearClip','fePeriod','feIntensityAmplitude',
+                  'feMovementAmplitude','value','weight',),
+        MelStruct('FNAM','f','fadevalue',),
+        MelFid('SNAM','sound'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreLeveledList(MreLeveledListBase):
     """Skryim Leveled item/creature/spell list."""
 
