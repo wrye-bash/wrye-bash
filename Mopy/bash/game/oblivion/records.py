@@ -1227,3 +1227,362 @@ class MreKeym(MelRecord):
 ##    )
 ##    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 #------------------------------------------------------------------------------
+class MreLigh(MelRecord):
+    """Light source record."""
+    classType = 'LIGH'
+    _flags = Flags(0L,Flags.getNames('dynamic','canTake','negative','flickers',
+        'unk1','offByDefault','flickerSlow','pulse','pulseSlow','spotLight','spotShadow'))
+    #--Mel NPC DATA
+    class MelLighData(MelStruct):
+        """Handle older truncated DATA for LIGH subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 32:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 24:
+                #--Else 24 byte record (skips value and weight...
+                unpacked = ins.unpack('iI3BsIff',size,readId)
+            else:
+                raise ModError(ins.inName,_('Unexpected size encountered for LIGH:DATA subrecord: %i') % size)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelModel(),
+        MelFid('SCRI','script'),
+        MelString('FULL','full'),
+        MelString('ICON','iconPath'),
+        MelLighData('DATA','iI3BsIffIf','duration','radius','red','green','blue',('unused1',null1),
+            (_flags,'flags',0L),'falloff','fov','value','weight'),
+        MelOptStruct('FNAM','f',('fade',None)),
+        MelFid('SNAM','sound'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreLscr(MelRecord):
+    """Load screen."""
+    classType = 'LSCR'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('ICON','iconPath'),
+        MelString('DESC','text'),
+        MelStructs('LNAM','2I2h','Locations',(FID,'direct'),(FID,'indirect'),'gridy','gridx'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreLtex(MelRecord):
+    """Landscape Texture."""
+    _flags = Flags(0L,Flags.getNames(
+        ( 0,'stone'),
+        ( 1,'cloth'),
+        ( 2,'dirt'),
+        ( 3,'glass'),
+        ( 4,'grass'),
+        ( 5,'metal'),
+        ( 6,'organic'),
+        ( 7,'skin'),
+        ( 8,'water'),
+        ( 9,'wood'),
+        (10,'heavyStone'),
+        (11,'heavyMetal'),
+        (12,'heavyWood'),
+        (13,'chain'),
+        (14,'snow'),))
+    classType = 'LTEX'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('ICON','iconPath'),
+        MelOptStruct('HNAM','3B',(_flags,'flags'),'friction','restitution'), ####flags are actually an enum....
+        MelOptStruct('SNAM','B','specular'),
+        MelFids('GNAM', 'grass'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreLvlc(MreLeveledList):
+    """LVLC record. Leveled list for creatures."""
+    classType = 'LVLC'
+    __slots__ = MreLeveledList.__slots__
+
+class MreLvli(MreLeveledList):
+    """LVLI record. Leveled list for items."""
+    classType = 'LVLI'
+    __slots__ = MreLeveledList.__slots__
+
+class MreLvsp(MreLeveledList):
+    """LVSP record. Leveled list for items."""
+    classType = 'LVSP'
+    __slots__ = MreLeveledList.__slots__
+
+class MreMgef(MelRecord):
+    """MGEF (magic effect) record."""
+    classType = 'MGEF'
+    #--Main flags
+    _flags = Flags(0L,Flags.getNames(
+        ( 0,'hostile'),
+        ( 1,'recover'),
+        ( 2,'detrimental'),
+        ( 3,'magnitude'),
+        ( 4,'self'),
+        ( 5,'touch'),
+        ( 6,'target'),
+        ( 7,'noDuration'),
+        ( 8,'noMagnitude'),
+        ( 9,'noArea'),
+        (10,'fxPersist'),
+        (11,'spellmaking'),
+        (12,'enchanting'),
+        (13,'noIngredient'),
+        (16,'useWeapon'),
+        (17,'useArmor'),
+        (18,'useCreature'),
+        (19,'useSkill'),
+        (20,'useAttr'),
+        (24,'useAV'),
+        (25,'sprayType'),
+        (26,'boltType'),
+        (27,'noHitEffect'),))
+
+    #--Mel NPC DATA
+    class MelMgefData(MelStruct):
+        """Handle older truncated DATA for DARK subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 64:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 36:
+                #--Else is data for DARK record, read it all.
+                unpacked = ins.unpack('IfIiiH2sIfI',size,readId)
+            else:
+                raise ModError(ins.inName,u'Unexpected size encountered for MGEF:DATA subrecord: %i' % size)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelString('DESC','text'),
+        MelString('ICON','iconPath'),
+        MelModel(),
+        MelMgefData('DATA','IfIiiH2sIf6I2f',
+            (_flags,'flags'),'baseCost',(FID,'associated'),'school','resistValue','numCounters',
+            ('unused1',null2),(FID,'light'),'projectileSpeed',(FID,'effectShader'),(FID,'enchantEffect',0),
+            (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),(FID,'areaSound',0),
+            ('cefEnchantment',0.0),('cefBarter',0.0)),
+        MelStructA('ESCE','4s','counterEffects','effect'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreMisc(MelRecord):
+    """MISC (miscellaneous item) record."""
+    classType = 'MISC'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelFid('SCRI','script'),
+        # DATA can have a FormID in it, this
+        # should be rewriten
+        MelStruct('DATA','if','value','weight'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+class MreNpc(MreActor):
+    """NPC Record. Non-Player Character."""
+    classType = 'NPC_'
+    #--Main flags
+    _flags = Flags(0L,Flags.getNames(
+        ( 0,'female'),
+        ( 1,'essential'),
+        ( 3,'respawn'),
+        ( 4,'autoCalc'),
+        ( 7,'pcLevelOffset'),
+        ( 9,'noLowLevel'),
+        (13,'noRumors'),
+        (14,'summonable'),
+        (15,'noPersuasion'),
+        (20,'canCorpseCheck'),))
+    #--AI Service flags
+    aiService = Flags(0L,Flags.getNames(
+        (0,'weapons'),
+        (1,'armor'),
+        (2,'clothing'),
+        (3,'books'),
+        (4,'ingredients'),
+        (7,'lights'),
+        (8,'apparatus'),
+        (10,'miscItems'),
+        (11,'spells'),
+        (12,'magicItems'),
+        (13,'potions'),
+        (14,'training'),
+        (16,'recharge'),
+        (17,'repair'),))
+    #--Mel NPC DATA
+    class MelNpcData(MelStruct):
+        """Convert npc stats into skills, health, attributes."""
+        def loadData(self,record,ins,type,size,readId):
+            unpacked = list(ins.unpack('=21BH2s8B',size,readId))
+            recordSetAttr = record.__setattr__
+            recordSetAttr('skills',unpacked[:21])
+            recordSetAttr('health',unpacked[21])
+            recordSetAttr('unused1',unpacked[22])
+            recordSetAttr('attributes',unpacked[23:])
+            if self._debug: print unpacked[:21],unpacked[21],unpacked[23:]
+        def dumpData(self,record,out):
+            """Dumps data from record to outstream."""
+            recordGetAttr = record.__getattribute__
+            values = recordGetAttr('skills')+[recordGetAttr('health')]+[recordGetAttr('unused1')]+recordGetAttr('attributes')
+            out.packSub(self.subType,'=21BH2s8B',*values)
+    #--Mel Set
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('FULL','full'),
+        MelModel(),
+        MelStruct('ACBS','=I3Hh2H',
+            (_flags,'flags',0L),'baseSpell','fatigue','barterGold',
+            ('level',1),'calcMin','calcMax'),
+        MelStructs('SNAM','=IB3s','factions',
+            (FID,'faction',None),'rank',('unused1','ODB')),
+        MelFid('INAM','deathItem'),
+        MelFid('RNAM','race'),
+        MelFids('SPLO','spells'),
+        MelFid('SCRI','script'),
+        MelStructs('CNTO','Ii','items',(FID,'item',None),('count',1)),
+        MelStruct('AIDT','=4BIbB2s',
+            ('aggression',5),('confidence',50),('energyLevel',50),('responsibility',50),
+            (aiService,'services',0L),'trainSkill','trainLevel',('unused1',null2)),
+        MelFids('PKID','aiPackages'),
+        MelStrings('KFFZ','animations'),
+        MelFid('CNAM','iclass'),
+        MelNpcData('DATA','',('skills',[0]*21),'health',('unused2',null2),('attributes',[0]*8)),
+        MelFid('HNAM','hair'),
+        MelOptStruct('LNAM','f',('hairLength',None)),
+        MelFid('ENAM','eye'), ####fid Array
+        MelStruct('HCLR','3Bs','hairRed','hairBlue','hairGreen',('unused3',null1)),
+        MelFid('ZNAM','combatStyle'),
+        MelBase('FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
+        MelBase('FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
+        MelBase('FGTS','fgts_p'), ####FaceGen Texture-Symmetric
+        MelStruct('FNAM','H','fnam'), ####Byte Array
+        )
+    __slots__ = MreActor.__slots__ + melSet.getSlotsUsed()
+
+    def setRace(self,race):
+        """Set additional race info."""
+        self.race = race
+        #--Model
+        if not self.model:
+            self.model = self.getDefault('model')
+        if race in (0x23fe9,0x223c7):
+            self.model.modPath = u"Characters\\_Male\\SkeletonBeast.NIF"
+        else:
+            self.model.modPath = u"Characters\\_Male\\skeleton.nif"
+        #--FNAM
+        fnams = {
+            0x23fe9 : 0x3cdc ,#--Argonian
+            0x224fc : 0x1d48 ,#--Breton
+            0x191c1 : 0x5472 ,#--Dark Elf
+            0x19204 : 0x21e6 ,#--High Elf
+            0x00907 : 0x358e ,#--Imperial
+            0x22c37 : 0x5b54 ,#--Khajiit
+            0x224fd : 0x03b6 ,#--Nord
+            0x191c0 : 0x0974 ,#--Orc
+            0x00d43 : 0x61a9 ,#--Redguard
+            0x00019 : 0x4477 ,#--Vampire
+            0x223c8 : 0x4a2e ,#--Wood Elf
+            }
+        self.fnam = fnams.get(race,0x358e)
+
+class MrePack(MelRecord):
+    """AI package record."""
+    classType = 'PACK'
+    _flags = Flags(0,Flags.getNames(
+        'offersServices','mustReachLocation','mustComplete','lockAtStart',
+        'lockAtEnd','lockAtLocation','unlockAtStart','unlockAtEnd',
+        'unlockAtLocation','continueIfPcNear','oncePerDay',None,
+        'skipFallout','alwaysRun',None,None,
+        None,'alwaysSneak','allowSwimming','allowFalls',
+        'unequipArmor','unequipWeapons','defensiveCombat','useHorse',
+        'noIdleAnims',))
+    class MelPackPkdt(MelStruct):
+        """Support older 4 byte version."""
+        def loadData(self,record,ins,type,size,readId):
+            if size != 4:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+            else:
+                record.flags,record.aiType,junk = ins.unpack('HBs',4,readId)
+                record.flags = MrePack._flags(record.flags)
+                record.unused1 = null3
+                if self._debug: print (record.flags.getTrueAttrs(),record.aiType,record.unused1)
+    class MelPackLT(MelStruct):
+        """For PLDT and PTDT. Second element of both may be either an FID or a long,
+        depending on value of first element."""
+        def hasFids(self,formElements):
+            formElements.add(self)
+        def dumpData(self,record,out):
+            if ((self.subType == 'PLDT' and (record.locType or record.locId)) or
+                (self.subType == 'PTDT' and (record.targetType or record.targetId))):
+                MelStruct.dumpData(self,record,out)
+        def mapFids(self,record,function,save=False):
+            """Applies function to fids. If save is true, then fid is set
+            to result of function."""
+            if self.subType == 'PLDT' and record.locType != 5:
+                result = function(record.locId)
+                if save: record.locId = result
+            elif self.subType == 'PTDT' and record.targetType != 2:
+                result = function(record.targetId)
+                if save: record.targetId = result
+    #--MelSet
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelPackPkdt('PKDT','IB3s',(_flags,'flags'),'aiType',('unused1',null3)),
+        MelPackLT('PLDT','iIi','locType','locId','locRadius'),
+        MelStruct('PSDT','2bBbi','month','day','date','time','duration'),
+        MelPackLT('PTDT','iIi','targetType','targetId','targetCount'),
+        MelConditions(),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+#------------------------------------------------------------------------------
+## See the comments on MreLand. Commented out for same reasons.
+##class MrePgrd(MelRecord):
+##    """Path grid structure. Part of cells."""
+##    ####Could probably be loaded via MelStructA,
+##    ####but little point since it is too complex to manipulate
+##    classType = 'PGRD'
+##    class MelPgrl(MelStructs):
+##        """Handler for pathgrid pgrl record."""
+##        def loadData(self,record,ins,type,size,readId):
+##            """Reads data from ins into record attribute."""
+##            if(size % 4 != 0):
+##                raise "Unexpected size encountered for pathgrid PGRL subrecord: %s" % size
+##            format = 'I' * (size % 4)
+##            attrs = self.attrs
+##            target = self.getDefault()
+##            record.__getattribute__(self.attr).append(target)
+##            target.__slots__ = self.attrs
+##            unpacked = ins.unpack(format,size,readId)
+##            setter = target.__setattr__
+##            map(setter,attrs,(unpacked[0], unpacked[1:]))
+##
+##        def dumpData(self,record,out):
+##            """Dumps data from record to outstream."""
+##            for target in record.__getattribute__(self.attr):
+##                out.packSub(self.subType,'I' + 'I'*(len(target.points)), target.reference, target.points)
+##
+##    melSet = MelSet(
+##        MelBase('DATA','data_p'),
+##        MelBase('PGRP','points_p'),
+##        MelBase('PGAG','pgag_p'),
+##        MelBase('PGRR','pgrr_p'),
+##        MelBase('PGRI','pgri_p'),
+##        MelPgrl('PGRL','','pgrl',(FID,'reference'),'points'),
+##    )
+##    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
