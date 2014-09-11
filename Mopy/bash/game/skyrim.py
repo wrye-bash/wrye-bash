@@ -3320,38 +3320,31 @@ class MreArmo(MelRecord):
         MelLString('FULL','full'),
         MelOptStruct('EITM','I',(FID,'enchantment')),
         MelOptStruct('EAMT','H','enchantmentAmount',),
-        MelModel(),
-        MelModel('model1','MOD2'),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelModel('model3','MOD4'),
-        MelString('ICO2','ico2_n'),
-        MelString('MIC2','mic2_n'),
+        MelModel('model2','MOD2'),
+        MelString('ICON','maleIconPath'),
+        MelString('MICO','maleSmallIconPath'),
+        MelModel('model4','MOD4'),
+        MelString('ICO2','femaleIconPath'),
+        MelString('MIC2','femaleSmallIconPath'),
         MelBipedObjectData(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
+        MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelString('BMCT','ragConTemp'), #Ragdoll Constraint Template
+        MelString('BMCT','ragdollTemplatePath'), #Ragdoll Constraint Template
         MelOptStruct('ETYP','I',(FID,'equipType')),
         MelOptStruct('BIDS','I',(FID,'bashImpact')),
         MelOptStruct('BAMT','I',(FID,'material')),
         MelOptStruct('RNAM','I',(FID,'race')),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
         MelLString('DESC','description'),
         MelFids('MODL','addons'),
-        MelStruct('DATA','=If','value','weight'),
-        MelStruct('DNAM','I','armorRating'),
-        MelFid('TNAM','baseItem'),
+        MelStruct('DATA','=if','value','weight'),
+        MelStruct('DNAM','i','armorRating'),
+        MelFid('TNAM','templateArmor'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified Correct for Skyrim 1.8
+# Verified for 305
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
     """Arto record (Art effect object)"""
