@@ -5860,6 +5860,463 @@ class MreMisc(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
+class MreMovt(MelRecord):
+    """Movt Item"""
+    classType = 'MOVT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelString('MNAM','mnam_n'),
+        MelStruct('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
+                  'forwardWalk','forwardRun','backWalk','backRun',
+                  'rotateInPlaceWalk','rotateInPlaceRun',
+                  'rotateWhileMovingRun'),
+        MelStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreMstt(MelRecord):
+    """Moveable static record."""
+    classType = 'MSTT'
+
+    MsttTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'onLocalMap'),
+        (1, 'unknown2'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelDestructible(),
+        MelStruct('DATA','B',(MsttTypeFlags,'flags',0L),),
+        MelFid('SNAM','sound'),
+    )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreMusc(MelRecord):
+    """Music type record."""
+    classType = 'MUSC'
+
+    MuscTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0,'playsOneSelection'),
+            (1,'abruptTransition'),
+            (2,'cycleTracks'),
+            (3,'maintainTrackOrder'),
+            (4,'unknown5'),
+            (5,'ducksCurrentTrack'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('FNAM','I',(MuscTypeFlags,'flags',0L),),
+        # Divided by 100 in TES5Edit, probably for editing only
+        MelStruct('PNAM','2H','priority','duckingDB'),
+        MelStruct('WNAM','f','fadeDuration'),
+        MelFidList('TNAM','musicTracks'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreMust(MelRecord):
+    """Music Track"""
+    classType = 'MUST'
+
+    # CNAM has wbEnum in TES5Edit
+    # Assigned to 'trackType' for WB
+    # Int64($23F678C3) :'Palette',
+    # Int64($6ED7E048) :'Single Track',
+    # Int64($A1A9C4D5) :'Silent Track'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('CNAM','I','trackType'),
+        MelOptStruct('FLTV','f','duration'),
+        MelOptStruct('DNAM','I','fadeOut'),
+        MelString('ANAM','trackFilename'),
+        MelString('BNAM','finaleFilename'),
+        MelOptStructA('FNAM','f','cuePoints'),
+        MelOptStruct('LNAM','2fI','loopBegins','loopEnds','loopCount',),
+        MelStruct('CITC','I','conditionCount'),
+        MelConditions(),
+        MelFidList('SNAM','tracks',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        conditions = self.conditions
+        self.conditionCount = len(conditions) if conditions else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreNavi(MelRecord):
+    """Navigation Mesh Info Map"""
+    classType = 'NAVI'
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelStruct('NVER','I','version'),
+        # NVMI and NVPP would need special routines to handle them
+        # If no mitigation is needed, then leave it as MelBase
+        MelBase('NVMI','navigationMapInfos',),
+        MelBase('NVPP','preferredPathing',),
+        MelFidList('NVSI','navigationMesh'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, Not Mergable - FormIDs unaccounted for
+#------------------------------------------------------------------------------
+class MreNavm(MelRecord):
+    """Navigation Mesh"""
+    classType = 'NAVM'
+
+    # 'Edge 0-1 link',
+    # 'Edge 1-2 link',
+    # 'Edge 2-0 link',
+    # 'Unknown 4',
+    # 'Unknown 5',
+    # 'Unknown 6',
+    # 'Preferred',
+    # 'Unknown 8',
+    # 'Unknown 9',
+    # 'Water',
+    # 'Door',
+    # 'Found',
+    # 'Unknown 13',
+    # 'Unknown 14',
+    # 'Unknown 15',
+    # 'Unknown 16'
+    NavmTrianglesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'edge01link'),
+            (1, 'edge12link'),
+            (2, 'edge20link'),
+            (3, 'unknown4'),
+            (4, 'unknown5'),
+            (5, 'unknown6'),
+            (6, 'preferred'),
+            (7, 'unknown8'),
+            (8, 'unknown9'),
+            (9, 'water'),
+            (10, 'door'),
+            (11, 'found'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    # 'Edge 0-1 wall',
+    # 'Edge 0-1 ledge cover',
+    # 'Unknown 3',
+    # 'Unknown 4',
+    # 'Edge 0-1 left',
+    # 'Edge 0-1 right',
+    # 'Edge 1-2 wall',
+    # 'Edge 1-2 ledge cover',
+    # 'Unknown 9',
+    # 'Unknown 10',
+    # 'Edge 1-2 left',
+    # 'Edge 1-2 right',
+    # 'Unknown 13',
+    # 'Unknown 14',
+    # 'Unknown 15',
+    # 'Unknown 16'
+    NavmCoverFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'edge01wall'),
+            (1, 'edge01ledgecover'),
+            (2, 'unknown3'),
+            (3, 'unknown4'),
+            (4, 'edge01left'),
+            (5, 'edge01right'),
+            (6, 'edge12wall'),
+            (7, 'edge12ledgecover'),
+            (8, 'unknown9'),
+            (9, 'unknown10'),
+            (10, 'edge12left'),
+            (11, 'edge12right'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        # NVNM, ONAM, PNAM, NNAM would need special routines to handle them
+        # If no mitigation is needed, then leave it as MelBase
+        MelBase('NVNM','navMeshGeometry'),
+        MelBase('ONAM','onam_p'),
+        MelBase('PNAM','pnam_p'),
+        MelBase('NNAM','nnam_p'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305, Not Mergable - FormIDs unaccounted for
+#------------------------------------------------------------------------------
+class MelNpcCnto(MelGroups):
+    def __init__(self):
+        MelGroups.__init__(self,'container',
+            MelStruct('CNTO','=2I',(FID,'item',None),'count'),
+            MelCoed(),
+            )
+
+    def dumpData(self,record,out):
+        # Only write the COCT/CNTO/COED subrecords if count > 0
+        out.packSub('COCT','I',len(record.container))
+        MelGroups.dumpData(self,record,out)
+
+class MreNpc(MelRecord):
+    """Npc"""
+    classType = 'NPC_'
+
+    # {0x00000001}'Ignore Weapon',
+    # {0x00000002}'Bash Attack',
+    # {0x00000004}'Power Attack',
+    # {0x00000008}'Left Attack',
+    # {0x00000010}'Rotating Attack',
+    # {0x00000020}'Unknown 6',
+    # {0x00000040}'Unknown 7',
+    # {0x00000080}'Unknown 8',
+    # {0x00000100}'Unknown 9',
+    # {0x00000200}'Unknown 10',
+    # {0x00000400}'Unknown 11',
+    # {0x00000800}'Unknown 12',
+    # {0x00001000}'Unknown 13',
+    # {0x00002000}'Unknown 14',
+    # {0x00004000}'Unknown 15',
+    # {0x00008000}'Unknown 16'
+    NpcFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'ignoreWeapon'),
+            (1, 'bashAttack'),
+            (2, 'powerAttack'),
+            (3, 'leftAttack'),
+            (4, 'rotatingAttack'),
+            (5, 'unknown6'),
+            (6, 'unknown7'),
+            (7, 'unknown8'),
+            (8, 'unknown9'),
+            (9, 'unknown10'),
+            (10, 'unknown11'),
+            (11, 'unknown12'),
+            (12, 'unknown13'),
+            (13, 'unknown14'),
+            (14, 'unknown15'),
+            (15, 'unknown16'),
+        ))
+
+    # {0x0001} 'Use Traits',
+    # {0x0002} 'Use Stats',
+    # {0x0004} 'Use Factions',
+    # {0x0008} 'Use Spell List',
+    # {0x0010} 'Use AI Data',
+    # {0x0020} 'Use AI Packages',
+    # {0x0040} 'Use Model/Animation?',
+    # {0x0080} 'Use Base Data',
+    # {0x0100} 'Use Inventory',
+    # {0x0200} 'Use Script',
+    # {0x0400} 'Use Def Pack List',
+    # {0x0800} 'Use Attack Data',
+    # {0x1000} 'Use Keywords'
+    NpcFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'useTraits'),
+            (1, 'useStats'),
+            (2, 'useFactions'),
+            (3, 'useSpellList'),
+            (4, 'useAIData'),
+            (5, 'useAIPackages'),
+            (6, 'useModelAnimation?'),
+            (7, 'useBaseData'),
+            (8, 'useInventory'),
+            (9, 'useScript'),
+            (10, 'useDefPackList'),
+            (11, 'useAttackData'),
+            (12, 'useKeywords'),
+        ))
+
+    # {0x00000001} 'Female',
+    # {0x00000002} 'Essential',
+    # {0x00000004} 'Is CharGen Face Preset',
+    # {0x00000008} 'Respawn',
+    # {0x00000010} 'Auto-calc stats',
+    # {0x00000020} 'Unique',
+    # {0x00000040} 'Doesn''t affect stealth meter',
+    # {0x00000080} 'PC Level Mult',
+    # {0x00000100} 'Use Template?',
+    # {0x00000200} 'Unknown 9',
+    # {0x00000400} 'Unknown 10',
+    # {0x00000800} 'Protected',
+    # {0x00001000} 'Unknown 12',
+    # {0x00002000} 'Unknown 13',
+    # {0x00004000} 'Summonable',
+    # {0x00008000} 'Unknown 15',
+    # {0x00010000} 'Doesn''t bleed',
+    # {0x00020000} 'Unknown 17',
+    # {0x00040000} 'Bleedout Override',
+    # {0x00080000} 'Opposite Gender Anims',
+    # {0x00100000} 'Simple Actor',
+    # {0x00200000} 'looped script?',
+    # {0x00400000} 'Unknown 22',
+    # {0x00800000} 'Unknown 23',
+    # {0x01000000} 'Unknown 24',
+    # {0x02000000} 'Unknown 25',
+    # {0x04000000} 'Unknown 26',
+    # {0x08000000} 'Unknown 27',
+    # {0x10000000} 'looped audio?',
+    # {0x20000000} 'Is Ghost',
+    # {0x40000000} 'Unknown 30',
+    # {0x80000000} 'Invulnerable'
+    NpcFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'female'),
+            (1, 'essential'),
+            (2, 'isCharGenFacePreset'),
+            (3, 'respawn'),
+            (4, 'autoCalc'),
+            (5, 'unique'),
+            (6, 'doesNotAffectStealth'),
+            (7, 'pcLevelMult'),
+            (8, 'useTemplate?'),
+            (9, 'unknown9'),
+            (10, 'unknown10'),
+            (11, 'protected'),
+            (12, 'unknown12'),
+            (13, 'unknown13'),
+            (14, 'summonable'),
+            (15, 'unknown15'),
+            (16, 'doesNotBleed'),
+            (17, 'unknown17'),
+            (18, 'bleedoutOverride'),
+            (19, 'oppositeGenderAnims'),
+            (20, 'simpleActor'),
+            (21, 'loopedscript?'),
+            (22, 'unknown22'),
+            (23, 'unknown23'),
+            (24, 'unknown24'),
+            (25, 'unknown25'),
+            (26, 'unknown26'),
+            (27, 'unknown27'),
+            (28, 'loopedaudio?'),
+            (29, 'isGhost'),
+            (30, 'unknown30'),
+            (31, 'invulnerable'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID', 'eid'),
+        MelVmad(),
+        MelBounds(),
+        MelStruct('ACBS','IHHhHHHhHHH',
+                  (NpcFlags1,'flags',0L),'magickaOffset',
+                  'staminaOffset','level','calcMin',
+                  'calcMax','speedMultiplier','dispotionBase',
+                  (NpcFlags2,'npcFlags2',0L),'healthOffset','bleedoutOverride',
+                  ),
+        MelStructs('SNAM','IB3s','factions',(FID, 'faction'), 'rank', 'snamUnused'),
+        MelOptStruct('INAM', 'I', (FID, 'deathItem')),
+        MelOptStruct('VTCK', 'I', (FID, 'voice')),
+        MelOptStruct('TPLT', 'I', (FID, 'template')),
+        MelFid('RNAM','race'),
+        MelCountedFids('SPLO', 'keywords', 'SPCT', '<I'),
+        MelDestructible(),
+        MelOptStruct('WNAM','I',(FID, 'wormArmor')),
+        MelOptStruct('ANAM','I',(FID, 'farawaymodel')),
+        MelOptStruct('ATKR','I',(FID, 'attackRace')),
+        MelStructs('ATKD', 'ffIIfffIfff', 'attackData',
+                   'damageMult','attackChance',(FID, 'attackSpell'),
+                   (NpcFlags3,'flags3',0L),'attackAngle','strikeAngle',
+                   'stagger',(FID,'attackType'),'knockdown',
+                   'recoveryTime', 'staminaMult'),
+        MelString('ATKE', 'attackEvents'),
+        MelOptStruct('SPOR', 'I', (FID, 'spectator')),
+        MelOptStruct('OCOR', 'I', (FID, 'observe')),
+        MelOptStruct('GWOR', 'I', (FID, 'guardWarn')),
+        MelOptStruct('ECOR', 'I', (FID, 'combat')),
+        MelOptStruct('PRKZ','I','perkCount'),
+        MelGroups('perks',
+            MelOptStruct('PRKR','IB3s',(FID, 'perk'),'rank','prkrUnused'),
+            ),
+        MelNull('COCT'),
+        MelNpcCnto(),
+        MelStruct('AIDT', 'BBBBBBBBIII', 'aggression', 'confidence',
+                  'engergy', 'responsibility', 'mood', 'assistance',
+                  'aggroRadiusBehavior',
+                  'aidtUnknown', 'warn', 'warnAttack', 'attack'),
+        MelFids('PKID', 'packages',),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelFid('CNAM', 'class'),
+        MelLString('FULL','full'),
+        MelLString('SHRT', 'shortName'),
+        MelBase('DATA', 'marker'),
+        MelStruct('DNAM','36BHHH2sfB3s',
+            'oneHandedSV','twoHandedSV','marksmanSV','blockSV','smithingSV',
+            'heavyArmorSV','lightArmorSV','pickpocketSV','lockpickingSV',
+            'sneakSV','alchemySV','speechcraftSV','alterationSV','conjurationSV',
+            'destructionSV','illusionSV','restorationSV','enchantingSV',
+            'oneHandedSO','twoHandedSO','marksmanSO','blockSO','smithingSO',
+            'heavyArmorSO','lightArmorSO','pickpocketSO','lockpickingSO',
+            'sneakSO','alchemySO','speechcraftSO','alterationSO','conjurationSO',
+            'destructionSO','illusionSO','restorationSO','enchantingSO',
+            'health','magicka','stamina','dnamUnused1',
+            'farawaymodeldistance','gearedupweapons','dnamUnused2'),
+        MelFids('PNAM', 'head_part_addons',),
+        MelOptStruct('HCLF', '<I', (FID, 'hair_color')),
+        MelOptStruct('ZNAM', '<I', (FID, 'combat_style')),
+        MelOptStruct('GNAM', '<I', (FID, 'gifts')),
+        MelBase('NAM5', 'nam5_p'),
+        MelStruct('NAM6', '<f', 'height'),
+        MelStruct('NAM7', '<f', 'weight'),
+        MelStruct('NAM8', '<I', 'sound_level'),
+        MelGroups('event_sound',
+            MelStruct('CSDT', '<I', 'sound_type'),
+            MelGroups('sound',
+                MelStruct('CSDI', '<I', (FID, 'sound')),
+                MelStruct('CSDC', '<B', 'chance')
+                )
+            ),
+        MelOptStruct('CSCR', '<I', (FID, 'audio_template')),
+        MelOptStruct('DOFT', '<I', (FID, 'default_outfit')),
+        MelOptStruct('SOFT', '<I', (FID, 'sleep_outfit')),
+        MelOptStruct('DPLT', '<I', (FID, 'default_package')),
+        MelOptStruct('CRIF', '<I', (FID, 'crime_faction')),
+        MelOptStruct('FTST', '<I', (FID, 'face_texture')),
+        MelOptStruct('QNAM', '<fff', 'skin_tone_r' ,'skin_tone_g', 'skin_tone_b'),
+        MelOptStruct('NAM9', '<fffffffffffffffffff', 'nose_long', 'nose_up',
+                     'jaw_up', 'jaw_wide', 'jaw_forward', 'cheeks_up', 'cheeks_back',
+                     'eyes_up', 'eyes_out', 'brows_up', 'brows_out', 'brows_forward',
+                     'lips_up', 'lips_out', 'chin_wide', 'chin_down', 'chin_underbite',
+                     'eyes_back', 'nam9_unused'),
+        MelOptStruct('NAMA', '<IiII', 'nose', 'unknown', 'eyes', 'mouth'),
+        MelGroups('face_tint_layer',
+            MelStruct('TINI', '<H', 'tint_item'),
+            MelStruct('TINC', '<4B', 'r', 'g', 'b' ,'a'),
+            MelStruct('TINV', '<i', 'tint_value'),
+            MelStruct('TIAS', '<h', 'preset'),
+            ),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+    def dumpData(self,out):
+        perks = self.perks
+        self.perkCount = len(perks) if perks else 0
+        MelRecord.dumpData(self,out)
+
+# Verified for 305
+#------------------------------------------------------------------------------
+class MreOtft(MelRecord):
+    """Otft Item"""
+    classType = 'OTFT'
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelFidList('INAM','items'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
