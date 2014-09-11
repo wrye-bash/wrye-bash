@@ -2410,6 +2410,7 @@ class MelMODS(MelBase):
 #-------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
+    # MODB and MODD are no longer used by TES5Edit
     typeSets = {
         'MODL': ('MODL','MODT','MODS'),
         'MOD2': ('MOD2','MO2T','MO2S'),
@@ -2431,6 +2432,23 @@ class MelModel(MelGroup):
         """Sets debug flag on self."""
         for element in self.elements[:2]: element.debug(on)
         return self
+
+#------------------------------------------------------------------------------
+class MelOwnership(MelGroup):
+    """Handles XOWN, XRNK for cells and cell children."""
+
+    def __init__(self,attr='ownership'):
+        """Initialize."""
+        MelGroup.__init__(self,attr,
+            MelFid('XOWN','owner'),
+            MelOptStruct('XRNK','i',('rank',None)),
+        )
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.ownership and record.ownership.owner:
+            MelGroup.dumpData(self,record,out)
+
 
 #------------------------------------------------------------------------------
 class MelString16(MelString):
