@@ -3888,6 +3888,29 @@ class MreCobj(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
+class MreColl(MelRecord):
+    """Collision Layer"""
+    classType = 'COLL'
+
+    CollisionLayerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0,'triggerVolume'),
+        (1,'sensor'),
+        (2,'navmeshObstacle'),
+    ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('DESC','description'),
+        MelStruct('BNAM','I','layerID'),
+        MelStruct('FNAM','=4B','red','green','blue','unused'),
+        MelStruct('GNAM','I',(CollisionLayerFlags,'flags',0L),),
+        MelString('MNAM','name',),
+        MelStruct('INTV','I','interactablesCount'),
+        MelFidList('CNAM','collidesWith',),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
     Master = u'Skyrim'
