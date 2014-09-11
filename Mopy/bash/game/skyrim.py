@@ -7659,6 +7659,85 @@ class MreVtyp(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 # Verified for 305
+#------------------------------------------------------------------------------
+class MreWatr(MelRecord):
+    """Water"""
+    classType = 'WATR'
+
+    WatrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+            (0, 'causesDamage'),
+        ))
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLString('FULL','full'),
+        MelGroups('unused',
+            MelString('NNAM','noiseMap',),
+            ),
+        MelStruct('ANAM','B','opacity'),
+        MelStruct('FNAM','B',(WatrTypeFlags,'flags',0L),),
+        MelBase('MNAM','unused1'),
+        MelFid('TNAM','material',),
+        MelFid('SNAM','openSound',),
+        MelFid('XNAM','spell',),
+        MelFid('INAM','imageSpace',),
+        MelStruct('DATA','H','damagePerSecond'),
+        MelStruct('DNAM','7f4s2f3Bs3Bs3B5s43f','unknown1','unknown2','unknown3',
+                  'unknown4','specularPropertiesSunSpecularPower',
+                  'waterPropertiesReflectivityAmount',
+                  'waterPropertiesFresnelAmount','unknown5',
+                  'fogPropertiesAboveWaterFogDistanceNearPlane',
+                  'fogPropertiesAboveWaterFogDistanceFarPlane',
+                  # Shallow Color
+                  'red_sc','green_sc','blue_sc','unknown_sc',
+                  # Deep Color
+                  'red_dc','green_dc','blue_dc','unknown_dc',
+                  # Reflection Color
+                  'red_rc','green_rc','blue_rc','unknown_rc',
+                  'unknown6','unknown7','unknown8','unknown9','unknown10',
+                  'displacementSimulatorStartingSize',
+                  'displacementSimulatorForce','displacementSimulatorVelocity',
+                  'displacementSimulatorFalloff','displacementSimulatorDampner',
+                  'unknown11','noisePropertiesNoiseFalloff',
+                  'noisePropertiesLayerOneWindDirection',
+                  'noisePropertiesLayerTwoWindDirection',
+                  'noisePropertiesLayerThreeWindDirection',
+                  'noisePropertiesLayerOneWindSpeed',
+                  'noisePropertiesLayerTwoWindSpeed',
+                  'noisePropertiesLayerThreeWindSpeed',
+                  'unknown12','unknown13','fogPropertiesAboveWaterFogAmount',
+                  'unknown14','fogPropertiesUnderWaterFogAmount',
+                  'fogPropertiesUnderWaterFogDistanceNearPlane',
+                  'fogPropertiesUnderWaterFogDistanceFarPlane',
+                  'waterPropertiesRefractionMagnitude',
+                  'specularPropertiesSpecularPower',
+                  'unknown15','specularPropertiesSpecularRadius',
+                  'specularPropertiesSpecularBrightness',
+                  'noisePropertiesLayerOneUVScale',
+                  'noisePropertiesLayerTwoUVScale',
+                  'noisePropertiesLayerThreeUVScale',
+                  'noisePropertiesLayerOneAmplitudeScale',
+                  'noisePropertiesLayerTwoAmplitudeScale',
+                  'noisePropertiesLayerThreeAmplitudeScale',
+                  'waterPropertiesReflectionMagnitude',
+                  'specularPropertiesSunSparkleMagnitude',
+                  'specularPropertiesSunSpecularMagnitude',
+                  'depthPropertiesReflections','depthPropertiesRefraction',
+                  'depthPropertiesNormals','depthPropertiesSpecularLighting',
+                  'specularPropertiesSunSparklePower',
+                  ),
+        MelBase('GNAM','unused2'),
+        # Linear Velocity
+        MelStruct('NAM0','3f','linv_x','linv_y','linv_z',),
+        # Angular Velocity
+        MelStruct('NAM1','3f','andv_x','andv_y','andv_z',),
+        MelString('NAM2','noiseTexture'),
+        MelString('NAM3','unused3'),
+        MelString('NAM4','unused4'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
 #--Mergeable record types
 mergeClasses = (
         MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
