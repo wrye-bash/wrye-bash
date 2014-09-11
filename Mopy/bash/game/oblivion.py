@@ -207,12 +207,6 @@ class ess:
             out.write(buffer)
         return oldMasters
 
-#--The main plugin Wrye Bash should look for
-masterFiles = [
-    u'Oblivion.esm',
-    u'Nehrim.esm',
-    ]
-
 #--INI files that should show up in the INI Edits tab
 iniFiles = [
     u'Oblivion.ini',
@@ -220,6 +214,17 @@ iniFiles = [
 
 #--INI setting to setup Save Profiles
 saveProfilesKey = (u'General',u'SLocalSavePath')
+
+#--The main plugin Wrye Bash should look for
+masterFiles = [
+    u'Oblivion.esm',
+    u'Nehrim.esm',
+    ]
+#--Plugin files that can't be deactivated
+nonDeactivatableFiles = []
+
+#The pickle file for this game. Holds encoded GMST IDs from the big list below.
+pklfile = ur'bash\db\Oblivion_ids.pkl'
 
 #--Game ESM/ESP/BSA files
 bethDataFiles = set((
@@ -337,9 +342,6 @@ allBethFiles = set((
     u'Knights.esp',
     u'DLCList.txt',
     ))
-
-#--Plugin files that can't be deactivated
-nonDeactivatableFiles = []
 
 #--BAIN: Directories that are OK to install to
 dataDirs = set((
@@ -584,19 +586,6 @@ conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param
 allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
-
-# Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
-#The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = ur'bash\db\Oblivion_ids.pkl'
 
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
@@ -946,16 +935,6 @@ gmstEids = ['fAbsorbBoltGrowWidth','fAbsorbBoltSmallWidth','fAbsorbBoltsRadius',
     'sFloraSuccessMessage','sQuickSaving','sFastTravelHorseatGate',
     'sLoadingArea','sQuickLoading','sNoCharge',
     ]
-
-#--Tags supported by this game
-allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags',
-                  u'C.Owner', u'C.Water', u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
-                  u'IIM', u'Invent', u'Names', u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents', u'Sound',
-                  u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F',
-                  u'R.Attributes-M', u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads', u'Actors.Anims',
-                  u'Actors.AIData', u'Actors.DeathItem', u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
-                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells', u'Actors.SpellsForceAdd',
-                  u'NPC.Race', u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly', u'Npc.EyesOnly')) ##, 'ForceMerge'
 
 #--GLOB record tweaks used by bosh's GmstTweaker
 #  Each entry is a tuple in the following format:
@@ -1592,6 +1571,16 @@ GmstTweaks = [
         ),
     ]
 
+#--Tags supported by this game
+allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate', u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags',
+                  u'C.Owner', u'C.Water', u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter', u'Graphics', u'Hair',
+                  u'IIM', u'Invent', u'Names', u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents', u'Sound',
+                  u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F',
+                  u'R.Attributes-M', u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads', u'Actors.Anims',
+                  u'Actors.AIData', u'Actors.DeathItem', u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
+                  u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells', u'Actors.SpellsForceAdd',
+                  u'NPC.Race', u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly', u'Npc.EyesOnly')) ##, 'ForceMerge'
+
 #--Patchers available when building a Bashed Patch
 patchers = (
     'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
@@ -1603,6 +1592,23 @@ patchers = (
     'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
     'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
     'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
+    )
+
+#--CBash patchers available when building a Bashed Patch
+CBash_patchers = (
+    'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
+    'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
+    'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
+    'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
+    'CBash_ClothesTweaker', 'CBash_GmstTweaker',
+    'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
+    'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
+    'CBash_ImportScripts',
+    'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
+    'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
+    'CBash_RacePatcher', 'CBash_RoadImporter',
+    'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
+    'CBash_ContentsChecker',
     )
 
 # For ListsMerger
@@ -1684,21 +1690,19 @@ statsHeaders = (
                     _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
                 )
 
-#--CBash patchers available when building a Bashed Patch
-CBash_patchers = (
-    'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
-    'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
-    'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
-    'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
-    'CBash_ClothesTweaker', 'CBash_GmstTweaker',
-    'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
-    'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
-    'CBash_ImportScripts',
-    'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
-    'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
-    'CBash_RacePatcher', 'CBash_RoadImporter',
-    'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
-    'CBash_ContentsChecker',
+# Mod Record Elements ----------------------------------------------------------
+#-------------------------------------------------------------------------------
+# Constants
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
+# Magic Info ------------------------------------------------------------------
+weaponTypes = (
+    _(u'Blade (1 Handed)'),
+    _(u'Blade (2 Handed)'),
+    _(u'Blunt (1 Handed)'),
+    _(u'Blunt (2 Handed)'),
+    _(u'Staff'),
+    _(u'Bow'),
     )
 
 # Race Info -------------------------------------------------------------------
@@ -1830,13 +1834,30 @@ class RecordHeader(brec.BaseRecordHeader):
         else:
             return struct.pack('=4s4I',self.recType,self.size,self.flags1,self.fid,self.flags2)
 
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
-
-# Oblivion Record elements -----------------------------------------------------
 #------------------------------------------------------------------------------
+# Record Elements    ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreActor(MelRecord):
+    """Creatures and NPCs."""
+
+    def mergeFilter(self,modSet):
+        """Filter out items that don't come from specified modSet.
+        Filters spells, factions and items."""
+        if not self.longFids: raise StateError(u"Fids not in long format")
+        self.spells = [x for x in self.spells if x[0] in modSet]
+        self.factions = [x for x in self.factions if x.faction[0] in modSet]
+        self.items = [x for x in self.items if x.item[0] in modSet]
+
+#------------------------------------------------------------------------------
+class MelBipedFlags(bolt.Flags):
+    """Biped flags element. Includes biped flag set by default."""
+    mask = 0xFFFF
+    def __init__(self,default=0L,newNames=None):
+        names = bolt.Flags.getNames('head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot', 'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon', 'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
+        if newNames: names.update(newNames)
+        Flags.__init__(self,default,names)
+
+#-------------------------------------------------------------------------------
 class MelConditions(MelStructs):
     """Represents a set of quest/dialog conditions. Difficulty is that FID state
     of parameters depends on function index."""
@@ -1959,125 +1980,6 @@ class MelEffects(MelGroups):
             )
 
 #------------------------------------------------------------------------------
-class MelOwnership(MelGroup):
-    """Handles XOWN, XRNK, and XGLB for cells and cell children."""
-
-    def __init__(self):
-        """Initialize."""
-        MelGroup.__init__(self, 'ownership',
-            MelFid('XOWN','owner'),
-            MelOptStruct('XRNK','i',('rank',None)),
-            MelFid('XGLB','global'),
-        )
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        if record.ownership and record.ownership.owner:
-            MelGroup.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-class MelScrxen(MelFids):
-    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
-
-    def getLoaders(self,loaders):
-        loaders['SCRV'] = self
-        loaders['SCRO'] = self
-
-    def loadData(self,record,ins,type,size,readId):
-        isFid = (type == 'SCRO')
-        if isFid: value = ins.unpackRef(readId)
-        else: value, = ins.unpack('I',4,readId)
-        record.__getattribute__(self.attr).append((isFid,value))
-
-    def dumpData(self,record,out):
-        for isFid,value in record.__getattribute__(self.attr):
-            if isFid: out.packRef('SCRO',value)
-            else: out.packSub('SCRV','I',value)
-
-    def mapFids(self,record,function,save=False):
-        scrxen = record.__getattribute__(self.attr)
-        for index,(isFid,value) in enumerate(scrxen):
-            if isFid:
-                result = function(value)
-                if save: scrxen[index] = (isFid,result)
-
-#------------------------------------------------------------------------------
-class MelBipedFlags(bolt.Flags):
-    """Biped flags element. Includes biped flag set by default."""
-    mask = 0xFFFF
-    def __init__(self,default=0L,newNames=None):
-        names = bolt.Flags.getNames('head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot', 'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon', 'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
-        if newNames: names.update(newNames)
-        Flags.__init__(self,default,names)
-
-#-------------------------------------------------------------------------------
-# Oblivion Records 0 -----------------------------------------------------------
-
-class MreHeader(MreHeaderBase):
-    """TES4 Record.  File header."""
-    classType = 'TES4'
-
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',),  #--Obsolete?
-        MelBase('DELE','dele_p',),  #--Obsolete?
-        MelUnicode('CNAM','author',u'',512),
-        MelUnicode('SNAM','description',u'',512),
-        MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'),
-        )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreActor(MelRecord):
-    """Creatures and NPCs."""
-
-    def mergeFilter(self,modSet):
-        """Filter out items that don't come from specified modSet.
-        Filters spells, factions and items."""
-        if not self.longFids: raise StateError(u"Fids not in long format")
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
-        self.items = [x for x in self.items if x.item[0] in modSet]
-
-#------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Leveled item/creature/spell list.."""
-    copyAttrs = ('script','template','chanceNone',)
-
-    #--Special load classes
-    class MelLevListLvld(MelStruct):
-        """Subclass to support alternate format."""
-        def loadData(self,record,ins,type,size,readId):
-            MelStruct.loadData(self,record,ins,type,size,readId)
-            if record.chanceNone > 127:
-                record.flags.calcFromAllLevels = True
-                record.chanceNone &= 127
-
-    class MelLevListLvlo(MelStructs):
-        """Subclass to support alternate format."""
-        def loadData(self,record,ins,type,size,readId):
-            target = self.getDefault()
-            record.__getattribute__(self.attr).append(target)
-            target.__slots__ = self.attrs
-            format,attrs = ((self.format,self.attrs),('iI',('level','listId'),))[size==8]####might be h2sI
-            unpacked = ins.unpack(format,size,readId)
-            setter = target.__setattr__
-            map(setter,attrs,unpacked)
-    #--Element Set
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelLevListLvld('LVLD','B','chanceNone'),
-        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
-        MelFid('SCRI','script'),
-        MelFid('TNAM','template'),
-        MelLevListLvlo('LVLO','h2sIh2s','entries','level',('unused1',null2),(FID,'listId',None),('count',1),('unused2',null2)),
-        MelNull('DATA'),
-        )
-    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreHasEffects:
     """Mixin class for magic items."""
     def getEffects(self):
@@ -2133,6 +2035,105 @@ class MreHasEffects:
                 buffWrite(u'\n')
                 return buff.getvalue()
 
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Leveled item/creature/spell list.."""
+    copyAttrs = ('script','template','chanceNone',)
+
+    #--Special load classes
+    class MelLevListLvld(MelStruct):
+        """Subclass to support alternate format."""
+        def loadData(self,record,ins,type,size,readId):
+            MelStruct.loadData(self,record,ins,type,size,readId)
+            if record.chanceNone > 127:
+                record.flags.calcFromAllLevels = True
+                record.chanceNone &= 127
+
+    class MelLevListLvlo(MelStructs):
+        """Subclass to support alternate format."""
+        def loadData(self,record,ins,type,size,readId):
+            target = self.getDefault()
+            record.__getattribute__(self.attr).append(target)
+            target.__slots__ = self.attrs
+            format,attrs = ((self.format,self.attrs),('iI',('level','listId'),))[size==8]####might be h2sI
+            unpacked = ins.unpack(format,size,readId)
+            setter = target.__setattr__
+            map(setter,attrs,unpacked)
+    #--Element Set
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelLevListLvld('LVLD','B','chanceNone'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelFid('SCRI','script'),
+        MelFid('TNAM','template'),
+        MelLevListLvlo('LVLO','h2sIh2s','entries','level',('unused1',null2),(FID,'listId',None),('count',1),('unused2',null2)),
+        MelNull('DATA'),
+        )
+    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MelOwnership(MelGroup):
+    """Handles XOWN, XRNK, and XGLB for cells and cell children."""
+
+    def __init__(self):
+        """Initialize."""
+        MelGroup.__init__(self, 'ownership',
+            MelFid('XOWN','owner'),
+            MelOptStruct('XRNK','i',('rank',None)),
+            MelFid('XGLB','global'),
+        )
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        if record.ownership and record.ownership.owner:
+            MelGroup.dumpData(self,record,out)
+
+#------------------------------------------------------------------------------
+class MelScrxen(MelFids):
+    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
+
+    def getLoaders(self,loaders):
+        loaders['SCRV'] = self
+        loaders['SCRO'] = self
+
+    def loadData(self,record,ins,type,size,readId):
+        isFid = (type == 'SCRO')
+        if isFid: value = ins.unpackRef(readId)
+        else: value, = ins.unpack('I',4,readId)
+        record.__getattribute__(self.attr).append((isFid,value))
+
+    def dumpData(self,record,out):
+        for isFid,value in record.__getattribute__(self.attr):
+            if isFid: out.packRef('SCRO',value)
+            else: out.packSub('SCRV','I',value)
+
+    def mapFids(self,record,function,save=False):
+        scrxen = record.__getattribute__(self.attr)
+        for index,(isFid,value) in enumerate(scrxen):
+            if isFid:
+                result = function(value)
+                if save: scrxen[index] = (isFid,result)
+
+#------------------------------------------------------------------------------
+# Oblivion Records ------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MreHeader(MreHeaderBase):
+    """TES4 Record.  File header."""
+    classType = 'TES4'
+
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelBase('DELE','dele_p',),  #--Obsolete?
+        MelUnicode('CNAM','author',u'',512),
+        MelUnicode('SNAM','description',u'',512),
+        MreHeaderBase.MelMasterName('MAST','masters'),
+        MelNull('DATA'),
+        )
+    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 # Oblivion Records 1 -----------------------------------------------------------
 #-------------------------------------------------------------------------------
 class MreAchr(MelRecord): # Placed NPC
