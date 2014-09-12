@@ -1342,7 +1342,6 @@ class DeathItemPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set() #--Record classes actually provided by src
@@ -1433,31 +1432,24 @@ class DeathItemPatcher(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
+        # deprint(recClass,type,type_count[type])
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if record.__getattribute__(attr) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[type] += 1
+
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched actor death item as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        self._patchLog(log,type_count)
+        """Merge last version of record with patched actor death item as
+        needed."""
+        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher):
     """Imports actor death items."""
@@ -1469,7 +1461,6 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_deathItem = {}
@@ -1486,15 +1477,20 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
             if deathitem['deathItem'].ValidateFormID(self.patchFile):
                 self.id_deathItem[record.fid] = deathitem['deathItem']
             else:
-                #Ignore the record. Another option would be to just ignore the invalid formIDs
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                # Ignore the record. Another option would be to just ignore
+                # the invalid formIDs
+                mod_skipcount = \
+                    self.patchFile.patcher_mod_skipcount.setdefault(
+                    self.name, {})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                    modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]:
+        if recordId in self.id_deathItem and record.deathItem != \
+                self.id_deathItem[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.deathItem = self.id_deathItem[recordId]
