@@ -303,6 +303,21 @@ class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+def _buildPatch(self,log,inner_for):
+        """Common buildPatch pattern of next few patchers.""" # TODO: filter()
+        if not self.isActive: return
+        modFileTops = self.patchFile.tops
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFileTops: continue
+            type_count[type] = 0
+            inner_for(id_data, keep, modFileTops, type, type_count)
+        id_data = None
+        self._patchLog(log,type_count)
+
 class GraphicsPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _(u'Import Graphics')
@@ -463,49 +478,36 @@ class GraphicsPatcher(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if isinstance(record.__getattribute__(attr),
+                              basestring) and isinstance(value, basestring):
+                    if record.__getattribute__(attr).lower() != value.lower():
+                        break
+                    continue
+                elif attr == 'model':
+                    try:
+                        if record.__getattribute__(
+                                attr).modPath.lower() != value.modPath.lower():
+                            break
+                        continue
+                    except: break  # assume they are not equal (ie they
+                        # aren't __both__ NONE)
+                if record.__getattribute__(attr) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[type] += 1
+
     def buildPatch(self,log,progress):
         """Merge last version of record with patched graphics data as
         needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if isinstance(record.__getattribute__(attr),
-                                  basestring) and isinstance(value,
-                                                             basestring):
-                        if record.__getattribute__(
-                                attr).lower() != value.lower():
-                            break
-                        continue
-                    elif attr == 'model':
-                        try:
-                            if record.__getattribute__(
-                                    attr).modPath.lower() != \
-                                    value.modPath.lower():
-                                break
-                            continue
-                        except:
-                            break  # assume they are not equal (ie they
-                            # aren't __both__ NONE)
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        id_data = None
-        self._patchLog(log,type_count)
+        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
 
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -626,7 +628,9 @@ class ActorImporter(ImportPatcher):
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race', u'Actors.Skeleton')
+    autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
+               u'Actors.Skeleton')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -782,30 +786,22 @@ class ActorImporter(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if reduce(getattr, attr.split('.'), record) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                setattr(reduce(getattr, attr.split('.')[:-1], record),
+                        attr.split('.')[-1], value)
+            keep(fid)
+            type_count[type] += 1
+
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if reduce(getattr,attr.split('.'),record) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    setattr(reduce(getattr,attr.split('.')[:-1],record),attr.split('.')[-1], value)
-                keep(fid)
-                type_count[type] += 1
-        self._patchLog(log,type_count)
+       _buildPatch(self,log,inner_for=self.__class__._inner_loop)
 
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
@@ -1009,31 +1005,21 @@ class KFFZPatcher(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if record.__getattribute__(attr) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[type] += 1
+
     def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as
-        needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        self._patchLog(log,type_count)
+        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
 
 class CBash_KFFZPatcher(CBash_ImportPatcher):
     """Merges changes to actor animations."""
