@@ -27,10 +27,11 @@
 from operator import itemgetter
 import struct
 # Wrye Bash imports
-from bash.bolt import AbstractError, ArgumentError
-from bash.brec import ModError, ModReader
-from bash.bolt import GPath, sio
-import bash.bush
+from ...bolt import AbstractError, ArgumentError
+from ...brec import ModError, ModReader
+from ...bolt import GPath, sio
+from ... import bush # for groupTypes
+import bash # this file is imported to bosh still...
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
@@ -102,7 +103,7 @@ class MobBase(object):
         else:
             numSubRecords = 0
             reader = self.getReader()
-            errLabel = bash.bush.groupTypes[self.groupType]
+            errLabel = bush.groupTypes[self.groupType]
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek
