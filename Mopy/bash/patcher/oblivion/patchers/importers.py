@@ -35,7 +35,8 @@ from ....patcher.base import AImportPatcher, Patcher
 from ....patcher.oblivion.patchers.base import ImportPatcher, \
     CBash_ImportPatcher
 from ....cint import ValidateDict, ValidateList
-from ..utilities import ActorFactions, CBash_ActorFactions
+from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
+    CBash_FactionRelations
 
 class ACellImporter(AImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -1725,5 +1726,190 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
         self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class ImportRelations(ImportPatcher):
+    """Import faction relations to factions."""
+    name = _(u'Import Relations')
+    text = _(u"Import relations from source mods/files.")
+    autoKey = u'Relations'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_relations = {}  #--[(otherLongid0,disp0),(...)] =
+        # id_relations[mainLongid].
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = bool(self.sourceMods)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        factionRelations = FactionRelations(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.sourceMods))
+        for srcFile in self.sourceMods:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if reModExt.search(srcFile.s):
+                if srcPath not in bosh.modInfos: continue
+                srcInfo = bosh.modInfos[GPath(srcFile)]
+                factionRelations.readFromMod(srcInfo)
+            else:
+                if srcPath not in patchesList: continue
+                factionRelations.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+        #--Finish
+        for fid, relations in factionRelations.id_relations.iteritems():
+            if fid and (
+                    fid[0] is not None and fid[0] in self.patchFile.loadSet):
+                filteredRelations = [relation for relation in relations if
+                                     relation[0] and (
+                                     relation[0][0] is not None and
+                                     relation[0][0] in self.patchFile.loadSet)]
+                if filteredRelations:
+                    self.id_relations[fid] = filteredRelations
+        self.isActive = bool(self.id_relations)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('FACT',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('FACT',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Scan modFile."""
+        if not self.isActive: return
+        id_relations= self.id_relations
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        for type in ('FACT',):
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            id_records = patchBlock.id_records
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid in id_records: continue
+                if fid not in id_relations: continue
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Make changes to patchfile."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_relations= self.id_relations
+        type_count = {}
+        for type in ('FACT',):
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid in id_relations:
+                    newRelations = set(id_relations[fid])
+                    curRelations = set(
+                        (x.faction, x.mod) for x in record.relations)
+                    changed = newRelations - curRelations
+                    if not changed: continue
+                    doKeep = False
+                    for faction,disp in changed:
+                        for entry in record.relations:
+                            if entry.faction == faction:
+                                if entry.mod != disp:
+                                    entry.mod = disp
+                                    doKeep = True
+                                    keep(fid)
+                                break
+                        else:
+                            entry = MelObject()
+                            entry.faction = faction
+                            entry.mod = disp
+                            record.relations.append(entry)
+                            doKeep = True
+                    if doKeep:
+                        type_count[type] += 1
+                        keep(fid)
+        self._patchLog(log, type_count,
+                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
+                       logMsg=u'\n=== ' + _(u'Modified Factions') + u': %d')
+
+    def _plog(self,log,logMsg,type_count):
+        log(logMsg % type_count['FACT'])
+
+class CBash_ImportRelations(CBash_ImportPatcher):
+    """Import faction relations to factions."""
+    name = _(u'Import Relations')
+    text = _(u"Import relations from source mods/files.")
+    autoKey = {u'Relations'}
+    logMsg = u'* ' + _(u'Re-Relationed Records') + u': %d'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.fid_faction_mod = {}
+        self.csvFid_faction_mod = {}
+        self.mod_count = {}
+
+    def initData(self,group_patchers,progress):
+        if not self.isActive: return
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
+        factionRelations = CBash_FactionRelations(
+            aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs))
+        patchesList = getPatchesList()
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesList: continue
+                factionRelations.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+        #--Finish
+        self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['FACT']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        relations = record.ConflictDetails(('relations_list',))
+        if relations:
+            self.fid_faction_mod.setdefault(record.fid, {}).update(
+                relations['relations_list'])
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan_more(modFile,record,bashTags)
+        fid = record.fid
+        if fid in self.csvFid_faction_mod:
+            newRelations = set((faction, mod) for faction, mod in
+                               self.csvFid_faction_mod[fid].iteritems() if
+                               faction.ValidateFormID(self.patchFile))
+        elif fid in self.fid_faction_mod:
+            newRelations = set((faction, mod) for faction, mod in
+                               self.fid_faction_mod[fid].iteritems() if
+                               faction.ValidateFormID(self.patchFile))
+        else:
+            return
+        curRelations = set(record.relations_list)
+        changed = newRelations - curRelations
+        if changed:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                for faction,mod in changed:
+                    for relation in override.relations:
+                        if relation.faction == faction:
+                            relation.mod = mod
+                            break
+                    else:
+                        relation = override.create_relation()
+                        relation.faction,relation.mod = faction,mod
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
