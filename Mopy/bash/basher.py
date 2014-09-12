@@ -55,7 +55,8 @@ from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
     AliasesPatcher, CBash_AliasesPatcher
 from patcher.oblivion.patchers.importers import CellImporter, \
     CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
-    CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher
+    CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher, NPCAIPackagePatcher, \
+    CBash_NPCAIPackagePatcher
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8016,8 +8017,8 @@ class CBash_GraphicsPatcher(CBash_GraphicsPatcher,ListPatcher): pass
 class KFFZPatcher(KFFZPatcher,ListPatcher): pass
 class CBash_KFFZPatcher(CBash_KFFZPatcher,ListPatcher): pass
 
-class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
-class CBash_NPCAIPackagePatcher(bosh.CBash_NPCAIPackagePatcher,ListPatcher): pass
+class NPCAIPackagePatcher(NPCAIPackagePatcher,ListPatcher): pass
+class CBash_NPCAIPackagePatcher(CBash_NPCAIPackagePatcher,ListPatcher): pass
 
 class ActorImporter(ActorImporter,ListPatcher): pass
 class CBash_ActorImporter(CBash_ActorImporter,ListPatcher): pass
