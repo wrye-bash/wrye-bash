@@ -29,7 +29,7 @@ import operator
 from .... import bosh # for modInfos
 from ....bosh import LoadFactory, ModFile, CountDict
 from ....brec import MreRecord
-from ....patcher.base import AImportPatcher
+from ....patcher.base import AImportPatcher, Patcher
 from ....patcher.oblivion.patchers.base import ImportPatcher, \
     CBash_ImportPatcher
 from ....cint import ValidateDict
@@ -619,6 +619,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
 
+#------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
     """Merges changes to actors."""
     name = _(u'Import Actors')
@@ -900,3 +901,176 @@ class CBash_ActorImporter(CBash_ImportPatcher):
             for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class KFFZPatcher(ImportPatcher):
+    """Merges changes to actor animation lists."""
+    name = _(u'Import Actors: Animations')
+    text = _(u"Import Actor animations from source mods.")
+    tip = text
+    autoKey = u'Actors.Anims'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src
+        #  mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
+            recAttrs_class[recClass] = ('animations',)
+        #--Needs Longs
+        self.longTypes = {'CREA', 'NPC_'}
+
+    def initData(self,progress):
+        """Get actor animation lists from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(
+            x.classType for x in self.recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                for record in srcFile.tops[
+                    recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    temp_id_data[fid] = dict(
+                        (attr, record.__getattribute__(attr)) for attr in
+                        recAttrs)
+            for master in masters:
+                if not master in bosh.modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = bosh.modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[
+                        recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] =temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(
+            x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched graphics data as
+        needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        self._patchLog(log,type_count)
+
+class CBash_KFFZPatcher(CBash_ImportPatcher):
+    """Merges changes to actor animations."""
+    name = _(u'Import Actors: Animations')
+    text = _(u"Import Actor animations from source mods.")
+    tip = text
+    autoKey = {u'Actors.Anims'}
+    logMsg = u'* ' + _(u'Imported Animations') + u': %d'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.id_animations = {}
+        self.mod_count = {}
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CREA','NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        animations = self.id_animations.setdefault(record.fid,[])
+        animations.extend(
+            [anim for anim in record.animations if anim not in animations])
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan_more(modFile,record,bashTags)
+        recordId = record.fid
+        if recordId in self.id_animations and record.animations != \
+                self.id_animations[recordId]:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.animations = self.id_animations[recordId]
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+#------------------------------------------------------------------------------
