@@ -1514,10 +1514,10 @@ class ImportFactions(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_factions= {} #--Factions keyed by long fid.
-        self.activeTypes = [] #--Types ('CREA','NPC_') of data actually provided by src mods/files.
+        self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
+        # provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = bool(self.sourceMods)
 
@@ -1620,7 +1620,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_factions = {}
@@ -1628,7 +1627,6 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.mod_count = {}
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
@@ -1642,7 +1640,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             progress.plus()
         #--Finish
         csvId_factions = self.csvId_factions
-        for group,aFid_factions in actorFactions.group_fid_factions.iteritems():
+        for group, aFid_factions in \
+                actorFactions.group_fid_factions.iteritems():
             if group not in ('CREA','NPC_'): continue
             for fid,factions in aFid_factions.iteritems():
                 csvId_factions[fid] = factions
@@ -1668,7 +1667,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
             removedFids = masterFids - thisFids
             addedFids = thisFids - masterFids
             # Add new factions
-            self.id_factions[record.fid].update(dict((x[0],x[1]) for x in thisFactions if x[0] in addedFids))
+            self.id_factions[record.fid].update(
+                dict((x[0], x[1]) for x in thisFactions if x[0] in addedFids))
             # Remove deleted factions
             for fid in removedFids:
                 self.id_factions[record.fid].pop(fid,None)
@@ -1678,12 +1678,18 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if fid in self.csvId_factions:
-            newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid] if faction.ValidateFormID(self.patchFile)])
+            newFactions = set(
+                [(faction, rank) for faction, rank in self.csvId_factions[fid]
+                 if faction.ValidateFormID(self.patchFile)])
         elif fid in self.id_factions:
-            newFactions = set([(faction,rank) for faction, rank in self.id_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
+            newFactions = set([(faction, rank) for faction, rank in
+                               self.id_factions[fid].iteritems() if
+                               faction.ValidateFormID(self.patchFile)])
         else:
             return
-        curFactions = set([(faction[0],faction[1]) for faction in record.factions_list if faction[0].ValidateFormID(self.patchFile)])
+        curFactions = set(
+            [(faction[0], faction[1]) for faction in record.factions_list if
+             faction[0].ValidateFormID(self.patchFile)])
         changed = newFactions - curFactions
         removed = curFactions - newFactions
         if changed or removed:
@@ -1698,9 +1704,13 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                         entry = override.create_faction()
                         entry.faction = faction
                         entry.rank = rank
-                override.factions_list = [(faction,rank) for faction,rank in override.factions_list if (faction,rank) not in removed]
+                override.factions_list = [(faction, rank) for faction, rank in
+                                          override.factions_list if
+                                          (faction, rank) not in removed]
                 class_mod_count = self.mod_count
-                class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                class_mod_count.setdefault(record._Type, {})[
+                    modFile.GName] = class_mod_count.setdefault(record._Type,
+                    {}).get(modFile.GName, 0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
