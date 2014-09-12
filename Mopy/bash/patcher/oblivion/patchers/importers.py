@@ -1515,7 +1515,7 @@ class ImportFactions(ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_factions= {} #--Factions keyed by long fid.
+        self.id_data= {} #--Factions keyed by long fid. WAS: id_factions
         self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
         # provided by src mods/files.
         self.sourceMods = self.getConfigChecked()
@@ -1538,12 +1538,12 @@ class ImportFactions(ImportPatcher):
                 actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()
         #--Finish
-        id_factions= self.id_factions
+        id_factions= self.id_data
         for type,aFid_factions in actorFactions.type_id_factions.iteritems():
             if type not in ('CREA','NPC_'): continue
             self.activeTypes.append(type)
             for longid,factions in aFid_factions.iteritems():
-                self.id_factions[longid] = factions
+                self.id_data[longid] = factions
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -1557,7 +1557,7 @@ class ImportFactions(ImportPatcher):
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
         if not self.isActive: return
-        id_factions= self.id_factions
+        id_factions = self.id_data
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in self.activeTypes:
@@ -1571,43 +1571,46 @@ class ImportFactions(ImportPatcher):
                 if fid not in id_factions: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
+    def _inner_loop(self, id_data, keep, modFileTops, type, type_count):
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            newFactions = set(id_data[fid])
+            curFactions = set((x.faction, x.rank) for x in record.factions)
+            changed = newFactions - curFactions
+            if not changed: continue
+            doKeep = False
+            for faction, rank in changed:
+                for entry in record.factions:
+                    if entry.faction == faction:
+                        if entry.rank != rank:
+                            entry.rank = rank
+                            doKeep = True
+                            keep(fid)
+                        break
+                else:
+                    entry = MelObject()
+                    entry.faction = faction
+                    entry.rank = rank
+                    entry.unused1 = 'ODB'
+                    record.factions.append(entry)
+                    doKeep = True
+            if doKeep:
+                record.factions = [x for x in record.factions if x.rank != -1]
+                type_count[type] += 1
+                keep(fid)
+
     def buildPatch(self,log,progress):
         """Make changes to patchfile."""
         if not self.isActive: return
-        modFile = self.patchFile
+        modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
-        id_factions= self.id_factions
+        id_data= self.id_data
         type_count = {}
         for type in self.activeTypes:
-            if type not in modFile.tops: continue
+            if type not in modFileTops: continue
             type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid in id_factions:
-                    newFactions = set(id_factions[fid])
-                    curFactions = set((x.faction,x.rank) for x in record.factions)
-                    changed = newFactions - curFactions
-                    if not changed: continue
-                    doKeep = False
-                    for faction,rank in changed:
-                        for entry in record.factions:
-                            if entry.faction == faction:
-                                if entry.rank != rank:
-                                    entry.rank = rank
-                                    doKeep = True
-                                    keep(fid)
-                                break
-                        else:
-                            entry = MelObject()
-                            entry.faction = faction
-                            entry.rank = rank
-                            entry.unused1 = 'ODB'
-                            record.factions.append(entry)
-                            doKeep = True
-                    if doKeep:
-                        record.factions = [x for x in record.factions if x.rank != -1]
-                        type_count[type] += 1
-                        keep(fid)
+            self._inner_loop(id_data, keep, modFileTops, type, type_count)
         self._patchLog(log, type_count,
                        modsHeader=u'=== ' + _(u'Source Mods/Files'),
                        logMsg=(u'\n=== ' + self.__class__.logMsg))
