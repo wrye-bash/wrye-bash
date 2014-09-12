@@ -1608,7 +1608,8 @@ class MrePack(MelRecord):
 class MreQust(MelRecord):
     """Quest record."""
     classType = 'QUST'
-    _questFlags = Flags(0,Flags.getNames('startGameEnabled',None,'repeatedTopics','repeatedStages'))
+    _questFlags = Flags(0, Flags.getNames('startGameEnabled', None,
+                                          'repeatedTopics', 'repeatedStages'))
     stageFlags = Flags(0,Flags.getNames('complete'))
     targetFlags = Flags(0,Flags.getNames('ignoresLocks'))
 
@@ -1617,7 +1618,8 @@ class MreQust(MelRecord):
         """Since CDTA subrecords occur in three different places, we need
         to replace ordinary 'loaders' dictionary with a 'dictionary' that will
         return the correct element to handle the CDTA subrecord. 'Correct'
-        element is determined by which other subrecords have been encountered."""
+        element is determined by which other subrecords have been encountered.
+        """
         def __init__(self,loaders,quest,stages,targets):
             self.data = loaders
             self.type_ctda = {'EDID':quest, 'INDX':stages, 'QSTA':targets}
@@ -1641,14 +1643,16 @@ class MreQust(MelRecord):
                 MelStruct('QSDT','B',(stageFlags,'flags')),
                 MelConditions(),
                 MelString('CNAM','text'),
-                MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+                MelStruct('SCHR', '4s4I', ('unused1', null4), 'numRefs',
+                          'compiledSize', 'lastIndex', 'scriptType'),
                 MelBase('SCDA','compiled_p'),
                 MelString('SCTX','scriptText'),
                 MelScrxen('SCRV/SCRO','references')
                 ),
             ),
-        MelGroups('targets',
-            MelStruct('QSTA','IB3s',(FID,'targetId'),(targetFlags,'flags'),('unused1',null3)),
+        MelGroups('targets', MelStruct('QSTA', 'IB3s', (FID, 'targetId'),
+                                       (targetFlags, 'flags'),
+                                       ('unused1', null3)),
             MelConditions(),
             ),
         )
@@ -1658,14 +1662,15 @@ class MreQust(MelRecord):
 class MreRace(MelRecord):
     """Race record.
 
-    This record is complex to read and write. Relatively simple problems are the VNAM
-    which can be empty or zeroed depending on relationship between voices and
-    the fid for the race.
+    This record is complex to read and write. Relatively simple problems are
+    the VNAM which can be empty or zeroed depending on relationship between
+    voices and the fid for the race.
 
-    The face and body data is much more complicated, with the same subrecord types
-    mapping to different attributes depending on preceding flag subrecords (NAM0, NAM1,
-    NMAN, FNAM and INDX.) These are handled by using the MelRaceDistributor class
-    to dynamically reassign melSet.loaders[type] as the flag records are encountered.
+    The face and body data is much more complicated, with the same subrecord
+    types mapping to different attributes depending on preceding flag
+    subrecords (NAM0, NAM1, NMAN, FNAM and INDX.) These are handled by using
+    the MelRaceDistributor class to dynamically reassign melSet.loaders[type]
+    as the flag records are encountered.
 
     It's a mess, but this is the shortest, clearest implementation that I could
     think of."""
@@ -1674,7 +1679,8 @@ class MreRace(MelRecord):
     _flags = Flags(0L,Flags.getNames('playable'))
 
     class MelRaceVoices(MelStruct):
-        """Set voices to zero, if equal race fid. If both are zero, then don't skip dump."""
+        """Set voices to zero, if equal race fid. If both are zero,
+        then don't skip dump."""
         def dumpData(self,record,out):
             if record.maleVoice == record.fid: record.maleVoice = 0L
             if record.femaleVoice == record.fid: record.femaleVoice = 0L
@@ -1682,7 +1688,8 @@ class MreRace(MelRecord):
                 MelStruct.dumpData(self,record,out)
 
     class MelRaceModel(MelGroup):
-        """Most face data, like a MelModel - MODT + ICON. Load is controlled by MelRaceDistributor."""
+        """Most face data, like a MelModel - MODT + ICON. Load is controlled
+        by MelRaceDistributor."""
         def __init__(self,attr,index):
             MelGroup.__init__(self,attr,
                 MelString('MODL','modPath'),
@@ -1696,7 +1703,8 @@ class MreRace(MelRecord):
             MelGroup.dumpData(self,record,out)
 
     class MelRaceIcon(MelString):
-        """Most body data plus eyes for face. Load is controlled by MelRaceDistributor."""
+        """Most body data plus eyes for face. Load is controlled by
+        MelRaceDistributor."""
         def __init__(self,attr,index):
             MelString.__init__(self,'ICON',attr)
             self.index = index
@@ -1708,14 +1716,16 @@ class MreRace(MelRecord):
         """Handles NAM0, NAM1, MNAM, FMAN and INDX records. Distributes load
         duties to other elements as needed."""
         def __init__(self):
-            bodyAttrs = ('UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath')
+            bodyAttrs = ('UpperBodyPath', 'LowerBodyPath', 'HandPath',
+                         'FootPath', 'TailPath')
             self.attrs = {
                 'MNAM':tuple('male'+text for text in bodyAttrs),
                 'FNAM':tuple('female'+text for text in bodyAttrs),
                 'NAM0':('head', 'maleEars', 'femaleEars', 'mouth',
                 'teethLower', 'teethUpper', 'tongue', 'leftEye', 'rightEye',)
                 }
-            self.tailModelAttrs = {'MNAM':'maleTailModel','FNAM':'femaleTailModel'}
+            self.tailModelAttrs = {'MNAM': 'maleTailModel',
+                                   'FNAM': 'femaleTailModel'}
             self._debug = False
 
         def getSlotsUsed(self):
@@ -1727,7 +1737,8 @@ class MreRace(MelRecord):
                 loaders[type] = self
 
         def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders later."""
+            """Set parent melset. Need this so that can reassign loaders
+            later."""
             self.melSet = melSet
             self.loaders = {}
             for element in melSet.elements:
@@ -1753,21 +1764,27 @@ class MreRace(MelRecord):
         MelString('DESC','text'),
         MelFids('SPLO','spells'),
         MelStructs('XNAM','Ii','relations',(FID,'faction'),'mod'),
-        MelStruct('DATA','14b2s4fI','skill1','skill1Boost','skill2','skill2Boost',
-                  'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',
-                  'skill6','skill6Boost','skill7','skill7Boost',('unused1',null2),
-                  'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags,'flags',0L)),
-        MelRaceVoices('VNAM','2I',(FID,'maleVoice'),(FID,'femaleVoice')), #--0 same as race fid.
-        MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)), #--0=None
-        MelStruct('CNAM','B','defaultHairColor'), #--Int corresponding to GMST sHairColorNN
+        MelStruct('DATA', '14b2s4fI', 'skill1', 'skill1Boost', 'skill2',
+                  'skill2Boost', 'skill3', 'skill3Boost', 'skill4',
+                  'skill4Boost', 'skill5', 'skill5Boost', 'skill6',
+                  'skill6Boost', 'skill7', 'skill7Boost', ('unused1', null2),
+                  'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
+                  (_flags, 'flags', 0L)),
+        MelRaceVoices('VNAM','2I',(FID,'maleVoice'),
+                      (FID,'femaleVoice')), #--0 same as race fid.
+        MelOptStruct('DNAM', '2I', (FID, 'defaultHairMale', 0L),
+                     (FID, 'defaultHairFemale', 0L)), # --0=None
+        MelStruct('CNAM', 'B', 'defaultHairColor'), #--Int corresponding to
+        # GMST sHairColorNN
         MelOptStruct('PNAM','f','mainClamp'),
         MelOptStruct('UNAM','f','faceClamp'),
         #--Male: Str,Int,Wil,Agi,Spd,End,Per,luck; Female Str,Int,...
-        MelStruct('ATTR','16B','maleStrength','maleIntelligence','maleWillpower',
-                  'maleAgility','maleSpeed','maleEndurance','malePersonality',
-                  'maleLuck','femaleStrength','femaleIntelligence',
-                  'femaleWillpower','femaleAgility','femaleSpeed',
-                  'femaleEndurance','femalePersonality','femaleLuck'),
+        MelStruct('ATTR', '16B', 'maleStrength', 'maleIntelligence',
+                  'maleWillpower', 'maleAgility', 'maleSpeed', 'maleEndurance',
+                  'malePersonality', 'maleLuck', 'femaleStrength',
+                  'femaleIntelligence', 'femaleWillpower', 'femaleAgility',
+                  'femaleSpeed', 'femaleEndurance', 'femalePersonality',
+                  'femaleLuck'),
         #--Begin Indexed entries
         MelBase('NAM0','_nam0',''), ####Face Data Marker, wbEmpty
         MelRaceModel('head',0),
@@ -1811,7 +1828,8 @@ class MreRefr(MelRecord):
     classType = 'REFR'
     _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo'))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
-    _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
+    _actFlags = Flags(0L, Flags.getNames('useDefault', 'activate', 'open',
+                                         'openByDefault'))
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     class MelRefrXloc(MelOptStruct):
         """Handle older truncated XLOC for REFR subrecord."""
@@ -1823,8 +1841,11 @@ class MreRefr(MelRecord):
                 #--Else is skipping unused2
                 unpacked = ins.unpack('B3sIB3s',size,readId)
             else:
-                raise ModError(ins.inName,u'Unexpected size encountered for REFR:XLOC subrecord: %i' % size)
-            unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
+                raise ModError(ins.inName,
+                               u'Unexpected size encountered for REFR:XLOC '
+                               u'subrecord: %i' % size)
+            unpacked = unpacked[:-2] + self.defaults[
+                                       len(unpacked) - 2:-2] + unpacked[-2:]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if callable(action): value = action(value)
@@ -1848,14 +1869,17 @@ class MreRefr(MelRecord):
                 elif type == 'FULL':
                     record.full = ins.readString(size,readId)
                 elif type == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs',size,readId)
+                    record.markerType, record.unused5 = insUnpack('Bs', size,
+                                                                  readId)
                 pos = insTell()
                 (type,size) = insUnpack('4sH',6,readId+'.FULL')
             ins.seek(pos)
-            if self._debug: print ' ',record.flags,record.full,record.markerType
+            if self._debug: print ' ', record.flags, record.full, \
+                record.markerType
 
         def dumpData(self,record,out):
-            if (record.flags,record.full,record.markerType,record.unused5) != self.defaults[1:]:
+            if (record.flags, record.full, record.markerType,
+                record.unused5) != self.defaults[1:]:
                 record.hasXmrk = True
             if record.hasXmrk:
                 try:
@@ -1866,22 +1890,29 @@ class MreRefr(MelRecord):
                         out.packSub0('FULL',value)
                     out.packSub('TNAM','Bs',record.markerType, record.unused5)
                 except struct.error:
-                    print self.subType,self.format,record.flags,record.full,record.markerType
+                    print self.subType, self.format, record.flags, \
+                        record.full, record.markerType
                     raise
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('NAME','base'),
-        MelOptStruct('XTEL','I6f',(FID,'destinationFid'),'destinationPosX','destinationPosY',
-            'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ'),
-        MelRefrXloc('XLOC','B3sI4sB3s','lockLevel',('unused1',null3),(FID,'lockKey'),('unused2',null4),(_lockFlags,'lockFlags'),('unused3',null3)),
+        MelOptStruct('XTEL', 'I6f', (FID, 'destinationFid'), 'destinationPosX',
+                     'destinationPosY', 'destinationPosZ', 'destinationRotX',
+                     'destinationRotY', 'destinationRotZ'),
+        MelRefrXloc('XLOC', 'B3sI4sB3s', 'lockLevel', ('unused1', null3),
+                    (FID, 'lockKey'), ('unused2', null4),
+                    (_lockFlags, 'lockFlags'), ('unused3', null3)),
         MelOwnership(),
-        MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused4',null3)),
+        MelOptStruct('XESP','IB3s',(FID,'parent'),
+                     (_parentFlags,'parentFlags'),('unused4',null3)),
         MelFid('XTRG','targetId'),
         MelBase('XSED','seed_p'),
-        ####SpeedTree Seed, if it's a single byte then it's an offset into the list of seed values in the TREE record
+        ####SpeedTree Seed, if it's a single byte then it's an offset into
+        # the list of seed values in the TREE record
         ####if it's 4 byte it's the seed value directly.
-        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)), ####Distant LOD Data, unknown
+        MelOptStruct('XLOD', '3f', ('lod1', None), ('lod2', None),
+                     ('lod3', None)), # ###Distant LOD Data, unknown
         MelOptStruct('XCHG','f',('charge',None)),
         MelOptStruct('XHLT','i',('health',None)),
         MelXpci('XPCI'), ####fid, unknown
@@ -1889,12 +1920,18 @@ class MreRefr(MelRecord):
         MelFid('XRTM','xrtm'), ####unknown
         MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)), ####Action Flag
         MelOptStruct('XCNT','i','count'),
-        MelRefrXmrk('XMRK','',('hasXmrk',False),(_flags,'flags',0L),'full','markerType',('unused5',null1)), ####Map Marker Start Marker, wbEmpty
+        MelRefrXmrk('XMRK', '', ('hasXmrk', False), (_flags, 'flags', 0L),
+                    'full', 'markerType', ('unused5', null1)),
+        ####Map Marker Start Marker, wbEmpty
         MelBase('ONAM','onam_p'), ####Open by Default, wbEmpty
         MelBase('XRGD','xrgd_p'),
         MelOptStruct('XSCL','f',('scale',1.0)),
-        MelOptStruct('XSOL','B',('soul',None)), ####Was entirely missing. Confirmed by creating a test mod...it isn't present in any of the official esps
-        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),('rotX',None),('rotY',None),('rotZ',None)),
+        MelOptStruct('XSOL', 'B', ('soul', None)),
+        ####Was entirely missing. Confirmed by creating a test mod...it
+        # isn't present in any of the official esps
+        MelOptStruct('DATA', '=6f', ('posX', None), ('posY', None),
+                     ('posZ', None), ('rotX', None), ('rotY', None),
+                     ('rotZ', None)),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1981,20 +2018,28 @@ class MreRegn(MelRecord):
             MelStruct('RPLI','I','edgeFalloff'),
             MelStructA('RPLD','2f','points','posX','posY')),
         MelGroups('entries',
-            MelStruct('RDAT', 'I2B2s','entryType', (_flags,'flags'), 'priority', ('unused1',null2)), ####flags actually an enum...
-            MelRegnStructA('RDOT', 'IH2sf4B2H4s4f3H2s4s', 'objects', (FID,'objectId'), 'parentIndex',
+                  MelStruct('RDAT', 'I2B2s', 'entryType', (_flags, 'flags'),
+                            'priority', ('unused1', null2)),
+                  ####flags actually an enum...
+                  MelRegnStructA('RDOT', 'IH2sf4B2H4s4f3H2s4s', 'objects',
+                                 (FID, 'objectId'), 'parentIndex',
             ('unused1',null2), 'density', 'clustering', 'minSlope', 'maxSlope',
             (obflags, 'flags'), 'radiusWRTParent', 'radius', ('unk1',null4),
             'maxHeight', 'sink', 'sinkVar', 'sizeVar', 'angleVarX',
             'angleVarY',  'angleVarZ', ('unused2',null2), ('unk2',null4)),
             MelRegnString('RDMP', 'mapName'),
 ## Disabled support due to bug when loading.
-## Apparently group records can't contain subrecords that are also present outside of the group.
-##            MelRegnString('ICON', 'iconPath'),  ####Obsolete? Only one record in oblivion.esm
-            MelRegnStructA('RDGS', 'I4s', 'grasses', (FID,'grass'), ('unk1',null4)),
+## Apparently group records can't contain subrecords that are also present
+# outside of the group.
+##          MelRegnString('ICON', 'iconPath'),  ####Obsolete? Only one
+# record in oblivion.esm
+            MelRegnStructA('RDGS', 'I4s', 'grasses', (FID,'grass'),
+                           ('unk1',null4)),
             MelRegnOptStruct('RDMD', 'I', ('musicType',None)),
-            MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '2I', 'weather', (FID, 'weather'), 'chance')),
+            MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'),
+                           (sdflags, 'flags'), 'chance'),
+            MelRegnStructA('RDWT', '2I', 'weather', (FID, 'weather'),
+                           'chance')),
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
