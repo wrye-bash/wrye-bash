@@ -1091,6 +1091,30 @@ class NPCAIPackagePatcher(ImportPatcher):
         self.data = {}
         self.longTypes = {'CREA', 'NPC_'}
 
+    def _insertPackage(self, data, fid, index, pkg, recordData):
+        if index == 0: data[fid]['merged'].insert(0, pkg)# insert as first item
+        elif index == (len(recordData['merged']) - 1):
+            data[fid]['merged'].append(pkg)  # insert as last item
+        else:  # figure out a good spot to insert it based on next or last
+            # recognized item (ugly ugly ugly)
+            i = index - 1
+            while i >= 0:
+                if recordData['merged'][i] in data[fid]['merged']:
+                    slot = data[fid]['merged'].index(
+                        recordData['merged'][i]) + 1
+                    data[fid]['merged'].insert(slot, pkg)
+                    break
+                i -= 1
+            else:
+                i = index + 1
+                while i != len(recordData['merged']):
+                    if recordData['merged'][i] in data[fid]['merged']:
+                        slot = data[fid]['merged'].index(
+                            recordData['merged'][i])
+                        data[fid]['merged'].insert(slot, pkg)
+                        break
+                    i += 1
+
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
@@ -1112,7 +1136,8 @@ class NPCAIPackagePatcher(ImportPatcher):
             mapper = srcFile.getLongMapper()
             for recClass in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
                 if recClass.classType not in srcFile.tops: continue
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                for record in srcFile.tops[
+                    recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.aiPackages)
             for master in reversed(masters):
@@ -1126,14 +1151,18 @@ class NPCAIPackagePatcher(ImportPatcher):
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for block in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+                blocks = (MreRecord.type_class[x] for x in ('NPC_', 'CREA'))
+                for block in blocks:
                     if block.classType not in srcFile.tops: continue
                     if block.classType not in masterFile.tops: continue
-                    for record in masterFile.tops[block.classType].getActiveRecords():
+                    for record in masterFile.tops[
+                        block.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if not fid in tempData: continue
-                        if record.aiPackages == tempData[fid] and not u'Actors.AIPackagesForceAdd' in bashTags:
-                            # if subrecord is identical to the last master then we don't care about older masters.
+                        if record.aiPackages == tempData[fid] and not \
+                            u'Actors.AIPackagesForceAdd' in bashTags:
+                            # if subrecord is identical to the last master
+                            # then we don't care about older masters.
                             del tempData[fid]
                             continue
                         if fid in data:
@@ -1151,57 +1180,32 @@ class NPCAIPackagePatcher(ImportPatcher):
                                 data[fid]['deleted'].append(pkg)
                             if data[fid]['merged'] == []:
                                 for pkg in recordData['merged']:
-                                    if pkg in data[fid]['deleted'] and not u'Actors.AIPackagesForceAdd' in bashTags: continue
+                                    if pkg in data[fid]['deleted'] and not \
+                                      u'Actors.AIPackagesForceAdd' in bashTags:
+                                        continue
                                     data[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if not pkg in data[fid]['merged']: # so needs to be added... (unless deleted that is)
+                                if not pkg in data[fid]['merged']:  # so needs
+                                    #  to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in data[fid]['deleted'] and not u'Actors.AIPackagesForceAdd' in bashTags: continue #previously deleted
-                                    if index == 0:
-                                        data[fid]['merged'].insert(0,pkg) #insert as first item
-                                    elif index == (len(recordData['merged'])-1):
-                                        data[fid]['merged'].append(pkg) #insert as last item
-                                    else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData['merged'][i] in data[fid]['merged']:
-                                                slot = data[fid]['merged'].index(recordData['merged'][i])+1
-                                                data[fid]['merged'].insert(slot, pkg)
-                                                break
-                                            i -= 1
-                                        else:
-                                            i = index + 1
-                                            while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in data[fid]['merged']:
-                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
-                                                    data[fid]['merged'].insert(slot, pkg)
-                                                    break
-                                                i += 1
+                                    if pkg in data[fid]['deleted'] and not \
+                                      u'Actors.AIPackagesForceAdd' in bashTags:
+                                        continue  # previously deleted
+                                    self._insertPackage(data, fid, index, pkg,
+                                                        recordData)
                                     continue # Done with this package
-                                elif index == data[fid]['merged'].index(pkg) or (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(pkg)): continue #pkg same in both lists.
-                                else: #this import is later loading so we'll assume it is better order
+                                elif index == data[fid]['merged'].index(
+                                        pkg) or (
+                                    len(recordData['merged']) - index) == (
+                                    len(data[fid]['merged']) - data[fid][
+                                    'merged'].index(pkg)):
+                                    continue  # pkg same in both lists.
+                                else:  # this import is later loading so we'll
+                                    #  assume it is better order
                                     data[fid]['merged'].remove(pkg)
-                                    if index == 0:
-                                        data[fid]['merged'].insert(0,pkg) #insert as first item
-                                    elif index == (len(recordData['merged'])-1):
-                                        data[fid]['merged'].append(pkg) #insert as last item
-                                    else:
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData['merged'][i] in data[fid]['merged']:
-                                                slot = data[fid]['merged'].index(recordData['merged'][i]) + 1
-                                                data[fid]['merged'].insert(slot, pkg)
-                                                break
-                                            i -= 1
-                                        else:
-                                            i = index + 1
-                                            while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in data[fid]['merged']:
-                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
-                                                    data[fid]['merged'].insert(slot, pkg)
-                                                    break
-                                                i += 1
+                                    self._insertPackage(data, fid, index, pkg,
+                                                     recordData)
             progress.plus()
 
     def getReadClasses(self):
@@ -1262,7 +1266,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.previousPackages = {}
@@ -1277,23 +1280,32 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         """Records information needed to apply the patch."""
         aiPackages = record.aiPackages
         if not ValidateList(aiPackages, self.patchFile):
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
+                self.name, {})
+            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                modFile.GName, 0) + 1
             return
 
         recordId = record.fid
         newPackages = MemorySet(aiPackages)
-        self.previousPackages.setdefault(recordId,{})[modFile.GName] = newPackages
+        self.previousPackages.setdefault(recordId, {})[
+            modFile.GName] = newPackages
 
         if modFile.GName in self.srcs:
-            masterPackages = self.previousPackages[recordId].get(recordId[0],None)
-            # can't just do "not masterPackages ^ newPackages" since the order may have changed
-            if masterPackages is not None and masterPackages == newPackages: return
-            mergedPackages = self.mergedPackageList.setdefault(recordId,newPackages)
-            if newPackages == mergedPackages: return #same as the current list, just skip.
+            masterPackages = self.previousPackages[recordId].get(recordId[0],
+                                                                 None)
+            # can't just do "not masterPackages ^ newPackages" since the
+            # order may have changed
+            if masterPackages is not None and masterPackages == newPackages:
+                return
+            mergedPackages = self.mergedPackageList.setdefault(recordId,
+                                                               newPackages)
+            if newPackages == mergedPackages: return  # same as the current
+            # list, just skip.
             for master in reversed(modFile.TES4.masters):
                 masterPath = GPath(master)
-                masterPackages = self.previousPackages[recordId].get(masterPath,None)
+                masterPackages = self.previousPackages[recordId].get(
+                    masterPath, None)
                 if masterPackages is None: continue
 
                 # Get differences from master
@@ -1325,10 +1337,12 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                     except:
                         newMergedPackages = []
                         for pkg in mergedPackages:
-                            if not pkg[0] is None: newMergedPackages.append(pkg)
+                            if not pkg[0] is None: newMergedPackages.append(
+                                pkg)
                         override.aiPackages = newMergedPackages
                     mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
