@@ -238,11 +238,6 @@ class CellImporter(ACellImporter, ImportPatcher):
                 keep(worldBlock.world.fid)
         self._patchLog(log, count, logMsg=u'\n=== ' + self.__class__.logMsg)
 
-    def _plog(self,log,logMsg,count):
-        log(logMsg)
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
-            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
-
 class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
