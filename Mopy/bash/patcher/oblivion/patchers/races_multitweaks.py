@@ -30,16 +30,17 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """ # TODO:DOCS
 import random
 import re
-from bash.bolt import SubProgress, BoltError, GPath, deprint
-from bash.bosh import SpecialPatcher, PatchFile, LoadFactory, \
+from .... import bush # for fullLoadOrder, defaultEyes (?)
+from .... import bosh # for modInfos
+from ....bolt import SubProgress, BoltError, GPath, deprint
+from ....bosh import SpecialPatcher, PatchFile, LoadFactory, \
     ModFile
-from bash.brec import MreRecord, MelObject, strFid
-import bash.bush
-from bash.cint import ValidateDict, FormID
-from bash.patcher.base import AMultiTweakItem, Patcher
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from ....brec import MreRecord, MelObject, strFid
+from ....cint import ValidateDict, FormID
+from ....patcher.base import AMultiTweakItem, Patcher
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import DoublePatcher, \
+from ....patcher.oblivion.patchers.base import DoublePatcher, \
     CBash_DoublePatcher, CBash_ListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------
@@ -782,11 +783,11 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
-        for modInfo in bash.bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (
                         autoKey & set(modInfo.getBashTags())):
-                if bash.bush.fullLoadOrder[modInfo.name] > \
-                        bash.bush.fullLoadOrder[PatchFile.patchName]: continue
+                if bush.fullLoadOrder[modInfo.name] > \
+                        bush.fullLoadOrder[PatchFile.patchName]: continue
                 autoItems.append(modInfo.name)
         return autoItems
 
@@ -824,8 +825,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         progress.setFull(len(self.srcMods))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcMods):
-            if srcMod not in bash.bosh.modInfos: continue
-            srcInfo = bash.bosh.modInfos[srcMod]
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             masters = srcInfo.header.masters
@@ -898,12 +899,12 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                 if u'R.Description' in bashTags:
                     tempRaceData['text'] = race.text
             for master in masters:
-                if not master in bash.bosh.modInfos: continue  # or break
+                if not master in bosh.modInfos: continue  # or break
                 # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bash.bosh.modInfos[master]
+                    masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     if 'RACE' not in masterFile.tops: continue
@@ -1177,7 +1178,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             if (race.flags.playable or race.fid == (
                     GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
                 defaultEyes[race.fid] = [x for x in
-                                         bash.bush.defaultEyes.get(race.fid,
+                                         bush.defaultEyes.get(race.fid,
                                              []) if x in race.eyes]
                 if not defaultEyes[race.fid]:
                     defaultEyes[race.fid] = [race.eyes[0]]
@@ -1732,7 +1733,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                             racesSorted.add(race.eid)
                             raceChanged = True
                         defaultEyes[recordId] = [x for x in
-                                                 bash.bush.defaultEyes.get(
+                                                 bush.defaultEyes.get(
                                                      recordId, []) if
                                                  x in currentEyes] or \
                                                 currentEyes

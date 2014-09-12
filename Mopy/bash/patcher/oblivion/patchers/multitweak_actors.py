@@ -27,13 +27,13 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 # TODO:DOCS
 import random
 import re
-import bash
-from bash.bolt import AbstractError, GPath
-from bash.cint import FormID
-from bash.patcher.base import AMultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from .... import bosh # for modInfos, dirs
+from ....bolt import AbstractError, GPath
+from ....cint import FormID
+from ....patcher.base import AMultiTweakItem
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+from ....patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
@@ -202,7 +202,7 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
         # Since bosh.dirs hasn't been populated when __init__ executes,
         # we do this here
         skeletonList = skeletonSetSpecial =[]
-        skeletonDir = bash.bosh.dirs['mods'].join(u'Meshes', u'Characters',
+        skeletonDir = bosh.dirs['mods'].join(u'Meshes', u'Characters',
                                                   u'_male')
         if skeletonDir.exists():
             skeletonList = [x for x in skeletonDir.list() if
@@ -476,7 +476,7 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
         #--Log
         log.setHeader(u'==='+_(u'No Bloody Creatures'))
         log(self.logMsg % sum(count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,

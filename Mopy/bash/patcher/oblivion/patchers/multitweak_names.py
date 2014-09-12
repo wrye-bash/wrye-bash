@@ -26,11 +26,11 @@
 to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO:DOCS
 import re
-import bash # had to do this so bash.bosh.modInfos is resolved (DUH)
-from bash.patcher.base import AMultiTweakItem, AMultiTweaker
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from .... import bosh # for modInfos
+from ....patcher.base import AMultiTweakItem, AMultiTweaker
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+from ....patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
 
 class _AMultiTweakItem_Names(MultiTweakItem):
@@ -42,7 +42,7 @@ class _AMultiTweakItem_Names(MultiTweakItem):
         # CBash implementations which _do_ use it produce different logs. TODO:
         # unify C/P logs by using self.logMsg (mind the classes mentioned)
         log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------

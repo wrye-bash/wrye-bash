@@ -25,12 +25,12 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings, said the oracle at Delphi.""" # TODO:DOCS
-from bash.bolt import SubProgress, StateError, deprint
-from bash.brec import MreRecord, ModReader
-import bash.bush
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from .... import bush # for game
+from ....bolt import SubProgress, StateError, deprint
+from ....brec import MreRecord, ModReader
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+from ....patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
@@ -85,7 +85,7 @@ class GmstTweak(MultiTweakItem):
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
-        isOblivion = bash.bush.game.fsName.lower() == u'oblivion'
+        isOblivion = bush.game.fsName.lower() == u'oblivion'
         for eid,value in zip(eids,self.choiceValues[self.chosen]):
             if isOblivion and value < 0:
                 deprint(_(u"GMST values can't be negative - currently %s - "
@@ -216,8 +216,8 @@ class GmstTweaker(MultiTweaker):
         # Load game specific tweaks
         self.tweaks = []
         tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(GlobalsTweak,bash.bush.game.GlobalsTweaks),
-                           (GmstTweak,bash.bush.game.GmstTweaks)]:
+        for cls,tweaks in [(GlobalsTweak,bush.game.GlobalsTweaks),
+                           (GmstTweak,bush.game.GmstTweaks)]:
             for tweak in tweaks:
                 if isinstance(tweak,tuple):
                     tweaksAppend(cls(*tweak))
@@ -276,8 +276,8 @@ class CBash_GmstTweaker(CBash_MultiTweaker):
         # Load game specific tweaks
         self.tweaks = []
         tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(CBash_GlobalsTweak,bash.bush.game.GlobalsTweaks),
-                           (CBash_GmstTweak,bash.bush.game.GmstTweaks)]:
+        for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
+                           (CBash_GmstTweak,bush.game.GmstTweaks)]:
             for tweak in tweaks:
                 if isinstance(tweak,tuple):
                     tweaksAppend(cls(*tweak))

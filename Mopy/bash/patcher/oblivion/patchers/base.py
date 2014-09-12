@@ -24,10 +24,10 @@
 
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import bash
-from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
+from ....bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt
+from ....patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
     AImportPatcher
-from bash.bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt
 
 class MultiTweakItem(AMultiTweakItem):
     # Notice the differences from Patcher in scanModFile and buildPatch

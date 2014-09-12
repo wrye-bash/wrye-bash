@@ -26,14 +26,14 @@
 
 # Patchers: 20 ----------------------------------------------------------------
 import operator
-import bash # to make bash.bosh.modInfos resolve...
-from bash.bosh import LoadFactory, ModFile, CountDict
-from bash.brec import MreRecord
-from bash.patcher.base import AImportPatcher
-from bash.patcher.oblivion.patchers.base import ImportPatcher, \
+from .... import bosh # for modInfos
+from ....bosh import LoadFactory, ModFile, CountDict
+from ....brec import MreRecord
+from ....patcher.base import AImportPatcher
+from ....patcher.oblivion.patchers.base import ImportPatcher, \
     CBash_ImportPatcher
-from bash.cint import ValidateDict
-from bash.patcher.base import Patcher
+from ....cint import ValidateDict
+from ....patcher.base import Patcher
 
 class ACellImporter(AImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -123,9 +123,9 @@ class CellImporter(ACellImporter, ImportPatcher):
         progress.setFull(len(self.sourceMods))
         cachedMasters = {}
         for srcMod in self.sourceMods:
-            if srcMod not in bash.bosh.modInfos: continue
+            if srcMod not in bosh.modInfos: continue
             tempCellData = {'Maps':{}}
-            srcInfo = bash.bosh.modInfos[srcMod]
+            srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
@@ -150,12 +150,12 @@ class CellImporter(ACellImporter, ImportPatcher):
                     #     if worldBlock.world.mapPath:
                     #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
-                if not master in bash.bosh.modInfos: continue  # or break
+                if not master in bosh.modInfos: continue  # or break
                 # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bash.bosh.modInfos[master]
+                    masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(('CELL','WRLD'))
@@ -240,7 +240,7 @@ class CellImporter(ACellImporter, ImportPatcher):
 
     def _plog(self,log,logMsg,count):
         log(logMsg)
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
@@ -372,8 +372,8 @@ class GraphicsPatcher(ImportPatcher):
         cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
-            if srcMod not in bash.bosh.modInfos: continue
-            srcInfo = bash.bosh.modInfos[srcMod]
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.header.masters
             srcFile.load(True)
@@ -413,12 +413,12 @@ class GraphicsPatcher(ImportPatcher):
                             (attr, record.__getattribute__(attr)) for attr in
                             recAttrs)
             for master in masters:
-                if not master in bash.bosh.modInfos: continue  # or break
+                if not master in bosh.modInfos: continue  # or break
                 # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bash.bosh.modInfos[master]
+                    masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)
@@ -619,7 +619,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
                 type, sum(mod_count[type].values())))
-            for srcMod in bash.bosh.modInfos.getOrdered(
+            for srcMod in bosh.modInfos.getOrdered(
                     mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
@@ -689,8 +689,8 @@ class ActorImporter(ImportPatcher):
         cachedMasters = {}
         for index,srcMod in enumerate(self.sourceMods):
             temp_id_data = {}
-            if srcMod not in bash.bosh.modInfos: continue
-            srcInfo = bash.bosh.modInfos[srcMod]
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             masters = srcInfo.header.masters
             srcFile.load(True)
@@ -717,11 +717,11 @@ class ActorImporter(ImportPatcher):
                             (subattr,reduce(getattr,subattr.split('.'),record))
                                     for subattr in attr)
             for master in masters:
-                if not master in bash.bosh.modInfos: continue # or break filter mods
+                if not master in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterInfo = bash.bosh.modInfos[master]
+                    masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
                     masterFile.convertToLongFids(longTypes)
@@ -902,6 +902,6 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
                 type, sum(mod_count[type].values())))
-            for srcMod in bash.bosh.modInfos.getOrdered(mod_count[type].keys()):
+            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
