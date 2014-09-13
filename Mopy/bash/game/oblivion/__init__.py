@@ -25,7 +25,7 @@
 """This modules defines static data for use by bush, when
    TES IV: Oblivion is set at the active game."""
 
-from oblivion_const import bethDataFiles, allBethFiles
+from constants import bethDataFiles, allBethFiles
 from ... import brec
 from ...brec import *
 
@@ -121,12 +121,12 @@ dontSkipDirs = {
 }
 
 #Folders BAIN should never check
-SkipBAINRefresh = set ((
+SkipBAINRefresh = {
     u'tes4edit backups',
     u'bgsee',
     u'conscribe logs',
     #Use lowercase names
-))
+}
 
 #--Some stuff dealing with INI files
 class ini:
@@ -235,7 +235,7 @@ pklfile = ur'bash\db\Oblivion_ids.pkl'
 # Moved to oblivion_const
 
 #--BAIN: Directories that are OK to install to
-dataDirs = set((
+dataDirs = {
     u'bash patches',
     u'distantlod',
     u'docs',
@@ -248,20 +248,20 @@ dataDirs = set((
     u'sound',
     u'textures',
     u'trees',
-    u'video'))
-dataDirsPlus = set((
+    u'video'}
+dataDirsPlus = {
     u'streamline',
     u'_tejon',
     u'ini tweaks',
     u'scripts',
     u'pluggy',
     u'ini',
-    u'obse'))
+    u'obse'}
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
-wryeBashDataFiles = set((
+wryeBashDataFiles = {
     u'Bashed Patch.esp',
     u'Bashed Patch, 0.esp',
     u'Bashed Patch, 1.esp',
@@ -285,22 +285,22 @@ wryeBashDataFiles = set((
     u'Docs\\wtxt_sand_small.css',
     u'Docs\\wtxt_teal.css',
     u'Docs\\Bash Readme Template.txt'
-    ))
-wryeBashDataDirs = set((
+}
+wryeBashDataDirs = {
     u'Bash Patches',
     u'INI Tweaks'
-    ))
-ignoreDataFiles = set((
+}
+ignoreDataFiles = {
     u'OBSE\\Plugins\\Construction Set Extender.dll',
     u'OBSE\\Plugins\\Construction Set Extender.ini'
-    ))
-ignoreDataFilePrefixes = set((
+}
+ignoreDataFilePrefixes = {
     u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-    ))
-ignoreDataDirs = set((
+}
+ignoreDataDirs = {
     u'OBSE\\Plugins\\ComponentDLLs\\CSE',
     u'LSData'
-    ))
+}
 
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
@@ -1329,10 +1329,10 @@ CBash_patchers = (
 # For ListsMerger
 listTypes = ('LVLC','LVLI','LVSP',)
 
-namesTypes = set((
-        'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CONT', 'CREA', 'DOOR',
-        'EYES', 'FACT', 'FLOR', 'HAIR','INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST',
-        'SLGM', 'SPEL','WEAP',))
+namesTypes = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT',
+              'CONT', 'CREA', 'DOOR', 'EYES', 'FACT', 'FLOR', 'HAIR', 'INGR',
+              'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST', 'SLGM', 'SPEL',
+              'WEAP'}
 pricesTypes = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
 statsTypes = {
             'ALCH':('eid', 'weight', 'value'),
@@ -1539,5 +1539,7 @@ def init():
         ))
 
     #--Simple records
-    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
-        set(('TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND','WRLD','INFO','DIAL')))
+    brec.MreRecord.simpleTypes = (
+        set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
+                                          'CELL', 'PGRD', 'ROAD', 'LAND',
+                                          'WRLD', 'INFO', 'DIAL'})
