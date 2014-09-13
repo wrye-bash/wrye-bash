@@ -43,12 +43,12 @@ from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
 # CBash_ListPatcher outta bosh
 
 # Patchers: 40 ----------------------------------------------------------------
-class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
+class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # TODO : translate ?
-        super(ARaceTweaker_BiggerOrcsandNords, self).__init__(
+        super(ARaceTweaker_BiggerOrcsAndNords, self).__init__(
             _(u"Bigger Nords and Orcs"),
             _(u'Adjusts the Orc and Nord race records to be taller/heavier '
               u'- to be more lore friendly.'),
@@ -63,7 +63,7 @@ class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Races tweaked: %d')
 
-class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,
+class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
                                      MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
     #--Patch Phase ------------------------------------------------------------
@@ -111,14 +111,14 @@ class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,
+class CBash_RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
                                            CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
     name = _(u"Bigger Nords and Orcs")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        super(CBash_RaceTweaker_BiggerOrcsandNords, self).__init__()
+        super(CBash_RaceTweaker_BiggerOrcsAndNords, self).__init__()
         self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
 
     def getTypes(self):
@@ -766,7 +766,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
     subLabel = _(u'Race Tweaks')
     races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
-        RaceTweaker_BiggerOrcsandNords(),
+        RaceTweaker_BiggerOrcsAndNords(),
         RaceTweaker_MergeSimilarRaceHairs(),
         RaceTweaker_MergeSimilarRaceEyes(),
         RaceTweaker_PlayableEyes(),
@@ -1829,7 +1829,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
                      'configChoices': {}}
     subLabel = _(u'Race Tweaks')
     tweaks = sorted([
-        CBash_RaceTweaker_BiggerOrcsandNords(),
+        CBash_RaceTweaker_BiggerOrcsAndNords(),
         CBash_RaceTweaker_PlayableHairs(),
         CBash_RaceTweaker_PlayableEyes(),
         CBash_RaceTweaker_SexlessHairs(),

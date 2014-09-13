@@ -268,7 +268,6 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-
         newFull = record.full
         if newFull:
             mgef_school = self.patchFile.mgef_school
@@ -298,7 +297,6 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
             else:
                 label = (u'X' if isPoison else u'') + u'ACDIMRU'[schoolType]
                 newFull = self.format % label + newFull
-
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -456,7 +454,6 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
                 newFull = magicFormat % u'ACDIMRU'[schoolType] + newFull
             #--Ordering
             newFull = self.orderFormat[isEnchanted] + newFull
-
             if record.full != newFull:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:

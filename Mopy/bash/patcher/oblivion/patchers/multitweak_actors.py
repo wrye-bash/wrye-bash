@@ -219,7 +219,6 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                 femaleOnly = self.choiceValues[self.chosen][0] == 1
                 maleOnly = self.choiceValues[self.chosen][0] == 2
                 playerFid = (GPath(u'Oblivion.esm'),0x000007)
-
                 for record in patchFile.NPC_.records:
                     # skip records (male only, female only, player)
                     if femaleOnly and not record.flags.female: continue
@@ -292,13 +291,11 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
             elif choice == 2 and record.IsFemale: return
             self.initSkeletonCollections()
             if len(self.skeletonList) == 0: return
-
             try:
                 oldModPath = record.modPath.lower()
             except AttributeError:  # for freaking weird esps with NPC's with
                 # no skeleton assigned to them(!)
                 pass
-
             specialSkelMesh = u"skel_special_%X.nif" % recordId[1]
             if specialSkelMesh in self.skeletonSetSpecial:
                 newModPath = self.modSkeletonDir.join(specialSkelMesh)
@@ -307,7 +304,6 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
                 randomNumber = random.randint(1, len(self.skeletonList)) - 1
                 newModPath = self.modSkeletonDir.join(
                     self.skeletonList[randomNumber])
-
             if newModPath.cs != oldModPath:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -580,7 +576,6 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not self.reImpModPath.search(record.modPath or u''): return
-
         reImp  = self.reImp
         for bodyPart in record.bodyParts:
             if reImp.search(bodyPart):
@@ -661,14 +656,12 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         if not self.reBoarModPath.search(record.modPath or ''): return
-
         reBoar  = self.reBoar
         for bodyPart in record.bodyParts:
             if reBoar.search(bodyPart):
                 break
         else:
             return
-
         spells = record.spells
         newSpell = self.spell
         if newSpell not in spells:
@@ -856,7 +849,6 @@ class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
         # 3 = IsRightBackFoot
         sounds_list = [(soundType, sound, chance) for soundType, sound, chance
                        in record.sounds_list if soundType not in [0, 1, 2, 3]]
-
         if sounds_list != record.sounds_list:
             override = record.CopyAsOverride(self.patchFile)
             if override:

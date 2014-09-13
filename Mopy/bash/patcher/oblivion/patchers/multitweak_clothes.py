@@ -62,7 +62,6 @@ class AClothesTweak(AMultiTweakItem):
         return ((recTypeFlags == myTypeFlags) or (
             self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
 
-
 class ClothesTweak(AClothesTweak,MultiTweakItem):
     def isMyType(self,record):
         """Returns true to save record for late processing."""
@@ -110,14 +109,12 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-
         maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
-
         if (record.weight > maxWeight) and self.isMyType(record) and (
                     record.weight < superWeight):
             for attr in self.matchFlags:
-                if(getattr(record, attr)):
+                if getattr(record, attr):
                     break
             else:
                 return
@@ -183,10 +180,9 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-
         if self.isMyType(record):
             for flag in self.hideFlags:
-                if(getattr(record, flag)):
+                if getattr(record, flag):
                     break
             else:
                 return

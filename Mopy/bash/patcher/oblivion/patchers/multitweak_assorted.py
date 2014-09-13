@@ -97,7 +97,6 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         """Edits patch file as desired."""
         if record.IsNonPlayable:
             return
-
         if getattr(record, self.hideFlag):
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -106,6 +105,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
+
 #------------------------------------------------------------------------------
 class AssortedTweak_ClothingShows(MultiTweakItem):
     """Fix robes, gloves and the like to show amulets/rings."""
@@ -558,7 +558,8 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
                 if override:
                     override.IsNonPlayable = False
                     mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -630,7 +631,9 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
         for record in patchFile.BOOK.records:
             if record.text and not record.enchantment:
                 text = record.text
-                text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
+                text = text.replace(u'\u201d', u'')  # there are some FUNKY
+                # quotes that don't translate properly. (they are in *latin*
+                # encoding not even cp1252 or something normal but non-unicode)
                 if reHead2.match(text):
                     self.inBold = False
                     text = reHead2.sub(
@@ -1083,7 +1086,6 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.weight
-
         if record.weight > maxWeight:
             for effect in record.effects:
                 if effect.name == self.SEFF:
@@ -1242,7 +1244,6 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.weight
-
         if record.IsStaff and record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -1317,7 +1318,6 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
         maxWeight = self.weight
-
         if record.weight > maxWeight:
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -1728,7 +1728,6 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
-
         if record.IsStaff or record.IsWeapon:
             uses = self.choiceValues[self.chosen][0]
             cost = uses
@@ -1833,7 +1832,7 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                         changed = True
                     elif record.flags.hand != 0:
                         record.maleIconPath = u"Armor\\Iron\\M\\Gauntlets.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Gauntlets.dds"
+                        record.femaleIconPath =u"Armor\\Iron\\F\\Gauntlets.dds"
                         changed = True
                     elif record.flags.foot != 0:
                         record.maleIconPath = u"Armor\\Iron\\M\\Boots.dds"
@@ -1853,28 +1852,37 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     if record.flags.notPlayable: continue
                     #choose based on body flags:
                     if record.flags.upperBody != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shirt.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"
+                        record.maleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\M\\Shirt.dds"
+                        record.femaleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"
                         changed = True
                     elif record.flags.lowerBody != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Pants.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Pants.dds"
+                        record.maleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\M\\Pants.dds"
+                        record.femaleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\F\\Pants.dds"
                         changed = True
                     elif record.flags.head or record.flags.hair:
-                        record.maleIconPath = u"Clothes\\MythicDawnrobe\\hood.dds"
+                        record.maleIconPath = \
+                            u"Clothes\\MythicDawnrobe\\hood.dds"
                         changed = True
                     elif record.flags.hand != 0:
-                        record.maleIconPath = u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds"
+                        record.maleIconPath = \
+                         u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds"
                         changed = True
                     elif record.flags.foot != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shoes.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"
+                        record.maleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\M\\Shoes.dds"
+                        record.femaleIconPath = \
+                            u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"
                         changed = True
                     elif record.flags.leftRing or record.flags.rightRing:
                         record.maleIconPath = u"Clothes\\Ring\\RingNovice.dds"
                         changed = True
                     else: #amulet
-                        record.maleIconPath = u"Clothes\\Amulet\\AmuletSilver.dds"
+                        record.maleIconPath = \
+                            u"Clothes\\Amulet\\AmuletSilver.dds"
                         changed = True
                 elif type_ == 'FACT':
                     #todo
@@ -1884,7 +1892,9 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     record.iconPath = u"Clutter\\IconSeeds.dds"
                     changed = True
                 elif type_ == 'KEYM':
-                    record.iconPath = [u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"][random.randint(0,1)]
+                    record.iconPath = \
+                        [u"Clutter\\Key\\Key.dds", u"Clutter\\Key\\Key02.dds"][
+                            random.randint(0, 1)]
                     changed = True
                 elif type_ == 'LIGH':
                     if not record.flags.canTake: continue
@@ -1925,17 +1935,22 @@ class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
                     count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTweakItem):
-    """Sets a default icon for any records that don't have any icon assigned."""
+class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
+                                       CBash_MultiTweakItem):
+    """Sets a default icon for any records that don't have any icon
+    assigned."""
     name = _(u'Default Icons')
     type_defaultIcon = {
                 'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
                 'AMMO': u"Weapons\\IronArrow.dds",
                 'APPA': u"Clutter\\IconMortarPestle.dds",
-                'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",u"Armor\\Iron\\F\\Cuirass.dds"),
-                         (u"Armor\\Iron\\M\\Greaves.dds",u"Armor\\Iron\\F\\Greaves.dds"),
+                'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",
+                          u"Armor\\Iron\\F\\Cuirass.dds"),
+                         (u"Armor\\Iron\\M\\Greaves.dds",
+                          u"Armor\\Iron\\F\\Greaves.dds"),
                          (u"Armor\\Iron\\M\\Helmet.dds",),
-                         (u"Armor\\Iron\\M\\Gauntlets.dds",u"Armor\\Iron\\F\\Gauntlets.dds"),
+                         (u"Armor\\Iron\\M\\Gauntlets.dds",
+                          u"Armor\\Iron\\F\\Gauntlets.dds"),
                          (u"Armor\\Iron\\M\\Boots.dds",),
                          (u"Armor\\Iron\\M\\Shield.dds",),
                          (u"Armor\\Iron\\M\\Shield.dds",), #Default Armor icon
@@ -1943,11 +1958,15 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
                 'BOOK': u"Clutter\\iconbook%d.dds",
                 'BSGN': u"Clutter\\iconbook%d.dds",
                 'CLAS': u"Clutter\\iconbook%d.dds",
-                'CLOT': ((u"Clothes\\MiddleClass\\01\\M\\Shirt.dds",u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
-                         (u"Clothes\\MiddleClass\\01\\M\\Pants.dds",u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
+                'CLOT': ((u"Clothes\\MiddleClass\\01\\M\\Shirt.dds",
+                          u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
+                         (u"Clothes\\MiddleClass\\01\\M\\Pants.dds",
+                          u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
                          (u"Clothes\\MythicDawnrobe\\hood.dds",),
-                         (u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds",),
-                         (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
+                         (u"Clothes\\LowerClass\\Jail\\M\\"
+                          u"JailShirtHandcuff.dds",),
+                         (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",
+                          u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
                          (u"Clothes\\Ring\\RingNovice.dds",),
                          (u"Clothes\\Amulet\\AmuletSilver.dds",),
                          ),
@@ -1981,7 +2000,6 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
         if record._Type == 'LIGH' and not record.IsCanTake: return
         if record._Type == 'QUST' and not record.stages: return
         if record._Type in ['ARMO','CLOT'] and not record.IsPlayable: return
-
         override = record.CopyAsOverride(self.patchFile)
         if override:
             icons = self.type_defaultIcon[override._Type]
@@ -2030,7 +2048,6 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTw
                 if override._Type in ['BOOK', 'BSGN', 'CLAS']:  # just a
                     # random book icon for class/birthsign as well.
                     icons = icons % (random.randint(1,13))
-
             try:
                 if isinstance(icons, tuple):
                     if len(icons) == 1:
@@ -2119,7 +2136,6 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
         if choice == 1:  # Prevent any pointless changes if a custom value
             # of 100 is used.
             return
-
         if record.staticAtten:
             override = record.CopyAsOverride(self.patchFile)
             if override:
@@ -2201,7 +2217,6 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
         if choice == 1:  # Prevent any pointless changes if a custom value
             # of 100 is used.
             return
-
         if record.staticAtten and u'nirnroot' in record.eid.lower() :
             override = record.CopyAsOverride(self.patchFile)
             if override:

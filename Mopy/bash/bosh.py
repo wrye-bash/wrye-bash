@@ -59,12 +59,15 @@ import ctypes
 import balt
 import bolt
 import bush
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError, FileError
-from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, sio
+from bolt import BoltError, AbstractError, ArgumentError, StateError, \
+    UncodedError, PermissionError, FileError
+from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
+    deprint, sio
 from bolt import _unicode, _encode
 from cint import *
 from brec import *
-from brec import _coerce # Since it wont get imported by the import * (it begins with _)
+from brec import _coerce # Since it wont get imported by the import * (it
+# begins with _)
 from chardet.universaldetector import UniversalDetector
 from patcher.oblivion.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
@@ -91,7 +94,8 @@ allTagsSet = set(allTags)
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
-reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
+reOblivion = re.compile(
+    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
@@ -134,7 +138,6 @@ def unformatDate(str,format):
             return time.strptime(str,'%c')
         else:
             raise
-
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -262,7 +265,7 @@ class PickleDict(bolt.PickleDict):
                 xnew = GPath(x._path)
             else:
                 #raise StateError('Unknown type: %s %s' % (xtype,x))
-                xnew = None #--Hopefully this will work for few old incompatibilties.
+                xnew = None #--Hopefully this will work for few old incompatibilities.
             return done.setdefault(xid,xnew)
         update(self.data)
 
@@ -1204,7 +1207,7 @@ class SaveFile:
     def load(self,progress=None):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
-        # out into obivion.py, and a version implemented for skyrim as well
+        # out into oblivion.py, and a version implemented for skyrim as well
         import array
         path = self.fileInfo.getPath()
         with bolt.StructFile(path.s,'rb') as ins:
@@ -1871,7 +1874,7 @@ class SaveFile:
             buff.write(struct.pack('I',value))
             self.preCreated = buff.getvalue()
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
     reSave  = re.compile(r'\.ess(f?)$',re.I)
@@ -1925,7 +1928,7 @@ class CoSaves:
         return cObse,cPluggy
 
 # File System -----------------------------------------------------------------
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class BsaFile:
     """Represents a BSA archive file."""
 
@@ -2104,7 +2107,7 @@ class BsaFile:
         #--Done
         return reset,inval,intxt
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
@@ -2393,7 +2396,7 @@ class IniFile(object):
                     deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
 
-#-----------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def BestIniFile(path):
     if not path:
         return oblivionIni
@@ -2645,7 +2648,7 @@ class OBSEIniFile(IniFile):
                 section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
     bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
@@ -2663,9 +2666,9 @@ class OblivionIni(IniFile):
         # default to user profile directory"""
         IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
 
-
     def ensureExists(self):
-        """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
+        """Ensures that Oblivion.ini file exists. Copies from default
+        oblivion.ini if necessary."""
         if self.path.exists(): return
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
         if srcPath.exists():
@@ -2867,7 +2870,7 @@ class OmodFile:
             # Move files to final directory
             balt.shellMove(stageDir,outDir.head)
         except Exception as e:
-            # Error occured, see if final output dir needs deleting
+            # Error occurred, see if final output dir needs deleting
             if outDir.exists():
                 try:
                     balt.shellDelete(outDir,progress.getParent(),False,False)
@@ -5599,7 +5602,7 @@ class ConfigHelpers:
                         self.lootMasterTime = path.mtime
                     return
                 except loot.LootError:
-                    deprint(u'An error occured while using the LOOT API:',traceback=True)
+                    deprint(u'An error occurred while using the LOOT API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
         taglist = dirs['defaultPatches'].join(u'taglist.yaml')
@@ -5609,8 +5612,8 @@ class ConfigHelpers:
             self.tagCache = {}
             lootDb.Load(taglist.s)
         except loot.LootError:
-            deprint(u'An error occured while parsing taglist.yaml with the LOOT API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the LOOT API.')
+            deprint(u'An error occurred while parsing taglist.yaml with the LOOT API.', traceback=True)
+            raise bolt.BoltError(u'An error occurred while parsing taglist.yaml with the LOOT API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -6786,7 +6789,7 @@ class Installer(object):
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
                     message = u'\n'.join((
-                        _(u'This intaller (%s) has an %s plugin ASI.'),
+                        _(u'This installer (%s) has an %s plugin ASI.'),
                         _(u'The file is %s'),
                         _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
                         _(u'Are you sure you want to install this?'),
@@ -6810,7 +6813,7 @@ class Installer(object):
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
                     message = u'\n'.join((
-                        _(u'This intaller (%s) has an %s patcher JAR.'),
+                        _(u'This installer (%s) has an %s patcher JAR.'),
                         _(u'The file is %s'),
                         _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
                         _(u'Are you sure you want to install this?'),
@@ -7689,7 +7692,7 @@ class InstallerArchive(Installer):
                 # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
                 # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
                 # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
-                # install a mod for Obilivon.
+                # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
@@ -7882,7 +7885,8 @@ class InstallerProject(Installer):
         return updated,removed
 
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
-        """Packs project to build directory. Release filters out developement material from the archive"""
+        """Packs project to build directory. Release filters out development
+        material from the archive"""
         progress = progress or bolt.Progress()
         length = len(self.fileSizeCrcs)
         if not length: return
@@ -8893,7 +8897,7 @@ class InstallersData(bolt.TankData, DataDict):
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         for file in removes:
-            # don't remove files in Wyre Bash-related directories
+            # don't remove files in Wrye Bash-related directories
             skip = False
             for skipPrefix in skipPrefixes:
                 if file.cs.startswith(skipPrefix):
@@ -12946,7 +12950,8 @@ class DeathItemPatcher(ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.srcClasses = set() #--Record classes actually provided by src
+        # mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
         #--Type Fields
@@ -14210,7 +14215,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import FullNames, CBash_FullNames
 
 class NamesPatcher(ImportPatcher):
@@ -16886,8 +16890,10 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     scanOrder = 50
     editOrder = 50
     name = _(u'Contents Checker')
-    text = _(u"Checks contents of leveled lists, inventories and containers for correct types.")
-    srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
+    text = _(u"Checks contents of leveled lists, inventories and containers "
+             u"for correct types.")
+    srcs = [] #so as not to fail screaming when determining load mods - but
+    # with the least processing required.
     defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
