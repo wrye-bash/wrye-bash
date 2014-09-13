@@ -1408,7 +1408,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(
         self.SEFF = MGEFCode('SEFF')
         # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
         # should call the constructor directly instead of super() ?
-        self.buildPatchLog=self._patchLog # TODO : maybe a simple override ?
+        self.buildPatchLog=self._patchLog # AAssortedTweak_ScriptEffectSilencer
 
     def getTypes(self):
         return ['MGEF']

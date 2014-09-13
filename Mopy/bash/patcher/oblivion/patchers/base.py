@@ -32,6 +32,13 @@ class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
 #  Patcher ? Should I define the  getWriteClasses, getReadClasses here ?
 # TODO: scanModFile() have VERY similar code - use getReadClasses here ?
 
+    def _patchLog(self, log, count):
+        #--Log - must define self.logMsg in subclasses
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+
 class CBash_MultiTweakItem(AMultiTweakItem):
     # extra CBash_MultiTweakItem class variables
     iiMode = False
