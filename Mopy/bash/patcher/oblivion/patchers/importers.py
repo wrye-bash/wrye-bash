@@ -26,7 +26,9 @@
 
 # Patchers: 20 ----------------------------------------------------------------
 import operator
+import re
 from .... import bosh # for modInfos
+from ....bush import game # for Name patcher
 from ....bolt import GPath, MemorySet
 from ....bosh import LoadFactory, ModFile, CountDict, getPatchesList, \
     reModExt, getPatchesPath
@@ -34,9 +36,9 @@ from ....brec import MreRecord, MelObject
 from ....patcher.base import AImportPatcher, Patcher
 from ....patcher.oblivion.patchers.base import ImportPatcher, \
     CBash_ImportPatcher
-from ....cint import ValidateDict, ValidateList, FormID
+from ....cint import ValidateDict, ValidateList, FormID, validTypes
 from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
-    CBash_FactionRelations
+    CBash_FactionRelations, FullNames, CBash_FullNames
 
 class ACellImporter(AImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
@@ -2552,5 +2554,202 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     def _clog(self,log): # type 2
         self._srcMods(log)
         super(CBash_ImportActorsSpells, self)._clog(log)
+
+#------------------------------------------------------------------------------
+class NamesPatcher(ImportPatcher):
+    """Merged leveled lists mod file."""
+    name = _(u'Import Names')
+    text = _(u"Import names from source mods/files.")
+    autoRe = game.namesPatcherMaster
+    autoKey = u'Names'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_full = {} #--Names keyed by long fid.
+        self.activeTypes = []  #--Types ('ALCH', etc.) of data actually
+        # provided by src mods/files.
+        self.skipTypes = [] #--Unknown types that were skipped.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = bool(self.sourceMods)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        fullNames = FullNames(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.sourceMods))
+        for srcFile in self.sourceMods:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if reModExt.search(srcFile.s):
+                if srcPath not in bosh.modInfos: continue
+                srcInfo = bosh.modInfos[GPath(srcFile)]
+                fullNames.readFromMod(srcInfo)
+            else:
+                if srcPath not in patchesList: continue
+                try:
+                    fullNames.readFromText(getPatchesPath(srcFile))
+                except UnicodeError as e:
+                    print srcFile.stail,u'is not saved in UTF-8 format:', e
+            progress.plus()
+        #--Finish
+        id_full = self.id_full
+        knownTypes = set(MreRecord.type_class.keys())
+        for type,id_name in fullNames.type_id_name.iteritems():
+            if type not in knownTypes:
+                self.skipTypes.append(type)
+                continue
+            self.activeTypes.append(type)
+            for longid,(eid,name) in id_name.iteritems():
+                if name != u'NO NAME':
+                    id_full[longid] = name
+        self.isActive = bool(self.activeTypes)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return tuple(self.activeTypes) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return tuple(self.activeTypes) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Scan modFile."""
+        if not self.isActive: return
+        id_full = self.id_full
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        for type in self.activeTypes:
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            if type == 'CELL':
+                id_records = patchBlock.id_cellBlock
+                activeRecords = (cellBlock.cell for cellBlock in
+                                 modFile.CELL.cellBlocks if
+                                 not cellBlock.cell.flags1.ignored)
+                setter = patchBlock.setCell
+            elif type == 'WRLD':
+                id_records = patchBlock.id_worldBlocks
+                activeRecords = (worldBlock.world for worldBlock in
+                                 modFile.WRLD.worldBlocks if
+                                 not worldBlock.world.flags1.ignored)
+                setter = patchBlock.setWorld
+            else:
+                id_records = patchBlock.id_records
+                activeRecords = modFile.tops[type].getActiveRecords()
+                setter = patchBlock.setRecord
+            for record in activeRecords:
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid in id_records: continue
+                if fid not in id_full: continue
+                if record.full != id_full[fid]:
+                    setter(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Make changes to patchfile."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_full = self.id_full
+        type_count = {}
+        for type in self.activeTypes:
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            if type == 'CELL':
+                records = (cellBlock.cell for cellBlock in
+                           modFile.CELL.cellBlocks)
+            elif type == 'WRLD':
+                records = (worldBlock.world for worldBlock in
+                           modFile.WRLD.worldBlocks)
+            else:
+                records = modFile.tops[type].records
+            for record in records:
+                fid = record.fid
+                if fid in id_full and record.full != id_full[fid]:
+                    record.full = id_full[fid]
+                    keep(fid)
+                    type_count[type] += 1
+        logMsg = u'\n=== ' + _(u'Renamed Items')
+        modsHeader = u'=== ' + _(u'Source Mods/Files')
+        self._patchLog(log,type_count,modsHeader=modsHeader,logMsg=logMsg)
+
+class CBash_NamesPatcher(CBash_ImportPatcher):
+    """Import names from source mods/files."""
+    name = _(u'Import Names')
+    text = _(u"Import names from source mods/files.")
+    autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+    autoKey = {u'Names'}
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.id_full = {}
+        self.csvId_full = {}
+        self.mod_count = {}
+
+    def initData(self,group_patchers,progress):
+        if not self.isActive: return
+        CBash_ImportPatcher.initData(self,group_patchers,progress)
+        fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs))
+        patchesList = getPatchesList()
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesList: continue
+                fullNames.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+
+        #--Finish
+        csvId_full = self.csvId_full
+        for group,fid_name in fullNames.group_fid_name.iteritems():
+            if group not in validTypes: continue
+            for fid,(eid,name) in fid_name.iteritems():
+                if name != u'NO NAME':
+                    csvId_full[fid] = name
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['CLAS','FACT','HAIR','EYES','RACE','MGEF','ENCH',
+                'SPEL','BSGN','ACTI','APPA','ARMO','BOOK','CLOT',
+                'CONT','DOOR','INGR','LIGH','MISC','FLOR','FURN',
+                'WEAP','AMMO','NPC_','CREA','SLGM','KEYM','ALCH',
+                'SGST','WRLD','CELLS','DIAL','QUST']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        full = record.ConflictDetails(('full',))
+        if full:
+            self.id_full[record.fid] = full['full']
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan_more(modFile,record,bashTags)
+        recordId = record.fid
+        full = self.id_full.get(recordId, None)
+        full = self.csvId_full.get(recordId, full)
+        if full and record.full != full:
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = full
+                class_mod_count = self.mod_count
+                class_mod_count.setdefault(record._Type, {})[
+                    modFile.GName] = class_mod_count.setdefault(record._Type,
+                    {}).get(modFile.GName, 0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+    def _clog(self, log): # type 1
+        mod_count = self.mod_count
+        self._srcMods(log, header=u'=== ' + _(u'Source Mods/Files'))
+        log(u'\n=== ' + _(u'Renamed Items'))
+        for type in mod_count.keys():
+            log(u'* ' + _(u'Modified %s Records: %d') % (
+                type, sum(mod_count[type].values())))
+            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
