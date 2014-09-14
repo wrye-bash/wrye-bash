@@ -311,6 +311,7 @@ def _buildPatch(self,log,inner_for):
         ActorImporter
         KFFZPatcher
         DeathItemPatcher
+        ImportScripts
     """ # TODO: filter()
     if not self.isActive: return
     modFileTops = self.patchFile.tops
@@ -322,7 +323,8 @@ def _buildPatch(self,log,inner_for):
         if type not in modFileTops: continue
         type_count[type] = 0
         inner_for(id_data, keep, modFileTops, type, type_count)
-    id_data = None
+    # noinspection PyUnusedLocal
+    id_data = None # cleanup to save memory
     self._patchLog(log,type_count)
 
 def _scanModFile(self, modFile):
@@ -330,6 +332,7 @@ def _scanModFile(self, modFile):
         GraphicsPatcher
         KFFZPatcher
         DeathItemPatcher
+        ImportScripts
     """
     if not self.isActive: return
     id_data = self.id_data
@@ -1538,7 +1541,7 @@ class ImportFactions(ImportPatcher):
         id_factions = self.id_data
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes:
+        for type in self.activeTypes: # here differs from _scanModFile
             if type not in modFile.tops: continue
             patchBlock = getattr(self.patchFile,type)
             id_records = patchBlock.id_records
@@ -1585,7 +1588,7 @@ class ImportFactions(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_data= self.id_data
         type_count = {}
-        for type in self.activeTypes:
+        for type in self.activeTypes: # TODO: activeTypes in all patchers ?
             if type not in modFileTops: continue
             type_count[type] = 0
             self._inner_loop(id_data, keep, modFileTops, type, type_count)
@@ -1978,52 +1981,24 @@ class ImportScripts(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+         _scanModFile(self,modFile)
+
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
+        for record in modFileTops[type].records:
+            fid = record.fid
+            if fid not in id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if record.__getattribute__(attr) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[type] += 1
 
     def buildPatch(self,log,progress):
         """Merge last version of record with patched scripts link as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        # noinspection PyUnusedLocal
-        id_data = None # cleanup to save memory
-        self._patchLog(log,type_count)
+        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
 
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
