@@ -59,7 +59,7 @@ from patcher.oblivion.patchers.importers import CellImporter, \
     CBash_NPCAIPackagePatcher, DeathItemPatcher, CBash_DeathItemPatcher, \
     ImportFactions, CBash_ImportFactions, ImportRelations, \
     CBash_ImportRelations, ImportScripts, CBash_ImportScripts, ImportInventory, \
-    CBash_ImportInventory
+    CBash_ImportInventory, ImportActorsSpells, CBash_ImportActorsSpells
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8041,8 +8041,8 @@ class CBash_ImportRelations(CBash_ImportRelations,ListPatcher): pass
 class ImportInventory(ImportInventory,ListPatcher): pass
 class CBash_ImportInventory(CBash_ImportInventory,ListPatcher): pass
 
-class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
-class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
+class ImportActorsSpells(ImportActorsSpells,ListPatcher): pass
+class CBash_ImportActorsSpells(CBash_ImportActorsSpells,ListPatcher): pass
 
 class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
 class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
