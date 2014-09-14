@@ -2753,3 +2753,229 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class NpcFacePatcher(ImportPatcher):
+    """NPC Faces patcher, for use with TNR or similar mods."""
+    name = _(u'Import NPC Faces')
+    text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
+             u" and similar mods.")
+    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoKey = (u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
+        u'Npc.EyesOnly')
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.faceData = {}
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+
+    def initData(self,progress):
+        """Get faces from TNR files."""
+        if not self.isActive: return
+        faceData = self.faceData
+        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,faceMod in enumerate(self.sourceMods):
+            if faceMod not in bosh.modInfos: continue
+            temp_faceData = {}
+            faceInfo = bosh.modInfos[faceMod]
+            faceFile = ModFile(faceInfo,loadFactory)
+            masters = faceInfo.header.masters
+            bashTags = faceInfo.getBashTags()
+            faceFile.load(True)
+            faceFile.convertToLongFids(('NPC_',))
+            for npc in faceFile.NPC_.getActiveRecords():
+                if npc.fid[0] in self.patchFile.loadSet:
+                    attrs, fidattrs = [],[]
+                    if u'Npc.HairOnly' in bashTags:
+                        fidattrs += ['hair']
+                        attrs = ['hairLength','hairRed','hairBlue','hairGreen']
+                    if u'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+                    if fidattrs:
+                        attr_fidvalue = dict(
+                            (attr, npc.__getattribute__(attr)) for attr in
+                            fidattrs)
+                    else:
+                        attr_fidvalue = dict(
+                            (attr, npc.__getattribute__(attr)) for attr in
+                            ('eye', 'hair'))
+                    for fidvalue in attr_fidvalue.values():
+                        if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                            #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                            mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
+                            break
+                    else:
+                        if not fidattrs:
+                            temp_faceData[npc.fid] = dict(
+                                (attr, npc.__getattribute__(attr)) for attr in
+                                ('fggs_p', 'fgga_p', 'fgts_p', 'hairLength',
+                                 'hairRed', 'hairBlue', 'hairGreen',
+                                 'unused3'))
+                        else:
+                            temp_faceData[npc.fid] = dict(
+                                (attr, npc.__getattribute__(attr)) for attr in
+                                attrs)
+                        temp_faceData[npc.fid].update(attr_fidvalue)
+            if u'NpcFacesForceFullImport' in bashTags:
+                for fid in temp_faceData:
+                    faceData[fid] = temp_faceData[fid]
+            else:
+                for master in masters:
+                    if not master in bosh.modInfos: continue # or break filter mods
+                    if master in cachedMasters:
+                        masterFile = cachedMasters[master]
+                    else:
+                        masterInfo = bosh.modInfos[master]
+                        masterFile = ModFile(masterInfo,loadFactory)
+                        masterFile.load(True)
+                        masterFile.convertToLongFids(('NPC_',))
+                        cachedMasters[master] = masterFile
+                    mapper = masterFile.getLongMapper()
+                    if 'NPC_' not in masterFile.tops: continue
+                    for npc in masterFile.NPC_.getActiveRecords():
+                        if npc.fid not in temp_faceData: continue
+                        for attr, value in temp_faceData[npc.fid].iteritems():
+                            if value == npc.__getattribute__(attr): continue
+                            if npc.fid not in faceData: faceData[
+                                npc.fid] = dict()
+                            try:
+                                faceData[npc.fid][attr] = \
+                                temp_faceData[npc.fid][attr]
+                            except KeyError:
+                                faceData[npc.fid].setdefault(attr,value)
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('NPC_',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('NPC_',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Add lists from modFile."""
+        modName = modFile.fileInfo.name
+        if not self.isActive or modName in self.sourceMods or 'NPC_' not in modFile.tops:
+            return
+        mapper = modFile.getLongMapper()
+        faceData,patchNpcs = self.faceData,self.patchFile.NPC_
+        modFile.convertToLongFids(('NPC_',))
+        for npc in modFile.NPC_.getActiveRecords():
+            if npc.fid in faceData:
+                patchNpcs.setRecord(npc)
+
+    def buildPatch(self,log,progress):
+        """Adds merged lists to patchfile."""
+        if not self.isActive: return
+        keep = self.patchFile.getKeeper()
+        faceData, count = self.faceData, 0
+        for npc in self.patchFile.NPC_.records:
+            if npc.fid in faceData:
+                changed = False
+                for attr, value in faceData[npc.fid].iteritems():
+                    if value != npc.__getattribute__(attr):
+                        npc.__setattr__(attr,value)
+                        changed = True
+                if changed:
+                    npc.setChanged()
+                    keep(npc.fid)
+                    count += 1
+        self._patchLog(log,count,logMsg=u'\n=== '+_(u'Faces Patched')+ u': %d')
+
+    def _plog(self,log,logMsg,count):
+        log(logMsg % count)
+
+class CBash_NpcFacePatcher(CBash_ImportPatcher):
+    """NPC Faces patcher, for use with TNR or similar mods."""
+    name = _(u'Import NPC Faces')
+    text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
+             u" and similar mods.")
+    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
+               u'Npc.EyesOnly'}
+    logMsg = u'* '+_(u'Faces Patched') + u': %d'
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.id_face = {}
+        self.faceData = (
+            'fggs_p', 'fgga_p', 'fgts_p', 'eye', 'hair', 'hairLength',
+            'hairRed', 'hairBlue', 'hairGreen', 'fnam')
+        self.mod_count = {}
+
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return ['NPC_']
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        attrs = []
+        if u'NpcFacesForceFullImport' in bashTags:
+            face = dict((attr,getattr(record,attr)) for attr in self.faceData)
+            if ValidateDict(face, self.patchFile):
+                self.id_face[record.fid] = face
+            else:
+                #Ignore the record. Another option would be to just ignore the invalid formIDs
+                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+            return
+        elif u'NpcFaces' in bashTags:
+            attrs = self.faceData
+        else:
+            if u'Npc.HairOnly' in bashTags:
+                attrs = ['hair', 'hairLength','hairRed','hairBlue','hairGreen']
+            if u'Npc.EyesOnly' in bashTags:
+                attrs += ['eye']
+        if not attrs:
+            return
+        face = record.ConflictDetails(attrs)
+
+        if ValidateDict(face, self.patchFile):
+            fid = record.fid
+            # Only save if different from the master record
+            if record.GetParentMod().GName != fid[0]:
+                history = record.History()
+                if history and len(history) > 0:
+                    masterRecord = history[0]
+                    if masterRecord.GetParentMod().GName == record.fid[0]:
+                        for attr, value in face.iteritems():
+                            if getattr(masterRecord,attr) != value:
+                                break
+                        else:
+                            return
+            self.id_face.setdefault(fid,{}).update(face)
+        else:
+            #Ignore the record. Another option would be to just ignore the invalid formIDs
+            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        self.scan_more(modFile,record,bashTags)
+
+        recordId = record.fid
+        prev_face_value = self.id_face.get(recordId,None)
+        if prev_face_value:
+            cur_face_value = dict(
+                (attr, getattr(record, attr)) for attr in prev_face_value)
+            if cur_face_value != prev_face_value:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    for attr, value in prev_face_value.iteritems():
+                        setattr(override,attr,value)
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def _clog(self,log): # type 2
+        self._srcMods(log)
+        super(CBash_NpcFacePatcher, self)._clog(log)
+
+#------------------------------------------------------------------------------

@@ -60,7 +60,7 @@ from patcher.oblivion.patchers.importers import CellImporter, \
     ImportFactions, CBash_ImportFactions, ImportRelations, \
     CBash_ImportRelations, ImportScripts, CBash_ImportScripts, ImportInventory, \
     CBash_ImportInventory, ImportActorsSpells, CBash_ImportActorsSpells, \
-    NamesPatcher, CBash_NamesPatcher
+    NamesPatcher, CBash_NamesPatcher, NpcFacePatcher, CBash_NpcFacePatcher
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8048,8 +8048,8 @@ class CBash_ImportActorsSpells(CBash_ImportActorsSpells,ListPatcher): pass
 class NamesPatcher(NamesPatcher,ListPatcher): pass
 class CBash_NamesPatcher(CBash_NamesPatcher,ListPatcher): pass
 
-class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
-class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
+class NpcFacePatcher(NpcFacePatcher,ListPatcher): pass
+class CBash_NpcFacePatcher(CBash_NpcFacePatcher,ListPatcher): pass
 
 class RacePatcher(RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
