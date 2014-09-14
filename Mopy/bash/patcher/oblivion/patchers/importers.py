@@ -2753,12 +2753,21 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class NpcFacePatcher(ImportPatcher):
+class _ANpcFacePatcher(AImportPatcher):
     """NPC Faces patcher, for use with TNR or similar mods."""
     name = _(u'Import NPC Faces')
     text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
              u" and similar mods.")
     autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+
+    def _ignore_record(self, faceMod):
+        # Ignore the record. Another option would be to just ignore the
+        # attr_fidvalue result
+        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
+            self.name, {})
+        mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
+
+class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
     autoKey = (u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
         u'Npc.EyesOnly')
 
@@ -2802,9 +2811,7 @@ class NpcFacePatcher(ImportPatcher):
                             ('eye', 'hair'))
                     for fidvalue in attr_fidvalue.values():
                         if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                            #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                            mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
+                            self._ignore_record(faceMod)
                             break
                     else:
                         if not fidattrs:
@@ -2888,12 +2895,7 @@ class NpcFacePatcher(ImportPatcher):
     def _plog(self,log,logMsg,count):
         log(logMsg % count)
 
-class CBash_NpcFacePatcher(CBash_ImportPatcher):
-    """NPC Faces patcher, for use with TNR or similar mods."""
-    name = _(u'Import NPC Faces')
-    text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
-             u" and similar mods.")
-    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
                u'Npc.EyesOnly'}
     logMsg = u'* '+_(u'Faces Patched') + u': %d'
@@ -2920,9 +2922,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
             if ValidateDict(face, self.patchFile):
                 self.id_face[record.fid] = face
             else:
-                #Ignore the record. Another option would be to just ignore the invalid formIDs
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                self._ignore_record(modFile.GName)
             return
         elif u'NpcFaces' in bashTags:
             attrs = self.faceData
@@ -2934,7 +2934,6 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
         if not attrs:
             return
         face = record.ConflictDetails(attrs)
-
         if ValidateDict(face, self.patchFile):
             fid = record.fid
             # Only save if different from the master record
@@ -2950,9 +2949,7 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                             return
             self.id_face.setdefault(fid,{}).update(face)
         else:
-            #Ignore the record. Another option would be to just ignore the invalid formIDs
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+            self._ignore_record(modFile.GName)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
