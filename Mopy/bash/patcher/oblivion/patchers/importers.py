@@ -306,19 +306,49 @@ class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
 
 #------------------------------------------------------------------------------
 def _buildPatch(self,log,inner_for):
-        """Common buildPatch pattern of next few patchers.""" # TODO: filter()
-        if not self.isActive: return
-        modFileTops = self.patchFile.tops
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFileTops: continue
-            type_count[type] = 0
-            inner_for(id_data, keep, modFileTops, type, type_count)
-        id_data = None
-        self._patchLog(log,type_count)
+    """Common buildPatch() pattern of :
+        GraphicsPatcher
+        ActorImporter
+        KFFZPatcher
+        DeathItemPatcher
+    """ # TODO: filter()
+    if not self.isActive: return
+    modFileTops = self.patchFile.tops
+    keep = self.patchFile.getKeeper()
+    id_data = self.id_data
+    type_count = {}
+    for recClass in self.srcClasses:
+        type = recClass.classType
+        if type not in modFileTops: continue
+        type_count[type] = 0
+        inner_for(id_data, keep, modFileTops, type, type_count)
+    id_data = None
+    self._patchLog(log,type_count)
+
+def _scanModFile(self, modFile):
+    """Scan mod file against source data. Common scanModFile() pattern of :
+        GraphicsPatcher
+        KFFZPatcher
+        DeathItemPatcher
+    """
+    if not self.isActive: return
+    id_data = self.id_data
+    modName = modFile.fileInfo.name # UNUSED ! TODO: bin ?
+    mapper = modFile.getLongMapper()
+    if self.longTypes:
+        modFile.convertToLongFids(self.longTypes)
+    for recClass in self.srcClasses:
+        type = recClass.classType
+        if type not in modFile.tops: continue
+        patchBlock = getattr(self.patchFile,type)
+        for record in modFile.tops[type].getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid not in id_data: continue
+            for attr,value in id_data[fid].iteritems():
+                if record.__getattribute__(attr) != value:
+                    patchBlock.setRecord(record.getTypeCopy(mapper))
+                    break
 
 class GraphicsPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -460,25 +490,7 @@ class GraphicsPatcher(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+         _scanModFile(self,modFile)
 
     @staticmethod
     def _inner_loop(id_data, keep, modFileTops, type, type_count):
@@ -784,6 +796,7 @@ class ActorImporter(ImportPatcher):
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_data: continue
                 for attr,value in id_data[fid].iteritems():
+                    # OOPS: line below is the only diff from _scanModFile()
                     if reduce(getattr,attr.split('.'),record) != value:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
@@ -987,25 +1000,7 @@ class KFFZPatcher(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+         _scanModFile(self,modFile)
 
     @staticmethod
     def _inner_loop(id_data, keep, modFileTops, type, type_count):
@@ -1414,25 +1409,7 @@ class DeathItemPatcher(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+         _scanModFile(self,modFile)
 
     @staticmethod
     def _inner_loop(id_data, keep, modFileTops, type, type_count):
