@@ -11127,57 +11127,12 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-from patcher.base import Patcher, CBash_Patcher, AListPatcher
+from patcher.base import Patcher, CBash_Patcher
 from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher, \
     ImportPatcher, CBash_ImportPatcher
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class APatchMerger(AListPatcher):
-    """Merges specified patches into Bashed Patch."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-    name = _(u'Merge Patches')
-    text = _(u"Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        for modInfo in modInfos.data.values():
-            if modInfo.name in modInfos.mergeable and u'NoMerge' not in \
-                    modInfo.getBashTags() and \
-                            bush.fullLoadOrder[modInfo.name] < \
-                            bush.fullLoadOrder[self._patchFile().patchName]:
-                autoItems.append(modInfo.name)
-        return autoItems
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(APatchMerger,self).initPatchFile(patchFile,loadMods)
-        #--WARNING: Since other patchers may rely on the following update
-        # during their initPatchFile section, it's important that PatchMerger
-        # runs first or near first.
-        self._setMods(patchFile)
-
-    def _setMods(self, patchFile): raise AbstractError # override in subclasses
-
-class PatchMerger(APatchMerger, ListPatcher):
-    autoKey = u'Merge'
-
-    def _setMods(self,patchFile):
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,self.getConfigChecked())
-
-class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
-    autoKey = {u'Merge'}
-    unloadedText = "" # Cbash only
-
-    def _setMods(self,patchFile):
-        if not self.isActive: return
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,self.srcs)
 
 #------------------------------------------------------------------------------
 # TODO: MI for UpdateReferences - notice self.srcFiles =self.getConfigChecked()

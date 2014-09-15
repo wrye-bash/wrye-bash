@@ -2678,7 +2678,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
+    autoRe = game.namesPatcherMaster
     autoKey = {u'Names'}
 
     #--Config Phase -----------------------------------------------------------

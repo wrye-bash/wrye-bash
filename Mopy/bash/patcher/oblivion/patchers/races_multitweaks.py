@@ -754,7 +754,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
               u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoRe = re.compile(r'^UNDEFINED$',re.I)
     autoKey = (u'Hair',u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes',u'Body-M',
         u'Body-F',u'Body-Size-M',u'Body-Size-F',u'Voice-M',u'Voice-F',
         u'R.Relations',u'R.Teeth',u'R.Mouth',u'R.Ears',u'R.Head',
@@ -1812,7 +1812,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
               u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoRe = re.compile(ur'^UNDEFINED$',re.I|re.U)
     autoKey = {'Hair', 'Eyes-D', 'Eyes-R', 'Eyes-E', 'Eyes', 'Body-M',
                'Body-F', 'Voice-M', 'Voice-F', 'R.Relations', 'R.Teeth',
                'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',

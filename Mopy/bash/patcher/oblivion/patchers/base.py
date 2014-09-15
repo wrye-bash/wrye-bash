@@ -23,11 +23,48 @@
 # =============================================================================
 
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
-import bash
+import bash # for bosh.modInfos, dirs
 from ....bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt
 from ....patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
-    AImportPatcher
+    AImportPatcher, APatchMerger
+
+# Patchers 1 ------------------------------------------------------------------
+class ListPatcher(AListPatcher,Patcher):
+
+    def _patchesList(self):
+        return bash.bosh.dirs['patches'].list()
+
+    def _patchFile(self):
+        return PatchFile
+
+class CBash_ListPatcher(AListPatcher,CBash_Patcher):
+    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
+                             u' following list will be IGNORED.')
+
+    #--Config Phase -----------------------------------------------------------
+    def _patchesList(self):
+        return getPatchesList()
+
+    def _patchFile(self):
+        return CBash_PatchFile
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
+        self.srcs = self.getConfigChecked()
+        self.isActive = bool(self.srcs)
+
+    def getConfigChecked(self):
+        """Returns checked config items in list order."""
+        if self.allowUnloaded:
+            return [item for item in self.configItems if
+                    self.configChecks[item]]
+        else:
+            return [item for item in self.configItems if
+                    self.configChecks[item] and (
+                        item in self.patchFile.allMods or not reModExt.match(
+                            item.s))]
 
 class MultiTweakItem(AMultiTweakItem):
     # Notice the differences from Patcher in scanModFile and buildPatch
@@ -118,42 +155,6 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
-class ListPatcher(AListPatcher,Patcher):
-
-    def _patchesList(self):
-        return bash.bosh.dirs['patches'].list()
-
-    def _patchFile(self):
-        return PatchFile
-
-class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
-                             u' following list will be IGNORED.')
-
-    #--Config Phase -----------------------------------------------------------
-    def _patchesList(self):
-        return getPatchesList()
-
-    def _patchFile(self):
-        return CBash_PatchFile
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
-        self.srcs = self.getConfigChecked()
-        self.isActive = bool(self.srcs)
-
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        if self.allowUnloaded:
-            return [item for item in self.configItems if
-                    self.configChecks[item]]
-        else:
-            return [item for item in self.configItems if
-                    self.configChecks[item] and (
-                        item in self.patchFile.allMods or not reModExt.match(
-                            item.s))]
-
 class DoublePatcher(ADoublePatcher, ListPatcher): pass
 
 class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
@@ -169,6 +170,23 @@ class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
         self.srcs = [] #so as not to fail screaming when determining load
         # mods - but with the least processing required.
 
+class PatchMerger(APatchMerger, ListPatcher):
+    autoKey = u'Merge'
+
+    def _setMods(self,patchFile):
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None,self.getConfigChecked())
+
+class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
+    autoKey = {u'Merge'}
+    unloadedText = "" # Cbash only
+
+    def _setMods(self,patchFile):
+        if not self.isActive: return
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None,self.srcs)
+
+# Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(AImportPatcher, ListPatcher):
 
     def getReadClasses(self):

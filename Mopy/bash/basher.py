@@ -52,7 +52,7 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
-    AliasesPatcher, CBash_AliasesPatcher
+    AliasesPatcher, CBash_AliasesPatcher, PatchMerger, CBash_PatchMerger
 from patcher.oblivion.patchers.importers import CellImporter, \
     CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
     CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher, NPCAIPackagePatcher, \
@@ -8010,9 +8010,9 @@ class DoublePatcher(TweakPatcher,ListPatcher):
 
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
-class PatchMerger(bosh.PatchMerger,ListPatcher):
+class PatchMerger(PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
-class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
+class CBash_PatchMerger(CBash_PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
 # Patchers 20 ------------------------------------------------------------------
 class GraphicsPatcher(GraphicsPatcher,ListPatcher): pass

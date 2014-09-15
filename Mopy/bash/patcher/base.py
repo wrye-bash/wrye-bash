@@ -23,7 +23,8 @@
 # =============================================================================
 
 """This module contains the base patcher classes - must be game independent.
-'A' in the names of the classes stands for 'Abstract'."""
+'A' in the names of the classes stands for 'Abstract'. You should not import
+from this module outside of the patcher package."""
 # FIXME: DETAILED docs - for the patcher attributes, the patcher methods and
 # classes and the patching process. Once this is done we should delete the (
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
@@ -32,11 +33,14 @@
 
 import copy
 import re
-import bash.bolt
-from bash.bolt import AbstractError, GPath
-from bash.bosh import reModExt, dirs, reCsvExt
-import bash.bush
+from ..bolt import AbstractError, GPath, Path
+from ..bosh import reModExt, dirs, reCsvExt # should I not import dirs here ?
+from .. import bush # for fullLoadOrder - needed ?
+import bash # for bosh.modInfos (can't import bosh yet)
 
+#------------------------------------------------------------------------------
+# _Abstract_Patcher and subclasses---------------------------------------------
+#------------------------------------------------------------------------------
 class _Abstract_Patcher(object):
     """Abstract base class for patcher elements - must be the penultimate class
      in MRO (method resolution order), just before object"""
@@ -158,6 +162,8 @@ class AListPatcher(_Abstract_Patcher):
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile(u'^UNDEFINED$',re.U)#--Compiled re used by getAutoItems
+    # all subclasses override this with re.compile(ur"^UNDEFINED$",re.I|re.U)
+    # except DoublePatcher and UpdateReference ones
     autoKey = None
     forceAuto = True
 
@@ -174,9 +180,8 @@ class AListPatcher(_Abstract_Patcher):
         for modInfo in bash.bosh.modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (
                 autoKey & modInfo.getBashTags()):
-                if bash.bush.fullLoadOrder[modInfo.name] > \
-                        bash.bush.fullLoadOrder[
-                            self._patchFile().patchName]: continue
+                if bush.fullLoadOrder[modInfo.name] > \
+                    bush.fullLoadOrder[self._patchFile().patchName]: continue
                 autoItems.append(modInfo.name)
                 if self.choiceMenu: self.getChoice(modInfo.name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
@@ -195,10 +200,8 @@ class AListPatcher(_Abstract_Patcher):
         newConfigItems = []
         patchesDir = self._patchesList()
         for srcPath in self.configItems:
-            if ((reModExt.search(
-                    srcPath.s) and srcPath in bash.bosh.modInfos) or
-                        reCsvExt.search(
-                    srcPath.s) and srcPath in patchesDir):
+            if ((reModExt.search(srcPath.s) and srcPath in bash.bosh.modInfos) or
+                        reCsvExt.search(srcPath.s) and srcPath in patchesDir):
                 newConfigItems.append(srcPath)
         self.configItems = newConfigItems
         if self.__class__.forceItemCheck:
@@ -222,7 +225,7 @@ class AListPatcher(_Abstract_Patcher):
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        if isinstance(item,bash.bolt.Path): item = item.s
+        if isinstance(item,Path): item = item.s
         if self.choiceMenu:
             return u'%s [%s]' % (item,self.getChoice(item))
         else:
@@ -303,6 +306,9 @@ class AAliasesPatcher(_Abstract_Patcher):
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
 
+#------------------------------------------------------------------------------
+# AMultiTweakItem(object)------------------------------------------------------
+#------------------------------------------------------------------------------
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
     def __init__(self,label,tip,key,*choices,**kwargs):
@@ -364,6 +370,9 @@ class AMultiTweakItem(object):
             label += u' [' + self.choiceLabels[self.chosen] + u']'
         return label
 
+#------------------------------------------------------------------------------
+# AListPatcher subclasses------------------------------------------------------
+#------------------------------------------------------------------------------
 class ADoublePatcher(AListPatcher):
     """docs - what's this about ?""" # TODO
 
@@ -390,7 +399,9 @@ class AImportPatcher(AListPatcher):
     scanOrder = 20
     editOrder = 20
     masters = {}
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
+    # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
+    # ImportRelations, ImportFactions
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -400,3 +411,33 @@ class AImportPatcher(AListPatcher):
                             self.configChecks.iteritems() if
                             value and reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
+
+class APatchMerger(AListPatcher):
+    """Merges specified patches into Bashed Patch."""
+    scanOrder = 10
+    editOrder = 10
+    group = _(u'General')
+    name = _(u'Merge Patches')
+    text = _(u"Merge patch mods into Bashed Patch.")
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        for modInfo in bash.bosh.modInfos.data.values():
+            if modInfo.name in bash.bosh.modInfos.mergeable and u'NoMerge' not in \
+                    modInfo.getBashTags() and \
+                            bush.fullLoadOrder[modInfo.name] < \
+                            bush.fullLoadOrder[self._patchFile().patchName]:
+                autoItems.append(modInfo.name)
+        return autoItems
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        super(APatchMerger,self).initPatchFile(patchFile,loadMods)
+        #--WARNING: Since other patchers may rely on the following update
+        # during their initPatchFile section, it's important that PatchMerger
+        # runs first or near first.
+        self._setMods(patchFile)
+
+    def _setMods(self, patchFile): raise AbstractError # override in subclasses
