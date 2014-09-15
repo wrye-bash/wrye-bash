@@ -11127,29 +11127,27 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-from patcher.base import Patcher, CBash_Patcher
+from patcher.base import Patcher, CBash_Patcher, AListPatcher
 from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher, \
     ImportPatcher, CBash_ImportPatcher
 
 # Patchers: 10 ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-
-#------------------------------------------------------------------------------
-# TODO: MI for UpdateReferences - notice self.srcFiles =self.getConfigChecked()
-# vs self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
-# plus unused vars, commented out code etc etc
-
-class UpdateReferences(ListPatcher):
+class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
+    # TODO: common code - notice self.srcFiles =self.getConfigChecked() vs
+    # self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
+    # plus unused vars, commented out code etc etc
     scanOrder = 15
     editOrder = 15
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
-    autoKey = u'Formids'
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
-    #--Config Phase -----------------------------------------------------------
+class UpdateReferences(AUpdateReferences,ListPatcher):
+    autoKey = u'Formids'
+
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -11350,15 +11348,8 @@ class UpdateReferences(ListPatcher):
 
 from patcher.oblivion.utilities import CBash_FidReplacer
 
-class CBash_UpdateReferences(CBash_ListPatcher):
-    """Imports Form Id replacers into the Bashed Patch."""
-    scanOrder = 15
-    editOrder = 15
-    group = _(u'General')
-    name = _(u'Replace Form IDs')
-    text = _(u"Imports FormId replacers from csv files into the Bashed Patch.")
+class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
     autoKey = {u'Formids'}
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
@@ -11366,8 +11357,8 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.old = [] #--Maps old fid to new fid
-        self.new = [] #--Maps old fid to new fid
+        self.old = [] #--Maps old fid to new fid # TODO: unused ?
+        self.new = [] #--Maps old fid to new fid # TODO: unused ?
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}
