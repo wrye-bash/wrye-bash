@@ -61,7 +61,8 @@ from patcher.oblivion.patchers.importers import CellImporter, \
     ImportFactions, CBash_ImportFactions, ImportRelations, \
     CBash_ImportRelations, ImportScripts, CBash_ImportScripts, ImportInventory, \
     CBash_ImportInventory, ImportActorsSpells, CBash_ImportActorsSpells, \
-    NamesPatcher, CBash_NamesPatcher, NpcFacePatcher, CBash_NpcFacePatcher
+    NamesPatcher, CBash_NamesPatcher, NpcFacePatcher, CBash_NpcFacePatcher, \
+    RoadImporter, CBash_RoadImporter
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8057,8 +8058,8 @@ class RacePatcher(RacePatcher,DoublePatcher):
 class CBash_RacePatcher(CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
-class RoadImporter(bosh.RoadImporter,ListPatcher): pass
-class CBash_RoadImporter(bosh.CBash_RoadImporter,ListPatcher): pass
+class RoadImporter(RoadImporter,ListPatcher): pass
+class CBash_RoadImporter(CBash_RoadImporter,ListPatcher): pass
 
 class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
 class CBash_SoundPatcher(bosh.CBash_SoundPatcher,ListPatcher): pass
