@@ -313,18 +313,18 @@ class MelCTDAHandler(MelStructs):
             (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
         elif size == 28:
             form12345 = form1+form2+form3+form4
-            unpacked2 = ins.unpack(form1234,16,readId)
+            unpacked2 = ins.unpack(form12345,16,readId)
             (target.param1,target.param2,target.runOn,target.reference) = unpacked2
             target.param3 = null4
         elif size == 24:
             form12345 = form1+form2+form3
-            unpacked2 = ins.unpack(form1234,12,readId)
+            unpacked2 = ins.unpack(form12345,12,readId)
             (target.param1,target.param2,target.runOn) = unpacked2
             target.reference = null4
             target.param3 = null4
         elif size == 20:
             form12345 = form1+form2
-            unpacked2 = ins.unpack(form1234,8,readId)
+            unpacked2 = ins.unpack(form12345,8,readId)
             (target.param1,target.param2) = unpacked2
             target.runOn = null4
             target.reference = null4
@@ -955,7 +955,7 @@ class MelVmad(MelBase):
                     else:
                         raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
             else:
-                raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
+                raise Exception(u'Unrecognized value of type: %s' % type(value))
             return data
 
     class Script(object):
@@ -1805,7 +1805,8 @@ class MreCams(MelRecord):
             elif size == 40:
                 unpacked = ins.unpack('4I6f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 44,
+                                   size, False) # untested, record.inName
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1898,7 +1899,9 @@ class MreCell(MelRecord):
             elif size == 24:
                 unpacked = ins.unpack('BBBsBBBsBBBsffi',size,readId)
             else:
-                raise ModSizeError(record.inName,record.recType+'.'+type,size,ModReader.recHeader.size,True)
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   # expected size then size IIUC
+                                   ModReader.recHeader.size, size, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1915,7 +1918,8 @@ class MreCell(MelRecord):
             elif size == 1:
                 unpacked = ins.unpack('B',size,readId)
             else:
-                raise ModSizeError(record.inName,record.recType+'.'+type,size,ModReader.recHeader.size,True)
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   ModReader.recHeader.size, size, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2508,7 +2512,8 @@ class MreEfsh(MelRecord):
             elif size == 308:
                 unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type,
+                                   400, size, False)  # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2587,7 +2592,8 @@ class MreEnch(MelRecord,MreHasEffects):
             elif size == 32:
                 unpacked = ins.unpack('i2Ii2IfI',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 36,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2660,7 +2666,8 @@ class MreExpl(MelRecord):
             elif size == 40:
                 unpacked = ins.unpack('6I4f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 52,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2787,7 +2794,8 @@ class MreFact(MelRecord):
             elif size == 12:
                 unpacked = ins.unpack('2B5H',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 20,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4825,7 +4833,8 @@ class MrePerk(MelRecord):
             elif record.type == 2:
                 format,attrs = ('HB',('entrypoint','function'))
             else:
-                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+                raise ModError(record.inName, # untested
+                               _('Unexpected type: %d') % record.type)
             values = []
             valuesAppend = values.append
             getter = target.__getattribute__
@@ -4885,7 +4894,8 @@ class MrePerk(MelRecord):
             for target in record.__getattribute__(self.attr):
                 element = self.loaders[target.recordType]
                 if not element:
-                    raise ModError(ins.inName,_('Unexpected type: %d') % target.recordType)
+                    raise ModError(record.inName, _(
+                        'Unexpected type: %d') % target.recordType)
                 element.dumpData(target,out)
 
     melSet = MelSet(
@@ -4966,7 +4976,8 @@ class MreProj(MelRecord):
             elif size == 84:
                 unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 92,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -6115,7 +6126,8 @@ class MreWrld(MelRecord):
             elif size == 16:
                 unpacked = ins.unpack('2i4h',size,readId)
             else:
-                raise ModSizeError(record.inName,record.recType+'.'+type,size,ModReader.recHeader.size,True)
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   ModReader.recHeader.size, size, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
