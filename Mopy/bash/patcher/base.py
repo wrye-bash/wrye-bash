@@ -441,3 +441,15 @@ class APatchMerger(AListPatcher):
         self._setMods(patchFile)
 
     def _setMods(self, patchFile): raise AbstractError # override in subclasses
+
+class AUpdateReferences(AListPatcher):
+    """Imports Form Id replacers into the Bashed Patch."""
+    # TODO: common code - notice self.srcFiles =self.getConfigChecked() vs
+    # self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
+    # plus unused vars, commented out code etc etc
+    scanOrder = 15
+    editOrder = 15
+    group = _(u'General')
+    name = _(u'Replace Form IDs')
+    text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default.

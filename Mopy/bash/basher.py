@@ -52,7 +52,8 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
-    AliasesPatcher, CBash_AliasesPatcher, PatchMerger, CBash_PatchMerger
+    AliasesPatcher, CBash_AliasesPatcher, PatchMerger, CBash_PatchMerger, \
+    UpdateReferences, CBash_UpdateReferences
 from patcher.oblivion.patchers.importers import CellImporter, \
     CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
     CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher, NPCAIPackagePatcher, \
@@ -8094,8 +8095,8 @@ class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
 class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
 class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
 
-class UpdateReferences(bosh.UpdateReferences,ListPatcher): pass
-class CBash_UpdateReferences(bosh.CBash_UpdateReferences,ListPatcher): pass
+class UpdateReferences(UpdateReferences,ListPatcher): pass
+class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
 class ListsMerger(bosh.ListsMerger,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
