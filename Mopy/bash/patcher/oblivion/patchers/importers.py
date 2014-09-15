@@ -307,13 +307,27 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-def _buildPatch(self,log,inner_for):
+def _inner_loop(id_data, keep, modFileTops, type, type_count):
+    """Most common pattern for the internal buildPatch() loop."""
+    for record in modFileTops[type].records:
+        fid = record.fid
+        if fid not in id_data: continue
+        for attr, value in id_data[fid].iteritems():
+            if record.__getattribute__(attr) != value: break
+        else: continue
+        for attr, value in id_data[fid].iteritems():
+            record.__setattr__(attr, value)
+        keep(fid)
+        type_count[type] += 1
+
+def _buildPatch(self,log,inner_loop=_inner_loop):
     """Common buildPatch() pattern of :
         GraphicsPatcher
         ActorImporter
         KFFZPatcher
         DeathItemPatcher
         ImportScripts
+        SoundPatcher
     """ # TODO: filter()
     if not self.isActive: return
     modFileTops = self.patchFile.tops
@@ -324,7 +338,7 @@ def _buildPatch(self,log,inner_for):
         type = recClass.classType
         if type not in modFileTops: continue
         type_count[type] = 0
-        inner_for(id_data, keep, modFileTops, type, type_count)
+        inner_loop(id_data, keep, modFileTops, type, type_count)
     # noinspection PyUnusedLocal
     id_data = None # cleanup to save memory
     self._patchLog(log,type_count)
@@ -335,6 +349,7 @@ def _scanModFile(self, modFile):
         KFFZPatcher
         DeathItemPatcher
         ImportScripts
+        SoundPatcher
     """
     if not self.isActive: return
     id_data = self.id_data
@@ -526,7 +541,7 @@ class GraphicsPatcher(ImportPatcher):
     def buildPatch(self,log,progress):
         """Merge last version of record with patched graphics data as
         needed."""
-        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
+        _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -815,13 +830,14 @@ class ActorImporter(ImportPatcher):
                 if reduce(getattr, attr.split('.'), record) != value: break
             else: continue
             for attr, value in id_data[fid].iteritems():
+                # OOPS: line below is the only diff from base _inner_loop()
                 setattr(reduce(getattr, attr.split('.')[:-1], record),
                         attr.split('.')[-1], value)
             keep(fid)
             type_count[type] += 1
 
     def buildPatch(self,log,progress):
-       _buildPatch(self,log,inner_for=self.__class__._inner_loop)
+       _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
@@ -1007,21 +1023,8 @@ class KFFZPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
 
-    @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
-            fid = record.fid
-            if fid not in id_data: continue
-            for attr, value in id_data[fid].iteritems():
-                if record.__getattribute__(attr) != value: break
-            else: continue
-            for attr, value in id_data[fid].iteritems():
-                record.__setattr__(attr, value)
-            keep(fid)
-            type_count[type] += 1
-
     def buildPatch(self,log,progress):
-        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
+        _buildPatch(self,log)
 
 class CBash_KFFZPatcher(CBash_ImportPatcher):
     """Merges changes to actor animations."""
@@ -1416,24 +1419,10 @@ class DeathItemPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
 
-    @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        # deprint(recClass,type,type_count[type])
-        for record in modFileTops[type].records:
-            fid = record.fid
-            if fid not in id_data: continue
-            for attr, value in id_data[fid].iteritems():
-                if record.__getattribute__(attr) != value: break
-            else: continue
-            for attr, value in id_data[fid].iteritems():
-                record.__setattr__(attr, value)
-            keep(fid)
-            type_count[type] += 1
-
     def buildPatch(self,log,progress):
         """Merge last version of record with patched actor death item as
         needed."""
-        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
+        _buildPatch(self,log)
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher):
     """Imports actor death items."""
@@ -1554,7 +1543,8 @@ class ImportFactions(ImportPatcher):
                 if fid not in id_factions: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def _inner_loop(self, id_data, keep, modFileTops, type, type_count):
+    @staticmethod
+    def _inner_loop(id_data, keep, modFileTops, type, type_count):
         for record in modFileTops[type].records:
             fid = record.fid
             if fid not in id_data: continue
@@ -1985,22 +1975,9 @@ class ImportScripts(ImportPatcher):
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
 
-    @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
-            fid = record.fid
-            if fid not in id_data: continue
-            for attr, value in id_data[fid].iteritems():
-                if record.__getattribute__(attr) != value: break
-            else: continue
-            for attr, value in id_data[fid].iteritems():
-                record.__setattr__(attr, value)
-            keep(fid)
-            type_count[type] += 1
-
     def buildPatch(self,log,progress):
         """Merge last version of record with patched scripts link as needed."""
-        _buildPatch(self,log,inner_for=self.__class__._inner_loop)
+        _buildPatch(self,log)
 
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
@@ -3216,52 +3193,11 @@ class SoundPatcher(ImportPatcher):
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+        _scanModFile(self,modFile)
 
     def buildPatch(self,log,progress):
         """Merge last version of record with patched sound data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            #deprint(recClass,type,type_count[type])
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        id_data = None
-        self._patchLog(log,type_count)
+        _buildPatch(self,log)
 
 class CBash_SoundPatcher(CBash_ImportPatcher):
     """Imports sounds from source mods into patch."""
