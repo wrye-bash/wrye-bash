@@ -1447,7 +1447,9 @@ mergeClasses = (
     )
 
 #--Extra read classes: need info from magic effects
-readClasses = (MreMgef, MreScpt,)
+readClasses = (MreMgef,
+               # MreScpt, # Can't be resolved
+               )
 writeClasses = (MreMgef,)
 
 

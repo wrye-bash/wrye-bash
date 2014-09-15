@@ -25,19 +25,25 @@
 """This module contains the oblivion record classes. Ripped from oblivion.py"""
 import re
 import struct
+import itertools
 from . import esp
-from ...bolt import StateError, Flags, BoltError, sio, DataDict
+from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
+    _encode, _unicode
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
     MelModel, MelFull0, null1, MelFidList, MelStructA, MelStrings, MreRecord, \
-    MreGmstBase, MelTuple
-from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
-from constants import allConditions, fid1Conditions, fid2Conditions
+    MreGmstBase, MelTuple, MelLString, MelCountedFidList, ModReader, \
+    MelOptStructA, MelCountedFids, MelSortedFidList
+from ... import bush
+from constants import allConditions, fid1Conditions, fid2Conditions, \
+    fid5Conditions
+
+from_iterable = itertools.chain.from_iterable
 
 #--Mod I/O
-class RecordHeader(brec.BaseRecordHeader):
+class RecordHeader(BaseRecordHeader):
     size = 24
 
     def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
@@ -59,7 +65,7 @@ class RecordHeader(brec.BaseRecordHeader):
         type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
         #--Bad type?
         if type not in esp.recordTypes:
-            raise brec.ModError(ins.inName,u'Bad header type: '+repr(type))
+            raise ModError(ins.inName,u'Bad header type: '+repr(type))
         #--Record
         if type != 'GRUP':
             pass
@@ -71,7 +77,7 @@ class RecordHeader(brec.BaseRecordHeader):
             elif str0 in esp.topIgTypes:
                 uint0 = esp.topIgTypes[str0]
             else:
-                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
+                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         #--Other groups
         return RecordHeader(type,size,uint0,uint1,uint2,uint3)
 
@@ -110,7 +116,7 @@ class MreActor(MelRecord):
 #-------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    BipedFlags = Flags(0L,Flags.getNames(
             (0, 'head'),
             (1, 'hair'),
             (2, 'body'),
@@ -146,7 +152,7 @@ class MelBipedObjectData(MelStruct):
         ))
 
     ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
-    LegacyFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    LegacyFlags = Flags(0L,Flags.getNames(
             (0, 'modulates_voice'), #{>>> From ARMA <<<}
             (1, 'unknown_2'),
             (2, 'unknown_3'),
@@ -154,7 +160,7 @@ class MelBipedObjectData(MelStruct):
             (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
 
-    ArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ArmorTypeFlags = Flags(0L,Flags.getNames(
         (0, 'light_armor'),
         (1, 'heavy_armor'),
         (2, 'clothing'),
@@ -290,7 +296,7 @@ class MelCTDAHandler(MelStructs):
         (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
         #--Get parameters
         if ifunc not in allConditions:
-            raise bolt.BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
+            raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
         # Form1 is Param1
         form1 = 'I' if ifunc in fid1Conditions else 'i'
         # Form2 is Param2
@@ -381,7 +387,7 @@ class MelConditions(MelGroups):
 class MelDecalData(MelStruct):
     """Represents Decal Data."""
 
-    DecalDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DecalDataFlags = Flags(0L,Flags.getNames(
             (0, 'parallax'),
             (0, 'alphaBlending'),
             (0, 'alphaTesting'),
@@ -400,7 +406,7 @@ class MelDecalData(MelStruct):
 class MelDestructible(MelGroup):
     """Represents a set of destruct record."""
 
-    MelDestStageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MelDestStageFlags = Flags(0L,Flags.getNames(
         (0, 'capDamage'),
         (1, 'disable'),
         (2, 'destroy'),
@@ -467,7 +473,7 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        with bolt.sio() as buff:
+        with sio() as buff:
             avEffects = bush.genericAVEffects
             aValues = bush.actorValues
             buffWrite = buff.write
@@ -645,7 +651,7 @@ class MelString16(MelString):
         value = record.__getattribute__(self.attr)
         if value != None:
             if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
+                value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
                 test,encoding = _encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
@@ -680,7 +686,7 @@ class MelString32(MelString):
         value = record.__getattribute__(self.attr)
         if value != None:
             if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
+                value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
                 test,encoding = _encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
@@ -1175,10 +1181,10 @@ class MreAact(MelRecord):
 class MreAchr(MelRecord):
     """Placed NPC"""
     classType = 'ACHR'
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('oppositeParent','popIn'))
+    _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
 
     # 'Parent Activate Only'
-    ActivateParentsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ActivateParentsFlags = Flags(0L,Flags.getNames(
             (0, 'parentActivateOnly'),
         ))
 
@@ -1285,7 +1291,7 @@ class MreActi(MelRecord):
     """Activator."""
     classType = 'ACTI'
 
-    ActivatorFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ActivatorFlags = Flags(0L,Flags.getNames(
         (0, 'noDisplacement'),
         (0, 'ignoredBySandbox'),
     ))
@@ -1347,7 +1353,7 @@ class MreAlch(MelRecord,MreHasEffects):
     # {0x00008000} 'Unknown 16',
     # {0x00010000} 'Medicine',
     # {0x00020000} 'Poison'
-    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IngestibleFlags = Flags(0L,Flags.getNames(
         (0, 'autoCalc'),
         (1, 'isFood'),
         (16, 'medicine'),
@@ -1379,7 +1385,7 @@ class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
 
-    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    AmmoTypeFlags = Flags(0L,Flags.getNames(
         (0, 'notNormalWeapon'),
         (1, 'nonPlayable'),
         (2, 'nonBolt'),
@@ -1451,7 +1457,7 @@ class MreArma(MelRecord):
 
     # {0x01} 'Unknown 0',
     # {0x02} 'Enabled'
-    WeightSliderFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    WeightSliderFlags = Flags(0L,Flags.getNames(
             (0, 'unknown0'),
             (1, 'enabled'),
         ))
@@ -1524,7 +1530,7 @@ class MreArto(MelRecord):
     #{0x00000001} 'Magic Casting',
     #{0x00000002} 'Magic Hit Effect',
     #{0x00000004} 'Enchantment Effect'
-    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ArtoTypeFlags = Flags(0L,Flags.getNames(
             (0, 'magic_casting'),
             (1, 'magic_hit_effect'),
             (2, 'enchantment_effect'),
@@ -1560,7 +1566,7 @@ class MreAstp(MelRecord):
 
     # DATA Flags
     # {0x00000001} 'Related'
-    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+    AstpTypeFlags = Flags(0L,Flags.getNames('related'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -1625,7 +1631,7 @@ class MelBookData(MelStruct):
     # {0x01} 'Teaches Skill',
     # {0x02} 'Can''t be Taken',
     # {0x04} 'Teaches Spell',
-    bookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    bookTypeFlags = Flags(0L,Flags.getNames(
         (0, 'teachesSkill'),
         (1, 'cantBeTaken'),
         (2, 'teachesSpell'),
@@ -1781,7 +1787,7 @@ class MreCams(MelRecord):
     # 'Target-Target',
     # 'Target-Lead Actor'
 
-    CamsFlagsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CamsFlagsFlags = Flags(0L,Flags.getNames(
             (0, 'positionFollowsLocation'),
             (1, 'rotationFollowsTarget'),
             (2, 'dontFollowBone'),
@@ -1833,7 +1839,7 @@ class MreCell(MelRecord):
     # {0x0040} 'Hand Changed',
     # {0x0080} 'Show Sky',
     # {0x0100} 'Use Sky Lighting'
-    CellDataFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    CellDataFlags1 = Flags(0L,Flags.getNames(
         (0,'isInterior'), # isInteriorCell
         (1,'hasWater'),
         (2,'cantFastTravel'),
@@ -1844,7 +1850,7 @@ class MreCell(MelRecord):
         (7,'behaveLikeExterior'),
         ))
 
-    CellDataFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    CellDataFlags2 = Flags(0L,Flags.getNames(
         # useSkyLighting
         (0,'useSkyLighting'),
         ))
@@ -1860,7 +1866,7 @@ class MreCell(MelRecord):
     # {0x00000100}'Fog Power',
     # {0x00000200}'Fog Max',
     # {0x00000400}'Light Fade Distances'
-    CellInheritedFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CellInheritedFlags = Flags(0L,Flags.getNames(
             (0, 'ambientColor'),
             (1, 'directionalColor'),
             (2, 'fogColor'),
@@ -1874,7 +1880,7 @@ class MreCell(MelRecord):
             (10, 'lightFadeDistances'),
         ))
 
-    CellGridFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CellGridFlags = Flags(0L,Flags.getNames(
             (0, 'quad1'),
             (1, 'quad2'),
             (2, 'quad3'),
@@ -2093,7 +2099,7 @@ class MreColl(MelRecord):
     """Collision Layer"""
     classType = 'COLL'
 
-    CollisionLayerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CollisionLayerFlags = Flags(0L,Flags.getNames(
         (0,'triggerVolume'),
         (1,'sensor'),
         (2,'navmeshObstacle'),
@@ -2133,7 +2139,7 @@ class MreCont(MelRecord):
     # {0x01} 'Allow Sounds When Animation',
     # {0x02} 'Respawns',
     # {0x04} 'Show Owner'
-    ContTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ContTypeFlags = Flags(0L,Flags.getNames(
         (0, 'allowSoundsWhenAnimation'),
         (1, 'respawns'),
         (2, 'showOwner'),
@@ -2186,7 +2192,7 @@ class MreCsty(MelRecord):
     # {0x01} 'Dueling',
     # {0x02} 'Flanking',
     # {0x04} 'Allow Dual Wielding'
-    CstyTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CstyTypeFlags = Flags(0L,Flags.getNames(
         (0, 'dueling'),
         (1, 'flanking'),
         (2, 'allowDualWielding'),
@@ -2215,7 +2221,7 @@ class MreDebr(MelRecord):
     """Debris record."""
     classType = 'DEBR'
 
-    dataFlags = bolt.Flags(0L,bolt.Flags.getNames('hasCollissionData'))
+    dataFlags = Flags(0L,Flags.getNames('hasCollissionData'))
     class MelDebrData(MelStruct):
         subType = 'DATA'
         _elements = (('percentage',0),('modPath',null1),('flags',0),)
@@ -2270,7 +2276,7 @@ class MreDial(MelRecord):
     # {6} 'Service',
     # {7} 'Miscellaneous'
 
-    DialTopicFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DialTopicFlags = Flags(0L,Flags.getNames(
         (0, 'doAllBeforeRepeating'),
     ))
 
@@ -2340,7 +2346,7 @@ class MreDlbr(MelRecord):
     """Dialog Branch"""
     classType = 'DLBR'
 
-    DialogBranchFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DialogBranchFlags = Flags(0L,Flags.getNames(
         (0,'topLevel'),
         (1,'blocking'),
         (2,'exclusive'),
@@ -2392,7 +2398,7 @@ class MreDoor(MelRecord):
     """Door Record"""
     classType = 'DOOR'
 
-    DoorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DoorTypeFlags = Flags(0L,Flags.getNames(
         (1, 'automatic'),
         (2, 'hidden'),
         (3, 'minimalUse'),
@@ -2420,7 +2426,7 @@ class MreDual(MelRecord):
     """Dual Cast Data"""
     classType = 'DUAL'
 
-    DualCastDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DualCastDataFlags = Flags(0L,Flags.getNames(
         (0,'hitEffectArt'),
         (1,'projectile'),
         (2,'explosion'),
@@ -2440,7 +2446,7 @@ class MreEczn(MelRecord):
     """Encounter Zone record."""
     classType = 'ECZN'
 
-    EcznTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EcznTypeFlags = Flags(0L,Flags.getNames(
             (0, 'neverResets'),
             (1, 'matchPCBelowMinimumLevel'),
             (2, 'disableCombatBoundary'),
@@ -2459,7 +2465,7 @@ class MreEfsh(MelRecord):
     """Efsh Record"""
     classType = 'EFSH'
 
-    EfshGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EfshGeneralFlags = Flags(0L,Flags.getNames(
         (0, 'noMembraneShader'),
         (1, 'membraneGrayscaleColor'),
         (2, 'membraneGrayscaleAlpha'),
@@ -2566,7 +2572,7 @@ class MreEnch(MelRecord,MreHasEffects):
     # $06, 'Enchantment',
     # $0C, 'Staff Enchantment'
 
-    EnchGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EnchGeneralFlags = Flags(0L,Flags.getNames(
         (0, 'noAutoCalc'),
         (1, 'unknownTwo'),
         (2, 'extendDurationOnRecast'),
@@ -2630,7 +2636,7 @@ class MreExpl(MelRecord):
     # 'Ignore Image Space Swap',
     # 'Chain',
     # 'No Controller Vibration'
-    ExplTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ExplTypeFlags = Flags(0L,Flags.getNames(
         (1, 'alwaysUsesWorldOrientation'),
         (2, 'knockDownAlways'),
         (3, 'knockDownByFormular'),
@@ -2686,7 +2692,7 @@ class MreEyes(MelRecord):
     # {0x01}'Playable',
     # {0x02}'Not Male',
     # {0x04}'Not Female',
-    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EyesTypeFlags = Flags(0L,Flags.getNames(
             (0, 'playable'),
             (1, 'notMale'),
             (2, 'notFemale'),
@@ -2723,7 +2729,7 @@ class MreFact(MelRecord):
     # {0x00004000}'Vendor',
     # {0x00008000}'Can Be Owner',
     # {0x00010000}'Ignore Crimes: Werewolf',
-    FactGeneralTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FactGeneralTypeFlags = Flags(0L,Flags.getNames(
         (0, 'hiddenFromPC'),
         (1, 'specialCombat'),
         (2, 'unknown3'),
@@ -2894,7 +2900,7 @@ class MreFurn(MelRecord):
 
     # {0x0001} 'Unknown 0',
     # {0x0002} 'Ignored By Sandbox'
-    FurnGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FurnGeneralFlags = Flags(0L,Flags.getNames(
         (1, 'ignoredBySandbox'),
     ))
 
@@ -2930,7 +2936,7 @@ class MreFurn(MelRecord):
     # {0x20000000} 'Unknown 30',
     # {0x40000000} 'Unknown 31',
     # {0x80000000} 'Unknown 32'
-    FurnActiveMarkerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FurnActiveMarkerFlags = Flags(0L,Flags.getNames(
         (0, 'sit0'),
         (1, 'sit1'),
         (2, 'sit2'),
@@ -2970,7 +2976,7 @@ class MreFurn(MelRecord):
     # {0x04} 'Right',
     # {0x08} 'Left',
     # {0x10} 'Up'
-    MarkerEntryPointFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MarkerEntryPointFlags = Flags(0L,Flags.getNames(
             (0, 'front'),
             (1, 'behind'),
             (2, 'right'),
@@ -3042,7 +3048,7 @@ class MreGras(MelRecord):
     """Grass record."""
     classType = 'GRAS'
 
-    GrasTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    GrasTypeFlags = Flags(0L,Flags.getNames(
             (0, 'vertexLighting'),
             (1, 'uniformScaling'),
             (2, 'fitToSlope'),
@@ -3082,7 +3088,7 @@ class MreHazd(MelRecord):
     # {0x04} 'Align to Impact Normal',
     # {0x08} 'Inherit Radius from Spawn Spell',
     # {0x10} 'Drop to Ground'
-    HazdTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    HazdTypeFlags = Flags(0L,Flags.getNames(
         (0, 'affectsPlayerOnly'),
         (1, 'inheritDurationFromSpawnSpell'),
         (2, 'alignToImpactNormal'),
@@ -3129,7 +3135,7 @@ class MreHdpt(MelRecord):
     # {0x04} 'Female',
     # {0x10} 'Is Extra Part',
     # {0x20} 'Use Solid Tint'
-    HdptTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    HdptTypeFlags = Flags(0L,Flags.getNames(
         (0, 'playable'),
         (1, 'male'),
         (2, 'female'),
@@ -3160,7 +3166,7 @@ class MreIdle(MelRecord):
     """Idle record."""
     classType = 'IDLE'
 
-    IdleTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IdleTypeFlags = Flags(0L,Flags.getNames(
             (0, 'parent'),
             (1, 'sequence'),
             (2, 'noAttacking'),
@@ -3186,7 +3192,7 @@ class MreIdlm(MelRecord):
     """Idle marker record."""
     classType = 'IDLM'
 
-    IdlmTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IdlmTypeFlags = Flags(0L,Flags.getNames(
         (0, 'runInSequence'),
         (1, 'unknown1'),
         (2, 'doOnce'),
@@ -3230,7 +3236,7 @@ class MreInfo(MelRecord):
     # 3 :'Large'
 
     # 'Use Emotion Animation'
-    InfoResponsesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    InfoResponsesFlags = Flags(0L,Flags.getNames(
             (0, 'useEmotionAnimation'),
         ))
 
@@ -3250,7 +3256,7 @@ class MreInfo(MelRecord):
     # {0x2000} 'Audio Output Override',
     # {0x4000} 'Spends favor points',
     # {0x8000} 'Unknown 16'
-    EnamResponseFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EnamResponseFlags = Flags(0L,Flags.getNames(
             (0, 'goodbye'),
             (1, 'random'),
             (2, 'sayonce'),
@@ -3325,7 +3331,7 @@ class MreImad(MelRecord):
     # {0x00000800}'Blur Radius Bit 2',
     # {0x00001000}'Blur Radius Bit 1',
     # {0x00002000}'Blur Radius Bit 0'
-    ImadDoFFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadDoFFlags = Flags(0L,Flags.getNames(
             (0, 'useTarget'),
             (1, 'unknown2'),
             (2, 'unknown3'),
@@ -3342,11 +3348,11 @@ class MreImad(MelRecord):
             (13, 'blurRadiusBit0'),
         ))
 
-    ImadUseTargetFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadUseTargetFlags = Flags(0L,Flags.getNames(
             (0, 'useTarget'),
         ))
 
-    ImadAnimatableFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadAnimatableFlags = Flags(0L,Flags.getNames(
             (0, 'animatable'),
         ))
 
@@ -3474,7 +3480,7 @@ class MreIngr(MelRecord,MreHasEffects):
     """INGR (ingredient) record."""
     classType = 'INGR'
 
-    IngrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IngrTypeFlags = Flags(0L,Flags.getNames(
             (0, 'No auto-calculation'),
             (1, 'Food item'),
             (2, 'Unknown 3'),
@@ -3524,7 +3530,7 @@ class MreIpctData(MelStruct):
     # for 'soundLevel' refer to wbSoundLevelEnum
 
     # {0x01} 'No Decal Data'
-    IpctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IpctTypeFlags = Flags(0L,Flags.getNames(
         (0, 'noDecalData'),
     ))
 
@@ -3746,7 +3752,7 @@ class MreLigh(MelRecord):
     # {0x00000800} 'Shadow Hemisphere',
     # {0x00001000} 'Shadow Omnidirectional',
     # {0x00002000} 'Portal-strict'
-    LighTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    LighTypeFlags = Flags(0L,Flags.getNames(
             (0, 'dynamic'),
             (1, 'canbeCarried'),
             (2, 'negative'),
@@ -3892,7 +3898,7 @@ class MreMato(MelRecord):
     """Material Object Records"""
     classType = 'MATO'
 
-    MatoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MatoTypeFlags = Flags(0L,Flags.getNames(
             (0, 'singlePass'),
         ))
 
@@ -3916,7 +3922,7 @@ class MreMatt(MelRecord):
     """Material Type Record."""
     classType = 'MATT'
 
-    MattTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MattTypeFlags = Flags(0L,Flags.getNames(
             (0, 'stairMaterial'),
             (1, 'arrowsStick'),
         ))
@@ -3938,7 +3944,7 @@ class MreMesg(MelRecord):
     """Message Record."""
     classType = 'MESG'
 
-    MesgTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MesgTypeFlags = Flags(0L,Flags.getNames(
             (0, 'messageBox'),
             (1, 'autoDisplay'),
         ))
@@ -3972,7 +3978,7 @@ class MreMgef(MelRecord):
     # 'castingSoundLevel', 'soundType'
     # refer to TES5Edit for values
 
-    MgefGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MgefGeneralFlags = Flags(0L,Flags.getNames(
             (0, 'hostile'),
             (1, 'recover'),
             (2, 'detrimental'),
@@ -4082,7 +4088,7 @@ class MreMstt(MelRecord):
     """Moveable static record."""
     classType = 'MSTT'
 
-    MsttTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MsttTypeFlags = Flags(0L,Flags.getNames(
         (0, 'onLocalMap'),
         (1, 'unknown2'),
     ))
@@ -4104,7 +4110,7 @@ class MreMusc(MelRecord):
     """Music type record."""
     classType = 'MUSC'
 
-    MuscTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MuscTypeFlags = Flags(0L,Flags.getNames(
             (0,'playsOneSelection'),
             (1,'abruptTransition'),
             (2,'cycleTracks'),
@@ -4194,7 +4200,7 @@ class MreNavm(MelRecord):
     # 'Unknown 14',
     # 'Unknown 15',
     # 'Unknown 16'
-    NavmTrianglesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    NavmTrianglesFlags = Flags(0L,Flags.getNames(
             (0, 'edge01link'),
             (1, 'edge12link'),
             (2, 'edge20link'),
@@ -4229,7 +4235,7 @@ class MreNavm(MelRecord):
     # 'Unknown 14',
     # 'Unknown 15',
     # 'Unknown 16'
-    NavmCoverFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    NavmCoverFlags = Flags(0L,Flags.getNames(
             (0, 'edge01wall'),
             (1, 'edge01ledgecover'),
             (2, 'unknown3'),
@@ -4293,7 +4299,7 @@ class MreNpc(MelRecord):
     # {0x00002000}'Unknown 14',
     # {0x00004000}'Unknown 15',
     # {0x00008000}'Unknown 16'
-    NpcFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags3 = Flags(0L,Flags.getNames(
             (0, 'ignoreWeapon'),
             (1, 'bashAttack'),
             (2, 'powerAttack'),
@@ -4325,7 +4331,7 @@ class MreNpc(MelRecord):
     # {0x0400} 'Use Def Pack List',
     # {0x0800} 'Use Attack Data',
     # {0x1000} 'Use Keywords'
-    NpcFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags2 = Flags(0L,Flags.getNames(
             (0, 'useTraits'),
             (1, 'useStats'),
             (2, 'useFactions'),
@@ -4373,7 +4379,7 @@ class MreNpc(MelRecord):
     # {0x20000000} 'Is Ghost',
     # {0x40000000} 'Unknown 30',
     # {0x80000000} 'Invulnerable'
-    NpcFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags1 = Flags(0L,Flags.getNames(
             (0, 'female'),
             (1, 'essential'),
             (2, 'isCharGenFacePreset'),
@@ -4526,19 +4532,19 @@ class MrePack(MelRecord):
     """Package"""
     classType = 'PACK'
 
-    PackFlags10 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags10 = Flags(0L,Flags.getNames(
             (0, 'successCompletesPackage'),
         ))
 
     # 'Repeat when Complete',
     # 'Unknown 1'
-    PackFlags9 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags9 = Flags(0L,Flags.getNames(
             (0, 'repeatwhenComplete'),
             (1, 'unknown1'),
         ))
 
     # wbPKDTFlags
-    PackFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags1 = Flags(0L,Flags.getNames(
             (0, 'offersServices'),
             (1, 'unknown2'),
             (2, 'mustcomplete'),
@@ -4574,7 +4580,7 @@ class MrePack(MelRecord):
         ))
 
     # wbPKDTInterruptFlags
-    PackFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags2 = Flags(0L,Flags.getNames(
             (0, 'hellostoplayer'),
             (1, 'randomconversations'),
             (2, 'observecombatbehavior'),
@@ -4594,7 +4600,7 @@ class MrePack(MelRecord):
         ))
 
     # UNAM, Data Inputs Flags
-    PackFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags3 = Flags(0L,Flags.getNames(
             (0, 'public'),
         ))
 
@@ -4768,7 +4774,7 @@ class MrePerk(MelRecord):
 
     # 'Run Immediately',
     # 'Replace Default'
-    PerkScriptFlagsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    PerkScriptFlagsFlags = Flags(0L,Flags.getNames(
             (0, 'runImmediately'),
             (1, 'replaceDefault'),
         ))
@@ -4934,7 +4940,7 @@ class MreProj(MelRecord):
     # $20 :'Barrier',
     # $40 :'Arrow'
 
-    ProjTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ProjTypeFlags = Flags(0L,Flags.getNames(
         (0, 'hitscan'),
         (1, 'explosive'),
         (2, 'altTriger'),
@@ -5068,7 +5074,7 @@ class MreRela(MelRecord):
     # 7 :'Enemy'
     # 8 :'Archnemesis'
 
-    RelationshipFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    RelationshipFlags = Flags(0L,Flags.getNames(
         (0,'Unknown 1'),
         (1,'Unknown 2'),
         (2,'Unknown 3'),
@@ -5110,7 +5116,7 @@ class MreRfct(MelRecord):
     # {0x00000001}'Rotate to Face Target',
     # {0x00000002}'Attach to Camera',
     # {0x00000004}'Inherit Rotation'
-    RfctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    RfctTypeFlags = Flags(0L,Flags.getNames(
         (0, 'rotateToFaceTarget'),
         (1, 'attachToCamera'),
         (2, 'inheritRotation'),
@@ -5146,7 +5152,7 @@ class MreScen(MelRecord):
     # {0x00004000} 'Face Target',
     # {0x00010000} 'Looping',
     # {0x00020000} 'Headtrack Player'
-    ScenFlags5 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags5 = Flags(0L,Flags.getNames(
             (0, 'unknown1'),
             (1, 'unknown2'),
             (2, 'unknown3'),
@@ -5192,7 +5198,7 @@ class MreScen(MelRecord):
     # 'Dialogue End',
     # 'OBS_COM Pause',
     # 'OBS_COM End'
-    ScenFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags3 = Flags(0L,Flags.getNames(
             (0, 'deathPauseunsused'),
             (1, 'deathEnd'),
             (2, 'combatPause'),
@@ -5205,7 +5211,7 @@ class MreScen(MelRecord):
 
     # 'No Player Activation',
     # 'Optional'
-    ScenFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags2 = Flags(0L,Flags.getNames(
             (0, 'noPlayerActivation'),
             (1, 'optional'),
         ))
@@ -5215,7 +5221,7 @@ class MreScen(MelRecord):
     # 'Unknown 3',
     # 'Repeat Conditions While True',
     # 'Interruptible'
-    ScenFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags1 = Flags(0L,Flags.getNames(
             (0, 'beginonQuestStart'),
             (1, 'stoponQuestEnd'),
             (2, 'unknown3'),
@@ -5325,7 +5331,7 @@ class MreScrl(MelRecord,MreHasEffects):
 
     # SPIT has several wbEnum refer to wbSPIT in TES5Edit
 
-    ScrollDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ScrollDataFlags = Flags(0L,Flags.getNames(
         (0,'manualCostCalc'),
         (1,'unknown2'),
         (2,'unknown3'),
@@ -5435,7 +5441,7 @@ class MreSmbn(MelRecord):
     """Story Manager Branch Node"""
     classType = 'SMBN'
 
-    SmbnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmbnNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -5462,7 +5468,7 @@ class MreSmen(MelRecord):
     """Story Manager Event Node"""
     classType = 'SMEN'
 
-    SmenNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmenNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -5492,13 +5498,13 @@ class MreSmqn(MelRecord):
     classType = 'SMQN'
 
     # "Do all" = "Do all before repeating"
-    SmqnQuestFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmqnQuestFlags = Flags(0L,Flags.getNames(
         (0,'doAll'),
         (1,'sharesEvent'),
         (2,'numQuestsToRun'),
     ))
 
-    SmqnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmqnNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -5534,7 +5540,7 @@ class MreSnct(MelRecord):
     """Sound Category"""
     classType = 'SNCT'
 
-    SoundCategoryFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SoundCategoryFlags = Flags(0L,Flags.getNames(
         (0,'muteWhenSubmerged'),
         (1,'shouldAppearOnMenu'),
     ))
@@ -5601,7 +5607,7 @@ class MreSopm(MelRecord):
 
     # 'Attenuates With Distance',
     # 'Allows Rumble'
-    SopmFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SopmFlags = Flags(0L,Flags.getNames(
             (0, 'attenuatesWithDistance'),
             (1, 'allowsRumble'),
         ))
@@ -5654,7 +5660,7 @@ class MreSpel(MelRecord,MreHasEffects):
     # SPIT has several wbEnum refer to wbSPIT in TES5Edit
 
     # flags = SpellFlags(0L,Flags.getNames
-    SpelTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SpelTypeFlags = Flags(0L,Flags.getNames(
         ( 0,'manualCostCalc'),
         ( 1,'unknown2'),
         ( 2,'unknown3'),
@@ -5817,7 +5823,7 @@ class MreTxst(MelRecord):
     # {0x0001}'No Specular Map',
     # {0x0002}'Facegen Textures',
     # {0x0004}'Has Model Space Normal Map'
-    TxstTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    TxstTypeFlags = Flags(0L,Flags.getNames(
         (0, 'noSpecularMap'),
         (1, 'facegenTextures'),
         (2, 'hasModelSpaceNormalMap'),
@@ -5849,7 +5855,7 @@ class MreVtyp(MelRecord):
 
     # 'Allow Default Dialog',
     # 'Female'
-    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    VtypTypeFlags = Flags(0L,Flags.getNames(
             (0, 'allowDefaultDialog'),
             (1, 'female'),
         ))
@@ -5866,7 +5872,7 @@ class MreWatr(MelRecord):
     """Water"""
     classType = 'WATR'
 
-    WatrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    WatrTypeFlags = Flags(0L,Flags.getNames(
             (0, 'causesDamage'),
         ))
 
@@ -5946,7 +5952,7 @@ class MreWeap(MelRecord):
     classType = 'WEAP'
 
     # 'On Death'
-    WeapFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags3 = Flags(0L,Flags.getNames(
         (0, 'onDeath'),
     ))
 
@@ -5964,7 +5970,7 @@ class MreWeap(MelRecord):
     # {0x00000800}'Unknown 12',
     # {0x00001000}'Non-hostile',
     # {0x00002000}'Bound Weapon'
-    WeapFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags2 = Flags(0L,Flags.getNames(
             (0, 'playerOnly'),
             (1, 'nPCsUseAmmo'),
             (2, 'noJamAfterReloadunused'),
@@ -5989,7 +5995,7 @@ class MreWeap(MelRecord):
     # {0x0020}'Embedded Weapon (unused)',
     # {0x0040}'Don''t Use 1st Person IS Anim (unused)',
     # {0x0080}'Non-playable'
-    WeapFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags1 = Flags(0L,Flags.getNames(
             (0, 'ignoresNormalWeaponResistance'),
             (1, 'automaticunused'),
             (2, 'hasScopeunused'),
@@ -6070,7 +6076,7 @@ class MreWrld(MelRecord):
     # {0x20} 'Unknown 6',
     # {0x40} 'Fixed Dimensions',
     # {0x80} 'No Grass'
-    WrldFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WrldFlags2 = Flags(0L,Flags.getNames(
             (0, 'smallWorld'),
             (1, 'noFastTravel'),
             (2, 'unknown3'),
@@ -6088,7 +6094,7 @@ class MreWrld(MelRecord):
     # {0x0010}'Use Climate Data',
     # {0x0020}'Use Image Space Data (unused)',
     # {0x0040}'Use Sky Cell'
-    WrldFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WrldFlags1 = Flags(0L,Flags.getNames(
             (0, 'useLandData'),
             (1, 'useLODData'),
             (2, 'don'),
@@ -6169,7 +6175,7 @@ class MreWthr(MelRecord):
     """Weather"""
     classType = 'WTHR'
 
-    WthrFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WthrFlags2 = Flags(0L,Flags.getNames(
             (0, 'layer_0'),
             (1, 'layer_1'),
             (2, 'layer_2'),
@@ -6210,7 +6216,7 @@ class MreWthr(MelRecord):
     # {0x08} 'Weather - Snow',
     # {0x10} 'Sky Statics - Always Visible',
     # {0x20} 'Sky Statics - Follows Sun Position'
-    WthrFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WthrFlags1 = Flags(0L,Flags.getNames(
             (0, 'weatherPleasant'),
             (1, 'weatherCloudy'),
             (2, 'weatherRainy'),
