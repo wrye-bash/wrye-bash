@@ -6236,3 +6236,6 @@ class MreWthr(MelRecord):
         MelModel('aurora','MODL'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+# Verified for 305
+# Some things Marked MelBase could be updated if mitigation needed
