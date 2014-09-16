@@ -42,9 +42,16 @@ from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
 
 # Functions -------------------------------------------------------------------
- # TODO: document parameters
-def _inner_loop(id_data, keep, modFileTops, type, type_count):
-    """Most common pattern for the internal buildPatch() loop."""
+# Factor out common code in the patchers. Serve as a document on the patcher
+# procedure. If need be inline them as default methods arguments in
+# buildPatch or scanMorFile.
+# TODO(ut): document parameters, generify more - maybe move some of it to base?
+def __inner_loop(id_data, keep, modFileTops, type, type_count):
+    """Most common pattern for the internal buildPatch() loop.
+
+    In:
+        KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
+    """
     for record in modFileTops[type].records:
         fid = record.fid
         if fid not in id_data: continue
@@ -56,15 +63,14 @@ def _inner_loop(id_data, keep, modFileTops, type, type_count):
         keep(fid)
         type_count[type] += 1
 
-def _buildPatch(self,log,inner_loop=_inner_loop):
-    """Common buildPatch() pattern of :
-        GraphicsPatcher
-        ActorImporter
-        KFFZPatcher
-        DeathItemPatcher
-        ImportScripts
-        SoundPatcher
-    """ # TODO: filter()
+def _buildPatch(self,log,inner_loop=__inner_loop):
+    """Common buildPatch() pattern of:
+
+        GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
+        ImportScripts, SoundPatcher
+    Consists of a type selection loop which could be rewritten to support
+    more patchers (maybe using filter()) and an inner loop that should be
+    provided by a patcher specific static _inner_loop method."""
     if not self.isActive: return
     modFileTops = self.patchFile.tops
     keep = self.patchFile.getKeeper()
@@ -80,11 +86,9 @@ def _buildPatch(self,log,inner_loop=_inner_loop):
     self._patchLog(log,type_count)
 
 def _scanModFile(self, modFile):
-    """Scan mod file against source data. Identical scanModFile() pattern of :
-        GraphicsPatcher
-        KFFZPatcher
-        DeathItemPatcher
-        ImportScripts
+    """Identical scanModFile() pattern of :
+
+        GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
         SoundPatcher
     """
     if not self.isActive: return
@@ -245,7 +249,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             tempCellData = {}
             progress.plus()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
         modName = modFile.fileInfo.name
         if not self.isActive or (
@@ -269,7 +273,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
                 # if worldBlock.world.fid in cellData['Maps']:
                     # patchWorlds.setWorld(worldBlock.world)
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch0
         """Adds merged lists to patchfile."""
         def handleCellBlock(cellBlock):
             modified=False
@@ -802,7 +806,7 @@ class ActorImporter(ImportPatcher):
             x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile1: reduce(...)
         """Scan mod file against source data."""
         if not self.isActive: return
         id_data = self.id_data
@@ -1210,7 +1214,7 @@ class NPCAIPackagePatcher(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('NPC_','CREA',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         if not self.isActive: return
         data = self.data
@@ -1224,7 +1228,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                     if list(record.aiPackages) != data[fid]['merged']:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -1529,7 +1533,7 @@ class ImportFactions(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return tuple(self.activeTypes) if self.isActive else()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile2
         """Scan modFile."""
         if not self.isActive: return
         id_factions = self.id_data
@@ -1576,7 +1580,7 @@ class ImportFactions(ImportPatcher):
                 type_count[type] += 1
                 keep(fid)
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
         """Make changes to patchfile."""
         if not self.isActive: return
         modFileTops = self.patchFile.tops
@@ -1753,7 +1757,7 @@ class ImportRelations(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('FACT',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile2
         """Scan modFile."""
         if not self.isActive: return
         id_relations= self.id_relations
@@ -1770,17 +1774,17 @@ class ImportRelations(ImportPatcher):
                 if fid not in id_relations: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
         """Make changes to patchfile."""
         if not self.isActive: return
-        modFile = self.patchFile
+        modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         id_relations= self.id_relations
         type_count = {}
         for type in ('FACT',):
-            if type not in modFile.tops: continue
+            if type not in modFileTops: continue # if 'FACT' in modFileTops ?
             type_count[type] = 0
-            for record in modFile.tops[type].records:
+            for record in modFileTops[type].records:
                 fid = record.fid
                 if fid in id_relations:
                     newRelations = set(id_relations[fid])
@@ -2104,7 +2108,7 @@ class ImportInventory(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('NPC_','CREA','CONT',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
         if not self.isActive: return
         touched = self.touched
@@ -2147,7 +2151,7 @@ class ImportInventory(ImportPatcher):
                     if fid in touched and fid not in id_records:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -2427,7 +2431,7 @@ class ImportActorsSpells(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('NPC_','CREA',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         if not self.isActive: return
         data = self.data
@@ -2441,7 +2445,7 @@ class ImportActorsSpells(ImportPatcher):
                     if list(record.spells) != data[fid]['merged']:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -2593,7 +2597,7 @@ class NamesPatcher(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return tuple(self.activeTypes) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile0?
         """Scan modFile."""
         if not self.isActive: return
         id_full = self.id_full
@@ -2626,7 +2630,7 @@ class NamesPatcher(ImportPatcher):
                 if record.full != id_full[fid]:
                     setter(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress):# buildPatch0
         """Make changes to patchfile."""
         if not self.isActive: return
         modFile = self.patchFile
@@ -2842,7 +2846,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('NPC_',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile3: mapper unused !
         """Add lists from modFile."""
         modName = modFile.fileInfo.name
         if not self.isActive or modName in self.sourceMods or 'NPC_' not in modFile.tops:
@@ -2854,7 +2858,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
             if npc.fid in faceData:
                 patchNpcs.setRecord(npc)
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress):# buildPatch3: one type
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -3000,7 +3004,7 @@ class RoadImporter(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('CELL','WRLD','ROAD',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
         if not self.isActive or 'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.WRLD
@@ -3012,7 +3016,7 @@ class RoadImporter(ImportPatcher):
                 patchWorlds.setWorld(worldBlock.world)
                 patchWorlds.id_worldBlocks[worldId].road = road
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress): # buildPatch3: one type
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
@@ -3332,7 +3336,7 @@ class StatsPatcher(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return tuple(self.activeTypes) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile4: ?
         """Add affected items to patchFile."""
         if not self.isActive: return
         fid_attr_value = self.fid_attr_value
@@ -3352,7 +3356,7 @@ class StatsPatcher(ImportPatcher):
                 if oldValues != itemStats:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress):# buildPatch1:
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile
@@ -3533,7 +3537,7 @@ class SpellsPatcher(ImportPatcher):
         """Returns load factory classes needed for writing."""
         return ('SPEL',) if self.isActive else ()
 
-    def scanModFile(self, modFile, progress):
+    def scanModFile(self, modFile, progress): # scanModFile4: ?
         """Add affected items to patchFile."""
         if not self.isActive or 'SPEL' not in modFile.tops:
             return
@@ -3552,7 +3556,7 @@ class SpellsPatcher(ImportPatcher):
             if oldValues != spellStats:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self,log,progress):# buildPatch3: one type
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile

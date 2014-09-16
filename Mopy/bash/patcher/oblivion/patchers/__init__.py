@@ -24,7 +24,13 @@
 
 """This module contains the oblivion patcher classes
 
+# Patchers 1 ------------------------------------------------------------------
+In patchers/base.py except Patcher and CBash_Patcher which are in
+patcher/base.py
+# Patchers 10 -----------------------------------------------------------------
+In patchers/base.py
 # Patchers: 30 ----------------------------------------------------------------
+# MultiTweakItem and MultiTweaker classes except from races_multitweaks
 multitweak_actors.py
 multitweak_assorted.py
 multitweak_clothes.py
