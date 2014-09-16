@@ -46,13 +46,13 @@ from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
 # procedure. If need be inline them as default methods arguments in
 # buildPatch or scanMorFile.
 # TODO(ut): document parameters, generify more - maybe move some of it to base?
-def __inner_loop(id_data, keep, modFileTops, type, type_count):
+def _inner_loop(id_data, keep, records, type, type_count):
     """Most common pattern for the internal buildPatch() loop.
 
     In:
         KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
     """
-    for record in modFileTops[type].records:
+    for record in records:
         fid = record.fid
         if fid not in id_data: continue
         for attr, value in id_data[fid].iteritems():
@@ -63,7 +63,7 @@ def __inner_loop(id_data, keep, modFileTops, type, type_count):
         keep(fid)
         type_count[type] += 1
 
-def _buildPatch(self,log,inner_loop=__inner_loop):
+def _buildPatch(self,log,inner_loop=_inner_loop,types=None):
     """Common buildPatch() pattern of:
 
         GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
@@ -76,11 +76,12 @@ def _buildPatch(self,log,inner_loop=__inner_loop):
     keep = self.patchFile.getKeeper()
     id_data = self.id_data
     type_count = {}
-    for recClass in self.srcClasses:
-        type = recClass.classType
-        if type not in modFileTops: continue
+    types = filter(lambda x: x in modFileTops,
+               types if types else map(lambda x: x.classType, self.srcClasses))
+    for type in types:
         type_count[type] = 0
-        inner_loop(id_data, keep, modFileTops, type, type_count)
+        records = modFileTops[type].records
+        inner_loop(id_data, keep, records, type, type_count)
     # noinspection PyUnusedLocal
     id_data = None # cleanup to save memory
     self._patchLog(log,type_count)
@@ -520,8 +521,8 @@ class GraphicsPatcher(ImportPatcher):
          _scanModFile(self,modFile)
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
@@ -829,8 +830,8 @@ class ActorImporter(ImportPatcher):
                         break
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
@@ -1551,8 +1552,8 @@ class ImportFactions(ImportPatcher):
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             newFactions = set(id_data[fid])
@@ -1590,7 +1591,7 @@ class ImportFactions(ImportPatcher):
         for type in self.activeTypes: # TODO: activeTypes in all patchers ?
             if type not in modFileTops: continue
             type_count[type] = 0
-            self._inner_loop(id_data, keep, modFileTops, type, type_count)
+            self._inner_loop(id_data, keep, modFileTops[type].records, type, type_count)
         self._patchLog(log, type_count,
                        modsHeader=u'=== ' + _(u'Source Mods/Files'),
                        logMsg=(u'\n=== ' + self.__class__.logMsg))
