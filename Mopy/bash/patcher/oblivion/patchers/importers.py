@@ -72,7 +72,12 @@ def _buildPatch(self, log, inner_loop=_inner_loop, types=None, modsHeader=None,
         ImportScripts, SoundPatcher
     Consists of a type selection loop which could be rewritten to support
     more patchers (maybe using filter()) and an inner loop that should be
-    provided by a patcher specific static _inner_loop method."""
+    provided by a patcher specific, static _inner_loop() method (except for
+    KFFZPatcher, DeathItemPatcher, ImportScripts and SoundPatcher which share
+    the module level _inner_loop() above).
+    Adding `types` and `modsHeader` parameters absorbed ImportRelations and
+    ImportFactions.
+    """
     if not self.isActive: return
     modFileTops = self.patchFile.tops
     keep = self.patchFile.getKeeper()
@@ -97,7 +102,7 @@ def _scanModFile(self, modFile):
     """Identical scanModFile() pattern of :
 
         GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
-        SoundPatcher
+        SoundPatcher.
     """
     if not self.isActive: return
     id_data = self.id_data
@@ -1588,20 +1593,11 @@ class ImportFactions(ImportPatcher):
                 type_count[type] += 1
                 keep(fid)
 
-    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        modFileTops = self.patchFile.tops
-        keep = self.patchFile.getKeeper()
-        id_data= self.id_data
-        type_count = {}
-        for type in self.activeTypes: # TODO: activeTypes in all patchers ?
-            if type not in modFileTops: continue
-            type_count[type] = 0
-            self._inner_loop(id_data, keep, modFileTops[type].records, type, type_count)
-        self._patchLog(log, type_count,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=(u'\n=== ' + self.__class__.logMsg))
+    def buildPatch(self,log,progress):
+        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
+                    types=self.activeTypes,
+                    modsHeader=u'=== ' + _(u'Source Mods/Files'),
+                    logMsg=(u'\n=== ' + self.__class__.logMsg))
 
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
@@ -1724,8 +1720,8 @@ class ImportRelations(ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_relations = {}  #--[(otherLongid0,disp0),(...)] =
-        # id_relations[mainLongid].
+        self.id_data = {}  #--[(otherLongid0,disp0),(...)] =
+        # id_relations[mainLongid]. # WAS id_relations -renamed for _buildPatch
         self.sourceMods = self.getConfigChecked()
         self.isActive = bool(self.sourceMods)
 
@@ -1754,8 +1750,8 @@ class ImportRelations(ImportPatcher):
                                      relation[0][0] is not None and
                                      relation[0][0] in self.patchFile.loadSet)]
                 if filteredRelations:
-                    self.id_relations[fid] = filteredRelations
-        self.isActive = bool(self.id_relations)
+                    self.id_data[fid] = filteredRelations
+        self.isActive = bool(self.id_data)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -1768,7 +1764,7 @@ class ImportRelations(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Scan modFile."""
         if not self.isActive: return
-        id_relations= self.id_relations
+        id_relations= self.id_data
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in ('FACT',):
@@ -1782,45 +1778,40 @@ class ImportRelations(ImportPatcher):
                 if fid not in id_relations: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        modFileTops = self.patchFile.tops
-        keep = self.patchFile.getKeeper()
-        id_relations= self.id_relations
-        type_count = {}
-        for type in ('FACT',):
-            if type not in modFileTops: continue # if 'FACT' in modFileTops ?
-            type_count[type] = 0
-            for record in modFileTops[type].records:
-                fid = record.fid
-                if fid in id_relations:
-                    newRelations = set(id_relations[fid])
-                    curRelations = set(
-                        (x.faction, x.mod) for x in record.relations)
-                    changed = newRelations - curRelations
-                    if not changed: continue
-                    doKeep = False
-                    for faction,disp in changed:
-                        for entry in record.relations:
-                            if entry.faction == faction:
-                                if entry.mod != disp:
-                                    entry.mod = disp
-                                    doKeep = True
-                                    keep(fid)
-                                break
-                        else:
-                            entry = MelObject()
-                            entry.faction = faction
-                            entry.mod = disp
-                            record.relations.append(entry)
-                            doKeep = True
-                    if doKeep:
-                        type_count[type] += 1
-                        keep(fid)
-        self._patchLog(log, type_count,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=u'\n=== ' + _(u'Modified Factions') + u': %d')
+    @staticmethod
+    def _inner_loop(id_relations, keep, records, type, type_count):
+        for record in records:
+            fid = record.fid
+            if fid in id_relations:
+                newRelations = set(id_relations[fid])
+                curRelations = set(
+                    (x.faction, x.mod) for x in record.relations)
+                changed = newRelations - curRelations
+                if not changed: continue
+                doKeep = False
+                for faction, disp in changed:
+                    for entry in record.relations:
+                        if entry.faction == faction:
+                            if entry.mod != disp:
+                                entry.mod = disp
+                                doKeep = True
+                                keep(fid)
+                            break
+                    else:
+                        entry = MelObject()
+                        entry.faction = faction
+                        entry.mod = disp
+                        record.relations.append(entry)
+                        doKeep = True
+                if doKeep:
+                    type_count[type] += 1
+                    keep(fid)
+
+    def buildPatch(self,log,progress):
+        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
+                    types=('FACT',),
+                    modsHeader=u'=== ' + _(u'Source Mods/Files'),
+                    logMsg=u'\n=== ' + _(u'Modified Factions') + u': %d')
 
     def _plog(self,log,logMsg,type_count):
         log(logMsg % type_count['FACT'])
@@ -3364,7 +3355,7 @@ class StatsPatcher(ImportPatcher):
                 if oldValues != itemStats:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):# buildPatch1:
+    def buildPatch(self,log,progress):# buildPatch2 !!!!
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile
