@@ -46,6 +46,7 @@ from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
 # procedure. If need be inline them as default methods arguments in
 # buildPatch or scanMorFile.
 # TODO(ut): document parameters, generify more - maybe move some of it to base?
+# TODO(ut): add static methods for logging
 def _inner_loop(id_data, keep, records, type, type_count):
     """Most common pattern for the internal buildPatch() loop.
 
@@ -63,7 +64,8 @@ def _inner_loop(id_data, keep, records, type, type_count):
         keep(fid)
         type_count[type] += 1
 
-def _buildPatch(self,log,inner_loop=_inner_loop,types=None):
+def _buildPatch(self, log, inner_loop=_inner_loop, types=None, modsHeader=None,
+                logMsg=None):
     """Common buildPatch() pattern of:
 
         GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
@@ -84,7 +86,12 @@ def _buildPatch(self,log,inner_loop=_inner_loop,types=None):
         inner_loop(id_data, keep, records, type, type_count)
     # noinspection PyUnusedLocal
     id_data = None # cleanup to save memory
-    self._patchLog(log,type_count)
+    # Log - must be simplified!
+    kwargs = {}
+    if modsHeader: kwargs['modsHeader'] = modsHeader
+    if logMsg: kwargs['logMsg'] = logMsg
+    if not kwargs: self._patchLog(log,type_count)
+    else: self._patchLog(log,type_count,**kwargs)
 
 def _scanModFile(self, modFile):
     """Identical scanModFile() pattern of :
