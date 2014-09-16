@@ -1447,8 +1447,10 @@ mergeClasses = (
     )
 
 #--Extra read classes: need info from magic effects
-readClasses = (MreMgef, MreScpt,)
-writeClasses = (MreMgef,)
+# MreScpt is Oblivion/FO3/FNV Only
+# MreMgef, has not been verified to be used here for Skyrim
+readClasses = () 
+writeClasses = ()
 
 
 def init():
