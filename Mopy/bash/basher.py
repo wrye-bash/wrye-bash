@@ -14775,7 +14775,9 @@ class Mod_ItemData_Import(Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = CompleteItemData() # FIXME - why not if CBash: ?
+            # FIXME - why not if CBash: ?
+            # No CBash support for FO3/FNV/Skyrim
+            itemStats = CompleteItemData()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemStats.readFromText(textPath)
