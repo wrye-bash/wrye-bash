@@ -133,7 +133,8 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     def __init__(self, label, tip, key, *choices, **kwargs):
         super(CBash_NamesTweak_Body, self).__init__(label, tip, key, *choices,
                                                     **kwargs)
-        self.logMsg = u'* '+_(u'%s Renamed:') % self.key + u' %d'
+        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
+            'record_type': (u'%s ' % self.key)} + u': %d'
 
     def getTypes(self):
         return [self.key]
@@ -188,7 +189,8 @@ class ANamesTweak_Potions(AMultiTweakItem):
             (_(u'XD - Illness'),u'%s - '),
             (_(u'(XD) Illness'),u'(%s) '),
             )
-        self.logMsg = u'* '+_(u'%s Renamed:') % self.key + u' %d'
+        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
+            'record_type': (u'%s ' % self.key)} + u': %d'
 
 class NamesTweak_Potions(ANamesTweak_Potions,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
@@ -320,7 +322,7 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
             (_(u'.D - Fire Ball'),u'.%s - '),
             (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -462,7 +464,7 @@ class ANamesTweak_Spells(AMultiTweakItem):
             (_(u'D2 - Fire Ball'),u'%s%d - '),
             (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
-        self.logMsg = u'* '+_(u'Spells Renamed: %d')
+        self.logMsg = u'* '+_(u'Spells Renamed') + u': %d'
 
 class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
@@ -580,7 +582,7 @@ class ANamesTweak_Weapons(AMultiTweakItem):
             (_(u'B08 - Iron Bow'),u'%s%02d - '),
             (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
 class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
@@ -676,7 +678,7 @@ class ATextReplacer(AMultiTweakItem):
         super(ATextReplacer, self).__init__(label, tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
 class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
     #--Config Phase -----------------------------------------------------------

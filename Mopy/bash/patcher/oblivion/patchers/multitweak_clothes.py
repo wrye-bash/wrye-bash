@@ -104,7 +104,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
                          'rings.maxWeight':('IsRightRing','IsLeftRing'),
                          'hoods.maxWeight':('IsHair',)
                          }[key]
-        self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
+        self.logMsg = u'* '+_(u'Clothes Reweighed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -173,7 +173,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
                          'gloves.unblock.rings2':('IsHideRings',),
                          'robes.unblock.pants':('IsLowerBody',)
                          }[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):

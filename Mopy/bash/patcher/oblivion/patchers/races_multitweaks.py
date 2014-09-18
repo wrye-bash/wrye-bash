@@ -61,7 +61,7 @@ class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
                 ((1.08, 1.07, 1.28, 1.19), (1.09, 1.06, 1.36, 1.3))),
             (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
+        self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
                                      MultiTweakItem):
@@ -160,7 +160,7 @@ class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
             (_(u'Merge hairs only from vanilla races'), 1),
             (_(u'Full hair merge between similar races'), 0),
             )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
+        self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
                                         MultiTweakItem):
@@ -299,7 +299,7 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
             (_(u'Merge eyes only from vanilla races'), 1),
             (_(u'Full eye merge between similar races'), 0),
             )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
+        self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                                        MultiTweakItem):
@@ -438,7 +438,7 @@ class ARaceTweaker_AllHairs(AMultiTweakItem):
             u'hairyraces',
             (u'get down tonight',1)
             )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
+        self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -498,7 +498,7 @@ class ARaceTweaker_AllEyes(AMultiTweakItem):
             u'eyeyraces',
             opt
             )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
+        self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
@@ -564,7 +564,7 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
             u'playableeyes',
             (u'Get it done', 1),
             )
-        self.logMsg = u'* '+_(u'Eyes tweaked: %d')
+        self.logMsg = u'* '+ _(u'Eyes tweaked') + u': %d'
 
 class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -626,7 +626,7 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
             u'playablehairs',
             (u'Get it done', 1),
             )
-        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
+        self.logMsg = u'* '+ _(u'Hairs tweaked') + u': %d'
 
 class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -688,7 +688,7 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
             u'sexlesshairs',
             (u'Get it done', 1),
             )
-        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
+        self.logMsg = u'* '+ _(u'Hairs tweaked') + u': %d'
 
 class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
