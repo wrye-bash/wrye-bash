@@ -34,7 +34,7 @@ from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     MelModel, MelFull0, null1, MelFidList, MelStructA, MelStrings, MreRecord, \
     MreGmstBase, MelTuple
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
-from oblivion_const import allConditions, fid1Conditions, fid2Conditions
+from constants import allConditions, fid1Conditions, fid2Conditions
 
 #--Mod I/O
 class RecordHeader(BaseRecordHeader):

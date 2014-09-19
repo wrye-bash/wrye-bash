@@ -54,7 +54,7 @@ def detectGames(workingDir=u''):
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
         except:
-            deprint(u'Error in game support file:', modname, traceback=True)
+            deprint(u'Error in game support module:', modname, traceback=True)
             continue
         submod = getattr(module,modname)
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
