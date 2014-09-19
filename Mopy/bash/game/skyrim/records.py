@@ -22,20 +22,20 @@
 #
 # =============================================================================
 
-"""This module contains the oblivion record classes. Ripped from oblivion.py"""
+"""This module contains the skyrim record classes. Ripped from skyrim.py"""
 import re
 import struct
 import itertools
 from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
-    _encode, _unicode
+    _encode
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
-    MelModel, MelFull0, null1, MelFidList, MelStructA, MelStrings, MreRecord, \
-    MreGmstBase, MelTuple, MelLString, MelCountedFidList, ModReader, \
-    MelOptStructA, MelCountedFids, MelSortedFidList
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelModel, \
+    null1, MelFidList, MelStructA, MreRecord, MreGmstBase, MelLString, \
+    MelCountedFidList, ModReader, MelOptStructA, MelCountedFids, \
+    MelSortedFidList
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
@@ -113,7 +113,7 @@ class MreActor(MelRecord):
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
     BipedFlags = Flags(0L,Flags.getNames(
@@ -195,7 +195,7 @@ class MelBipedObjectData(MelStruct):
             # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self,record,ins,type,size,readId)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelBounds(MelStruct):
     def __init__(self):
         MelStruct.__init__(self,'OBND','=6h',
@@ -252,7 +252,7 @@ class MelColorN(MelStruct):
                 MelStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelComponents(MelStructs):
     """Handle writing COCT subrecord for the CNTO subrecord"""
     def dumpData(self,record,out):
@@ -494,7 +494,7 @@ class MreHasEffects:
                 buffWrite(u'\n')
         return buff.getvalue()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelIcons(MelGroup):
     """Handles ICON and MICO."""
 
@@ -511,7 +511,8 @@ class MelIcons(MelGroup):
             MelGroup.dumpData(self,record,out)
         if record.iconsIaM and record.iconsIaM.smallIconPath:
             MelGroup.dumpData(self,record,out)
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 class MelIcons2(MelGroup):
     """Handles ICON and MICO."""
 
@@ -528,7 +529,8 @@ class MelIcons2(MelGroup):
             MelGroup.dumpData(self,record,out)
         if record.iconsIaM and record.iconsIaM.smallIconPath2:
             MelGroup.dumpData(self,record,out)
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
     def dumpData(self,record,out):
@@ -538,7 +540,7 @@ class MelKeywords(MelFidList):
             out.packSub('KSIZ','I',len(keywords))
             MelFidList.dumpData(self,record,out)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
     def hasFids(self,formElements):
@@ -585,7 +587,7 @@ class MelMODS(MelBase):
             data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
             if save: record.__setattr__(attr,data)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
     # MODB and MODD are no longer used by TES5Edit
@@ -671,7 +673,7 @@ class MelString16(MelString):
             value = struct.pack('H',len(value))+value
             out.packSub0(self.subType,value)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelString32(MelString):
     """Represents a mod record string element."""
     def loadData(self,record,ins,type,size,readId):
@@ -1144,9 +1146,9 @@ class MelVmad(MelBase):
         if vmad is None: return
         vmad.mapFids(record,function,save)
 
-#-------------------------------------------------------------------------------
-# Skyrim Records ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Skyrim Records --------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
@@ -1622,7 +1624,6 @@ class MreAvif(MelRecord):
     melSet.loaders = MelCnamLoaders(melSet.loaders,melSet.elements[4],melSet.elements[6])
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-
 # Verified for 305
 #------------------------------------------------------------------------------
 class MelBookData(MelStruct):
@@ -1985,7 +1986,6 @@ class MreCell(MelRecord):
         MelFid('XCIM','imageSpace',),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
 
 # Verified for 305
 #------------------------------------------------------------------------------
