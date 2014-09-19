@@ -22,1845 +22,28 @@
 #
 # =============================================================================
 
-"""This modules defines static data for use by bush, when TES V:
-   Skyrim is set at the active game."""
-
+"""This module contains the skyrim record classes. Ripped from skyrim.py"""
+import re
 import struct
-from .. import brec
-from ..brec import *
-from .. import bolt
-from ..bolt import Flags, DataDict, StateError, _unicode, _encode
-from .. import bush
-from skyrim_const import bethDataFiles, allBethFiles
-
 import itertools
+from . import esp
+from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
+    _encode
+from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
+    null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
+    MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelModel, \
+    null1, MelFidList, MelStructA, MreRecord, MreGmstBase, MelLString, \
+    MelCountedFidList, ModReader, MelOptStructA, MelCountedFids, \
+    MelSortedFidList
+from ... import bush
+from constants import allConditions, fid1Conditions, fid2Conditions, \
+    fid5Conditions
+
 from_iterable = itertools.chain.from_iterable
 
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
-#--Name of the game
-displayName = u'Skyrim'
-#--Name of the game's filesystem folder.
-fsName = u'Skyrim'
-#--Alternate display name to use instead of "Wrye Bash for ***"'
-altName = u'Wrye Smash'
-#--Name of game's default ini file.
-defaultIniFile = u'Skyrim_default.ini'
-
-#--exe to look for to see if this is the right game
-exe = u'TESV.exe'
-
-#--Registry keys to read to find the install location
-regInstallKeys = [
-    (u'Bethesda Softworks\\Skyrim',u'Installed Path'),
-    ]
-
-#--patch information
-patchURL = u'' # Update via steam
-patchTip = u'Update via Steam'
-
-#--URL to the Nexus site for this game
-nexusUrl = u'http://www.nexusmods.com/skyrim/'
-nexusName = u'Skyrim Nexus'
-nexusKey = 'bash.installers.openSkyrimNexus'
-
-#--Creation Kit Set information
-class cs:
-    shortName = u'CK'                # Abbreviated name
-    longName = u'Creation Kit'       # Full name
-    exe = u'CreationKit.exe'         # Executable to run
-    seArgs = None # u'-editor'       # Argument to pass to the SE to load the CS # Not yet needed
-    imageName = u'creationkit%s.png' # Image name template for the status bar
-
-#--Script Extender information
-class se:
-    shortName = u'SKSE'                      # Abbreviated name
-    longName = u'Skyrim Script Extender'     # Full name
-    exe = u'skse_loader.exe'                 # Exe to run
-    steamExe = u'skse_loader.exe'            # Exe to run if a steam install
-    url = u'http://skse.silverlock.org/'     # URL to download from
-    urlTip = u'http://skse.silverlock.org/'  # Tooltip for mouse over the URL
-
-#--Script Dragon
-class sd:
-    shortName = u'SD'
-    longName = u'Script Dragon'
-    installDir = u'asi'
-
-#--SkyProc Patchers
-class sp:
-    shortName = u'SP'
-    longName = u'SkyProc'
-    installDir = u'SkyProc Patchers'
-
-#--Quick shortcut for combining both the SE and SD names
-se_sd = se.shortName+u'/'+sd.longName
-
-#--Graphics Extender information
-class ge:
-    shortName = u''
-    longName = u''
-    exe = u'**DNE**'
-    url = u''
-    urlTip = u''
-
-#--4gb Launcher
-class laa:
-    # Skyrim has a 4gb Launcher, but as of patch 1.3.10, it is
-    # no longer required (Bethsoft updated TESV.exe to already
-    # be LAA)
-    name = u''
-    exe = u'**DNE**'
-    launchesSE = False
-
-# Files BAIN shouldn't skip
-dontSkip = (
-       #These are all in the Interface folder. Apart from the skyui_ files, they are all present in vanilla.
-       u'skyui_cfg.txt',
-       u'skyui_translate.txt',
-       u'credits.txt',
-       u'credits_french.txt',
-       u'fontconfig.txt',
-       u'controlmap.txt',
-       u'gamepad.txt',
-       u'mouse.txt',
-       u'keyboard_english.txt',
-       u'keyboard_french.txt',
-       u'keyboard_german.txt',
-       u'keyboard_spanish.txt',
-       u'keyboard_italian.txt',
-)
-
-# Directories where specific file extensions should not be skipped by BAIN
-dontSkipDirs = {
-                # This rule is to allow mods with string translation enabled.
-                'interface\\translations':['.txt']
-}
-
-#Folders BAIN should never check
-SkipBAINRefresh = set ((
-    #Use lowercase names
-    u'tes5edit backups',
-))
-
-#--Some stuff dealing with INI files
-class ini:
-    #--True means new lines are allowed to be added via INI Tweaks
-    #  (by default)
-    allowNewLines = True
-
-    #--INI Entry to enable BSA Redirection
-    bsaRedirection = (u'',u'')
-
-#--Save Game format stuff
-class ess:
-    # Save file capabilities
-    canReadBasic = True         # All the basic stuff needed for the Saves Tab
-    canEditMasters = True       # Adjusting save file masters
-    canEditMore = False         # No advanced editing
-
-    @staticmethod
-    def load(ins,header):
-        """Extract info from save file."""
-        #--Header
-        if ins.read(13) != 'TESV_SAVEGAME':
-            raise Exception(u'Save file is not a Skyrim save game.')
-        headerSize, = struct.unpack('I',ins.read(4))
-        #--Name, location
-        version,saveNumber,size = struct.unpack('2IH',ins.read(10))
-        header.pcName = ins.read(size)
-        header.pcLevel, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcLocation = ins.read(size)
-        size, = struct.unpack('H',ins.read(2))
-        header.gameDate = ins.read(size)
-        hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
-        playSeconds = hours*60*60 + minutes*60 + seconds
-        header.gameDays = float(playSeconds)/(24*60*60)
-        header.gameTicks = playSeconds * 1000
-        size, = struct.unpack('H',ins.read(2))
-        ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime
-        ssWidth, = struct.unpack('I',ins.read(4))
-        ssHeight, = struct.unpack('I',ins.read(4))
-        if ins.tell() != headerSize + 17:
-            raise Exception(u'Save game header size (%s) not as expected (%s).' % (ins.tell()-17,headerSize))
-        #--Image Data
-        ssData = ins.read(3*ssWidth*ssHeight)
-        header.image = (ssWidth,ssHeight,ssData)
-        #--unknown
-        unk3 = ins.read(1)
-        #--Masters
-        mastersSize, = struct.unpack('I',ins.read(4))
-        mastersStart = ins.tell()
-        del header.masters[:]
-        numMasters, = struct.unpack('B',ins.read(1))
-        for count in xrange(numMasters):
-            size, = struct.unpack('H',ins.read(2))
-            header.masters.append(ins.read(size))
-        if ins.tell() != mastersStart + mastersSize:
-            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
-
-    @staticmethod
-    def writeMasters(ins,out,header):
-        """Rewrites masters of existing save file."""
-        def unpack(format,size): return struct.unpack(format,ins.read(size))
-        def pack(format,*args): out.write(struct.pack(format,*args))
-        #--Magic (TESV_SAVEGAME)
-        out.write(ins.read(13))
-        #--Header
-        size, = unpack('I',4)
-        pack('I',size)
-        out.write(ins.read(size-8))
-        ssWidth,ssHeight = unpack('2I',8)
-        pack('2I',ssWidth,ssHeight)
-        #--Screenshot
-        out.write(ins.read(3*ssWidth*ssHeight))
-        #--formVersion
-        out.write(ins.read(1))
-        #--plugin info
-        oldSize, = unpack('I',4)
-        newSize = 1 + sum(len(x)+2 for x in header.masters)
-        pack('I',newSize)
-        #  Skip old masters
-        oldMasters = []
-        numMasters, = unpack('B',1)
-        pack('B',len(header.masters))
-        for x in xrange(numMasters):
-            size, = unpack('H',2)
-            oldMasters.append(ins.read(size))
-        #  Write new masters
-        for master in header.masters:
-            pack('H',len(master))
-            out.write(master.s)
-        #--Offsets
-        offset = out.tell() - ins.tell()
-        #--File Location Table
-        for i in xrange(6):
-            # formIdArrayCount offset, unkownTable3Offset,
-            # globalDataTable1Offset, globalDataTable2Offset,
-            # changeFormsOffset, globalDataTable3Offset
-            oldOffset, = unpack('I',4)
-            pack('I',oldOffset+offset)
-        #--Copy the rest
-        while True:
-            buffer = ins.read(0x5000000)
-            if not buffer: break
-            out.write(buffer)
-        return oldMasters
-
-#--INI files that should show up in the INI Edits tab
-iniFiles = [
-    u'Skyrim.ini',
-    u'SkyrimPrefs.ini',
-    ]
-
-#--INI setting to setup Save Profiles
-saveProfilesKey = (u'General',u'SLocalSavePath')
-
-#--The main plugin file Wrye Bash should look for
-masterFiles = [
-    u'Skyrim.esm',
-    u'Update.esm',
-    ]
-
-#--Plugin files that can't be deactivated
-nonDeactivatableFiles = [
-    u'Skyrim.esm',
-    u'Update.esm',
-    ]
-
-namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
-
-#The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = r'bash\db\Skyrim_ids.pkl'
-
-#--Game ESM/ESP/BSA files
-#  These filenames need to be in lowercase,
-# bethDataFiles = set()
-# Moved to skyrim_const
-
-#--Every file in the Data directory from Bethsoft
-# allBethFiles = set()
-# Moved to skyrim_const
-
-#--BAIN: Directories that are OK to install to
-dataDirs = set((
-    u'bash patches',
-    u'dialogueviews',
-    u'docs',
-    u'interface',
-    u'meshes',
-    u'strings',
-    u'textures',
-    u'video',
-    u'lodsettings',
-    u'grass',
-    u'scripts',
-    u'shadersfx',
-    u'music',
-    u'sound',
-    u'seq',
-    ))
-dataDirsPlus = set((
-    u'ini tweaks',
-    u'skse',
-    u'ini',
-    u'asi',
-    u'skyproc patchers',
-    ))
-
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = set((
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt',
-    u'Docs\\Bashed Patch, 0.html',
-    u'Docs\\Bashed Patch, 0.txt',
-    ))
-wryeBashDataDirs = set((
-    u'Bash Patches',
-    u'INI Tweaks'
-    ))
-ignoreDataFiles = set((
-    ))
-ignoreDataFilePrefixes = set((
-    ))
-ignoreDataDirs = set((
-    u'LSData'
-    ))
-
-# Function Info ----------------------------------------------------------------
-conditionFunctionData = ( #--0: no param; 1: int param; 2 formid param
-    (  0, 'GetWantBlocking', 0, 0, 0),
-    (  1, 'GetDistance', 2, 0, 0),
-    (  5, 'GetLocked', 0, 0, 0),
-    (  6, 'GetPos', 1, 0, 0),
-    (  8, 'GetAngle', 1, 0, 0),
-    ( 10, 'GetStartingPos', 1, 0, 0),
-    ( 11, 'GetStartingAngle', 1, 0, 0),
-    ( 12, 'GetSecondsPassed', 0, 0, 0),
-    ( 14, 'GetActorValue', 1, 0, 0),
-    ( 18, 'GetCurrentTime', 0, 0, 0),
-    ( 24, 'GetScale', 0, 0, 0),
-    ( 25, 'IsMoving', 0, 0, 0),
-    ( 26, 'IsTurning', 0, 0, 0),
-    ( 27, 'GetLineOfSight', 2, 0, 0),
-    ( 31, 'GetButtonPressed', 0, 0, 0), # Not in TES5Edit
-    ( 32, 'GetInSameCell', 2, 0, 0),
-    ( 35, 'GetDisabled', 0, 0, 0),
-    ( 36, 'MenuMode', 1, 0, 0),
-    ( 39, 'GetDisease', 0, 0, 0),
-    ( 41, 'GetClothingValue', 0, 0, 0),
-    ( 42, 'SameFaction', 2, 0, 0),
-    ( 43, 'SameRace', 2, 0, 0),
-    ( 44, 'SameSex', 2, 0, 0),
-    ( 45, 'GetDetected', 2, 0, 0),
-    ( 46, 'GetDead', 0, 0, 0),
-    ( 47, 'GetItemCount', 2, 0, 0),
-    ( 48, 'GetGold', 0, 0, 0),
-    ( 49, 'GetSleeping', 0, 0, 0),
-    ( 50, 'GetTalkedToPC', 0, 0, 0),
-    ( 53, 'GetScriptVariable', 2, 1, 0),
-    ( 56, 'GetQuestRunning', 2, 0, 0),
-    ( 58, 'GetStage', 2, 0, 0),
-    ( 59, 'GetStageDone', 2, 1, 0),
-    ( 60, 'GetFactionRankDifference', 2, 2, 0),
-    ( 61, 'GetAlarmed', 0, 0, 0),
-    ( 62, 'IsRaining', 0, 0, 0),
-    ( 63, 'GetAttacked', 0, 0, 0),
-    ( 64, 'GetIsCreature', 0, 0, 0),
-    ( 65, 'GetLockLevel', 0, 0, 0),
-    ( 66, 'GetShouldAttack', 2, 0, 0),
-    ( 67, 'GetInCell', 2, 0, 0),
-    ( 68, 'GetIsClass', 2, 0, 0),
-    ( 69, 'GetIsRace', 2, 0, 0),
-    ( 70, 'GetIsSex', 2, 0, 0),
-    ( 71, 'GetInFaction', 2, 0, 0),
-    ( 72, 'GetIsID', 2, 0, 0),
-    ( 73, 'GetFactionRank', 2, 0, 0),
-    ( 74, 'GetGlobalValue', 2, 0, 0),
-    ( 75, 'IsSnowing', 0, 0, 0),
-    ( 77, 'GetRandomPercent', 0, 0, 0),
-    ( 79, 'GetQuestVariable', 2, 1, 0),
-    ( 80, 'GetLevel', 0, 0, 0),
-    ( 81, 'IsRotating', 0, 0, 0),
-    ( 83, 'GetLeveledEncounterValue', 1, 0, 0), # Not in TES5Edit
-    ( 84, 'GetDeadCount', 2, 0, 0),
-    ( 91, 'GetIsAlerted', 0, 0, 0),
-    ( 98, 'GetPlayerControlsDisabled', 0, 0, 0),
-    ( 99, 'GetHeadingAngle', 2, 0, 0),
-    (101, 'IsWeaponMagicOut', 0, 0, 0),
-    (102, 'IsTorchOut', 0, 0, 0),
-    (103, 'IsShieldOut', 0, 0, 0),
-    (105, 'IsActionRef', 2, 0, 0), # Not in TES5Edit
-    (106, 'IsFacingUp', 0, 0, 0),
-    (107, 'GetKnockedState', 0, 0, 0),
-    (108, 'GetWeaponAnimType', 0, 0, 0),
-    (109, 'IsWeaponSkillType', 1, 0, 0),
-    (110, 'GetCurrentAIPackage', 0, 0, 0),
-    (111, 'IsWaiting', 0, 0, 0),
-    (112, 'IsIdlePlaying', 0, 0, 0),
-    (116, 'IsIntimidatedbyPlayer', 0, 0, 0),
-    (117, 'IsPlayerInRegion', 2, 0, 0),
-    (118, 'GetActorAggroRadiusViolated', 0, 0, 0),
-    (119, 'GetCrimeKnown', 1, 2, 0), # Not in TES5Edit
-    (122, 'GetCrime', 2, 1, 0),
-    (123, 'IsGreetingPlayer', 0, 0, 0),
-    (125, 'IsGuard', 0, 0, 0),
-    (127, 'HasBeenEaten', 0, 0, 0),
-    (128, 'GetStaminaPercentage', 0, 0, 0),
-    (129, 'GetPCIsClass', 2, 0, 0),
-    (130, 'GetPCIsRace', 2, 0, 0),
-    (131, 'GetPCIsSex', 2, 0, 0),
-    (132, 'GetPCInFaction', 2, 0, 0),
-    (133, 'SameFactionAsPC', 0, 0, 0),
-    (134, 'SameRaceAsPC', 0, 0, 0),
-    (135, 'SameSexAsPC', 0, 0, 0),
-    (136, 'GetIsReference', 2, 0, 0),
-    (141, 'IsTalking', 0, 0, 0),
-    (142, 'GetWalkSpeed', 0, 0, 0),
-    (143, 'GetCurrentAIProcedure', 0, 0, 0),
-    (144, 'GetTrespassWarningLevel', 0, 0, 0),
-    (145, 'IsTrespassing', 0, 0, 0),
-    (146, 'IsInMyOwnedCell', 0, 0, 0),
-    (147, 'GetWindSpeed', 0, 0, 0),
-    (148, 'GetCurrentWeatherPercent', 0, 0, 0),
-    (149, 'GetIsCurrentWeather', 2, 0, 0),
-    (150, 'IsContinuingPackagePCNear', 0, 0, 0),
-    (152, 'GetIsCrimeFaction', 2, 0, 0),
-    (153, 'CanHaveFlames', 0, 0, 0),
-    (154, 'HasFlames', 0, 0, 0),
-    (157, 'GetOpenState', 0, 0, 0),
-    (159, 'GetSitting', 0, 0, 0),
-    (160, 'GetFurnitureMarkerID', 0, 0, 0), # Not in TES5Edit
-    (161, 'GetIsCurrentPackage', 2, 0, 0),
-    (162, 'IsCurrentFurnitureRef', 2, 0, 0),
-    (163, 'IsCurrentFurnitureObj', 2, 0, 0),
-    (167, 'GetFactionReaction', 2, 2, 0), # Not in TES5Edit
-    (170, 'GetDayOfWeek', 0, 0, 0),
-    (172, 'GetTalkedToPCParam', 2, 0, 0),
-    (175, 'IsPCSleeping', 0, 0, 0),
-    (176, 'IsPCAMurderer', 0, 0, 0),
-    (180, 'HasSameEditorLocAsRef', 2, 2, 0),
-    (181, 'HasSameEditorLocAsRefAlias', 2, 2, 0),
-    (182, 'GetEquipped', 2, 0, 0),
-    (185, 'IsSwimming', 0, 0, 0),
-    (188, 'GetPCSleepHours', 0, 0, 0), # Not in TES5Edit
-    (190, 'GetAmountSoldStolen', 0, 0, 0),
-    (192, 'GetIgnoreCrime', 0, 0, 0),
-    (193, 'GetPCExpelled', 2, 0, 0),
-    (195, 'GetPCFactionMurder', 2, 0, 0),
-    (197, 'GetPCEnemyofFaction', 2, 0, 0),
-    (199, 'GetPCFactionAttack', 2, 0, 0),
-    (203, 'GetDestroyed', 0, 0, 0),
-    (205, 'GetActionRef', 0, 0, 0), # Not in TES5Edit
-    (206, 'GetSelf', 0, 0, 0), # Not in TES5Edit
-    (207, 'GetContainer', 0, 0, 0), # Not in TES5Edit
-    (208, 'GetForceRun', 0, 0, 0), # Not in TES5Edit
-    (210, 'GetForceSneak', 0, 0, 0), # Not in TES5Edit
-    (214, 'HasMagicEffect', 2, 0, 0),
-    (215, 'GetDefaultOpen', 0, 0, 0),
-    (219, 'GetAnimAction', 0, 0, 0),
-    (223, 'IsSpellTarget', 2, 0, 0),
-    (224, 'GetVATSMode', 0, 0, 0),
-    (225, 'GetPersuasionNumber', 0, 0, 0),
-    (226, 'GetVampireFeed', 0, 0, 0),
-    (227, 'GetCannibal', 0, 0, 0),
-    (228, 'GetIsClassDefault', 2, 0, 0),
-    (229, 'GetClassDefaultMatch', 0, 0, 0),
-    (230, 'GetInCellParam', 2, 2, 0),
-    (232, 'GetCombatTarget', 0, 0, 0), # Not in TES5Edit
-    (233, 'GetPackageTarget', 0, 0, 0), # Not in TES5Edit
-    (235, 'GetVatsTargetHeight', 0, 0, 0),
-    (237, 'GetIsGhost', 0, 0, 0),
-    (242, 'GetUnconscious', 0, 0, 0),
-    (244, 'GetRestrained', 0, 0, 0),
-    (246, 'GetIsUsedItem', 2, 0, 0),
-    (247, 'GetIsUsedItemType', 2, 0, 0),
-    (248, 'IsScenePlaying', 2, 0, 0),
-    (249, 'IsInDialogueWithPlayer', 0, 0, 0),
-    (250, 'GetLocationCleared', 2, 0, 0),
-    (254, 'GetIsPlayableRace', 0, 0, 0),
-    (255, 'GetOffersServicesNow', 0, 0, 0),
-    (256, 'GetGameSetting', 1, 0, 0), # Not in TES5Edit
-    (258, 'HasAssociationType', 2, 2, 0),
-    (259, 'HasFamilyRelationship', 2, 0, 0),
-    (261, 'HasParentRelationship', 2, 0, 0),
-    (262, 'IsWarningAbout', 2, 0, 0),
-    (263, 'IsWeaponOut', 0, 0, 0),
-    (264, 'HasSpell', 2, 0, 0),
-    (265, 'IsTimePassing', 0, 0, 0),
-    (266, 'IsPleasant', 0, 0, 0),
-    (267, 'IsCloudy', 0, 0, 0),
-    (274, 'IsSmallBump', 0, 0, 0),
-    (275, 'GetParentRef', 0, 0, 0), # Not in TES5Edit
-    (277, 'GetBaseActorValue', 1, 0, 0),
-    (278, 'IsOwner', 2, 0, 0),
-    (280, 'IsCellOwner', 2, 2, 0),
-    (282, 'IsHorseStolen', 0, 0, 0),
-    (285, 'IsLeftUp', 0, 0, 0),
-    (286, 'IsSneaking', 0, 0, 0),
-    (287, 'IsRunning', 0, 0, 0),
-    (288, 'GetFriendHit', 0, 0, 0),
-    (289, 'IsInCombat', 1, 0, 0),
-    (296, 'IsAnimPlaying', 2, 0, 0), # Not in TES5Edit
-    (300, 'IsInInterior', 0, 0, 0),
-    (303, 'IsActorsAIOff', 0, 0, 0), # Not in TES5Edit
-    (304, 'IsWaterObject', 0, 0, 0),
-    (305, 'GetPlayerAction', 0, 0, 0),
-    (306, 'IsActorUsingATorch', 0, 0, 0),
-    (309, 'IsXBox', 0, 0, 0),
-    (310, 'GetInWorldspace', 2, 0, 0),
-    (312, 'GetPCMiscStat', 1, 0, 0),
-    (313, 'GetPairedAnimation', 0, 0, 0),
-    (314, 'IsActorAVictim', 0, 0, 0),
-    (315, 'GetTotalPersuasionNumber', 0, 0, 0),
-    (318, 'GetIdleDoneOnce', 0, 0, 0),
-    (320, 'GetNoRumors', 0, 0, 0),
-    (323, 'GetCombatState', 0, 0, 0),
-    (325, 'GetWithinPackageLocation', 2, 0, 0),
-    (327, 'IsRidingMount', 0, 0, 0),
-    (329, 'IsFleeing', 0, 0, 0),
-    (332, 'IsInDangerousWater', 0, 0, 0),
-    (338, 'GetIgnoreFriendlyHits', 0, 0, 0),
-    (339, 'IsPlayersLastRiddenMount', 0, 0, 0),
-    (353, 'IsActor', 0, 0, 0),
-    (354, 'IsEssential', 0, 0, 0),
-    (358, 'IsPlayerMovingIntoNewSpace', 0, 0, 0),
-    (359, 'GetInCurrentLoc', 2, 0, 0),
-    (360, 'GetInCurrentLocAlias', 2, 0, 0),
-    (361, 'GetTimeDead', 0, 0, 0),
-    (362, 'HasLinkedRef', 2, 0, 0),
-    (363, 'GetLinkedRef', 2, 0, 0), # Not in TES5Edit
-    (365, 'IsChild', 0, 0, 0),
-    (366, 'GetStolenItemValueNoCrime', 2, 0, 0),
-    (367, 'GetLastPlayerAction', 0, 0, 0),
-    (368, 'IsPlayerActionActive', 1, 0, 0),
-    (370, 'IsTalkingActivatorActor', 2, 0, 0),
-    (372, 'IsInList', 2, 0, 0),
-    (373, 'GetStolenItemValue', 2, 0, 0),
-    (375, 'GetCrimeGoldViolent', 2, 0, 0),
-    (376, 'GetCrimeGoldNonviolent', 2, 0, 0),
-    (378, 'HasShout', 2, 0, 0),
-    (381, 'GetHasNote', 2, 0, 0),
-    (387, 'GetObjectiveFailed', 2, 1, 0), # Not in TES5Edit
-    (390, 'GetHitLocation', 0, 0, 0),
-    (391, 'IsPC1stPerson', 0, 0, 0),
-    (396, 'GetCauseofDeath', 0, 0, 0),
-    (397, 'IsLimbGone', 1, 0, 0),
-    (398, 'IsWeaponInList', 2, 0, 0),
-    (402, 'IsBribedbyPlayer', 0, 0, 0),
-    (403, 'GetRelationshipRank', 2, 0, 0),
-    (407, 'GetVATSValue', 1, 1, 0),
-    (408, 'IsKiller', 2, 0, 0),
-    (409, 'IsKillerObject', 2, 0, 0),
-    (410, 'GetFactionCombatReaction', 2, 2, 0),
-    (414, 'Exists', 2, 0, 0),
-    (415, 'GetGroupMemberCount', 0, 0, 0),
-    (416, 'GetGroupTargetCount', 0, 0, 0),
-    (419, 'GetObjectiveCompleted', 2, 1, 0), # Not in TES5Edit
-    (420, 'GetObjectiveDisplayed', 2, 1, 0), # Not in TES5Edit
-    (425, 'GetIsFormType', 2, 0, 0), # Not in TES5Edit
-    (426, 'GetIsVoiceType', 2, 0, 0),
-    (427, 'GetPlantedExplosive', 0, 0, 0),
-    (429, 'IsScenePackageRunning', 0, 0, 0),
-    (430, 'GetHealthPercentage', 0, 0, 0),
-    (432, 'GetIsObjectType', 2, 0, 0),
-    (434, 'GetDialogueEmotion', 0, 0, 0),
-    (435, 'GetDialogueEmotionValue', 0, 0, 0),
-    (437, 'GetIsCreatureType', 1, 0, 0),
-    (444, 'GetInCurrentLocFormList', 2, 0, 0),
-    (445, 'GetInZone', 2, 0, 0),
-    (446, 'GetVelocity', 1, 0, 0),
-    (447, 'GetGraphVariableFloat', 1, 0, 0),
-    (448, 'HasPerk', 2, 0, 0),
-    (449, 'GetFactionRelation', 2, 0, 0),
-    (450, 'IsLastIdlePlayed', 2, 0, 0),
-    (453, 'GetPlayerTeammate', 0, 0, 0),
-    (454, 'GetPlayerTeammateCount', 0, 0, 0),
-    (458, 'GetActorCrimePlayerEnemy', 0, 0, 0),
-    (459, 'GetCrimeGold', 2, 0, 0),
-    (462, 'GetPlayerGrabbedRef', 0, 0, 0), # Not in TES5Edit
-    (463, 'IsPlayerGrabbedRef', 2, 0, 0),
-    (465, 'GetKeywordItemCount', 2, 0, 0),
-    (467, 'GetBroadcastState', 0, 0, 0), # Not in TES5Edit
-    (470, 'GetDestructionStage', 0, 0, 0),
-    (473, 'GetIsAlignment', 2, 0, 0),
-    (476, 'IsProtected', 0, 0, 0),
-    (477, 'GetThreatRatio', 2, 0, 0),
-    (479, 'GetIsUsedItemEquipType', 2, 0, 0),
-    (480, 'GetPlayerName', 0, 0, 0), # Not in TES5Edit
-    (487, 'IsCarryable', 0, 0, 0),
-    (488, 'GetConcussed', 0, 0, 0),
-    (491, 'GetMapMarkerVisible', 0, 0, 0),
-    (493, 'PlayerKnows', 2, 0, 0),
-    (494, 'GetPermanentActorValue', 1, 0, 0),
-    (495, 'GetKillingBlowLimb', 0, 0, 0),
-    (497, 'CanPayCrimeGold', 2, 0, 0),
-    (499, 'GetDaysInJail', 0, 0, 0),
-    (500, 'EPAlchemyGetMakingPoison', 0, 0, 0),
-    (501, 'EPAlchemyEffectHasKeyword', 2, 0, 0),
-    (503, 'GetAllowWorldInteractions', 0, 0, 0),
-    (508, 'GetLastHitCritical', 0, 0, 0),
-    (513, 'IsCombatTarget', 2, 0, 0),
-    (515, 'GetVATSRightAreaFree', 2, 0, 0),
-    (516, 'GetVATSLeftAreaFree', 2, 0, 0),
-    (517, 'GetVATSBackAreaFree', 2, 0, 0),
-    (518, 'GetVATSFrontAreaFree', 2, 0, 0),
-    (519, 'GetIsLockBroken', 0, 0, 0),
-    (520, 'IsPS3', 0, 0, 0),
-    (521, 'IsWin32', 0, 0, 0),
-    (522, 'GetVATSRightTargetVisible', 2, 0, 0),
-    (523, 'GetVATSLeftTargetVisible', 2, 0, 0),
-    (524, 'GetVATSBackTargetVisible', 2, 0, 0),
-    (525, 'GetVATSFrontTargetVisible', 2, 0, 0),
-    (528, 'IsInCriticalStage', 2, 0, 0),
-    (530, 'GetXPForNextLevel', 0, 0, 0),
-    (533, 'GetInfamy', 2, 0, 0),
-    (534, 'GetInfamyViolent', 2, 0, 0),
-    (535, 'GetInfamyNonViolent', 2, 0, 0),
-    (543, 'GetQuestCompleted', 2, 0, 0),
-    (547, 'IsGoreDisabled', 0, 0, 0),
-    (550, 'IsSceneActionComplete', 2, 1, 0),
-    (552, 'GetSpellUsageNum', 2, 0, 0),
-    (554, 'GetActorsInHigh', 0, 0, 0),
-    (555, 'HasLoaded3D', 0, 0, 0),
-    (559, 'IsImageSpaceActive', 2, 0, 0), # Not in TES5Edit
-    (560, 'HasKeyword', 2, 0, 0),
-    (561, 'HasRefType', 2, 0, 0),
-    (562, 'LocationHasKeyword', 2, 0, 0),
-    (563, 'LocationHasRefType', 2, 0, 0),
-    (565, 'GetIsEditorLocation', 2, 0, 0),
-    (566, 'GetIsAliasRef', 2, 0, 0),
-    (567, 'GetIsEditorLocAlias', 2, 0, 0),
-    (568, 'IsSprinting', 0, 0, 0),
-    (569, 'IsBlocking', 0, 0, 0),
-    (570, 'HasEquippedSpell', 2, 0, 0),
-    (571, 'GetCurrentCastingType', 2, 0, 0),
-    (572, 'GetCurrentDeliveryType', 2, 0, 0),
-    (574, 'GetAttackState', 0, 0, 0),
-    (575, 'GetAliasedRef', 2, 0, 0), # Not in TES5Edit
-    (576, 'GetEventData', 2, 2, 0),
-    (577, 'IsCloserToAThanB', 2, 2, 0),
-    (579, 'GetEquippedShout', 2, 0, 0),
-    (580, 'IsBleedingOut', 0, 0, 0),
-    (584, 'GetRelativeAngle', 2, 1, 0),
-    (589, 'GetMovementDirection', 0, 0, 0),
-    (590, 'IsInScene', 0, 0, 0),
-    (591, 'GetRefTypeDeadCount', 2, 2, 0),
-    (592, 'GetRefTypeAliveCount', 2, 2, 0),
-    (594, 'GetIsFlying', 0, 0, 0),
-    (595, 'IsCurrentSpell', 2, 2, 0),
-    (596, 'SpellHasKeyword', 2, 2, 0),
-    (597, 'GetEquippedItemType', 2, 0, 0),
-    (598, 'GetLocationAliasCleared', 2, 0, 0),
-    (600, 'GetLocAliasRefTypeDeadCount', 2, 2, 0),
-    (601, 'GetLocAliasRefTypeAliveCount', 2, 2, 0),
-    (602, 'IsWardState', 2, 0, 0),
-    (603, 'IsInSameCurrentLocAsRef', 2, 2, 0),
-    (604, 'IsInSameCurrentLocAsRefAlias', 2, 2, 0),
-    (605, 'LocAliasIsLocation', 2, 2, 0),
-    (606, 'GetKeywordDataForLocation', 2, 2, 0),
-    (608, 'GetKeywordDataForAlias', 2, 2, 0),
-    (610, 'LocAliasHasKeyword', 2, 2, 0),
-    (611, 'IsNullPackageData', 1, 0, 0),
-    (612, 'GetNumericPackageData', 1, 0, 0),
-    (613, 'IsFurnitureAnimType', 2, 0, 0),
-    (614, 'IsFurnitureEntryType', 2, 0, 0),
-    (615, 'GetHighestRelationshipRank', 0, 0, 0),
-    (616, 'GetLowestRelationshipRank', 0, 0, 0),
-    (617, 'HasAssociationTypeAny', 2, 0, 0),
-    (618, 'HasFamilyRelationshipAny', 0, 0, 0),
-    (619, 'GetPathingTargetOffset', 1, 0, 0),
-    (620, 'GetPathingTargetAngleOffset', 1, 0, 0),
-    (621, 'GetPathingTargetSpeed', 0, 0, 0),
-    (622, 'GetPathingTargetSpeedAngle', 1, 0, 0),
-    (623, 'GetMovementSpeed', 0, 0, 0),
-    (624, 'GetInContainer', 2, 0, 0),
-    (625, 'IsLocationLoaded', 2, 0, 0),
-    (626, 'IsLocAliasLoaded', 2, 0, 0),
-    (627, 'IsDualCasting', 0, 0, 0),
-    (629, 'GetVMQuestVariable', 2, 1, 0),
-    (630, 'GetVMScriptVariable', 2, 1, 0),
-    (631, 'IsEnteringInteractionQuick', 0, 0, 0),
-    (632, 'IsCasting', 0, 0, 0),
-    (633, 'GetFlyingState', 0, 0, 0),
-    (635, 'IsInFavorState', 0, 0, 0),
-    (636, 'HasTwoHandedWeaponEquipped', 0, 0, 0),
-    (637, 'IsExitingInstant', 0, 0, 0),
-    (638, 'IsInFriendStatewithPlayer', 0, 0, 0),
-    (639, 'GetWithinDistance', 2, 1, 0),
-    (640, 'GetActorValuePercent', 1, 0, 0),
-    (641, 'IsUnique', 0, 0, 0),
-    (642, 'GetLastBumpDirection', 0, 0, 0),
-    (644, 'IsInFurnitureState', 2, 0, 0),
-    (645, 'GetIsInjured', 0, 0, 0),
-    (646, 'GetIsCrashLandRequest', 0, 0, 0),
-    (647, 'GetIsHastyLandRequest', 0, 0, 0),
-    (650, 'IsLinkedTo', 2, 2, 0),
-    (651, 'GetKeywordDataForCurrentLocation', 2, 0, 0),
-    (652, 'GetInSharedCrimeFaction', 2, 0, 0),
-    (653, 'GetBribeAmount', 0, 0, 0), # Not in TES5Edit
-    (654, 'GetBribeSuccess', 0, 0, 0),
-    (655, 'GetIntimidateSuccess', 0, 0, 0),
-    (656, 'GetArrestedState', 0, 0, 0),
-    (657, 'GetArrestingActor', 0, 0, 0),
-    (659, 'EPTemperingItemIsEnchanted', 0, 0, 0),
-    (660, 'EPTemperingItemHasKeyword', 2, 0, 0),
-    (661, 'GetReceivedGiftValue', 0, 0, 0), # Not in TES5Edit
-    (662, 'GetGiftGivenValue', 0, 0, 0), # Not in TES5Edit
-    (664, 'GetReplacedItemType', 2, 0, 0),
-    (672, 'IsAttacking', 0, 0, 0),
-    (673, 'IsPowerAttacking', 0, 0, 0),
-    (674, 'IsLastHostileActor', 0, 0, 0),
-    (675, 'GetGraphVariableInt', 1, 0, 0),
-    (676, 'GetCurrentShoutVariation', 0, 0, 0),
-    (678, 'ShouldAttackKill', 2, 0, 0),
-    (680, 'GetActivationHeight', 0, 0, 0),
-    (681, 'EPModSkillUsage_IsAdvanceSkill', 1, 0, 0),
-    (682, 'WornHasKeyword', 2, 0, 0),
-    (683, 'GetPathingCurrentSpeed', 0, 0, 0),
-    (684, 'GetPathingCurrentSpeedAngle', 1, 0, 0),
-    (691, 'EPModSkillUsage_AdvancedObjectHasKeyword', 2, 0, 0),
-    (692, 'EPModSkillUsage_IsAdvanceAction', 2, 0, 0),
-    (693, 'EPMagic_SpellHasKeyword', 2, 0, 0),
-    (694, 'GetNoBleedoutRecovery', 0, 0, 0),
-    (696, 'EPMagic_SpellHasSkill', 1, 0, 0),
-    (697, 'IsAttackType', 2, 0, 0),
-    (698, 'IsAllowedToFly', 0, 0, 0),
-    (699, 'HasMagicEffectKeyword', 2, 0, 0),
-    (700, 'IsCommandedActor', 0, 0, 0),
-    (701, 'IsStaggered', 0, 0, 0),
-    (702, 'IsRecoiling', 0, 0, 0),
-    (703, 'IsExitingInteractionQuick', 0, 0, 0),
-    (704, 'IsPathing', 0, 0, 0),
-    (705, 'GetShouldHelp', 2, 0, 0),
-    (706, 'HasBoundWeaponEquipped', 2, 0, 0),
-    (707, 'GetCombatTargetHasKeyword', 2, 0, 0),
-    (709, 'GetCombatGroupMemberCount', 0, 0, 0),
-    (710, 'IsIgnoringCombat', 0, 0, 0),
-    (711, 'GetLightLevel', 0, 0, 0),
-    (713, 'SpellHasCastingPerk', 2, 0, 0),
-    (714, 'IsBeingRidden', 0, 0, 0),
-    (715, 'IsUndead', 0, 0, 0),
-    (716, 'GetRealHoursPassed', 0, 0, 0),
-    (718, 'IsUnlockedDoor', 0, 0, 0),
-    (719, 'IsHostileToActor', 2, 0, 0),
-    (720, 'GetTargetHeight', 0, 0, 0),
-    (721, 'IsPoison', 0, 0, 0),
-    (722, 'WornApparelHasKeywordCount', 2, 0, 0),
-    (723, 'GetItemHealthPercent', 0, 0, 0),
-    (724, 'EffectWasDualCast', 0, 0, 0),
-    (725, 'GetKnockStateEnum', 0, 0, 0),
-    (726, 'DoesNotExist', 0, 0, 0),
-    (730, 'IsOnFlyingMount', 0, 0, 0),
-    (731, 'CanFlyHere', 0, 0, 0),
-    (732, 'IsFlyingMountPatrolQueud', 0, 0, 0),
-    (733, 'IsFlyingMountFastTravelling', 0, 0, 0),
-
-    # extended by SKSE
-    (1024, 'GetSKSEVersion', 0, 0, 0),
-    (1025, 'GetSKSEVersionMinor', 0, 0, 0),
-    (1026, 'GetSKSEVersionBeta', 0, 0, 0),
-    (1027, 'GetSKSERelease', 0, 0, 0),
-    (1028, 'ClearInvalidRegistrations', 0, 0, 0),
-    )
-
-allConditions = set(entry[0] for entry in conditionFunctionData)
-fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
-fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
-# Skip 3 and 4 because it needs to be set per runOn
-fid5Conditions = set(entry[0] for entry in conditionFunctionData if entry[4] == 2)
-
-#--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs it Editor Id listed here.
-gmstEids = ['bAutoAimBasedOnDistance','fActionPointsAttackMagic','fActionPointsAttackRanged',
-    'fActionPointsFOVBase','fActiveEffectConditionUpdateInterval','fActorAlertSoundTimer',
-    'fActorAlphaFadeSeconds','fActorAnimZAdjust','fActorArmorDesirabilityDamageMult',
-    'fActorArmorDesirabilitySkillMult','fActorLeaveWaterBreathTimer','fActorLuckSkillMult',
-    'fActorStrengthEncumbranceMult','fActorSwimBreathBase','fActorTeleportFadeSeconds',
-    'fActorWeaponDesirabilityDamageMult','fActorWeaponDesirabilitySkillMult','fAiAcquireKillBase',
-    'fAiAcquireKillMult','fAIAcquireObjectDistance','fAiAcquirePickBase',
-    'fAiAcquirePickMult','fAiAcquireStealBase','fAiAcquireStealMult',
-    'fAIActivateHeight','fAIActivateReach','fAIActorPackTargetHeadTrackMod',
-    'fAIAimBlockedHalfCircleRadius','fAIAimBlockedToleranceDegrees','fAIAwareofPlayerTimer',
-    'fAIBestHeadTrackDistance','fAICombatFleeScoreThreshold','fAICombatNoAreaEffectAllyDistance',
-    'fAICombatNoTargetLOSPriorityMult','fAICombatSlopeDifference','fAICombatTargetUnreachablePriorityMult',
-    'fAICombatUnreachableTargetPriorityMult','fAICommentTimeWindow','fAIConversationExploreTime',
-    'fAIDialogueDistance','fAIDistanceRadiusMinLocation','fAIDistanceTeammateDrawWeapon',
-    'fAIDodgeDecisionBase','fAIDodgeFavorLeftRightMult','fAIDodgeVerticalRangedAttackMult',
-    'fAIDodgeWalkChance','fAIEnergyLevelBase','fAIEngergyLevelMult',
-    'fAIEscortFastTravelMaxDistFromPath','fAIEscortHysteresisWidth','fAIEscortStartStopDelayTime',
-    'fAIEscortWaitDistanceExterior','fAIEscortWaitDistanceInterior','fAIExplosiveWeaponDamageMult',
-    'fAIExplosiveWeaponRangeMult','fAIExteriorSpectatorDetection','fAIExteriorSpectatorDistance',
-    'fAIFaceTargetAnimationAngle','fAIFindBedChairsDistance','fAIFleeConfBase',
-    'fAIFleeConfMult','fAIFleeHealthMult','fAIFleeSuccessTimeout',
-    'fAIHoldDefaultHeadTrackTimer','fAIHorseSearchDistance','fAIIdleAnimationDistance',
-    'fAIIdleAnimationLargeCreatureDistanceMult','fAIIdleWaitTimeComplexScene','fAIInteriorHeadTrackMult',
-    'fAIInteriorSpectatorDetection','fAIInteriorSpectatorDistance','fAILockDoorsSeenRecentlySeconds',
-    'fAIMagicSpellMult','fAIMagicTimer','fAIMaxAngleRangeMovingToStartSceneDialogue','fAIMaxHeadTrackDistance',
-    'fAIMaxHeadTrackDistanceFromPC','fAIMaxLargeCreatureHeadTrackDistance','fAIMaxSmileDistance',
-    'fAIMaxWanderTime','fAIMeleeArmorMult','fAIMeleeHandMult',
-    'fAIMeleeWeaponMult','fAIMinAngleRangeToStartSceneDialogue','fAIMinGreetingDistance',
-    'fAIMinLocationHeight','fAIMoveDistanceToRecalcFollowPath','fAIMoveDistanceToRecalcTravelPath',
-    'fAIMoveDistanceToRecalcTravelToActor','fAIPatrolHysteresisWidth','fAIPatrolMinSecondsAtNormalFurniture',
-    'fAIPowerAttackCreatureChance','fAIPowerAttackKnockdownBonus','fAIPowerAttackNPCChance',
-    'fAIPowerAttackRecoilBonus','fAIPursueDistanceLineOfSight','fAIRandomizeInitialLocationMinRadius',
-    'fAIRangedWeaponMult','fAIRangMagicSpellMult','fAIRevertToScriptTracking',
-    'fAIShoutRetryDelaySeconds','fAISocialTimerToWaitForEvent','fAISpectatorCommentTimer',
-    'fAISpectatorShutdownDistance','fAISpectatorThreatDistExplosion','fAISpectatorThreatDistMelee',
-    'fAISpectatorThreatDistMine','fAISpectatorThreatDistRanged','fAIStayonScriptHeadtrack',
-    'fAItalktoNPCtimer','fAItalktosameNPCtimer','fAIUpdateMovementRestrictionsDistance',
-    'fAIUseMagicToleranceDegrees','fAIUseWeaponAnimationTimeoutSeconds','fAIUseWeaponToleranceDegrees',
-    'fAIWaitingforScriptCallback','fAIWalkAwayTimerForConversation','fAIWanderDefaultMinDist',
-    'fAlchemyGoldMult','fAlchemyIngredientInitMult','fAlignEvilMaxKarma',
-    'fAlignGoodMinKarma','fAlignMaxKarma','fAlignMinKarma',
-    'fAlignVeryEvilMaxKarma','fAlignVeryGoodMinKarma','fAmbushOverRideRadiusforPlayerDetection',
-    'fArmorRatingPCBase','fArmorWeightLightMaxMod','fArrowBounceBlockPercentage',
-    'fArrowBounceLinearSpeed','fArrowBounceRotateSpeed','fArrowBowFastMult',
-    'fArrowBowMinTime','fArrowBowSlowMult','fArrowFakeMass',
-    'fArrowGravityBase','fArrowGravityMin','fArrowGravityMult',
-    'fArrowMaxDistance','fArrowMinBowVelocity','fArrowMinDistanceForTrails',
-    'fArrowMinPower','fArrowMinSpeedForTrails','fArrowMinVelocity',
-    'fArrowOptimalDistance','fArrowSpeedMult','fArrowWeakGravity',
-    'fArrowWobbleAmplitude','fArrowWobbleCurve','fArrowWobbleDuration',
-    'fArrowWobblePeriod','fAttributeClassPrimaryBonus','fAttributeClassSecondaryBonus',
-    'fAuroraFadeOutStart','fAutoAimMaxDegreesMelee','fAutoAimMaxDegreesVATS',
-    'fAutomaticWeaponBurstCooldownTime','fAutomaticWeaponBurstFireTime','fAvoidPlayerDistance',
-    'fBarterBuyMin','fBarterSellMax','fBeamWidthDefault',
-    'fBigBumpSpeed','fBleedoutCheck','fBlockAmountHandToHandMult',
-    'fBlockScoreNoShieldMult','fBlockSkillBase','fBloodSplatterCountBase',
-    'fBloodSplatterCountDamageBase','fBloodSplatterCountDamageMult','fBloodSplatterCountRandomMargin',
-    'fBodyMorphWeaponAdjustMult','fBowDrawTime','fBowHoldTimer',
-    'fBowZoomStaminaRegenDelay','fBribeBase','fBribeMoralityMult',
-    'fBribeMult','fBribeNPCLevelMult','fBSUnitsPerFoot',
-    'fBuoyancyMultBody','fBuoyancyMultExtremity','fCameraShakeDistFadeDelta',
-    'fCameraShakeDistFadeStart','fCameraShakeDistMin','fCameraShakeExplosionDistMult',
-    'fCameraShakeFadeTime','fCameraShakeMultMin','fCameraShakeTime',
-    'fCharacterControllerMultipleStepSpeed','fChaseDetectionTimerSetting','fCheckDeadBodyTimer',
-    'fCheckPositionFallDistance','fClosetoPlayerDistance','fClothingArmorBase',
-    'fClothingBase','fClothingClassScale','fClothingJewelryBase',
-    'fClothingJewelryScale','fCombatAcquirePickupAnimationDelay','fCombatAcquireWeaponAmmoMinimumScoreMult',
-    'fCombatAcquireWeaponAvoidTargetRadius','fCombatAcquireWeaponCloseDistanceMax','fCombatAcquireWeaponCloseDistanceMin',
-    'fCombatAcquireWeaponDisarmedAcquireTime','fCombatAcquireWeaponDisarmedDistanceMax','fCombatAcquireWeaponDisarmedDistanceMin',
-    'fCombatAcquireWeaponDisarmedTime','fCombatAcquireWeaponEnchantmentChargeMult','fCombatAcquireWeaponFindAmmoDistance',
-    'fCombatAcquireWeaponMeleeScoreMult','fCombatAcquireWeaponMinimumScoreMult','fCombatAcquireWeaponMinimumTargetDistance',
-    'fCombatAcquireWeaponRangedDistanceMax','fCombatAcquireWeaponRangedDistanceMin','fCombatAcquireWeaponReachDistance',
-    'fCombatAcquireWeaponScoreCostMult','fCombatAcquireWeaponScoreRatioMax','fCombatAcquireWeaponSearchFailedDelay',
-    'fCombatAcquireWeaponSearchRadiusBuffer','fCombatAcquireWeaponSearchSuccessDelay','fCombatAcquireWeaponTargetDistanceCheck',
-    'fCombatAcquireWeaponUnarmedDistanceMax','fCombatAcquireWeaponUnarmedDistanceMin','fCombatActiveCombatantAttackRangeDistance',
-    'fCombatActiveCombatantLastSeenTime','fCombatAdvanceInnerRadiusMid','fCombatAdvanceInnerRadiusMin',
-    'fCombatAdvanceLastDamagedThreshold','fCombatAdvanceNormalAttackChance','fCombatAdvancePathRetryTime',
-    'fCombatAdvanceRadiusStaggerMult','fCombatAimDeltaThreshold','fCombatAimLastSeenLocationTimeLimit',
-    'fCombatAimMeleeHighPriorityUpdateTime','fCombatAimMeleeUpdateTime','fCombatAimProjectileBlockedTime',
-    'fCombatAimProjectileGroundMinRadius','fCombatAimProjectileRandomOffset','fCombatAimProjectileUpdateTime',
-    'fCombatAimTrackTargetUpdateTime','fCombatAngleTolerance','fCombatAnticipatedLocationCheckDistance',
-    'fCombatAnticipateTime','fCombatApproachTargetSlowdownDecelerationMult','fCombatApproachTargetSlowdownDistance',
-    'fCombatApproachTargetSlowdownUpdateTime','fCombatApproachTargetSlowdownVelocityAngle','fCombatApproachTargetSprintStopMovingRange',
-    'fCombatApproachTargetSprintStopRange','fCombatApproachTargetUpdateTime','fCombatAreaHoldPositionMinimumRadius',
-    'fCombatAreaStandardAttackedRadius','fCombatAreaStandardAttackedTime','fCombatAreaStandardCheckViewConeDistanceMax',
-    'fCombatAreaStandardCheckViewConeDistanceMin','fCombatAreaStandardFlyingRadiusMult','fCombatAreaStandardRadius',
-    'fCombatAttackAllowedOverrunDistance','fCombatAttackAnimationDrivenDelayTime','fCombatAttackAnticipatedDistanceMin',
-    'fCombatAttackChanceBlockingMultMax','fCombatAttackChanceBlockingMultMin','fCombatAttackChanceBlockingSwingMult',
-    'fCombatAttackChanceLastAttackBonus','fCombatAttackChanceLastAttackBonusTime','fCombatAttackChanceMax',
-    'fCombatAttackChanceMin','fCombatAttackCheckTargetRangeDistance','fCombatAttackMovingAttackDistance',
-    'fCombatAttackMovingAttackReachMult','fCombatAttackMovingStrikeAngleMult','fCombatAttackPlayerAnticipateMult',
-    'fCombatAttackStationaryAttackDistance','fCombatAttackStrikeAngleMult','fCombatAvoidThreatsChance',
-    'fCombatBackoffChance','fCombatBackoffMinDistanceMult','fCombatBashChanceMax',
-    'fCombatBashChanceMin','fCombatBashTargetBlockingMult','fCombatBetweenAdvanceTimer',
-    'fCombatBlockAttackChanceMax','fCombatBlockAttackChanceMin','fCombatBlockAttackReachMult',
-    'fCombatBlockAttackStrikeAngleMult','fCombatBlockChanceMax','fCombatBlockChanceMin',
-    'fCombatBlockMaxTargetRetreatVelocity','fCombatBlockStartDistanceMax','fCombatBlockStartDistanceMin',
-    'fCombatBlockStopDistanceMax','fCombatBlockStopDistanceMin','fCombatBlockTimeMax',
-    'fCombatBlockTimeMid','fCombatBlockTimeMin','fCombatBoltStickDepth',
-    'fCombatBoundWeaponDPSBonus','fCombatBuffMaxTimer','fCombatBuffStandoffTimer',
-    'fCombatCastConcentrationOffensiveMagicCastTimeMax','fCombatCastConcentrationOffensiveMagicCastTimeMin','fCombatCastConcentrationOffensiveMagicChanceMax',
-    'fCombatCastConcentrationOffensiveMagicChanceMin','fCombatCastConcentrationOffensiveMagicWaitTimeMax','fCombatCastConcentrationOffensiveMagicWaitTimeMin',
-    'fCombatCastImmediateOffensiveMagicChanceMax','fCombatCastImmediateOffensiveMagicChanceMin','fCombatCastImmediateOffensiveMagicHoldTimeAbsoluteMin',
-    'fCombatCastImmediateOffensiveMagicHoldTimeMax','fCombatCastImmediateOffensiveMagicHoldTimeMin','fCombatCastImmediateOffensiveMagicHoldTimeMinDistance',
-    'fCombatChangeProcessFaceTargetDistance','fCombatCircleAngleMax','fCombatCircleAngleMin',
-    'fCombatCircleAnglePlayerMult','fCombatCircleChanceMax','fCombatCircleChanceMin',
-    'fCombatCircleDistanceMax','fCombatCircleDistantChanceMax','fCombatCircleDistantChanceMin',
-    'fCombatCircleMinDistanceMult','fCombatCircleMinDistanceRadiusMult','fCombatCircleMinMovementDistance',
-    'fCombatCircleViewConeAngle','fCombatCloseRangeTrackTargetDistance','fCombatClusterUpdateTime',
-    'fCombatCollectAlliesTimer','fCombatCoverAttackMaxWaitTime','fCombatCoverAttackOffsetDistance',
-    'fCombatCoverAttackTimeMax','fCombatCoverAttackTimeMid','fCombatCoverAttackTimeMin',
-    'fCombatCoverAvoidTargetRadius','fCombatCoverCheckCoverHeightMin','fCombatCoverCheckCoverHeightOffset',
-    'fCombatCoverEdgeOffsetDistance','fCombatCoverLedgeOffsetDistance','fCombatCoverMaxRangeMult',
-    'fCombatCoverMidPointMaxRangeBuffer','fCombatCoverMinimumActiveRange','fCombatCoverMinimumRange',
-    'fCombatCoverObstacleMovedTime','fCombatCoverRangeMaxActiveMult','fCombatCoverRangeMaxBufferDistance',
-    'fCombatCoverRangeMinActiveMult','fCombatCoverRangeMinBufferDistance','fCombatCoverReservationWidthMult',
-    'fCombatCoverSearchDistanceMax','fCombatCoverSearchDistanceMin','fCombatCoverSearchFailedDelay',
-    'fCombatCoverSecondaryThreatLastSeenTime','fCombatCoverSecondaryThreatMinDistance','fCombatCoverWaitLookOffsetDistance',
-    'fCombatCoverWaitTimeMax','fCombatCoverWaitTimeMid','fCombatCoverWaitTimeMin',
-    'fCombatDamageBonusMeleeSneakingMult','fCombatDamageScale','fCombatDeadActorHitConeMult',
-    'fCombatDetectionDialogueMaxElapsedTime','fCombatDetectionDialogueMinElapsedTime','fCombatDetectionFleeingLostRemoveTime',
-    'fCombatDetectionLostCheckNoticedDistance','fCombatDetectionLostRemoveDistance','fCombatDetectionLostRemoveDistanceTime',
-    'fCombatDetectionLostRemoveTime','fCombatDetectionLostTimeLimit','fCombatDetectionLowDetectionDistance',
-    'fCombatDetectionLowPriorityDistance','fCombatDetectionNoticedDistanceLimit','fCombatDetectionNoticedTimeLimit',
-    'fCombatDetectionVeryLowPriorityDistance','fCombatDialogueAllyKilledDistanceMult','fCombatDialogueAllyKilledMaxElapsedTime',
-    'fCombatDialogueAllyKilledMinElapsedTime','fCombatDialogueAttackDistanceMult','fCombatDialogueAvoidThreatDistanceMult',
-    'fCombatDialogueAvoidThreatMaxElapsedTime','fCombatDialogueAvoidThreatMinElapsedTime','fCombatDialogueBashDistanceMult',
-    'fCombatDialogueBleedoutDistanceMult','fCombatDialogueBleedOutMaxElapsedTime','fCombatDialogueBleedOutMinElapsedTime',
-    'fCombatDialogueBlockDistanceMult','fCombatDialogueDeathDistanceMult','fCombatDialogueFleeDistanceMult',
-    'fCombatDialogueFleeMaxElapsedTime','fCombatDialogueFleeMinElapsedTime','fCombatDialogueGroupStrategyDistanceMult',
-    'fCombatDialogueHitDistanceMult','fCombatDialoguePowerAttackDistanceMult','fCombatDialogueTauntDistanceMult',
-    'fCombatDisarmedFindBetterWeaponInitialTime','fCombatDisarmedFindBetterWeaponTime','fCombatDismemberedLimbVelocity',
-    'fCombatDistanceMin','fCombatDiveBombChanceMax','fCombatDiveBombChanceMin',
-    'fCombatDiveBombOffsetPercent','fCombatDiveBombSlowDownDistance','fCombatDodgeAccelerationMult',
-    'fCombatDodgeAcceptableThreatScoreMult','fCombatDodgeAnticipateThreatTime','fCombatDodgeBufferDistance',
-    'fCombatDodgeChanceMax','fCombatDodgeChanceMin','fCombatDodgeDecelerationMult',
-    'fCombatDodgeMovingReactionTime','fCombatDodgeReactionTime','fCombatDPSBowSpeedMult',
-    'fCombatDPSMeleeSpeedMult','fCombatEffectiveDistanceAnticipateTime','fCombatEnvironmentBloodChance',
-    'fCombatFallbackChanceMax','fCombatFallbackChanceMin','fCombatFallbackDistanceMax',
-    'fCombatFallbackDistanceMin','fCombatFallbackMaxAngle','fCombatFallbackMinMovementDistance',
-    'fCombatFallbackWaitTimeMax','fCombatFallbackWaitTimeMin','fCombatFindAllyAttackLocationAllyRadius',
-    'fCombatFindAllyAttackLocationDistanceMax','fCombatFindAllyAttackLocationDistanceMin','fCombatFindAttackLocationAvoidTargetRadius',
-    'fCombatFindAttackLocationDistance','fCombatFindAttackLocationKeyAngle','fCombatFindAttackLocationKeyHeight',
-    'fCombatFindBetterWeaponTime','fCombatFindLateralAttackLocationDistance','fCombatFindLateralAttackLocationIntervalMax',
-    'fCombatFindLateralAttackLocationIntervalMin','fCombatFiringArcStationaryTurnMult','fCombatFlankingAngleOffset',
-    'fCombatFlankingAngleOffsetCostMult','fCombatFlankingAngleOffsetMax','fCombatFlankingDirectionDistanceMult',
-    'fCombatFlankingDirectionGoalAngleOffset','fCombatFlankingDirectionOffsetCostMult','fCombatFlankingDirectionRotateAngleOffset',
-    'fCombatFlankingDistanceMax','fCombatFlankingDistanceMin','fCombatFlankingGoalAngleFarMax',
-    'fCombatFlankingGoalAngleFarMaxDistance','fCombatFlankingGoalAngleFarMin','fCombatFlankingGoalAngleFarMinDistance',
-    'fCombatFlankingGoalAngleNear','fCombatFlankingGoalCheckDistanceMax','fCombatFlankingGoalCheckDistanceMin',
-    'fCombatFlankingGoalCheckDistanceMult','fCombatFlankingLocationGridSize','fCombatFlankingMaxTurnAngle',
-    'fCombatFlankingMaxTurnAngleGoal','fCombatFlankingNearDistance','fCombatFlankingRotateAngle',
-    'fCombatFlankingStalkRange','fCombatFlankingStalkTimeMax','fCombatFlankingStalkTimeMin',
-    'fCombatFlankingStepDistanceMax','fCombatFlankingStepDistanceMin','fCombatFlankingStepDistanceMult',
-    'fCombatFleeAllyDistanceMax','fCombatFleeAllyDistanceMin','fCombatFleeAllyRadius',
-    'fCombatFleeCoverMinDistance','fCombatFleeCoverSearchRadius','fCombatFleeDistanceExterior',
-    'fCombatFleeDistanceInterior','fCombatFleeDoorDistanceMax','fCombatFleeDoorTargetCheckDistance',
-    'fCombatFleeInitialDoorRestrictChance','fCombatFleeLastDoorRestrictTime','fCombatFleeTargetAvoidRadius',
-    'fCombatFleeTargetGatherRadius','fCombatFleeUseDoorChance','fCombatFleeUseDoorRestrictTime',
-    'fCombatFlightEffectiveDistance','fCombatFlightMinimumRange','fCombatFlyingAttackChanceMax',
-    'fCombatFlyingAttackChanceMin','fCombatFlyingAttackTargetDistanceThreshold','fCombatFollowRadiusBase',
-    'fCombatFollowRadiusMin','fCombatFollowSneakFollowRadius','fCombatForwardAttackChance',
-    'fCombatGiantCreatureReachMult','fCombatGrenadeBounceTimeMax','fCombatGrenadeBounceTimeMin',
-    'fCombatGroundAttackChanceMax','fCombatGroundAttackChanceMin','fCombatGroupCombatStrengthUpdateTime',
-    'fCombatGroupOffensiveMultMin','fCombatGuardFollowBufferDistance','fCombatGuardRadiusMin',
-    'fCombatGuardRadiusMult','fCombatHideCheckViewConeDistanceMax','fCombatHideCheckViewConeDistanceMin',
-    'fCombatHideFailedTargetDistance','fCombatHideFailedTargetLOSDistance','fCombatHitConeAngle',
-    'fCombatHoverAngleLimit','fCombatHoverAngleMax','fCombatHoverAngleMin',
-    'fCombatHoverChanceMax','fCombatHoverChanceMin','fCombatHoverTimeMax',
-    'fCombatInTheWayTimer','fCombatInventoryDesiredRangeScoreMultMax','fCombatInventoryDesiredRangeScoreMultMid',
-    'fCombatInventoryDesiredRangeScoreMultMin','fCombatInventoryDualWieldScorePenalty','fCombatInventoryEquipmentMinScoreMult',
-    'fCombatInventoryEquippedScoreBonus','fCombatInventoryMaxRangeEquippedBonus','fCombatInventoryMaxRangeScoreMult',
-    'fCombatInventoryMeleeEquipRange','fCombatInventoryMinEquipTimeBlock','fCombatInventoryMinEquipTimeDefault',
-    'fCombatInventoryMinEquipTimeMagic','fCombatInventoryMinEquipTimeShout','fCombatInventoryMinEquipTimeStaff',
-    'fCombatInventoryMinEquipTimeTorch','fCombatInventoryMinEquipTimeWeapon','fCombatInventoryMinRangeScoreMult',
-    'fCombatInventoryMinRangeUnequippedBonus','fCombatInventoryOptimalRangePercent','fCombatInventoryRangedScoreMult',
-    'fCombatInventoryResourceCurrentRequiredMult','fCombatInventoryResourceDesiredRequiredMult','fCombatInventoryResourceRegenTime',
-    'fCombatInventoryShieldEquipRange','fCombatInventoryShoutMaxRecoveryTime','fCombatInventoryTorchEquipRange',
-    'fCombatInventoryUpdateTimer','fCombatIronSightsDistance','fCombatIronSightsRangeMult',
-    'fCombatItemBuffTimer','fCombatKillMoveDamageMult','fCombatLandingAvoidActorRadius',
-    'fCombatLandingSearchDistance','fCombatLandingZoneDistance','fCombatLineOfSightTimer',
-    'fCombatLocationTargetRadiusMin','fCombatLowFleeingTargetHitPercent','fCombatLowMaxAttackDistance',
-    'fCombatLowTargetHitPercent','fCombatMagicArmorDistanceMax','fCombatMagicArmorDistanceMin',
-    'fCombatMagicArmorMinCastTime','fCombatMagicBoundItemDistance','fCombatMagicBuffDuration',
-    'fCombatMagicCloakDistanceMax','fCombatMagicCloakDistanceMin','fCombatMagicCloakMinCastTime',
-    'fCombatMagicConcentrationAimVariance','fCombatMagicConcentrationFiringArcMult','fCombatMagicConcentrationMinCastTime',
-    'fCombatMagicConcentrationScoreDuration','fCombatMagicDefaultLongDuration','fCombatMagicDefaultMinCastTime',
-    'fCombatMagicDefaultShortDuration','fCombatMagicDisarmDistance','fCombatMagicDisarmRestrictTime',
-    'fCombatMagicDrinkPotionWaitTime','fCombatMagicDualCastChance','fCombatMagicDualCastInterruptTime',
-    'fCombatMagicImmediateAimVariance','fCombatMagicInvisibilityDistance','fCombatMagicInvisibilityMinCastTime',
-    'fCombatMagicLightMinCastTime','fCombatMagicOffensiveMinCastTime','fCombatMagicParalyzeDistance',
-    'fCombatMagicParalyzeMinCastTime','fCombatMagicParalyzeRestrictTime','fCombatMagicProjectileFiringArc',
-    'fCombatMagicReanimateDistance','fCombatMagicReanimateMinCastTime','fCombatMagicReanimateRestrictTime',
-    'fCombatMagicStaggerDistance','fCombatMagicSummonMinCastTime','fCombatMagicSummonRestrictTime',
-    'fCombatMagicTacticalDuration','fCombatMagicTargetEffectMinCastTime','fCombatMagicWardAttackRangeDistance',
-    'fCombatMagicWardAttackReachMult','fCombatMagicWardCooldownTime','fCombatMagicWardMagickaCastLimit',
-    'fCombatMagicWardMagickaEquipLimit','fCombatMagicWardMinCastTime','fCombatMaintainOptimalDistanceMaxAngle',
-    'fCombatMaintainRangeDistanceMin','fCombatMaxHoldScore','fCombatMaximumOptimalRangeMax',
-    'fCombatMaximumOptimalRangeMid','fCombatMaximumOptimalRangeMin','fCombatMaximumProjectileRange',
-    'fCombatMaximumRange','fCombatMeleeTrackTargetDistanceMax','fCombatMeleeTrackTargetDistanceMin',
-    'fCombatMinEngageDistance','fCombatMissileImpaleDepth','fCombatMonitorBuffsTimer',
-    'fCombatMoveToActorBufferDistance','fCombatMusicGroupThreatRatioMax','fCombatMusicGroupThreatRatioMin',
-    'fCombatMusicGroupThreatRatioTimer','fCombatMusicNearCombatInnerRadius','fCombatMusicNearCombatOuterRadius',
-    'fCombatMusicPlayerCombatStrengthCap','fCombatMusicPlayerNearStrengthMult','fCombatMusicStopTime',
-    'fCombatMusicUpdateTime','fCombatOffensiveBashChanceMax','fCombatOffensiveBashChanceMin',
-    'fCombatOptimalRangeMaxBufferDistance','fCombatOptimalRangeMinBufferDistance','fCombatOrbitTimeMax',
-    'fCombatOrbitTimeMin','fCombatParalyzeTacticalDuration','fCombatPathingAccelerationMult',
-    'fCombatPathingCurvedPathSmoothingMult','fCombatPathingDecelerationMult','fCombatPathingGoalRayCastPathDistance',
-    'fCombatPathingIncompletePathMinDistance','fCombatPathingLocationCenterOffsetMult','fCombatPathingLookAheadDelta',
-    'fCombatPathingNormalizedRotationSpeed','fCombatPathingRefLocationUpdateDistance','fCombatPathingRefLocationUpdateTimeDistanceMax',
-    'fCombatPathingRefLocationUpdateTimeDistanceMin','fCombatPathingRefLocationUpdateTimeMax','fCombatPathingRefLocationUpdateTimeMin',
-    'fCombatPathingRetryWaitTime','fCombatPathingRotationAccelerationMult','fCombatPathingStartRayCastPathDistance',
-    'fCombatPathingStraightPathCheckDistance','fCombatPathingStraightRayCastPathDistance','fCombatPathingUpdatePathCostMult',
-    'fCombatPerchAttackChanceMax','fCombatPerchAttackChanceMin','fCombatPerchAttackTimeMax',
-    'fCombatPerchMaxTargetAngle','fCombatProjectileMaxRangeMult','fCombatProjectileMaxRangeOptimalMult',
-    'fCombatRadiusMinMult','fCombatRangedAimVariance','fCombatRangedAttackChanceLastAttackBonus',
-    'fCombatRangedAttackChanceLastAttackBonusTime','fCombatRangedAttackChanceMax','fCombatRangedAttackChanceMin',
-    'fCombatRangedAttackHoldTimeAbsoluteMin','fCombatRangedAttackHoldTimeMax','fCombatRangedAttackHoldTimeMin',
-    'fCombatRangedAttackHoldTimeMinDistance','fCombatRangedAttackMaximumHoldTime','fCombatRangedDistance',
-    'fCombatRangedMinimumRange','fCombatRangedProjectileFiringArc','fCombatRangedStandoffTimer',
-    'fCombatRelativeDamageMod','fCombatRestoreHealthPercentMax','fCombatRestoreHealthPercentMin',
-    'fCombatRestoreHealthRestrictTime','fCombatRestoreMagickaPercentMax','fCombatRestoreMagickaPercentMin',
-    'fCombatRestoreMagickaRestrictTime','fCombatRestoreStopCastThreshold','fCombatRoundAmount',
-    'fCombatSearchAreaUpdateTime','fCombatSearchCenterRadius','fCombatSearchCheckDestinationDistanceMax',
-    'fCombatSearchCheckDestinationDistanceMid','fCombatSearchCheckDestinationDistanceMin','fCombatSearchCheckDestinationTime',
-    'fCombatSearchDoorDistance','fCombatSearchDoorDistanceLow','fCombatSearchDoorSearchRadius',
-    'fCombatSearchExteriorRadiusMax','fCombatSearchExteriorRadiusMin','fCombatSearchIgnoreLocationRadius',
-    'fCombatSearchInteriorRadiusMax','fCombatSearchInteriorRadiusMin','fCombatSearchInvestigateTime',
-    'fCombatSearchLocationCheckDistance','fCombatSearchLocationCheckTime','fCombatSearchLocationInitialCheckTime',
-    'fCombatSearchLocationInvestigateDistance','fCombatSearchLocationRadius','fCombatSearchLookTime',
-    'fCombatSearchRadiusBufferDistance','fCombatSearchRadiusMemberDistance','fCombatSearchSightRadius',
-    'fCombatSearchStartWaitTime','fCombatSearchUpdateTime','fCombatSearchWanderDistance',
-    'fCombatSelectTargetSwitchUpdateTime','fCombatSelectTargetUpdateTime','fCombatShoutHeadTrackingAngleMovingMult',
-    'fCombatShoutHeadTrackingAngleMult','fCombatShoutLongRecoveryTime','fCombatShoutMaxHeadTrackingAngle',
-    'fCombatShoutReleaseTime','fCombatShoutShortRecoveryTime','fCombatSneakBowMult',
-    'fCombatSneakCrossbowMult','fCombatSneakStaffMult','fCombatSpeakPowerAttackChance',
-    'fCombatSpeakTauntChance','fCombatSpecialAttackChanceMax','fCombatSpecialAttackChanceMin',
-    'fCombatSplashDamageMaxSpeed','fCombatSplashDamageMinDamage','fCombatSplashDamageMinRadius',
-    'fCombatStaffTimer','fCombatStealthPointAttackedMaxValue','fCombatStealthPointDetectedEventMaxValue',
-    'fCombatStealthPointMax','fCombatStealthPointRegenAlertWaitTime','fCombatStealthPointRegenLostWaitTime',
-    'fCombatStepAdvanceDistance','fCombatStrafeChanceMax','fCombatStrafeChanceMin',
-    'fCombatStrafeDistanceMax','fCombatStrafeDistanceMin','fCombatStrafeMinDistanceRadiusMult',
-    'fCombatStrengthUpdateTime','fCombatSurroundDistanceMax','fCombatSurroundDistanceMin',
-    'fCombatTargetEngagedLastSeenTime','fCombatTargetLocationAvoidNodeRadiusOffset','fCombatTargetLocationCurrentReservationDistanceMult',
-    'fCombatTargetLocationMaxDistance','fCombatTargetLocationMinDistanceMult','fCombatTargetLocationPathingRadius',
-    'fCombatTargetLocationRadiusSizeMult','fCombatTargetLocationRepositionAngleMult','fCombatTargetLocationSwimmingOffset',
-    'fCombatTargetLocationWidthMax','fCombatTargetLocationWidthMin','fCombatTargetLocationWidthSizeMult',
-    'fCombatTeammateFollowRadiusBase','fCombatTeammateFollowRadiusMin','fCombatThreatAnticipateTime',
-    'fCombatThreatAvoidCost','fCombatThreatBufferRadius','fCombatThreatCacheVelocityTime',
-    'fCombatThreatDangerousObjectHealth','fCombatThreatExplosiveObjectThreatTime','fCombatThreatExtrudeTime',
-    'fCombatThreatExtrudeVelocityThreshold','fCombatThreatNegativeExtrudeTime','fCombatThreatSignificantScore',
-    'fCombatThreatTimedExplosionLength','fCombatThreatUpdateTimeMax','fCombatThreatUpdateTimeMin',
-    'fCombatThreatViewCone','fCombatUnreachableTargetCheckTime','fCombatVulnerabilityMod',
-    'fCombatYieldRetryTime','fCombatYieldTime','fConeProjectileForceBase',
-    'fConeProjectileForceMult','fConeProjectileForceMultAngular','fConeProjectileForceMultLinear',
-    'fConeProjectileWaterScaleMult','fConfidenceCowardly','fConfidenceFoolhardy',
-    'fConstructibleSkillUseConst','fConstructibleSkilluseExp','fConstructibleSkillUseMult',
-    'fCoveredAdvanceMinAdvanceDistanceMax','fCoveredAdvanceMinAdvanceDistanceMin','fCoverEvaluationLastSeenExpireTime',
-    'fCoverFiredProjectileExpireTime','fCoverFiringReloadClipPercent','fCoverWaitReloadClipPercent',
-    'fCreatureDefaultTurningSpeed','fCrimeAlarmRespMult','fCrimeDispAttack',
-    'fCrimeDispMurder','fCrimeDispPersonal','fCrimeDispPickpocket',
-    'fCrimeDispSteal','fCrimeDispTresspass','fCrimeFavorMult',
-    'fCrimeGoldSkillPenaltyMult','fCrimeGoldSteal','fCrimePersonalRegardMult',
-    'fCrimeRegardMult','fCrimeSoundBase','fCrimeSoundMult',
-    'fCrimeWitnessRegardMult','fDamageArmConditionBase','fDamageArmConditionMult',
-    'fDamagePCSkillMin','fDamageSkillMax','fDamageSkillMin',
-    'fDamageStrengthBase','fDamageStrengthMult','fDamageUnarmedPenalty',
-    'fDamageWeaponMult','fDangerousObjectExplosionDamage','fDangerousObjectExplosionRadius',
-    'fDangerousProjectileExplosionDamage','fDangerousProjectileExplosionRadius','fDaytimeColorExtension',
-    'fDeadReactionDistance','fDeathForceMassBase','fDeathForceMassMult',
-    'fDeathSoundMaxDistance','fDebrisFadeTime','fDebrisMaxVelocity',
-    'fDebrisMinExtent','fDecapitateBloodTime','fDefaultAngleTolerance',
-    'fDefaultHealth','fDefaultMagicka','fDefaultMass',
-    'fDefaultRelaunchInterval','fDefaultStamina','fDemandBase',
-    'fDemandMult','fDetectEventDistanceNPC','fDetectEventDistancePlayer',
-    'fDetectEventDistanceVeryLoudMult','fDetectEventSneakDistanceVeryLoud','fDetectionActionTimer',
-    'fDetectionCombatNonTargetDistanceMult','fDetectionCommentTimer','fDetectionEventExpireTime',
-    'fDetectionLargeActorSizeMult','fDetectionLOSDistanceAngle','fDetectionLOSDistanceMultExterior',
-    'fDetectionLOSDistanceMultInterior','fDetectionNightEyeBonus','fDetectionStateExpireTime',
-    'fDetectionUpdateTimeMax','fDetectionUpdateTimeMaxComplex','fDetectionUpdateTimeMin',
-    'fDetectionUpdateTimeMinComplex','fDetectionViewCone','fDetectProjectileDistanceNPC',
-    'fDetectProjectileDistancePlayer','fDialogFocalDepthRange','fDialogFocalDepthStrength',
-    'fDialogZoomInSeconds','fDialogZoomOutSeconds','fDifficultyDamageMultiplier',
-    'fDifficultyDefaultValue','fDifficultyMaxValue','fDifficultyMinValue',
-    'fDiffMultHPByPCE','fDiffMultHPByPCH','fDiffMultHPByPCN',
-    'fDiffMultHPByPCVE','fDiffMultHPByPCVH','fDiffMultHPToPCE',
-    'fDiffMultHPToPCH','fDiffMultHPToPCN','fDiffMultHPToPCVE',
-    'fDiffMultHPToPCVH','fDiffMultXPE','fDiffMultXPN',
-    'fDiffMultXPVE','fDisarmedPickupWeaponDistanceMult','fDistanceAutomaticallyActivateDoor',
-    'fDistanceExteriorReactCombat','fDistanceFadeActorAutoLoadDoor','fDistanceInteriorReactCombat',
-    'fDistanceProjectileExplosionDetection','fDistancetoPlayerforConversations','fDOFDistanceMult',
-    'fDragonLandingZoneClearRadius','fDrinkRepeatRate','fDyingTimer',
-    'fEffectShaderFillEdgeMinFadeRate','fEffectShaderParticleMinFadeRate','fEmbeddedWeaponSwitchChance',
-    'fEmbeddedWeaponSwitchTime','fEnchantingCostExponent','fEnchantingSkillCostBase',
-    'fEnchantingSkillCostMult','fEnchantingSkillCostScale','fEnchantmentGoldMult',
-    'fEnemyHealthBarTimer','fEssentialDownCombatHealthRegenMult','fEssentialHealthPercentReGain',
-    'fEssentialNonCombatHealRateBonus','fEssentialNPCMinimumHealth','fEvaluatePackageTimer',
-    'fEvaluateProcedureTimer','fExplosionForceClutterUpBias','fExplosionForceKnockdownMinimum',
-    'fExplosionKnockStateExplodeDownTime','fExplosionLOSBuffer','fExplosionLOSBufferDistance',
-    'fExplosionMaxImpulse','fExplosiveProjectileBlockedResetTime','fExplosiveProjectileBlockedWaitTime',
-    'fExpressionChangePerSec','fExpressionStrengthAdd','fEyePitchMaxOffsetEmotionSad',
-    'fEyePitchMinOffsetEmotionAngry','fEyePitchMinOffsetEmotionHappy','fFallLegDamageMult',
-    'fFastTravelSpeedMult','fFavorCostActivator','fFavorCostAttack',
-    'fFavorCostAttackCrimeMult','fFavorCostLoadDoor','fFavorCostNonLoadDoor',
-    'fFavorCostOwnedDoorMult','fFavorCostStealContainerCrime','fFavorCostStealContainerMult',
-    'fFavorCostStealObjectMult','fFavorCostTakeObject','fFavorCostUnlockContainer',
-    'fFavorCostUnlockDoor','fFavorEventStopDistance','fFavorEventTriggerDistance',
-    'fFleeDoneDistanceExterior','fFleeDoneDistanceInterior','fFleeIsSafeTimer',
-    'fFloatQuestMarkerFloatHeight','fFloatQuestMarkerMaxDistance','fFloatQuestMarkerMinDistance',
-    'fFollowerSpacingAtDoors','fFollowExtraCatchUpSpeedMult','fFollowMatchSpeedZoneWidth',
-    'fFollowRunMaxSpeedupMultiplier','fFollowSlowdownZoneWidth','fFollowStartSprintDistance',
-    'fFollowStopZoneMinMult','fFollowWalkMaxSpeedupMultiplier','fFollowWalkMinSlowdownMultiplier',
-    'fFollowWalkZoneMult','fFriendHitTimer','fFriendMinimumLastHitTime',
-    'fFurnitureScaleAnimDurationNPC','fFurnitureScaleAnimDurationPlayer','fGameplayImpulseMinMass',
-    'fGameplayImpulseMultTrap','fGameplayImpulseScale','fGameplaySpeakingEmotionMaxChangeValue',
-    'fGetHitPainMult','fGrabMaxWeightRunning','fGrabMaxWeightWalking',
-    'fGrenadeAgeMax','fGrenadeHighArcSpeedPercentage','fGrenadeThrowHitFractionThreshold',
-    'fGunDecalCameraDistance','fGunReferenceSkill','fGunShellCameraDistance',
-    'fGunShellLifetime','fGunShellRotateRandomize','fGunShellRotateSpeed',
-    'fGunSpreadCrouchBase','fGunSpreadDriftBase','fGunSpreadHeadBase',
-    'fGunSpreadHeadMult','fGunSpreadIronSightsBase','fGunSpreadIronSightsMult',
-    'fGunSpreadNPCArmBase','fGunSpreadNPCArmMult','fGunSpreadRunBase',
-    'fGunSpreadWalkBase','fGunSpreadWalkMult','fHandDamageSkillBase',
-    'fHandDamageSkillMult','fHandDamageStrengthBase','fHandDamageStrengthMult',
-    'fHandHealthMax','fHandHealthMin','fHandReachDefault',
-    'fHazardDefaultTargetInterval','fHazardDropMaxDistance','fHazardMaxWaitTime',
-    'fHazardMinimumSpawnInterval','fHazardSpacingMult','fHeadingMarkerAngleTolerance',
-    'fHealthDataValue2','fHealthDataValue3','fHealthDataValue4',
-    'fHealthDataValue5','fHealthDataValue6','fHealthRegenDelayMax',
-    'fHorseMountOffsetX','fHorseMountOffsetY','fHostileActorExteriorDistance',
-    'fHostileActorInteriorDistance','fHostileFlyingActorExteriorDistance','fIdleMarkerAngleTolerance',
-    'fImpactShaderMaxMagnitude','fImpactShaderMinMagnitude','fIntimidateConfidenceMultAverage',
-    'fIntimidateConfidenceMultBrave','fIntimidateConfidenceMultCautious','fIntimidateConfidenceMultCowardly',
-    'fIntimidateConfidenceMultFoolhardy','fIntimidateSpeechcraftCurve','fInvisibilityMinRefraction',
-    'fIronSightsDOFSwitchSeconds','fIronSightsFOVTimeChange','fItemPointsMult',
-    'fItemRepairCostMult','fJumpDoubleMult','fJumpFallRiderMult',
-    'fJumpFallSkillBase','fJumpFallSkillMult','fJumpMoveBase',
-    'fJumpMoveMult','fKarmaModMurderingNonEvilCreature','fKarmaModMurderingNonEvilNPC',
-    'fKillCamLevelBias','fKillCamLevelFactor','fKillCamLevelMaxBias',
-    'fKillMoveMaxDuration','fKillWitnessesTimerSetting','fKnockbackAgilBase',
-    'fKnockbackAgilMult','fKnockbackDamageBase','fKnockdownAgilBase',
-    'fKnockdownAgilMult','fKnockdownBaseHealthThreshold','fKnockdownChance',
-    'fKnockdownDamageBase','fKnockdownDamageMult','fLargeProjectilePickBufferSize',
-    'fLargeProjectileSize','fLargeRefMinSize','fLeveledLockMult',
-    'fLightRecalcTimer','fLightRecalcTimerPlayer','fLoadingWheelScale',
-    'fLockLevelBase','fLockLevelMult','fLockpickBreakAdept',
-    'fLockpickBreakApprentice','fLockPickBreakBase','fLockpickBreakExpert',
-    'fLockpickBreakMaster','fLockPickBreakMult','fLockpickBreakNovice',
-    'fLockpickBreakSkillBase','fLockpickBreakSkillMult','fLockPickQualityBase',
-    'fLockPickQualityMult','fLockpickSkillSweetSpotBase','fLockSkillBase',
-    'fLockSkillMult','fLockTrapGoOffBase','fLockTrapGoOffMult',
-    'fLookDownDisableBlinkingAmt','fLowHealthTutorialPercentage','fLowLevelNPCBaseHealthMult',
-    'fLowMagickaTutorialPercentage','fLowStaminaTutorialPercentage','fMagicAbsorbDistanceReachMult',
-    'fMagicAccumulatingModifierEffectHoldDuration','fMagicAreaScale','fMagicBallMaximumDistance',
-    'fMagicBallOptimalDistance','fMagicBarrierDepth','fMagicBarrierHeight',
-    'fMagicBarrierSpacing','fMagicBoltDuration','fMagicBoltMaximumDistance',
-    'fMagicBoltOptimalDistance','fMagicBoltSegmentLength','fMagicCasterPCSkillCostMult',
-    'fMagicCasterSkillCostBase','fMagicCasterTargetUpdateInterval','fMagicCEEnchantMagOffset',
-    'fMagicChainExplosionEffectivenessDelta','fMagicCloudAreaMin','fMagicCloudDurationMin',
-    'fMagicCloudFindTargetTime','fMagicCloudLifeScale','fMagicCloudSizeScale',
-    'fMagicCloudSlowdownRate','fMagicCloudSpeedBase','fMagicCloudSpeedScale',
-    'fMagicCostScale','fMagicDefaultAccumulatingModifierEffectRate','fMagicDefaultCEBarterFactor',
-    'fMagicDefaultTouchDistance','fMagicDiseaseTransferBase','fMagicDiseaseTransferMult',
-    'fMagicDispelMagnitudeMult','fMagicDualCastingCostBase','fMagicDualCastingEffectivenessMult',
-    'fMagicDualCastingTimeBase','fMagicDurMagBaseCostMult','fMagicEnchantmentChargeBase',
-    'fMagicEnchantmentChargeMult','fMagicEnchantmentDrainBase','fMagicEnchantmentDrainMult',
-    'fMagicExplosionAgilityMult','fMagicExplosionClutterMult','fMagicExplosionIncorporealMult',
-    'fMagicExplosionIncorporealTime','fMagicExplosionPowerBase','fMagicExplosionPowerMax',
-    'fMagicExplosionPowerMin','fMagicExplosionPowerMult','fMagicFogMaximumDistance',
-    'fMagicFogOptimalDistance','fMagicGrabActorDrawSpeed','fMagicGrabActorMinDistance',
-    'fMagicGrabActorRange','fMagicGrabActorThrowForce','fMagickaRegenDelayMax',
-    'fMagickaReturnBase','fMagickaReturnMult','fMagicLesserPowerCooldownTimer',
-    'fMagicLightRadiusBase','fMagicNightEyeAmbient','fMagicPlayerMinimumInvisibility',
-    'fMagicPostDrawCastDelay','fMagicProjectileMaxDistance','fMagicResistActorSkillBase',
-    'fMagicResistActorSkillMult','fMagicResistTargetWillpowerBase','fMagicResistTargetWillpowerMult',
-    'fMagicSprayMaximumDistance','fMagicSprayOptimalDistance','fMagicSummonMaxAppearTime',
-    'fMagicTelekinesisComplexMaxForce','fMagicTelekinesisComplexObjectDamping','fMagicTelekinesisComplexSpringDamping',
-    'fMagicTelekinesisComplexSpringElasticity','fMagicTelekinesisDamageBase','fMagicTelekinesisDamageMult',
-    'fMagicTelekinesisDualCastDamageMult','fMagicTelekinesisDualCastThrowMult','fMagicTelekinesisLiftPowerMult',
-    'fMagicTelekinesisMaxForce','fMagicTelekinesisMoveAccelerate','fMagicTelekinesisMoveBase',
-    'fMagicTelekinesisMoveMax','fMagicTelekinesisObjectDamping','fMagicTelekinesisSpringDamping',
-    'fMagicTelekinesisSpringElasticity','fMagicTelekinesisThrow','fMagicTelekinesisThrowAccelerate',
-    'fMagicTelekinesisThrowMax','fMagicTrackingLimit','fMagicTrackingLimitComplex',
-    'fMagicTrackingMultBall','fMagicTrackingMultBolt','fMagicTrackingMultFog',
-    'fMagicUnitsPerFoot','fMagicVACNoPartTargetedMult','fMagicVACPartTargetedMult',
-    'fMapMarkerMaxPercentSize','fMapMarkerMinFadeAlpha','fMapMarkerMinPercentSize',
-    'fMapQuestMarkerMaxPercentSize','fMapQuestMarkerMinFadeAlpha','fMapQuestMarkerMinPercentSize',
-    'fMasserAngleShadowEarlyFade','fMasserSpeed','fMasserZOffset',
-    'fMaximumWind','fMaxSandboxRescanSeconds','fMaxSellMult',
-    'fMeleeMovementRestrictionsUpdateTime','fMeleeSweepViewAngleMult','fMinDistanceUseHorse',
-    'fMineAgeMax','fMinesBlinkFast','fMinesBlinkMax',
-    'fMinesBlinkSlow','fMinSandboxRescanSeconds','fModelReferenceEffectMaxWaitTime',
-    'fmodifiedTargetAttackRange','fMotionBlur','fMountedMaxLookingDown',
-    'fMoveCharRunBase','fMovementNearTargetAvoidCost','fMovementNearTargetAvoidRadius',
-    'fMovementTargetAvoidCost','fMovementTargetAvoidRadius','fMovementTargetAvoidRadiusMult',
-    'fMoveSprintMult','fMoveSwimMult','fMoveWeightMin',
-    'fNPCAttributeHealthMult','fNPCBaseMagickaMult','fNPCGeneticVariation',
-    'fObjectHitH2HReach','fObjectHitTwoHandReach','fObjectHitWeaponReach',
-    'fObjectMotionBlur','fObjectWeightPickupDetectionMult','fOutOfBreathStaminaRegenDelay',
-    'fPainDelay','fPCBaseHealthMult','fPCBaseMagickaMult',
-    'fPerceptionMult','fPerkHeavyArmorExpertSpeedMult','fPerkHeavyArmorJourneymanDamageMult',
-    'fPerkHeavyArmorMasterSpeedMult','fPerkHeavyArmorNoviceDamageMult','fPerkHeavyArmorSinkGravityMult',
-    'fPerkLightArmorExpertSpeedMult','fPerkLightArmorJourneymanDamageMult','fPerkLightArmorMasterRatingMult',
-    'fPerkLightArmorNoviceDamageMult','fPersAdmireAggr','fPersAdmireConf',
-    'fPersAdmireEner','fPersAdmireIntel','fPersAdmirePers',
-    'fPersAdmireResp','fPersAdmireStre','fPersAdmireWillp',
-    'fPersBoastAggr','fPersBoastConf','fPersBoastEner',
-    'fPersBoastIntel','fPersBoastPers','fPersBoastResp',
-    'fPersBoastStre','fPersBoastWillp','fPersBullyAggr',
-    'fPersBullyConf','fPersBullyEner','fPersBullyIntel',
-    'fPersBullyPers','fPersBullyResp','fPersBullyStre',
-    'fPersBullyWillp','fPersJokeAggr','fPersJokeConf',
-    'fPersJokeEner','fPersJokeIntel','fPersJokePers',
-    'fPersJokeResp','fPersJokeStre','fPersJokeWillp',
-    'fPersuasionAccuracyMaxDisposition','fPersuasionAccuracyMaxSelect','fPersuasionAccuracyMinDispostion',
-    'fPersuasionAccuracyMinSelect','fPersuasionBaseValueMaxDisposition','fPersuasionBaseValueMaxSelect',
-    'fPersuasionBaseValueMinDispostion','fPersuasionBaseValueMinSelect','fPersuasionBaseValueShape',
-    'fPersuasionMaxDisposition','fPersuasionMaxInput','fPersuasionMaxSelect',
-    'fPersuasionMinDispostion','fPersuasionMinInput','fPersuasionMinPercentCircle',
-    'fPersuasionMinSelect','fPersuasionShape','fPhysicsDamage1Damage',
-    'fPhysicsDamage2Damage','fPhysicsDamage2Mass','fPhysicsDamage3Damage',
-    'fPhysicsDamage3Mass','fPhysicsDamageSpeedBase','fPhysicsDamageSpeedMin',
-    'fPhysicsDamageSpeedMult','fPickLevelBase','fPickLevelMult',
-    'fPickNumBase','fPickNumMult','fPickPocketAmountBase',
-    'fPickPocketDetected','fPickPocketWeightBase','fPickSpring1',
-    'fPickSpring2','fPickSpring3','fPickSpring4',
-    'fPickSpring5','fPickupItemDistanceFudge','fPickUpWeaponDelay',
-    'fPickupWeaponDistanceMinMaxDPSMult','fPickupWeaponMeleeDistanceMax','fPickupWeaponMeleeDistanceMin',
-    'fPickupWeaponMeleeWeaponDPSMult','fPickupWeaponMinDPSImprovementPercent','fPickupWeaponRangedDistanceMax',
-    'fPickupWeaponRangedDistanceMin','fPickupWeaponRangedMeleeDPSRatioThreshold','fPickupWeaponTargetUnreachableDistanceMult',
-    'fPickupWeaponUnarmedDistanceMax','fPickupWeaponUnarmedDistanceMin','fPlayerDropDistance',
-    'fPlayerHealthHeartbeatFast','fPlayerHealthHeartbeatSlow','fPlayerMaxResistance',
-    'fPlayerTargetCombatDistance','fPlayerTeleportFadeSeconds','fPotionGoldValueMult',
-    'fPotionMortPestleMult','fPotionMortPestleMult','fPotionT1AleDurMult',
-    'fPotionT1AleMagMult','fPotionT1CalDurMult','fPotionT1CalMagMult',
-    'fPotionT1MagMult','fPotionT1RetDurMult','fPotionT1RetMagMult',
-    'fPotionT2AleDurMult','fPotionT2CalDurMult','fPotionT2RetDurMult',
-    'fPotionT3AleMagMult','fPotionT3CalMagMult','fPotionT3RetMagMult',
-    'fPrecipWindMult','fProjectileCollisionImpulseScale','fProjectileDefaultTracerRange',
-    'fProjectileDeflectionTime','fProjectileKnockMinMass','fProjectileKnockMultClutter',
-    'fProjectileKnockMultProp','fProjectileKnockMultTrap','fProjectileMaxDistance',
-    'fProjectileReorientTracerMin','fQuestCinematicCharacterFadeIn','fQuestCinematicCharacterFadeInDelay',
-    'fQuestCinematicCharacterFadeOut','fQuestCinematicCharacterRemain','fQuestCinematicObjectiveFadeIn',
-    'fQuestCinematicObjectiveFadeInDelay','fQuestCinematicObjectiveFadeOut','fQuestCinematicObjectivePauseTime',
-    'fQuestCinematicObjectiveScrollTime','fRandomDoorDistance','fRechargeGoldMult',
-    'fReEquipArmorTime','fReflectedAbsorbChanceReduction','fRefTranslationAlmostDonePercent',
-    'fRegionGenNoiseFactor','fRegionGenTexGenMatch','fRegionGenTexGenNotMatch',
-    'fRegionGenTexPlacedMatch','fRegionGenTexPlacedNotMatch','fRegionGenTreeSinkPower',
-    'fRegionObjectDensityPower','fRelationshipBase','fRelationshipMult',
-    'fRemoteCombatMissedAttack','fRemoveExcessComplexDeadTime','fRepairMax',
-    'fRepairMin','fRepairScavengeMult','fRepairSkillBase',
-    'fReservationExpirationSeconds','fResistArrestTimer','fRockitDamageBonusWeightMin',
-    'fRockitDamageBonusWeightMult','fRoomLightingTransitionDuration','fRumbleBlockStrength',
-    'fRumbleBlockTime','fRumbleHitBlockedStrength','fRumbleHitBlockedTime',
-    'fRumbleHitStrength','fRumbleHitTime','fRumblePainStrength',
-    'fRumblePainTime','fRumbleShakeRadiusMult','fRumbleShakeTimeMult',
-    'fRumbleStruckStrength','fRumbleStruckTime','fSandboxBreakfastMax',
-    'fSandboxBreakfastMin','fSandboxCylinderTop','fSandBoxDelayEvalSeconds',
-    'fSandboxDurationMultSitting','fSandboxDurationMultSleeping','fSandboxDurationMultWandering',
-    'fSandboxDurationRangeMult','fSandboxEnergyMult','fSandboxEnergyMultEatSitting',
-    'fSandboxEnergyMultEatStanding','fSandboxEnergyMultFurniture','fSandboxEnergyMultSitting',
-    'fSandboxEnergyMultSleeping','fSandboxEnergyMultWandering','fSandBoxExtraDialogueRange',
-    'fSandBoxInterMarkerMinDist','fSandBoxSearchRadius','fSandboxSleepDurationMax',
-    'fSandboxSleepDurationMin','fSandboxSleepStartMax','fSandboxSleepStartMin',
-    'fSayOncePerDayInfoTimer','fScrollCostMult','fSecondsBetweenWindowUpdate',
-    'fSecundaAngleShadowEarlyFade','fSecundaSpeed','fSecundaZOffset',
-    'fSeenDataUpdateRadius','fShieldBashPCMin','fShieldBashSkillUseBase',
-    'fShieldBashSkillUseMult','fShockBoltGrowWidth','fShockBoltsLength',
-    'fShockBoltSmallWidth','fShockBoltsRadius','fShockBoltsRadiusStrength',
-    'fShockBranchBoltsRadius','fShockBranchBoltsRadiusStrength','fShockBranchLifetime',
-    'fShockBranchSegmentLength','fShockBranchSegmentVariance','fShockCastVOffset',
-    'fShockCoreColorB','fShockCoreColorG','fShockCoreColorR',
-    'fShockGlowColorB','fShockGlowColorG','fShockGlowColorR',
-    'fShockSegmentLength','fShockSegmentVariance','fShockSubSegmentVariance',
-    'fShoutTimeout','fSittingMaxLookingDown','fSkillUsageSneakHidden',
-    'fSkyCellRefProcessDistanceMult','fSmallBumpSpeed','fSmithingArmorMax',
-    'fSmithingConditionFactor','fSmithingWeaponMax','fSneakAmbushTargetMod',
-    'fSneakAttackSkillUsageRanged','fSneakCombatMod','fSneakDetectionSizeLarge',
-    'fSneakDetectionSizeNormal','fSneakDetectionSizeSmall','fSneakDetectionSizeVeryLarge',
-    'fSneakDistanceAttenuationExponent','fSneakEquippedWeightBase','fSneakEquippedWeightMult',
-    'fSneakLightMoveMult','fSneakLightRunMult','fSneakNoticeMin',
-    'fSneakSizeBase','fSneakStealthBoyMult','fSortActorDistanceListTimer',
-    'fSpecialLootMaxPCLevelBase','fSpecialLootMaxPCLevelMult','fSpecialLootMaxZoneLevelBase',
-    'fSpecialLootMinPCLevelBase','fSpecialLootMinZoneLevelBase','fSpeechCraftBase',
-    'fSpeechcraftFavorMax','fSpeechcraftFavorMin','fSpeechCraftMult',
-    'fSpellCastingDetectionHitActorMod','fSpellCastingDetectionMod','fSpellmakingGoldMult',
-    'fSplashScale1','fSplashScale2','fSplashScale3',
-    'fSplashSoundLight','fSplashSoundOutMult','fSplashSoundTimer',
-    'fSplashSoundVelocityMult','fSprayDecalsDistance','fSprayDecalsGravity',
-    'fSprintEncumbranceMult','fStagger1WeapAR','fStagger1WeapMult',
-    'fStagger2WeapAR','fStagger2WeapMult','fStaggerAttackBase',
-    'fStaggerAttackMult','fStaggerBlockAttackBase','fStaggerBowAR',
-    'fStaggerDaggerAR','fStaggerMassBase','fStaggerMassMult',
-    'fStaggerMassOffsetMult','fStaggerMaxDuration','fStaggerRecoilingMult',
-    'fStaggerRunningMult','fStaggerShieldMult','fStaminaBlockStaggerMult',
-    'fStaminaRegenDelayMax','fStatsCameraNearDistance','fStatsHealthLevelMult',
-    'fStatsHealthStartMult','fStatsLineScale','fStatsRotationRampTime',
-    'fStatsRotationSpeedMax','fStatsSkillsLookAtX','fStatsSkillsLookAtY',
-    'fStatsSkillsLookAtZ','fStatsStarCameraOffsetX','fStatsStarCameraOffsetY',
-    'fStatsStarCameraOffsetZ','fStatsStarLookAtX','fStatsStarLookAtY',
-    'fStatsStarLookAtZ','fStatsStarScale','fStatsStarZInitialOffset',
-    'fSubmergedAngularDamping','fSubmergedLinearDampingH','fSubmergedLinearDampingV',
-    'fSubmergedLODDistance','fSubmergedMaxSpeed','fSubmergedMaxWaterDistance',
-    'fSubSegmentVariance','fSummonDistanceCheckThreshold','fSummonedCreatureSearchRadius',
-    'fSunReduceGlareSpeed','fTakeBackTimerSetting','fTargetMovedCoveredMoveRepathLength',
-    'fTargetMovedRepathLength','fTargetMovedRepathLengthLow','fTargetSearchRadius',
-    'fTeammateAggroOnDistancefromPlayer','fTemperingSkillUseItemValConst','fTemperingSkillUseItemValExp',
-    'fTemperingSkillUseItemValMult','fTimerForPlayerFurnitureEnter','fTimeSpanAfternoonEnd',
-    'fTimeSpanAfternoonStart','fTimeSpanEveningEnd','fTimeSpanEveningStart',
-    'fTimeSpanMidnightEnd','fTimeSpanMidnightStart','fTimeSpanMorningEnd',
-    'fTimeSpanMorningStart','fTimeSpanNightEnd','fTimeSpanNightStart',
-    'fTimeSpanSunriseEnd','fTimeSpanSunriseStart','fTimeSpanSunsetEnd',
-    'fTimeSpanSunsetStart','fTorchEvaluationTimer','fTorchLightLevelInterior',
-    'fTorchLightLevelMorning','fTorchLightLevelNight','fTrackEyeXY',
-    'fTrackEyeZ','fTrackFudgeXY','fTrackFudgeZ',
-    'fTrackJustAcquiredDuration','fTrackMaxZ','fTrackMinZ',
-    'fTrackXY','fTrainingBaseCost','fTreeTrunkToFoliageMultiplier',
-    'fTriggerAvoidPlayerDistance','fUnarmedCreatureDPSMult','fUnarmedDamageMult',
-    'fUnarmedNPCDPSMult','fUnderwaterFullDepth','fValueofItemForNoOwnership',
-    'fVATSAutomaticMeleeDamageMult','fVATSCameraMinTime','fVATSCamTransRBDownStart',
-    'fVATSCamTransRBRampDown','fVATSCamTransRBRampup','fVATSCamZoomInTime',
-    'fVATSCriticalChanceBonus','fVATSDestructibleMult','fVATSDOFSwitchSeconds',
-    'fVATSGrenadeChanceMult','fVATSGrenadeDistAimZMult','fVATSGrenadeRangeMin',
-    'fVATSGrenadeRangeMult','fVATSGrenadeSkillFactor','fVATSGrenadeSuccessExplodeTimer',
-    'fVATSGrenadeSuccessMaxDistance','fVATSGrenadeTargetMelee','fVATSHitChanceMult',
-    'fVATSImageSpaceTransitionTime','fVATSLimbSelectCamPanTime','fVATSMaxChance',
-    'fVATSMaxEngageDistance','fVATSMeleeArmConditionBase','fVATSMeleeArmConditionMult',
-    'fVATSMeleeChanceMult','fVATSMeleeMaxDistance','fVATSMeleeReachMult',
-    'fVATSMoveCameraMaxSpeed','fVATSMoveCameraYPercent','fVATSSafetyMaxTime',
-    'fVATSSafetyMaxTimeRanged','fVATSShotBurstTime','fVatsShotgunSpreadRatio',
-    'fVATSSkillFactor','fVATSSmartCameraCheckStepCount','fVATSStealthMult',
-    'fVATSTargetActorHeightPanMult','fVATSTargetFOVMinDist','fVATSTargetFOVMinFOV',
-    'fVATSTargetScanRotateMult','fVATSTargetSelectCamPanTime','fVATSTargetTimeUpdateMult',
-    'fVATSThrownWeaponRangeMult','fVoiceRateBase','fWardAngleForExplosions',
-    'fWeaponBashMin','fWeaponBashPCMax','fWeaponBashPCMin',
-    'fWeaponBashSkillUseBase','fWeaponBashSkillUseMult','fWeaponBlockSkillUseBase',
-    'fWeaponBlockSkillUseMult','fWeaponBloodAlphaToRGBScale','fWeaponClutterKnockBipedScale',
-    'fWeaponClutterKnockMaxWeaponMass','fWeaponClutterKnockMinClutterMass','fWeaponClutterKnockMult',
-    'fWeaponConditionCriticalChanceMult','fWeaponConditionJam10','fWeaponConditionJam5',
-    'fWeaponConditionJam6','fWeaponConditionJam7','fWeaponConditionJam8',
-    'fWeaponConditionJam9','fWeaponConditionRateOfFire10','fWeaponConditionReloadJam1',
-    'fWeaponConditionReloadJam10','fWeaponConditionReloadJam2','fWeaponConditionReloadJam3',
-    'fWeaponConditionReloadJam4','fWeaponConditionReloadJam5','fWeaponConditionReloadJam6',
-    'fWeaponConditionReloadJam7','fWeaponConditionReloadJam8','fWeaponConditionReloadJam9',
-    'fWeaponConditionSpread10','fWeaponTwoHandedAnimationSpeedMult','fWeatherCloudSpeedMax',
-    'fWeatherFlashAmbient','fWeatherFlashDirectional','fWeatherFlashDuration',
-    'fWeatherTransMax','fWeatherTransMin','fWortalchmult',
-    'fWortcraftChanceIntDenom','fWortcraftChanceLuckDenom','fWortcraftStrChanceDenom',
-    'fWortcraftStrCostDenom','fWortStrMult','fXPPerSkillRank',
-    'fZKeyComplexHelperMinDistance','fZKeyComplexHelperScale','fZKeyComplexHelperWeightMax',
-    'fZKeyComplexHelperWeightMin','fZKeyHeavyWeight','fZKeyMaxContactDistance',
-    'fZKeyMaxContactMassRatio','fZKeyMaxForceScaleHigh','fZKeyMaxForceScaleLow',
-    'fZKeyMaxForceWeightLow','fZKeyObjectDamping','fZKeySpringDamping',
-    'fZKeySpringElasticity','iActivatePickLength','iActorKeepTurnDegree',
-    'iActorLuckSkillBase','iActorTorsoMaxRotation','iAICombatMaxAllySummonCount',
-    'iAICombatMinDetection','iAICombatRestoreMagickaPercentage','iAIFleeMaxHitCount',
-    'iAIMaxSocialDistanceToTriggerEvent','iAimingNumIterations','iAINPCRacePowerChance',
-    'iAINumberActorsComplexScene','iAINumberDaysToStayBribed','iAINumberDaysToStayIntimidated',
-    'iAlertAgressionMin','iAllowAlchemyDuringCombat','iAllowRechargeDuringCombat',
-    'iAllowRepairDuringCombat','iAllyHitCombatAllowed','iAllyHitNonCombatAllowed',
-    'iArmorBaseSkill','iArmorDamageBootsChance','iArmorDamageCuirassChance',
-    'iArmorDamageGauntletsChance','iArmorDamageGreavesChance','iArmorDamageHelmChance',
-    'iArmorDamageShieldChance','iArmorWeightBoots','iArmorWeightCuirass',
-    'iArmorWeightGauntlets','iArmorWeightGreaves','iArmorWeightHelmet',
-    'iArmorWeightShield','iArrestOnSightNonViolent','iArrestOnSightViolent',
-    'iArrowMaxCount','iAttackOnSightNonViolent','iAttackOnSightViolent',
-    'iAttractModeIdleTime','iAVDAutoCalcSkillMax','iAVDSkillStart',
-    'iAvoidHurtingNonTargetsResponsibility','iBallisticProjectilePathPickSegments',
-    'iBaseDisposition','iBoneLODDistMult','iClassAcrobat',
-    'iClassAgent','iClassArcher',
-    'iClassAssassin','iClassBarbarian','iClassBard',
-    'iClassBattlemage','iClassCharactergenClass','iClassCrusader',
-    'iClassHealer','iClassKnight','iClassMage',
-    'iClassMonk','iClassNightblade','iClassPilgrim',
-    'iClassPriest','iClassRogue','iClassScout',
-    'iClassSorcerer','iClassSpellsword','iClassThief',
-    'iClassWarrior','iClassWitchhunter','iCombatAimMaxIterations',
-    'iCombatCastDrainMinimumValue','iCombatCrippledTorsoHitStaggerChance','iCombatFlankingAngleOffsetCount',
-    'iCombatFlankingAngleOffsetGoalCount','iCombatFlankingDirectionOffsetCount','iCombatHighPriorityModifier',
-    'iCombatHoverLocationCount','iCombatSearchDoorFailureMax','iCombatStealthPointSneakDetectionThreshold',
-    'iCombatTargetLocationCount','iCombatTargetPlayerSoftCap','iCombatUnloadedActorLastSeenTimeLimit',
-    'iCrimeAlarmLowRecDistance','iCrimeAlarmRecDistance','iCrimeCommentNumber',
-    'iCrimeDaysInPrisonMod','iCrimeEnemyCoolDownTimer','iCrimeFavorBaseValue',
-    'iCrimeGoldAttack','iCrimeGoldEscape','iCrimeGoldMinValue',
-    'iCrimeGoldMurder','iCrimeGoldPickpocket','iCrimeGoldTrespass',
-    'iCrimeMaxNumberofDaysinJail','iCrimeRegardBaseValue','iCrimeValueAttackValue',
-    'iCurrentTargetBonus','iDebrisMaxCount','iDetectEventLightLevelExterior',
-    'iDetectEventLightLevelInterior','iDialogueDispositionFriendValue','iDismemberBloodDecalCount',
-    'iDispKaramMax','iDistancetoAttackedTarget','iFallLegDamageChance',
-    'iFloraEmptyAlpha','iFloraFullAlpha','iFriendHitNonCombatAllowed',
-    'iGameplayiSpeakingEmotionDeltaChange','iGameplayiSpeakingEmotionListenValue','iHairColor00',
-    'iHairColor01','iHairColor02','iHairColor03',
-    'iHairColor04','iHairColor05','iHairColor06',
-    'iHairColor07','iHairColor08','iHairColor09',
-    'iHairColor10','iHairColor11','iHairColor12',
-    'iHairColor13','iHairColor14','iHairColor15',
-    'iHorseTurnDegreesPerSecond','iHorseTurnDegreesRampUpPerSecond','iHoursToClearCorpses',
-    'iInventoryAskQuantityAt','iKarmaMax','iKarmaMin',
-    'iKillCamLevelOffset','iLargeProjectilePickCount','iLevCharLevelDifferenceMax',
-    'iLevelUpReminder','iLevItemLevelDifferenceMax','iLightLevelExteriorMod',
-    'iLockLevelMaxAverage','iLockLevelMaxEasy','iLockLevelMaxHard',
-    'iLockLevelMaxImpossible','iLockLevelMaxVeryHard','iLowLevelNPCMaxLevel',
-    'iMagicLightMaxCount','iMaxArrowsInQuiver','iMaxAttachedArrows',
-    'iMaxCharacterLevel','iMaxSummonedCreatures','iMessageBoxMaxItems',
-    'iMinClipSizeToAddReloadDelay','iMoodFaceValue','iNPCBasePerLevelHealthMult',
-    'iNumberActorsAllowedToFollowPlayer','iNumberActorsGoThroughLoadDoorInCombat','iNumberActorsInCombatPlayer',
-    'iNumberGuardsCrimeResponse','iNumExplosionDecalCDPoint','iPCStartSpellSkillLevel',
-    'iPerkBlockStaggerChance','iPerkHandToHandBlockRecoilChance','iPerkHeavyArmorJumpSum',
-    'iPerkHeavyArmorSinkSum','iPerkLightArmorMasterMinSum','iPerkMarksmanKnockdownChance',
-    'iPerkMarksmanParalyzeChance','iPersuasionAngleMax','iPersuasionAngleMin',
-    'iPersuasionBribeCrime','iPersuasionBribeGold','iPersuasionBribeRefuse',
-    'iPersuasionBribeScale','iPersuasionDemandDisposition','iPersuasionDemandGold',
-    'iPersuasionDemandRefuse','iPersuasionDemandScale','iPersuasionInner',
-    'iPersuasionMiddle','iPersuasionOuter','iPersuasionPower1',
-    'iPersuasionPower2','iPersuasionPower3','iPickPocketWarnings',
-    'iPlayerCustomClass','iPlayerHealthHeartbeatFadeMS','iProjectileMaxRefCount',
-    'iQuestReminderPipboyDisabledTime','iRegionGenClusterAttempts','iRegionGenClusterPasses',
-    'iRegionGenRandomnessType','iRelationshipAcquaintanceValue','iRelationshipAllyValue',
-    'iRelationshipArchnemesisValue','iRelationshipConfidantValue','iRelationshipEnemyValue',
-    'iRelationshipFoeValue','iRelationshipFriendValue','iRelationshipLoverValue',
-    'iRelationshipRivalValue','iRemoveExcessDeadComplexCount','iRemoveExcessDeadComplexTotalActorCount',
-    'iRemoveExcessDeadTotalActorCount','iSecondsToSleepPerUpdate','iShockBranchNumBolts',
-    'iShockBranchSegmentsPerBolt','iShockDebug','iShockNumBolts',
-    'iShockSegmentsPerBolt','iShockSubSegments','iSkillPointsTagSkillMult',
-    'iSkillUsageSneakFullDetection','iSkillUsageSneakMinDetection','iSneakSkillUseDistance',
-    'iSoulLevelValueCommon','iSoulLevelValueGrand','iSoulLevelValueGreater',
-    'iSoulLevelValueLesser','iSoulLevelValuePetty','iSoundLevelLoud',
-    'iSoundLevelNormal','iSoundLevelVeryLoud','iSprayDecalsDebug',
-    'iStandardEmotionValue','iStealWarnings','iTrainingExpertSkill',
-    'iTrainingJourneymanCost','iTrainingJourneymanSkill','iTrainingMasterSkill',
-    'iTrainingNumAllowedPerLevel','iTrespassWarnings','iUpdateESMVersion',
-    'iVATSCameraHitDist','iVATSConcentratedFireBonus','iVoicePointsDefault',
-    'iWeaponCriticalHitDropChance','iWortcraftMaxEffectsApprentice','iWortcraftMaxEffectsExpert',
-    'iWortcraftMaxEffectsJourneyman','iWortcraftMaxEffectsMaster','iWortcraftMaxEffectsNovice',
-    'iXPBase','iXPLevelHackComputerAverage','iXPLevelHackComputerEasy',
-    'iXPLevelHackComputerHard','iXPLevelHackComputerVeryEasy','iXPLevelHackComputerVeryHard',
-    'iXPLevelPickLockAverage','iXPLevelPickLockEasy','iXPLevelPickLockHard',
-    'iXPLevelPickLockVeryEasy','iXPLevelPickLockVeryHard','iXPLevelSpeechChallengeAverage',
-    'iXPLevelSpeechChallengeEasy','iXPLevelSpeechChallengeHard','iXPLevelSpeechChallengeVeryEasy',
-    'iXPLevelSpeechChallengeVeryHard','iXPRewardDiscoverSecretArea','iXPRewardKillNPCAverage',
-    'iXPRewardKillNPCEasy','iXPRewardKillNPCHard','iXPRewardKillNPCVeryEasy',
-    'iXPRewardKillNPCVeryHard','iXPRewardKillOpponent','iXPRewardSpeechChallengeAverage',
-    'iXPRewardSpeechChallengeEasy','iXPRewardSpeechChallengeHard','iXPRewardSpeechChallengeVeryHard',
-    'sGenericCraftKeywordName01','sGenericCraftKeywordName02','sGenericCraftKeywordName03',
-    'sGenericCraftKeywordName04','sGenericCraftKeywordName05','sGenericCraftKeywordName06',
-    'sGenericCraftKeywordName07','sGenericCraftKeywordName08','sGenericCraftKeywordName09',
-    'sGenericCraftKeywordName10','sInvalidTagString','sKinectAllyTooFarToTrade',
-    'sKinectCantInit','sKinectNotCalibrated','sNoBolts',
-    'sRSMFinishedWarning','sVerletCape','uiMuteMusicPauseTime',
-    ]
-
-#--GLOB record tweaks used by bosh's GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GLOB
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
-GlobalsTweaks = [
-    (_(u'Timescale'),_(u'Timescale will be set to:'),
-        u'timescale',
-        (u'1',         1),
-        (u'8',         8),
-        (u'10',       10),
-        (u'12',       12),
-        (u'[20]',     20),
-        (u'24',       24),
-        (u'30',       30),
-        (u'40',       40),
-        (_(u'Custom'), 20),
-        ),
-    ]
-
-#--GMST record tweaks used by bosh's GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GMST
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
-GmstTweaks = [
-    (_(u'Msg: Soul Captured!'),_(u'Message upon capturing a soul in a Soul Gem.'),
-     u'sSoulCaptured',
-     (_(u'[None]'),          u' '),
-     (u'.',                  u'.'),
-     (_(u'Custom'),       _(u' ')),
-     ),
-    (_(u'Actor Strength Encumbrance Multiplier'),_(u"Actor's Strength X this = Actor's Encumbrance capacity."),
-        (u'fActorStrengthEncumbranceMult',),
-        (u'1',                 1.0),
-        (u'3',                 3.0),
-        (u'[5]',               5.0),
-        (u'8',                 8.0),
-        (u'10',               10.0),
-        (u'20',               20.0),
-        (_(u'Unlimited'), 999999.0),
-        (_(u'Custom'),         5.0),
-        ),
-    (_(u'AI: Max Active Actors'),_(u'Maximum actors whose AI can be active. Must be higher than Combat: Max Actors'),
-        (u'iAINumberActorsComplexScene',),
-        (u'[20]',               20),
-        (u'25',                 25),
-        (u'30',                 30),
-        (u'35',                 35),
-        (_(u'MMM Default: 40'), 40),
-        (u'50',                 50),
-        (u'60',                 60),
-        (u'100',               100),
-        (_(u'Custom'),          20),
-        ),
-    (_(u'Arrow: Recovery from Actor'),_(u'Chance that an arrow shot into an actor can be recovered.'),
-        (u'iArrowInventoryChance',),
-        (u'[33%]',     33),
-        (u'50%',       50),
-        (u'60%',       60),
-        (u'70%',       70),
-        (u'80%',       80),
-        (u'90%',       90),
-        (u'100%',     100),
-        (_(u'Custom'), 33),
-        ),
-    (_(u'Arrow: Speed'),_(u'Speed of a full power arrow.'),
-        (u'fArrowSpeedMult',),
-        (u'[x 1.0]',                  1500.0),
-        (u'x 1.2',                1500.0*1.2),
-        (u'x 1.4',                1500.0*1.4),
-        (u'x 1.6',                1500.0*1.6),
-        (u'x 1.8',                1500.0*1.8),
-        (u'x 2.0',                1500.0*2.0),
-        (u'x 2.2',                1500.0*2.2),
-        (u'x 2.4',                1500.0*2.4),
-        (u'x 2.6',                1500.0*2.6),
-        (u'x 2.8',                1500.0*2.8),
-        (u'x 3.0',                1500.0*3.0),
-        (_(u'Custom (base is 1500)'), 1500.0),
-        ),
-    (_(u'Cell: Respawn Time'),_(u'Time before unvisited cells respawn. Longer times increase save game size.'),
-        (u'iHoursToRespawnCell',),
-        (_(u'1 Day'),           24*1),
-        (_(u'3 Days'),          24*3),
-        (_(u'5 Days'),          24*5),
-        (_(u'[10 Days]'),      24*10),
-        (_(u'20 Days'),        24*20),
-        (_(u'1 Month'),        24*30),
-        (_(u'6 Months'),      24*182),
-        (_(u'1 Year'),        24*365),
-        (_(u'Custom (in hours)'), 240),
-        ),
-    (_(u'Cell: Respawn Time (Cleared)'),_(u'Time before a cleared cell will respawn. Longer times increase save game size.'),
-        (u'iHoursToRespawnCellCleared',),
-        (_(u'10 Days'),         24*10),
-        (_(u'15 Days'),         24*15),
-        (_(u'20 Days'),         24*20),
-        (_(u'25 Days'),         24*25),
-        (_(u'[30 Days]'),       24*30),
-        (_(u'2 Months'),        24*60),
-        (_(u'6 Months'),      24*180),
-        (_(u'1 Year'),        24*365),
-        (_(u'Custom (in hours)'), 720),
-        ),
-    (_(u'Combat: Alchemy'),_(u'Allow alchemy during combat.'),
-        (u'iAllowAlchemyDuringCombat',),
-        (_(u'Allow'),      1),
-        (_(u'[Disallow]'), 0),
-        ),
-    (_(u'Combat: Max Actors'),_(u'Maximum number of actors that can actively be in combat with the player.'),
-        (u'iNumberActorsInCombatPlayer',),
-        (u'10',        10),
-        (u'15',        15),
-        (u'[20]',      20),
-        (u'30',        30),
-        (u'40',        40),
-        (u'50',        50),
-        (u'80',        80),
-        (_(u'Custom'), 20),
-        ),
-    (_(u'Combat: Recharge Weapons'),_(u'Allow recharging weapons during combat.'),
-        (u'iAllowRechargeDuringCombat',),
-        (_(u'[Allow]'),  1),
-        (_(u'Disallow'), 0),
-        ),
-    (_(u'Companions: Max Number'),_(u'Maximum number of actors following the player.'),
-        (u'iNumberActorsAllowedToFollowPlayer',),
-        (u'2',         2),
-        (u'4',         4),
-        (u'[6]',       6),
-        (u'8',         8),
-        (u'10',       10),
-        (_(u'Custom'), 6),
-        ),
-    (_(u'Crime: Alarm Distance'),_(u'Distance from player that NPCs(guards) will be alerted of a crime.'),
-        (u'iCrimeAlarmRecDistance',),
-        (u'8000',      8000),
-        (u'6000',      6000),
-        (u'[4000]',    4000),
-        (u'3000',      3000),
-        (u'2000',      2000),
-        (u'1000',      1000),
-        (u'500',        500),
-        (_(u'Custom'), 4000),
-        ),
-    (_(u'Crime: Assault Fine'),_(u'Fine in septims for committing an assault.'),
-        (u'iCrimeGoldAttack',),
-        (u'[40]',     40),
-        (u'50',       50),
-        (u'60',       60),
-        (u'70',       70),
-        (u'80',       80),
-        (u'90',       90),
-        (u'100',     100),
-        (_(u'Custom'), 40),
-        ),
-    (_(u'Crime: Days in Prison'),_(u'Number of days to advance the calendar when serving prison time.'),
-        (u'iCrimeDaysInPrisonMod',),
-        (u'50',       50),
-        (u'60',       60),
-        (u'70',       70),
-        (u'80',       80),
-        (u'90',       90),
-        (u'[100]',   100),
-        (_(u'Custom'), 100),
-        ),
-    (_(u'Crime: Escape Jail'),_(u'Amount added to your bounty for escaping from jail.'),
-        (u'iCrimeGoldEscape',),
-        (u'[100]',   100),
-        (u'125',     125),
-        (u'150',     150),
-        (u'175',     175),
-        (u'200',     200),
-        (_(u'Custom'), 100),
-        ),
-    (_(u'Crime: Murder Bounty'),_(u'Bounty for committing a witnessed murder.'),
-        (u'iCrimeGoldMurder',),
-        (u'500',      500),
-        (u'750',      750),
-        (u'[1000]',  1000),
-        (u'1250',    1250),
-        (u'1500',    1500),
-        (_(u'Custom'), 1000),
-        ),
-    (_(u'Crime: Pickpocketing Fine'),_(u'Fine in septims for picpocketing.'),
-        (u'iCrimeGoldPickpocket',),
-        (u'5',          5),
-        (u'8',          8),
-        (u'10',        10),
-        (u'[25]',      25),
-        (u'50',        50),
-        (u'100',      100),
-        (_(u'Custom'), 25),
-        ),
-    (_(u'Crime: Trespassing Fine'),_(u'Fine in septims for trespassing.'),
-        (u'iCrimeGoldTrespass',),
-        (u'1',         1),
-        (u'[5]',       5),
-        (u'8',         8),
-        (u'10',       10),
-        (u'20',       20),
-        (_(u'Custom'), 5),
-        ),
-    (_(u'Max Resistence'),_(u'Maximum level of resistence a player can have to various forms of magic and disease.'),
-        (u'fPlayerMaxResistance',),
-        (u'50%',       50),
-        (u'60%',       60),
-        (u'70%',       70),
-        (u'80%',       80),
-        (u'[85%]',     85),
-        (u'90%',       90),
-        (u'100%',     100),
-        (_(u'Custom'), 85),
-        ),
-    (_(u'Max Summons'),_(u'Maximum number of allowed summoned creatures the player can call forth.'),
-        (u'iMaxSummonedCreatures',),
-        (u'[1]',              1),
-        (u'2',                2),
-        (u'3',                3),
-        (u'4',                4),
-        (u'5',                5),
-        (_(u'Custom'),        1),
-        ),
-    (_(u'Max Training'),_(u'Maximum number of training sessions the player can have per level.'),
-        (u'iTrainingNumAllowedPerLevel',),
-        (u'3',         3),
-        (u'4',         4),
-        (u'[5]',       5),
-        (u'8',         8),
-        (u'10',       10),
-        (_(u'Custom'), 5),
-        ),
-    (_(u'NPC Vertical Object Detection'),_(u'Change the vertical range in which NPCs detect objects. For custom values, fSandboxCylinderTop must be >= 0 and fSandboxCylinderBottom must be <= 0.'),
-        (u'fSandboxCylinderTop',u'fSandboxCylinderBottom',),
-        (u'[x 1.0]',   150,         -100),
-        (u'x 2.0',     150*2.0, -100*2.0),
-        (u'x 3.0',     150*3.0, -100*3.0),
-        (u'x 4.0',     150*4.0, -100*4.0),
-        (u'x 5.0',     150*5.0, -100*5.0),
-        (_(u'Custom'), 150,         -100),
-        ),
-    ]
-
-#--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
-
-#--Patchers available when building a Bashed Patch
-patchers = (
-    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'NamesPatcher', u'StatsPatcher'
-    )
-
-#--CBash patchers available when building a Bashed Patch
-CBash_patchers = tuple()
-
-# For ListsMerger
-listTypes = ('LVLI','LVLN','LVSP',)
-
-namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
-#-------------------------------------------------------------------------------
-# StatsImporter
-#-------------------------------------------------------------------------------
-statsTypes = {
-            'AMMO':('eid', 'value', 'damage'),
-            'ARMO':('eid', 'weight', 'value', 'armorRating'),
-            'APPA':('eid', 'weight', 'value'),
-            'MISC':('eid', 'weight', 'value'),
-            }
-statsHeaders = (
-                #--Ammo
-                (u'AMMO',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                #--Armo
-                (u'ARMO',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_('armorRating'))) + u'"\n')),
-                (u'APPA',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                (u'MISC',
-                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-                )
-
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
-
-# Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
-# Race Info -------------------------------------------------------------------
-raceNames = {
-    0x13740 : _(u'Argonian'),
-    0x13741 : _(u'Breton'),
-    0x13742 : _(u'Dark Elf'),
-    0x13743 : _(u'High Elf'),
-    0x13744 : _(u'Imperial'),
-    0x13745 : _(u'Khajiit'),
-    0x13746 : _(u'Nord'),
-    0x13747 : _(u'Orc'),
-    0x13748 : _(u'Redguard'),
-    0x13749 : _(u'Wood Elf'),
-    }
-
-raceShortNames = {
-    0x13740 : u'Arg',
-    0x13741 : u'Bre',
-    0x13742 : u'Dun',
-    0x13743 : u'Alt',
-    0x13744 : u'Imp',
-    0x13745 : u'Kha',
-    0x13746 : u'Nor',
-    0x13747 : u'Orc',
-    0x13748 : u'Red',
-    0x13749 : u'Bos',
-    }
-
-raceHairMale = {
-    0x13740 : 0x64f32, #--Arg
-    0x13741 : 0x90475, #--Bre
-    0x13742 : 0x64214, #--Dun
-    0x13743 : 0x7b792, #--Alt
-    0x13744 : 0x90475, #--Imp
-    0x13745 : 0x653d4, #--Kha
-    0x13746 : 0x1da82, #--Nor
-    0x13747 : 0x66a27, #--Orc
-    0x13748 : 0x64215, #--Red
-    0x13749 : 0x690bc, #--Bos
-    }
-
-raceHairFemale = {
-    0x13740 : 0x64f33, #--Arg
-    0x13741 : 0x1da83, #--Bre
-    0x13742 : 0x1da83, #--Dun
-    0x13743 : 0x690c2, #--Alt
-    0x13744 : 0x1da83, #--Imp
-    0x13745 : 0x653d0, #--Kha
-    0x13746 : 0x1da83, #--Nor
-    0x13747 : 0x64218, #--Orc
-    0x13748 : 0x64210, #--Red
-    0x13749 : 0x69473, #--Bos
-    }
-
-#--Plugin format stuff
-class esp:
-    #--Wrye Bash capabilities
-    canBash = True         # No Bashed Patch creation
-    canCBash = False        # CBash cannot handle this game's records
-    canEditHeader = True    # Can edit anything in the TES4 record
-
-    #--Valid ESM/ESP header versions
-    validHeaderVersions = (0.94, 1.70,)
-
-    #--Strings Files
-    stringsFiles = [
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.STRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.DLSTRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.ILSTRINGS'),
-        ]
-
-    #--Top types in Skyrim order.
-    topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
-                'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH',
-                'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR',
-                'LIGH', 'MISC', 'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE',
-                'CLDC', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
-                'IDLM', 'COBJ', 'PROJ', 'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD',
-                'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK',
-                'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
-                'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP',
-                'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'RGDL', 'DOBJ',
-                'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST',
-                'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO',
-                'MATO', 'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',]
-
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    topIgTypes = dict([(struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type) for type in topTypes])
-
-    #-> this needs updating for Skyrim
-    recordTypes = set(topTypes + 'GRUP,TES4,REFR,ACHR,ACRE,LAND,INFO,NAVM,PHZD,PGRE'.split(','))
-
 #--Mod I/O
-class RecordHeader(brec.BaseRecordHeader):
+class RecordHeader(BaseRecordHeader):
     size = 24
 
     def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
@@ -1882,7 +65,7 @@ class RecordHeader(brec.BaseRecordHeader):
         type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
         #--Bad type?
         if type not in esp.recordTypes:
-            raise brec.ModError(ins.inName,u'Bad header type: '+repr(type))
+            raise ModError(ins.inName,u'Bad header type: '+repr(type))
         #--Record
         if type != 'GRUP':
             pass
@@ -1894,7 +77,7 @@ class RecordHeader(brec.BaseRecordHeader):
             elif str0 in esp.topIgTypes:
                 uint0 = esp.topIgTypes[str0]
             else:
-                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
+                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         #--Other groups
         return RecordHeader(type,size,uint0,uint1,uint2,uint3)
 
@@ -1930,10 +113,10 @@ class MreActor(MelRecord):
         self.factions = [x for x in self.factions if x.faction[0] in modSet]
         self.items = [x for x in self.items if x.item[0] in modSet]
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelBipedObjectData(MelStruct):
     """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    BipedFlags = Flags(0L,Flags.getNames(
             (0, 'head'),
             (1, 'hair'),
             (2, 'body'),
@@ -1969,7 +152,7 @@ class MelBipedObjectData(MelStruct):
         ))
 
     ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
-    LegacyFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    LegacyFlags = Flags(0L,Flags.getNames(
             (0, 'modulates_voice'), #{>>> From ARMA <<<}
             (1, 'unknown_2'),
             (2, 'unknown_3'),
@@ -1977,7 +160,7 @@ class MelBipedObjectData(MelStruct):
             (4, 'non_playable'), #{>>> From ARMO <<<}
         ))
 
-    ArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ArmorTypeFlags = Flags(0L,Flags.getNames(
         (0, 'light_armor'),
         (1, 'heavy_armor'),
         (2, 'clothing'),
@@ -2012,7 +195,7 @@ class MelBipedObjectData(MelStruct):
             # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self,record,ins,type,size,readId)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelBounds(MelStruct):
     def __init__(self):
         MelStruct.__init__(self,'OBND','=6h',
@@ -2069,7 +252,7 @@ class MelColorN(MelStruct):
                 MelStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelComponents(MelStructs):
     """Handle writing COCT subrecord for the CNTO subrecord"""
     def dumpData(self,record,out):
@@ -2113,7 +296,7 @@ class MelCTDAHandler(MelStructs):
         (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
         #--Get parameters
         if ifunc not in allConditions:
-            raise bolt.BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
+            raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
         # Form1 is Param1
         form1 = 'I' if ifunc in fid1Conditions else 'i'
         # Form2 is Param2
@@ -2130,18 +313,18 @@ class MelCTDAHandler(MelStructs):
             (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
         elif size == 28:
             form12345 = form1+form2+form3+form4
-            unpacked2 = ins.unpack(form1234,16,readId)
+            unpacked2 = ins.unpack(form12345,16,readId)
             (target.param1,target.param2,target.runOn,target.reference) = unpacked2
             target.param3 = null4
         elif size == 24:
             form12345 = form1+form2+form3
-            unpacked2 = ins.unpack(form1234,12,readId)
+            unpacked2 = ins.unpack(form12345,12,readId)
             (target.param1,target.param2,target.runOn) = unpacked2
             target.reference = null4
             target.param3 = null4
         elif size == 20:
             form12345 = form1+form2
-            unpacked2 = ins.unpack(form1234,8,readId)
+            unpacked2 = ins.unpack(form12345,8,readId)
             (target.param1,target.param2) = unpacked2
             target.runOn = null4
             target.reference = null4
@@ -2204,7 +387,7 @@ class MelConditions(MelGroups):
 class MelDecalData(MelStruct):
     """Represents Decal Data."""
 
-    DecalDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DecalDataFlags = Flags(0L,Flags.getNames(
             (0, 'parallax'),
             (0, 'alphaBlending'),
             (0, 'alphaTesting'),
@@ -2223,7 +406,7 @@ class MelDecalData(MelStruct):
 class MelDestructible(MelGroup):
     """Represents a set of destruct record."""
 
-    MelDestStageFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MelDestStageFlags = Flags(0L,Flags.getNames(
         (0, 'capDamage'),
         (1, 'disable'),
         (2, 'destroy'),
@@ -2290,7 +473,7 @@ class MreHasEffects:
         """Return a text description of magic effects."""
         mgef_school = mgef_school or bush.mgef_school
         mgef_name = mgef_name or bush.mgef_name
-        with bolt.sio() as buff:
+        with sio() as buff:
             avEffects = bush.genericAVEffects
             aValues = bush.actorValues
             buffWrite = buff.write
@@ -2311,7 +494,7 @@ class MreHasEffects:
                 buffWrite(u'\n')
         return buff.getvalue()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelIcons(MelGroup):
     """Handles ICON and MICO."""
 
@@ -2328,7 +511,8 @@ class MelIcons(MelGroup):
             MelGroup.dumpData(self,record,out)
         if record.iconsIaM and record.iconsIaM.smallIconPath:
             MelGroup.dumpData(self,record,out)
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 class MelIcons2(MelGroup):
     """Handles ICON and MICO."""
 
@@ -2345,7 +529,8 @@ class MelIcons2(MelGroup):
             MelGroup.dumpData(self,record,out)
         if record.iconsIaM and record.iconsIaM.smallIconPath2:
             MelGroup.dumpData(self,record,out)
-#-------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
 class MelKeywords(MelFidList):
     """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
     def dumpData(self,record,out):
@@ -2355,7 +540,7 @@ class MelKeywords(MelFidList):
             out.packSub('KSIZ','I',len(keywords))
             MelFidList.dumpData(self,record,out)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
     def hasFids(self,formElements):
@@ -2402,7 +587,7 @@ class MelMODS(MelBase):
             data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
             if save: record.__setattr__(attr,data)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model record."""
     # MODB and MODD are no longer used by TES5Edit
@@ -2453,7 +638,6 @@ class MelPerks(MelStructs):
             out.packSub('PRKZ','<I',len(perks))
             MelStructs.dumpData(self,record,out)
 
-
 #------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
@@ -2469,7 +653,7 @@ class MelString16(MelString):
         value = record.__getattribute__(self.attr)
         if value != None:
             if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
+                value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
                 test,encoding = _encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
@@ -2489,7 +673,7 @@ class MelString16(MelString):
             value = struct.pack('H',len(value))+value
             out.packSub0(self.subType,value)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelString32(MelString):
     """Represents a mod record string element."""
     def loadData(self,record,ins,type,size,readId):
@@ -2504,7 +688,7 @@ class MelString32(MelString):
         value = record.__getattribute__(self.attr)
         if value != None:
             if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
+                value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
                 test,encoding = _encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
@@ -2773,7 +957,7 @@ class MelVmad(MelBase):
                     else:
                         raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
             else:
-                raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
+                raise Exception(u'Unrecognized value of type: %s' % type(value))
             return data
 
     class Script(object):
@@ -2962,9 +1146,9 @@ class MelVmad(MelBase):
         if vmad is None: return
         vmad.mapFids(record,function,save)
 
-#-------------------------------------------------------------------------------
-# Skyrim Records ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Skyrim Records --------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
@@ -2999,10 +1183,10 @@ class MreAact(MelRecord):
 class MreAchr(MelRecord):
     """Placed NPC"""
     classType = 'ACHR'
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('oppositeParent','popIn'))
+    _flags = Flags(0L,Flags.getNames('oppositeParent','popIn'))
 
     # 'Parent Activate Only'
-    ActivateParentsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ActivateParentsFlags = Flags(0L,Flags.getNames(
             (0, 'parentActivateOnly'),
         ))
 
@@ -3109,7 +1293,7 @@ class MreActi(MelRecord):
     """Activator."""
     classType = 'ACTI'
 
-    ActivatorFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ActivatorFlags = Flags(0L,Flags.getNames(
         (0, 'noDisplacement'),
         (0, 'ignoredBySandbox'),
     ))
@@ -3127,7 +1311,7 @@ class MreActi(MelRecord):
         MelOptStruct('VNAM','I',(FID,'pickupSound')),
         MelOptStruct('WNAM','I',(FID,'water')),
         MelLString('RNAM','rnam_p'),
-        MelStruct('FNAM','H',(ActivatorFlags,'flags',0L),),
+        MelOptStruct('FNAM','H',(ActivatorFlags,'flags',0L),),
         MelOptStruct('KNAM','I',(FID,'keyword')),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -3171,7 +1355,7 @@ class MreAlch(MelRecord,MreHasEffects):
     # {0x00008000} 'Unknown 16',
     # {0x00010000} 'Medicine',
     # {0x00020000} 'Poison'
-    IngestibleFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IngestibleFlags = Flags(0L,Flags.getNames(
         (0, 'autoCalc'),
         (1, 'isFood'),
         (16, 'medicine'),
@@ -3203,7 +1387,7 @@ class MreAmmo(MelRecord):
     """Ammo record (arrows)"""
     classType = 'AMMO'
 
-    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    AmmoTypeFlags = Flags(0L,Flags.getNames(
         (0, 'notNormalWeapon'),
         (1, 'nonPlayable'),
         (2, 'nonBolt'),
@@ -3275,7 +1459,7 @@ class MreArma(MelRecord):
 
     # {0x01} 'Unknown 0',
     # {0x02} 'Enabled'
-    WeightSliderFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    WeightSliderFlags = Flags(0L,Flags.getNames(
             (0, 'unknown0'),
             (1, 'enabled'),
         ))
@@ -3287,7 +1471,7 @@ class MreArma(MelRecord):
         MelStruct('DNAM','4B2sBsf','malePriority','femalePriority',
                   (WeightSliderFlags,'maleFlags',0L),
                   (WeightSliderFlags,'femaleFlags',0L),
-                  'unknown','detectionSoundValue','unknown','weaponAdjust',),
+                  'unknown','detectionSoundValue','unknown1','weaponAdjust',),
         MelModel('male_model','MOD2'),
         MelModel('female_model','MOD3'),
         MelModel('male_model_1st','MOD4'),
@@ -3348,7 +1532,7 @@ class MreArto(MelRecord):
     #{0x00000001} 'Magic Casting',
     #{0x00000002} 'Magic Hit Effect',
     #{0x00000004} 'Enchantment Effect'
-    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ArtoTypeFlags = Flags(0L,Flags.getNames(
             (0, 'magic_casting'),
             (1, 'magic_hit_effect'),
             (2, 'enchantment_effect'),
@@ -3384,7 +1568,7 @@ class MreAstp(MelRecord):
 
     # DATA Flags
     # {0x00000001} 'Related'
-    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
+    AstpTypeFlags = Flags(0L,Flags.getNames('related'))
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -3410,39 +1594,12 @@ class MreAvif(MelRecord):
         element is determined by which other subrecords have been encountered."""
         def __init__(self,loaders,actorinfo,perks):
             self.data = loaders
-            self.type_cnam = {'EDID':actorinfo, 'SNAM':perks}
+            self.type_cnam = {'EDID':actorinfo, 'PNAM':perks}
             self.cnam = actorinfo #--Which cnam element loader to use next.
         def __getitem__(self,key):
             if key == 'CNAM': return self.cnam
             self.cnam = self.type_cnam.get(key, self.cnam)
             return self.data[key]
-
-    # unpack requires a string argument of length 16
-    # Error loading 'AVIF' record and/or subrecord: 00000450
-    # eid = u'AVSmithing'
-    # subrecord = 'CNAM'
-    # subrecord size = 4
-    # file pos = 1437112
-    # Error in Update.esm
-
-    # TypeError: __init__() takes exactly 4 arguments (5 given)
-
-    class MelAvifCnam(MelStructs):
-        """Handle older truncated CNAM for AVIF subrecord."""
-        def loadData(self,record,ins,type,size,readId):
-            if size == 16:
-                MelStruct.loadData(self,record,ins,type,size,readId)
-                return
-            elif size == 4:
-                unpacked = ins.unpack('I',size,readId)
-            else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -3450,8 +1607,8 @@ class MreAvif(MelRecord):
         MelLString('DESC','description'),
         MelString('ANAM','abbreviation'),
         MelBase('CNAM','cnam_p'),
-        MelStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult',
-                  'skillImproveOffset',),
+        MelOptStruct('AVSK','4f','skillUseMult','skillOffsetMult','skillImproveMult',
+                     'skillImproveOffset',),
         MelGroups('perkTree',
             MelFid('PNAM', 'perk',),
             MelBase('FNAM','fnam_p'),
@@ -3460,18 +1617,12 @@ class MreAvif(MelRecord):
             MelStruct('HNAM','f','horizontalPosition'),
             MelStruct('VNAM','f','verticalPosition'),
             MelFid('SNAM','associatedSkill',),
-            MelAvifCnam('CNAM','I','connections',
-                       'lineToIndex',),
+            MelStructs('CNAM','I','connections','lineToIndex',),
             MelStruct('INAM','I','index',),
         ),
     )
-    # melSet.loaders = MelCnamLoaders(melSet.loaders,*melSet.elements[4:7])
+    melSet.loaders = MelCnamLoaders(melSet.loaders,melSet.elements[4],melSet.elements[6])
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        if record.iconsIaM and record.cnam_p:
-            MelGroup.dumpData(self,record,out)
 
 # Verified for 305
 #------------------------------------------------------------------------------
@@ -3481,7 +1632,7 @@ class MelBookData(MelStruct):
     # {0x01} 'Teaches Skill',
     # {0x02} 'Can''t be Taken',
     # {0x04} 'Teaches Spell',
-    bookTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    bookTypeFlags = Flags(0L,Flags.getNames(
         (0, 'teachesSkill'),
         (1, 'cantBeTaken'),
         (2, 'teachesSpell'),
@@ -3637,7 +1788,7 @@ class MreCams(MelRecord):
     # 'Target-Target',
     # 'Target-Lead Actor'
 
-    CamsFlagsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CamsFlagsFlags = Flags(0L,Flags.getNames(
             (0, 'positionFollowsLocation'),
             (1, 'rotationFollowsTarget'),
             (2, 'dontFollowBone'),
@@ -3646,10 +1797,28 @@ class MreCams(MelRecord):
             (5, 'startAtTimeZero'),
         ))
 
+    class MelCamsData(MelStruct):
+        """Handle older truncated DATA for CAMS subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 44:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 40:
+                unpacked = ins.unpack('4I6f',size,readId)
+            else:
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 44,
+                                   size, False) # untested, record.inName
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
-        MelStruct('SNAM','4I7f','action','location','target',
+        MelCamsData('DATA','4I7f','action','location','target',
                   (CamsFlagsFlags,'flags',0L),'timeMultPlayer',
                   'timeMultTarget','timeMultGlobal','maxTime','minTime',
                   'targetPctBetweenActors','nearTargetDistance',),
@@ -3672,8 +1841,8 @@ class MreCell(MelRecord):
     # {0x0040} 'Hand Changed',
     # {0x0080} 'Show Sky',
     # {0x0100} 'Use Sky Lighting'
-    CellDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0,'isInteriorCell'),
+    CellDataFlags1 = Flags(0L,Flags.getNames(
+        (0,'isInterior'), # isInteriorCell
         (1,'hasWater'),
         (2,'cantFastTravel'),
         (3,'noLODWater'),
@@ -3681,8 +1850,11 @@ class MreCell(MelRecord):
         (6,'handChanged'),
         # showSky
         (7,'behaveLikeExterior'),
+        ))
+
+    CellDataFlags2 = Flags(0L,Flags.getNames(
         # useSkyLighting
-        (8,'useSkyLighting'),
+        (0,'useSkyLighting'),
         ))
 
     # {0x00000001}'Ambient Color',
@@ -3696,7 +1868,7 @@ class MreCell(MelRecord):
     # {0x00000100}'Fog Power',
     # {0x00000200}'Fog Max',
     # {0x00000400}'Light Fade Distances'
-    CellInheritedFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CellInheritedFlags = Flags(0L,Flags.getNames(
             (0, 'ambientColor'),
             (1, 'directionalColor'),
             (2, 'fogColor'),
@@ -3710,13 +1882,56 @@ class MreCell(MelRecord):
             (10, 'lightFadeDistances'),
         ))
 
-    CellGridFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CellGridFlags = Flags(0L,Flags.getNames(
             (0, 'quad1'),
             (1, 'quad2'),
             (2, 'quad3'),
             (3, 'quad4'),
         ))
 
+    class MelCellXcll(MelOptStruct):
+        """Handle older truncated XCLL for CELL subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 92:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 64:
+                unpacked = ins.unpack('BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBs',size,readId)
+            elif size == 24:
+                unpacked = ins.unpack('BBBsBBBsBBBsffi',size,readId)
+            else:
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   # expected size then size IIUC
+                                   ModReader.recHeader.size, size, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+    class MelCellData(MelStruct):
+        """Handle older truncated DATA for CELL subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 2:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 1:
+                unpacked = ins.unpack('B',size,readId)
+            else:
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   ModReader.recHeader.size, size, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+    class MelWaterHeight(MelOptStruct):
+        def dumpData(self,record,out):
+            if not record.flags.isInterior:
+                MelOptStruct.dumpData(self,record,out)
 
 # Flags can be itU8, but CELL\DATA has a critical role in various wbImplementation.pas routines
 # and replacing it with wbUnion generates error when setting for example persistent flag in REFR.
@@ -3724,22 +1939,24 @@ class MreCell(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
-        MelStruct('DATA','H',(CellDataFlags,'flags',0L),),
-        MelStruct('XCLC','2iI','pos_x','pos_y',(CellGridFlags,'gridFlags',0L),),
-        MelStruct('XCLL','3Bs3Bs3Bs2f2i3f4B4B4B4B4B4B4BfBBBsfffI',
+        MelCellData('DATA','BB',(CellDataFlags1,'flags',0L),(CellDataFlags2,'skyFlags',0L),),
+        MelOptStruct('XCLC','2iI','posX','posY',(CellGridFlags,'gridFlags',0L),),
+        MelCellXcll('XCLL','BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBsBBBsfBBBsfffI',
                  'ambientRed','ambientGreen','ambientBlue',('unused1',null1),
                  'directionalRed','directionalGreen','directionalBlue',('unused2',null1),
                  'fogRed','fogGreen','fogBlue',('unused3',null1),
                  'fogNear','fogFar','directionalXY','directionalZ',
                  'directionalFade','fogClip','fogPower',
-                 'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
-                 'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
-                 'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
-                 'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
-                 'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
-                 'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
-                 'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
-                 'fresnelPower' # Fresnel Power
+                 'redXplus','greenXplus','blueXplus',('unknownXplus',null1), # 'X+'
+                 'redXminus','greenXminus','blueXminus',('unknownXminus',null1), # 'X-'
+                 'redYplus','greenYplus','blueYplus',('unknownYplus',null1), # 'Y+'
+                 'redYminus','greenYminus','blueYminus',('unknownYminus',null1), # 'Y-'
+                 'redZplus','greenZplus','blueZplus',('unknownZplus',null1), # 'Z+'
+                 'redZminus','greenZminus','blueZminus',('unknownZminus',null1), # 'Z-'
+                 'redSpec','greenSpec','blueSpec',('unknownSpec',null1), # Specular Color Values
+                 'fresnelPower', # Fresnel Power
+                 'fogColorFarRed','fogColorFarGreen','fogColorFarBlue',('unused4',null1),
+                 'fogMax','lightFadeBegin','lightFadeEnd',(CellInheritedFlags,'inherits',0L),
              ),
         MelBase('TVDT','unknown_TVDT'),
         MelBase('MHDT','unknown_MHDT'),
@@ -3747,14 +1964,14 @@ class MreCell(MelRecord):
         # leftover flags, they are now in XCLC
         MelBase('LNAM','unknown_LNAM'),
         # XCLW sometimes has $FF7FFFFF and causes invalid floatation point
-        MelOptStruct('XCLW','f',('waterHeight',-2147483649)),
+        MelWaterHeight('XCLW','f',('waterHeight',-2147483649)),
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelFid('XLCN','location',),
         MelBase('XWCN','unknown_XWCN'),
         MelBase('XWCS','unknown_XWCS'),
-        MelStruct('XWCU','3f4s3f','xOffset','yOffset','zOffset','unknown','xAngle',
-                  'yAngle','zAngle',dumpExtra='unknown',),
+        MelOptStruct('XWCU','3f4s3f','xOffset','yOffset','zOffset','unk1XWCU','xAngle',
+                  'yAngle','zAngle',dumpExtra='unk2XWCU',),
         MelFid('XCWT','water'),
 
         # {--- Ownership ---}
@@ -3769,7 +1986,6 @@ class MreCell(MelRecord):
         MelFid('XCIM','imageSpace',),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
 
 # Verified for 305
 #------------------------------------------------------------------------------
@@ -3887,7 +2103,7 @@ class MreColl(MelRecord):
     """Collision Layer"""
     classType = 'COLL'
 
-    CollisionLayerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CollisionLayerFlags = Flags(0L,Flags.getNames(
         (0,'triggerVolume'),
         (1,'sensor'),
         (2,'navmeshObstacle'),
@@ -3927,7 +2143,7 @@ class MreCont(MelRecord):
     # {0x01} 'Allow Sounds When Animation',
     # {0x02} 'Respawns',
     # {0x04} 'Show Owner'
-    ContTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ContTypeFlags = Flags(0L,Flags.getNames(
         (0, 'allowSoundsWhenAnimation'),
         (1, 'respawns'),
         (2, 'showOwner'),
@@ -3980,7 +2196,7 @@ class MreCsty(MelRecord):
     # {0x01} 'Dueling',
     # {0x02} 'Flanking',
     # {0x04} 'Allow Dual Wielding'
-    CstyTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    CstyTypeFlags = Flags(0L,Flags.getNames(
         (0, 'dueling'),
         (1, 'flanking'),
         (2, 'allowDualWielding'),
@@ -4009,7 +2225,7 @@ class MreDebr(MelRecord):
     """Debris record."""
     classType = 'DEBR'
 
-    dataFlags = bolt.Flags(0L,bolt.Flags.getNames('hasCollissionData'))
+    dataFlags = Flags(0L,Flags.getNames('hasCollissionData'))
     class MelDebrData(MelStruct):
         subType = 'DATA'
         _elements = (('percentage',0),('modPath',null1),('flags',0),)
@@ -4064,7 +2280,7 @@ class MreDial(MelRecord):
     # {6} 'Service',
     # {7} 'Miscellaneous'
 
-    DialTopicFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DialTopicFlags = Flags(0L,Flags.getNames(
         (0, 'doAllBeforeRepeating'),
     ))
 
@@ -4134,7 +2350,7 @@ class MreDlbr(MelRecord):
     """Dialog Branch"""
     classType = 'DLBR'
 
-    DialogBranchFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DialogBranchFlags = Flags(0L,Flags.getNames(
         (0,'topLevel'),
         (1,'blocking'),
         (2,'exclusive'),
@@ -4186,7 +2402,7 @@ class MreDoor(MelRecord):
     """Door Record"""
     classType = 'DOOR'
 
-    DoorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DoorTypeFlags = Flags(0L,Flags.getNames(
         (1, 'automatic'),
         (2, 'hidden'),
         (3, 'minimalUse'),
@@ -4214,7 +2430,7 @@ class MreDual(MelRecord):
     """Dual Cast Data"""
     classType = 'DUAL'
 
-    DualCastDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    DualCastDataFlags = Flags(0L,Flags.getNames(
         (0,'hitEffectArt'),
         (1,'projectile'),
         (2,'explosion'),
@@ -4234,7 +2450,7 @@ class MreEczn(MelRecord):
     """Encounter Zone record."""
     classType = 'ECZN'
 
-    EcznTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EcznTypeFlags = Flags(0L,Flags.getNames(
             (0, 'neverResets'),
             (1, 'matchPCBelowMinimumLevel'),
             (2, 'disableCombatBoundary'),
@@ -4253,7 +2469,7 @@ class MreEfsh(MelRecord):
     """Efsh Record"""
     classType = 'EFSH'
 
-    EfshGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EfshGeneralFlags = Flags(0L,Flags.getNames(
         (0, 'noMembraneShader'),
         (1, 'membraneGrayscaleColor'),
         (2, 'membraneGrayscaleAlpha'),
@@ -4281,6 +2497,30 @@ class MreEfsh(MelRecord):
         (24, 'useBloodGeometry'),
     ))
 
+    class MelEfshData(MelStruct):
+        """Handle older truncated DATA for EFSH subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 400:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 396:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2f',size,readId)
+            elif size == 344:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs6f',size,readId)
+            elif size == 312:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI',size,readId)
+            elif size == 308:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',size,readId)
+            else:
+                raise ModSizeError(ins.inName, record.recType + '.' + type,
+                                   400, size, False)  # untested
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('ICON','fillTexture'),
@@ -4288,62 +2528,40 @@ class MreEfsh(MelRecord):
         MelString('NAM7','holesTexture'),
         MelString('NAM8','membranePaletteTexture'),
         MelString('NAM9','particlePaletteTexture'),
-        MelStruct('DATA','4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2fI',
-                  'unknown','membraneShaderSourceBlendMode',
-                  'membraneShaderBlendOperation','membraneShaderZTestFunction',
-                  'red','green','blue','unknown',
-                  'fillTextureEffectAlphaFadeInTime','fillTextureEffectFullAlphaTime',
-                  'fillTextureEffectAlphaFadeOutTime','fillTextureEffectPresistentAlphaRatio',
-                  'fillTextureEffectAlphaPulseAmplitude','fillTextureEffectAlphaPulseFrequency',
-                  'fillTextureEffectTextureAnimationSpeedU','fillTextureEffectTextureAnimationSpeedV',
-                  'edgeEffectFallOff',
-                  'red','green','blue','unknown',
-                  'edgeEffectAlphaFadeInTime','edgeEffectFullAlphaTime',
-                  'edgeEffectAlphaFadeOutTime','edgeEffectPersistentAlphaRatio',
-                  'edgeEffectAlphaPulseAmplitude','edgeEffectAlphaPulseFrequency',
-                  'fillTextureEffectFullAlphaRatio','edgeEffectFullAlphaRatio',
-                  'membraneShaderDestBlendMode','particleShaderSourceBlendMode',
-                  'particleShaderBlendOperation','particleShaderZTestFunction',
-                  'particleShaderDestBlendMode','particleShaderParticleBirthRampUpTime',
-                  'particleShaderFullParticleBirthTime','particleShaderParticleBirthRampDownTime',
-                  'particleShaderFullParticleBirthRatio','particleShaderPersistantParticleCount',
-                  'particleShaderParticleLifetime','particleShaderParticleLifetime',
-                  'particleShaderInitialSpeedAlongNormal','particleShaderAccelerationAlongNormal',
-                  'particleShaderInitialVelocity1','particleShaderInitialVelocity2',
-                  'particleShaderInitialVelocity3','particleShaderAcceleration1',
-                  'particleShaderAcceleration2','particleShaderAcceleration3',
-                  'particleShaderScaleKey1','particleShaderScaleKey2',
-                  'particleShaderScaleKey1Time','particleShaderScaleKey2Time',
-                  'red','green','blue','unknown',
-                  'red','green','blue','unknown',
-                  'red','green','blue','unknown',
-                  'colorKey1ColorAlpha','colorKey2ColorAlpha',
-                  'colorKey3ColorAlpha','colorKey1ColorKeyTime',
-                  'colorKey2ColorKeyTime','colorKey3ColorKeyTime',
-                  'particleShaderInitialSpeedAlongNormal','particleShaderInitialRotationdeg',
-                  'particleShaderInitialRotationdeg','particleShaderRotationSpeeddegsec',
-                  'particleShaderRotationSpeeddegsec',(FID,'addonModels'),
-                  'holesStartTime','holesEndTime','holesStartVal','holesEndVal',
-                  'edgeWidthalphaunits',
-                  'red','green','blue','unknown',
-                  'explosionWindSpeed','textureCountU','textureCountV',
-                  'addonModelsFadeInTime','addonModelsFadeOutTime',
-                  'addonModelsScaleStart','addonModelsScaleEnd',
-                  'addonModelsScaleInTime','addonModelsScaleOutTime',
-                  (FID,'ambientSound'),
-                  'red','green','blue','unknown',
-                  'red','green','blue','unknown',
-                  'fillTextureEffectColorKeyScaleTimecolorKey1Scale',
-                  'fillTextureEffectColorKeyScaleTimecolorKey2Scale',
-                  'fillTextureEffectColorKeyScaleTimecolorKey3Scale',
-                  'fillTextureEffectColorKeyScaleTimecolorKey1Time',
-                  'fillTextureEffectColorKeyScaleTimecolorKey2Time',
-                  'fillTextureEffectColorKeyScaleTimecolorKey3Time',
-                  'colorScale','birthPositionOffset','birthPositionOffsetRange',
-                  'startFrame','startFrameVariation','endFrame','loopStartFrame',
+        MelEfshData('DATA','4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2fI',
+                  'unused1','memSBlend','memBlendOp','memZFunc','fillRed',
+                  'fillGreen','fillBlue','unused2','fillAlphaIn','fillFullAlpha',
+                  'fillAlphaOut','fillAlphaRatio','fillAlphaAmp','fillAlphaPulse',
+                  'fillAnimSpeedU','fillAnimSpeedV','edgeEffectOff','edgeRed',
+                  'edgeGreen','edgeBlue','unused3','edgeAlphaIn','edgeFullAlpha',
+                  'edgeAlphaOut','edgeAlphaRatio','edgeAlphaAmp','edgeAlphaPulse',
+                  'fillFullAlphaRatio','edgeFullAlphaRatio','memDestBlend',
+                  'partSourceBlend','partBlendOp','partZTestFunc','partDestBlend',
+                  'partBSRampUp','partBSFull','partBSRampDown','partBSRatio',
+                  'partBSPartCount','partBSLifetime','partBSLifetimeDelta',
+                  'partSSpeedNorm','partSAccNorm','partSVel1','partSVel2',
+                  'partSVel3','partSAccel1','partSAccel2','partSAccel3',
+                  'partSKey1','partSKey2','partSKey1Time','partSKey2Time',
+                  'key1Red','key1Green','key1Blue','unused4','key2Red',
+                  'key2Green','key2Blue','unused5','key3Red','key3Green',
+                  'key3Blue','unused6','colorKey1Alpha','colorKey2Alpha',
+                  'colorKey3Alpha','colorKey1KeyTime','colorKey2KeyTime',
+                  'colorKey3KeyTime','partSSpeedNormDelta','partSSpeedRotDeg',
+                  'partSSpeedRotDegDelta','partSRotDeg','partSRotDegDelta',
+                  (FID,'addonModels'),'holesStart','holesEnd','holesStartVal',
+                  'holesEndVal','edgeWidthAlphaUnit','edgeAlphRed',
+                  'edgeAlphGreen','edgeAlphBlue','unused7','expWindSpeed',
+                  'textCountU','textCountV','addonModelIn','addonModelOut',
+                  'addonScaleStart','addonScaleEnd','addonScaleIn','addonScaleOut',
+                  (FID,'ambientSound'),'key2FillRed','key2FillGreen',
+                  'key2FillBlue','unused8','key3FillRed','key3FillGreen',
+                  'key3FillBlue','unused9','key1ScaleFill','key2ScaleFill',
+                  'key3ScaleFill','key1FillTime','key2FillTime','key3FillTime',
+                  'colorScale','birthPosOffset','birthPosOffsetRange','startFrame',
+                  'startFrameVariation','endFrame','loopStartFrame',
                   'loopStartVariation','frameCount','frameCountVariation',
-                  (EfshGeneralFlags,'flags',0L),'fillTextureEffectTextureScaleU',
-                  'fillTextureEffectTextureScaleV','sceneGraphEmitDepthLimitunused',
+                  (EfshGeneralFlags,'flags',0L),'fillTextScaleU',
+                  'fillTextScaleV','sceneGraphDepthLimit',
                   ),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -4359,7 +2577,7 @@ class MreEnch(MelRecord,MreHasEffects):
     # $06, 'Enchantment',
     # $0C, 'Staff Enchantment'
 
-    EnchGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EnchGeneralFlags = Flags(0L,Flags.getNames(
         (0, 'noAutoCalc'),
         (1, 'unknownTwo'),
         (2, 'extendDurationOnRecast'),
@@ -4374,7 +2592,8 @@ class MreEnch(MelRecord,MreHasEffects):
             elif size == 32:
                 unpacked = ins.unpack('i2Ii2IfI',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 36,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4423,7 +2642,7 @@ class MreExpl(MelRecord):
     # 'Ignore Image Space Swap',
     # 'Chain',
     # 'No Controller Vibration'
-    ExplTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ExplTypeFlags = Flags(0L,Flags.getNames(
         (1, 'alwaysUsesWorldOrientation'),
         (2, 'knockDownAlways'),
         (3, 'knockDownByFormular'),
@@ -4447,7 +2666,8 @@ class MreExpl(MelRecord):
             elif size == 40:
                 unpacked = ins.unpack('6I4f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 52,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4479,7 +2699,7 @@ class MreEyes(MelRecord):
     # {0x01}'Playable',
     # {0x02}'Not Male',
     # {0x04}'Not Female',
-    EyesTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EyesTypeFlags = Flags(0L,Flags.getNames(
             (0, 'playable'),
             (1, 'notMale'),
             (2, 'notFemale'),
@@ -4488,7 +2708,7 @@ class MreEyes(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
-        MelString('ICON','iconPath'),
+        MelIcons(),
         MelStruct('DATA','B',(EyesTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -4516,7 +2736,7 @@ class MreFact(MelRecord):
     # {0x00004000}'Vendor',
     # {0x00008000}'Can Be Owner',
     # {0x00010000}'Ignore Crimes: Werewolf',
-    FactGeneralTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FactGeneralTypeFlags = Flags(0L,Flags.getNames(
         (0, 'hiddenFromPC'),
         (1, 'specialCombat'),
         (2, 'unknown3'),
@@ -4574,7 +2794,8 @@ class MreFact(MelRecord):
             elif size == 12:
                 unpacked = ins.unpack('2B5H',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 20,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4687,7 +2908,7 @@ class MreFurn(MelRecord):
 
     # {0x0001} 'Unknown 0',
     # {0x0002} 'Ignored By Sandbox'
-    FurnGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FurnGeneralFlags = Flags(0L,Flags.getNames(
         (1, 'ignoredBySandbox'),
     ))
 
@@ -4723,7 +2944,7 @@ class MreFurn(MelRecord):
     # {0x20000000} 'Unknown 30',
     # {0x40000000} 'Unknown 31',
     # {0x80000000} 'Unknown 32'
-    FurnActiveMarkerFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    FurnActiveMarkerFlags = Flags(0L,Flags.getNames(
         (0, 'sit0'),
         (1, 'sit1'),
         (2, 'sit2'),
@@ -4763,7 +2984,7 @@ class MreFurn(MelRecord):
     # {0x04} 'Right',
     # {0x08} 'Left',
     # {0x10} 'Up'
-    MarkerEntryPointFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MarkerEntryPointFlags = Flags(0L,Flags.getNames(
             (0, 'front'),
             (1, 'behind'),
             (2, 'right'),
@@ -4835,7 +3056,7 @@ class MreGras(MelRecord):
     """Grass record."""
     classType = 'GRAS'
 
-    GrasTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    GrasTypeFlags = Flags(0L,Flags.getNames(
             (0, 'vertexLighting'),
             (1, 'uniformScaling'),
             (2, 'fitToSlope'),
@@ -4875,7 +3096,7 @@ class MreHazd(MelRecord):
     # {0x04} 'Align to Impact Normal',
     # {0x08} 'Inherit Radius from Spawn Spell',
     # {0x10} 'Drop to Ground'
-    HazdTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    HazdTypeFlags = Flags(0L,Flags.getNames(
         (0, 'affectsPlayerOnly'),
         (1, 'inheritDurationFromSpawnSpell'),
         (2, 'alignToImpactNormal'),
@@ -4922,7 +3143,7 @@ class MreHdpt(MelRecord):
     # {0x04} 'Female',
     # {0x10} 'Is Extra Part',
     # {0x20} 'Use Solid Tint'
-    HdptTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    HdptTypeFlags = Flags(0L,Flags.getNames(
         (0, 'playable'),
         (1, 'male'),
         (2, 'female'),
@@ -4953,7 +3174,7 @@ class MreIdle(MelRecord):
     """Idle record."""
     classType = 'IDLE'
 
-    IdleTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IdleTypeFlags = Flags(0L,Flags.getNames(
             (0, 'parent'),
             (1, 'sequence'),
             (2, 'noAttacking'),
@@ -4979,7 +3200,7 @@ class MreIdlm(MelRecord):
     """Idle marker record."""
     classType = 'IDLM'
 
-    IdlmTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IdlmTypeFlags = Flags(0L,Flags.getNames(
         (0, 'runInSequence'),
         (1, 'unknown1'),
         (2, 'doOnce'),
@@ -5023,7 +3244,7 @@ class MreInfo(MelRecord):
     # 3 :'Large'
 
     # 'Use Emotion Animation'
-    InfoResponsesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    InfoResponsesFlags = Flags(0L,Flags.getNames(
             (0, 'useEmotionAnimation'),
         ))
 
@@ -5043,7 +3264,7 @@ class MreInfo(MelRecord):
     # {0x2000} 'Audio Output Override',
     # {0x4000} 'Spends favor points',
     # {0x8000} 'Unknown 16'
-    EnamResponseFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    EnamResponseFlags = Flags(0L,Flags.getNames(
             (0, 'goodbye'),
             (1, 'random'),
             (2, 'sayonce'),
@@ -5118,7 +3339,7 @@ class MreImad(MelRecord):
     # {0x00000800}'Blur Radius Bit 2',
     # {0x00001000}'Blur Radius Bit 1',
     # {0x00002000}'Blur Radius Bit 0'
-    ImadDoFFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadDoFFlags = Flags(0L,Flags.getNames(
             (0, 'useTarget'),
             (1, 'unknown2'),
             (2, 'unknown3'),
@@ -5135,62 +3356,62 @@ class MreImad(MelRecord):
             (13, 'blurRadiusBit0'),
         ))
 
-    ImadUseTargetFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadUseTargetFlags = Flags(0L,Flags.getNames(
             (0, 'useTarget'),
         ))
 
-    ImadAnimatableFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ImadAnimatableFlags = Flags(0L,Flags.getNames(
             (0, 'animatable'),
         ))
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        # 'unknown1' is 192 bytes in TES5Edit
-        # 'unknown2' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
-        # MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
-        #           'unknown1',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
-        #           'radialBlurCenterY','unknown2',(ImadDoFFlags,'dofFlags',0L),),
-        MelBase('DNAM','data',),
+        # 'unknown' is 192 bytes in TES5Edit
+        # 'unknown1' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
+        MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
+                  'unknown',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
+                  'radialBlurCenterY','unknown1',(ImadDoFFlags,'dofFlags',0L),
+                  dumpExtra='unknownExtra1',),
         # Blur
         MelStruct('BNAM','2f','blurUnknown','blurRadius',dumpExtra='unknownExtra2',),
         # Double Vision
         MelStruct('VNAM','2f','dvUnknown','dvStrength',dumpExtra='unknownExtra3',),
         # Cinematic Colors
-        MelStruct('TNAM','5f','unknown','tintRed','tintGreen','tintBlue',
+        MelStruct('TNAM','5f','unknown4','tintRed','tintGreen','tintBlue',
                   'tintAlpha',dumpExtra='unknownExtra4',),
-        MelStruct('NAM3','5f','unknown','fadeRed','fadeGreen','fadeBlue',
+        MelStruct('NAM3','5f','unknown5','fadeRed','fadeGreen','fadeBlue',
                   'fadeAlpha',dumpExtra='unknownExtra5',),
         # {<<<< Begin Radial Blur >>>>}
-        MelStruct('RNAM','2f','unknown','strength',dumpExtra='unknownExtra6',),
-        MelStruct('SNAM','2f','unknown','rampup',dumpExtra='unknownExtra7',),
-        MelStruct('UNAM','2f','unknown','start',dumpExtra='unknownExtra8',),
-        MelStruct('NAM1','2f','unknown','rampdown',dumpExtra='unknownExtra9',),
-        MelStruct('NAM2','2f','unknown','downstart',dumpExtra='unknownExtra10',),
+        MelStruct('RNAM','2f','unknown6','strength',dumpExtra='unknownExtra6',),
+        MelStruct('SNAM','2f','unknown7','rampup',dumpExtra='unknownExtra7',),
+        MelStruct('UNAM','2f','unknown8','start',dumpExtra='unknownExtra8',),
+        MelStruct('NAM1','2f','unknown9','rampdown',dumpExtra='unknownExtra9',),
+        MelStruct('NAM2','2f','unknown10','downstart',dumpExtra='unknownExtra10',),
         # {<<<< End Radial Blur >>>>}
         # {<<<< Begin Depth of Field >>>>}
-        MelStruct('WNAM','2f','unknown','strength',dumpExtra='unknownExtra11',),
-        MelStruct('XNAM','2f','unknown','distance',dumpExtra='unknownExtra12',),
-        MelStruct('YNAM','2f','unknown','range',dumpExtra='unknownExtra13',),
+        MelStruct('WNAM','2f','unknown11','strength',dumpExtra='unknownExtra11',),
+        MelStruct('XNAM','2f','unknown12','distance',dumpExtra='unknownExtra12',),
+        MelStruct('YNAM','2f','unknown13','range',dumpExtra='unknownExtra13',),
         # {<<<< FullScreen Motion Blur >>>>}
-        MelStruct('NAM4','2f','unknown','strength',dumpExtra='unknownExtra14',),
+        MelStruct('NAM4','2f','unknown14','strength',dumpExtra='unknownExtra14',),
         # {<<<< End Depth of Field >>>>}
         # {<<<< Begin HDR >>>>}
-        MelStruct('\x00IAD','2f','unknown','multiply',dumpExtra='unknownExtra15',),
-        MelStruct('\x40IAD','2f','unknown','add',dumpExtra='unknownExtra16',),
-        MelStruct('\x01IAD','2f','unknown','multiply',dumpExtra='unknownExtra17',),
-        MelStruct('\x41IAD','2f','unknown','add',dumpExtra='unknownExtra18',),
-        MelStruct('\x02IAD','2f','unknown','multiply',dumpExtra='unknownExtra19',),
-        MelStruct('\x42IAD','2f','unknown','add',dumpExtra='unknownExtra20',),
-        MelStruct('\x03IAD','2f','unknown','multiply',dumpExtra='unknownExtra21',),
-        MelStruct('\x43IAD','2f','unknown','add',dumpExtra='unknownExtra22',),
-        MelStruct('\x04IAD','2f','unknown','multiply',dumpExtra='unknownExtra23',),
-        MelStruct('\x44IAD','2f','unknown','add',dumpExtra='unknownExtra24',),
-        MelStruct('\x05IAD','2f','unknown','multiply',dumpExtra='unknownExtra25',),
-        MelStruct('\x45IAD','2f','unknown','add',dumpExtra='unknownExtra26',),
-        MelStruct('\x06IAD','2f','unknown','multiply',dumpExtra='unknownExtra27',),
-        MelStruct('\x46IAD','2f','unknown','add',dumpExtra='unknownExtra28',),
-        MelStruct('\x07IAD','2f','unknown','multiply',dumpExtra='unknownExtra29',),
-        MelStruct('\x47IAD','2f','unknown','add',dumpExtra='unknownExtra30',),
+        MelStruct('\x00IAD','2f','unknown15','multiply',dumpExtra='unknownExtra15',),
+        MelStruct('\x40IAD','2f','unknown16','add',dumpExtra='unknownExtra16',),
+        MelStruct('\x01IAD','2f','unknown17','multiply',dumpExtra='unknownExtra17',),
+        MelStruct('\x41IAD','2f','unknown18','add',dumpExtra='unknownExtra18',),
+        MelStruct('\x02IAD','2f','unknown19','multiply',dumpExtra='unknownExtra19',),
+        MelStruct('\x42IAD','2f','unknown20','add',dumpExtra='unknownExtra20',),
+        MelStruct('\x03IAD','2f','unknown21','multiply',dumpExtra='unknownExtra21',),
+        MelStruct('\x43IAD','2f','unknown22','add',dumpExtra='unknownExtra22',),
+        MelStruct('\x04IAD','2f','unknown23','multiply',dumpExtra='unknownExtra23',),
+        MelStruct('\x44IAD','2f','unknown24','add',dumpExtra='unknownExtra24',),
+        MelStruct('\x05IAD','2f','unknown25','multiply',dumpExtra='unknownExtra25',),
+        MelStruct('\x45IAD','2f','unknown26','add',dumpExtra='unknownExtra26',),
+        MelStruct('\x06IAD','2f','unknown27','multiply',dumpExtra='unknownExtra27',),
+        MelStruct('\x46IAD','2f','unknown28','add',dumpExtra='unknownExtra28',),
+        MelStruct('\x07IAD','2f','unknown29','multiply',dumpExtra='unknownExtra29',),
+        MelStruct('\x47IAD','2f','unknown30','add',dumpExtra='unknownExtra30',),
         # {<<<< End HDR >>>>}
         MelBase('\x08IAD','isd08IAD_p'),
         MelBase('\x48IAD','isd48IAD_p'),
@@ -5211,12 +3432,12 @@ class MreImad(MelRecord):
         MelBase('\x10IAD','isd10IAD_p'),
         MelBase('\x50IAD','isd50IAD_p'),
         # {<<<< Begin Cinematic >>>>}
-        MelStruct('\x11IAD','2f','unknown','multiply',dumpExtra='unknownExtra31',),
-        MelStruct('\x51IAD','2f','unknown','add',dumpExtra='unknownExtra32',),
-        MelStruct('\x12IAD','2f','unknown','multiply',dumpExtra='unknownExtra33',),
-        MelStruct('\x52IAD','2f','unknown','add',dumpExtra='unknownExtra34',),
-        MelStruct('\x13IAD','2f','unknown','multiply',dumpExtra='unknownExtra35',),
-        MelStruct('\x53IAD','2f','unknown','add',dumpExtra='unknownExtra36',),
+        MelStruct('\x11IAD','2f','unknown31','multiply',dumpExtra='unknownExtra31',),
+        MelStruct('\x51IAD','2f','unknown32','add',dumpExtra='unknownExtra32',),
+        MelStruct('\x12IAD','2f','unknown33','multiply',dumpExtra='unknownExtra33',),
+        MelStruct('\x52IAD','2f','unknown34','add',dumpExtra='unknownExtra34',),
+        MelStruct('\x13IAD','2f','unknown35','multiply',dumpExtra='unknownExtra35',),
+        MelStruct('\x53IAD','2f','unknown36','add',dumpExtra='unknownExtra36',),
         # {<<<< End Cinematic >>>>}
         MelBase('\x14IAD','isd14IAD_p'),
         MelBase('\x54IAD','isd54IAD_p'),
@@ -5267,7 +3488,7 @@ class MreIngr(MelRecord,MreHasEffects):
     """INGR (ingredient) record."""
     classType = 'INGR'
 
-    IngrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IngrTypeFlags = Flags(0L,Flags.getNames(
             (0, 'No auto-calculation'),
             (1, 'Food item'),
             (2, 'Unknown 3'),
@@ -5317,7 +3538,7 @@ class MreIpctData(MelStruct):
     # for 'soundLevel' refer to wbSoundLevelEnum
 
     # {0x01} 'No Decal Data'
-    IpctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    IpctTypeFlags = Flags(0L,Flags.getNames(
         (0, 'noDecalData'),
     ))
 
@@ -5428,44 +3649,44 @@ class MreLctn(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
 
-        MelOptStructA('ACPR','2I2h','actorCellPersistentReference',
-                     (FID,'actor'),(FID,'location'),'gridX','gridY',),
-        MelOptStructA('LCPR','2I2h','locationCellPersistentReference',
+        MelStructA('ACPR','2I2h','actorCellPersistentReference',
+                   (FID,'actor'),(FID,'location'),'gridX','gridY',),
+        MelStructA('LCPR','2I2h','locationCellPersistentReference',
                      (FID,'actor'),(FID,'location'),'gridX','gridY',),
         # From Danwguard.esm, Does not follow similar previous patterns
         MelFidList('RCPR','referenceCellPersistentReference',),
 
-        MelOptStructA('ACUN','3I','actorCellUnique',
+        MelStructA('ACUN','3I','actorCellUnique',
                      (FID,'actor'),(FID,'eef'),(FID,'location'),),
-        MelOptStructA('LCUN','3I','locationCellUnique',
+        MelStructA('LCUN','3I','locationCellUnique',
                      (FID,'actor'),(FID,'ref'),(FID,'location'),),
         # in Unofficial Skyrim patch
         MelFidList('RCUN','referenceCellUnique',),
 
-        MelOptStructA('ACSR','3I2h','actorCellStaticReference',
+        MelStructA('ACSR','3I2h','actorCellStaticReference',
                      (FID,'locRefType'),(FID,'marker'),(FID,'location'),
                      'gridX','gridY',),
-        MelOptStructA('LCSR','3I2h','locationCellStaticReference',
+        MelStructA('LCSR','3I2h','locationCellStaticReference',
                      (FID,'locRefType'),(FID,'marker'),(FID,'location'),
                      'gridX','gridY',),
         # Seen in Open Cities
         MelFidList('RCSR','referenceCellStaticReference',),
 
         MelStructs('ACEC','I','actorCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYAcec',),
+                  (FID,'actor'), dumpExtra='gridsXYAcec',),
         MelStructs('LCEC','I','locationCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYLcec',),
+                  (FID,'actor'), dumpExtra='gridsXYLcec',),
         # Seen in Open Cities
         MelStructs('RCEC','I','referenceCellEncounterCell',
-                  (FID,'Actor'), dumpExtra='gridsXYRcec',),
+                  (FID,'actor'), dumpExtra='gridsXYRcec',),
 
         MelFidList('ACID','actorCellMarkerReference',),
         MelFidList('LCID','locationCellMarkerReference',),
 
-        MelOptStructA('ACEP','2I2h','actorCellEnablePoint',
-                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
-        MelOptStructA('LCEP','2I2h','locationCellEnablePoint',
-                     (FID,'Actor'),(FID,'Ref'),'gridX','gridY',),
+        MelStructA('ACEP','2I2h','actorCellEnablePoint',
+                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
+        MelStructA('LCEP','2I2h','locationCellEnablePoint',
+                     (FID,'actor'),(FID,'ref'),'gridX','gridY',),
 
         MelLString('FULL','full'),
         MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
@@ -5479,7 +3700,7 @@ class MreLctn(MelRecord):
     )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified for 305, not mergable
+# Verified for 305
 #------------------------------------------------------------------------------
 class MelLgtmData(MelStruct):
     def __init__(self,type='DALC'):
@@ -5539,7 +3760,7 @@ class MreLigh(MelRecord):
     # {0x00000800} 'Shadow Hemisphere',
     # {0x00001000} 'Shadow Omnidirectional',
     # {0x00002000} 'Portal-strict'
-    LighTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    LighTypeFlags = Flags(0L,Flags.getNames(
             (0, 'dynamic'),
             (1, 'canbeCarried'),
             (2, 'negative'),
@@ -5685,7 +3906,7 @@ class MreMato(MelRecord):
     """Material Object Records"""
     classType = 'MATO'
 
-    MatoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MatoTypeFlags = Flags(0L,Flags.getNames(
             (0, 'singlePass'),
         ))
 
@@ -5709,7 +3930,7 @@ class MreMatt(MelRecord):
     """Material Type Record."""
     classType = 'MATT'
 
-    MattTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MattTypeFlags = Flags(0L,Flags.getNames(
             (0, 'stairMaterial'),
             (1, 'arrowsStick'),
         ))
@@ -5731,7 +3952,7 @@ class MreMesg(MelRecord):
     """Message Record."""
     classType = 'MESG'
 
-    MesgTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MesgTypeFlags = Flags(0L,Flags.getNames(
             (0, 'messageBox'),
             (1, 'autoDisplay'),
         ))
@@ -5765,7 +3986,7 @@ class MreMgef(MelRecord):
     # 'castingSoundLevel', 'soundType'
     # refer to TES5Edit for values
 
-    MgefGeneralFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MgefGeneralFlags = Flags(0L,Flags.getNames(
             (0, 'hostile'),
             (1, 'recover'),
             (2, 'detrimental'),
@@ -5875,7 +4096,7 @@ class MreMstt(MelRecord):
     """Moveable static record."""
     classType = 'MSTT'
 
-    MsttTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MsttTypeFlags = Flags(0L,Flags.getNames(
         (0, 'onLocalMap'),
         (1, 'unknown2'),
     ))
@@ -5897,7 +4118,7 @@ class MreMusc(MelRecord):
     """Music type record."""
     classType = 'MUSC'
 
-    MuscTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    MuscTypeFlags = Flags(0L,Flags.getNames(
             (0,'playsOneSelection'),
             (1,'abruptTransition'),
             (2,'cycleTracks'),
@@ -5987,7 +4208,7 @@ class MreNavm(MelRecord):
     # 'Unknown 14',
     # 'Unknown 15',
     # 'Unknown 16'
-    NavmTrianglesFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    NavmTrianglesFlags = Flags(0L,Flags.getNames(
             (0, 'edge01link'),
             (1, 'edge12link'),
             (2, 'edge20link'),
@@ -6022,7 +4243,7 @@ class MreNavm(MelRecord):
     # 'Unknown 14',
     # 'Unknown 15',
     # 'Unknown 16'
-    NavmCoverFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    NavmCoverFlags = Flags(0L,Flags.getNames(
             (0, 'edge01wall'),
             (1, 'edge01ledgecover'),
             (2, 'unknown3'),
@@ -6086,7 +4307,7 @@ class MreNpc(MelRecord):
     # {0x00002000}'Unknown 14',
     # {0x00004000}'Unknown 15',
     # {0x00008000}'Unknown 16'
-    NpcFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags3 = Flags(0L,Flags.getNames(
             (0, 'ignoreWeapon'),
             (1, 'bashAttack'),
             (2, 'powerAttack'),
@@ -6118,7 +4339,7 @@ class MreNpc(MelRecord):
     # {0x0400} 'Use Def Pack List',
     # {0x0800} 'Use Attack Data',
     # {0x1000} 'Use Keywords'
-    NpcFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags2 = Flags(0L,Flags.getNames(
             (0, 'useTraits'),
             (1, 'useStats'),
             (2, 'useFactions'),
@@ -6166,7 +4387,7 @@ class MreNpc(MelRecord):
     # {0x20000000} 'Is Ghost',
     # {0x40000000} 'Unknown 30',
     # {0x80000000} 'Invulnerable'
-    NpcFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    NpcFlags1 = Flags(0L,Flags.getNames(
             (0, 'female'),
             (1, 'essential'),
             (2, 'isCharGenFacePreset'),
@@ -6256,8 +4477,8 @@ class MreNpc(MelRecord):
             'heavyArmorSO','lightArmorSO','pickpocketSO','lockpickingSO',
             'sneakSO','alchemySO','speechcraftSO','alterationSO','conjurationSO',
             'destructionSO','illusionSO','restorationSO','enchantingSO',
-            'health','magicka','stamina','dnamUnused1',
-            'farawaymodeldistance','gearedupweapons','dnamUnused2'),
+            'health','magicka','stamina',('dnamUnused1',null2),
+            'farawaymodeldistance','gearedupweapons',('dnamUnused2',null3)),
         MelFids('PNAM', 'head_part_addons',),
         MelOptStruct('HCLF', '<I', (FID, 'hair_color')),
         MelOptStruct('ZNAM', '<I', (FID, 'combat_style')),
@@ -6319,19 +4540,19 @@ class MrePack(MelRecord):
     """Package"""
     classType = 'PACK'
 
-    PackFlags10 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags10 = Flags(0L,Flags.getNames(
             (0, 'successCompletesPackage'),
         ))
 
     # 'Repeat when Complete',
     # 'Unknown 1'
-    PackFlags9 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags9 = Flags(0L,Flags.getNames(
             (0, 'repeatwhenComplete'),
             (1, 'unknown1'),
         ))
 
     # wbPKDTFlags
-    PackFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags1 = Flags(0L,Flags.getNames(
             (0, 'offersServices'),
             (1, 'unknown2'),
             (2, 'mustcomplete'),
@@ -6367,7 +4588,7 @@ class MrePack(MelRecord):
         ))
 
     # wbPKDTInterruptFlags
-    PackFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags2 = Flags(0L,Flags.getNames(
             (0, 'hellostoplayer'),
             (1, 'randomconversations'),
             (2, 'observecombatbehavior'),
@@ -6387,7 +4608,7 @@ class MrePack(MelRecord):
         ))
 
     # UNAM, Data Inputs Flags
-    PackFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    PackFlags3 = Flags(0L,Flags.getNames(
             (0, 'public'),
         ))
 
@@ -6561,7 +4782,7 @@ class MrePerk(MelRecord):
 
     # 'Run Immediately',
     # 'Replace Default'
-    PerkScriptFlagsFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    PerkScriptFlagsFlags = Flags(0L,Flags.getNames(
             (0, 'runImmediately'),
             (1, 'replaceDefault'),
         ))
@@ -6612,7 +4833,8 @@ class MrePerk(MelRecord):
             elif record.type == 2:
                 format,attrs = ('HB',('entrypoint','function'))
             else:
-                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
+                raise ModError(record.inName, # untested
+                               _('Unexpected type: %d') % record.type)
             values = []
             valuesAppend = values.append
             getter = target.__getattribute__
@@ -6672,7 +4894,8 @@ class MrePerk(MelRecord):
             for target in record.__getattribute__(self.attr):
                 element = self.loaders[target.recordType]
                 if not element:
-                    raise ModError(ins.inName,_('Unexpected type: %d') % target.recordType)
+                    raise ModError(record.inName, _(
+                        'Unexpected type: %d') % target.recordType)
                 element.dumpData(target,out)
 
     melSet = MelSet(
@@ -6727,7 +4950,7 @@ class MreProj(MelRecord):
     # $20 :'Barrier',
     # $40 :'Arrow'
 
-    ProjTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ProjTypeFlags = Flags(0L,Flags.getNames(
         (0, 'hitscan'),
         (1, 'explosive'),
         (2, 'altTriger'),
@@ -6753,7 +4976,8 @@ class MreProj(MelRecord):
             elif size == 84:
                 unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
             else:
-                raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
+                raise ModSizeError(ins.inName, record.recType + '.' + type, 92,
+                                   size, False) # untested
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -6861,7 +5085,7 @@ class MreRela(MelRecord):
     # 7 :'Enemy'
     # 8 :'Archnemesis'
 
-    RelationshipFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    RelationshipFlags = Flags(0L,Flags.getNames(
         (0,'Unknown 1'),
         (1,'Unknown 2'),
         (2,'Unknown 3'),
@@ -6903,7 +5127,7 @@ class MreRfct(MelRecord):
     # {0x00000001}'Rotate to Face Target',
     # {0x00000002}'Attach to Camera',
     # {0x00000004}'Inherit Rotation'
-    RfctTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    RfctTypeFlags = Flags(0L,Flags.getNames(
         (0, 'rotateToFaceTarget'),
         (1, 'attachToCamera'),
         (2, 'inheritRotation'),
@@ -6939,7 +5163,7 @@ class MreScen(MelRecord):
     # {0x00004000} 'Face Target',
     # {0x00010000} 'Looping',
     # {0x00020000} 'Headtrack Player'
-    ScenFlags5 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags5 = Flags(0L,Flags.getNames(
             (0, 'unknown1'),
             (1, 'unknown2'),
             (2, 'unknown3'),
@@ -6985,7 +5209,7 @@ class MreScen(MelRecord):
     # 'Dialogue End',
     # 'OBS_COM Pause',
     # 'OBS_COM End'
-    ScenFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags3 = Flags(0L,Flags.getNames(
             (0, 'deathPauseunsused'),
             (1, 'deathEnd'),
             (2, 'combatPause'),
@@ -6998,7 +5222,7 @@ class MreScen(MelRecord):
 
     # 'No Player Activation',
     # 'Optional'
-    ScenFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags2 = Flags(0L,Flags.getNames(
             (0, 'noPlayerActivation'),
             (1, 'optional'),
         ))
@@ -7008,7 +5232,7 @@ class MreScen(MelRecord):
     # 'Unknown 3',
     # 'Repeat Conditions While True',
     # 'Interruptible'
-    ScenFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    ScenFlags1 = Flags(0L,Flags.getNames(
             (0, 'beginonQuestStart'),
             (1, 'stoponQuestEnd'),
             (2, 'unknown3'),
@@ -7118,7 +5342,7 @@ class MreScrl(MelRecord,MreHasEffects):
 
     # SPIT has several wbEnum refer to wbSPIT in TES5Edit
 
-    ScrollDataFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    ScrollDataFlags = Flags(0L,Flags.getNames(
         (0,'manualCostCalc'),
         (1,'unknown2'),
         (2,'unknown3'),
@@ -7228,7 +5452,7 @@ class MreSmbn(MelRecord):
     """Story Manager Branch Node"""
     classType = 'SMBN'
 
-    SmbnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmbnNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -7255,7 +5479,7 @@ class MreSmen(MelRecord):
     """Story Manager Event Node"""
     classType = 'SMEN'
 
-    SmenNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmenNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -7285,13 +5509,13 @@ class MreSmqn(MelRecord):
     classType = 'SMQN'
 
     # "Do all" = "Do all before repeating"
-    SmqnQuestFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmqnQuestFlags = Flags(0L,Flags.getNames(
         (0,'doAll'),
         (1,'sharesEvent'),
         (2,'numQuestsToRun'),
     ))
 
-    SmqnNodeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SmqnNodeFlags = Flags(0L,Flags.getNames(
         (0,'Random'),
         (1,'noChildWarn'),
     ))
@@ -7327,7 +5551,7 @@ class MreSnct(MelRecord):
     """Sound Category"""
     classType = 'SNCT'
 
-    SoundCategoryFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SoundCategoryFlags = Flags(0L,Flags.getNames(
         (0,'muteWhenSubmerged'),
         (1,'shouldAppearOnMenu'),
     ))
@@ -7394,7 +5618,7 @@ class MreSopm(MelRecord):
 
     # 'Attenuates With Distance',
     # 'Allows Rumble'
-    SopmFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SopmFlags = Flags(0L,Flags.getNames(
             (0, 'attenuatesWithDistance'),
             (1, 'allowsRumble'),
         ))
@@ -7447,7 +5671,7 @@ class MreSpel(MelRecord,MreHasEffects):
     # SPIT has several wbEnum refer to wbSPIT in TES5Edit
 
     # flags = SpellFlags(0L,Flags.getNames
-    SpelTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    SpelTypeFlags = Flags(0L,Flags.getNames(
         ( 0,'manualCostCalc'),
         ( 1,'unknown2'),
         ( 2,'unknown3'),
@@ -7610,7 +5834,7 @@ class MreTxst(MelRecord):
     # {0x0001}'No Specular Map',
     # {0x0002}'Facegen Textures',
     # {0x0004}'Has Model Space Normal Map'
-    TxstTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    TxstTypeFlags = Flags(0L,Flags.getNames(
         (0, 'noSpecularMap'),
         (1, 'facegenTextures'),
         (2, 'hasModelSpaceNormalMap'),
@@ -7642,7 +5866,7 @@ class MreVtyp(MelRecord):
 
     # 'Allow Default Dialog',
     # 'Female'
-    VtypTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    VtypTypeFlags = Flags(0L,Flags.getNames(
             (0, 'allowDefaultDialog'),
             (1, 'female'),
         ))
@@ -7659,7 +5883,7 @@ class MreWatr(MelRecord):
     """Water"""
     classType = 'WATR'
 
-    WatrTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
+    WatrTypeFlags = Flags(0L,Flags.getNames(
             (0, 'causesDamage'),
         ))
 
@@ -7677,10 +5901,10 @@ class MreWatr(MelRecord):
         MelFid('XNAM','spell',),
         MelFid('INAM','imageSpace',),
         MelStruct('DATA','H','damagePerSecond'),
-        MelStruct('DNAM','7f4s2f3Bs3Bs3B5s43f','unknown1','unknown2','unknown3',
+        MelStruct('DNAM','7f4s2f3Bs3Bs3Bs4s43f','unknown1','unknown2','unknown3',
                   'unknown4','specularPropertiesSunSpecularPower',
                   'waterPropertiesReflectivityAmount',
-                  'waterPropertiesFresnelAmount','unknown5',
+                  'waterPropertiesFresnelAmount',('unknown5',null4),
                   'fogPropertiesAboveWaterFogDistanceNearPlane',
                   'fogPropertiesAboveWaterFogDistanceFarPlane',
                   # Shallow Color
@@ -7689,7 +5913,7 @@ class MreWatr(MelRecord):
                   'red_dc','green_dc','blue_dc','unknown_dc',
                   # Reflection Color
                   'red_rc','green_rc','blue_rc','unknown_rc',
-                  'unknown6','unknown7','unknown8','unknown9','unknown10',
+                  ('unknown6',null4),'unknown7','unknown8','unknown9','unknown10',
                   'displacementSimulatorStartingSize',
                   'displacementSimulatorForce','displacementSimulatorVelocity',
                   'displacementSimulatorFalloff','displacementSimulatorDampner',
@@ -7739,7 +5963,7 @@ class MreWeap(MelRecord):
     classType = 'WEAP'
 
     # 'On Death'
-    WeapFlags3 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags3 = Flags(0L,Flags.getNames(
         (0, 'onDeath'),
     ))
 
@@ -7757,7 +5981,7 @@ class MreWeap(MelRecord):
     # {0x00000800}'Unknown 12',
     # {0x00001000}'Non-hostile',
     # {0x00002000}'Bound Weapon'
-    WeapFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags2 = Flags(0L,Flags.getNames(
             (0, 'playerOnly'),
             (1, 'nPCsUseAmmo'),
             (2, 'noJamAfterReloadunused'),
@@ -7782,7 +6006,7 @@ class MreWeap(MelRecord):
     # {0x0020}'Embedded Weapon (unused)',
     # {0x0040}'Don''t Use 1st Person IS Anim (unused)',
     # {0x0080}'Non-playable'
-    WeapFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WeapFlags1 = Flags(0L,Flags.getNames(
             (0, 'ignoresNormalWeaponResistance'),
             (1, 'automaticunused'),
             (2, 'hasScopeunused'),
@@ -7863,9 +6087,9 @@ class MreWrld(MelRecord):
     # {0x20} 'Unknown 6',
     # {0x40} 'Fixed Dimensions',
     # {0x80} 'No Grass'
-    WrldFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WrldFlags2 = Flags(0L,Flags.getNames(
             (0, 'smallWorld'),
-            (1, 'can'),
+            (1, 'noFastTravel'),
             (2, 'unknown3'),
             (3, 'noLODWater'),
             (4, 'noLandscape'),
@@ -7881,7 +6105,7 @@ class MreWrld(MelRecord):
     # {0x0010}'Use Climate Data',
     # {0x0020}'Use Image Space Data (unused)',
     # {0x0040}'Use Sky Cell'
-    WrldFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WrldFlags1 = Flags(0L,Flags.getNames(
             (0, 'useLandData'),
             (1, 'useLODData'),
             (2, 'don'),
@@ -7890,6 +6114,26 @@ class MreWrld(MelRecord):
             (5, 'useImageSpaceDataunused'),
             (6, 'useSkyCell'),
         ))
+
+    class MelWrldMnam(MelOptStruct):
+        """Handle older truncated MNAM for WRLD subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 28:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 24:
+                unpacked = ins.unpack('2i4h2f',size,readId)
+            elif size == 16:
+                unpacked = ins.unpack('2i4h',size,readId)
+            else:
+                raise ModSizeError(record.inName, record.recType + '.' + type,
+                                   ModReader.recHeader.size, size, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -7901,7 +6145,7 @@ class MreWrld(MelRecord):
         MelBase('MHDT','maxHeightData'),
         MelLString('FULL','full'),
         # Fixed Dimensions Center Cell
-        MelStruct('WCTR','2h','fixedX','fixedY',),
+        MelOptStruct('WCTR','2h','fixedX','fixedY',),
         MelFid('LTMP','interiorLighting',),
         MelFid('XEZN','encounterZone',),
         MelFid('XLCN','location',),
@@ -7912,11 +6156,11 @@ class MreWrld(MelRecord):
         MelFid('CNAM','climate',),
         MelFid('NAM2','water',),
         MelFid('NAM3','lODWaterType',),
-        MelStruct('NAM4','f','lODWaterHeight',),
-        MelStruct('DNAM','2f','defaultLandHeight','defaultWaterHeight',),
+        MelOptStruct('NAM4','f','lODWaterHeight',),
+        MelOptStruct('DNAM','2f','defaultLandHeight','defaultWaterHeight',),
         MelString('ICON','mapImage'),
         MelModel('cloudModel','MODL',),
-        MelStruct('MNAM','2i4h3f','usableDimensionsX','usableDimensionsY',
+        MelWrldMnam('MNAM','2i4h3f','usableDimensionsX','usableDimensionsY',
                   'cellCoordinatesX','cellCoordinatesY','seCellX','seCellY',
                   'cameraDataMinHeight','cameraDataMaxHeight',
                   'cameraDataInitialPitch',),
@@ -7943,7 +6187,7 @@ class MreWthr(MelRecord):
     """Weather"""
     classType = 'WTHR'
 
-    WthrFlags2 = bolt.Flags(0L,bolt.Flags.getNames(
+    WthrFlags2 = Flags(0L,Flags.getNames(
             (0, 'layer_0'),
             (1, 'layer_1'),
             (2, 'layer_2'),
@@ -7984,7 +6228,7 @@ class MreWthr(MelRecord):
     # {0x08} 'Weather - Snow',
     # {0x10} 'Sky Statics - Always Visible',
     # {0x20} 'Sky Statics - Follows Sun Position'
-    WthrFlags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    WthrFlags1 = Flags(0L,Flags.getNames(
             (0, 'weatherPleasant'),
             (1, 'weatherCloudy'),
             (2, 'weatherRainy'),
@@ -8032,24 +6276,22 @@ class MreWthr(MelRecord):
         MelFid('MNAM','precipitationType',),
         MelFid('NNAM','visualEffect',),
         MelBase('ONAM','unused'),
-        MelBase('RNAM','ySpeed'),
-        MelBase('QNAM','xSpeed'),
+        MelBase('RNAM','cloudSpeedY'),
+        MelBase('QNAM','cloudSpeedX'),
         MelBase('PNAM','cloudColors'),
-        MelBase('PNAM','cloudAlphas'),
+        MelBase('JNAM','cloudAlphas'),
         MelBase('NAM0','weatherColors'),
         MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
                   'dayPower','nightPower','dayMax','nightMax',),
-        MelStruct('DATA','B2s16B','windSpeed','unknown','transDelta',
+        MelStruct('DATA','B2s16B','windSpeed',('unknown',null2),'transDelta',
                   'sunGlare','sunDamage','precipitationBeginFadeIn',
                   'precipitationEndFadeOut','thunderLightningBeginFadeIn',
                   'thunderLightningEndFadeOut','thunderLightningFrequency',
-                  (WthrFlags1,'flags',0L),'red','green','blue',
+                  (WthrFlags1,'wthrFlags1',0L),'red','green','blue',
                   'visualEffectBegin','visualEffectEnd',
                   'windDirection','windDirectionRange',),
-        MelStruct('NAM1','I',(WthrFlags2,'flags',0L),),
-        MelGroups('sounds',
-            MelOptStruct('SNAM','2I',(FID,'weatherSound'),'weatherType'),
-            ),
+        MelStruct('NAM1','I',(WthrFlags2,'wthrFlags2',0L),),
+        MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
         MelFids('TNAM','skyStatics',),
         MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
                   (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),
@@ -8062,65 +6304,3 @@ class MreWthr(MelRecord):
 
 # Verified for 305
 # Some things Marked MelBase could be updated if mitigation needed
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# CLDC ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# HAIR ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# PWAT ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# RGDL ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# SCOL ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# SCPT ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# These Are normally not mergable but added to brec.MreRecord.type_class
-#
-#       MreCell,
-#------------------------------------------------------------------------------
-# These have undefined FormIDs Do not merge them
-#
-#       MreNavi, MreNavm,
-#------------------------------------------------------------------------------
-# These need syntax revision but can be merged once that is corrected
-#
-#       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-#------------------------------------------------------------------------------
-#--Mergeable record types
-mergeClasses = (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
-    )
-
-#--Extra read classes: these record types will always be loaded, even if patchers
-#  don't need them directly (for example, for MGEF info)
-readClasses = ()
-writeClasses = ()
-
-def init():
-    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
-    # re-executing all lines within the module, it acts like another 'import'
-    # statement - in otherwords, nothing happens.  This means any lines that
-    # affect outside modules must do so within this function, which will be
-    # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
-
-    #--Record Types
-    brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
-        MreHeader,
-        ))
-
-    #--Simple records
-    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
-        set(('TES4')))

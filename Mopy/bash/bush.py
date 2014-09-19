@@ -38,7 +38,7 @@ gamePath = None
 fullLoadOrder = {}
 
 def detectGames(workingDir=u''):
-    """Detect which supported games are intalled.
+    """Detect which supported games are installed.
        - First, read the windows registry, checking for the install keys for the
          games.
        - Next, check for a valid game at "workingDir"
@@ -54,7 +54,7 @@ def detectGames(workingDir=u''):
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
         except:
-            deprint(u'Error in game support file:', modname, traceback=True)
+            deprint(u'Error in game support module:', modname, traceback=True)
             continue
         submod = getattr(module,modname)
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
@@ -413,7 +413,7 @@ mgef_school.update(dict((_strU.unpack(x)[0],y) for x,[y,z,a] in magicEffects.ite
 mgef_name.update(dict((_strU.unpack(x)[0],z) for x,[y,z,a] in magicEffects.items()))
 mgef_basevalue.update(dict((_strU.unpack(x)[0],a) for x,[y,z,a] in magicEffects.items()))
 
-hostileEffects = set((
+hostileEffects = {
     'ABAT', #--Absorb Attribute
     'ABFA', #--Absorb Fatigue
     'ABHE', #--Absorb Health
@@ -449,14 +449,14 @@ hostileEffects = set((
     'WKNW', #--Weakness to Normal Weapons
     'WKPO', #--Weakness to Poison
     'WKSH', #--Weakness to Shock
-    ))
+    }
 hostileEffects |= set((_strU.unpack(x)[0] for x in hostileEffects))
 
 #Doesn't list mgefs that use actor values, but rather mgefs that have a generic name
 #Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue field contains 9
 #    But it is actually using an attribute rather than an actor value
 #Ex: Burden uses an actual actor value (encumbrance) but it isn't listed since its name doesn't change
-genericAVEffects = set([
+genericAVEffects = {
     'ABAT', #--Absorb Attribute (Use Attribute)
     'ABSK', #--Absorb Skill (Use Skill)
     'DGAT', #--Damage Attribute (Use Attribute)
@@ -465,7 +465,7 @@ genericAVEffects = set([
     'FOAT', #--Fortify Attribute (Use Attribute)
     'FOSK', #--Fortify Skill (Use Skill)
     'REAT', #--Restore Attribute (Use Attribute)
-    ])
+    }
 genericAVEffects |= set((_strU.unpack(x)[0] for x in genericAVEffects))
 
 actorValues = [
@@ -706,22 +706,22 @@ id_exhaustion = {
 
 # Repair Factions -------------------------------------------------------------
 #--Formids for npcs which legitimately have no faction membership
-repairFactions_legitNullSpells = set((
+repairFactions_legitNullSpells = {
     #--MS47 Aleswell Invisibility
     0x0002F85F, #Sakeepa
     0x0002F861, #ShagolgroBumph
     0x0002F864, #DiramSerethi
     0x0002F865, #AdosiSerethi
     0x0002F866, #UrnsiSerethi
-    ))
+    }
 
-repairFactions_legitNullFactions = set((
+repairFactions_legitNullFactions = {
     #0x00012106, #SEThadon (Between SE07 and SE12) Safer to leave in.
     #0x00012107, #SESyl (Between SE07 and SE12) Safer to leave in.
     #0x00031540, #Mirisa (Only in Cropsford, but doesn't hurt to leave her in it.)
-    ))
+    }
 
-repairFactions_legitDroppedFactions = set((
+repairFactions_legitDroppedFactions = {
     (0x000034CC,0x000034B9), #UlrichLeland CheydinhalGuardFaction
     (0x000034CC,0x000034BB), #UlrichLeland CheydinhalCastleFaction
     (0x000055C2,0x00090E31), #CheydinhalGuardCastlePostDay01 CheydinhalCorruptGuardsFactionMS10
@@ -786,7 +786,7 @@ repairFactions_legitDroppedFactions = set((
     (0x0004EF69,0x00090E31), #CheydinhalGuardCityPostDay03 CheydinhalCorruptGuardsFactionMS10
     (0x0004EFF9,0x00090E31), #CheydinhalGuardCityPostDay04 CheydinhalCorruptGuardsFactionMS10
     (0x0004EFFA,0x00090E31), #CheydinhalGuardCityPostNight04 CheydinhalCorruptGuardsFactionMS10
-    ))
+}
 
 # Messages Text ===============================================================
 messagesHeader = u"""<html>
