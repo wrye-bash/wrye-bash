@@ -541,7 +541,14 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         self._clog(log)
 
     def _clog(self,log):
-        """Most common logging pattern - override as needed"""
+        """Most common logging pattern - override as needed.
+
+        Used in:
+        CBash_CellImporter, CBash_KFFZPatcher, CBash_NPCAIPackagePatcher,
+        CBash_ImportRelations, CBash_RoadImporter, CBash_SpellsPatcher.
+        You must define logMsg as a class attribute in subclasses except
+        CBash_ImportFactions and CBash_ImportInventory.
+        """
         mod_count = self.mod_count
         log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
