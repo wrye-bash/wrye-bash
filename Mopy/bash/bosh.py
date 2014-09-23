@@ -11128,7 +11128,8 @@ class CBash_PatchFile(ObModFile):
 
 #------------------------------------------------------------------------------
 from patcher.base import Patcher, CBash_Patcher
-from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher
+from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher, \
+    SpecialPatcher
 
 # Patchers: 10 ----------------------------------------------------------------
 ################################### MOVED #####################################
@@ -11137,25 +11138,6 @@ from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher
 # Patchers: 30 ----------------------------------------------------------------
 ################################### MOVED #####################################
 # Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher:
-    """Provides default group, scan and edit orders."""
-    group = _(u'Special')
-    scanOrder = 40
-    editOrder = 40
-
-    def scan_more(self,modFile,record,bashTags):
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: return
-
 #------------------------------------------------------------------------------
 class AlchemicalCatalogs(SpecialPatcher,Patcher):
     """Updates COBL alchemical catalogs."""

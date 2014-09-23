@@ -36,5 +36,8 @@ multitweak_assorted.py
 multitweak_clothes.py
 multitweak_names.py
 multitweak_settings.py
-
+# Patchers: 40 ----------------------------------------------------------------
+# SpecialPatcher is used in those
+races_multitweaks.py
+special.py
 """
