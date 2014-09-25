@@ -28,7 +28,8 @@ import re
 import string
 from .... import bosh # for modInfos, dirs
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader, Path
-from ....bosh import PrintFormID, getPatchesList, getPatchesPath
+from ....bosh import PrintFormID, getPatchesList, getPatchesPath, \
+    LoadFactory, ModFile
 from ....brec import MreRecord, ModReader, null4
 from .... import bush
 from ....cint import MGEFCode, FormID
@@ -1351,5 +1352,135 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class SEWorldEnforcer(SpecialPatcher,Patcher):
+    """Suspends Cyrodiil quests while in Shivering Isles."""
+    name = _(u'SEWorld Tests')
+    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
+             u"re-instates GetPlayerInSEWorld tests as necessary.")
+    defaultConfig = {'isEnabled': True}
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cyrodiilQuests = set()
+        if GPath(u'Oblivion.esm') in loadMods:
+            loadFactory = LoadFactory(False,MreRecord.type_class['QUST'])
+            modInfo = bosh.modInfos[GPath(u'Oblivion.esm')]
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for record in modFile.QUST.getActiveRecords():
+                for condition in record.conditions:
+                    if condition.ifunc == 365 and condition.compValue == 0:
+                        self.cyrodiilQuests.add(mapper(record.fid))
+                        break
+        self.isActive = bool(self.cyrodiilQuests)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('QUST',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('QUST',) if self.isActive else ()
+
+    def scanModFile(self,modFile,progress):
+        if not self.isActive: return
+        if modFile.fileInfo.name == GPath(u'Oblivion.esm'): return
+        cyrodiilQuests = self.cyrodiilQuests
+        mapper = modFile.getLongMapper()
+        patchBlock = self.patchFile.QUST
+        for record in modFile.QUST.getActiveRecords():
+            fid = mapper(record.fid)
+            if fid not in cyrodiilQuests: continue
+            for condition in record.conditions:
+                if condition.ifunc == 365: break #--365: playerInSeWorld
+            else:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        cyrodiilQuests = self.cyrodiilQuests
+        patchFile = self.patchFile
+        keep = patchFile.getKeeper()
+        patched = []
+        for record in patchFile.QUST.getActiveRecords():
+            if record.fid not in cyrodiilQuests: continue
+            for condition in record.conditions:
+                if condition.ifunc == 365: break #--365: playerInSeWorld
+            else:
+                condition = record.getDefault('conditions')
+                condition.ifunc = 365
+                record.conditions.insert(0,condition)
+                keep(record.fid)
+                patched.append(record.eid)
+        log.setHeader('= '+self.__class__.name)
+        log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
+
+class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
+    """Suspends Cyrodiil quests while in Shivering Isles."""
+    name = _(u'SEWorld Tests')
+    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
+             u"re-instates GetPlayerInSEWorld tests as necessary.")
+    scanRequiresChecked = True
+    applyRequiresChecked = False
+    defaultConfig = {'isEnabled':True}
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cyrodiilQuests = set()
+        self.srcs = [GPath(u'Oblivion.esm')]
+        self.isActive = self.srcs[0] in loadMods
+        self.mod_eids = {}
+
+    def getTypes(self):
+        return ['QUST']
+
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        for condition in record.conditions:
+            if condition.ifunc == 365 and condition.compValue == 0:
+                self.cyrodiilQuests.add(record.fid)
+                return
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if modFile.GName in self.srcs: return
+
+        recordId = record.fid
+        if recordId in self.cyrodiilQuests:
+            for condition in record.conditions:
+                if condition.ifunc == 365: return #--365: playerInSeWorld
+            else:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    conditions = override.conditions
+                    condition = override.create_condition()
+                    condition.ifunc = 365
+                    conditions.insert(0,condition)
+                    override.conditions = conditions
+                    self.mod_eids.setdefault(modFile.GName, []).append(
+                        override.eid)
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_eids = self.mod_eids
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'\n=== '+_(u'Quests Patched'))
+        for mod,eids in mod_eids.iteritems():
+            log(u'* %s: %d' % (mod.s,len(eids)))
+            for eid in sorted(eids):
+                log(u'  * %s' % eid)
+        self.mod_eids = {}
 
 #------------------------------------------------------------------------------

@@ -78,7 +78,7 @@ from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
 from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
     CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
-    CBash_MFactMarker
+    CBash_MFactMarker, SEWorldEnforcer, CBash_SEWorldEnforcer
 from patcher.oblivion.patchers.special import ListsMerger as ListsMerger_
 from patcher.oblivion.patchers.special import \
     CBash_ListsMerger as CBash_ListsMerger_
@@ -8114,8 +8114,8 @@ class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
 class MFactMarker(MFactMarker,ListPatcher): pass
 class CBash_MFactMarker(CBash_MFactMarker,ListPatcher): pass
 
-class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
-class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
+class SEWorldEnforcer(SEWorldEnforcer,Patcher): pass
+class CBash_SEWorldEnforcer(CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(bosh.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
