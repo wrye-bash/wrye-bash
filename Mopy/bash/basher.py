@@ -78,6 +78,9 @@ from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
 from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
     CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion
+from patcher.oblivion.patchers.special import ListsMerger as ListsMerger_
+from patcher.oblivion.patchers.special import \
+    CBash_ListsMerger as CBash_ListsMerger_
 
 startupinfo = bolt.startupinfo
 
@@ -8102,9 +8105,9 @@ class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
 class UpdateReferences(UpdateReferences,ListPatcher): pass
 class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
-class ListsMerger(bosh.ListsMerger,ListPatcher):
+class ListsMerger(ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
-class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
+class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
 
 class MFactMarker(bosh.MFactMarker,ListPatcher): pass
@@ -14327,7 +14330,7 @@ class Mod_ListPatchConfig(Link):
                         else:
                             log(u'. ~~%s~~' % label)
                             clip.write(u'    %s\n' % label)
-            elif isinstance(patcher, (bosh.CBash_ListsMerger,bosh.ListsMerger)):
+            elif isinstance(patcher, (CBash_ListsMerger_, ListsMerger_)):
                 # Leveled Lists
                 patcher.configChoices = conf.get('configChoices',{})
                 for item in conf.get('configItems',[]):
