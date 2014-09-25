@@ -31,7 +31,7 @@ from ...bolt import AbstractError, ArgumentError
 from ...brec import ModError, ModReader
 from ...bolt import GPath, sio
 from ... import bush # for groupTypes
-import bash # this file is imported to bosh still...
+import bash # TODO: this file is imported to bosh still...
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not

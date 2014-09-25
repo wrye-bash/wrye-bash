@@ -36,7 +36,7 @@ import re
 from ..bolt import AbstractError, GPath, Path
 from ..bosh import reModExt, dirs, reCsvExt # should I not import dirs here ?
 from .. import bush # for fullLoadOrder - needed ?
-import bash # for bosh.modInfos (can't import bosh yet)
+from .. import bosh # for modInfos
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -177,7 +177,7 @@ class AListPatcher(_Abstract_Patcher):
             autoKey = {autoKey}
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in bash.bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.data.values():
             if autoRe.match(modInfo.name.s) or (
                 autoKey & modInfo.getBashTags()):
                 if bush.fullLoadOrder[modInfo.name] > \
@@ -200,7 +200,7 @@ class AListPatcher(_Abstract_Patcher):
         newConfigItems = []
         patchesDir = self._patchesList()
         for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in bash.bosh.modInfos) or
+            if ((reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
                         reCsvExt.search(srcPath.s) and srcPath in patchesDir):
                 newConfigItems.append(srcPath)
         self.configItems = newConfigItems
@@ -234,7 +234,7 @@ class AListPatcher(_Abstract_Patcher):
     def sortConfig(self,items):
         """Return sorted items. Default assumes mods and sorts by load
         order."""
-        return bash.bosh.modInfos.getOrdered(items,False)
+        return bosh.modInfos.getOrdered(items,False)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -425,8 +425,8 @@ class APatchMerger(AListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        for modInfo in bash.bosh.modInfos.data.values():
-            if modInfo.name in bash.bosh.modInfos.mergeable and u'NoMerge' not in \
+        for modInfo in bosh.modInfos.data.values():
+            if modInfo.name in bosh.modInfos.mergeable and u'NoMerge' not in \
                     modInfo.getBashTags() and \
                             bush.fullLoadOrder[modInfo.name] < \
                             bush.fullLoadOrder[self._patchFile().patchName]:

@@ -26,6 +26,7 @@ from operator import itemgetter, attrgetter
 import os
 import re
 import string
+# Internal
 from .... import bosh # for modInfos, dirs
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader, Path
 from ....bosh import PrintFormID, getPatchesList, getPatchesPath, \

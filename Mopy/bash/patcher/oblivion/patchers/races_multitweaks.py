@@ -30,6 +30,7 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """ # TODO:DOCS
 import random
 import re
+# Internal
 from .... import bush # for fullLoadOrder, defaultEyes (?)
 from .... import bosh # for modInfos
 from ....bolt import SubProgress, BoltError, GPath, deprint

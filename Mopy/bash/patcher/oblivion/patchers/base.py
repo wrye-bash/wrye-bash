@@ -25,7 +25,7 @@
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import struct
 from operator import itemgetter
-import bash # for bosh.modInfos, dirs
+from .... import bosh # for bosh.modInfos, dirs
 from ....bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt, \
     getPatchesPath, CountDict
 from ....bolt import GPath, CsvReader
@@ -38,7 +38,7 @@ from ....patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
 class ListPatcher(AListPatcher,Patcher):
 
     def _patchesList(self):
-        return bash.bosh.dirs['patches'].list()
+        return bosh.dirs['patches'].list()
 
     def _patchFile(self):
         return PatchFile
@@ -99,7 +99,7 @@ class MultiTweakItem(AMultiTweakItem):
         #--Log - must define self.logMsg in subclasses
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CBash_MultiTweakItem(AMultiTweakItem):
@@ -130,7 +130,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         mod_count = self.mod_count
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
@@ -389,7 +389,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for mod in self.getConfigChecked():
             log(u'* ' +mod.s)
         log(u'\n=== '+_(u'Records Patched'))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 from ..utilities import CBash_FidReplacer
@@ -470,7 +470,7 @@ class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
             for srcFile in self.srcs:
                 log(u"* " +srcFile.s)
         log(u'\n')
-        for mod in bash.bosh.modInfos.getOrdered(mod_count_old_new.keys()):
+        for mod in bosh.modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
             log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
@@ -529,7 +529,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             if conflict != record:
                 mod = conflict.GetParentMod()
                 if mod.GName in self.srcs:
-                    tags = bash.bosh.modInfos[mod.GName].getBashTags()
+                    tags = bosh.modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
 
@@ -551,7 +551,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         """
         mod_count = self.mod_count
         log(self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
@@ -578,6 +578,6 @@ class SpecialPatcher:
             if conflict != record:
                 mod = conflict.GetParentMod()
                 if mod.GName in self.srcs:
-                    tags = bash.bosh.modInfos[mod.GName].getBashTags()
+                    tags = bosh.modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
