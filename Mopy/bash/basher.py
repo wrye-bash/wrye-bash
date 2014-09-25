@@ -77,7 +77,8 @@ from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
 from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
 from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
-    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion
+    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
+    CBash_MFactMarker
 from patcher.oblivion.patchers.special import ListsMerger as ListsMerger_
 from patcher.oblivion.patchers.special import \
     CBash_ListsMerger as CBash_ListsMerger_
@@ -8110,8 +8111,8 @@ class ListsMerger(ListsMerger_,ListPatcher):
 class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
 
-class MFactMarker(bosh.MFactMarker,ListPatcher): pass
-class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
+class MFactMarker(MFactMarker,ListPatcher): pass
+class CBash_MFactMarker(CBash_MFactMarker,ListPatcher): pass
 
 class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
 class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass

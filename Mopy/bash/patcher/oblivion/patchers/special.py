@@ -1098,3 +1098,258 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class MFactMarker(SpecialPatcher,ListPatcher):
+    """Mark factions that player can acquire while morphing."""
+    name = _(u'Morph Factions')
+    text = (_(u"Mark factions that player can acquire while morphing.") +
+            u'\n\n' +
+            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
+            )
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = 'MFact'
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles) and GPath(
+            u"Cobl Main.esm") in bosh.modInfos.ordered
+        self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        for srcFile in self.srcFiles:
+            textPath = getPatchesPath(srcFile)
+            if not textPath.exists(): continue
+            with CsvReader(textPath) as ins:
+                for fields in ins:
+                    if len(fields) < 6 or fields[1][:2] != u'0x':
+                        continue
+                    mod,objectIndex = fields[:2]
+                    mod = GPath(mod)
+                    longid = (aliases.get(mod,mod),int(objectIndex,0))
+                    morphName = fields[4].strip()
+                    rankName = fields[5].strip()
+                    if not morphName: continue
+                    if not rankName: rankName = _(u'Member')
+                    id_info[longid] = (morphName,rankName)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('FACT',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('FACT',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Scan modFile."""
+        if not self.isActive: return
+        id_info = self.id_info
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        patchBlock = self.patchFile.FACT
+        if modFile.fileInfo.name == GPath(u"Cobl Main.esm"):
+            modFile.convertToLongFids(('FACT',))
+            record = modFile.FACT.getRecord(self.mFactLong)
+            if record:
+                patchBlock.setRecord(record.getTypeCopy())
+        for record in modFile.FACT.getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid in id_info:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Make changes to patchfile."""
+        if not self.isActive: return
+        mFactLong = self.mFactLong
+        id_info = self.id_info
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        changed = {}
+        mFactable = []
+        for record in modFile.FACT.getActiveRecords():
+            if record.fid not in id_info: continue
+            if record.fid == mFactLong: continue
+            mFactable.append(record.fid)
+            #--Update record if it doesn't have an existing relation with
+            # mFactLong
+            if mFactLong not in [relation.faction for relation in
+                                 record.relations]:
+                record.flags.hiddenFromPC = False
+                relation = record.getDefault('relations')
+                relation.faction = mFactLong
+                relation.mod = 10
+                record.relations.append(relation)
+                mname,rankName = id_info[record.fid]
+                record.full = mname
+                if not record.ranks:
+                    record.ranks = [record.getDefault('ranks')]
+                for rank in record.ranks:
+                    if not rank.male: rank.male = rankName
+                    if not rank.female: rank.female = rank.male
+                    if not rank.insigniaPath:
+                        rank.insigniaPath = \
+                            u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
+                keep(record.fid)
+                mod = record.fid[0]
+                changed[mod] = changed.setdefault(mod,0) + 1
+        #--MFact record
+        record = modFile.FACT.getRecord(mFactLong)
+        if record:
+            relations = record.relations
+            del relations[:]
+            for faction in mFactable:
+                relation = record.getDefault('relations')
+                relation.faction = faction
+                relation.mod = 10
+                relations.append(relation)
+            keep(record.fid)
+        modsHeader = u'=== ' + _(u'Source Mods/Files')
+        log.setHeader(u'= ' + self.__class__.name)
+        log(modsHeader)
+        for file in self.srcFiles:
+            log(u'* ' +file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
+        for mod in sorted(changed):
+            log(u'* %s: %d' % (mod.s,changed[mod]))
+
+class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
+    """Mark factions that player can acquire while morphing."""
+    name = _(u'Morph Factions')
+    text = (_(u"Mark factions that player can acquire while morphing.") +
+            u'\n\n' +
+            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
+            )
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoKey = {'MFact'}
+    unloadedText = u""
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.cobl = GPath(u'Cobl Main.esm')
+        self.isActive = self.cobl in loadMods and \
+                        bosh.modInfos.getVersionFloat(self.cobl) > 1.27
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.mFactLong = FormID(self.cobl,0x33FB)
+        self.mod_count = {}
+        self.mFactable = set()
+
+    def initData(self,group_patchers,progress):
+        if not self.isActive: return
+        for type in self.getTypes():
+            group_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['FACT']
+
+    def readFromText(self,textPath):
+        """Imports id_info from specified text file."""
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        textPath = GPath(textPath)
+        if not textPath.exists(): return
+        with CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != u'0x':
+                    continue
+                mod,objectIndex = fields[:2]
+                mod = GPath(mod)
+                longid = FormID(aliases.get(mod,mod),int(objectIndex,0))
+                morphName = fields[4].strip()
+                rankName = fields[5].strip()
+                if not morphName: continue
+                if not rankName: rankName = _(u'Member')
+                id_info[longid] = (morphName,rankName)
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        id_info = self.id_info
+        recordId = record.fid
+        mFactLong = self.mFactLong
+        if recordId in id_info and recordId != mFactLong:
+            self.mFactable.add(recordId)
+            if mFactLong not in [relation.faction for relation in
+                                 record.relations]:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.IsHiddenFromPC = False
+                    relation = override.create_relation()
+                    relation.faction = mFactLong
+                    relation.mod = 10
+                    mname,rankName = id_info[recordId]
+                    override.full = mname
+                    ranks = override.ranks or [override.create_rank()]
+                    for rank in ranks:
+                        if not rank.male: rank.male = rankName
+                        if not rank.female: rank.female = rank.male
+                        if not rank.insigniaPath:
+                            rank.insigniaPath = \
+                            u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def finishPatch(self,patchFile,progress):
+        """Edits the bashed patch file directly."""
+        mFactable = self.mFactable
+        if not mFactable: return
+        subProgress = SubProgress(progress)
+        subProgress.setFull(max(len(mFactable),1))
+        pstate = 0
+        coblMod = patchFile.Current.LookupModFile(self.cobl.s)
+
+        record = coblMod.LookupRecord(self.mFactLong)
+        if record.recType != 'FACT':
+            print PrintFormID(self.mFactLong)
+            print patchFile.Current.Debug_DumpModFiles()
+            print record
+            raise StateError(u"Cobl Morph Factions: Unable to lookup morphable"
+                             u" faction record in Cobl Main.esm!")
+
+        override = record.CopyAsOverride(patchFile)
+        if override:
+            override.relations = None
+            pstate = 0
+            for faction in mFactable:
+                subProgress(pstate, _(u'Marking Morphable Factions...')+u'\n')
+                relation = override.create_relation()
+                relation.faction = faction
+                relation.mod = 10
+                pstate += 1
+        mFactable.clear()
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
+        for file in self.srcs:
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+            log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
