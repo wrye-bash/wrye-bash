@@ -77,7 +77,7 @@ from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
 from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
 from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
-    CBash_AlchemicalCatalogs
+    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion
 
 startupinfo = bolt.startupinfo
 
@@ -8096,8 +8096,8 @@ class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 class AlchemicalCatalogs(AlchemicalCatalogs,Patcher): pass
 class CBash_AlchemicalCatalogs(CBash_AlchemicalCatalogs,Patcher): pass
 
-class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
-class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
+class CoblExhaustion(CoblExhaustion,ListPatcher): pass
+class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
 
 class UpdateReferences(UpdateReferences,ListPatcher): pass
 class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
