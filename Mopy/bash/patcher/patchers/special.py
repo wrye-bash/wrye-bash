@@ -27,15 +27,14 @@ import os
 import re
 import string
 # Internal
-from .... import bosh # for modInfos, dirs
-from ....bolt import GPath, sio, SubProgress, StateError, CsvReader, Path
-from ....bosh import PrintFormID, getPatchesList, getPatchesPath, \
+from ... import bosh # for modInfos, dirs
+from ...bolt import GPath, sio, SubProgress, StateError, CsvReader, Path
+from ...bosh import PrintFormID, getPatchesList, getPatchesPath, \
     LoadFactory, ModFile
-from ....brec import MreRecord, ModReader, null4
-from .... import bush
-from ....cint import MGEFCode, FormID
-from ....patcher.base import Patcher, CBash_Patcher
-from ....patcher.oblivion.patchers.base import SpecialPatcher, ListPatcher, \
+from ...brec import MreRecord, ModReader, null4
+from ... import bush
+from ...cint import MGEFCode, FormID
+from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
     CBash_ListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------

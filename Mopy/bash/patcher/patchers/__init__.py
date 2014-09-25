@@ -22,7 +22,7 @@
 #
 # =============================================================================
 
-"""This module contains the oblivion patcher classes
+"""This module contains the patcher classes
 
 # Patchers 1 ------------------------------------------------------------------
 In patchers/base.py except Patcher and CBash_Patcher which are in

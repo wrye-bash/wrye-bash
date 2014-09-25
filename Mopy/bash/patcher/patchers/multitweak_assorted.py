@@ -27,17 +27,15 @@ to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
 # TODO:DOCS
 import random
 import re
-
-from ....bolt import GPath
-from ....brec import MreRecord
-from .... import bosh # for modInfos
-from .... import bush # from ....bush import game ? # should be set by now !
-from ....cint import MGEFCode
-from ....patcher.base import AMultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweaker, \
-    CBash_MultiTweaker
+# Internal
+from ...bolt import GPath
+from ...brec import MreRecord
+from ... import bosh # for modInfos
+from ... import bush # from ....bush import game ? # should be set by now !
+from ...cint import MGEFCode
+from ...patcher.base import AMultiTweakItem
+from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class AssortedTweak_ArmorShows(MultiTweakItem):

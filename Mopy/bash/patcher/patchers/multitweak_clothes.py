@@ -25,12 +25,10 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 # TODO:DOCS
-from .... import bosh # for modInfos
-from ....patcher.base import AMultiTweakItem, AMultiTweaker
-from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweaker, \
-    CBash_MultiTweaker
+from ... import bosh # for modInfos
+from ...patcher.base import AMultiTweakItem, AMultiTweaker
+from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class AClothesTweak(AMultiTweakItem):
