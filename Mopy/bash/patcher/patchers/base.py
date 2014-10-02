@@ -564,7 +564,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'* ' + mod.s)
 
 # Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher:
+class SpecialPatcher(object):
     """Provides default group, scan and edit orders."""
     group = _(u'Special')
     scanOrder = 40

@@ -38,12 +38,14 @@ from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
     CBash_ListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------
-class AlchemicalCatalogs(SpecialPatcher,Patcher):
+class _AAlchemicalCatalogs(SpecialPatcher):
     """Updates COBL alchemical catalogs."""
     name = _(u'Cobl Catalogs')
     text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.")
             + u'\n\n' + _(u'Will only run if Cobl Main.esm is loaded.'))
     defaultConfig = {'isEnabled':True}
+
+class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -157,16 +159,10 @@ class AlchemicalCatalogs(SpecialPatcher,Patcher):
         log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
-class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
-    """Updates COBL alchemical catalogs."""
-    name = _(u'Cobl Catalogs')
-    text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.")
-            + u'\n\n' + _(u'Will only run if Cobl Main.esm is loaded.'))
-
+class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
     unloadedText = ""
     srcs = [] #so as not to fail screaming when determining load mods - but
     # with the least processing required.
-    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -336,15 +332,20 @@ class CBash_AlchemicalCatalogs(SpecialPatcher,CBash_Patcher):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
-class CoblExhaustion(SpecialPatcher,ListPatcher):
+class _ACoblExhaustion(SpecialPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion
     feature."""
+    # TODO: readFromText differ only in (PBash -> CBash):
+    # -         longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+    # +         longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
     name = _(u'Cobl Exhaustion')
     text = (_(u"Modify greater powers to use Cobl's Power Exhaustion feature.")
             + u'\n\n' + _(u'Will only run if Cobl Main v1.66 (or higher) is'
                           u' active.'))
-    autoKey = u'Exhaust'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+class CoblExhaustion(_ACoblExhaustion,ListPatcher):
+    autoKey = u'Exhaust'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -441,15 +442,8 @@ class CoblExhaustion(SpecialPatcher,ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
-    """Modifies most Greater power to work with Cobl's power exhaustion
-    feature."""
-    name = _(u'Cobl Exhaustion')
-    text = (_(u"Modify greater powers to use Cobl's Power Exhaustion feature.")
-            + u'\n\n' + _(u'Will only run if Cobl Main v1.66 (or higher) is'
-                          u' active.'))
+class CBash_CoblExhaustion(_ACoblExhaustion,CBash_ListPatcher):
     autoKey = {u'Exhaust'}
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
@@ -488,7 +482,8 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             reNum = re.compile(ur'\d+',re.U)
             for fields in ins:
                 if len(fields) < 4 or fields[1][:2] != u'0x' or \
-                        not reNum.match(fields[3]): continue
+                        not reNum.match(fields[3]):
+                    continue
                 mod,objectIndex,eid,time = fields[:4]
                 mod = GPath(mod)
                 longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
@@ -536,7 +531,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class ListsMerger(SpecialPatcher,ListPatcher):
+class _AListsMerger(SpecialPatcher):
     """Merged leveled lists mod file."""
     scanOrder = 45
     editOrder = 45
@@ -549,7 +544,6 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')  #--List of possible
     # choices for each config item. Item 0 is default.
-    autoKey = (u'Delev',u'Relev')
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -563,7 +557,9 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def getDefaultTags():
         tags = {}
         for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            textPath = bosh.dirs['patches'].join(fileName)
+            # TODO: P version: textPath = bosh.dirs['patches'].join(fileName)
+            # Does it make a difference ?
+            textPath = getPatchesPath(fileName)
             if textPath.exists():
                 with CsvReader(textPath) as reader:
                     for fields in reader:
@@ -572,6 +568,9 @@ class ListsMerger(SpecialPatcher,ListPatcher):
                             continue
                         tags[GPath(fields[0])] = fields[1]
         return tags
+
+class ListsMerger(_AListsMerger,ListPatcher):
+    autoKey = (u'Delev',u'Relev')
 
     #--Config Phase -----------------------------------------------------------
     def getChoice(self,item):
@@ -788,45 +787,11 @@ class ListsMerger(SpecialPatcher,ListPatcher):
             for eid in sorted(cleaned,key=string.lower):
                 log(u'* '+eid)
 
-class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
-    """Merged leveled lists mod file."""
-    scanOrder = 45
-    editOrder = 45
-    name = _(u'Leveled Lists')
-    text = (_(
-        u"Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY.") +
-            u'\n\n' + _(
-        u'Advanced users may override Relev/Delev tags for any mod (active '
-        u'or inactive) using the list below.'))
-    tip = _(u"Merges changes to leveled lists from all active mods.")
-    choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')  #--List of possible
-    # choices for each config item. Item 0 is default.
+class CBash_ListsMerger(_AListsMerger,CBash_ListPatcher):
     autoKey = {u'Delev', u'Relev'}
-    forceAuto = False
-    forceItemCheck = True #--Force configChecked to True for all items
-    iiMode = True
-    selectCommands = False
     allowUnloaded = False
     scanRequiresChecked = False
     applyRequiresChecked = False
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
-
-    #--Static------------------------------------------------------------------
-    @staticmethod
-    def getDefaultTags():
-        tags = {}
-        for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            textPath = getPatchesPath(fileName)
-            if textPath.exists():
-                with CsvReader(textPath) as reader:
-                    for fields in reader:
-                        if len(fields) < 2 or not fields[0] or \
-                            fields[1] not in (u'DR', u'R', u'D', u'RD', u''):
-                            continue
-                        tags[GPath(fields[0])] = fields[1]
-        return tags
 
     #--Config Phase -----------------------------------------------------------
     def getChoice(self,item):
@@ -1099,7 +1064,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class MFactMarker(SpecialPatcher,ListPatcher):
+class _AMFactMarker(SpecialPatcher):
     """Mark factions that player can acquire while morphing."""
     name = _(u'Morph Factions')
     text = (_(u"Mark factions that player can acquire while morphing.") +
@@ -1107,8 +1072,10 @@ class MFactMarker(SpecialPatcher,ListPatcher):
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = 'MFact'
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+class MFactMarker(_AMFactMarker,ListPatcher):
+    autoKey = 'MFact'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1221,17 +1188,9 @@ class MFactMarker(SpecialPatcher,ListPatcher):
         for mod in sorted(changed):
             log(u'* %s: %d' % (mod.s,changed[mod]))
 
-class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
-    """Mark factions that player can acquire while morphing."""
-    name = _(u'Morph Factions')
-    text = (_(u"Mark factions that player can acquire while morphing.") +
-            u'\n\n' +
-            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
-            )
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+class CBash_MFactMarker(_AMFactMarker,CBash_ListPatcher):
     autoKey = {'MFact'}
     unloadedText = u""
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1354,13 +1313,14 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-class SEWorldEnforcer(SpecialPatcher,Patcher):
+class _ASEWorldEnforcer(SpecialPatcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     name = _(u'SEWorld Tests')
     text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
              u"re-instates GetPlayerInSEWorld tests as necessary.")
     defaultConfig = {'isEnabled': True}
 
+class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         Patcher.initPatchFile(self,patchFile,loadMods)
@@ -1421,14 +1381,9 @@ class SEWorldEnforcer(SpecialPatcher,Patcher):
         log.setHeader('= '+self.__class__.name)
         log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
 
-class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
-    """Suspends Cyrodiil quests while in Shivering Isles."""
-    name = _(u'SEWorld Tests')
-    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
-             u"re-instates GetPlayerInSEWorld tests as necessary.")
+class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
-    defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1484,7 +1439,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         self.mod_eids = {}
 
 #------------------------------------------------------------------------------
-class ContentsChecker(SpecialPatcher,Patcher):
+class _AContentsChecker(SpecialPatcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""
     scanOrder = 50
@@ -1494,6 +1449,7 @@ class ContentsChecker(SpecialPatcher,Patcher):
              u" for correct types.")
     defaultConfig = {'isEnabled': True}
 
+class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         Patcher.initPatchFile(self,patchFile,loadMods)
@@ -1587,17 +1543,9 @@ class ContentsChecker(SpecialPatcher,Patcher):
                             mod,index = removedId
                             log(u'  . %s: %06X' % (mod.s,index))
 
-class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
-    """Checks contents of leveled lists, inventories and containers for
-    correct content types."""
-    scanOrder = 50
-    editOrder = 50
-    name = _(u'Contents Checker')
-    text = _(u"Checks contents of leveled lists, inventories and containers"
-             u" for correct types.")
+class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
     srcs = []  # so as not to fail screaming when determining load mods - but
     # with the least processing required.
-    defaultConfig = {'isEnabled': True}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
