@@ -42,6 +42,8 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
+from game.oblivion.patcher.special import AlchemicalCatalogs, \
+    CBash_AlchemicalCatalogs
 import loot
 import barb
 import bass
@@ -76,8 +78,7 @@ from patcher.patchers.multitweak_settings import GmstTweaker, \
     CBash_GmstTweaker
 from patcher.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
-from patcher.patchers.special import AlchemicalCatalogs, \
-    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
+from patcher.patchers.special import CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
     CBash_MFactMarker, SEWorldEnforcer, CBash_SEWorldEnforcer, ContentsChecker, \
     CBash_ContentsChecker
 from patcher.patchers.special import ListsMerger as ListsMerger_
