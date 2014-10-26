@@ -31,7 +31,6 @@ from bash.bolt import AbstractError, ArgumentError
 from bash.brec import ModError, ModReader
 from bash.bolt import GPath, sio
 import bash.bush
-import bash.bosh
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not

@@ -51,6 +51,21 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
+from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
+    AliasesPatcher, CBash_AliasesPatcher
+from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
+    CBash_TweakActors
+from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
+    CBash_AssortedTweaker
+from patcher.oblivion.patchers.multitweak_clothes import ClothesTweaker, \
+    CBash_ClothesTweaker
+from patcher.oblivion.patchers.multitweak_names import NamesTweaker, \
+    CBash_NamesTweaker
+from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
+    CBash_GmstTweaker
+from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
+    CBash_RacePatcher
+
 startupinfo = bolt.startupinfo
 
 #--Python
@@ -7411,7 +7426,7 @@ class Patcher:
             self.gConfigPanel.Layout()
 
 #------------------------------------------------------------------------------
-class AliasesPatcher(Patcher,bosh.AliasesPatcher):
+class AliasesPatcher(Patcher, AliasesPatcher):
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -7451,7 +7466,7 @@ class AliasesPatcher(Patcher,bosh.AliasesPatcher):
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
 
-class CBash_AliasesPatcher(Patcher,bosh.CBash_AliasesPatcher):
+class CBash_AliasesPatcher(Patcher, CBash_AliasesPatcher):
     """Basic patcher panel with no options."""
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -8028,9 +8043,9 @@ class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
 class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
 class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
 
-class RacePatcher(bosh.RacePatcher,DoublePatcher):
+class RacePatcher(RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
-class CBash_RacePatcher(bosh.CBash_RacePatcher,DoublePatcher):
+class CBash_RacePatcher(CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
 class RoadImporter(bosh.RoadImporter,ListPatcher): pass
@@ -8049,20 +8064,20 @@ class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
 class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
-class AssortedTweaker(bosh.AssortedTweaker,TweakPatcher): pass
-class CBash_AssortedTweaker(bosh.CBash_AssortedTweaker,TweakPatcher): pass
+class AssortedTweaker(AssortedTweaker,TweakPatcher): pass
+class CBash_AssortedTweaker(CBash_AssortedTweaker,TweakPatcher): pass
 
-class ClothesTweaker(bosh.ClothesTweaker,TweakPatcher): pass
-class CBash_ClothesTweaker(bosh.CBash_ClothesTweaker,TweakPatcher): pass
+class ClothesTweaker(ClothesTweaker,TweakPatcher): pass
+class CBash_ClothesTweaker(CBash_ClothesTweaker,TweakPatcher): pass
 
-class GmstTweaker(bosh.GmstTweaker,TweakPatcher): pass
-class CBash_GmstTweaker(bosh.CBash_GmstTweaker,TweakPatcher): pass
+class GmstTweaker(GmstTweaker,TweakPatcher): pass
+class CBash_GmstTweaker(CBash_GmstTweaker,TweakPatcher): pass
 
-class NamesTweaker(bosh.NamesTweaker,TweakPatcher): pass
-class CBash_NamesTweaker(bosh.CBash_NamesTweaker,TweakPatcher): pass
+class NamesTweaker(NamesTweaker,TweakPatcher): pass
+class CBash_NamesTweaker(CBash_NamesTweaker,TweakPatcher): pass
 
-class TweakActors(bosh.TweakActors,TweakPatcher): pass
-class CBash_TweakActors(bosh.CBash_TweakActors,TweakPatcher): pass
+class TweakActors(TweakActors,TweakPatcher): pass
+class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
 class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
@@ -14286,7 +14301,7 @@ class Mod_ListPatchConfig(Link):
             log.setHeader(u'== '+humanName)
             clip.write(u'\n')
             clip.write(u'== '+humanName+u'\n')
-            if isinstance(patcher, (bosh.CBash_MultiTweaker, bosh.MultiTweaker)):
+            if isinstance(patcher, (CBash_MultiTweaker, MultiTweaker)):
                 # Tweak patcher
                 patcher.getConfig(config)
                 for tweak in patcher.tweaks:
@@ -14305,7 +14320,8 @@ class Mod_ListPatchConfig(Link):
                 for item in conf.get('configItems',[]):
                     log(u'. __%s__' % patcher.getItemLabel(item))
                     clip.write(u'    %s\n' % patcher.getItemLabel(item))
-            elif isinstance(patcher, (bosh.CBash_AliasesPatcher,bosh.AliasesPatcher)):
+            elif isinstance(patcher, (CBash_AliasesPatcher,
+                                      AliasesPatcher)):
                 # Alias mod names
                 aliases = conf.get('aliases',{})
                 for mod in aliases:

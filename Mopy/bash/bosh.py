@@ -59,14 +59,18 @@ import ctypes
 import balt
 import bolt
 import bush
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, PermissionError, FileError
-from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, deprint, sio
+from bolt import BoltError, AbstractError, ArgumentError, StateError, \
+    UncodedError, PermissionError, FileError
+from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
+    deprint, sio
 from bolt import _unicode, _encode
 from cint import *
 from brec import *
-from brec import _coerce # Since it wont get imported by the import * (it begins with _)
+from brec import _coerce # Since it wont get imported by the import * (it
+# begins with _)
 from chardet.universaldetector import UniversalDetector
-from patcher.RecordGroups import MobWorlds, MobDials, MobICells, MobObjects, MobBase
+from patcher.oblivion.record_groups import MobWorlds, MobDials, MobICells, \
+    MobObjects, MobBase
 import loot
 import libbsa
 import liblo
@@ -79,9 +83,9 @@ tooldirs = {}
 inisettings = {}
 defaultExt = u'.7z'
 writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
-readExts = set((u'.rar',u'.7z.001',u'.001'))
+readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
-noSolidExts = set((u'.zip',))
+noSolidExts = {u'.zip'}
 settings = None
 installersWindow = None
 
@@ -90,10 +94,11 @@ allTagsSet = set(allTags)
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
-reOblivion = re.compile(u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$',re.U)
+reOblivion = re.compile(
+    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
-undefinedPaths = set([GPath(u'C:\\Path\\exe.exe'),undefinedPath])
+undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Default settings
 settingDefaults = {
@@ -133,7 +138,6 @@ def unformatDate(str,format):
             return time.strptime(str,'%c')
         else:
             raise
-
 
 # Singletons, Constants -------------------------------------------------------
 #--Constants
@@ -181,7 +185,7 @@ class PickleDict(bolt.PickleDict):
 
     def exists(self):
         """See if pickle file exists."""
-        return (bolt.PickleDict.exists(self) or self.oldPath.exists())
+        return bolt.PickleDict.exists(self) or self.oldPath.exists()
 
     def load(self):
         """Loads vdata and data from file or backup file.
@@ -224,7 +228,8 @@ class PickleDict(bolt.PickleDict):
     def updatePaths(self):
         """Updates paths from bosh.Path to bolt.Path."""
         import wx
-        basicTypes = set((NoneType,FloatType,IntType,LongType,BooleanType,StringType,UnicodeType))
+        basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
+                      StringType, UnicodeType}
         SetType = type(set())
         done = {}
         changed = set()
@@ -260,7 +265,7 @@ class PickleDict(bolt.PickleDict):
                 xnew = GPath(x._path)
             else:
                 #raise StateError('Unknown type: %s %s' % (xtype,x))
-                xnew = None #--Hopefully this will work for few old incompatibilties.
+                xnew = None #--Hopefully this will work for few old incompatibilities.
             return done.setdefault(xid,xnew)
         update(self.data)
 
@@ -311,11 +316,11 @@ reSplitModGroup = re.compile(ur'^(.+?)([-+]\d+)?$',re.U)
 def splitModGroup(offGroup):
     """Splits a full group name into a group name and an integer offset.
     E.g. splits 'Overhaul+1' into ('Overhaul',1)."""
-    if not offGroup: return (u'',0)
+    if not offGroup: return u'',0
     maSplitModGroup = reSplitModGroup.match(offGroup)
     group = maSplitModGroup.group(1)
     offset = int(maSplitModGroup.group(2) or 0)
-    return (group,offset)
+    return group,offset
 
 def joinModGroup(group,offset):
     """Combines a group and offset into a full group name."""
@@ -444,7 +449,7 @@ class LoadFactory:
         if CELL and WRLD top types are expanded."""
         return (
             self.keepAll or
-            (self.recTypes & set(('REFR','ACHR','ACRE','PGRD','LAND'))) or
+            (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
             (topType == 'WRLD' and 'LAND' in self.recTypes))
 
     def getTopClass(self,type):
@@ -583,7 +588,7 @@ class ModFile:
     def save(self,outPath=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.loadFactory.keepAll): raise StateError(u"Insufficient data to write file.")
+        if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with ModWriter(outPath.open('wb')) as out:
             #--Mod Record
@@ -605,7 +610,7 @@ class ModFile:
             if fid is None: return None
             if isinstance(fid,tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
-            return (masters[min(mod,maxMaster)],object)
+            return masters[min(mod,maxMaster)],object
         return mapper
 
     def getShortMapper(self):
@@ -840,7 +845,7 @@ class SreNPC(object):
 
     def getTuple(self,fid,version):
         """Returns record as a change record tuple."""
-        return (fid,35,self.getFlags(),version,self.getData())
+        return fid,35,self.getFlags(),version,self.getData()
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
@@ -1060,17 +1065,17 @@ class ObseFile:
         newPlugins = []
         for (opcodeBase,chunks) in self.plugins:
             newChunks = []
-            if (opcodeBase == 0x2330):
+            if opcodeBase == 0x2330:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
-                    if (chunkTypeNum == 1):
+                    if chunkTypeNum == 1:
                         with sio(chunkBuff) as ins:
                             with sio() as buff:
                                 def unpack(format,size):
                                     return struct.unpack(format,ins.read(size))
                                 def pack(format,*args):
                                     buff.write(struct.pack(format,*args))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     espId,modId,modNameLen, = unpack('=BBI',6)
                                     modName = GPath(ins.read(modNameLen))
                                     modName = masterMap.get(modName,modName)
@@ -1202,7 +1207,7 @@ class SaveFile:
     def load(self,progress=None):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
-        # out into obivion.py, and a version implemented for skyrim as well
+        # out into oblivion.py, and a version implemented for skyrim as well
         import array
         path = self.fileInfo.getPath()
         with bolt.StructFile(path.s,'rb') as ins:
@@ -1288,7 +1293,7 @@ class SaveFile:
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if (not self.canSave): raise StateError(u"Insufficient data to write file.")
+        if not self.canSave: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open('wb') as out:
             def pack(format,*data):
@@ -1529,7 +1534,7 @@ class SaveFile:
         #--Fids log
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
-        log(u'  %d\t\t     Lost Refs (Fid == 0)' % (lostRefs))
+        log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
         for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
             if irefed or changed:
                 log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
@@ -1581,14 +1586,14 @@ class SaveFile:
                 espMap = {}
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
                     chunkTypeNum, = struct.unpack('=I',chunkType)
-                    if (chunkType[0] >= ' ' and chunkType[3] >= ' '):
+                    if chunkType[0] >= ' ' and chunkType[3] >= ' ':
                         log(u'  %4s  %-4u  %08X' % (chunkType,chunkVersion,len(chunkBuff)))
                     else:
                         log(u'  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
                     with sio(chunkBuff) as ins:
                         def unpack(format,size):
                             return struct.unpack(format,ins.read(size))
-                        if (opcodeBase == 0x1400):  # OBSE
+                        if opcodeBase == 0x1400:  # OBSE
                             if chunkType == 'RVTS':
                                 #--OBSE String
                                 modIndex,stringID,stringLength, = unpack('=BIH',7)
@@ -1600,7 +1605,7 @@ class SaveFile:
                                 #--OBSE Array
                                 modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
                                 if modIndex == 255:
-                                    log(_(u'    Mod :  %02X (Save File)') % (modIndex))
+                                    log(_(u'    Mod :  %02X (Save File)') % modIndex)
                                 else:
                                     log(_(u'    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
                                 log(_(u'    ID  :  %u') % arrayID)
@@ -1620,7 +1625,7 @@ class SaveFile:
                                         for x in range(numRefs):
                                             refModID, = unpack('=B',1)
                                             if refModID == 255:
-                                                log(_(u'      %02X (Save File)') % (refModID))
+                                                log(_(u'      %02X (Save File)') % refModID)
                                             else:
                                                 log(u'      %02X (%s)' % (refModID, self.masters[refModID].s))
                                 numElements, = unpack('=I',4)
@@ -1650,12 +1655,12 @@ class SaveFile:
                                         data, = unpack('=I',4)
                                         dataStr = u'%u' % data
                                     log(u'    [%s]:%s = %s' % (keyStr,(u'BAD',u'NUM',u'REF',u'STR',u'ARR')[dataType],dataStr))
-                        elif (opcodeBase == 0x2330):    # Pluggy
-                            if (chunkTypeNum == 1):
+                        elif opcodeBase == 0x2330:    # Pluggy
+                            if chunkTypeNum == 1:
                                 #--Pluggy TypeESP
                                 log(_(u'    Pluggy ESPs'))
                                 log(_(u'    EID   ID    Name'))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     if chunkVersion == 2:
                                         espId,modId, = unpack('=BB', 2)
                                         log(u'    %02X    %02X' % (espId,modId))
@@ -1665,7 +1670,7 @@ class SaveFile:
                                         modName = ins.read(modNameLen)
                                         log(u'    %02X    %02X    %s' % (espId,modId,modName))
                                         espMap[modId] = modName # was [espId]
-                            elif (chunkTypeNum == 2):
+                            elif chunkTypeNum == 2:
                                 #--Pluggy TypeSTR
                                 log(_(u'    Pluggy String'))
                                 strId,modId,strFlags, = unpack('=IBB',6)
@@ -1674,7 +1679,7 @@ class SaveFile:
                                 log(u'      '+_(u'ModID :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags :')+u' %u' % strFlags)
                                 log(u'      '+_(u'Data  :')+u' %s' % strData)
-                            elif (chunkTypeNum == 3):
+                            elif chunkTypeNum == 3:
                                 #--Pluggy TypeArray
                                 log(_(u'    Pluggy Array'))
                                 arrId,modId,arrFlags,arrSize, = unpack('=IBBI',10)
@@ -1682,19 +1687,19 @@ class SaveFile:
                                 log(_(u'      ModID : %02X %s') % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(_(u'      Flags : %u') % (arrFlags,))
                                 log(_(u'      Size  : %u') % (arrSize,))
-                                while (ins.tell() < len(chunkBuff)):
+                                while ins.tell() < len(chunkBuff):
                                     elemIdx,elemType, = unpack('=IB',5)
                                     elemStr = ins.read(4)
-                                    if (elemType == 0): #--Integer
+                                    if elemType == 0: #--Integer
                                         elem, = struct.unpack('=i',elemStr)
                                         log(u'        [%u]  INT  %d' % (elemIdx,elem,))
-                                    elif (elemType == 1): #--Ref
+                                    elif elemType == 1: #--Ref
                                         elem, = struct.unpack('=I',elemStr)
                                         log(u'        [%u]  REF  %08X' % (elemIdx,elem,))
-                                    elif (elemType == 2): #--Float
+                                    elif elemType == 2: #--Float
                                         elem, = struct.unpack('=f',elemStr)
                                         log(u'        [%u]  FLT  %08X' % (elemIdx,elem,))
-                            elif (chunkTypeNum == 4):
+                            elif chunkTypeNum == 4:
                                 #--Pluggy TypeName
                                 log(_(u'    Pluggy Name'))
                                 refId, = unpack('=I',4)
@@ -1705,7 +1710,7 @@ class SaveFile:
                                     newName = newName + ch
                                 log(_(u'      RefID : %08X') % refId)
                                 log(_(u'      Name  : %s') % _unicode(newName))
-                            elif (chunkTypeNum == 5):
+                            elif chunkTypeNum == 5:
                                 #--Pluggy TypeScr
                                 log(_(u'    Pluggy ScreenSize'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1713,7 +1718,7 @@ class SaveFile:
                                 scrW,scrH, = unpack('=II',8)
                                 log(_(u'      Width  : %u') % scrW)
                                 log(_(u'      Height : %u') % scrH)
-                            elif (chunkTypeNum == 6):
+                            elif chunkTypeNum == 6:
                                 #--Pluggy TypeHudS
                                 log(u'    '+_(u'Pluggy HudS'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1732,7 +1737,7 @@ class SaveFile:
                                 log(u'      '+_(u'Align  :')+u' %02X' % hudAlignment)
                                 log(u'      '+_(u'AutoSc :')+u' %02X' % hudAutoScale)
                                 log(u'      '+_(u'File   :')+u' %s' % hudFileName)
-                            elif (chunkTypeNum == 7):
+                            elif chunkTypeNum == 7:
                                 #--Pluggy TypeHudT
                                 log(_(u'    Pluggy HudT'))
                                 #UNTESTED - uncomment following line to skip this record type
@@ -1797,7 +1802,7 @@ class SaveFile:
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
-        return (createdCounts,nullRefCount)
+        return createdCounts,nullRefCount
 
     def removeBloating(self,uncreateKeys,removeNullRefs=True,progress=None):
         """Removes duplicated created items and null refs."""
@@ -1839,7 +1844,7 @@ class SaveFile:
                 kept.append(record)
             progress.plus()
         self.records = kept
-        return (numUncreated,numUnCreChanged,numUnNulled)
+        return numUncreated,numUnCreChanged,numUnNulled
 
     def getCreated(self,*types):
         """Return created items of specified type(s)."""
@@ -1856,7 +1861,7 @@ class SaveFile:
         abombBytes = data[2+tesClassSize-4:2+tesClassSize]
         abombCounter, = struct.unpack('I',abombBytes)
         abombFloat, = struct.unpack('f',abombBytes)
-        return (tesClassSize,abombCounter,abombFloat)
+        return tesClassSize,abombCounter,abombFloat
 
     def setAbomb(self,value=0x41000000):
         """Resets abomb counter to specified value."""
@@ -1869,7 +1874,7 @@ class SaveFile:
             buff.write(struct.pack('I',value))
             self.preCreated = buff.getvalue()
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
     reSave  = re.compile(r'\.ess(f?)$',re.I)
@@ -1920,10 +1925,10 @@ class CoSaves:
             cPluggy = u'XP'[abs(pluggy.mtime - save.mtime) < 10]
         if obse.exists():
             cObse = u'XO'[abs(obse.mtime - save.mtime) < 10]
-        return (cObse,cPluggy)
+        return cObse,cPluggy
 
 # File System -----------------------------------------------------------------
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class BsaFile:
     """Represents a BSA archive file."""
 
@@ -2100,9 +2105,9 @@ class BsaFile:
         self.resetMTimes()
         self.updateAIText(intxt)
         #--Done
-        return (reset,inval,intxt)
+        return reset,inval,intxt
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
@@ -2160,7 +2165,7 @@ class IniFile(object):
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         if lineNumbers:
-            def makeSetting(match,lineNo): return (match.group(2).strip(),lineNo)
+            def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
         else:
             def makeSetting(match,lineNo): return match.group(2).strip()
         #--Read ini file
@@ -2391,7 +2396,7 @@ class IniFile(object):
                     deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
 
-#-----------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 def BestIniFile(path):
     if not path:
         return oblivionIni
@@ -2643,11 +2648,11 @@ class OBSEIniFile(IniFile):
                 section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
 
-#--------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
-    bsaRedirectors = set((u'archiveinvalidationinvalidated!.bsa',
-                          u'..\\obmm\\bsaredirection.bsa'))
+    bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
+                      u'..\\obmm\\bsaredirection.bsa'}
     encoding = 'cp1252'
 
     def __init__(self,name):
@@ -2661,9 +2666,9 @@ class OblivionIni(IniFile):
         # default to user profile directory"""
         IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
 
-
     def ensureExists(self):
-        """Ensures that Oblivion.ini file exists. Copies from default oblvion.ini if necessary."""
+        """Ensures that Oblivion.ini file exists. Copies from default
+        oblivion.ini if necessary."""
         if self.path.exists(): return
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
         if srcPath.exists():
@@ -2865,7 +2870,7 @@ class OmodFile:
             # Move files to final directory
             balt.shellMove(stageDir,outDir.head)
         except Exception as e:
-            # Error occured, see if final output dir needs deleting
+            # Error occurred, see if final output dir needs deleting
             if outDir.exists():
                 try:
                     balt.shellDelete(outDir,progress.getParent(),False,False)
@@ -3180,7 +3185,7 @@ class MasterInfo:
             self.masterNames = tuple()
 
     def hasChanged(self):
-        return (self.name != self.oldName)
+        return self.name != self.oldName
 
     def isEsm(self):
         if self.modInfo:
@@ -3413,7 +3418,7 @@ class FileInfo:
         #--New
         snapLast[-1] = (u'%0'+unicode(len(snapLast[-1]))+u'd') % (int(snapLast[-1])+1,)
         destName = root+separator+(u'.'.join(snapLast))+ext
-        return (destDir,destName,(root+u'*'+ext).s)
+        return destDir,destName,(root+u'*'+ext).s
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
@@ -3674,7 +3679,7 @@ class ModInfo(FileInfo):
     def getDirtyMessage(self):
         """Returns a dirty message from LOOT."""
         if modInfos.table.getItem(self.name,'ignoreDirty',False):
-            return (False,u'')
+            return False,u''
         return configHelpers.getDirtyMessage(self.name)
 
     #--Header Editing ---------------------------------------------------------
@@ -4782,7 +4787,7 @@ class ModInfos(FileInfos):
                     if configChecks[modName]:
                         merged.add(modName)
             imported.update(patchConfigs.get('ImportedMods',tuple()))
-        return (merged,imported)
+        return merged,imported
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
@@ -4857,7 +4862,7 @@ class ModInfos(FileInfos):
             if not wtxt: log(u'[spoiler][xml]\n', False)
             for name in allMods:
                 if name in masters:
-                    prefix = bul+u'%02X' % (modIndex)
+                    prefix = bul+u'%02X' % modIndex
                     modIndex += 1
                 elif name in headers:
                     match = re.match(u'^[\.+= ]*(.*?)\.es[pm]',name.s,flags=re.U)
@@ -4874,7 +4879,7 @@ class ModInfos(FileInfos):
                 text = u'%s  %s' % (prefix,name.s,)
                 if showVersion:
                     version = self.getVersion(name)
-                    if version: text += _(u'  [Version %s]') % (version)
+                    if version: text += _(u'  [Version %s]') % version
                 if showCRC:
                     text +=_(u'  [CRC: %08X]') % (self[name].cachedCrc())
                 log(text)
@@ -4938,7 +4943,7 @@ class ModInfos(FileInfos):
 
     def isSelected(self,modFile):
         """True if modFile is selected (active)."""
-        return (modFile in self.ordered)
+        return modFile in self.ordered
 
     def select(self,fileName,doSave=True,modSet=None,children=None):
         """Adds file to selected."""
@@ -5315,7 +5320,7 @@ class SaveInfos(FileInfos):
     #--Enabled ----------------------------------------------------------------
     def isEnabled(self,fileName):
         """True if fileName is enabled)."""
-        return (fileName.cext == u'.ess')
+        return fileName.cext == u'.ess'
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
@@ -5597,7 +5602,7 @@ class ConfigHelpers:
                         self.lootMasterTime = path.mtime
                     return
                 except loot.LootError:
-                    deprint(u'An error occured while using the LOOT API:',traceback=True)
+                    deprint(u'An error occurred while using the LOOT API:',traceback=True)
             if not firstTime: return
         #--No masterlist, use the taglist
         taglist = dirs['defaultPatches'].join(u'taglist.yaml')
@@ -5607,8 +5612,8 @@ class ConfigHelpers:
             self.tagCache = {}
             lootDb.Load(taglist.s)
         except loot.LootError:
-            deprint(u'An error occured while parsing taglist.yaml with the LOOT API.', traceback=True)
-            raise bolt.BoltError(u'An error occured while parsing taglist.yaml with the LOOT API.')
+            deprint(u'An error occurred while parsing taglist.yaml with the LOOT API.', traceback=True)
+            raise bolt.BoltError(u'An error occurred while parsing taglist.yaml with the LOOT API.')
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -5631,7 +5636,7 @@ class ConfigHelpers:
     def getDirtyMessage(self,modName):
         message,clean = lootDb.GetDirtyMessage(modName)
         cleanIt = clean == loot.loot_needs_cleaning_yes
-        return (cleanIt,message)
+        return cleanIt,message
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
@@ -5904,7 +5909,7 @@ class Messages(DataDict):
         dates = {'today':None,'yesterday':None,'previous':None}
         if maPathDate:
             year,month,day = map(int,maPathDate.groups())
-            if year < 100: year = 2000+year
+            if year < 100: year += 2000
             dates['today'] = datetime.datetime(year,month,day)
             dates['yesterday'] = dates['today'] - datetime.timedelta(1)
         reRelDate = re.compile(ur'(Today|Yesterday), (\d+):(\d+) (AM|PM)',re.U)
@@ -6093,7 +6098,7 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
             return self.tankColumns[:]
         else:
             author,version,karma,tags = self.data[item][1:5]
-            return (item,author,version,tags)
+            return item,author,version,tags
 
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
@@ -6103,7 +6108,7 @@ class ModBaseData(PickleTankData, bolt.TankData, DataDict):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
         iconKey = u'karma%+d' % self.data[item][1]
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
 #------------------------------------------------------------------------------
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
@@ -6158,7 +6163,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
         """Returns keys for icon and text and background colors."""
         textKey = backKey = None
         iconKey = u'karma%+d' % self.data[item][1]
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
     #--Operations
     def loadText(self,path):
@@ -6241,21 +6246,21 @@ class Installer(object):
         'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
     __slots__ = persistent+volatile
     #--Package analysis/porting.
-    docDirs = set((u'screenshots',))
-    dataDirsMinus = set((u'bash',u'replacers',u'--')) #--Will be skipped even if hasExtraData == True.
+    docDirs = {u'screenshots'}
+    dataDirsMinus = {u'bash', u'replacers',
+                     u'--'}  #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
     reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
-    skipExts = set((u'.exe', u'.py',u'.pyc', u'.7z',u'.zip',u'.rar', u'.db',
-                    u'.ace',u'.tgz',u'.tar', u'.gz',u'.bz2',u'.omod',u'.fomod',
-                    u'.tb2',u'.lzma',u'.bsl',
-                    ))
+    skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
+                u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
+                u'.fomod', u'.tb2', u'.lzma', u'.bsl'}
     skipExts.update(set(readExts))
-    docExts = set((u'.txt',u'.rtf',u'.htm',u'.html',u'.doc',u'.docx',u'.odt',
-                   u'.mht',u'.pdf',u'.css',u'.xls',u'.xlsx',u'.ods',u'.odp',
-                   u'.ppt',u'.pptx'))
-    imageExts = set((u'.gif',u'.jpg',u'.png',u'.jpeg',u'.bmp'))
-    scriptExts = set((u'.txt',u'.ini',u'.cfg'))
-    commonlyEditedExts = scriptExts | set((u'.xml',))
+    docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
+               u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
+               u'.ppt', u'.pptx'}
+    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
+    scriptExts = {u'.txt', u'.ini', u'.cfg'}
+    commonlyEditedExts = scriptExts | {u'.xml'}
     #--Needs to be called after bush.game has been set
     @staticmethod
     def initData():
@@ -6571,7 +6576,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        packageFiles = set((u'package.txt',u'package.jpg'))
+        packageFiles = {u'package.txt', u'package.jpg'}
         unSize = 0
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
@@ -6677,7 +6682,7 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
                         continue
-                    elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                    elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         ## Disabling Auto-BCF's for now, until the code for them can be updated to the latest
                         ## tempDir stuff
                         ## TODO: DO THIS!
@@ -6736,7 +6741,7 @@ class Installer(object):
             elif fileLower == u'wizard.txt':
                 self.hasWizard = full
                 continue
-            elif fileExt in (defaultExt) and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+            elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                 self.hasBCF = full
                 continue
             elif skipImages and fileExt in imageExts:
@@ -6784,7 +6789,7 @@ class Installer(object):
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
                     message = u'\n'.join((
-                        _(u'This intaller (%s) has an %s plugin ASI.'),
+                        _(u'This installer (%s) has an %s plugin ASI.'),
                         _(u'The file is %s'),
                         _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
                         _(u'Are you sure you want to install this?'),
@@ -6808,7 +6813,7 @@ class Installer(object):
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
                     message = u'\n'.join((
-                        _(u'This intaller (%s) has an %s patcher JAR.'),
+                        _(u'This installer (%s) has an %s patcher JAR.'),
                         _(u'The file is %s'),
                         _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
                         _(u'Are you sure you want to install this?'),
@@ -7065,7 +7070,7 @@ class Installer(object):
         #--Done
         (self.status,oldStatus) = (status,self.status)
         (self.underrides,oldUnderrides) = (underrides,self.underrides)
-        return (self.status != oldStatus or self.underrides != oldUnderrides)
+        return self.status != oldStatus or self.underrides != oldUnderrides
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
@@ -7490,7 +7495,7 @@ class InstallerConverter(object):
         result = ins.close()
         tempList.remove()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % (subTempDir.s)
+        cmd = ur'attrib -R "%s\*" /S /D' % subTempDir.s
         ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
         if result or errorLine:
             raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
@@ -7619,7 +7624,7 @@ class InstallerArchive(Installer):
             result = ins.close()
             self.tempList.remove()
             # Clear ReadOnly flag if set
-            cmd = ur'attrib -R "%s\*" /S /D' % (self.getTempDir().s)
+            cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
             ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
             if result or errorLine:
                 if len(errorLine) > 10:
@@ -7687,9 +7692,9 @@ class InstallerArchive(Installer):
                 # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
                 # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
                 # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
-                # install a mod for Obilivon.
+                # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir = stageDataDir + u'\\*'
+                stageDataDir += u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean up staging dir
@@ -7714,7 +7719,7 @@ class InstallerArchive(Installer):
         count = 0
         tempDir = self.getTempDir()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % (tempDir.s)
+        cmd = ur'attrib -R "%s\*" /S /D' % tempDir.s
         ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
         tempDirJoin = tempDir.join
         destDirJoin = destDir.join
@@ -7750,7 +7755,7 @@ class InstallerArchive(Installer):
                             file = value.decode('utf8')
                         elif key == u'Attributes':
                             isdir = (value[0] == u'D')
-                            text.append((u'%s' % (file), isdir))
+                            text.append((u'%s' % file, isdir))
                         elif key == u'Method':
                             file = u''
                             isdir = False
@@ -7848,7 +7853,7 @@ class InstallerProject(Installer):
         try:
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir = stageDataDir + u'\\*'
+                stageDataDir += u'\\*'
                 balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
         finally:
             #--Clean out staging dir
@@ -7862,7 +7867,7 @@ class InstallerProject(Installer):
         srcDir = dirs['mods']
         projFiles = set(projFiles)
         srcProj = tuple((x,y) for x,y in self.refreshDataSizeCrc().iteritems() if x in projFiles)
-        if not srcProj: return (0,0)
+        if not srcProj: return 0,0
         #--Sync Files
         updated = removed = 0
         norm_ghost = Installer.getGhosted()
@@ -7877,10 +7882,11 @@ class InstallerProject(Installer):
                 srcFull.copyTo(projFull)
                 updated += 1
         self.removeEmpties(package)
-        return (updated,removed)
+        return updated,removed
 
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
-        """Packs project to build directory. Release filters out developement material from the archive"""
+        """Packs project to build directory. Release filters out development
+        material from the archive"""
         progress = progress or bolt.Progress()
         length = len(self.fileSizeCrcs)
         if not length: return
@@ -8215,7 +8221,7 @@ class InstallersData(bolt.TankData, DataDict):
             iconKey += '.dir'
         if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
             iconKey += '.wiz'
-        return (iconKey,textKey,backKey)
+        return iconKey,textKey,backKey
 
     def getMouseText(self,iconKey,textKey,backKey):
         """Returns mouse text to use, given the iconKey,textKey, and backKey."""
@@ -8506,7 +8512,7 @@ class InstallersData(bolt.TankData, DataDict):
         return changed
 
     def validConverterName(self,path):
-        return path.cext in (defaultExt) and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
+        return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
 
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
@@ -8891,7 +8897,7 @@ class InstallersData(bolt.TankData, DataDict):
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         for file in removes:
-            # don't remove files in Wyre Bash-related directories
+            # don't remove files in Wrye Bash-related directories
             skip = False
             for skipPrefix in skipPrefixes:
                 if file.cs.startswith(skipPrefix):
@@ -9036,7 +9042,7 @@ class InstallersData(bolt.TankData, DataDict):
             modIndex,header = 0, None
             log(u'[spoiler][xml]\n',False)
             for package in allPackages:
-                prefix = u'%03d' % (self.data[package].order)
+                prefix = u'%03d' % self.data[package].order
                 if isinstance(self.data[package],InstallerMarker):
                     log(u'%s - %s' % (prefix,package.s))
                 elif self.data[package].isActive:
@@ -9057,7 +9063,7 @@ class ModDetails:
         def getRecordReader(ins,flags,size):
             """Decompress record data as needed."""
             if not MreRecord._flags1(flags).compressed:
-                return (ins,ins.tell()+size)
+                return ins,ins.tell()+size
             else:
                 import zlib
                 sizeCheck, = struct.unpack('I',ins.read(4))
@@ -9066,7 +9072,7 @@ class ModDetails:
                     raise ModError(self.inName,
                         u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
                 reader = ModReader(modInfo.name,sio(decomp))
-                return (reader,sizeCheck)
+                return reader,sizeCheck
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
         records = group_records[bush.game.MreHeader.classType] = []
@@ -9726,7 +9732,7 @@ class ModCleaner:
             self.itm = itm
         if what & ModCleaner.FOG:
             self.fog = fog
-        return (udr,itm,fog)
+        return udr,itm,fog
 
     @staticmethod
     def scan_Many(modInfos,what=DEFAULT,progress=bolt.Progress(),detailed=False):
@@ -10359,7 +10365,7 @@ class PatchFile(ModFile):
         #--Empty mod
         elif not modFile.tops:
             if not verbose: return False
-            reasons += u'\n.    '+(u'Empty mod.')
+            reasons += u'\n.    '+ u'Empty mod.'
         #--New record
         lenMasters = len(modFile.tes4.masters)
         newblocks = []
@@ -10483,7 +10489,7 @@ class PatchFile(ModFile):
                 isMerged = modName in self.mergeSet
                 doFilter = isMerged and u'Filter' in bashTags
                 #--iiMode is a hack to support Item Interchange. Actual key used is InventOnly.
-                iiMode = isMerged and bool(set((u'InventOnly',u'IIM')) & bashTags)
+                iiMode = isMerged and bool({u'InventOnly', u'IIM'} & bashTags)
                 if isMerged:
                     progress(pstate,modName.s+u'\n'+_(u'Merging...'))
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
@@ -10679,7 +10685,7 @@ class CBash_PatchFile(ObModFile):
 
     @staticmethod
     def modIsMergeableLoad(modInfo,verbose):
-        allowMissingMasters = set([u'Filter',u'IIM',u'InventOnly'])
+        allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
         tags = modInfos[modInfo.name].getBashTags()
         reasons = []
 
@@ -10829,7 +10835,7 @@ class CBash_PatchFile(ObModFile):
                     override = record.CopyAsOverride(self, UseWinningParents=True)
                 if override:
                     if undelete:
-                        override.posZ = override.posZ - 1000
+                        override.posZ -= 1000
                         override.IsInitiallyDisabled = True
                     mergeIds.add(override.fid)
 
@@ -10849,8 +10855,8 @@ class CBash_PatchFile(ObModFile):
                       'ROADS','CELL','CELLS','PGRDS','LANDS','ACHRS',
                       'ACRES','REFRS']
 
-        iiModeSet = set((u'InventOnly',u'IIM'))
-        levelLists = set(('LVLC','LVLI','LVSP'))
+        iiModeSet = {u'InventOnly', u'IIM'}
+        levelLists = {'LVLC', 'LVLI', 'LVSP'}
         nullProgress = bolt.Progress()
 
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])
@@ -10908,7 +10914,7 @@ class CBash_PatchFile(ObModFile):
                 for record in modFile.MGEF:
                     full = record.full
                     eid = record.eid
-                    if (full and eid):
+                    if full and eid:
                         eidRaw = eid.encode('cp1252')
                         mgefId = MGEFCode(eidRaw) if record.recordVersion is None else record.mgefCode
                         self.mgef_school[mgefId] = record.schoolType
@@ -11121,446 +11127,10 @@ class CBash_PatchFile(ObModFile):
                                  )
 
 #------------------------------------------------------------------------------
-class _Abstract_Patcher(object):
-    """Abstract base class for patcher elements - must be the penultimate class
-     in MRO, just before object"""
-    scanOrder = 10
-    editOrder = 10
-    group = u'UNDEFINED'
-    name = u'UNDEFINED'
-    text = u"UNDEFINED."
-    tip = None
-    defaultConfig = {'isEnabled':False}
-    iiMode = False
-    selectCommands = True
-
-    def getName(self):
-        """Returns patcher name."""
-        return self.__class__.name
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        """Initialization of common values to defaults."""
-        self.patchFile = None
-        self.scanOrder = self.__class__.scanOrder
-        self.editOrder = self.__class__.editOrder
-        self.isActive = True
-        #--Gui stuff
-        self.isEnabled = False #--Patcher is enabled.
-        self.gConfigPanel = None
-        # super(Abstract_Patcher, self).__init__() # NOT NEEDED - ALWAYS BEFORE obj
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
-        for attr,default in self.__class__.defaultConfig.iteritems():
-            value = copy.deepcopy(config.get(attr,default))
-            setattr(self,attr,value)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        for attr in self.__class__.defaultConfig:
-            config[attr] = copy.deepcopy(getattr(self,attr))
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-
-    def initData(self,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        pass  # TODO raise AbstractError ?
-
-class Patcher(_Abstract_Patcher):
-    """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ()  # TODO raise AbstractError ?
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ()  # TODO raise AbstractError ?
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it. If adds record, should first convert it to long fids."""
-        pass  # TODO raise AbstractError ?
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Should write to log."""
-        pass  # TODO raise AbstractError ?
-
-class CBash_Patcher(_Abstract_Patcher):
-    """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO : clarify "performing" ?
-    unloadedText = u""
-    allowUnloaded = True
-    scanRequiresChecked = False
-    applyRequiresChecked = False
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_Patcher, self).__init__()
-        if not self.allowUnloaded:
-            self.text = self.text + self.unloadedText
-
-    #--Patch Phase ------------------------------------------------------------
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return []  # TODO raise AbstractError ?
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type_ in self.getTypes():
-            group_patchers.setdefault(type_,[]).append(self)
-        if self.allowUnloaded:
-            loadMods = set([mod for mod in self.srcs if reModExt.search(mod.s) and mod not in self.patchFile.allMods])
-            self.patchFile.scanSet |= loadMods
-
-    def buildPatchLog(self,log):
-        """Write to log."""
-        pass  # TODO raise AbstractError ?
-
-#------------------------------------------------------------------------------
-class AListPatcher(_Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects.""" # TODO: docs
-    #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item
-    #  0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],
-                     'configChecks':{},'configChoices':{}}
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default
-    forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile(u'^UNDEFINED$',re.U) #--Compiled re used by getAutoItems
-    autoKey = None
-    forceAuto = True
-
-    #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        if isinstance(autoKey,basestring):
-            autoKey = set((autoKey,))
-        autoKey = set(autoKey)
-        self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (
-                autoKey & modInfo.getBashTags()):
-                if bush.fullLoadOrder[modInfo.name] >\
-                   bush.fullLoadOrder[self._patchFile().patchName]: continue
-                autoItems.append(modInfo.name)
-                if self.choiceMenu: self.getChoice(modInfo.name)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(set(dirs['patches'].list()) | set(
-                dirs['defaultPatches'].list())):
-            if reFile.search(fileName.s):
-                autoItems.append(fileName)
-        return autoItems
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(AListPatcher,self).getConfig(configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
-        #--Verify file existence
-        newConfigItems = []
-        patchesDir = self._patchesList()
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in modInfos) or
-                reCsvExt.search(srcPath.s) and srcPath in patchesDir):
-                    newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
-
-    def _patchesList(self): raise AbstractError # TODO needed? check subclasses
-
-    def _patchFile(self): raise AbstractError
-
-    def getChoice(self,item):
-        """Get default config choice."""
-        return self.configChoices.setdefault(item,self.choiceMenu[0])
-
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        if isinstance(item,bolt.Path): item = item.s
-        if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
-        else:
-            return item
-
-    def sortConfig(self,items):
-        """Return sorted items. Default assumes mods and sorts by load order."""
-        return modInfos.getOrdered(items,False)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        self.configChecks = dict(
-            [(key,value) for key,value in self.configChecks.iteritems() if
-             key in listSet])
-        self.configChoices = dict(
-            [(key,value) for key,value in self.configChoices.iteritems() if
-             key in listSet])
-        super(AListPatcher,self).saveConfig(configs)
-
-    #--Patch Phase ------------------------------------------------------------
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        return [item for item in self.configItems if self.configChecks[item]]
-
-class ListPatcher(AListPatcher,Patcher):
-
-    def _patchesList(self):
-        return dirs['patches'].list()
-
-    def _patchFile(self):
-        return PatchFile
-
-class CBash_ListPatcher(AListPatcher,CBash_Patcher):
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
-                             u' following list will be IGNORED.')
-
-    #--Config Phase -----------------------------------------------------------
-    def _patchesList(self):
-        return getPatchesList()
-
-    def _patchFile(self):
-        return CBash_PatchFile
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
-        self.srcs = self.getConfigChecked()
-        self.isActive = bool(self.srcs)
-
-    def getConfigChecked(self):
-        """Returns checked config items in list order."""
-        if self.allowUnloaded:
-            return [item for item in self.configItems if
-                    self.configChecks[item]]
-        else:
-            return [item for item in self.configItems if
-                    self.configChecks[item] and (
-                        item in self.patchFile.allMods or not reModExt.match(
-                            item.s))]
-
-#------------------------------------------------------------------------------
-class AMultiTweakItem(object):
-    """A tweak item, optionally with configuration choices."""
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        self.label = label
-        self.tip = tip
-        self.key = key
-        self.choiceLabels = []
-        self.choiceValues = []
-        self.default = 0
-        for choice in choices:
-            self.choiceLabels.append(choice[0])
-            if choice[0][0] == u'[':
-                self.default = choices.index(choice)
-            self.choiceValues.append(choice[1:])
-        #--Config
-        self.isEnabled = False
-        self.defaultEnabled = kwargs.get('defaultEnabled', False)
-        self.chosen = 0
-        #--Log
-        self.logHeader = u'=== '+ label
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        self.isEnabled,self.chosen = self.defaultEnabled,0
-        if self.key in configs:
-            self._isNew = False
-            self.isEnabled,value = configs[self.key]
-            if value in self.choiceValues:
-                self.chosen = self.choiceValues.index(value)
-            else:
-                for label in self.choiceLabels:
-                    if label.startswith(_(u'Custom')):
-                        self.chosen = self.choiceLabels.index(label)
-                        self.choiceValues[self.chosen] = value
-        else:
-            self._isNew = True
-            if self.default:
-                self.chosen = self.default
-
-    def isNew(self):
-        """returns whether this tweak is new (i.e. whether the value was not loaded from a saved config"""
-        return getattr(self, "_isNew", False)
-
-    def getListLabel(self):
-        """Returns label to be used in list"""
-        label = self.label
-        if len(self.choiceLabels) > 1:
-            label += u' [' + self.choiceLabels[self.chosen] + u']'
-        return label
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        if self.choiceValues: value = self.choiceValues[self.chosen]
-        else: value = None
-        configs[self.key] = self.isEnabled,value
-
-    def _patchLog(self,log,count):
-        #--Log - must define self.logMsg in subclasses - TODO: move up ? down ?
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class MultiTweakItem(AMultiTweakItem): pass
-
-class CBash_MultiTweakItem(AMultiTweakItem):
-    # extra CBash_MultiTweakItem class variables
-    iiMode = False
-    scanRequiresChecked = False
-    applyRequiresChecked = False
-    # the default scan and edit orders - override as needed
-    scanOrder = 32
-    editOrder = 32
-
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        super(CBash_MultiTweakItem,self).__init__(label,tip,key,*choices,**kwargs)
-        self.mod_count = {} # extra CBash_MultiTweakItem instance variable
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-class AMultiTweaker(_Abstract_Patcher):
-    """Combines a number of sub-tweaks which can be individually enabled and
-    configured through a choice menu."""
-    group = _(u'Tweakers')
-    scanOrder = 20
-    editOrder = 20
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        config['isEnabled'] = self.isEnabled
-        for tweak in self.tweaks:
-            tweak.saveConfig(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
-        self.isActive = len(self.enabledTweaks) > 0
-
-class MultiTweaker(AMultiTweaker,Patcher):
-
-    def buildPatch(self,log,progress):
-        """Applies individual tweaks."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(log,progress,self.patchFile)
-
-class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type_ in tweak.getTypes():
-                group_patchers.setdefault(type_,[]).append(tweak)
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        log.setHeader(u'= '+self.__class__.name,True)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
-
-class ADoublePatcher(AListPatcher):
-    """docs - what's this about ?""" # TODO
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(ADoublePatcher, self).getConfig(configs)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        super(ADoublePatcher, self).saveConfig(configs)
-        config = configs[self.__class__.__name__]
-        for tweak in self.tweaks:
-            tweak.saveConfig(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
-
-class DoublePatcher(ADoublePatcher, ListPatcher): pass
-
-class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
+from patcher.base import Patcher, CBash_Patcher, AListPatcher
+from patcher.oblivion.patchers.base import ListPatcher, CBash_ListPatcher
 
 # Patchers: 10 ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class AAliasesPatcher(_Abstract_Patcher):
-    """Specify mod aliases for patch files."""
-    scanOrder = 10
-    editOrder = 10
-    group = _(u'General')
-    name = _(u"Alias Mod Names")
-    text = _(u"Specify mod aliases for reading CSV source files.")
-    tip = None
-    defaultConfig = {'isEnabled':False,'aliases':{}}
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(AAliasesPatcher, self).getConfig(configs)
-        #--Update old configs to use Paths instead of strings.
-        self.aliases = dict(map(GPath,item) for item in self.aliases.iteritems())
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        super(AAliasesPatcher, self).initPatchFile(patchFile,loadMods)
-        if self.isEnabled:
-            self.patchFile.aliases = self.aliases
-
-class AliasesPatcher(AAliasesPatcher,Patcher): pass
-
-class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(CBash_AliasesPatcher,self).getConfig(configs)
-        self.srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
-
 #------------------------------------------------------------------------------
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
@@ -11600,7 +11170,7 @@ class PatchMerger(APatchMerger, ListPatcher):
             patchFile.setMods(None,self.getConfigChecked())
 
 class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
-    autoKey = set((u'Merge',))
+    autoKey = {u'Merge'}
     unloadedText = "" # Cbash only
 
     def _setMods(self,patchFile):
@@ -11631,7 +11201,8 @@ class UpdateReferences(ListPatcher):
         self.srcFiles = self.getConfigChecked()
         self.isActive = bool(self.srcFiles)
         self.types = MreRecord.simpleTypes
-        self.classes = self.types.union(set(('CELL','WRLD','REFR','ACHR','ACRE')))
+        self.classes = self.types.union(
+            {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -11830,7 +11401,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports FormId replacers from csv files into the Bashed Patch.")
-    autoKey = set((u'Formids',))
+    autoKey = {u'Formids'}
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
@@ -11908,7 +11479,7 @@ class CBash_UpdateReferences(CBash_ListPatcher):
         log(u'\n')
         for mod in modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
-            log(u'\n=== %s' % (mod.s))
+            log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
             log(u'  * '+_(u'Updated References: %d') % sum([count for count, old, new in entries]))
             log(u'\n'.join([u'    * %3d %s >> %s' % entry for entry in entries if entry[0] > 0]))
@@ -12171,7 +11742,8 @@ class CBash_CellImporter(CBash_ImportPatcher):
     name = _(u'Import Cells')
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoKey = set((u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music'))#,u'C.Maps'
+    autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
+               u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12286,7 +11858,11 @@ class GraphicsPatcher(ImportPatcher):
                                         'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
                                         'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
         #--Needs Longs
-        self.longTypes = set(('BSGN','LSCR','CLAS','LTEX','REGN','ACTI','DOOR','FLOR','FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO','CLOT','CREA','MGEF','EFSH'))
+        self.longTypes = {'BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN', 'ACTI',
+                          'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT', 'ALCH',
+                          'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH',
+                          'MISC', 'SGST', 'SLGM', 'WEAP', 'TREE', 'ARMO',
+                          'CLOT', 'CREA', 'MGEF', 'EFSH'}
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -12425,7 +12001,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     name = _(u'Import Graphics')
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoKey = set((u'Graphics',))
+    autoKey = {u'Graphics'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12587,7 +12163,7 @@ class ActorImporter(ImportPatcher):
                 u'Actors.Skeleton': ('model',),
                 }
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -12719,7 +12295,9 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoKey = set((u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',u'Actors.Skeleton'))
+    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
+               u'Actors.Skeleton'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12835,7 +12413,7 @@ class KFFZPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('animations',)
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get actor animation lists from source files."""
@@ -12949,7 +12527,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Animations')
     text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoKey = set((u'Actors.Anims',))
+    autoKey = {u'Actors.Anims'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12972,7 +12550,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_animations and record.animations != self.id_animations[recordId]):
+        if recordId in self.id_animations and record.animations != self.id_animations[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.animations = self.id_animations[recordId]
@@ -13007,7 +12585,7 @@ class NPCAIPackagePatcher(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = len(self.srcMods) != 0
         self.data = {}
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get data from source files."""
@@ -13176,7 +12754,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: AI Packages')
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
-    autoKey = set((u'Actors.AIPackages',u'Actors.AIPackagesForceAdd'))
+    autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
     scanRequiresChecked = False
 
     #--Patch Phase ------------------------------------------------------------
@@ -13236,7 +12814,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         recordId = record.fid
         if recordId in self.mergedPackageList:
             mergedPackages = list(self.mergedPackageList[recordId])
-            if(record.aiPackages != mergedPackages):
+            if record.aiPackages != mergedPackages:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     try:
@@ -13275,7 +12853,8 @@ class DeathItemPatcher(ImportPatcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.srcClasses = set() #--Record classes actually provided by src
+        # mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
         #--Type Fields
@@ -13283,7 +12862,7 @@ class DeathItemPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('deathItem',)
         #--Needs Longs
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get actor death items from source files."""
@@ -13399,7 +12978,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     name = _(u'Import Actors: Death Items')
     text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoKey = set((u'Actors.DeathItem',))
+    autoKey = {u'Actors.DeathItem'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13428,7 +13007,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]):
+        if recordId in self.id_deathItem and record.deathItem != self.id_deathItem[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.deathItem = self.id_deathItem[recordId]
@@ -13568,7 +13147,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
-    autoKey = set((u'Factions',))
+    autoKey = {u'Factions'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13629,9 +13208,9 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
-        if(fid in self.csvId_factions):
+        if fid in self.csvId_factions:
             newFactions = set([(faction,rank) for faction, rank in self.csvId_factions[fid] if faction.ValidateFormID(self.patchFile)])
-        elif(fid in self.id_factions):
+        elif fid in self.id_factions:
             newFactions = set([(faction,rank) for faction, rank in self.id_factions[fid].iteritems() if faction.ValidateFormID(self.patchFile)])
         else:
             return
@@ -13780,7 +13359,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    autoKey = set((u'Relations',))
+    autoKey = {u'Relations'}
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -13820,9 +13399,9 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
-        if(fid in self.csvFid_faction_mod):
+        if fid in self.csvFid_faction_mod:
             newRelations = set((faction,mod) for faction,mod in self.csvFid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
-        elif(fid in self.fid_faction_mod):
+        elif fid in self.fid_faction_mod:
             newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
         else:
             return
@@ -13873,7 +13452,10 @@ class ImportScripts(ImportPatcher):
         self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
-        self.longTypes = set(('WEAP','ACTI','ALCH','APPA','ARMO','BOOK','CLOT','CONT','CREA','DOOR','FLOR','FURN','INGR','KEYM','LIGH','MISC','NPC_','QUST','SGST','SLGM'))
+        self.longTypes = {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK',
+                          'CLOT', 'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN',
+                          'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'QUST',
+                          'SGST', 'SLGM'}
         for recClass in (MreRecord.type_class[x] for x in self.longTypes):
             recAttrs_class[recClass] = ('script',)
 
@@ -13993,7 +13575,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
     name = _(u'Import Scripts')
     text = _(u"Import Scripts on containers, plants, misc, weapons etc from source mods.")
     tip = text
-    autoKey = set((u'Scripts',))
+    autoKey = {u'Scripts'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14032,7 +13614,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_script and record.script != self.id_script[recordId]):
+        if recordId in self.id_script and record.script != self.id_script[recordId]:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.script = self.id_script[recordId]
@@ -14073,7 +13655,7 @@ class ImportInventory(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.srcMods = [x for x in self.srcMods if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcMods if
-            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and {u'InventOnly', u'IIM'} & modInfos[x].getBashTags()))
         self.isActive = bool(self.srcMods)
         self.masters = set()
         for srcMod in self.srcMods:
@@ -14190,7 +13772,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
-    autoKey = set((u'Invent',u'InventOnly'))
+    autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
 
     #--Config Phase -----------------------------------------------------------
@@ -14202,7 +13784,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         #should be redundant since this patcher doesn't allow unloaded
         #self.srcs = [x for x in self.srcs if (x in modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.srcs if
-            (x in patchFile.mergeSet and set((u'InventOnly',u'IIM')) & modInfos[x].getBashTags()))
+            (x in patchFile.mergeSet and {u'InventOnly', u'IIM'} & modInfos[x].getBashTags()))
         self.class_mod_count = {}
 
     def getTypes(self):
@@ -14297,7 +13879,7 @@ class ImportActorsSpells(ImportPatcher):
         self.srcMods = self.getConfigChecked()
         self.isActive = len(self.srcMods) != 0
         self.data = {}
-        self.longTypes = set(('CREA','NPC_'))
+        self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
         """Get data from source files."""
@@ -14467,7 +14049,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
     name = _(u'Import Actors: Spells')
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoKey = set((u'Actors.Spells',u'Actors.SpellsForceAdd'))
+    autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14536,7 +14118,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import FullNames, CBash_FullNames
 
 class NamesPatcher(ImportPatcher):
@@ -14660,7 +14241,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
     autoRe = re.compile(ur"^Oblivion.esm$",re.I|re.U)
-    autoKey = set((u'Names',))
+    autoKey = {u'Names'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -14713,7 +14294,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
         recordId = record.fid
         full = self.id_full.get(recordId, None)
         full = self.csvId_full.get(recordId, full)
-        if(full and record.full != full):
+        if full and record.full != full:
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.full = full
@@ -14865,7 +14446,8 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
     name = _(u'Import NPC Faces')
     text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR and similar mods.")
     autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
-    autoKey = set((u'NpcFaces',u'NpcFacesForceFullImport',u'Npc.HairOnly',u'Npc.EyesOnly'))
+    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
+               u'Npc.EyesOnly'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15039,7 +14621,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     name = _(u'Import Roads')
     text = _(u"Import roads from source mods.")
     tip = text
-    autoKey = set((u'Roads',))
+    autoKey = {u'Roads'}
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -15138,7 +14720,7 @@ class SoundPatcher(ImportPatcher):
         for recClass in (MreRecord.type_class[x] for x in ('DOOR',)):
             recAttrs_class[recClass] = ('soundOpen','soundClose','soundLoop')
         #--Needs Longs
-        self.longTypes = set(('MGEF','ACTI','LIGH','WTHR','CONT','DOOR'))
+        self.longTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR'}
 
     def initData(self,progress):
         """Get sounds from source files."""
@@ -15254,7 +14836,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
     name = _(u'Import Sounds')
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors, Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    autoKey = set((u'Sound',))
+    autoKey = {u'Sound'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15322,7 +14904,6 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         self.class_mod_count = {}
 
 #------------------------------------------------------------------------------
-
 from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
 
 class StatsPatcher(ImportPatcher):
@@ -15453,7 +15034,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    autoKey = set((u'Stats',))
+    autoKey = {u'Stats'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15645,7 +15226,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = set((u'Spells',u'SpellStats'))
+    autoKey = {u'Spells', u'SpellStats'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15721,4964 +15302,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.mod_count = {}
 
 # Patchers: 30 ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class AssortedTweak_ArmorShows(MultiTweakItem):
-    """Fix armor to show amulets/rings."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(AssortedTweak_ArmorShows, self).__init__(label,tip,key)
-        self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
-        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        hidesBit = self.hidesBit
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        hidesBit = self.hidesBit
-        for record in patchFile.ARMO.records:
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record.flags[hidesBit] = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
-    """Fix armor to show amulets/rings."""
-    name = _(u'Armor Tweaks')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_AssortedTweak_ArmorShows, self).__init__(label,tip,key)
-        self.hideFlag = {u'armorShowsRings':'IsHideRings',u'armorShowsAmulets':'IsHideAmulets'}[key]
-        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
-
-    def getTypes(self):
-        """Returns the group types that this patcher checks"""
-        return ['ARMO']
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.IsNonPlayable:
-            return
-
-        if (getattr(record, self.hideFlag)):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                setattr(override, self.hideFlag, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AssortedTweak_ClothingShows(MultiTweakItem):
-    """Fix robes, gloves and the like to show amulets/rings."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(AssortedTweak_ClothingShows, self).__init__(label,tip,key)
-        self.hidesBit = {u'ClothingShowsRings':16,u'ClothingShowsAmulets':17}[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CLOT',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CLOT',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        hidesBit = self.hidesBit
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        hidesBit = self.hidesBit
-        for record in patchFile.CLOT.records:
-            if record.flags[hidesBit] and not record.flags.notPlayable:
-                record.flags[hidesBit] = False
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
-    """Fix robes, gloves and the like to show amulets/rings."""
-    name = _(u'Clothing Tweaks')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_AssortedTweak_ClothingShows, self).__init__(label,tip,key)
-        self.hideFlag = {u'ClothingShowsRings':'IsHideRings',u'ClothingShowsAmulets':'IsHideAmulets'}[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
-
-    def getTypes(self):
-        return ['CLOT']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.IsNonPlayable:
-            return
-        if (getattr(record, self.hideFlag)):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                setattr(override, self.hideFlag, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_BowReach(AMultiTweakItem):
-    """Fix bows to have reach = 1.0."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_BowReach, self).__init__(_(u"Bow Reach Fix"),
-            _(u'Fix bows with zero reach. (Zero reach causes CTDs.)'),
-            u'BowReach',
-            (u'1.0',  u'1.0'),
-            )
-        self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Bows fixed: %d')
-
-class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('WEAP',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('WEAP',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.WEAP
-        for record in modFile.WEAP.getActiveRecords():
-            if record.weaponType == 5 and record.reach <= 0:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.WEAP.records:
-            if record.weaponType == 5 and record.reach <= 0:
-                record.reach = 1
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,CBash_MultiTweakItem):
-    name = _(u'Bow Reach Fix')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['WEAP']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if (record.IsBow and record.reach <= 0):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.reach = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
-    """Sets all one handed weapons as blades, two handed weapons as blunt."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_SkyrimStyleWeapons, self).__init__(_(u"Skyrim-style Weapons"),
-            _(u'Sets all one handed weapons as blades, two handed weapons as blunt.'),
-            u'skyrimweaponsstyle',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Weapons Adjusted: %d')
-
-class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('WEAP',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('WEAP',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.WEAP
-        for record in modFile.WEAP.getActiveRecords():
-            if record.weaponType in [1,2]:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.WEAP.records:
-            if record.weaponType == 1:
-                record.weaponType = 3
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-            elif record.weaponType == 2:
-                record.weaponType = 0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,CBash_MultiTweakItem):
-    name = _(u'Skyrim-style Weapons')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['WEAP']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.IsBlade2Hand or record.IsBlunt1Hand:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                if override.IsBlade2Hand:
-                    override.IsBlunt2Hand = True
-                else:
-                    override.IsBlade1Hand = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_ConsistentRings(AMultiTweakItem):
-    """Sets rings to all work on same finger."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_ConsistentRings, self).__init__(_(u"Right Hand Rings"),
-            _(u'Fixes rings to unequip consistently by making them prefer the right hand.'),
-            u'ConsistentRings',
-            (u'1.0',  u'1.0'),
-            )
-        self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Rings fixed: %d')
-
-class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,MultiTweakItem):
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CLOT',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CLOT',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags.leftRing:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.CLOT.records:
-            if record.flags.leftRing:
-                record.flags.leftRing = False
-                record.flags.rightRing = True
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,CBash_MultiTweakItem):
-    name = _(u'Right Hand Rings')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CLOT']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsLeftRing:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.IsLeftRing = False
-                override.IsRightRing = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-rePlayableSkips = re.compile(ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|(?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|(?:ghostly immobility)|(?:corspe)',re.I)
-
-class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
-    """Sets all clothes to playable"""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_ClothingPlayable, self).__init__(_(u"All Clothing Playable"),
-            _(u'Sets all clothing to be playable.'),
-            u'PlayableClothing',
-            (u'1.0',  u'1.0'),
-            )
-        self.logHeader = u'=== '+_(u'Playable Clothes')
-        self.logMsg = u'* '+_(u'Clothes set as playable: %d')
-
-class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,MultiTweakItem):
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CLOT',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CLOT',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CLOT
-        for record in modFile.CLOT.getActiveRecords():
-            if record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.CLOT.records:
-            if record.flags.notPlayable:
-                full = record.full
-                if not full: continue
-                if record.script: continue
-                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
-                if record.flags.leftRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0:
-                    record.flags.notPlayable = 0
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,CBash_MultiTweakItem):
-    scanOrder = 29 #Run before the show clothing tweaks
-    editOrder = 29
-    name = _(u'Playable Clothes')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CLOT']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            full = record.full
-            if not full: return
-            if record.script: return
-            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
-            #If only the right ring and no other body flags probably a token that wasn't zeroed (which there are a lot of).
-            if record.IsLeftRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.IsNonPlayable = False
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
-    """Sets all armors to be playable"""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_ArmorPlayable, self).__init__(_(u"All Armor Playable"),
-            _(u'Sets all armor to be playable.'),
-            u'PlayableArmor',
-            (u'1.0',  u'1.0'),
-            )
-        self.logHeader = u'=== '+_(u'Playable Armor')
-        self.logMsg = u'* '+_(u'Armor pieces set as playable: %d')
-
-class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ARMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ARMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.ARMO
-        for record in modFile.ARMO.getActiveRecords():
-            if record.flags.notPlayable:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ARMO.records:
-            if record.flags.notPlayable:
-                full = record.full
-                if not full: continue
-                if record.script: continue
-                if rePlayableSkips.search(full): continue #probably truly shouldn't be playable
-                # We only want to set playable if the record has at least one body flag... otherwise most likely a token.
-                if record.flags.leftRing != 0 or record.flags.rightRing != 0 or record.flags.foot != 0 or record.flags.hand != 0 or record.flags.amulet != 0 or record.flags.lowerBody != 0 or record.flags.upperBody != 0 or record.flags.head != 0 or record.flags.hair != 0 or record.flags.tail != 0 or record.flags.shield != 0:
-                    record.flags.notPlayable = 0
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,CBash_MultiTweakItem):
-    scanOrder = 29 #Run before the show armor tweaks
-    editOrder = 29
-    name = _(u'Playable Armor')
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['ARMO']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            full = record.full
-            if not full: return
-            if record.script: return
-            if rePlayableSkips.search(full): return #probably truly shouldn't be playable
-            #If no body flags are set it is probably a token.
-            if record.IsLeftRing or record.IsRightRing or record.IsFoot or record.IsHand or record.IsAmulet or record.IsLowerBody or record.IsUpperBody or record.IsHead or record.IsHair or record.IsTail or record.IsShield:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.IsNonPlayable = False
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_DarnBooks(AMultiTweakItem):
-    """DarNifies books.""" # TODO C and P implementations have very similar code
-    reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-    reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
-    reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-    reDiv = re.compile(ur'<div',re.I+re.M)
-    reFont = re.compile(ur'<font',re.I+re.M)
-    reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-    reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-    reBold = re.compile(ur'(__|\*\*|~~)')
-    reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_DarnBooks, self).__init__(_(u"DarNified Books"),
-            _(u'Books will be reformatted for DarN UI.'),
-            u'DarnBooks',
-            (u'default',  u'default'),
-            )
-        self.logMsg = u'* '+_(u'Books DarNified: %d')
-
-class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('BOOK',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('BOOK',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        # maxWeight = self.choiceValues[self.chosen][0] # TODO: is this suposed to be used ?
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.BOOK
-        id_records = patchBlock.id_records
-        for record in modFile.BOOK.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if not record.enchantment:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        reColor = self.__class__.reColor
-        reTagInWord = self.__class__.reTagInWord
-        reFont1 = self.__class__.reFont1
-        reDiv = self.__class__.reDiv
-        reFont = self.__class__.reFont
-        reHead2 = self.__class__.reHead2
-        reHead3 = self.__class__.reHead3
-        reBold = self.__class__.reBold
-        reAlign = self.__class__.reAlign
-        keep = patchFile.getKeeper()
-        align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
-        self.inBold = False
-        def replaceBold(mo):
-            self.inBold = not self.inBold
-            return u'<font face=3 color=%s>' % (u'440000' if self.inBold else u'444444')
-        def replaceAlign(mo):
-            return u'<div align=%s>' % align_text[mo.group(1)]
-        for record in patchFile.BOOK.records:
-            if record.text and not record.enchantment:
-                text = record.text
-                text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
-                if reHead2.match(text):
-                    self.inBold = False
-                    text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
-                    text = reHead3.sub(ur'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
-                    text = reAlign.sub(replaceAlign,text)
-                    text = reBold.sub(replaceBold,text)
-                    text = re.sub(ur'\r\n',ur'<br>\r\n',text)
-                else:
-                    maColor = reColor.search(text)
-                    if maColor:
-                        color = maColor.group(1)
-                    elif record.flags.isScroll:
-                        color = u'000000'
-                    else:
-                        color = u'444444'
-                    fontFace = u'<font face=3 color='+color+u'>'
-                    text = reTagInWord.sub(ur'\1',text)
-                    text.lower()
-                    if reDiv.search(text) and not reFont.search(text):
-                        text = fontFace+text
-                    else:
-                        text = reFont1.sub(fontFace,text)
-                if text != record.text:
-                    record.text = text
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,CBash_MultiTweakItem):
-    name = _(u'Books DarNified')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['BOOK']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        def replaceBold(mo):
-            self.inBold = not self.inBold
-            return u'<font face=3 color=%s>' % (u'440000' if self.inBold else u'444444')
-        def replaceAlign(mo):
-            return u'<div align=%s>' % align_text[mo.group(1)]
-
-        if record.text and not record.enchantment:
-            text = record.text
-            text = text.replace(u'\u201d',u'') #there are some FUNKY quotes that don't translate properly. (they are in *latin* encoding not even cp1252 or something normal but non-unicode)
-            reColor = self.__class__.reColor
-            reTagInWord = self.__class__.reTagInWord
-            reFont1 = self.__class__.reFont1
-            reDiv = self.__class__.reDiv
-            reFont = self.__class__.reFont
-            reHead2 = self.__class__.reHead2
-            reHead3 = self.__class__.reHead3
-            reBold = self.__class__.reBold
-            reAlign = self.__class__.reAlign
-            align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
-            self.inBold = False
-            if reHead2.match(text):
-                text = reHead2.sub(ur'\1<font face=1 color=220000>\2<font face=3 color=444444>\r\n',text)
-                text = reHead3.sub(ur'\1<font face=3 color=220000>\2<font face=3 color=444444>\r\n',text)
-                text = reAlign.sub(replaceAlign,text)
-                text = reBold.sub(replaceBold,text)
-                text = re.sub(ur'\r\n',r'<br>\r\n',text)
-            else:
-                maColor = reColor.search(text)
-                if maColor:
-                    color = maColor.group(1)
-                elif record.IsScroll:
-                    color = u'000000'
-                else:
-                    color = u'444444'
-                fontFace = u'<font face=3 color='+color+u'>'
-                text = reTagInWord.sub(ur'\1',text)
-                text.lower()
-                if reDiv.search(text) and not reFont.search(text):
-                    text = fontFace+text
-                else:
-                    text = reFont1.sub(fontFace,text)
-            if text != record.text:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.text = text
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_FogFix(AMultiTweakItem):
-    """Fix fog in cell to be non-zero."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_FogFix, self).__init__(_(u"Nvidia Fog Fix"),
-            _(u'Fix fog related Nvidia black screen problems.'),
-            u'FogFix',
-            (u'0.0001',  u'0.0001'),
-            )
-        self.defaultEnabled = True
-
-class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CELL','WRLD',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CELL','WRLD',)
-
-    def scanModFile(self, modFile, progress,patchFile):
-        """Add lists from modFile."""
-        if 'CELL' not in modFile.tops: return
-        patchCells = patchFile.CELL
-        modFile.convertToLongFids(('CELL',))
-        for cellBlock in modFile.CELL.cellBlocks:
-            cell = cellBlock.cell
-            if not (cell.fogNear or cell.fogFar or cell.fogClip):
-                patchCells.setCell(cell)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Adds merged lists to patchfile."""
-        keep = patchFile.getKeeper()
-        count = {}
-        for cellBlock in patchFile.CELL.cellBlocks:
-            for cellBlock in patchFile.CELL.cellBlocks:
-                cell = cellBlock.cell
-                if not (cell.fogNear or cell.fogFar or cell.fogClip):
-                    cell.fogNear = 0.0001
-                    keep(cell.fid)
-                    count.setdefault(cell.fid[0],0)
-                    count[cell.fid[0]] += 1
-        #--Log
-        log.setHeader(self.logHeader)
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
-    name = _(u'Nvidia Fog Fix')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CELLS'] #or 'CELL', but we want this patcher to run in the same
-                        #group as the CellImporter, so we'll have to skip
-                        #worldspaces.  It shouldn't be a problem in those CELLs.
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.Parent:
-            # It's a CELL that showed up because we said 'CELLS' instead of 'CELL'
-            return
-        if not (record.fogNear or record.fogFar or record.fogClip):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.fogNear = 0.0001
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
-    """Remove light flickering for low end machines."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_NoLightFlicker, self).__init__(_(u"No Light Flicker"),
-            _(u'Remove flickering from lights. For use on low-end machines.'),
-            u'NoLightFlicker',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Lights unflickered: %d')
-
-class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AssortedTweak_NoLightFlicker, self).__init__()
-        self.flags = flags = MreRecord.type_class['LIGH']._flags()
-        flags.flickers = flags.flickerSlow = flags.pulse = flags.pulseSlow = True
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('LIGH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('LIGH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        flickerFlags = self.flags
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LIGH
-        for record in modFile.LIGH.getActiveRecords():
-            if record.flags & flickerFlags:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        flickerFlags = self.flags
-        notFlickerFlags = ~flickerFlags
-        keep = patchFile.getKeeper()
-        for record in patchFile.LIGH.records:
-            if int(record.flags & flickerFlags):
-                record.flags &= notFlickerFlags
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,CBash_MultiTweakItem):
-    name = _(u'No Light Flicker')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['LIGH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if (record.IsFlickers or record.IsFlickerSlow or record.IsPulse or record.IsPulseSlow):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.IsFlickers = False
-                override.IsFlickerSlow = False
-                override.IsPulse = False
-                override.IsPulseSlow = False
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-
-class AMultiTweakItem_Weight(AMultiTweakItem):
-
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        super(AMultiTweakItem_Weight, self).__init__(label,tip,key,*choices,**kwargs)
-        self.weight = self.choiceValues[self.chosen][0]
-
-    def _patchLog(self,log,count,weight):
-        # TODO: maybe overide _patchLog and call self.weight instead of passing it ?
-        log.setHeader(self.logHeader)
-        log(self.logWeightValue % weight)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem):
-
-    def buildPatchLog(self,log):
-        """Will write to log for a class that has a weight field"""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logWeightValue % self.weight)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
-    """Reweighs standard potions down to 0.1."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_PotionWeight, self).__init__(_(u"Reweigh: Potions (Maximum)"),
-            _(u'Potion weight will be capped.'),
-            u'MaximumPotionWeight',
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.logWeightValue = _(u'Potions set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
-
-class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ALCH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ALCH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight and record.weight < 1:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ALCH.records:
-            if record.weight > maxWeight and record.weight < 1 and not ('SEFF',0) in record.getEffects():
-                record.weight = maxWeight
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
-
-class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,CBash_MultiTweakItem_Weight):
-    name = _(u"Reweigh: Potions (Maximum)")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_AssortedTweak_PotionWeight, self).__init__()
-        # see https://github.com/wrye-bash/wrye-bash/commit/3aa3c941b2de6d751f71e50613ba20ac14f477e8
-        # CBash only, PBash gets away with just knowing the FormID of SEFF
-        # and always assuming it exists, since it's from Oblivion.esm. CBash
-        #  handles this by making sure the MGEF records are almost always
-        # read in, and always before patchers that will need them
-        self.SEFF = MGEFCode('SEFF')
-
-    def getTypes(self):
-        return ['ALCH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        maxWeight = self.weight
-        if (record.weight > maxWeight and record.weight < 1.0):
-            for effect in record.effects:
-                if effect.name == self.SEFF:
-                    return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
-    """Reweighs standard ingredients down to 0.1."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_IngredientWeight, self).__init__(_(u"Reweigh: Ingredients"),
-            _(u'Ingredient weight will be capped.'),
-            u'MaximumIngredientWeight',
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.logWeightValue = _(u'Ingredients set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Ingredients Reweighed: %d')
-
-class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('INGR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('INGR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.INGR
-        id_records = patchBlock.id_records
-        for record in modFile.INGR.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.INGR.records:
-            if record.weight > maxWeight:
-                record.weight = maxWeight
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
-
-class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,CBash_MultiTweakItem_Weight):
-    name = _(u'Reweigh: Ingredients')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_AssortedTweak_IngredientWeight, self).__init__()
-        self.SEFF = MGEFCode('SEFF')
-
-    def getTypes(self):
-        return ['INGR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        maxWeight = self.weight
-
-        if record.weight > maxWeight:
-            for effect in record.effects:
-                if effect.name == self.SEFF:
-                    return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
-    """Reweighs any potions up to 4."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_PotionWeightMinimum, self).__init__(_(u"Reweigh: Potions (Minimum)"),
-            _(u'Potion weight will be floored.'),
-            u'MinimumPotionWeight',
-            (u'1',  1),
-            (u'2',  2),
-            (u'3',  3),
-            (u'4',  4),
-            (_(u'Custom'),0.0),
-            )
-        self.logWeightValue = _(u'Potions set to minimum weight of %f')
-        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
-
-class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ALCH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ALCH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        minWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight < minWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        minWeight = self.weight
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ALCH.records:
-            if record.weight < minWeight:
-                record.weight = minWeight
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,minWeight)
-
-class CBash_AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,CBash_MultiTweakItem_Weight):
-    scanOrder = 33 #Have it run after the max weight for consistent results
-    editOrder = 33
-    name = _(u'Reweigh: Potions (Minimum)')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['ALCH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        minWeight = self.weight
-        if (record.weight < minWeight):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = minWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
-    """Reweighs staffs."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_StaffWeight, self).__init__(_(u"Reweigh: Staffs/Staves"),
-            _(u'Staff weight will be capped.'),
-            u'StaffWeight',
-            (u'1',  1.0),
-            (u'2',  2.0),
-            (u'3',  3.0),
-            (u'4',  4.0),
-            (u'5',  5.0),
-            (u'6',  6.0),
-            (u'7',  7.0),
-            (u'8',  8.0),
-            (_(u'Custom'),0.0),
-            )
-        self.logWeightValue = _(u'Staffs/Staves set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Staffs/Staves Reweighed: %d')
-
-class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('WEAP',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('WEAP',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.WEAP
-        id_records = patchBlock.id_records
-        for record in modFile.WEAP.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weaponType == 4 and record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.WEAP.records:
-            if record.weaponType == 4 and record.weight > maxWeight:
-                record.weight = maxWeight
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
-
-class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,CBash_MultiTweakItem_Weight):
-    name = _(u'Reweigh: Staffs/Staves')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['WEAP']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        maxWeight = self.weight
-
-        if (record.IsStaff and record.weight > maxWeight):
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
-    """Reweighs standard arrows down to 0.""" # TODO : Wha ?
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_ArrowWeight, self).__init__(_(u"Reweigh: Arrows"),
-            _(u'Arrow weights will be capped.'),
-            u'MaximumArrowWeight',
-            (u'0',    0.0),
-            (u'0.1',  0.1),
-            (u'0.2',  0.2),
-            (u'0.4',  0.4),
-            (u'0.6',  0.6),
-            (_(u'Custom'),0.0),
-            )
-        self.logWeightValue = _(u'Arrows set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Arrows Reweighed: %d')
-
-class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('AMMO',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('AMMO',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        maxWeight = self.weight
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.AMMO
-        id_records = patchBlock.id_records
-        for record in modFile.AMMO.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.weight > maxWeight:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        maxWeight = self.weight
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.AMMO.records:
-            if record.weight > maxWeight:
-                record.weight = maxWeight
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
-
-class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,CBash_MultiTweakItem_Weight):
-    name = _(u'Reweigh: Arrows')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['AMMO']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        maxWeight = self.weight
-
-        if record.weight > maxWeight:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_ScriptEffectSilencer(AMultiTweakItem):
-    """Silences the script magic effect and gives it an extremely high speed."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_ScriptEffectSilencer, self).__init__(_(u"Magic: Script Effect Silencer"),
-            _(u'Script Effect will be silenced and have no graphics.'),
-            u'SilentScriptEffect',
-            (u'0',    0),
-            )
-        self.defaultEnabled = True
-
-    def _patchLog(self,log):
-        log.setHeader(self.logHeader)
-        log(_(u'Script Effect silenced.'))
-
-class AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('MGEF',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('MGEF',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.MGEF
-        id_records = patchBlock.id_records
-        modFile.convertToLongFids(('MGEF',))
-        for record in modFile.MGEF.getActiveRecords():
-            fid = record.fid
-            if not record.longFids: fid = mapper(fid)
-            if fid in id_records: continue
-            if record.eid != 'SEFF': continue
-            patchBlock.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        nullRef = (GPath(u'Oblivion.esm'),0)
-        silentattrs = {
-            'model' : None,
-            'projectileSpeed' : 9999,
-            'light' : nullRef,
-            'effectShader' : nullRef,
-            'enchantEffect' : nullRef,
-            'castingSound' : nullRef,
-            'boltSound' : nullRef,
-            'hitSound' : nullRef,
-            'areaSound' : nullRef}
-        keep = patchFile.getKeeper()
-        for record in patchFile.MGEF.records:
-            if record.eid != 'SEFF' or not record.longFids: continue
-            record.flags.noHitEffect = True
-            for attr in silentattrs:
-                if getattr(record,attr) != silentattrs[attr]:
-                    setattr(record,attr,silentattrs[attr])
-                    keep(record.fid)
-        self._patchLog(log)
-
-class CBash_AssortedTweak_ScriptEffectSilencer(AAssortedTweak_ScriptEffectSilencer,CBash_MultiTweakItem):
-    name = _(u'Magic: Script Effect Silencer')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_AssortedTweak_ScriptEffectSilencer, self).__init__()
-        self.attrs = ['modPath','modb','modt_p','projectileSpeed','light','effectShader',
-                      'enchantEffect','castingSound','boltSound','hitSound','areaSound',
-                      'IsNoHitEffect']
-        self.newValues = [None,None,None,9999,None,None,None,None,None,None,None,True]
-        self.SEFF = MGEFCode('SEFF')
-        # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
-        # should call the contructor directly ? (space overhead but very small)
-        self.buildPatchLog=self._patchLog # TODO : maybe a simple override ?
-
-    def getTypes(self):
-        return ['MGEF']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.eid == self.SEFF[0]:
-            attrs = self.attrs
-            newValues = self.newValues
-            oldValues = map(record.__getattribute__, attrs)
-            if oldValues != newValues:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    map(override.__setattr__, attrs, newValues)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_HarvestChance(AMultiTweakItem):
-    """Adjust Harvest Chances."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_HarvestChance, self).__init__(_(u"Harvest Chance"),
-            _(u'Harvest chances on all plants will be set to the chosen percentage.'),
-            u'HarvestChance',
-            (u'10%',  10),
-            (u'20%',  20),
-            (u'30%',  30),
-            (u'40%',  40),
-            (u'50%',  50),
-            (u'60%',  60),
-            (u'70%',  70),
-            (u'80%',  80),
-            (u'90%',  90),
-            (u'100%', 100),
-            (_(u'Custom'),0),
-            )
-        self.logMsg = u'* '+_(u'Harvest Chances Changed: %d')
-
-class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('FLOR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('FLOR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        chance = self.choiceValues[self.chosen][0]
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.FLOR
-        id_records = patchBlock.id_records
-        for record in modFile.FLOR.getActiveRecords():
-            if record.eid.startswith('Nirnroot'): continue #skip Nirnroots
-            if mapper(record.fid) in id_records: continue
-            for attr in ['spring','summer','fall','winter']:
-                if getattr(record,attr) != chance:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-                    break
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        chance = self.choiceValues[self.chosen][0]
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.FLOR.records:
-            record.spring,record.summer,record.fall,record.winter = chance, chance, chance, chance
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,CBash_MultiTweakItem):
-    name = _(u'Harvest Chance')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_AssortedTweak_HarvestChance, self).__init__()
-        self.attrs = ['spring','summer','fall','winter']
-
-    def getTypes(self):
-        return ['FLOR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.eid.startswith(u'Nirnroot'): return #skip Nirnroots
-        newValues = [self.choiceValues[self.chosen][0]] * 4
-        oldValues = map(record.__getattribute__, self.attrs)
-        if oldValues != newValues:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                map(override.__setattr__, self.attrs, newValues)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_WindSpeed(AMultiTweakItem):
-    """Disables Weather winds."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_WindSpeed, self).__init__(_(u"Disable Wind"),
-            _(u'Disables the wind on all weathers.'),
-            u'windSpeed',
-            (_(u'Disable'),  0),
-            )
-        self.logMsg = u'* '+_(u'Winds Disabled: %d')
-
-class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('WTHR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('WTHR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.WTHR
-        id_records = patchBlock.id_records
-        for record in modFile.WTHR.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.windSpeed != 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.WTHR.records:
-            if record.windSpeed != 0:
-                record.windSpeed = 0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,CBash_MultiTweakItem):
-    name = _(u'Disable Wind')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['WTHR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.windSpeed != 0:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.windSpeed = 0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
-    """Eliminates random variation in groundcover."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_UniformGroundcover,self).__init__(_(u"Uniform Groundcover"),
-            _(u'Eliminates random variation in groundcover (grasses, shrubs, etc.).'),
-            u'UniformGroundcover',
-            (u'1.0', u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Grasses Normalized: %d')
-
-class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('GRAS',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GRAS',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.GRAS
-        id_records = patchBlock.id_records
-        for record in modFile.GRAS.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.heightRange != 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.GRAS.records:
-            if record.heightRange != 0:
-                record.heightRange = 0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,CBash_MultiTweakItem):
-    name = _(u'Uniform Groundcover')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GRAS']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.heightRange != 0:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.heightRange = 0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
-    """Sets Cast When Used Enchantment number of uses."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,self).__init__(_(u"Number of uses for pre-enchanted weapons and Staffs/Staves"),
-            _(u'The charge amount and cast cost will be edited so that all enchanted weapons and Staffs/Staves have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.'),
-            u'Number of uses:',
-            (u'1', 1),
-            (u'5', 5),
-            (u'10', 10),
-            (u'20', 20),
-            (u'30', 30),
-            (u'40', 40),
-            (u'50', 50),
-            (u'80', 80),
-            (u'100', 100),
-            (u'250', 250),
-            (u'500', 500),
-            (_(u'Unlimited'), 0),
-            (_(u'Custom'),0),
-            )
-        self.logHeader = u'=== '+_(u'Set Enchantment Number of Uses')
-        self.logMsg = u'* '+_(u'Enchantments set: %d')
-
-class AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,MultiTweakItem):
-#info: 'itemType','chargeAmount','enchantCost'
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ENCH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ENCH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ENCH
-        id_records = patchBlock.id_records
-        for record in modFile.ENCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.itemType in [1,2]:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.ENCH.records:
-            if record.itemType in [1,2]:
-                uses = self.choiceValues[self.chosen][0]
-                cost = uses
-                if uses != 0:
-                    cost = max(record.chargeAmount/uses,1)
-                record.enchantCost = cost
-                record.chargeAmount = cost * uses
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(AAssortedTweak_SetCastWhenUsedEnchantmentCosts,CBash_MultiTweakItem):
-    name = _(u'Set Enchantment Number of Uses')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['ENCH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-
-        if (record.IsStaff or record.IsWeapon):
-            uses = self.choiceValues[self.chosen][0]
-            cost = uses
-            if uses != 0:
-                cost = max(record.chargeAmount/uses,1)
-            amount = cost * uses
-            if record.enchantCost != cost or record.chargeAmount != amount:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.enchantCost = cost
-                    override.chargeAmount = amount
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_DefaultIcons(AMultiTweakItem):
-    """Sets a default icon for any records that don't have any icon assigned."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_DefaultIcons,self).__init__(_(u"Default Icons"),
-            _(u"Sets a default icon for any records that don't have any icon assigned"),
-            u'icons',
-            (u'1', 1),
-            )
-        self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Default Icons set: %d')
-
-class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                            'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
-                            'MISC','QUST','SGST','SLGM','WEAP']
-        super(AssortedTweak_DefaultIcons,self).__init__()
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
-                'MISC','QUST','SGST','SLGM','WEAP',
-                )
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CLAS','CLOT','FACT','INGR','KEYM','LIGH',
-                'MISC','QUST','SGST','SLGM','WEAP',
-                )
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        for blockType in self.activeTypes:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        count = {}
-        keep = patchFile.getKeeper()
-        for type_ in self.activeTypes:
-            if type_ not in patchFile.tops: continue
-            for record in patchFile.tops[type_].records:
-                if getattr(record, 'iconPath', None): continue
-                if getattr(record, 'maleIconPath', None): continue
-                if getattr(record, 'femaleIconPath', None): continue
-                changed = False
-                if type_ == 'ALCH':
-                    record.iconPath = u"Clutter\\Potions\\IconPotion01.dds"
-                    changed = True
-                elif type_ == 'AMMO':
-                    record.iconPath = u"Weapons\\IronArrow.dds"
-                    changed = True
-                elif type_ == 'APPA':
-                    record.iconPath = u"Clutter\\IconMortarPestle.dds"
-                    changed = True
-                elif type_ == 'AMMO':
-                    record.iconPath = u"Weapons\\IronArrow.dds"
-                    changed = True
-                elif type_ == 'ARMO':
-                    if record.flags.notPlayable: continue
-                    #choose based on body flags:
-                    if record.flags.upperBody != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Cuirass.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Cuirass.dds"
-                        changed = True
-                    elif record.flags.lowerBody != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Greaves.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Greaves.dds"
-                        changed = True
-                    elif record.flags.head != 0 or record.flags.hair != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Helmet.dds"
-                        changed = True
-                    elif record.flags.hand != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Gauntlets.dds"
-                        record.femaleIconPath = u"Armor\\Iron\\F\\Gauntlets.dds"
-                        changed = True
-                    elif record.flags.foot != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Boots.dds"
-                        changed = True
-                    elif record.flags.shield != 0:
-                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
-                        changed = True
-                    else: #Default icon, probably a token or somesuch
-                        record.maleIconPath = u"Armor\\Iron\\M\\Shield.dds"
-                        changed = True
-                elif type_ in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                    record.iconPath = u"Clutter\\iconbook%d.dds" % (random.randint(1,13))
-                    changed = True
-                elif type_ == 'CLOT':
-                    if record.flags.notPlayable: continue
-                    #choose based on body flags:
-                    if record.flags.upperBody != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shirt.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"
-                        changed = True
-                    elif record.flags.lowerBody != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Pants.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Pants.dds"
-                        changed = True
-                    elif record.flags.head or record.flags.hair:
-                        record.maleIconPath = u"Clothes\\MythicDawnrobe\\hood.dds"
-                        changed = True
-                    elif record.flags.hand != 0:
-                        record.maleIconPath = u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds"
-                        changed = True
-                    elif record.flags.foot != 0:
-                        record.maleIconPath = u"Clothes\\MiddleClass\\01\\M\\Shoes.dds"
-                        record.femaleIconPath = u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"
-                        changed = True
-                    elif record.flags.leftRing or record.flags.rightRing:
-                        record.maleIconPath = u"Clothes\\Ring\\RingNovice.dds"
-                        changed = True
-                    else: #amulet
-                        record.maleIconPath = u"Clothes\\Amulet\\AmuletSilver.dds"
-                        changed = True
-                elif type_ == 'FACT':
-                    #todo
-                    #changed = True
-                    pass
-                elif type_ == 'INGR':
-                    record.iconPath = u"Clutter\\IconSeeds.dds"
-                    changed = True
-                elif type_ == 'KEYM':
-                    record.iconPath = [u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"][random.randint(0,1)]
-                    changed = True
-                elif type_ == 'LIGH':
-                    if not record.flags.canTake: continue
-                    record.iconPath = u"Lights\\IconTorch02.dds"
-                    changed = True
-                elif type_ == 'MISC':
-                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
-                    changed = True
-                elif type_ == 'QUST':
-                    if not record.stages: continue
-                    record.iconPath = u"Quest\\icon_miscellaneous.dds"
-                    changed = True
-                elif type_ == 'SGST':
-                    record.iconPath = u"IconSigilStone.dds"
-                    changed = True
-                elif type_ == 'SLGM':
-                    record.iconPath = u"Clutter\\Soulgems\\AzurasStar.dds"
-                    changed = True
-                elif type_ == 'WEAP':
-                    if record.weaponType == 0:
-                        record.iconPath = u"Weapons\\IronDagger.dds"
-                    elif record.weaponType == 1:
-                        record.iconPath = u"Weapons\\IronClaymore.dds"
-                    elif record.weaponType == 2:
-                        record.iconPath = u"Weapons\\IronMace.dds"
-                    elif record.weaponType == 3:
-                        record.iconPath = u"Weapons\\IronBattleAxe.dds"
-                    elif record.weaponType == 4:
-                        record.iconPath = u"Weapons\\Staff.dds"
-                    elif record.weaponType == 5:
-                        record.iconPath = u"Weapons\\IronBow.dds"
-                    else: #Should never reach this point
-                        record.iconPath = u"Weapons\\IronDagger.dds"
-                    changed = True
-                if changed:
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,CBash_MultiTweakItem):
-    """Sets a default icon for any records that don't have any icon assigned."""
-    name = _(u'Default Icons')
-    type_defaultIcon = {
-                'ALCH': u"Clutter\\Potions\\IconPotion01.dds",
-                'AMMO': u"Weapons\\IronArrow.dds",
-                'APPA': u"Clutter\\IconMortarPestle.dds",
-                'AMMO': u"Weapons\\IronArrow.dds",
-                'ARMO': ((u"Armor\\Iron\\M\\Cuirass.dds",u"Armor\\Iron\\F\\Cuirass.dds"),
-                         (u"Armor\\Iron\\M\\Greaves.dds",u"Armor\\Iron\\F\\Greaves.dds"),
-                         (u"Armor\\Iron\\M\\Helmet.dds",),
-                         (u"Armor\\Iron\\M\\Gauntlets.dds",u"Armor\\Iron\\F\\Gauntlets.dds"),
-                         (u"Armor\\Iron\\M\\Boots.dds",),
-                         (u"Armor\\Iron\\M\\Shield.dds",),
-                         (u"Armor\\Iron\\M\\Shield.dds",), #Default Armor icon
-                         ),
-                'BOOK': u"Clutter\\iconbook%d.dds",
-                'BSGN': u"Clutter\\iconbook%d.dds",
-                'CLAS': u"Clutter\\iconbook%d.dds",
-                'CLOT': ((u"Clothes\\MiddleClass\\01\\M\\Shirt.dds",u"Clothes\\MiddleClass\\01\\F\\Shirt.dds"),
-                         (u"Clothes\\MiddleClass\\01\\M\\Pants.dds",u"Clothes\\MiddleClass\\01\\F\\Pants.dds"),
-                         (u"Clothes\\MythicDawnrobe\\hood.dds",),
-                         (u"Clothes\\LowerClass\\Jail\\M\\JailShirtHandcuff.dds",),
-                         (u"Clothes\\MiddleClass\\01\\M\\Shoes.dds",u"Clothes\\MiddleClass\\01\\F\\Shoes.dds"),
-                         (u"Clothes\\Ring\\RingNovice.dds",),
-                         (u"Clothes\\Amulet\\AmuletSilver.dds",),
-                         ),
-##                'FACT': u"", ToDo
-                'INGR': u"Clutter\\IconSeeds.dds",
-                'KEYM': (u"Clutter\\Key\\Key.dds",u"Clutter\\Key\\Key02.dds"),
-                'LIGH': u"Lights\\IconTorch02.dds",
-                'MISC': u"Clutter\\Soulgems\\AzurasStar.dds",
-                'QUST': u"Quest\\icon_miscellaneous.dds",
-                'SGST': u"IconSigilStone.dds",
-                'SLGM': u"Clutter\\Soulgems\\AzurasStar.dds",
-                'WEAP': (u"Weapons\\IronDagger.dds",
-                         u"Weapons\\IronClaymore.dds",
-                         u"Weapons\\IronMace.dds",
-                         u"Weapons\\IronBattleAxe.dds",
-                         u"Weapons\\Staff.dds",
-                         u"Weapons\\IronBow.dds",
-                         ),
-                }
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return [_type for _type in self.type_defaultIcon.keys()]
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if getattr(record, 'iconPath', None): return
-        if getattr(record, 'maleIconPath', None): return
-        if getattr(record, 'femaleIconPath', None): return
-        if record._Type == 'LIGH' and not record.IsCanTake: return
-        if record._Type == 'QUST' and not record.stages: return
-        if record._Type in ['ARMO','CLOT'] and not record.IsPlayable: return
-
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            icons = self.type_defaultIcon[override._Type]
-            if isinstance(icons, tuple):
-                if override._Type == 'ARMO':
-                    #choose based on body flags:
-                    if override.IsUpperBody:
-                        icons = icons[0]
-                    elif override.IsLowerBody:
-                        icons = icons[1]
-                    elif override.IsHead or record.IsHair:
-                        icons = icons[2]
-                    elif override.IsHand:
-                        icons = icons[3]
-                    elif override.IsFoot:
-                        icons = icons[4]
-                    elif override.IsShield:
-                        icons = icons[5]
-                    else: #default icon, probably a token or somesuch
-                        icons = icons[6]
-                elif override._Type == 'CLOT':
-                    #choose based on body flags:
-                    if override.IsUpperBody:
-                        icons = icons[0]
-                    elif override.IsLowerBody:
-                        icons = icons[1]
-                    elif override.IsHead or record.IsHair:
-                        icons = icons[2]
-                    elif override.IsHand:
-                        icons = icons[3]
-                    elif override.IsFoot:
-                        icons = icons[4]
-                    elif override.IsLeftRing or override.IsRightRing:
-                        icons = icons[5]
-                    else:
-                        icons = icons[6]
-                elif override._Type == 'KEYM':
-                    icons = icons[random.randint(0,1)]
-                elif override._Type == 'WEAP':
-                    #choose based on weapon type:
-                    try:
-                        icons = icons[override.weaponType]
-                    except IndexError: #just in case
-                        icons = icons[0]
-            else:
-                if override._Type in ['BOOK','BSGN','CLAS']: #just a random book icon for class/birthsign as well.
-                    icons = icons % (random.randint(1,13))
-
-            try:
-                if isinstance(icons, tuple):
-                    if len(icons) == 1:
-                        override.maleIconPath = icons[0]
-                    else:
-                        override.maleIconPath, override.femaleIconPath = icons
-                else:
-                    override.iconPath = icons
-            except ValueError, error:
-                print override._Type
-                print icons
-                print error
-                print self.patchFile.Current.Debug_DumpModFiles()
-                raise error
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
-    """Sets Sound Attenuation Levels for all records except Nirnroots."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_SetSoundAttenuationLevels,self).__init__(_(u"Set Sound Attenuation Levels"),
-            _(u'The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume.'),
-            u'Attenuation%:',
-            (u'0%', 0),
-            (u'5%', 5),
-            (u'10%', 10),
-            (u'20%', 20),
-            (u'50%', 50),
-            (u'80%', 80),
-            (_(u'Custom'),0),
-            )
-        self.logMsg = u'* '+_(u'Sounds Modified: %d')
-
-class AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('SOUN',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('SOUN',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SOUN
-        id_records = patchBlock.id_records
-        for record in modFile.SOUN.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.staticAtten:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.SOUN.records:
-            if record.staticAtten:
-                record.staticAtten = record.staticAtten*self.choiceValues[self.chosen][0]/100
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_SetSoundAttenuationLevels(AAssortedTweak_SetSoundAttenuationLevels,CBash_MultiTweakItem):
-    name = _(u'Set Sound Attenuation Levels')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['SOUN']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        choice = self.choiceValues[self.chosen][0] / 100
-        if choice == 1: #Prevent any pointless changes if a custom value of 100 is used.
-            return
-
-        if record.staticAtten:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.staticAtten = override.staticAtten * choice
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
-    """Sets Sound Attenuation Levels for Nirnroots."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,self).__init__(_(u"Set Sound Attenuation Levels: Nirnroots Only"),
-            _(u'The sound attenuation levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume. This one only affects Nirnroots.'),
-            u'Nirnroot Attenuation%:',
-            (u'0%', 0),
-            (u'5%', 5),
-            (u'10%', 10),
-            (u'20%', 20),
-            (u'50%', 50),
-            (u'80%', 80),
-            (_(u'Custom'),0),
-            )
-        self.logMsg = u'* '+_(u'Sounds Modified: %d')
-
-class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('SOUN',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('SOUN',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SOUN
-        id_records = patchBlock.id_records
-        for record in modFile.SOUN.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.staticAtten and u'nirnroot' in record.eid.lower():
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.SOUN.records:
-            if record.staticAtten and u'nirnroot' in record.eid.lower():
-                record.staticAtten = record.staticAtten*self.choiceValues[self.chosen][0]/100
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly,CBash_MultiTweakItem):
-    name = _(u'Set Sound Attenuation Levels: Nirnroots Only')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['SOUN']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        choice = self.choiceValues[self.chosen][0] / 100
-        if choice == 1: #Prevent any pointless changes if a custom value of 100 is used.
-            return
-
-        if record.staticAtten and u'nirnroot' in record.eid.lower() :
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.staticAtten = override.staticAtten * choice
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
-    """Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_FactioncrimeGoldMultiplier,self).__init__(_(u"Faction crime Gold Multiplier Fix"),
-            _(u'Fix factions with unset crimeGoldMultiplier to have a crimeGoldMultiplier of 1.0.'),
-            u'FactioncrimeGoldMultiplier',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Factions fixed: %d')
-
-class AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('FACT',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('FACT',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.FACT
-        for record in modFile.FACT.getActiveRecords():
-            if not isinstance(record.crimeGoldMultiplier,float):
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.FACT.records:
-            if not isinstance(record.crimeGoldMultiplier,float):
-                record.crimeGoldMultiplier = 1.0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_FactioncrimeGoldMultiplier(AAssortedTweak_FactioncrimeGoldMultiplier,CBash_MultiTweakItem):
-    name = _(u'Faction crime Gold Multiplier Fix')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['FACT']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        if record.crimeGoldMultiplier is None:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.crimeGoldMultiplier = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
-    """Remove light flickering for low end machines."""
-    # TODO : was """Sets light fade value when not set to 1.0."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_LightFadeValueFix,self).__init__(_(u"No Light Fade Value Fix"),
-            _(u"Sets Light's Fade values to default of 1.0 if not set."),
-            u'NoLightFadeValueFix',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Lights with fade values added: %d')
-
-class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('LIGH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('LIGH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LIGH
-        for record in modFile.LIGH.getActiveRecords():
-            if not isinstance(record.fade,float):
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.LIGH.records:
-            if not isinstance(record.fade,float):
-                record.fade = 1.0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,CBash_MultiTweakItem):
-    name = _(u'No Light Fade Value Fix')
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['LIGH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.fade is None:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.fade = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
-    """Removes the description from loading screens."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAssortedTweak_TextlessLSCRs,self).__init__(_(u"No Description Loading Screens"),
-            _(u"Removes the description from loading screens."),
-            u'NoDescLSCR',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Loading screens tweaked: %d')
-
-class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('LSCR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('LSCR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.LSCR
-        for record in modFile.LSCR.getActiveRecords():
-            if record.text:
-                record = record.getTypeCopy(mapper)
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.LSCR.records:
-            if record.text:
-                record.text = u''
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,CBash_MultiTweakItem):
-    name = _(u"No Description Loading Screens")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['LSCR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.text:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.text = u''
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AssortedTweaker(MultiTweaker):
-    """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u'Tweak Assorted')
-    text = _(u"Tweak various records in miscellaneous ways.")
-    defaultConfig = {'isEnabled':True}
-    if bush.game.fsName == u'Oblivion':
-        tweaks = sorted([
-            AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
-                _(u"Prevents armor from hiding amulets."),
-                u'armorShowsAmulets',
-                ),
-            AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
-                _(u"Prevents armor from hiding rings."),
-                u'armorShowsRings',
-                ),
-            AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
-                _(u"Prevents Clothing from hiding amulets."),
-                u'ClothingShowsAmulets',
-                ),
-            AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
-                _(u"Prevents Clothing from hiding rings."),
-                u'ClothingShowsRings',
-                ),
-            AssortedTweak_ArmorPlayable(),
-            AssortedTweak_ClothingPlayable(),
-            AssortedTweak_BowReach(),
-            AssortedTweak_ConsistentRings(),
-            AssortedTweak_DarnBooks(),
-            AssortedTweak_FogFix(),
-            AssortedTweak_NoLightFlicker(),
-            AssortedTweak_PotionWeight(),
-            AssortedTweak_PotionWeightMinimum(),
-            AssortedTweak_StaffWeight(),
-            AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
-            AssortedTweak_WindSpeed(),
-            AssortedTweak_UniformGroundcover(),
-            AssortedTweak_HarvestChance(),
-            AssortedTweak_IngredientWeight(),
-            AssortedTweak_ArrowWeight(),
-            AssortedTweak_ScriptEffectSilencer(),
-            AssortedTweak_DefaultIcons(),
-            AssortedTweak_SetSoundAttenuationLevels(),
-            AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
-            AssortedTweak_FactioncrimeGoldMultiplier(),
-            AssortedTweak_LightFadeValueFix(),
-            AssortedTweak_SkyrimStyleWeapons(),
-            AssortedTweak_TextlessLSCRs(),
-            ],key=lambda a: a.label.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classNames = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classNames,tuple())
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
-
-class CBash_AssortedTweaker(CBash_MultiTweaker):
-    """Tweaks assorted stuff. Sub-tweaks behave like patchers themselves."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u'Tweak Assorted')
-    text = _(u"Tweak various records in miscellaneous ways.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = sorted([
-        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
-            _(u"Prevents armor from hiding amulets."),
-            u'armorShowsAmulets',
-            ),
-        CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Rings"),
-            _(u"Prevents armor from hiding rings."),
-            u'armorShowsRings',
-            ),
-        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Amulets"),
-            _(u"Prevents Clothing from hiding amulets."),
-            u'ClothingShowsAmulets',
-            ),
-        CBash_AssortedTweak_ClothingShows(_(u"Clothing Shows Rings"),
-            _(u"Prevents Clothing from hiding rings."),
-            u'ClothingShowsRings',
-            ),
-        CBash_AssortedTweak_ArmorPlayable(),
-        CBash_AssortedTweak_ClothingPlayable(),
-        CBash_AssortedTweak_BowReach(),
-        CBash_AssortedTweak_ConsistentRings(),
-        CBash_AssortedTweak_DarnBooks(),
-        CBash_AssortedTweak_FogFix(),
-        CBash_AssortedTweak_NoLightFlicker(),
-        CBash_AssortedTweak_PotionWeight(),
-        CBash_AssortedTweak_PotionWeightMinimum(),
-        CBash_AssortedTweak_StaffWeight(),
-        CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(),
-        CBash_AssortedTweak_HarvestChance(),
-        CBash_AssortedTweak_WindSpeed(),
-        CBash_AssortedTweak_UniformGroundcover(),
-        CBash_AssortedTweak_IngredientWeight(),
-        CBash_AssortedTweak_ArrowWeight(),
-        CBash_AssortedTweak_ScriptEffectSilencer(),
-        CBash_AssortedTweak_DefaultIcons(),
-        CBash_AssortedTweak_SetSoundAttenuationLevels(),
-        CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(),
-        CBash_AssortedTweak_FactioncrimeGoldMultiplier(),
-        CBash_AssortedTweak_LightFadeValueFix(),
-        CBash_AssortedTweak_SkyrimStyleWeapons(),
-        CBash_AssortedTweak_TextlessLSCRs(),
-        ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-
-#------------------------------------------------------------------------------
-class GlobalsTweak(MultiTweakItem):
-    """set a global to specified value"""
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        value = self.choiceValues[self.chosen][0]
-        for record in patchFile.GLOB.records:
-            if hasattr(record,'eid'):
-                if record.eid.lower() == self.key:
-                    if record.value != value:
-                        record.value = value
-                        keep(record.fid)
-                    break
-        log(u'* '+_(u'%s set to: %4.2f') % (self.label,value))
-
-class CBash_GlobalsTweak(CBash_MultiTweakItem):
-    """Sets a global to specified value"""
-    scanOrder = 29
-    editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GLOB']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if (record.eid == self.key): #eid is case insensitive on comparisons by default
-            value = self.value = self.choiceValues[self.chosen][0]
-            if record.value != value:
-                self.count = 1
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.value = float(value) #Globals are always stored as floats, regardless of what the CS says
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        if self.count:
-            log(u'  * '+_(u'%s set to: %4.2f') % (self.label,self.value))
-
-#------------------------------------------------------------------------------
-class AClothesTweak(AMultiTweakItem):
-    flags = {
-        u'hoods':    0x00000002,
-        u'shirts':   0x00000004,
-        u'pants':    0x00000008,
-        u'gloves':   0x00000010,
-        u'amulets':  0x00000100,
-        u'rings2':   0x00010000,
-        u'amulets2': 0x00020000,
-        #--Multi
-        u'robes':    0x0000000C,
-        u'rings':    0x000000C0,
-        }
-        # u'robes':   (1<<2) + (1<<3),
-        # u'rings':   (1<<6) + (1<<7),
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(AClothesTweak,self).__init__(label,tip,key,*choices)
-        typeKey = key[:key.find(u'.')]
-        self.orTypeFlags = typeKey == u'rings'
-        self.typeFlags = self.__class__.flags[typeKey]
-
-    def isMyType(self,record):
-        """Returns true to save record for late processing."""
-        recTypeFlags = int(record.flags) & 0xFFFF
-        myTypeFlags = self.typeFlags
-        return ((recTypeFlags == myTypeFlags) or
-                (self.orTypeFlags and (recTypeFlags & myTypeFlags == recTypeFlags)))
-
-class ClothesTweak(AClothesTweak,MultiTweakItem):
-    def isMyType(self,record):
-        """Returns true to save record for late processing."""
-        # TODO : needed in CBash ?
-        if record.flags.notPlayable: return False #--Ignore non-playable items.
-        return super(ClothesTweak,self).isMyType(record)
-
-class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem): pass
-
-#------------------------------------------------------------------------------
-class ClothesTweak_MaxWeight(ClothesTweak):
-    """Enforce a max weight for specified clothes."""
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        tweakCount = 0
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
-        superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
-        for record in patchFile.CLOT.records:
-            weight = record.weight
-            if self.isMyType(record) and weight > maxWeight and weight < superWeight:
-                record.weight = maxWeight
-                keep(record.fid)
-                tweakCount += 1
-        log(u'* %s: [%4.2f]: %d' % (self.label,maxWeight,tweakCount))
-
-class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
-    """Enforce a max weight for specified clothes."""
-    name = _(u'Reweigh Clothes')
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(CBash_ClothesTweak_MaxWeight,self).__init__(label,tip,key,*choices)
-        self.matchFlags = {'amulets.maxWeight':('IsAmulet',),
-                         'rings.maxWeight':('IsRightRing','IsLeftRing'),
-                         'hoods.maxWeight':('IsHair',)
-                         }[key]
-        self.logMsg = u'* '+_(u'Clothes Reweighed: %d')
-
-    def getTypes(self):
-        return ['CLOT']
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            return
-
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
-        superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
-
-        if (record.weight > maxWeight) and self.isMyType(record) and (record.weight < superWeight):
-            for attr in self.matchFlags:
-                if(getattr(record, attr)):
-                    break
-            else:
-                return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: [%4.2f]: %d' % (srcMod.s,maxWeight,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-class ClothesTweak_Unblock(ClothesTweak):
-    """Unlimited rings, amulets."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key,*choices):
-        super(ClothesTweak_Unblock,self).__init__(label,tip,key,*choices)
-        self.unblockFlags = self.__class__.flags[key[key.rfind('.')+1:]]
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        tweakCount = 0
-        for record in patchFile.CLOT.records:
-            if self.isMyType(record) and int(record.flags & self.unblockFlags):
-                record.flags &= ~self.unblockFlags
-                keep(record.fid)
-                tweakCount += 1
-        log(u'* %s: %d' % (self.label,tweakCount))
-
-class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
-    """Unlimited rings, amulets."""
-    scanOrder = 31
-    editOrder = 31
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,label,tip,key):
-        super(CBash_ClothesTweak_Unblock,self).__init__(label,tip,key)
-        self.hideFlags = {'amulets.unblock.amulets':('IsAmulet',),
-                         'robes.show.amulets2':('IsHideAmulets',),
-                         'rings.unblock.rings':('IsRightRing','IsLeftRing'),
-                         'gloves.unblock.rings2':('IsHideRings',),
-                         'robes.unblock.pants':('IsLowerBody',)
-                         }[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
-
-    def getTypes(self):
-        return ['CLOT']
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable:
-            return
-
-        if self.isMyType(record):
-            for flag in self.hideFlags:
-                if(getattr(record, flag)):
-                    break
-            else:
-                return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                for attr in self.hideFlags:
-                    setattr(override, attr, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ClothesTweaker(MultiTweaker):
-    """Patches clothes in miscellaneous ways."""
-    scanOrder = 31
-    editOrder = 31
-    name = _(u'Tweak Clothes')
-    text = _(u"Tweak clothing weight and blocking.")
-    tweaks = sorted([
-        ClothesTweak_Unblock(_(u"Unlimited Amulets"),
-            _(u"Wear unlimited number of amulets - but they won't display."),
-            u'amulets.unblock.amulets'),
-        ClothesTweak_Unblock(_(u"Unlimited Rings"),
-            _(u"Wear unlimited number of rings - but they won't display."),
-            u'rings.unblock.rings'),
-        ClothesTweak_Unblock(_(u"Gloves Show Rings"),
-            _(u"Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
-            u'gloves.unblock.rings2'),
-        ClothesTweak_Unblock(_(u"Robes Show Pants"),
-            _(u"Robes will allow pants, greaves, skirts - but they'll clip."),
-            u'robes.unblock.pants'),
-        ClothesTweak_Unblock(_(u"Robes Show Amulets"),
-            _(u"Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
-            u'robes.show.amulets2'),
-        ClothesTweak_MaxWeight(_(u"Max Weight Amulets"),
-            _(u"Amulet weight will be capped."),
-            u'amulets.maxWeight',
-            (u'0.0',0),
-            (u'0.1',0.1),
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (_(u'Custom'),0),
-            ),
-        ClothesTweak_MaxWeight(_(u"Max Weight Rings"),
-            _(u'Ring weight will be capped.'),
-            u'rings.maxWeight',
-            (u'0.0',0),
-            (u'0.1',0.1),
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (_(u'Custom'),0),
-            ),
-        ClothesTweak_MaxWeight(_(u"Max Weight Hoods"),
-            _(u'Hood weight will be capped.'),
-            u'hoods.maxWeight',
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (u'1.0',1.0),
-            (_(u'Custom'),0),
-            ),
-        ],key=lambda a: a.label.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CLOT',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CLOT',) if self.isActive else ()
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive or 'CLOT' not in modFile.tops: return
-        mapper = modFile.getLongMapper()
-        patchRecords = self.patchFile.CLOT
-        id_records = patchRecords.id_records
-        for record in modFile.CLOT.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            for tweak in self.enabledTweaks:
-                if tweak.isMyType(record):
-                    record = record.getTypeCopy(mapper)
-                    patchRecords.setRecord(record)
-                    break
-
-    def buildPatch(self,log,progress):
-        """Applies individual clothes tweaks."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self.__class__.name)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(self.patchFile,keep,log)
-
-class CBash_ClothesTweaker(CBash_MultiTweaker):
-    """Patches clothes in miscellaneous ways."""
-    scanOrder = 31
-    editOrder = 31
-    name = _(u'Tweak Clothes')
-    text = _(u"Tweak clothing weight and blocking.")
-    tweaks = sorted([
-        CBash_ClothesTweak_Unblock(_(u"Unlimited Amulets"),
-            _(u"Wear unlimited number of amulets - but they won't display."),
-            u'amulets.unblock.amulets'),
-        CBash_ClothesTweak_Unblock(_(u"Unlimited Rings"),
-            _(u"Wear unlimited number of rings - but they won't display."),
-            u'rings.unblock.rings'),
-        CBash_ClothesTweak_Unblock(_(u"Gloves Show Rings"),
-            _(u"Gloves will always show rings. (Conflicts with Unlimited Rings.)"),
-            u'gloves.unblock.rings2'),
-        CBash_ClothesTweak_Unblock(_(u"Robes Show Pants"),
-            _(u"Robes will allow pants, greaves, skirts - but they'll clip."),
-            u'robes.unblock.pants'),
-        CBash_ClothesTweak_Unblock(_(u"Robes Show Amulets"),
-            _(u"Robes will always show amulets. (Conflicts with Unlimited Amulets.)"),
-            u'robes.show.amulets2'),
-        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Amulets"),
-            _(u"Amulet weight will be capped."),
-            u'amulets.maxWeight',
-            (u'0.0',0.0),
-            (u'0.1',0.1),
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (_(u'Custom'),0.0),
-            ),
-        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Rings"),
-            _(u'Ring weight will be capped.'),
-            u'rings.maxWeight',
-            (u'0.0',0.0),
-            (u'0.1',0.1),
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (_(u'Custom'),0.0),
-            ),
-        CBash_ClothesTweak_MaxWeight(_(u"Max Weight Hoods"),
-            _(u'Hood weight will be capped.'),
-            u'hoods.maxWeight',
-            (u'0.2',0.2),
-            (u'0.5',0.5),
-            (u'1.0',1.0),
-            (_(u'Custom'),0.0),
-            ),
-        ],key=lambda a: a.label.lower())
-
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-
-#------------------------------------------------------------------------------
-class GmstTweak(MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self,patchFile,keep,log):
-        """Build patch."""
-        eids = ((self.key,),self.key)[isinstance(self.key,tuple)]
-        isOblivion = bush.game.fsName.lower() == u'oblivion'
-        for eid,value in zip(eids,self.choiceValues[self.chosen]):
-            if isOblivion and value < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - skipping setting GMST.") % value)
-                return
-            eidLower = eid.lower()
-            for record in patchFile.GMST.records:
-                if record.eid.lower() == eidLower:
-                    if record.value != value:
-                        record.value = value
-                        keep(record.fid)
-                    break
-            else:
-                gmst = MreRecord.type_class['GMST'](ModReader.recHeader('GMST',0,0,0,0))
-                gmst.eid,gmst.value,gmst.longFids = eid,value,True
-                fid = gmst.fid = keep(gmst.getGMSTFid())
-                patchFile.GMST.setRecord(gmst)
-        if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.choiceValues[self.chosen][0],basestring):
-                    log(u'* %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
-                else:
-                    log(u'* %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.choiceValues[self.chosen][0]))
-            else: log(u'* %s: %s' % (self.label,self.choiceLabels[self.chosen]))
-        else:
-            log(u'* ' + self.label)
-
-class CBash_GmstTweak(CBash_MultiTweakItem):
-    """Sets a gmst to specified value"""
-    scanOrder = 29
-    editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GMST']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        values = self.values = self.choiceValues[self.chosen]
-        recEid = record.eid
-        for eid,value in zip(self.key,values):
-            if eid == recEid:
-                newValue = value
-                break
-        else:
-            return
-        if recEid.startswith(u"f") and type(newValue) != float:
-            deprint(_(u"converting custom value to float for GMST %s: %s") % (recEid, newValue))
-            newValue = float(newValue)
-        if record.value != newValue:
-            self.eid_count[eid] = 1
-            if newValue < 0:
-                deprint(_(u"GMST values can't be negative - currently %s - skipping setting GMST.") % newValue)
-                return
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.value = newValue
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
-        subProgress = SubProgress(progress)
-        values = self.values = self.choiceValues[self.chosen]
-        subProgress.setFull(max(len(values),1))
-        pstate = 0
-        for eid,value in zip(self.key,values):
-            subProgress(pstate, _(u"Finishing GMST Tweaks..."))
-            if not self.eid_count.get(eid,0):
-                self.eid_count[eid] = 1
-                record = patchFile.create_GMST(eid)
-                if not record:
-                    print eid
-                    print patchFile.Current.Debug_DumpModFiles()
-                    for conflict in patchFile.Current.LookupRecords(eid, False):
-                        print conflict.GetParentMod().ModName
-                    raise StateError(u"Tweak Settings: Unable to create GMST!")
-                if eid.startswith("f") and type(value) != float:
-                    deprint(_(u"converting custom value to float for GMST %s: %s") % (eid, value))
-                    value = float(value)
-                record.value = value
-            pstate += 1
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        if len(self.choiceLabels) > 1:
-            if self.choiceLabels[self.chosen].startswith(_(u'Custom')):
-                if isinstance(self.values[0],basestring):
-                    log(u'  * %s: %s %s' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
-                else:
-                    log(u'  * %s: %s %4.2f' % (self.label,self.choiceLabels[self.chosen],self.values[0]))
-            else: log(u'  * %s: %s' % (self.label,self.choiceLabels[self.chosen]))
-        else:
-            log(u'  * ' + self.label)
-
-#------------------------------------------------------------------------------
-class GmstTweaker(MultiTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    scanOrder = 29
-    editOrder = 29
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = []
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(GlobalsTweak,bush.game.GlobalsTweaks),
-                           (GmstTweak,bush.game.GmstTweaks)]:
-            for tweak in tweaks:
-                if isinstance(tweak,tuple):
-                    tweaksAppend(cls(*tweak))
-                elif isinstance(tweak,list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('GMST','GLOB') if self.isActive else ()
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        mapper = modFile.getLongMapper()
-        for blockType in ['GMST','GLOB']:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(self.patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress):
-        """Edits patch file as desired. Will write to log."""
-        if not self.isActive: return
-        keep = self.patchFile.getKeeper()
-        log.setHeader(u'= '+self.__class__.name)
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(self.patchFile,keep,log)
-
-class CBash_GmstTweaker(CBash_MultiTweaker):
-    """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = []
-
-    #--Config Phase ------------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        CBash_MultiTweaker.getConfig(self,configs)
-        # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
-                           (CBash_GmstTweak,bush.game.GmstTweaks)]:
-            for tweak in tweaks:
-                if isinstance(tweak,tuple):
-                    tweaksAppend(cls(*tweak))
-                elif isinstance(tweak,list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-            if isinstance(tweak,CBash_GlobalsTweak):
-                tweak.count = 0
-            else:
-                tweak.eid_count = {}
-
-#------------------------------------------------------------------------------
-class ANamesTweak_BodyTags(AMultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ANamesTweak_BodyTags,self).__init__(_(u"Body Part Codes"),
-            _(u'Sets body part codes used by Armor/Clothes name tweaks. A: Amulet, R: Ring, etc.'),
-            u'bodyTags',
-            (u'ARGHTCCPBS',u'ARGHTCCPBS'),
-            (u'ABGHINOPSL',u'ABGHINOPSL'),
-            )
-
-class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple()
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        return
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        patchFile.bodyTags = self.choiceValues[self.chosen][0]
-
-class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return []
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        pass
-
-#------------------------------------------------------------------------------
-class NamesTweak_Body(MultiTweakItem):
-    """Names tweaker for armor and clothes."""
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return (self.key,)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return (self.key,)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = getattr(patchFile,self.key)
-        id_records = patchBlock.id_records
-        for record in getattr(modFile,self.key).getActiveRecords():
-            if record.full and mapper(record.fid) not in id_records:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        format_ = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format_
-        keep = patchFile.getKeeper()
-        codes = getattr(patchFile,'bodyTags','ARGHTCCPBS')
-        amulet,ring,gloves,head,tail,robe,chest,pants,shoes,shield = [
-            x for x in codes]
-        for record in getattr(patchFile,self.key).records:
-            if not record.full: continue
-            if record.full[0] in u'+-=.()[]': continue
-            flags = record.flags
-            if flags.head or flags.hair: type_ = head
-            elif flags.rightRing or flags.leftRing: type_ = ring
-            elif flags.amulet: type_ = amulet
-            elif flags.upperBody and flags.lowerBody: type_ = robe
-            elif flags.upperBody: type_ = chest
-            elif flags.lowerBody: type_ = pants
-            elif flags.hand: type_ = gloves
-            elif flags.foot: type_ = shoes
-            elif flags.tail: type_ = tail
-            elif flags.shield: type_ = shield
-            else: continue
-            if record.recType == 'ARMO':
-                type_ += 'LH'[record.flags.heavyArmor]
-            if showStat:
-                record.full = format_ % (type_,record.strength/100) + record.full
-            else:
-                record.full = format_ % type_ + record.full
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NamesTweak_Body(CBash_MultiTweakItem):
-    """Names tweaker for armor and clothes."""
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return [self.key]
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNonPlayable: return
-        newFull = record.full
-        if newFull:
-            if record.IsHead or record.IsHair: type_ = self.head
-            elif record.IsRightRing or record.IsLeftRing: type_ = self.ring
-            elif record.IsAmulet: type_ = self.amulet
-            elif record.IsUpperBody and record.IsLowerBody: type_ = self.robe
-            elif record.IsUpperBody: type_ = self.chest
-            elif record.IsLowerBody: type_ = self.pants
-            elif record.IsHand: type_ = self.gloves
-            elif record.IsFoot: type_ = self.shoes
-            elif record.IsTail: type_ = self.tail
-            elif record.IsShield: type_ = self.shield
-            else: return
-            if record._Type == 'ARMO':
-                type_ += 'LH'[record.IsHeavyArmor]
-            if self.showStat:
-                newFull = self.format % (type_, record.strength / 100) + newFull
-            else:
-                newFull = self.format % type_ + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName, 0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-class ANamesTweak_Potions(AMultiTweakItem):
-    """Names tweaker for potions."""
-    reOldLabel = re.compile(u'^(-|X) ',re.U)
-    reOldEnd = re.compile(u' -$',re.U)
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ANamesTweak_Potions, self).__init__(_(u"Potions"),
-            _(u'Label potions to sort by type and effect.'),
-            'ALCH',
-            (_(u'XD Illness'),  u'%s '),
-            (_(u'XD. Illness'), u'%s. '),
-            (_(u'XD - Illness'),u'%s - '),
-            (_(u'(XD) Illness'),u'(%s) '),
-            )
-
-class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('ALCH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('ALCH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.ALCH
-        id_records = patchBlock.id_records
-        for record in modFile.ALCH.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            record = record.getTypeCopy(mapper)
-            patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        format_ = self.choiceValues[self.chosen][0]
-        hostileEffects = patchFile.getMgefHostiles()
-        keep = patchFile.getKeeper()
-        reOldLabel = self.__class__.reOldLabel
-        reOldEnd = self.__class__.reOldEnd
-        mgef_school = patchFile.getMgefSchool()
-        for record in patchFile.ALCH.records:
-            if not record.full: continue
-            school = 6 #--Default to 6 (U: unknown)
-            for index,effect in enumerate(record.effects):
-                effectId = effect.name
-                if index == 0:
-                    if effect.scriptEffect:
-                        school = effect.scriptEffect.school
-                    else:
-                        school = mgef_school.get(effectId,6)
-                #--Non-hostile effect?
-                if effect.scriptEffect:
-                    if not effect.scriptEffect.flags.hostile:
-                        isPoison = False
-                        break
-                elif effectId not in hostileEffects:
-                    isPoison = False
-                    break
-            else:
-                isPoison = True
-            full = reOldLabel.sub(u'',record.full) #--Remove existing label
-            full = reOldEnd.sub(u'',full)
-            if record.flags.isFood:
-                record.full = u'.'+full
-            else:
-                label = (u'X' if isPoison else u'') + u'ACDIMRU'[school]
-                record.full = format_ % label + full
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['ALCH']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-
-        newFull = record.full
-        if newFull:
-            mgef_school = self.patchFile.mgef_school
-            hostileEffects = self.patchFile.hostileEffects
-            schoolType = 6 #--Default to 6 (U: unknown)
-            for index,effect in enumerate(record.effects):
-                effectId = effect.name
-                if index == 0:
-                    if effect.script:
-                        schoolType = effect.schoolType
-                    else:
-                        schoolType = mgef_school.get(effectId,6)
-                #--Non-hostile effect?
-                if effect.script:
-                    if not effect.IsHostile:
-                        isPoison = False
-                        break
-                elif effectId not in hostileEffects:
-                    isPoison = False
-                    break
-            else:
-                isPoison = True
-            newFull = self.reOldLabel.sub(u'',newFull) #--Remove existing label
-            newFull = self.reOldEnd.sub(u'',newFull)
-            if record.IsFood:
-                newFull = u'.' + newFull
-            else:
-                label = (u'X' if isPoison else u'') + u'ACDIMRU'[schoolType]
-                newFull = self.format % label + newFull
-
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
-#------------------------------------------------------------------------------
-reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once (TODO : should be faster ? name ?)
-class ANamesTweak_Scrolls(AMultiTweakItem):
-    reOldLabel = reSpell
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ANamesTweak_Scrolls,self).__init__(_(u"Notes and Scrolls"),
-            _(u'Mark notes and scrolls to sort separately from books'),
-            u'scrolls',
-            (_(u'~Fire Ball'),    u'~'),
-            (_(u'~D Fire Ball'),  u'~%s '),
-            (_(u'~D. Fire Ball'), u'~%s. '),
-            (_(u'~D - Fire Ball'),u'~%s - '),
-            (_(u'~(D) Fire Ball'),u'~(%s) '),
-            (u'----',u'----'),
-            (_(u'.Fire Ball'),    u'.'),
-            (_(u'.D Fire Ball'),  u'.%s '),
-            (_(u'.D. Fire Ball'), u'.%s. '),
-            (_(u'.D - Fire Ball'),u'.%s - '),
-            (_(u'.(D) Fire Ball'),u'.(%s) '),
-            )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        super(ANamesTweak_Scrolls,self).saveConfig(configs)
-        rawFormat = self.choiceValues[self.chosen][0]
-        self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
-        self.magicFormat = rawFormat[1:]
-
-class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('BOOK','ENCH',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('BOOK','ENCH',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        #--Scroll Enchantments
-        if self.magicFormat:
-            patchBlock = patchFile.ENCH
-            id_records = patchBlock.id_records
-            for record in modFile.ENCH.getActiveRecords():
-                if mapper(record.fid) in id_records: continue
-                if record.itemType == 0:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-        #--Books
-        patchBlock = patchFile.BOOK
-        id_records = patchBlock.id_records
-        for record in modFile.BOOK.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.flags.isScroll and not record.flags.isFixed:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        reOldLabel = self.__class__.reOldLabel
-        orderFormat, magicFormat = self.orderFormat, self.magicFormat
-        keep = patchFile.getKeeper()
-        id_ench = patchFile.ENCH.id_records
-        mgef_school = patchFile.getMgefSchool()
-        for record in patchFile.BOOK.records:
-            if not record.full or not record.flags.isScroll or record.flags.isFixed: continue
-            #--Magic label
-            isEnchanted = bool(record.enchantment)
-            if magicFormat and isEnchanted:
-                school = 6 #--Default to 6 (U: unknown)
-                enchantment = id_ench.get(record.enchantment)
-                if enchantment and enchantment.effects:
-                    effect = enchantment.effects[0]
-                    effectId = effect.name
-                    if effect.scriptEffect:
-                        school = effect.scriptEffect.school
-                    else:
-                        school = mgef_school.get(effectId,6)
-                record.full = reOldLabel.sub(u'',record.full) #--Remove existing label
-                record.full = magicFormat % 'ACDIMRU'[school] + record.full
-            #--Ordering
-            record.full = orderFormat[isEnchanted] + record.full
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
-    """Names tweaker for scrolls."""
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['BOOK']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        newFull = record.full
-        if newFull and record.IsScroll and not record.IsFixed:
-            #--Magic label
-            isEnchanted = bool(record.enchantment)
-            magicFormat = self.magicFormat
-            if magicFormat and isEnchanted:
-                schoolType = 6 #--Default to 6 (U: unknown)
-                enchantment = record.enchantment
-                if enchantment:
-                    enchantment = self.patchFile.Current.LookupRecords(enchantment)
-                    if enchantment:
-                        #Get the winning record
-                        enchantment = enchantment[0]
-                        Effects = enchantment.effects
-                    else:
-                        Effects = None
-                    if Effects:
-                        effect = Effects[0]
-                        if effect.script:
-                            schoolType = effect.schoolType
-                        else:
-                            schoolType = self.patchFile.mgef_school.get(effect.name,6)
-                newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove existing label
-                newFull = magicFormat % u'ACDIMRU'[schoolType] + newFull
-            #--Ordering
-            newFull = self.orderFormat[isEnchanted] + newFull
-
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ANamesTweak_Spells(AMultiTweakItem):
-    """Names tweaker for spells."""
-    #--Config Phase -----------------------------------------------------------
-    reOldLabel = reSpell
-    def __init__(self):
-        super(ANamesTweak_Spells, self).__init__(_(u"Spells"),
-            _(u'Label spells to sort by school and level.'),
-            'SPEL',
-            (_(u'Fire Ball'),  u'NOTAGS'),
-            (u'----',u'----'),
-            (_(u'D Fire Ball'),  u'%s '),
-            (_(u'D. Fire Ball'), u'%s. '),
-            (_(u'D - Fire Ball'),u'%s - '),
-            (_(u'(D) Fire Ball'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'D2 Fire Ball'),  u'%s%d '),
-            (_(u'D2. Fire Ball'), u'%s%d. '),
-            (_(u'D2 - Fire Ball'),u'%s%d - '),
-            (_(u'(D2) Fire Ball'),u'(%s%d) '),
-            )
-        self.logMsg = u'* '+_(u'Spells Renamed: %d')
-
-class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('SPEL',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('SPEL',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchBlock = patchFile.SPEL
-        id_records = patchBlock.id_records
-        for record in modFile.SPEL.getActiveRecords():
-            if mapper(record.fid) in id_records: continue
-            if record.spellType == 0:
-                record = record.getTypeCopy(mapper)
-                patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        format_ = self.choiceValues[self.chosen][0]
-        removeTags = u'%s' not in format_
-        showLevel = u'%d' in format_
-        keep = patchFile.getKeeper()
-        reOldLabel = self.__class__.reOldLabel
-        mgef_school = patchFile.getMgefSchool()
-        for record in patchFile.SPEL.records:
-            if record.spellType != 0 or not record.full: continue
-            school = 6 #--Default to 6 (U: unknown)
-            if record.effects:
-                effect = record.effects[0]
-                effectId = effect.name
-                if effect.scriptEffect:
-                    school = effect.scriptEffect.school
-                else:
-                    school = mgef_school.get(effectId,6)
-            newFull = reOldLabel.sub(u'',record.full) #--Remove existing label
-            if not removeTags:
-                if showLevel:
-                    newFull = format_ % (u'ACDIMRU'[school],record.level) + newFull
-                else:
-                    newFull = format_ % u'ACDIMRU'[school] + newFull
-            if newFull != record.full:
-                record.full = newFull
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['SPEL']
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Spells, self).saveConfig(configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.removeTags = u'%s' not in self.format
-        self.showLevel = u'%d' in self.format
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        newFull = record.full
-        if newFull and record.IsSpell:
-            #--Magic label
-            schoolType = 6 #--Default to 6 (U: unknown)
-            Effects = record.effects
-            if Effects:
-                effect = Effects[0]
-                if effect.script:
-                    schoolType = effect.schoolType
-                else:
-                    schoolType = self.patchFile.mgef_school.get(effect.name,6)
-            newFull = self.__class__.reOldLabel.sub(u'',newFull) #--Remove existing label
-            if not self.removeTags:
-                if self.showLevel:
-                    newFull = self.format % (u'ACDIMRU'[schoolType],record.levelType) + newFull
-                else:
-                    newFull = self.format % u'ACDIMRU'[schoolType] + newFull
-
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ANamesTweak_Weapons(AMultiTweakItem):
-    """Names tweaker for weapons and ammo."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ANamesTweak_Weapons, self).__init__(_(u"Weapons"),
-            _(u'Label ammo and weapons to sort by type and damage.'),
-            u'WEAP',
-            (_(u'B Iron Bow'),  u'%s '),
-            (_(u'B. Iron Bow'), u'%s. '),
-            (_(u'B - Iron Bow'),u'%s - '),
-            (_(u'(B) Iron Bow'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'B08 Iron Bow'),  u'%s%02d '),
-            (_(u'B08. Iron Bow'), u'%s%02d. '),
-            (_(u'B08 - Iron Bow'),u'%s%02d - '),
-            (_(u'(B08) Iron Bow'),u'(%s%02d) '),
-            )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-
-class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('AMMO','WEAP',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('AMMO','WEAP',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        for blockType in ('AMMO','WEAP'):
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        format_ = self.choiceValues[self.chosen][0]
-        showStat = u'%02d' in format_
-        keep = patchFile.getKeeper()
-        for record in patchFile.AMMO.records:
-            if not record.full: continue
-            if record.full[0] in u'+-=.()[]': continue
-            if showStat:
-                record.full = format_ % (u'A',record.damage) + record.full
-            else:
-                record.full = format_ % u'A' + record.full
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        for record in patchFile.WEAP.records:
-            if not record.full: continue
-            if showStat:
-                record.full = format_ % (u'CDEFGB'[record.weaponType],record.damage) + record.full
-            else:
-                record.full = format_ % u'CDEFGB'[record.weaponType] + record.full
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['AMMO','WEAP']
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Weapons, self).saveConfig(configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.showStat = u'%02d' in self.format
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        newFull = record.full
-        if newFull:
-            if record._Type == 'AMMO':
-                if newFull[0] in u'+-=.()[]': return
-                type_ = 6
-            else:
-                type_ = record.weaponType
-            if self.showStat:
-                newFull = self.format % (u'CDEFGBA'[type_], record.damage) + newFull
-            else:
-                newFull = self.format % u'CDEFGBA'[type_] + newFull
-            if record.full != newFull:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName, 0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ATextReplacer(AMultiTweakItem):
-    """Base class for replacing any text via regular expressions."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        super(ATextReplacer, self).__init__(label, tip, key, choices)
-        self.reMatch = reMatch
-        self.reReplace = reReplace
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
-
-class TextReplacer(ATextReplacer,MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self, reMatch, reReplace, label, tip, key, choices):
-        super(TextReplacer, self).__init__(reMatch, reReplace, label, tip, key, choices)
-        self.activeTypes = ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                            'CLAS','CLOT','CONT','CREA','DOOR',
-                            'ENCH','EYES','FACT','FLOR','FURN','GMST',
-                            'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                            'MISC','NPC_','QUST','RACE','SCPT','SGST',
-                            'SKIL','SLGM','SPEL','WEAP']
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.activeTypes)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple(self.activeTypes)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        for blockType in self.activeTypes:
-            if blockType not in modFile.tops: continue
-            modBlock = getattr(modFile,blockType)
-            patchBlock = getattr(patchFile,blockType)
-            id_records = patchBlock.id_records
-            for record in modBlock.getActiveRecords():
-                if mapper(record.fid) not in id_records:
-                    record = record.getTypeCopy(mapper)
-                    patchBlock.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        count = {}
-        keep = patchFile.getKeeper()
-        reMatch = re.compile(self.reMatch)
-        reReplace = self.reReplace
-        for type_ in self.activeTypes:
-            if type_ not in patchFile.tops: continue
-            for record in patchFile.tops[type_].records:
-                changed = False
-                if hasattr(record, 'full'):
-                    changed = reMatch.search(record.full or u'')
-                if not changed:
-                    if hasattr(record, 'effects'):
-                        Effects = record.effects
-                        for effect in Effects:
-                            try:
-                                changed = reMatch.search(effect.scriptEffect.full or u'')
-                            except AttributeError:
-                                continue
-                            if changed: break
-                if not changed:
-                    if hasattr(record, 'text'):
-                        changed = reMatch.search(record.text or u'')
-                if not changed:
-                    if hasattr(record, 'description'):
-                        changed = reMatch.search(record.description or u'')
-                if not changed:
-                    if type_ == 'GMST' and record.eid[0] == u's':
-                        changed = reMatch.search(record.value or u'')
-                if not changed:
-                    if hasattr(record, 'stages'):
-                        Stages = record.stages
-                        for stage in Stages:
-                            for entry in stage.entries:
-                                changed = reMatch.search(entry.text or u'')
-                                if changed: break
-                if not changed:
-                    if type_ == 'SKIL':
-                        changed = reMatch.search(record.apprentice or u'')
-                        if not changed:
-                            changed = reMatch.search(record.journeyman or u'')
-                        if not changed:
-                            changed = reMatch.search(record.expert or u'')
-                        if not changed:
-                            changed = reMatch.search(record.master or u'')
-                if changed:
-                    if hasattr(record, 'full'):
-                        newString = record.full
-                        if record:
-                            record.full = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'effects'):
-                        Effects = record.effects
-                        for effect in Effects:
-                            try:
-                                newString = effect.scriptEffect.full
-                            except AttributeError:
-                                continue
-                            if newString:
-                                effect.scriptEffect.full = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'text'):
-                        newString = record.text
-                        if newString:
-                            record.text = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'description'):
-                        newString = record.description
-                        if newString:
-                            record.description = reMatch.sub(reReplace, newString)
-                    if type_ == 'GMST' and record.eid[0] == u's':
-                        newString = record.value
-                        if newString:
-                            record.value = reMatch.sub(reReplace, newString)
-                    if hasattr(record, 'stages'):
-                        Stages = record.stages
-                        for stage in Stages:
-                            for entry in stage.entries:
-                                newString = entry.text
-                                if newString:
-                                    entry.text = reMatch.sub(reReplace, newString)
-                    if type_ == 'SKIL':
-                        newString = record.apprentice
-                        if newString:
-                            record.apprentice = reMatch.sub(reReplace, newString)
-                        newString = record.journeyman
-                        if newString:
-                            record.journeyman = reMatch.sub(reReplace, newString)
-                        newString = record.expert
-                        if newString:
-                            record.expert = reMatch.sub(reReplace, newString)
-                        newString = record.master
-                        if newString:
-                            record.master = reMatch.sub(reReplace, newString)
-
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        # TODO : notice it differs only in 'CELLS' form TextReplacer.activeTypes
-        return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
-                'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
-                'ENCH','EYES','FACT','FLOR','FURN','GMST',
-                'HAIR','INGR','KEYM','LIGH','LSCR','MGEF',
-                'MISC','NPC_','QUST','RACE','SCPT','SGST',
-                'SKIL','SLGM','SPEL','WEAP']
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        CBash_MultiTweakItem.saveConfig(self,configs)
-        self.format = self.choiceValues[self.chosen][0]
-        self.showStat = u'%02d' in self.format
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        reMatch = re.compile(self.reMatch)
-        changed = False
-        if hasattr(record, 'full'):
-            changed = reMatch.search(record.full or u'')
-        if not changed:
-            if hasattr(record, 'effects'):
-                Effects = record.effects
-                for effect in Effects:
-                    changed = reMatch.search(effect.full or u'')
-                    if changed: break
-        if not changed:
-            if hasattr(record, 'text'):
-                changed = reMatch.search(record.text or u'')
-        if not changed:
-            if hasattr(record, 'description'):
-                changed = reMatch.search(record.description or u'')
-        if not changed:
-            if record._Type == 'GMST' and record.eid[0] == u's':
-                changed = reMatch.search(record.value or u'')
-        if not changed:
-            if hasattr(record, 'stages'):
-                Stages = record.stages
-                for stage in Stages:
-                    for entry in stage.entries:
-                        changed = reMatch.search(entry.text or u'')
-                        if changed: break
-##                        compiled = entry.compiled_p
-##                        if compiled:
-##                            changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
-##                            if changed: break
-##                        changed = reMatch.search(entry.scriptText or '')
-##                        if changed: break
-##        if not changed:
-##            if hasattr(record, 'scriptText'):
-##                changed = reMatch.search(record.scriptText or '')
-##                if not changed:
-##                    compiled = record.compiled_p
-##                    changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
-        if not changed:
-            if record._Type == 'SKIL':
-                changed = reMatch.search(record.apprentice or u'')
-                if not changed:
-                    changed = reMatch.search(record.journeyman or u'')
-                if not changed:
-                    changed = reMatch.search(record.expert or u'')
-                if not changed:
-                    changed = reMatch.search(record.master or u'')
-
-        #Could support DIAL/INFO as well, but skipping since they're often voiced as well
-        if changed:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                if hasattr(override, 'full'):
-                    newString = override.full
-                    if newString:
-                        override.full = reMatch.sub(self.reReplace, newString)
-
-                if hasattr(override, 'effects'):
-                    Effects = override.effects
-                    for effect in Effects:
-                        newString = effect.full
-                        if newString:
-                            effect.full = reMatch.sub(self.reReplace, newString)
-
-                if hasattr(override, 'text'):
-                    newString = override.text
-                    if newString:
-                        override.text = reMatch.sub(self.reReplace, newString)
-
-                if hasattr(override, 'description'):
-                    newString = override.description
-                    if newString:
-                        override.description = reMatch.sub(self.reReplace, newString)
-
-                if override._Type == 'GMST' and override.eid[0] == u's':
-                    newString = override.value
-                    if newString:
-                        override.value = reMatch.sub(self.reReplace, newString)
-
-                if hasattr(override, 'stages'):
-                    Stages = override.stages
-                    for stage in Stages:
-                        for entry in stage.entries:
-                            newString = entry.text
-                            if newString:
-                                entry.text = reMatch.sub(self.reReplace, newString)
-##                            newString = entry.compiled_p
-##                            if newString:
-##                                nSize = len(newString)
-##                                newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
-##                                nSize = len(newString)
-##                                entry.compiled_p = struct.unpack('B' * nSize, newString)
-##                                entry.compiledSize = nSize
-##                            newString = entry.scriptText
-##                            if newString:
-##                                entry.scriptText = reMatch.sub(self.reReplace, newString)
-##
-
-##                if hasattr(override, 'scriptText'):
-##                    newString = override.compiled_p
-##                    if newString:
-##                        nSize = len(newString)
-##                        newString = reMatch.sub(self.reReplace, struct.pack('B' * nSize, *newString))
-##                        nSize = len(newString)
-##                        override.compiled_p = struct.unpack('B' * nSize, newString)
-##                        override.compiledSize = nSize
-##                    newString = override.scriptText
-##                    if newString:
-##                        override.scriptText = reMatch.sub(self.reReplace, newString)
-
-                if override._Type == 'SKIL':
-                    newString = override.apprentice
-                    if newString:
-                        override.apprentice = reMatch.sub(self.reReplace, newString)
-
-                    newString = override.journeyman
-                    if newString:
-                        override.journeyman = reMatch.sub(self.reReplace, newString)
-
-                    newString = override.expert
-                    if newString:
-                        override.expert = reMatch.sub(self.reReplace, newString)
-
-                    newString = override.master
-                    if newString:
-                        override.master = reMatch.sub(self.reReplace, newString)
-
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class NamesTweaker(MultiTweaker):
-    """Tweaks record full names in various ways."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendlyness or show type/quality.")
-    tweaks = sorted([
-        NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
-            (_(u'BL Leather Boots'),  u'%s '),
-            (_(u'BL. Leather Boots'), u'%s. '),
-            (_(u'BL - Leather Boots'),u'%s - '),
-            (_(u'(BL) Leather Boots'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'BL02 Leather Boots'),  u'%s%02d '),
-            (_(u'BL02. Leather Boots'), u'%s%02d. '),
-            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
-            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
-            ),
-        NamesTweak_Body(_(u"Clothes"),_(u"Rename clothes to sort by type."),'CLOT',
-            (_(u'P Grey Trousers'),  u'%s '),
-            (_(u'P. Grey Trousers'), u'%s. '),
-            (_(u'P - Grey Trousers'),u'%s - '),
-            (_(u'(P) Grey Trousers'),u'(%s) '),
-            ),
-        NamesTweak_Potions(),
-        NamesTweak_Scrolls(),
-        NamesTweak_Spells(),
-        NamesTweak_Weapons(),
-        TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
-            ur'\1wemer',
-            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
-            u'Dwemer',
-            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
-            ),
-        TextReplacer(ur'\b(d|D)(?:warfs)\b',
-            ur'\1warves',
-            _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurences of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
-            u'Dwarfs',
-            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
-            ),
-        TextReplacer(ur'\b(s|S)(?:taffs)\b',
-            ur'\1taves',
-            _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurences of the words "Staffs" with "Staves" to better follow proper English.'),
-            u'Staffs',
-            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
-            ),
-        ],key=lambda a: a.label.lower())
-    tweaks.insert(0,NamesTweak_BodyTags())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
-
-class CBash_NamesTweaker(CBash_MultiTweaker):
-    """Tweaks record full names in various ways."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendlyness or show type/quality.")
-    tweaks = sorted([
-        CBash_NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
-            (_(u'BL Leather Boots'),  u'%s '),
-            (_(u'BL. Leather Boots'), u'%s. '),
-            (_(u'BL - Leather Boots'),u'%s - '),
-            (_(u'(BL) Leather Boots'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'BL02 Leather Boots'),  u'%s%02d '),
-            (_(u'BL02. Leather Boots'), u'%s%02d. '),
-            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
-            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
-            ),
-        CBash_NamesTweak_Body(_(u"Clothes"),_(u"Rename clothes to sort by type."),'CLOT',
-            (_(u'P Grey Trousers'),  u'%s '),
-            (_(u'P. Grey Trousers'), u'%s. '),
-            (_(u'P - Grey Trousers'),u'%s - '),
-            (_(u'(P) Grey Trousers'),u'(%s) '),
-            ),
-        CBash_NamesTweak_Potions(),
-        CBash_NamesTweak_Scrolls(),
-        CBash_NamesTweak_Spells(),
-        CBash_NamesTweak_Weapons(),
-        CBash_TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
-            ur'\1wemer',
-            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurences of the words "Dwarf" or "Dwarven" with "Dwemer" to better follow lore.'),
-            u'Dwemer',
-            ((u'Lore Friendly Text: Dwarven -> Dwemer'),  u'Dwemer'),
-            ),
-        CBash_TextReplacer(ur'\b(d|D)(?:warfs)\b',
-            ur'\1warves',
-            _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurences of the words "Dwarfs" with "Dwarves" to better follow proper English.'),
-            u'Dwarfs',
-            ((u'Proper English Text: Dwarfs -> Dwarves'),  u'Dwarves'),
-            ),
-        CBash_TextReplacer(ur'\b(s|S)(?:taffs)\b',
-            ur'\1taves',
-            _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurences of the words "Staffs" with "Staves" to better follow proper English.'),
-            u'Staffs',
-            ((u'Proper English Text: Staffs -> Staves'),  u'Staves'),
-            ),
-        ],key=lambda a: a.label.lower())
-    tweaks.insert(0,CBash_NamesTweak_BodyTags())
-
-    #--Config Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks[1:]:
-            tweak.patchFile = patchFile
-        bodyTagPatcher = self.tweaks[0]
-        patchFile.bodyTags = bodyTagPatcher.choiceValues[bodyTagPatcher.chosen][0]
-        patchFile.indexMGEFs = True
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                group_patchers.setdefault(type,[]).append(tweak)
-            tweak.format = tweak.choiceValues[tweak.chosen][0]
-            if isinstance(tweak, CBash_NamesTweak_Body):
-                tweak.showStat = u'%02d' in tweak.format
-                tweak.codes = getattr(self.patchFile,'bodyTags',u'ARGHTCCPBS')
-                tweak.amulet,tweak.ring,tweak.gloves,tweak.head,tweak.tail,tweak.robe,tweak.chest,tweak.pants,tweak.shoes,tweak.shield = [
-                    x for x in tweak.codes]
-
-#------------------------------------------------------------------------------
-class BasalNPCTweaker(MultiTweakItem):
-    """Base for all NPC tweakers"""
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('NPC_',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('NPC_',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile): raise AbstractError
-
-#------------------------------------------------------------------------------
-class BasalCreatureTweaker(MultiTweakItem):
-    """Base for all Creature tweakers"""
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('CREA',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('CREA',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.CREA
-        for record in modFile.CREA.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile): raise AbstractError
-
-#------------------------------------------------------------------------------
-class AMAONPCSkeletonPatcher(AMultiTweakItem):
-    """Changes all NPCs to use the right Mayu's Animation Overhaul Skeleton for use with MAO."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AMAONPCSkeletonPatcher, self).__init__(_(u"Mayu's Animation Overhaul Skeleton Tweaker"),
-            _(u'Changes all (modded and vanilla) NPCs to use the MAO skeletons.  Not compatible with VORB.  Note: ONLY use if you have MAO installed.'),
-            u'MAO Skeleton',
-            (_(u'All NPCs'), 0),
-            (_(u'Only Female NPCs'), 1),
-            (_(u'Only Male NPCs'), 2),
-            )
-        self.logHeader = u'=== '+_(u'MAO Skeleton Setter')
-        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
-
-class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if self.choiceValues[self.chosen][0] == 1 and not record.flags.female: continue
-            elif self.choiceValues[self.chosen][0] == 2 and record.flags.female: continue
-            if record.fid == (GPath(u'Oblivion.esm'),0x000007): continue #skip player record
-            try:
-                oldModPath = record.model.modPath
-            except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-                continue
-            newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonBeast.nif"
-            try:
-                if oldModPath.lower() == u'characters\\_male\\skeletonsesheogorath.nif':
-                    newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonSESheogorath.nif"
-            except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
-                pass
-            if newModPath != oldModPath:
-                record.model.modPath = newModPath
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
-    name = _(u"MAO Skeleton Setter")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_MAONPCSkeletonPatcher, self).__init__()
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
-            choice = self.choiceValues[self.chosen][0]
-            if choice == 1 and record.IsMale: return
-            elif choice == 2 and record.IsFemale: return
-            oldModPath = record.modPath
-            newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonBeast.nif"
-            try:
-                if oldModPath == u'characters\\_male\\skeletonsesheogorath.nif': #modPaths do case insensitive comparisons by default
-                    newModPath = u"Mayu's Projects[M]\\Animation Overhaul\\Vanilla\\SkeletonSESheogorath.nif"
-            except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
-                pass
-            if newModPath != oldModPath:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.modPath = newModPath
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
-    """Changes all NPCs to use the diverse skeleton for different look."""
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AVORB_NPCSkeletonPatcher, self).__init__(_(u"VadersApp's Oblivion Real Bodies Skeleton Tweaker"),
-            _(u"Changes all (modded and vanilla) NPCs to use diverse skeletons for different look.  Not compatible with MAO, Requires VadersApp's Oblivion Real Bodies."),
-            u'VORB',
-            (_(u'All NPCs'), 0),
-            (_(u'Only Female NPCs'), 1),
-            (_(u'Only Male NPCs'), 2),
-            )
-        self.logHeader = u'=== '+_(u"VadersApp's Oblivion Real Bodies")
-        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
-
-class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired.  Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-
-        #--Some setup
-        skeletonDir = dirs['mods'].join(u'Meshes',u'Characters',u'_male')
-        modSkeletonDir = GPath(u'Characters').join(u'_male')
-
-        if skeletonDir.exists():
-            # construct skeleton mesh collections
-            # skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
-            # skeletonSetSpecial gets files that match "skel_special_*.nif"
-            skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith(u'skel_') and not x.csbody.startswith(u'skel_special_') and x.cext == u'.nif']
-            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith(u'skel_special_') and x.cext == u'.nif'))
-
-            if len(skeletonList) > 0:
-                femaleOnly = self.choiceValues[self.chosen][0] == 1
-                maleOnly = self.choiceValues[self.chosen][0] == 2
-                playerFid = (GPath(u'Oblivion.esm'),0x000007)
-
-                for record in patchFile.NPC_.records:
-                    # skip records (male only, female only, player)
-                    if femaleOnly and not record.flags.female: continue
-                    elif maleOnly and record.flags.female: continue
-                    if record.fid == playerFid: continue
-                    try:
-                        oldModPath = record.model.modPath
-                    except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
-                        continue
-
-                    specialSkelMesh = u"skel_special_%X.nif" % record.fid[1]
-                    if specialSkelMesh in skeletonSetSpecial:
-                        newModPath = modSkeletonDir.join(specialSkelMesh)
-                    else:
-                        random.seed(record.fid)
-                        randomNumber = random.randint(1, len(skeletonList))-1
-                        newModPath = modSkeletonDir.join(skeletonList[randomNumber])
-
-                    if newModPath != oldModPath:
-                        record.model.modPath = newModPath.s
-                        keep(record.fid)
-                        srcMod = record.fid[0]
-                        count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log, count)
-
-class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,CBash_MultiTweakItem):
-    name = _(u"VORB Skeleton Setter")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_VORB_NPCSkeletonPatcher, self).__init__()
-        self.modSkeletonDir = GPath(u'Characters').join(u'_male')
-        self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-        self.skeletonList = None
-        self.skeletonSetSpecial = None
-
-    def initSkeletonCollections(self):
-        """ construct skeleton mesh collections
-            skeletonList gets files that match the pattern "skel_*.nif", but not "skel_special_*.nif"
-            skeletonSetSpecial gets files that match "skel_special_*.nif" """
-        # Since bosh.dirs hasn't been populated when __init__ executes, we do this here
-        if not self.skeletonList is None:
-            return
-        self.skeletonList = []
-        skeletonDir = dirs['mods'].join(u'Meshes', u'Characters', u'_male')
-        if skeletonDir.exists():
-            self.skeletonList = [x for x in skeletonDir.list() if x.csbody.startswith(u'skel_') and not x.csbody.startswith(u'skel_special_') and x.cext == u'.nif']
-            self.skeletonSetSpecial = set((x.s for x in skeletonDir.list() if x.csbody.startswith(u'skel_special_') and x.cext == u'.nif'))
-
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        recordId = record.fid
-        if recordId != self.playerFid: #skip player record
-            choice = self.choiceValues[self.chosen][0]
-            if choice == 1 and record.IsMale: return
-            elif choice == 2 and record.IsFemale: return
-            self.initSkeletonCollections()
-            if len(self.skeletonList) == 0: return
-
-            try:
-                oldModPath = record.modPath.lower()
-            except AttributeError:  # for freaking weird esps with NPC's with no skeleton assigned to them(!)
-                pass
-
-            specialSkelMesh = u"skel_special_%X.nif" % recordId[1]
-            if specialSkelMesh in self.skeletonSetSpecial:
-                newModPath = self.modSkeletonDir.join(specialSkelMesh)
-            else:
-                random.seed(recordId)
-                randomNumber = random.randint(1, len(self.skeletonList)) - 1
-                newModPath = self.modSkeletonDir.join(self.skeletonList[randomNumber])
-
-            if newModPath.cs != oldModPath:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.modPath = newModPath.s
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AVanillaNPCSkeletonPatcher(AMultiTweakItem):
-    """Changes all NPCs to use the vanilla beast race skeleton."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AVanillaNPCSkeletonPatcher, self).__init__(_(u"Vanilla Beast Skeleton Tweaker"),
-            _(u'Avoids visual glitches if an NPC is a beast race but has the regular skeleton.nif selected, but can cause performance issues.'),
-            u'Vanilla Skeleton',
-            (u'1.0',  u'1.0'),
-            )
-        self.logHeader = u'=== '+_(u'Vanilla Beast Skeleton')
-        self.logMsg = u'* '+_(u'Skeletons Tweaked: %d')
-
-class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
-    #--Patch Phase ------------------------------------------------------------
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.NPC_
-        for record in modFile.NPC_.getActiveRecords():
-            record = record.getTypeCopy(mapper)
-            if not record.model: continue #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-            model = record.model.modPath
-            if model.lower() == u'characters\\_male\\skeleton.nif':
-                patchRecords.setRecord(record)
-
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        newModPath = u"Characters\\_Male\\SkeletonBeast.nif"
-        for record in patchFile.NPC_.records:
-            try:
-                oldModPath = record.model.modPath
-            except AttributeError: #for freaking weird esps with NPC's with no skeleton assigned to them(!)
-                continue
-            try:
-                if oldModPath.lower() != u'characters\\_male\\skeleton.nif':
-                    continue
-            except AttributeError: #in case oldModPath was None. Try/Except has no overhead if exception isn't thrown.
-                pass
-            if newModPath != oldModPath:
-                record.model.modPath = newModPath
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,CBash_MultiTweakItem):
-    scanOrder = 31 #Run before MAO
-    editOrder = 31
-    name = _(u"Vanilla Beast Skeleton")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        oldModPath = record.modPath
-        newModPath = u"Characters\\_Male\\SkeletonBeast.nif"
-        try:
-            if oldModPath != u'characters\\_male\\skeleton.nif': #modPaths do case insensitive comparisons by default
-                return
-        except AttributeError: #in case modPath was None. Try/Except has no overhead if exception isn't thrown.
-            pass
-        if newModPath != oldModPath:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.modPath = newModPath
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ARedguardNPCPatcher(AMultiTweakItem):
-    """Changes all Redguard NPCs texture symmetry for Better Redguard Compatibility."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARedguardNPCPatcher, self).__init__(_(u"Redguard FGTS Nuller"),
-            _(u'Nulls FGTS of all Redguard NPCs - for compatibility with Better Redguards.'),
-            u'RedguardFGTSPatcher',
-            (u'1.0',  u'1.0'),
-            )
-        self.logHeader = u'=== '+_(u'Redguard FGTS Patcher')
-        self.logMsg = u'* '+_(u'Redguard NPCs Tweaked: %d')
-
-class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if not record.race: continue
-            if record.race[1] == 0x00d43:
-                record.fgts_p = '\x00'*200
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
-    name = _(u"Redguard FGTS Patcher")
-    redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.race == self.__class__.redguardId: #Only affect npc's with the Redguard race
-            oldFGTS_p = record.fgts_p
-            newFGTS_p = [0x00] * 200
-            if newFGTS_p != oldFGTS_p:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.fgts_p = newFGTS_p
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ANoBloodCreaturesPatcher(AMultiTweakItem):
-    """Set all creatures to have no blood records."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ANoBloodCreaturesPatcher, self).__init__(_(u"No Bloody Creatures"),
-            _(u"Set all creatures to have no blood records, will have pretty much no effect when used with MMM since the MMM blood uses a different system."),
-            u'No bloody creatures',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
-
-class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.CREA.records:
-            if record.bloodDecalPath or record.bloodSprayPath:
-                record.bloodDecalPath = None
-                record.bloodSprayPath = None
-                record.flags.noBloodSpray = True
-                record.flags.noBloodDecal = True
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log.setHeader(u'==='+_(u'No Bloody Creatures'))
-        log(u'* '+_(u'%d Creatures Tweaked') % sum(count.values()))
-        for srcMod in modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
-class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,CBash_MultiTweakItem):
-    name = _(u"No Bloody Creatures")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.bloodDecalPath or record.bloodSprayPath:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.bloodDecalPath = None
-                override.bloodSprayPath = None
-                override.IsNoBloodSpray = True
-                override.IsNoBloodDecal = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAsIntendedImpsPatcher(AMultiTweakItem):
-    """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
-    reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAsIntendedImpsPatcher, self).__init__(_(u'As Intended: Imps'),
-            _(u"Set imps to have the unassigned Bethesda Imp Spells as discovered by the UOP team and made into a mod by Tejon."),
-            u'vicious imps!',
-            (_(u'All imps'), u'all'),
-            (_(u'Only fullsize imps'), u'big'),
-            (_(u'Only implings'), u'small'),
-            )
-        self.logMsg = u'* '+_(u'Imps Tweaked: %d')
-
-class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        spell = (GPath(u'Oblivion.esm'), 0x02B53F)
-        reImp  = self.reImp
-        reImpModPath = self.reImpModPath
-        for record in patchFile.CREA.records:
-            try:
-                oldModPath = record.model.modPath
-            except AttributeError:
-                continue
-            if not reImpModPath.search(oldModPath or u''): continue
-
-            for bodyPart in record.bodyParts:
-                if reImp.search(bodyPart):
-                    break
-            else:
-                continue
-            if record.baseScale < 0.4:
-                if u'big' in self.choiceValues[self.chosen]:
-                    continue
-            elif u'small' in self.choiceValues[self.chosen]:
-                continue
-            if spell not in record.spells:
-                record.spells.append(spell)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
-    """Set all imps to have the Bethesda imp spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    name = _(u"As Intended: Imps")
-    spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if not self.reImpModPath.search(record.modPath or u''): return
-
-        reImp  = self.reImp
-        for bodyPart in record.bodyParts:
-            if reImp.search(bodyPart):
-                break
-        else:
-            return
-        if record.baseScale < 0.4:
-            if u'big' in self.choiceValues[self.chosen]:
-                return
-        elif u'small' in self.choiceValues[self.chosen]:
-            return
-        spells = record.spells
-        newSpell = self.spell
-        if newSpell not in spells:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                spells.append(newSpell)
-                override.spells = spells
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AAsIntendedBoarsPatcher(AMultiTweakItem):
-    """Set all boars to have the Bethesda boar spells that were never assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
-    reBoar  = re.compile(ur'(boar)',re.I|re.U)
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AAsIntendedBoarsPatcher, self).__init__(_(u'As Intended: Boars'),
-            _(u"Set boars to have the unassigned Bethesda Boar Spells as discovered by the UOP team and made into a mod by Tejon."),
-            u'vicious boars!',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'Boars Tweaked: %d')
-
-class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        spell = (GPath(u'Oblivion.esm'), 0x02B54E)
-        keep = patchFile.getKeeper()
-        reBoar  = self.reBoar
-        reBoarModPath = self.reBoarModPath
-        for record in patchFile.CREA.records:
-            try:
-                oldModPath = record.model.modPath
-            except AttributeError:
-                continue
-            if not reBoarModPath.search(oldModPath or u''): continue
-
-            for bodyPart in record.bodyParts:
-                if reBoar.search(bodyPart):
-                    break
-            else:
-                continue
-            if spell not in record.spells:
-                record.spells.append(spell)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,CBash_MultiTweakItem):
-    name = _(u"As Intended: Boars")
-    spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if not self.reBoarModPath.search(record.modPath or ''): return
-
-        reBoar  = self.reBoar
-        for bodyPart in record.bodyParts:
-            if reBoar.search(bodyPart):
-                break
-        else:
-            return
-
-        spells = record.spells
-        newSpell = self.spell
-        if newSpell not in spells:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                spells.append(newSpell)
-                override.spells = spells
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ASWALKNPCAnimationPatcher(AMultiTweakItem):
-    """Changes all female NPCs to use Mur Zuk's Sexy Walk."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ASWALKNPCAnimationPatcher, self).__init__(_(u"Sexy Walk for female NPCs"),
-            _(u"Changes all female NPCs to use Mur Zuk's Sexy Walk - Requires Mur Zuk's Sexy Walk animation file."),
-            u'Mur Zuk SWalk',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'NPCs Tweaked : %d')
-
-class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if record.flags.female == 1:
-                record.animations = record.animations + [u'0sexywalk01.kf']
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,CBash_MultiTweakItem):
-    name = _(u"Sexy Walk for female NPCs")
-    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
-            if record.IsFemale:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.animations = override.animations + [u'0sexywalk01.kf']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class ARWALKNPCAnimationPatcher(AMultiTweakItem):
-    """Changes all female NPCs to use Mur Zuk's Real Walk."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARWALKNPCAnimationPatcher, self).__init__(_(u"Real Walk for female NPCs"),
-            _(u"Changes all female NPCs to use Mur Zuk's Real Walk - Requires Mur Zuk's Real Walk animation file."),
-            u'Mur Zuk RWalk',
-            (u'1.0',  u'1.0'),
-            )
-        self.logMsg = u'* '+_(u'NPCs Tweaked: %d')
-
-class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.NPC_.records:
-            if record.flags.female == 1:
-                record.animations = record.animations + [u'0realwalk01.kf']
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,CBash_MultiTweakItem):
-    name = _(u"Real Walk for female NPCs")
-    playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.fid != self.playerFid: #skip player record
-            if record.IsFemale:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.animations = override.animations + [u'0realwalk01.kf']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AQuietFeetPatcher(AMultiTweakItem):
-    """Removes 'foot' sounds from all/specified creatures - like the mod by the same name but works on all modded creatures."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AQuietFeetPatcher, self).__init__(_(u'Quiet Feet'),
-            _(u"Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost."),
-            u'silent n sneaky!',
-            (_(u'All Creature Foot Sounds'), u'all'),
-            (_(u'Only 4 Legged Creature Foot Sounds'), u'partial'),
-            (_(u'Only Mount Foot Sounds'), u'mounts'),
-            )
-        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
-
-class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        chosen = self.choiceValues[self.chosen][0]
-        for record in patchFile.CREA.records:
-            sounds = record.sounds
-            if chosen == u'all':
-                sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
-            elif chosen == u'partial':
-                for sound in record.sounds:
-                    if sound.type in [2,3]:
-                        sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
-                        break
-            else: #really is: "if chosen == 'mounts':", but less cpu to do it as else.
-                if record.creatureType == 4:
-                    sounds = [sound for sound in sounds if sound.type not in [0,1,2,3]]
-            if sounds != record.sounds:
-                record.sounds = sounds
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
-    name = _(u"Quiet Feet")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        chosen = self.choiceValues[self.chosen][0]
-        if chosen == u'partial':
-            for sound in record.sounds:
-                if sound.IsLeftBackFoot or sound.IsRightBackFoot:
-                    break
-            else:
-                return
-        elif chosen == u'mounts' and not record.IsHorse:
-            return
-        #equality operator not implemented for ObCREARecord.Sound class, so use the list version instead
-        #0 = IsLeftFoot, 1 = IsRightFoot, 2 = IsLeftBackFoot, 3 = IsRightBackFoot
-        sounds_list = [(soundType, sound, chance) for soundType, sound, chance in record.sounds_list if soundType not in [0,1,2,3]]
-
-        if sounds_list != record.sounds_list:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.sounds_list = sounds_list
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class AIrresponsibleCreaturesPatcher(AMultiTweakItem):
-    """Sets responsibility to 0 for all/specified creatures - like the mod by the name of Irresponsible Horses but works on all modded creatures."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(AIrresponsibleCreaturesPatcher, self).__init__(_(u'Irresponsible Creatures'),
-            _(u"Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes."),
-            u'whatbadguarddogs',
-            (_(u'All Creatures'), u'all'),
-            (_(u'Only Horses'), u'mounts'),
-            )
-        self.logMsg = u'* '+_(u'Creatures Tweaked: %d')
-
-class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,BasalCreatureTweaker):
-    def buildPatch(self,log,progress,patchFile):
-        """Edits patch file as desired. Will write to log."""
-        count = {}
-        keep = patchFile.getKeeper()
-        chosen = self.choiceValues[self.chosen][0]
-        for record in patchFile.CREA.records:
-            if record.responsibility == 0: continue
-            if chosen == u'all':
-                record.responsibility = 0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-            else: #really is: "if chosen == 'mounts':", but less cpu to do it as else.
-                if record.creatureType == 4:
-                    record.responsibility = 0
-                    keep(record.fid)
-                    srcMod = record.fid[0]
-                    count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count)
-
-class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,CBash_MultiTweakItem):
-    name = _(u"Irresponsible Creatures")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.responsibility == 0: return
-        if self.choiceValues[self.chosen][0] == u'mounts' and not record.IsHorse: return
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            override.responsibility = 0
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
-
-#------------------------------------------------------------------------------
-class TweakActors(MultiTweaker):
-    """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _(u'Tweak Actors')
-    text = _(u"Tweak NPC and Creatures records in specified ways.")
-    tweaks = sorted([
-        VORB_NPCSkeletonPatcher(),
-        MAONPCSkeletonPatcher(),
-        VanillaNPCSkeletonPatcher(),
-        RedguardNPCPatcher(),
-        NoBloodCreaturesPatcher(),
-        AsIntendedImpsPatcher(),
-        AsIntendedBoarsPatcher(),
-        QuietFeetPatcher(),
-        IrresponsibleCreaturesPatcher(),
-        RWALKNPCAnimationPatcher(),
-        SWALKNPCAnimationPatcher(),
-        ],key=lambda a: a.label.lower())
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getReadClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        if not self.isActive: return tuple()
-        classTuples = [tweak.getWriteClasses() for tweak in self.enabledTweaks]
-        return sum(classTuples,tuple())
-
-    def scanModFile(self,modFile,progress):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        if not self.isActive: return
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
-
-class CBash_TweakActors(CBash_MultiTweaker):
-    """Sets Creature stuff or NPC Skeletons, Animations or other settings to better work with mods or avoid bugs."""
-    name = _(u'Tweak Actors')
-    text = _(u"Tweak NPC and Creatures records in specified ways.")
-    tweaks = sorted([
-        CBash_VORB_NPCSkeletonPatcher(),
-        CBash_MAONPCSkeletonPatcher(),
-        CBash_VanillaNPCSkeletonPatcher(),
-        CBash_RedguardNPCPatcher(),
-        CBash_NoBloodCreaturesPatcher(),
-        CBash_AsIntendedImpsPatcher(),
-        CBash_AsIntendedBoarsPatcher(),
-        CBash_QuietFeetPatcher(),
-        CBash_IrresponsibleCreaturesPatcher(),
-        CBash_RWALKNPCAnimationPatcher(),
-        CBash_SWALKNPCAnimationPatcher(),
-        ],key=lambda a: a.label.lower())
-    #--Config Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-
+################################### MOVED #####################################
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher:
     """Provides default group, scan and edit orders."""
@@ -21087,7 +15711,7 @@ class CBash_CoblExhaustion(SpecialPatcher,CBash_ListPatcher):
             u'\n\n' +
             _(u'Will only run if Cobl Main v1.66 (or higher) is active.')
             )
-    autoKey = set((u'Exhaust',))
+    autoKey = {u'Exhaust'}
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
     unloadedText = ""
 
@@ -21209,11 +15833,11 @@ class ListsMerger(SpecialPatcher,ListPatcher):
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set((u'Auto',))
+        if not isinstance(choice,set): choice = {u'Auto'}
         if u'Auto' in choice:
             if item in modInfos:
                 bashTags = modInfos[item].getBashTags()
-                choice = set((u'Auto',)) | (set((u'Delev',u'Relev')) & bashTags)
+                choice = {u'Auto'} | ({u'Delev', u'Relev'} & bashTags)
         self.configChoices[item] = choice
         return choice
 
@@ -21238,10 +15862,13 @@ class ListsMerger(SpecialPatcher,ListPatcher):
         self.levelers = None #--Will initialize later
         self.empties = set()
         OverhaulCompat = False
-        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
-        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath(u"TIE.esp")])
+        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
+                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
+        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
+                     GPath(u"Francesco.esp")}
+        WCMods = {GPath(u"Oblivion Warcry.esp"),
+                  GPath(u"Oblivion Warcry EV.esp")}
+        TIEMods = {GPath(u"TIE.esp")}
         if GPath(u"Unofficial Oblivion Patch.esp") in self.srcMods:
             if (OOOMods|WCMods) & self.srcMods:
                 OverhaulCompat = True
@@ -21422,7 +16049,7 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
             )
     tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = (u'Auto',u'----',u'Delev',u'Relev') #--List of possible choices for each config item. Item 0 is default.
-    autoKey = set((u'Delev',u'Relev'))
+    autoKey = {u'Delev', u'Relev'}
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -21449,10 +16076,10 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
     def getChoice(self,item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = set((u'Auto',))
+        if not isinstance(choice,set): choice = {u'Auto'}
         if u'Auto' in choice:
             if item in modInfos:
-                choice = set((u'Auto',))
+                choice = {u'Auto'}
                 bashTags = modInfos[item].getBashTags()
                 for key in (u'Delev',u'Relev'):
                     if key in bashTags: choice.add(key)
@@ -21479,10 +16106,13 @@ class CBash_ListsMerger(SpecialPatcher,CBash_ListPatcher):
         self.empties = set()
         importMods = set(self.srcs) & set(loadMods)
         OverhaulCompat = False
-        OOOMods = set([GPath(u"Oscuro's_Oblivion_Overhaul.esm"),GPath(u"Oscuro's_Oblivion_Overhaul.esp")])
-        FransMods = set([GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),GPath(u"Francesco.esp")])
-        WCMods = set([GPath(u"Oblivion Warcry.esp"),GPath(u"Oblivion Warcry EV.esp")])
-        TIEMods = set([GPath(u"TIE.esp")])
+        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
+                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
+        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
+                     GPath(u"Francesco.esp")}
+        WCMods = {GPath(u"Oblivion Warcry.esp"),
+                  GPath(u"Oblivion Warcry EV.esp")}
+        TIEMods = {GPath(u"TIE.esp")}
         if GPath(u"Unofficial Oblivion Patch.esp") in importMods:
             if (OOOMods|WCMods) & importMods:
                 OverhaulCompat = True
@@ -21803,7 +16433,7 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = set(('MFact',))
+    autoKey = {'MFact'}
     unloadedText = u""
     canAutoItemCheck = False #--GUI: Whether new items are checked by default or not.
 
@@ -21925,1701 +16555,6 @@ class CBash_MFactMarker(SpecialPatcher,CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
-# Races tweakers - notice the Pbash ones do not log in buildPatch - the
-# RacesTweaker patcher was callig their "log" method - now super's _patchLog()
-#------------------------------------------------------------------------------
-class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        # TODO : translate ?
-        super(ARaceTweaker_BiggerOrcsandNords, self).__init__(_(u"Bigger Nords and Orcs"),
-            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
-            u'BiggerOrcsandNords',
-            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
-            (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
-            )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
-
-class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakItem):
-    """Adjusts the Orc and Nord race records to be taller/heavier."""
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            if not record.full: continue
-            if not u'orc' in record.full.lower() and not u'nord' in record.full.lower(): continue
-            record = record.getTypeCopy(mapper)
-            patchRecords.setRecord(record)
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if not record.full: continue
-            if u'nord' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
-                    setattr(record,attr,value)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-                continue
-            elif u'orc' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
-                    setattr(record,attr,value)
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash_MultiTweakItem):
-    """Changes all Orcs and Nords to be bigger."""
-    name = _(u"Bigger Nords and Orcs")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_RaceTweaker_BiggerOrcsandNords, self).__init__()
-        self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
-
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if not record.full: return
-        if u'nord' in record.full.lower():
-            newValues = self.choiceValues[self.chosen][0][0]
-        elif u'orc' in record.full.lower():
-            newValues = self.choiceValues[self.chosen][0][1]
-        else:
-            return
-
-        oldValues = tuple(map(record.__getattribute__, self.attrs))
-        if oldValues != newValues:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                map(override.__setattr__, self.attrs, newValues)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-                return
-
-class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
-    """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_MergeSimilarRaceHairs, self).__init__(_(u"Merge Hairs from similar races"),
-            _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
-            u'MergeSimilarRaceHairLists',
-            (_(u'Merge hairs only from vanilla races'), 1),
-            (_(u'Full hair merge between similar races'), 0),
-            )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
-
-class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            if not record.full: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        #process hair lists
-        changedHairs = {}
-        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
-            for race in extra:
-                for r in vanilla:
-                    if r in race:
-                        if extra[r]['hairs'] != extra[race]['hairs']:
-                            changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs'])) #yuach nasty but quickly and easily removes duplicates.
-        else: # full back and forth merge!
-            for race in extra:
-                #nasty processing slog
-                rs = race.split('(')
-                rs = rs[0].split()
-                if len(rs) > 1 and rs[1] in ['elf','seducer']:
-                    rs[0] = rs[0]+' '+rs[1]
-                    del(rs[1])
-                for r in extra:
-                    if r == race: continue
-                    for s in rs:
-                        if s in r:
-                            if extra[r]['hairs'] != extra[race]['hairs']:
-                                changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs']))
-                                # list(set([]) disgusting thing again
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if not record.full: continue
-            if not record.full.lower() in changedHairs: continue
-            record.hairs = changedHairs[record.full.lower()]
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,CBash_MultiTweakItem):
-    name = _(u"Merge Hairs from similar races")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
-        Current = patchFile.Current
-        subProgress = SubProgress(progress)
-        subProgress.setFull(max(len(Current.LoadOrderMods) * 2,1))
-        races_data = patchFile.races_data
-        races_vanilla = patchFile.races_vanilla
-        changedHairs = {}
-        mod_count = self.mod_count
-        #process hair list:s
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
-            for race in races_data:
-                for r in races_vanilla:
-                    if r in race:
-                        if races_data[r]['hairs'] != races_data[race]['hairs']:
-                            changedHairs[race] = list(set(races_data[r]['hairs']+races_data[race]['hairs'])) #yuach nasty but quickly and easily removes duplicates.
-        else: # full back and forth merge!
-            for race in races_data:
-                #nasty processing slog
-                rs = race.split('(')
-                rs = rs[0].split()
-                if len(rs) > 1 and rs[1] in ['elf','seducer']:
-                    rs[0] = rs[0]+' '+rs[1]
-                    del(rs[1])
-                for r in races_data:
-                    if r == race: continue
-                    for s in rs:
-                        if s in r:
-                            if races_data[r]['hairs'] != races_data[race]['hairs']:
-                                # list(set([]) disgusting thing again
-                                changedHairs[race] = list(set(races_data[r]['hairs']+races_data[race]['hairs']))
-        pstate = 0
-        for modFile in Current.LoadOrderMods:
-            subProgress(pstate, _(u'Merging hairs...')+u'\n')
-            for race in modFile.RACE:
-                if not race.full: continue
-                if not race.full.lower() in changedHairs: continue
-                if race.IsWinning():
-                    if race.hairs != changedHairs[race.full.lower()]:
-                        override = race.CopyAsOverride(patchFile)
-                        if override:
-                            override.hairs = changedHairs[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                            race.UnloadRecord()
-                            race._RecordID = override._RecordID
-
-class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
-    """Merges similar race's eyes."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_MergeSimilarRaceEyes, self).__init__(_(u"Merge Eyes from similar races"),
-            _(u'Merges eye lists from similar races (f.e. give RBP khajit eyes to all the other varieties of khajits in Elsweyr)'),
-            u'MergeSimilarRaceEyeLists',
-            (_(u'Merge eyes only from vanilla races'), 1),
-            (_(u'Full eye merge between similar races'), 0),
-            )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
-
-class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            if not record.full: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        #process hair lists
-        changedEyes = {}
-        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        if self.choiceValues[self.chosen][0] == 1: #merge eyes only from vanilla races to custom eyes.
-            for race in extra:
-                for r in vanilla:
-                    if r in race:
-                        if extra[r]['eyes'] != extra[race]['eyes']:
-                            changedEyes[race] = list(set(extra[r]['eyes']+extra[race]['eyes'])) #yuach nasty but quickly and easily removes duplicates.
-        else: # full back and forth merge!
-            for race in extra:
-                #nasty processing slog
-                rs = race.split('(')
-                rs = rs[0].split()
-                if len(rs) > 1 and rs[1] in ['elf','seducer']:
-                    rs[0] = rs[0]+' '+rs[1]
-                    del(rs[1])
-                for r in extra:
-                    if r == race: continue
-                    for s in rs:
-                        if s in r:
-                            if extra[r]['eyes'] != extra[race]['eyes']:
-                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+extra[r]['eyes']+extra[race]['eyes']))
-                                # list(set([]) disgusting thing again
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if not record.full: continue
-            if not record.full.lower() in changedEyes: continue
-            record.eyes = changedEyes[record.full.lower()]
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,CBash_MultiTweakItem):
-    """Merges similar race's eyes."""
-    name = _(u"Merge Eyes from similar races")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
-        Current = patchFile.Current
-        subProgress = SubProgress(progress)
-        subProgress.setFull(max(len(Current.LoadOrderMods) * 2,1))
-        races_data = patchFile.races_data
-        races_vanilla = patchFile.races_vanilla
-        changedEyes = {}
-        mod_count = self.mod_count
-        #process hair list:s
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
-            for race in races_data:
-                for r in races_vanilla:
-                    if r in race:
-                        if races_data[r]['eyes'] != races_data[race]['eyes']:
-                            changedEyes[race] = list(set(races_data[r]['eyes']+races_data[race]['eyes'])) #yuach nasty but quickly and easily removes duplicates.
-        else: # full back and forth merge!
-            for race in races_data:
-                #nasty processing slog
-                rs = race.split('(')
-                rs = rs[0].split()
-                if len(rs) > 1 and rs[1] in ['elf','seducer']:
-                    rs[0] = rs[0]+' '+rs[1]
-                    del(rs[1])
-                for r in races_data:
-                    if r == race: continue
-                    for s in rs:
-                        if s in r:
-                            if races_data[r]['eyes'] != races_data[race]['eyes']:
-                                # list(set([]) disgusting thing again
-                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+races_data[r]['eyes']+races_data[race]['eyes']))
-        pstate = 0
-        for modFile in Current.LoadOrderMods:
-            subProgress(pstate, _(u'Merging eyes...')+u'\n')
-            for race in modFile.RACE:
-                if not race.full: continue
-                if not race.full.lower() in changedEyes: continue
-                if race.IsWinning():
-                    if race.eyes != changedEyes[race.full.lower()]:
-                        override = race.CopyAsOverride(patchFile)
-                        if override:
-                            override.eyes = changedEyes[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                            race.UnloadRecord()
-                            race._RecordID = override._RecordID
-
-class ARaceTweaker_AllHairs(AMultiTweakItem):
-    """Gives all races ALL hairs."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_AllHairs, self).__init__(_(u"Races Have All Hairs"),
-            _(u'Gives all races every available hair.'),
-            u'hairyraces',
-            (u'get down tonight',1)
-            )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
-
-class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        hairs = extra['HAIR']
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if record.hairs == hairs: continue
-            record.hairs = hairs
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
-    name = _(u"Races Have All Hairs")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.hairs != self.patchFile.races_data['HAIR']:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.hairs = self.patchFile.races_data['HAIR']
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-                return
-
-class ARaceTweaker_AllEyes(AMultiTweakItem):
-    """Gives all races ALL eyes."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self,opt=(u'what a lot of eyes you have dear',1)):
-        super(ARaceTweaker_AllEyes, self).__init__(_(u"Races Have All Eyes"),
-            _(u'Gives all races every available eye.'),
-            u'eyeyraces',
-            opt
-            )
-        self.logMsg = u'* '+_(u'Races tweaked: %d')
-
-class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
-
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.RACE
-        for record in modFile.RACE.getActiveRecords():
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        eyes = extra['EYES']
-        keep = patchFile.getKeeper()
-        for record in patchFile.RACE.records:
-            if record.eyes == eyes: continue
-            record.eyes = eyes
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
-    name = _(u"Races Have All Eyes")
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(CBash_RaceTweaker_AllEyes, self).__init__(
-            opt=(u'them races are a real eye full', 1)
-        )
-
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.eyes != self.patchFile.races_data['EYES']:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.eyes = self.patchFile.races_data['EYES']
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-                return
-
-class ARaceTweaker_PlayableEyes(AMultiTweakItem):
-    """Sets all eyes to be playable."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_PlayableEyes, self).__init__(_(u"Playable Eyes"),
-            _(u'Sets all eyes to be playable.'),
-            u'playableeyes',
-            (u'Get it done', 1),
-            )
-        self.logMsg = u'* '+_(u'Eyes tweaked: %d')
-
-class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('EYES',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('EYES',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.EYES
-        for record in modFile.EYES.getActiveRecords():
-            if record.flags.playable: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.EYES.records:
-            if record.flags.playable: continue
-            record.flags.playable = True
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakItem):
-    """Sets all eyes to be playable."""
-    name = _(u"Playable Eyes")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['EYES']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsPlayable: return
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            override.IsPlayable = True
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
-            return
-
-class ARaceTweaker_PlayableHairs(AMultiTweakItem):
-    """Sets all hairs to be playable."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_PlayableHairs, self).__init__(_(u"Playable Hairs"),
-            _(u'Sets all Hairs to be playable.'),
-            u'playablehairs',
-            (u'Get it done', 1),
-            )
-        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
-
-class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('HAIR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('HAIR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.HAIR
-        for record in modFile.HAIR.getActiveRecords():
-            if record.flags.playable: continue
-            patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.HAIR.records:
-            if record.flags.playable: continue
-            record.flags.playable = True
-            keep(record.fid)
-            srcMod = record.fid[0]
-            count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTweakItem):
-    """Sets all hairs to be playable."""
-    name = _(u"Playable Hairs")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['HAIR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsPlayable: return
-        override = record.CopyAsOverride(self.patchFile)
-        if override:
-            override.IsPlayable = True
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-            record.UnloadRecord()
-            record._RecordID = override._RecordID
-            return
-
-class ARaceTweaker_SexlessHairs(AMultiTweakItem):
-    """Sets all hairs to be playable by both males and females."""
-
-    #--Config Phase -----------------------------------------------------------
-    def __init__(self):
-        super(ARaceTweaker_SexlessHairs, self).__init__(_(u"Sexless Hairs"),
-            _(u'Lets any sex of character use any hair.'),
-            u'sexlesshairs',
-            (u'Get it done', 1),
-            )
-        self.logMsg = u'* '+_(u'Hairs tweaked: %d')
-
-class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
-    #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('HAIR',)
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('HAIR',)
-
-    def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
-        mapper = modFile.getLongMapper()
-        patchRecords = patchFile.HAIR
-        for record in modFile.HAIR.getActiveRecords():
-            if record.flags.notMale or record.flags.notFemale:
-                patchRecords.setRecord(record.getTypeCopy(mapper))
-
-    def buildPatch(self,progress,patchFile,extra):
-        """Edits patch file as desired."""
-        count = self.count = {}
-        keep = patchFile.getKeeper()
-        for record in patchFile.HAIR.records:
-            if record.flags.notMale or record.flags.notFemale:
-                record.flags.notMale = 0
-                record.flags.notFemale = 0
-                keep(record.fid)
-                srcMod = record.fid[0]
-                count[srcMod] = count.get(srcMod,0) + 1
-
-class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakItem):
-    name = _(u"Sexless Hairs")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['HAIR']
-
-    #--Patch Phase ------------------------------------------------------------
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired. """
-        if record.IsNotFemale or record.IsNotMale:
-            override = record.CopyAsOverride(self.patchFile)
-            if override:
-                override.IsNotFemale = False
-                override.IsNotMale = False
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
-                return
-
-class RacePatcher(SpecialPatcher,DoublePatcher):
-    """Merged leveled lists mod file."""
-    name = _(u'Race Records')
-    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
-            u'\n\n' +
-            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
-            )
-    tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
-    autoKey = (u'Hair',u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes',u'Body-M',
-        u'Body-F',u'Body-Size-M',u'Body-Size-F',u'Voice-M',u'Voice-F',
-        u'R.Relations',u'R.Teeth',u'R.Mouth',u'R.Ears',u'R.Head',
-        u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
-        u'R.AddSpells',u'R.ChangeSpells',)
-    forceAuto = True
-    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    subLabel = _(u'Race Tweaks')
-    races_data = {'EYES':[],'HAIR':[]}
-    tweaks = sorted([
-        RaceTweaker_BiggerOrcsandNords(),
-        RaceTweaker_MergeSimilarRaceHairs(),
-        RaceTweaker_MergeSimilarRaceEyes(),
-        RaceTweaker_PlayableEyes(),
-        RaceTweaker_PlayableHairs(),
-        RaceTweaker_SexlessHairs(),
-        RaceTweaker_AllEyes(),
-        RaceTweaker_AllHairs(),
-        ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = set(self.__class__.autoKey)
-        for modInfo in modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
-                if bush.fullLoadOrder[modInfo.name] > bush.fullLoadOrder[PatchFile.patchName]: continue
-                autoItems.append(modInfo.name)
-        return autoItems
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.races_data = {'EYES':[],'HAIR':[]}
-        self.raceData = {} #--Race eye meshes, hair,eyes
-        self.tempRaceData = {}
-        #--Restrict srcMods to active/merged mods.
-        self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
-        self.isActive = True #--Always enabled to support eye filtering
-        self.bodyKeys = set(('TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
-        self.sizeKeys = set(('Height','Weight'))
-        self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
-        self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
-        self.eyeKeys = set((u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes'))
-        #--Mesh tuple for each defined eye. Derived from race records.
-        defaultMesh = (u'characters\\imperial\\eyerighthuman.nif', u'characters\\imperial\\eyelefthuman.nif')
-        self.eye_mesh = {}
-        self.scanTypes = set(('RACE','EYES','HAIR','NPC_'))
-
-    def initData(self,progress):
-        """Get data from source files."""
-        if not self.isActive or not self.srcMods: return
-        loadFactory = LoadFactory(False,MreRecord.type_class['RACE'])
-        progress.setFull(len(self.srcMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.srcMods):
-            if srcMod not in modInfos: continue
-            srcInfo = modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            masters = srcInfo.header.masters
-            bashTags = srcInfo.getBashTags()
-            if 'RACE' not in srcFile.tops: continue
-            srcFile.convertToLongFids(('RACE',))
-            self.tempRaceData = {} #so as not to carry anything over!
-            if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
-                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % srcMod.s)
-            for race in srcFile.RACE.getActiveRecords():
-                tempRaceData = self.tempRaceData.setdefault(race.fid,{})
-                raceData = self.raceData.setdefault(race.fid,{})
-                if u'Hair' in bashTags:
-                    raceHair = raceData.setdefault('hairs',[])
-                    for hair in race.hairs:
-                        if hair not in raceHair: raceHair.append(hair)
-                if self.eyeKeys & bashTags:
-                    tempRaceData['rightEye'] = race.rightEye
-                    tempRaceData['leftEye'] = race.leftEye
-                    raceEyes = raceData.setdefault('eyes',[])
-                    for eye in race.eyes:
-                        if eye not in raceEyes: raceEyes.append(eye)
-                if u'Voice-M' in bashTags:
-                    tempRaceData['maleVoice'] = race.maleVoice
-                if u'Voice-F' in bashTags:
-                    tempRaceData['femaleVoice'] = race.femaleVoice
-                if u'Body-M' in bashTags:
-                    for key in ['male'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'Body-F' in bashTags:
-                    for key in ['female'+key for key in self.bodyKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'Body-Size-M' in bashTags:
-                    for key in ['male'+key for key in self.sizeKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'Body-Size-F' in bashTags:
-                    for key in ['female'+key for key in self.sizeKeys]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Teeth' in bashTags:
-                    for key in ('teethLower','teethUpper'):
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Mouth' in bashTags:
-                    for key in ('mouth','tongue'):
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Head' in bashTags:
-                    tempRaceData['head'] = race.head
-                if u'R.Ears' in bashTags:
-                    for key in ('maleEars','femaleEars'):
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Relations' in bashTags:
-                    relations = raceData.setdefault('relations',{})
-                    for x in race.relations:
-                        relations[x.faction] = x.mod
-                if u'R.Attributes-F' in bashTags:
-                    for key in ['female'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Attributes-M' in bashTags:
-                    for key in ['male'+key for key in self.raceAttributes]:
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.Skills' in bashTags:
-                    for key in self.raceSkills:
-                        tempRaceData[key] = getattr(race,key)
-                if u'R.AddSpells' in bashTags:
-                    tempRaceData['AddSpells'] = race.spells
-                if u'R.ChangeSpells' in bashTags:
-                    raceData['spellsOverride'] = race.spells
-                if u'R.Description' in bashTags:
-                    tempRaceData['text'] = race.text
-            for master in masters:
-                if not master in modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    if 'RACE' not in masterFile.tops: continue
-                    masterFile.convertToLongFids(('RACE',))
-                    cachedMasters[master] = masterFile
-                for race in masterFile.RACE.getActiveRecords():
-                    if race.fid not in self.tempRaceData: continue
-                    tempRaceData = self.tempRaceData[race.fid]
-                    raceData = self.raceData[race.fid]
-                    if 'AddSpells' in tempRaceData:
-                        raceData.setdefault('AddSpells', [])
-                        for spell in tempRaceData['AddSpells']:
-                            if spell not in race.spells:
-                                if spell not in raceData['AddSpells']:
-                                    raceData['AddSpells'].append(spell)
-                        del tempRaceData['AddSpells']
-                    for key in tempRaceData:
-                        if not tempRaceData[key] == getattr(race,key):
-                            raceData[key] = tempRaceData[key]
-            progress.plus()
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return ('RACE','EYES','HAIR','NPC_',) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return ('RACE','EYES','HAIR','NPC_',) if self.isActive else ()
-
-    def scanModFile(self, modFile, progress):
-        """Add appropriate records from modFile."""
-        if not self.isActive: return
-        races_data = self.races_data
-        eye_mesh = self.eye_mesh
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if not (set(modFile.tops) & self.scanTypes): return
-        modFile.convertToLongFids(('RACE','EYES','HAIR','NPC_'))
-        srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
-        #--Eyes, Hair
-        for type in ('EYES','HAIR'):
-            patchBlock = getattr(self.patchFile,type)
-            id_records = patchBlock.id_records
-            for record in getattr(modFile,type).getActiveRecords():
-                races_data[type].append(record.fid)
-                if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-        #--Npcs with unassigned eyes
-        patchBlock = self.patchFile.NPC_
-        id_records = patchBlock.id_records
-        for record in modFile.NPC_.getActiveRecords():
-            if not record.eye and record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-        #--Race block
-        patchBlock = self.patchFile.RACE
-        id_records = patchBlock.id_records
-        for record in modFile.RACE.getActiveRecords():
-            if record.fid not in id_records:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
-            if not record.rightEye or not record.leftEye:
-                deprint(_(u'No right and/or no left eye recorded in race %s, from mod %s') % (record.full, modName))
-                continue
-            for eye in record.eyes:
-                if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
-        for tweak in self.enabledTweaks:
-            tweak.scanModFile(modFile,progress,self.patchFile)
-
-    def buildPatch(self,log,progress):
-        """Updates races as needed."""
-        debug = False
-        extra = self.races_data
-        if not self.isActive: return
-        patchFile = self.patchFile
-        keep = patchFile.getKeeper()
-        if 'RACE' not in patchFile.tops: return
-        racesPatched = []
-        racesSorted = []
-        racesFiltered = []
-        mod_npcsFixed = {}
-        reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
-        #--Import race info
-        for race in patchFile.RACE.records:
-            #~~print 'Building',race.eid
-            raceData = self.raceData.get(race.fid,None)
-            if not raceData: continue
-            raceChanged = False
-            #-- Racial Hair and  Eye sets
-            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
-                race.hairs = raceData['hairs']
-                raceChanged = True
-            if 'eyes' in raceData:
-                if set(race.eyes) != set(raceData['eyes']):
-                    race.eyes = raceData['eyes']
-                    raceChanged = True
-            #-- Eye paths:
-            if 'rightEye' in raceData:
-                if not race.rightEye: deprint(_(u'Very odd race %s found - no right eye assigned') % (race.full))
-                else:
-                    if race.rightEye.modPath != raceData['rightEye'].modPath:
-                        race.rightEye.modPath = raceData['rightEye'].modPath
-                        raceChanged = True
-            if 'leftEye' in raceData:
-                if not race.leftEye: deprint(_(u'Very odd race %s found - no left eye assigned') % (race.full))
-                else:
-                    if race.leftEye.modPath != raceData['leftEye'].modPath:
-                        race.leftEye.modPath = raceData['leftEye'].modPath
-                        raceChanged = True
-            #--Teeth/Mouth/head/ears/description
-            for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
-                        raceChanged = True
-            #--spells
-            if 'spellsOverride' in raceData:
-                race.spells = raceData['spellsOverride']
-            if 'AddSpells' in raceData:
-                raceData['spells'] = race.spells
-                for spell in raceData['AddSpells']:
-                    raceData['spells'].append(spell)
-                race.spells = raceData['spells']
-            #--skills
-            for key in self.raceSkills:
-                if key in raceData:
-                    if getattr(race,key) != raceData[key]:
-                        setattr(race,key,raceData[key])
-                        raceChanged = True
-            #--Gender info (voice, gender specific body data)
-            for gender in ('male','female'):
-                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('Ears','Voice'))))
-                bodyKeys = [gender+key for key in bodyKeys]
-                for key in bodyKeys:
-                    if key in raceData:
-                        if getattr(race,key) != raceData[key]:
-                            setattr(race,key,raceData[key])
-                            raceChanged = True
-            #--Relations
-            if 'relations' in raceData:
-                relations = raceData['relations']
-                oldRelations = set((x.faction,x.mod) for x in race.relations)
-                newRelations = set(relations.iteritems())
-                if newRelations != oldRelations:
-                    del race.relations[:]
-                    for faction,mod in newRelations:
-                        entry = MelObject()
-                        entry.faction = faction
-                        entry.mod = mod
-                        race.relations.append(entry)
-                    raceChanged = True
-            #--Changed
-            if raceChanged:
-                racesPatched.append(race.eid)
-                keep(race.fid)
-        #--Eye Mesh filtering
-        eye_mesh = self.eye_mesh
-        try:
-            blueEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x27308)]
-        except KeyError:
-            print u'error getting blue eye mesh:'
-            print u'eye meshes:', eye_mesh
-            raise
-        argonianEyeMesh = eye_mesh[(GPath(u'Oblivion.esm'),0x3e91e)]
-        if debug:
-            print u'== Eye Mesh Filtering'
-            print u'blueEyeMesh',blueEyeMesh
-            print u'argonianEyeMesh',argonianEyeMesh
-        for eye in (
-            (GPath(u'Oblivion.esm'),0x1a), #--Reanimate
-            (GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
-            (GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
-            (GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
-            ):
-            eye_mesh.setdefault(eye,blueEyeMesh)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
-        for race in patchFile.RACE.records:
-            if debug: print u'===', race.eid
-            if not race.eyes: continue #--Sheogorath. Assume is handled correctly.
-            if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match(u'^117[a-zA-Z]',race.eid,flags=re.U): continue #-- x117 race?
-            raceChanged = False
-            mesh_eye = {}
-            for eye in race.eyes:
-                if eye not in eye_mesh:
-                    deprint(_(u'Mesh undefined for eye %s in race %s, eye removed from race list.') % (strFid(eye),race.eid,))
-                    continue
-                mesh = eye_mesh[eye]
-                if mesh not in mesh_eye:
-                    mesh_eye[mesh] = []
-                mesh_eye[mesh].append(eye)
-            currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
-            try:
-                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
-            except IndexError:
-                maxEyesMesh = blueEyeMesh
-            #--Single eye mesh, but doesn't match current mesh?
-            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
-                setRaceEyeMesh(race,*maxEyesMesh)
-                raceChanged = True
-            #--Multiple eye meshes (and playable)?
-            if debug:
-                for mesh,eyes in mesh_eye.iteritems():
-                    print mesh
-                    for eye in eyes: print ' ',strFid(eye)
-            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (GPath('Oblivion.esm'), 0x038010)):
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
-                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
-                    setRaceEyeMesh(race,*blueEyeMesh)
-                    race.eyes = mesh_eye[blueEyeMesh]
-                    raceChanged = True
-                elif argonianEyeMesh in mesh_eye:
-                    setRaceEyeMesh(race,*argonianEyeMesh)
-                    race.eyes = mesh_eye[argonianEyeMesh]
-                    raceChanged = True
-                #--Else figure that current eye mesh is the correct one
-                elif currentMesh in mesh_eye:
-                    race.eyes = mesh_eye[currentMesh]
-                    raceChanged = True
-                #--Else use most popular eye mesh
-                else:
-                    setRaceEyeMesh(race,*maxEyesMesh)
-                    race.eyes = mesh_eye[maxEyesMesh]
-                    raceChanged = True
-            if raceChanged:
-                racesFiltered.append(race.eid)
-                keep(race.fid)
-            if race.full:
-                extra[race.full.lower()] = {'hairs':race.hairs,'eyes':race.eyes,'relations':race.relations}
-        for tweak in self.enabledTweaks:
-            tweak.buildPatch(progress,self.patchFile,extra)
-        #--Sort Eyes/Hair
-        defaultEyes = {}
-        defaultMaleHair = {}
-        defaultFemaleHair = {}
-        eyeNames  = dict((x.fid,x.full) for x in patchFile.EYES.records)
-        hairNames = dict((x.fid,x.full) for x in patchFile.HAIR.records)
-        maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
-        femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
-        for race in patchFile.RACE.records:
-            if (race.flags.playable or race.fid == (GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
-                defaultEyes[race.fid] = [x for x in bush.defaultEyes.get(race.fid,[]) if x in race.eyes]
-                if not defaultEyes[race.fid]:
-                    defaultEyes[race.fid] = [race.eyes[0]]
-                defaultMaleHair[race.fid] = [x for x in race.hairs if x in maleHairs]
-                defaultFemaleHair[race.fid] = [x for x in race.hairs if x in femaleHairs]
-                race.hairs.sort(key=lambda x: hairNames.get(x))
-                race.eyes.sort(key=lambda x: eyeNames.get(x))
-                racesSorted.append(race.eid)
-                keep(race.fid)
-        #--Npcs with unassigned eyes/hair
-        for npc in patchFile.NPC_.records:
-            if npc.fid == (GPath(u'Oblivion.esm'), 0x000007): continue #skip player
-            if npc.full is not None and npc.race == (GPath(u'Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
-            raceEyes = defaultEyes.get(npc.race)
-            if not npc.eye and raceEyes:
-                npc.eye = random.choice(raceEyes)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
-                keep(npc.fid)
-            raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.flags.female]).get(npc.race)
-            if not npc.hair and raceHair:
-                npc.hair = random.choice(raceHair)
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                mod_npcsFixed[srcMod].add(npc.fid)
-                keep(npc.fid)
-            if not npc.hairLength:
-                npc.hairLength = random.random()
-                srcMod = npc.fid[0]
-                if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
-                keep(npc.fid)
-                if npc.fid in mod_npcsFixed[srcMod]: continue
-                mod_npcsFixed[srcMod].add(npc.fid)
-
-        #--Done
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcMods:
-            log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Merged'))
-        if not racesPatched:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for eid in sorted(racesPatched):
-                log(u'* '+eid)
-        log(u'\n=== '+_(u'Eyes/Hair Sorted'))
-        if not racesSorted:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for eid in sorted(racesSorted):
-                log(u'* '+eid)
-        log(u'\n=== '+_(u'Eye Meshes Filtered'))
-        if not racesFiltered:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
-            for eid in sorted(racesFiltered):
-                log(u'* '+eid)
-        if mod_npcsFixed:
-            log(u'\n=== '+_(u'Eyes/Hair Assigned for NPCs'))
-            for srcMod in sorted(mod_npcsFixed):
-                log(u'* %s: %d' % (srcMod.s,len(mod_npcsFixed[srcMod])))
-        for tweak in self.enabledTweaks:
-            tweak._patchLog(log,tweak.count)
-
-#-------------------------- CBash only Race Patchers --------------------------#
-
-class CBash_RacePatcher_Relations(SpecialPatcher):
-    """Merges changes to race relations."""
-    autoKey = set(('R.Relations',))
-    iiMode = False
-    allowUnloaded = True
-    scanRequiresChecked = True
-    applyRequiresChecked = False
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        self.srcs = srcs
-        self.isActive = bool(srcs)
-        if not self.isActive: return
-        self.racesPatched = set()
-        self.fid_faction_mod = {}
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
-
-    def getTypes(self):
-        return ['RACE']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        if bashTags & self.autoKey:
-            relations = record.ConflictDetails(('relations_list',))
-            if relations:
-                self.fid_faction_mod.setdefault(record.fid,{}).update(relations['relations_list'])
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        fid = record.fid
-        if fid in self.fid_faction_mod:
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
-            curRelations = set(record.relations_list)
-            changed = newRelations - curRelations
-            if changed:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    for faction,mod in changed:
-                        for relation in override.relations:
-                            if relation.faction == faction:
-                                relation.mod = mod
-                                break
-                        else:
-                            relation = override.create_relation()
-                            relation.faction,relation.mod = faction,mod
-                    self.racesPatched.add(record.eid)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-class CBash_RacePatcher_Imports(SpecialPatcher):
-    """Imports various race fields."""
-    autoKey = set(('Hair','Body-M','Body-F','Voice-M','Voice-F','R.Teeth',
-               'R.Mouth','R.Ears','R.Head','R.Attributes-F','R.Attributes-M',
-               'R.Skills','R.Description', 'Body-Size-F','Body-Size-M'))
-    tag_attrs = {
-        'Hair'  : ('hairs',),
-        'Body-M': ('maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
-                   'maleHandPath','maleFootPath','maleTailPath'),
-        'Body-F': ('femaleTail_list','femaleUpperBodyPath','femaleLowerBodyPath',
-                   'femaleHandPath','femaleFootPath','femaleTailPath'),
-        'Body-Size-M': ('maleHeight','maleWeight'),
-        'Body-Size-F': ('femaleHeight','femaleWeight'),
-        'Voice-M': ('maleVoice',),
-        'Voice-F': ('femaleVoice',),
-        'R.Teeth': ('teethLower_list','teethUpper_list',),
-        'R.Mouth': ('mouth_list','tongue_list',),
-        'R.Ears': ('maleEars_list','femaleEars_list',),
-        'R.Head': ('head_list','fggs_p','fgga_p','fgts_p','snam_p'),
-        'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower','maleAgility','maleSpeed','maleEndurance','malePersonality','maleLuck'),
-        'R.Attributes-F': ('femaleStrength','femaleIntelligence','femaleWillpower','femaleAgility','femaleSpeed','femaleEndurance','femalePersonality','femaleLuck'),
-        'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
-        'R.Description': ('text',),
-        }
-    iiMode = False
-    allowUnloaded = True
-    scanRequiresChecked = True
-    applyRequiresChecked = False
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        self.srcs = srcs
-        self.isActive = bool(srcs)
-        if not self.isActive: return
-        self.racesPatched = set()
-        self.fid_attr_value = {}
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
-
-    def getTypes(self):
-        return ['RACE']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        recordId = record.fid
-        for bashKey in bashTags & self.autoKey:
-            attrs = self.tag_attrs[bashKey]
-            if bashKey == 'Hair':
-                hairs = self.fid_attr_value.setdefault(recordId,{}).get('hairs', [])
-                hairs.extend([hair for hair in record.hairs if hair.ValidateFormID(self.patchFile) and hair not in hairs])
-                attr_value = {'hairs':hairs}
-            else:
-                attr_value = record.ConflictDetails(attrs)
-                if not ValidateDict(attr_value, self.patchFile):
-                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                    continue
-            self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        recordId = record.fid
-        prev_attr_value = self.fid_attr_value.get(recordId,None)
-
-        if prev_attr_value:
-            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
-            if cur_attr_value != prev_attr_value:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    for attr, value in prev_attr_value.iteritems():
-                        setattr(override,attr,value)
-                    self.racesPatched.add(record.eid)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-class CBash_RacePatcher_Spells(SpecialPatcher):
-    """Merges changes to race spells."""
-    autoKey = set(('R.AddSpells', 'R.ChangeSpells'))
-    iiMode = False
-    allowUnloaded = True
-    scanRequiresChecked = True
-    applyRequiresChecked = False
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        self.srcs = srcs
-        self.isActive = bool(srcs)
-        if not self.isActive: return
-        self.racesPatched = set()
-        self.id_spells = {}
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
-
-    def getTypes(self):
-        return ['RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        tags = bashTags & self.autoKey
-        if tags:
-            if 'R.ChangeSpells' in tags and 'R.AddSpells' in tags:
-                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % modFile.ModName)
-            curSpells = set([spell for spell in record.spells if spell.ValidateFormID(self.patchFile)])
-            if curSpells:
-                spells = self.id_spells.setdefault(record.fid,set())
-                if 'R.ChangeSpells' in tags:
-                    spells = curSpells
-                elif 'R.AddSpells' in tags:
-                    spells |= curSpells
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        recordId = record.fid
-        if(recordId in self.id_spells):
-            newSpells = self.id_spells[recordId]
-            curSpells = set(record.spells)
-            changed = newSpells - curSpells
-            if changed:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.spells = newSpells
-                    self.racesPatched.add(record.eid)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-class CBash_RacePatcher_Eyes(SpecialPatcher):
-    """Merges and filters changes to race eyes."""
-    autoKey = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
-    blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
-    argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
-    dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
-##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
-    reX117 = re.compile(u'^117[a-z]',re.I|re.U)
-    iiMode = False
-    allowUnloaded = True
-    scanRequiresChecked = False
-    applyRequiresChecked = False
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        self.patchFile = patchFile
-        self.srcs = srcs
-        self.isActive = True #--Always partially enabled to support eye filtering
-        self.racesPatched = set()
-        self.racesSorted = set()
-        self.racesFiltered = []
-        self.mod_npcsFixed = {}
-        self.hairNames = {}
-        self.eyeNames = {}
-        self.maleHairs = set()
-        self.femaleHairs = set()
-        self.id_meshes = {}
-        self.id_eyes = {}
-        self.srcEyes = {}
-        self.eye_meshes = {}
-        self.finishedOnce = False
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        if not self.isActive: return
-        for type in self.getTypes():
-            group_patchers.setdefault(type,[]).append(self)
-
-    def getTypes(self):
-        return ['EYES','HAIR','RACE']
-
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        recordId = record.fid
-        if record._Type == 'RACE':
-            if record.IsWinning():
-                if record.full:
-                    self.patchFile.races_data[record.full.lower()] = {'hairs':record.hairs,'eyes':record.eyes,'relations':record.relations}
-            eye_meshes = self.eye_meshes
-            srcEyes = self.srcEyes.get(modFile.GName,set())
-            curEyes = set([eye for eye in record.eyes if eye.ValidateFormID(self.patchFile)])
-            eyePaths = (record.rightEye.modPath, record.leftEye.modPath)
-            for eye in curEyes:
-                # only map eyes that are (re)defined in this mod
-                if eye not in eye_meshes or eye in srcEyes:
-                    eye_meshes[eye] = eyePaths
-            if modFile.GName in self.srcs and self.autoKey & bashTags:
-                allEyes = self.id_eyes.setdefault(recordId,set())
-                allEyes |= curEyes
-                self.id_meshes[recordId] = eyePaths
-        else:
-            if not recordId.ValidateFormID(self.patchFile):
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
-                return
-
-            if record._Type == 'HAIR':
-                self.patchFile.races_data['HAIR'].append(recordId)
-                if record.IsMale:
-                    self.maleHairs.add(recordId)
-                else:
-                    self.femaleHairs.add(recordId)
-                self.hairNames.update({recordId:record.full})
-            else: #record._Type == 'EYES'
-                self.patchFile.races_data['EYES'].append(recordId)
-                self.eyeNames.update({recordId:record.full})
-                self.srcEyes.setdefault(modFile.GName,set()).add(recordId)
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan(modFile,record,bashTags)
-        if record._Type in ('HAIR','EYES'):
-            return
-
-        recordId = record.fid
-        if self.isActive and (recordId in self.id_eyes):
-            curEyes = set(record.eyes)
-            newEyes = self.id_eyes[recordId]
-            changed = newEyes - curEyes
-            if not changed:
-                newRightEye, newLeftEye = self.id_meshes[recordId]
-                curRightEye, curLeftEye = (record.rightEye.modPath, record.leftEye.modPath)
-                changed = (newRightEye, newLeftEye) != (curRightEye, curLeftEye) #modPaths do case insensitive comparison by default
-            if changed:
-                override = record.CopyAsOverride(self.patchFile)
-                if override:
-                    override.eyes = newEyes
-                    override.rightEye.modPath, override.leftEye.modPath = self.id_meshes[recordId]
-                    self.racesPatched.add(record.eid)
-                    record.UnloadRecord()
-                    record._RecordID = override._RecordID
-
-    def finishPatch(self,patchFile,progress):
-        """Edits the bashed patch file directly."""
-        #The patcher gets registered multiple times due to the multiple getTypes
-        #This ensures the finishPatch only runs once per bashed patch
-        if self.finishedOnce: return
-        self.finishedOnce = True
-        racesSorted = self.racesSorted
-        racesFiltered = self.racesFiltered
-        mod_npcsFixed = self.mod_npcsFixed
-        Current = patchFile.Current
-        subProgress = SubProgress(progress)
-        subProgress.setFull(max(len(Current.LoadOrderMods) * 2,1))
-        reX117 = self.reX117
-        defaultEyes = {}
-        defaultMaleHair = {}
-        defaultFemaleHair = {}
-        hairNames = self.hairNames
-        eyeNames = self.eyeNames
-        maleHairs = self.maleHairs
-        femaleHairs = self.femaleHairs
-        playableRaces = set([self.dremoraRace])
-
-        #--Eye Mesh filtering
-        eye_meshes = self.eye_meshes
-        try:
-            blueEyeMeshes = eye_meshes[self.blueEye]
-        except KeyError:
-            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
-            return
-        try:
-            argonianEyeMeshes = eye_meshes[self.argonianEye]
-        except KeyError:
-            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
-            return
-        fixedRaces = set()
-        fixedNPCs = set([FormID(GPath(u'Oblivion.esm'), 0x000007)]) #causes player to be skipped
-        for eye in (
-            FormID(GPath(u'Oblivion.esm'),0x1a), #--Reanimate
-            FormID(GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
-            FormID(GPath(u'Oblivion.esm'),0x54bba), #--Golden Saint
-            FormID(GPath(u'Oblivion.esm'),0x5fa43), #--Ordered
-            self.dremoraRace,
-            ):
-            eye_meshes.setdefault(eye,blueEyeMeshes)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
-        #Scan hairs and eyes for later sorting and/or assigning to non-haired npcs
-        pstate = 0
-        noEyes = 0
-        noHair = 0
-        for modFile in Current.LoadOrderMods:
-            subProgress(pstate, _(u'Filtering eyes...')+u'\n')
-            for race in modFile.RACE:
-                recordId = race.fid
-                if race.IsPlayable:
-                    playableRaces.add(recordId)
-                currentEyes = race.eyes
-                if not currentEyes: continue #--Sheogorath. Assume is handled correctly.
-                if not race.rightEye or not race.leftEye: continue #no eye set for either right or left... skip.
-                curRightEye, curLeftEye = race.rightEye.modPath, race.leftEye.modPath
-                if not curRightEye or not curLeftEye: continue #--WIPZ race?
-                if reX117.match(race.eid): continue #-- x117 race?
-                if recordId in fixedRaces: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
-                #IsNewest
-                if race.IsWinning():
-                    raceChanged = False
-                    currentMeshes = (curRightEye, curLeftEye)
-                    meshes_eyes = {}
-                    for eye in currentEyes:
-                        if eye not in eye_meshes:
-                            deprint(_(u'Mesh undefined for eye %s in race %s') % (eye,race.eid))
-                            continue
-                        rightEye, leftEye = eye_meshes[eye]
-                        meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
-
-                    try:
-                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]),reverse=True)[0]
-                    except IndexError:
-                        maxEyesMeshes = blueEyeMeshes
-                    meshesCount = len(meshes_eyes)
-                    #--Single eye mesh, but doesn't match current mesh?
-                    if meshesCount == 1 and currentMeshes != maxEyesMeshes:
-                        currentMeshes = maxEyesMeshes
-                        currentEyes = meshes_eyes[maxEyesMeshes]
-                        raceChanged = True
-                    #--Multiple eye meshes (and playable)?
-                    elif meshesCount > 1 and recordId in playableRaces:
-                        #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
-                        if blueEyeMeshes in meshes_eyes and currentMeshes != argonianEyeMeshes:
-                            currentMeshes = blueEyeMeshes
-                            currentEyes = meshes_eyes[blueEyeMeshes]
-                            raceChanged = True
-                        elif argonianEyeMeshes in meshes_eyes:
-                            currentMeshes = argonianEyeMeshes
-                            currentEyes = meshes_eyes[argonianEyeMeshes]
-                            raceChanged = True
-                        #--Else figure that current eye mesh is the correct one
-                        elif currentMeshes in meshes_eyes:
-                            currentEyes = meshes_eyes[currentMeshes]
-                            raceChanged = True
-                        #--Else use most popular eye mesh
-                        else:
-                            currentMeshes = maxEyesMeshes
-                            currentEyes = meshes_eyes[maxEyesMeshes]
-                            raceChanged = True
-                    if raceChanged:
-                        racesFiltered.append(race.eid)
-
-                    #--Sort Eyes/Hair
-                    oldHairs = race.hairs
-                    currentHairs = oldHairs
-                    if recordId in playableRaces:
-                        currentHairs = sorted(oldHairs,key=lambda x: hairNames.get(x))
-                        if currentHairs != oldHairs:
-                            racesSorted.add(race.eid)
-                            raceChanged = True
-                        oldEyes = currentEyes
-                        currentEyes = sorted(oldEyes,key=lambda x: eyeNames.get(x))
-                        if currentEyes != oldEyes:
-                            racesSorted.add(race.eid)
-                            raceChanged = True
-                        defaultEyes[recordId] = [x for x in bush.defaultEyes.get(recordId,[]) if x in currentEyes] or currentEyes
-                        defaultMaleHair[recordId] = [x for x in currentHairs if x in maleHairs]
-                        defaultFemaleHair[recordId] = [x for x in currentHairs if x in femaleHairs]
-
-                    if raceChanged:
-                        fixedRaces.add(recordId)
-                        override = race.CopyAsOverride(patchFile)
-                        if override:
-                            override.eyes = currentEyes
-                            override.hairs = currentHairs
-                            override.rightEye.modPath, override.leftEye.modPath = currentMeshes
-                race.UnloadRecord()
-            pstate += 1
-        for modFile in Current.LoadOrderMods:
-            #--Npcs with unassigned eyes/hair
-            #--Must run after all race records have been processed
-            subProgress(pstate, _(u'Assigning random eyes and hairs to npcs missing them...')+u'\n')
-            reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
-            for npc in modFile.NPC_:
-                recordId = npc.fid
-                if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
-                raceId = npc.race
-                if raceId not in playableRaces: continue
-                if npc.full is not None and raceId == self.dremoraRace and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race.
-                #IsNewest
-                if npc.IsWinning():
-                    npcChanged = False
-                    raceEyes = defaultEyes.get(raceId)
-                    eye = npc.eye
-                    if eye is None and raceEyes:
-                        eye = random.choice(raceEyes)
-                        npcChanged = True
-                    raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.IsFemale]).get(raceId)
-                    hair = npc.hair
-                    if hair is None and raceHair:
-                        hair = random.choice(raceHair)
-                        npcChanged = True
-                    if npcChanged:
-                        fixedNPCs.add(recordId)
-                        override = npc.CopyAsOverride(patchFile)
-                        if override:
-                            override.eye = eye
-                            override.hair = hair
-                            if not override.hairLength:
-                                override.hairLength = random.random()
-                            mod_npcsFixed.setdefault(modFile.GName,set()).add(recordId)
-                npc.UnloadRecord()
-            pstate += 1
-
-class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
-    """Merged leveled lists mod file."""
-    name = _(u'Race Records')
-    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
-            u'\n\n' +
-            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
-            )
-    tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
-        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells','Body-Size-M','Body-Size-F',))
-    forceAuto = True
-    tweakers = [
-        CBash_RacePatcher_Relations(),
-        CBash_RacePatcher_Imports(),
-        CBash_RacePatcher_Spells(),
-        CBash_RacePatcher_Eyes(),
-        ]
-    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
-    subLabel = _(u'Race Tweaks')
-    tweaks = sorted([
-        CBash_RaceTweaker_BiggerOrcsandNords(),
-        CBash_RaceTweaker_PlayableHairs(),
-        CBash_RaceTweaker_PlayableEyes(),
-        CBash_RaceTweaker_SexlessHairs(),
-        CBash_RaceTweaker_MergeSimilarRaceHairs(),
-        CBash_RaceTweaker_MergeSimilarRaceEyes(),
-        CBash_RaceTweaker_AllEyes(),
-        CBash_RaceTweaker_AllHairs(),
-        ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
-        #This single tweak is broken into several parts to make it easier to manage
-        #Each part is a group of tags that are processed similarly
-        for tweak in self.tweakers:
-            tweak.initPatchFile(self.srcs,patchFile,loadMods)
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
-
-    def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
-        for tweak in self.tweakers:
-            tweak.initData(group_patchers,progress)
-        for tweak in self.enabledTweaks:
-            for type in tweak.getTypes():
-                group_patchers.setdefault(type,[]).append(tweak)
-
-
-    #--Patch Phase ------------------------------------------------------------
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        racesPatched = set()
-        racesSorted = set()
-        racesFiltered = []
-        mod_npcsFixed = {}
-        for tweak in self.tweakers:
-            if hasattr(tweak, 'racesPatched'):
-                racesPatched |= tweak.racesPatched
-            if hasattr(tweak, 'racesSorted'):
-                racesSorted |= tweak.racesSorted
-            if hasattr(tweak, 'racesFiltered'):
-                racesFiltered += tweak.racesFiltered
-            if hasattr(tweak, 'mod_npcsFixed'):
-                mod_npcsFixed.update(tweak.mod_npcsFixed)
-        #--Done
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        if not self.srcs:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for mod in self.srcs:
-                log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Merged'))
-
-        if not racesPatched:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for eid in sorted(racesPatched):
-                log(u'* '+eid)
-        log(u'\n=== '+_(u'Eyes/Hair Sorted'))
-        if not racesSorted:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for eid in sorted(racesSorted):
-                log(u'* '+eid)
-        log(u'\n=== '+_(u'Eye Meshes Filtered'))
-        if not racesFiltered:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
-            for eid in sorted(racesFiltered):
-                log(u'* '+eid)
-        if mod_npcsFixed:
-            log(u'\n=== '+_(u'Eyes/Hair Assigned for NPCs'))
-            for srcMod in sorted(mod_npcsFixed):
-                if srcMod.cext == u'.tmp':
-                    name = srcMod.sbody
-                else:
-                    name = srcMod.s
-                log(u'* %s: %d' % (name,len(mod_npcsFixed[srcMod])))
-        for tweak in self.enabledTweaks:
-            tweak.buildPatchLog(log)
-
-#--------------------------------------------
-#------------------------------------------------------------------------------
 class SEWorldEnforcer(SpecialPatcher,Patcher):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     name = _(u'SEWorld Tests')
@@ -23723,7 +16658,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         if modFile.GName in self.srcs: return
 
         recordId = record.fid
-        if(recordId in self.cyrodiilQuests):
+        if recordId in self.cyrodiilQuests:
             for condition in record.conditions:
                 if condition.ifunc == 365: return #--365: playerInSeWorld
             else:
@@ -23748,7 +16683,7 @@ class CBash_SEWorldEnforcer(SpecialPatcher,CBash_Patcher):
         for mod,eids in mod_eids.iteritems():
             log(u'* %s: %d' % (mod.s,len(eids)))
             for eid in sorted(eids):
-                log(u'  * %s' % (eid))
+                log(u'  * %s' % eid)
         self.mod_eids = {}
 
 #------------------------------------------------------------------------------
@@ -23858,8 +16793,10 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
     scanOrder = 50
     editOrder = 50
     name = _(u'Contents Checker')
-    text = _(u"Checks contents of leveled lists, inventories and containers for correct types.")
-    srcs = [] #so as not to fail screaming when determining load mods - but with the least processing required.
+    text = _(u"Checks contents of leveled lists, inventories and containers "
+             u"for correct types.")
+    srcs = [] #so as not to fail screaming when determining load mods - but
+    # with the least processing required.
     defaultConfig = {'isEnabled':True}
 
     #--Config Phase -----------------------------------------------------------
@@ -23867,14 +16804,26 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_Patcher.initPatchFile(self,patchFile,loadMods)
         self.isActive = True
-        self.type_validEntries = {'LVSP':set(['LVSP','SPEL']),
-                                'LVLC':set(['LVLC','NPC_','CREA']),
-                                'LVLI':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'CONT':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'CREA':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP']),
-                                'NPC_':set(['LVLI','ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP'])}
-        self.listTypes = set(['LVSP','LVLC','LVLI'])
-        self.containerTypes = set(['CONT','CREA','NPC_'])
+        self.type_validEntries = {'LVSP': {'LVSP', 'SPEL'},
+                                'LVLC': {'LVLC', 'NPC_', 'CREA'},
+                                'LVLI': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'CONT': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'CREA': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'},
+                                'NPC_': {'LVLI', 'ALCH', 'AMMO', 'APPA',
+                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
+                                         'KEYM', 'LIGH', 'MISC', 'SGST',
+                                         'SLGM', 'WEAP'}}
+        self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
+        self.containerTypes = {'CONT', 'CREA', 'NPC_'}
         self.mod_type_id_badEntries = {}
         self.knownGood = set()
 
@@ -23937,7 +16886,7 @@ class CBash_ContentsChecker(SpecialPatcher,CBash_Patcher):
         mod_type_id_badEntries = self.mod_type_id_badEntries
         log.setHeader(u'= ' +self.__class__.name)
         for mod, type_id_badEntries in mod_type_id_badEntries.iteritems():
-            log(u'\n=== %s' % (mod.s))
+            log(u'\n=== %s' % mod.s)
             for type,id_badEntries in type_id_badEntries.iteritems():
                 log(u'  * '+_(u'Cleaned %s: %d') % (type,len(id_badEntries)))
                 for id, badEntries in id_badEntries.iteritems():
@@ -24088,7 +17037,7 @@ def getPersonalPath(bashIni, path):
         sErrorInfo = _(u"Folder path specified on command line (-p)")
     elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
         path = GPath(bashIni.get('General', 'sPersonalPath').strip())
-        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sPersonalPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_PERSONAL)
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
@@ -24112,7 +17061,7 @@ def getLocalAppDataPath(bashIni, path):
         sErrorInfo = _(u"Folder path specified on command line (-l)")
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
-        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % (u'sLocalAppDataPath')
+        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
     elif shell and shellcon:
         path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
