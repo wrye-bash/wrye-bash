@@ -48,35 +48,40 @@ class ARaceTweaker_BiggerOrcsandNords(AMultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         # TODO : translate ?
-        super(ARaceTweaker_BiggerOrcsandNords, self).__init__(_(u"Bigger Nords and Orcs"),
-            _(u'Adjusts the Orc and Nord race records to be taller/heavier - to be more lore friendly.'),
+        super(ARaceTweaker_BiggerOrcsandNords, self).__init__(
+            _(u"Bigger Nords and Orcs"),
+            _(u'Adjusts the Orc and Nord race records to be taller/heavier '
+              u'- to be more lore friendly.'),
             u'BiggerOrcsandNords',
-            #('Example',(Nordmaleheight,NordFheight,NordMweight,NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
-            (u'Bigger Nords and Orcs', ((1.09,1.09,1.13,1.06),(1.09,1.09,1.13,1.0))),
-            (u'MMM Resized Races', ((1.08,1.07,1.28,1.19),(1.09,1.06,1.36,1.3))),
+            # ('Example',(Nordmaleheight,NordFheight,NordMweight,
+            # NordFweight,Orcmaleheight,OrcFheight,OrcMweight,OrcFweight))
+            (u'Bigger Nords and Orcs',
+             ((1.09, 1.09, 1.13, 1.06), (1.09, 1.09, 1.13, 1.0))),
+            (u'MMM Resized Races',
+                ((1.08, 1.07, 1.28, 1.19), (1.09, 1.06, 1.36, 1.3))),
             (u'RBP', ((1.075,1.06,1.20,1.125),(1.06,1.045,1.275,1.18)))
             )
         self.logMsg = u'* '+_(u'Races tweaked: %d')
 
-class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakItem):
+class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,
+                                     MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('RACE',)
+        return 'RACE',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('RACE',)
+        return 'RACE',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
             if not record.full: continue
-            if not u'orc' in record.full.lower() and not u'nord' in record.full.lower(): continue
+            if not u'orc' in record.full.lower() and not u'nord' in \
+                    record.full.lower(): continue
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
 
@@ -87,20 +92,27 @@ class RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,MultiTweakI
         for record in patchFile.RACE.records:
             if not record.full: continue
             if u'nord' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][0]):
+                for attr, value in zip(
+                        ['maleHeight', 'femaleHeight', 'maleWeight',
+                         'femaleWeight'],
+                        self.choiceValues[self.chosen][0][0]):
                     setattr(record,attr,value)
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
                 continue
             elif u'orc' in record.full.lower():
-                for attr,value in zip(['maleHeight','femaleHeight','maleWeight','femaleWeight'],self.choiceValues[self.chosen][0][1]):
+                for attr, value in zip(
+                        ['maleHeight', 'femaleHeight', 'maleWeight',
+                         'femaleWeight'],
+                        self.choiceValues[self.chosen][0][1]):
                     setattr(record,attr,value)
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash_MultiTweakItem):
+class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,
+                                           CBash_MultiTweakItem):
     """Changes all Orcs and Nords to be bigger."""
     name = _(u"Bigger Nords and Orcs")
 
@@ -135,31 +147,33 @@ class CBash_RaceTweaker_BiggerOrcsandNords(ARaceTweaker_BiggerOrcsandNords,CBash
                 return
 
 class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
-    """Merges similar race's hairs (kinda specifically designed for SOVVM's bearded races)."""
+    """Merges similar race's hairs (kinda specifically designed for SOVVM's
+    bearded races)."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        super(ARaceTweaker_MergeSimilarRaceHairs, self).__init__(_(u"Merge Hairs from similar races"),
-            _(u'Merges hair lists from similar races (f.e. give RBP khajit hair to all the other varieties of khajits in Elsweyr)'),
+        super(ARaceTweaker_MergeSimilarRaceHairs, self).__init__(
+            _(u"Merge Hairs from similar races"),
+            _(u'Merges hair lists from similar races (f.e. give RBP khajit '
+              u'hair to all the other varieties of khajits in Elsweyr)'),
             u'MergeSimilarRaceHairLists',
             (_(u'Merge hairs only from vanilla races'), 1),
             (_(u'Full hair merge between similar races'), 0),
             )
         self.logMsg = u'* '+_(u'Races tweaked: %d')
 
-class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,MultiTweakItem):
+class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
+                                        MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('RACE',)
+        return 'RACE',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('RACE',)
+        return 'RACE',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
@@ -171,13 +185,19 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,Multi
         count = self.count = {}
         #process hair lists
         changedHairs = {}
-        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
+        vanilla = ['argonian', 'breton', 'dremora', 'dark elf', 'dark seducer',
+                   'golden saint', 'high elf', 'imperial', 'khajiit', 'nord',
+                   'orc', 'redguard', 'wood elf']
+        if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
+            # vanilla races to custom hairs.
             for race in extra:
                 for r in vanilla:
                     if r in race:
                         if extra[r]['hairs'] != extra[race]['hairs']:
-                            changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs'])) #yuach nasty but quickly and easily removes duplicates.
+                            changedHairs[race] = list(set(
+                                extra[r]['hairs'] + extra[race][
+                                    'hairs']))  # yuach nasty but quickly
+                                    # and easily removes duplicates.
         else: # full back and forth merge!
             for race in extra:
                 #nasty processing slog
@@ -191,7 +211,8 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,Multi
                     for s in rs:
                         if s in r:
                             if extra[r]['hairs'] != extra[race]['hairs']:
-                                changedHairs[race] = list(set(extra[r]['hairs']+extra[race]['hairs']))
+                                changedHairs[race] = list(set(
+                                    extra[r]['hairs'] + extra[race]['hairs']))
                                 # list(set([]) disgusting thing again
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -202,7 +223,8 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,Multi
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,CBash_MultiTweakItem):
+class CBash_RaceTweaker_MergeSimilarRaceHairs(
+    ARaceTweaker_MergeSimilarRaceHairs, CBash_MultiTweakItem):
     name = _(u"Merge Hairs from similar races")
 
     #--Config Phase -----------------------------------------------------------
@@ -220,12 +242,16 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs
         changedHairs = {}
         mod_count = self.mod_count
         #process hair list:s
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
+        if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
+            # vanilla races to custom hairs.
             for race in races_data:
                 for r in races_vanilla:
                     if r in race:
                         if races_data[r]['hairs'] != races_data[race]['hairs']:
-                            changedHairs[race] = list(set(races_data[r]['hairs']+races_data[race]['hairs'])) #yuach nasty but quickly and easily removes duplicates.
+                            changedHairs[race] = list(set(
+                                races_data[r]['hairs'] + races_data[race][
+                                    'hairs']))  # yuach nasty but quickly
+                                    # and easily removes duplicates.
         else: # full back and forth merge!
             for race in races_data:
                 #nasty processing slog
@@ -238,9 +264,12 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs
                     if r == race: continue
                     for s in rs:
                         if s in r:
-                            if races_data[r]['hairs'] != races_data[race]['hairs']:
+                            if races_data[r]['hairs'] != races_data[race][
+                                'hairs']:
                                 # list(set([]) disgusting thing again
-                                changedHairs[race] = list(set(races_data[r]['hairs']+races_data[race]['hairs']))
+                                changedHairs[race] = list(set(
+                                    races_data[r]['hairs'] + races_data[race][
+                                        'hairs']))
         pstate = 0
         for modFile in Current.LoadOrderMods:
             subProgress(pstate, _(u'Merging hairs...')+u'\n')
@@ -252,7 +281,8 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs
                         override = race.CopyAsOverride(patchFile)
                         if override:
                             override.hairs = changedHairs[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                            mod_count[modFile.GName] = mod_count.get(
+                                modFile.GName, 0) + 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
@@ -261,27 +291,28 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        super(ARaceTweaker_MergeSimilarRaceEyes, self).__init__(_(u"Merge Eyes from similar races"),
-            _(u'Merges eye lists from similar races (f.e. give RBP khajit eyes to all the other varieties of khajits in Elsweyr)'),
+        super(ARaceTweaker_MergeSimilarRaceEyes, self).__init__(
+            _(u"Merge Eyes from similar races"),
+            _(u'Merges eye lists from similar races (f.e. give RBP khajit '
+              u'eyes to all the other varieties of khajits in Elsweyr)'),
             u'MergeSimilarRaceEyeLists',
             (_(u'Merge eyes only from vanilla races'), 1),
             (_(u'Full eye merge between similar races'), 0),
             )
         self.logMsg = u'* '+_(u'Races tweaked: %d')
 
-class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTweakItem):
+class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
+                                       MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('RACE',)
+        return 'RACE',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('RACE',)
+        return 'RACE',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
@@ -293,13 +324,19 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
         count = self.count = {}
         #process hair lists
         changedEyes = {}
-        vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        if self.choiceValues[self.chosen][0] == 1: #merge eyes only from vanilla races to custom eyes.
+        vanilla = ['argonian', 'breton', 'dremora', 'dark elf', 'dark seducer',
+                   'golden saint', 'high elf', 'imperial', 'khajiit', 'nord',
+                   'orc', 'redguard', 'wood elf']
+        if self.choiceValues[self.chosen][0] == 1:  # merge eyes only from
+            # vanilla races to custom eyes.
             for race in extra:
                 for r in vanilla:
                     if r in race:
                         if extra[r]['eyes'] != extra[race]['eyes']:
-                            changedEyes[race] = list(set(extra[r]['eyes']+extra[race]['eyes'])) #yuach nasty but quickly and easily removes duplicates.
+                            changedEyes[race] = list(set(
+                                extra[r]['eyes'] + extra[race][
+                                    'eyes']))  # yuach nasty but quickly and
+                                    #  easily removes duplicates.
         else: # full back and forth merge!
             for race in extra:
                 #nasty processing slog
@@ -313,7 +350,9 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
                     for s in rs:
                         if s in r:
                             if extra[r]['eyes'] != extra[race]['eyes']:
-                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+extra[r]['eyes']+extra[race]['eyes']))
+                                changedEyes[race] = list(set(
+                                    changedEyes.setdefault(race, []) +
+                                    extra[r]['eyes'] + extra[race]['eyes']))
                                 # list(set([]) disgusting thing again
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -324,7 +363,8 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,MultiTw
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,CBash_MultiTweakItem):
+class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
+                                             CBash_MultiTweakItem):
     """Merges similar race's eyes."""
     name = _(u"Merge Eyes from similar races")
 
@@ -343,12 +383,16 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
         changedEyes = {}
         mod_count = self.mod_count
         #process hair list:s
-        if self.choiceValues[self.chosen][0] == 1: #merge hairs only from vanilla races to custom hairs.
+        if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
+            # vanilla races to custom hairs.
             for race in races_data:
                 for r in races_vanilla:
                     if r in race:
                         if races_data[r]['eyes'] != races_data[race]['eyes']:
-                            changedEyes[race] = list(set(races_data[r]['eyes']+races_data[race]['eyes'])) #yuach nasty but quickly and easily removes duplicates.
+                            changedEyes[race] = list(set(
+                                races_data[r]['eyes'] + races_data[race][
+                                    'eyes']))  # yuach nasty but quickly and
+                                    #  easily removes duplicates.
         else: # full back and forth merge!
             for race in races_data:
                 #nasty processing slog
@@ -361,9 +405,13 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
                     if r == race: continue
                     for s in rs:
                         if s in r:
-                            if races_data[r]['eyes'] != races_data[race]['eyes']:
+                            if races_data[r]['eyes'] != races_data[race][
+                                'eyes']:
                                 # list(set([]) disgusting thing again
-                                changedEyes[race] = list(set(changedEyes.setdefault(race,[])+races_data[r]['eyes']+races_data[race]['eyes']))
+                                changedEyes[race] = list(set(
+                                    changedEyes.setdefault(race, []) +
+                                    races_data[r]['eyes'] + races_data[race][
+                                        'eyes']))
         pstate = 0
         for modFile in Current.LoadOrderMods:
             subProgress(pstate, _(u'Merging eyes...')+u'\n')
@@ -375,7 +423,8 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,C
                         override = race.CopyAsOverride(patchFile)
                         if override:
                             override.eyes = changedEyes[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                            mod_count[modFile.GName] = mod_count.get(
+                                modFile.GName, 0) + 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
@@ -395,15 +444,13 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('RACE',)
+        return 'RACE',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('RACE',)
+        return 'RACE',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
@@ -458,15 +505,13 @@ class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('RACE',)
+        return 'RACE',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('RACE',)
+        return 'RACE',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
         for record in modFile.RACE.getActiveRecords():
@@ -525,15 +570,13 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('EYES',)
+        return 'EYES',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('EYES',)
+        return 'EYES',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.EYES
         for record in modFile.EYES.getActiveRecords():
@@ -551,7 +594,8 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,CBash_MultiTweakItem):
+class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,
+                                     CBash_MultiTweakItem):
     """Sets all eyes to be playable."""
     name = _(u"Playable Eyes")
 
@@ -588,15 +632,13 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('HAIR',)
+        return 'HAIR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('HAIR',)
+        return 'HAIR',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
         for record in modFile.HAIR.getActiveRecords():
@@ -614,7 +656,8 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,CBash_MultiTweakItem):
+class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,
+                                      CBash_MultiTweakItem):
     """Sets all hairs to be playable."""
     name = _(u"Playable Hairs")
 
@@ -651,15 +694,13 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('HAIR',)
+        return 'HAIR',
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('HAIR',)
+        return 'HAIR',
 
     def scanModFile(self,modFile,progress,patchFile):
-        """Scans specified mod file to extract info. May add record to patch mod,
-        but won't alter it."""
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
         for record in modFile.HAIR.getActiveRecords():
@@ -678,7 +719,8 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
 
-class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakItem):
+class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
+                                     CBash_MultiTweakItem):
     name = _(u"Sexless Hairs")
 
     #--Config Phase -----------------------------------------------------------
@@ -702,9 +744,13 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,CBash_MultiTweakI
 class RacePatcher(SpecialPatcher,DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
-    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
-            u'\n\n' +
-            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
+    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
+              u" mods.  Any non-active, non-merged mods in the following list"
+              u" will be IGNORED.") + u'\n\n' +
+            _(u"Even if none of the below mods are checked, this will sort"
+              u" hairs and eyes and attempt to remove googly eyes from all"
+              u" active mods.  It will also randomly assign hairs and eyes to"
+              u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(r"^UNDEFINED$",re.I)
@@ -714,7 +760,9 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
         u'R.AddSpells',u'R.ChangeSpells',)
     forceAuto = True
-    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
+                     'configItems': [], 'configChecks': {},
+                     'configChoices': {}}
     subLabel = _(u'Race Tweaks')
     races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
@@ -735,7 +783,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
         for modInfo in bash.bosh.modInfos.data.values():
-            if autoRe.match(modInfo.name.s) or (autoKey & set(modInfo.getBashTags())):
+            if autoRe.match(modInfo.name.s) or (
+                        autoKey & set(modInfo.getBashTags())):
                 if bash.bush.fullLoadOrder[modInfo.name] > \
                         bash.bush.fullLoadOrder[PatchFile.patchName]: continue
                 autoItems.append(modInfo.name)
@@ -743,23 +792,30 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         Patcher.initPatchFile(self,patchFile,loadMods)
         self.races_data = {'EYES':[],'HAIR':[]}
         self.raceData = {} #--Race eye meshes, hair,eyes
         self.tempRaceData = {}
         #--Restrict srcMods to active/merged mods.
-        self.srcMods = [x for x in self.getConfigChecked() if x in patchFile.allSet]
+        self.srcMods = [x for x in self.getConfigChecked() if
+                        x in patchFile.allSet]
         self.isActive = True #--Always enabled to support eye filtering
-        self.bodyKeys = set(('TailModel','UpperBodyPath','LowerBodyPath','HandPath','FootPath','TailPath'))
-        self.sizeKeys = set(('Height','Weight'))
-        self.raceAttributes = set(('Strength','Intelligence','Willpower','Agility','Speed','Endurance','Personality','Luck'))
-        self.raceSkills = set(('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'))
-        self.eyeKeys = set((u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes'))
+        self.bodyKeys = {'TailModel', 'UpperBodyPath', 'LowerBodyPath',
+                         'HandPath', 'FootPath', 'TailPath'}
+        self.sizeKeys = {'Height', 'Weight'}
+        self.raceAttributes = {'Strength', 'Intelligence', 'Willpower',
+                               'Agility', 'Speed', 'Endurance', 'Personality',
+                               'Luck'}
+        self.raceSkills = {'skill1', 'skill1Boost', 'skill2', 'skill2Boost',
+                           'skill3', 'skill3Boost', 'skill4', 'skill4Boost',
+                           'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
+                           'skill7', 'skill7Boost'}
+        self.eyeKeys = {u'Eyes-D', u'Eyes-R', u'Eyes-E', u'Eyes'}
         #--Mesh tuple for each defined eye. Derived from race records.
-        defaultMesh = (u'characters\\imperial\\eyerighthuman.nif', u'characters\\imperial\\eyelefthuman.nif')
+        defaultMesh = (u'characters\\imperial\\eyerighthuman.nif',
+                       u'characters\\imperial\\eyelefthuman.nif')
         self.eye_mesh = {}
-        self.scanTypes = set(('RACE','EYES','HAIR','NPC_'))
+        self.scanTypes = {'RACE', 'EYES', 'HAIR', 'NPC_'}
 
     def initData(self,progress):
         """Get data from source files."""
@@ -778,7 +834,10 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             srcFile.convertToLongFids(('RACE',))
             self.tempRaceData = {} #so as not to carry anything over!
             if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
-                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % srcMod.s)
+                raise BoltError(
+                    u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
+                    u'tags - only one of those tags should be on a mod at '
+                    u'one time' % srcMod.s)
             for race in srcFile.RACE.getActiveRecords():
                 tempRaceData = self.tempRaceData.setdefault(race.fid,{})
                 raceData = self.raceData.setdefault(race.fid,{})
@@ -839,7 +898,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                 if u'R.Description' in bashTags:
                     tempRaceData['text'] = race.text
             for master in masters:
-                if not master in bash.bosh.modInfos: continue # or break filter mods
+                if not master in bash.bosh.modInfos: continue  # or break
+                # filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -882,7 +942,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         mapper = modFile.getLongMapper()
         if not (set(modFile.tops) & self.scanTypes): return
         modFile.convertToLongFids(('RACE','EYES','HAIR','NPC_'))
-        srcEyes = set([record.fid for record in modFile.EYES.getActiveRecords()])
+        srcEyes = set(
+            [record.fid for record in modFile.EYES.getActiveRecords()])
         #--Eyes, Hair
         for type in ('EYES','HAIR'):
             patchBlock = getattr(self.patchFile,type)
@@ -904,11 +965,14 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
             if not record.rightEye or not record.leftEye:
-                deprint(_(u'No right and/or no left eye recorded in race %s, from mod %s') % (record.full, modName))
+                deprint(_(u'No right and/or no left eye recorded in race %s, '
+                          u'from mod %s') % (
+                            record.full, modName))
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),record.leftEye.modPath.lower())
+                    eye_mesh[eye] = (record.rightEye.modPath.lower(),
+                                     record.leftEye.modPath.lower())
         for tweak in self.enabledTweaks:
             tweak.scanModFile(modFile,progress,self.patchFile)
 
@@ -924,7 +988,9 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         racesSorted = []
         racesFiltered = []
         mod_npcsFixed = {}
-        reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
+        reProcess = re.compile(
+            ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
+            re.I | re.U)
         #--Import race info
         for race in patchFile.RACE.records:
             #~~print 'Building',race.eid
@@ -932,7 +998,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             if not raceData: continue
             raceChanged = False
             #-- Racial Hair and  Eye sets
-            if 'hairs' in raceData and (set(race.hairs) != set(raceData['hairs'])):
+            if 'hairs' in raceData and (
+                        set(race.hairs) != set(raceData['hairs'])):
                 race.hairs = raceData['hairs']
                 raceChanged = True
             if 'eyes' in raceData:
@@ -941,19 +1008,26 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                     raceChanged = True
             #-- Eye paths:
             if 'rightEye' in raceData:
-                if not race.rightEye: deprint(_(u'Very odd race %s found - no right eye assigned') % (race.full))
+                if not race.rightEye:
+                    deprint(_(
+                        u'Very odd race %s found - no right eye assigned') %
+                            race.full)
                 else:
                     if race.rightEye.modPath != raceData['rightEye'].modPath:
                         race.rightEye.modPath = raceData['rightEye'].modPath
                         raceChanged = True
             if 'leftEye' in raceData:
-                if not race.leftEye: deprint(_(u'Very odd race %s found - no left eye assigned') % (race.full))
+                if not race.leftEye:
+                    deprint(_(
+                        u'Very odd race %s found - no left eye assigned') %
+                            race.full)
                 else:
                     if race.leftEye.modPath != raceData['leftEye'].modPath:
                         race.leftEye.modPath = raceData['leftEye'].modPath
                         raceChanged = True
             #--Teeth/Mouth/head/ears/description
-            for key in ('teethLower','teethUpper','mouth','tongue','text','head'):
+            for key in ('teethLower', 'teethUpper', 'mouth', 'tongue', 'text',
+                    'head'):
                 if key in raceData:
                     if getattr(race,key) != raceData[key]:
                         setattr(race,key,raceData[key])
@@ -974,7 +1048,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                         raceChanged = True
             #--Gender info (voice, gender specific body data)
             for gender in ('male','female'):
-                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(set(('Ears','Voice'))))
+                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(
+                    {'Ears', 'Voice'}))
                 bodyKeys = [gender+key for key in bodyKeys]
                 for key in bodyKeys:
                     if key in raceData:
@@ -1023,22 +1098,30 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
             race.leftEye.modPath = leftPath
         for race in patchFile.RACE.records:
             if debug: print u'===', race.eid
-            if not race.eyes: continue #--Sheogorath. Assume is handled correctly.
+            if not race.eyes: continue  #--Sheogorath. Assume is handled
+            # correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match(u'^117[a-zA-Z]',race.eid,flags=re.U): continue #-- x117 race?
+            if re.match(u'^117[a-zA-Z]', race.eid, flags=re.U): continue  #--
+            #  x117 race?
             raceChanged = False
             mesh_eye = {}
             for eye in race.eyes:
                 if eye not in eye_mesh:
-                    deprint(_(u'Mesh undefined for eye %s in race %s, eye removed from race list.') % (strFid(eye),race.eid,))
+                    deprint(
+                        _(u'Mesh undefined for eye %s in race %s, eye removed '
+                          u'from race list.') % (
+                            strFid(eye), race.eid,))
                     continue
                 mesh = eye_mesh[eye]
                 if mesh not in mesh_eye:
                     mesh_eye[mesh] = []
                 mesh_eye[mesh].append(eye)
-            currentMesh = (race.rightEye.modPath.lower(),race.leftEye.modPath.lower())
+            currentMesh = (
+                race.rightEye.modPath.lower(), race.leftEye.modPath.lower())
             try:
-                maxEyesMesh = sorted(mesh_eye.keys(),key=lambda a: len(mesh_eye[a]),reverse=True)[0]
+                maxEyesMesh = \
+                    sorted(mesh_eye.keys(), key=lambda a: len(mesh_eye[a]),
+                           reverse=True)[0]
             except IndexError:
                 maxEyesMesh = blueEyeMesh
             #--Single eye mesh, but doesn't match current mesh?
@@ -1050,8 +1133,10 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                 for mesh,eyes in mesh_eye.iteritems():
                     print mesh
                     for eye in eyes: print ' ',strFid(eye)
-            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (GPath('Oblivion.esm'), 0x038010)):
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
+            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
+                    GPath('Oblivion.esm'), 0x038010)):
+                #--If blueEyeMesh (mesh used for vanilla eyes) is present,
+                # use that.
                 if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
                     setRaceEyeMesh(race,*blueEyeMesh)
                     race.eyes = mesh_eye[blueEyeMesh]
@@ -1073,7 +1158,9 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                 racesFiltered.append(race.eid)
                 keep(race.fid)
             if race.full:
-                extra[race.full.lower()] = {'hairs':race.hairs,'eyes':race.eyes,'relations':race.relations}
+                extra[race.full.lower()] = {'hairs': race.hairs,
+                                            'eyes': race.eyes,
+                                            'relations': race.relations}
         for tweak in self.enabledTweaks:
             tweak.buildPatch(progress,self.patchFile,extra)
         #--Sort Eyes/Hair
@@ -1082,25 +1169,33 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         defaultFemaleHair = {}
         eyeNames  = dict((x.fid,x.full) for x in patchFile.EYES.records)
         hairNames = dict((x.fid,x.full) for x in patchFile.HAIR.records)
-        maleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
-        femaleHairs = set(x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
+        maleHairs = set(
+            x.fid for x in patchFile.HAIR.records if not x.flags.notMale)
+        femaleHairs = set(
+            x.fid for x in patchFile.HAIR.records if not x.flags.notFemale)
         for race in patchFile.RACE.records:
-            if (race.flags.playable or race.fid == (GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
+            if (race.flags.playable or race.fid == (
+                    GPath(u'Oblivion.esm'), 0x038010)) and race.eyes:
                 defaultEyes[race.fid] = [x for x in
                                          bash.bush.defaultEyes.get(race.fid,
                                              []) if x in race.eyes]
                 if not defaultEyes[race.fid]:
                     defaultEyes[race.fid] = [race.eyes[0]]
-                defaultMaleHair[race.fid] = [x for x in race.hairs if x in maleHairs]
-                defaultFemaleHair[race.fid] = [x for x in race.hairs if x in femaleHairs]
+                defaultMaleHair[race.fid] = [x for x in race.hairs if
+                                             x in maleHairs]
+                defaultFemaleHair[race.fid] = [x for x in race.hairs if
+                                               x in femaleHairs]
                 race.hairs.sort(key=lambda x: hairNames.get(x))
                 race.eyes.sort(key=lambda x: eyeNames.get(x))
                 racesSorted.append(race.eid)
                 keep(race.fid)
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.NPC_.records:
-            if npc.fid == (GPath(u'Oblivion.esm'), 0x000007): continue #skip player
-            if npc.full is not None and npc.race == (GPath(u'Oblivion.esm'), 0x038010) and not reProcess.search(npc.full): continue
+            if npc.fid == (GPath(u'Oblivion.esm'), 0x000007): continue  #
+            # skip player
+            if npc.full is not None and npc.race == (
+                    GPath(u'Oblivion.esm'), 0x038010) and not reProcess.search(
+                    npc.full): continue
             raceEyes = defaultEyes.get(npc.race)
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
@@ -1108,7 +1203,9 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
                 if srcMod not in mod_npcsFixed: mod_npcsFixed[srcMod] = set()
                 mod_npcsFixed[srcMod].add(npc.fid)
                 keep(npc.fid)
-            raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.flags.female]).get(npc.race)
+            raceHair = (
+                (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
+                npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
                 srcMod = npc.fid[0]
@@ -1144,7 +1241,8 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         if not racesFiltered:
             log(u'. ~~%s~~'%_(u'None'))
         else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
+            log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
+                  u"been removed from the following races."))
             for eid in sorted(racesFiltered):
                 log(u'* '+eid)
         if mod_npcsFixed:
@@ -1157,7 +1255,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 #-------------------------- CBash only RacePatchers --------------------------#
 class CBash_RacePatcher_Relations(SpecialPatcher):
     """Merges changes to race relations."""
-    autoKey = set(('R.Relations',))
+    autoKey = {'R.Relations'}
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -1165,7 +1263,6 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1174,7 +1271,6 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         self.fid_faction_mod = {}
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
             group_patchers.setdefault(type,[]).append(self)
@@ -1187,14 +1283,17 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
         if bashTags & self.autoKey:
             relations = record.ConflictDetails(('relations_list',))
             if relations:
-                self.fid_faction_mod.setdefault(record.fid,{}).update(relations['relations_list'])
+                self.fid_faction_mod.setdefault(record.fid, {}).update(
+                    relations['relations_list'])
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         fid = record.fid
         if fid in self.fid_faction_mod:
-            newRelations = set((faction,mod) for faction,mod in self.fid_faction_mod[fid].iteritems() if faction.ValidateFormID(self.patchFile))
+            newRelations = set((faction, mod) for faction, mod in
+                               self.fid_faction_mod[fid].iteritems() if
+                               faction.ValidateFormID(self.patchFile))
             curRelations = set(record.relations_list)
             changed = newRelations - curRelations
             if changed:
@@ -1214,15 +1313,17 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
 
 class CBash_RacePatcher_Imports(SpecialPatcher):
     """Imports various race fields."""
-    autoKey = set(('Hair','Body-M','Body-F','Voice-M','Voice-F','R.Teeth',
-               'R.Mouth','R.Ears','R.Head','R.Attributes-F','R.Attributes-M',
-               'R.Skills','R.Description', 'Body-Size-F','Body-Size-M'))
+    autoKey = {'Hair', 'Body-M', 'Body-F', 'Voice-M', 'Voice-F', 'R.Teeth',
+               'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
+               'R.Attributes-M', 'R.Skills', 'R.Description', 'Body-Size-F',
+               'Body-Size-M'}
     tag_attrs = {
         'Hair'  : ('hairs',),
         'Body-M': ('maleTail_list','maleUpperBodyPath','maleLowerBodyPath',
                    'maleHandPath','maleFootPath','maleTailPath'),
-        'Body-F': ('femaleTail_list','femaleUpperBodyPath','femaleLowerBodyPath',
-                   'femaleHandPath','femaleFootPath','femaleTailPath'),
+        'Body-F': ('femaleTail_list','femaleUpperBodyPath',
+                   'femaleLowerBodyPath', 'femaleHandPath','femaleFootPath',
+                   'femaleTailPath'),
         'Body-Size-M': ('maleHeight','maleWeight'),
         'Body-Size-F': ('femaleHeight','femaleWeight'),
         'Voice-M': ('maleVoice',),
@@ -1231,9 +1332,16 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         'R.Mouth': ('mouth_list','tongue_list',),
         'R.Ears': ('maleEars_list','femaleEars_list',),
         'R.Head': ('head_list','fggs_p','fgga_p','fgts_p','snam_p'),
-        'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower','maleAgility','maleSpeed','maleEndurance','malePersonality','maleLuck'),
-        'R.Attributes-F': ('femaleStrength','femaleIntelligence','femaleWillpower','femaleAgility','femaleSpeed','femaleEndurance','femalePersonality','femaleLuck'),
-        'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost','skill6','skill6Boost','skill7','skill7Boost'),
+        'R.Attributes-M': ('maleStrength','maleIntelligence','maleWillpower',
+                           'maleAgility','maleSpeed','maleEndurance',
+                           'malePersonality','maleLuck'),
+        'R.Attributes-F': ('femaleStrength','femaleIntelligence',
+                           'femaleWillpower','femaleAgility','femaleSpeed',
+                           'femaleEndurance','femalePersonality','femaleLuck'),
+        'R.Skills': ('skill1','skill1Boost','skill2','skill2Boost','skill3',
+                     'skill3Boost','skill4','skill4Boost','skill5',
+                     'skill5Boost','skill6','skill6Boost','skill7',
+                     'skill7Boost'),
         'R.Description': ('text',),
         }
     iiMode = False
@@ -1243,7 +1351,6 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1252,7 +1359,6 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.fid_attr_value = {}
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
             group_patchers.setdefault(type,[]).append(self)
@@ -1266,14 +1372,20 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         for bashKey in bashTags & self.autoKey:
             attrs = self.tag_attrs[bashKey]
             if bashKey == 'Hair':
-                hairs = self.fid_attr_value.setdefault(recordId,{}).get('hairs', [])
-                hairs.extend([hair for hair in record.hairs if hair.ValidateFormID(self.patchFile) and hair not in hairs])
+                hairs = self.fid_attr_value.setdefault(recordId, {}).get(
+                    'hairs', [])
+                hairs.extend([hair for hair in record.hairs if
+                              hair.ValidateFormID(
+                                  self.patchFile) and hair not in hairs])
                 attr_value = {'hairs':hairs}
             else:
                 attr_value = record.ConflictDetails(attrs)
                 if not ValidateDict(attr_value, self.patchFile):
-                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    mod_skipcount = \
+                        self.patchFile.patcher_mod_skipcount.setdefault(
+                        self.name, {})
+                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                        modFile.GName, 0) + 1
                     continue
             self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
@@ -1284,7 +1396,8 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         prev_attr_value = self.fid_attr_value.get(recordId,None)
 
         if prev_attr_value:
-            cur_attr_value = dict((attr,getattr(record,attr)) for attr in prev_attr_value)
+            cur_attr_value = dict(
+                (attr, getattr(record, attr)) for attr in prev_attr_value)
             if cur_attr_value != prev_attr_value:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
@@ -1296,7 +1409,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
 
 class CBash_RacePatcher_Spells(SpecialPatcher):
     """Merges changes to race spells."""
-    autoKey = set(('R.AddSpells', 'R.ChangeSpells'))
+    autoKey = {'R.AddSpells', 'R.ChangeSpells'}
     iiMode = False
     allowUnloaded = True
     scanRequiresChecked = True
@@ -1304,7 +1417,6 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1313,7 +1425,6 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         self.id_spells = {}
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
             group_patchers.setdefault(type,[]).append(self)
@@ -1327,8 +1438,12 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         tags = bashTags & self.autoKey
         if tags:
             if 'R.ChangeSpells' in tags and 'R.AddSpells' in tags:
-                raise BoltError(u'WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time' % modFile.ModName)
-            curSpells = set([spell for spell in record.spells if spell.ValidateFormID(self.patchFile)])
+                raise BoltError(
+                    u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
+                    u'tags - only one of those tags should be on a mod at '
+                    u'one time' % modFile.ModName)
+            curSpells = set([spell for spell in record.spells if
+                             spell.ValidateFormID(self.patchFile)])
             if curSpells:
                 spells = self.id_spells.setdefault(record.fid,set())
                 if 'R.ChangeSpells' in tags:
@@ -1340,7 +1455,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
         """Edits patch file as desired."""
         self.scan_more(modFile,record,bashTags)
         recordId = record.fid
-        if(recordId in self.id_spells):
+        if recordId in self.id_spells:
             newSpells = self.id_spells[recordId]
             curSpells = set(record.spells)
             changed = newSpells - curSpells
@@ -1354,11 +1469,12 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
 class CBash_RacePatcher_Eyes(SpecialPatcher):
     """Merges and filters changes to race eyes."""
-    autoKey = set(('Eyes-D','Eyes-R','Eyes-E','Eyes'))
+    autoKey = {'Eyes-D', 'Eyes-R', 'Eyes-E', 'Eyes'}
     blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
     argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
     dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
-##    defaultMesh = (r'characters\imperial\eyerighthuman.nif', r'characters\imperial\eyelefthuman.nif')
+##    defaultMesh = (r'characters\imperial\eyerighthuman.nif',
+#  r'characters\imperial\eyelefthuman.nif')
     reX117 = re.compile(u'^117[a-z]',re.I|re.U)
     iiMode = False
     allowUnloaded = True
@@ -1367,10 +1483,10 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,srcs,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         self.patchFile = patchFile
         self.srcs = srcs
-        self.isActive = True #--Always partially enabled to support eye filtering
+        self.isActive = True #--Always partially enabled to support eye
+        # filtering
         self.racesPatched = set()
         self.racesSorted = set()
         self.racesFiltered = []
@@ -1386,7 +1502,6 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         self.finishedOnce = False
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         for type in self.getTypes():
             group_patchers.setdefault(type,[]).append(self)
@@ -1401,10 +1516,13 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         if record._Type == 'RACE':
             if record.IsWinning():
                 if record.full:
-                    self.patchFile.races_data[record.full.lower()] = {'hairs':record.hairs,'eyes':record.eyes,'relations':record.relations}
+                    self.patchFile.races_data[record.full.lower()] = {
+                        'hairs': record.hairs, 'eyes': record.eyes,
+                        'relations': record.relations}
             eye_meshes = self.eye_meshes
             srcEyes = self.srcEyes.get(modFile.GName,set())
-            curEyes = set([eye for eye in record.eyes if eye.ValidateFormID(self.patchFile)])
+            curEyes = set([eye for eye in record.eyes if
+                           eye.ValidateFormID(self.patchFile)])
             eyePaths = (record.rightEye.modPath, record.leftEye.modPath)
             for eye in curEyes:
                 # only map eyes that are (re)defined in this mod
@@ -1416,8 +1534,10 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 self.id_meshes[recordId] = eyePaths
         else:
             if not recordId.ValidateFormID(self.patchFile):
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                mod_skipcount = self.patchFile.patcher_mod_skipcount\
+                    .setdefault(self.name, {})
+                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
+                    modFile.GName, 0) + 1
                 return
 
             if record._Type == 'HAIR':
@@ -1445,20 +1565,25 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             changed = newEyes - curEyes
             if not changed:
                 newRightEye, newLeftEye = self.id_meshes[recordId]
-                curRightEye, curLeftEye = (record.rightEye.modPath, record.leftEye.modPath)
-                changed = (newRightEye, newLeftEye) != (curRightEye, curLeftEye) #modPaths do case insensitive comparison by default
+                curRightEye, curLeftEye = (
+                    record.rightEye.modPath, record.leftEye.modPath)
+                changed = (newRightEye, newLeftEye) != \
+                          (curRightEye, curLeftEye) #modPaths do case
+                          #  insensitive comparison by default
             if changed:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.eyes = newEyes
-                    override.rightEye.modPath, override.leftEye.modPath = self.id_meshes[recordId]
+                    override.rightEye.modPath, override.leftEye.modPath = \
+                        self.id_meshes[recordId]
                     self.racesPatched.add(record.eid)
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
     def finishPatch(self,patchFile,progress):
         """Edits the bashed patch file directly."""
-        #The patcher gets registered multiple times due to the multiple getTypes
+        #The patcher gets registered multiple times due to the multiple
+        # getTypes
         #This ensures the finishPatch only runs once per bashed patch
         if self.finishedOnce: return
         self.finishedOnce = True
@@ -1476,22 +1601,35 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         eyeNames = self.eyeNames
         maleHairs = self.maleHairs
         femaleHairs = self.femaleHairs
-        playableRaces = set([self.dremoraRace])
+        playableRaces = {self.dremoraRace}
 
         #--Eye Mesh filtering
         eye_meshes = self.eye_meshes
         try:
             blueEyeMeshes = eye_meshes[self.blueEye]
         except KeyError:
-            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+            print _(
+                u"Wrye Bash is low on memory and cannot complete building "
+                u"the patch. This will likely succeed if you restart Wrye "
+                u"Bash and try again. If it fails repeatedly, please report "
+                u"it at the current official Wrye Bash thread at "
+                u"http://forums.bethsoft.com/index.php?/forum/25-mods/. We "
+                u"apologize for the inconvenience.")
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
         except KeyError:
-            print _(u"Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience.")
+            print _(
+                u"Wrye Bash is low on memory and cannot complete building "
+                u"the patch. This will likely succeed if you restart Wrye "
+                u"Bash and try again. If it fails repeatedly, please report "
+                u"it at the current official Wrye Bash thread at "
+                u"http://forums.bethsoft.com/index.php?/forum/25-mods/. We "
+                u"apologize for the inconvenience.")
             return
         fixedRaces = set()
-        fixedNPCs = set([FormID(GPath(u'Oblivion.esm'), 0x000007)]) #causes player to be skipped
+        fixedNPCs = {
+        FormID(GPath(u'Oblivion.esm'), 0x000007)}  #causes player to be skipped
         for eye in (
             FormID(GPath(u'Oblivion.esm'),0x1a), #--Reanimate
             FormID(GPath(u'Oblivion.esm'),0x54bb9), #--Dark Seducer
@@ -1503,7 +1641,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
         def setRaceEyeMesh(race,rightPath,leftPath):
             race.rightEye.modPath = rightPath
             race.leftEye.modPath = leftPath
-        #Scan hairs and eyes for later sorting and/or assigning to non-haired npcs
+        #Scan hairs and eyes for later sorting and/or assigning to non-haired
+        # npcs
         pstate = 0
         noEyes = 0
         noHair = 0
@@ -1514,12 +1653,17 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 if race.IsPlayable:
                     playableRaces.add(recordId)
                 currentEyes = race.eyes
-                if not currentEyes: continue #--Sheogorath. Assume is handled correctly.
-                if not race.rightEye or not race.leftEye: continue #no eye set for either right or left... skip.
-                curRightEye, curLeftEye = race.rightEye.modPath, race.leftEye.modPath
-                if not curRightEye or not curLeftEye: continue #--WIPZ race?
-                if reX117.match(race.eid): continue #-- x117 race?
-                if recordId in fixedRaces: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
+                if not currentEyes: continue  #--Sheogorath. Assume is
+                # handled correctly.
+                if not race.rightEye or not race.leftEye: continue  # no eye
+                #  set for either right or left... skip.
+                curRightEye, curLeftEye = race.rightEye.modPath, \
+                                          race.leftEye.modPath
+                if not curRightEye or not curLeftEye: continue  # --WIPZ race?
+                if reX117.match(race.eid): continue  #-- x117 race?
+                if recordId in fixedRaces: continue  #--already processed
+                # once (added to patchFile, and now the patchFile is being
+                # processed)
                 #IsNewest
                 if race.IsWinning():
                     raceChanged = False
@@ -1527,13 +1671,18 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     meshes_eyes = {}
                     for eye in currentEyes:
                         if eye not in eye_meshes:
-                            deprint(_(u'Mesh undefined for eye %s in race %s') % (eye,race.eid))
+                            deprint(
+                                _(u'Mesh undefined for eye %s in race %s') % (
+                                    eye, race.eid))
                             continue
                         rightEye, leftEye = eye_meshes[eye]
-                        meshes_eyes.setdefault((rightEye, leftEye),[]).append(eye)
-
+                        meshes_eyes.setdefault((rightEye, leftEye), []).append(
+                            eye)
                     try:
-                        maxEyesMeshes = sorted(meshes_eyes.keys(),key=lambda a: len(meshes_eyes[a]),reverse=True)[0]
+                        maxEyesMeshes = sorted(meshes_eyes.keys(),
+                                               key=lambda a: len(
+                                                   meshes_eyes[a]),
+                                               reverse=True)[0]
                     except IndexError:
                         maxEyesMeshes = blueEyeMeshes
                     meshesCount = len(meshes_eyes)
@@ -1544,8 +1693,10 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         raceChanged = True
                     #--Multiple eye meshes (and playable)?
                     elif meshesCount > 1 and recordId in playableRaces:
-                        #--If blueEyeMesh (mesh used for vanilla eyes) is present, use that.
-                        if blueEyeMeshes in meshes_eyes and currentMeshes != argonianEyeMeshes:
+                        #--If blueEyeMesh (mesh used for vanilla eyes) is
+                        # present, use that.
+                        if blueEyeMeshes in meshes_eyes and currentMeshes !=\
+                                argonianEyeMeshes:
                             currentMeshes = blueEyeMeshes
                             currentEyes = meshes_eyes[blueEyeMeshes]
                             raceChanged = True
@@ -1569,12 +1720,14 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     oldHairs = race.hairs
                     currentHairs = oldHairs
                     if recordId in playableRaces:
-                        currentHairs = sorted(oldHairs,key=lambda x: hairNames.get(x))
+                        currentHairs = sorted(oldHairs,
+                                              key=lambda x: hairNames.get(x))
                         if currentHairs != oldHairs:
                             racesSorted.add(race.eid)
                             raceChanged = True
                         oldEyes = currentEyes
-                        currentEyes = sorted(oldEyes,key=lambda x: eyeNames.get(x))
+                        currentEyes = sorted(oldEyes,
+                                             key=lambda x: eyeNames.get(x))
                         if currentEyes != oldEyes:
                             racesSorted.add(race.eid)
                             raceChanged = True
@@ -1594,20 +1747,31 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         if override:
                             override.eyes = currentEyes
                             override.hairs = currentHairs
-                            override.rightEye.modPath, override.leftEye.modPath = currentMeshes
+                            override.rightEye.modPath, \
+                            override.leftEye.modPath = currentMeshes
                 race.UnloadRecord()
             pstate += 1
         for modFile in Current.LoadOrderMods:
             #--Npcs with unassigned eyes/hair
             #--Must run after all race records have been processed
-            subProgress(pstate, _(u'Assigning random eyes and hairs to npcs missing them...')+u'\n')
-            reProcess = re.compile(ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',re.I|re.U)
+            subProgress(pstate, _(
+                u'Assigning random eyes and hairs to npcs missing them...')
+                        + u'\n')
+            reProcess = re.compile(
+                ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
+                re.I | re.U)
             for npc in modFile.NPC_:
                 recordId = npc.fid
-                if recordId in fixedNPCs: continue #--already processed once (added to patchFile, and now the patchFile is being processed)
+                if recordId in fixedNPCs: continue  #--already processed
+                # once (added to patchFile, and now the patchFile is being
+                # processed)
                 raceId = npc.race
                 if raceId not in playableRaces: continue
-                if npc.full is not None and raceId == self.dremoraRace and not reProcess.search(npc.full): continue # So as not to give OOO's spectral warriors different hairs/eyes since they are dremora race.
+                if npc.full is not None and raceId == self.dremoraRace and \
+                        not reProcess.search(
+                        npc.full): continue  # So as not to give OOO's
+                # spectral warriors different hairs/eyes since they are
+                # dremora race.
                 #IsNewest
                 if npc.IsWinning():
                     npcChanged = False
@@ -1616,7 +1780,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                     if eye is None and raceEyes:
                         eye = random.choice(raceEyes)
                         npcChanged = True
-                    raceHair = ((defaultMaleHair,defaultFemaleHair)[npc.IsFemale]).get(raceId)
+                    raceHair = ((defaultMaleHair, defaultFemaleHair)[
+                            npc.IsFemale]).get(raceId)
                     hair = npc.hair
                     if hair is None and raceHair:
                         hair = random.choice(raceHair)
@@ -1629,23 +1794,29 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                             override.hair = hair
                             if not override.hairLength:
                                 override.hairLength = random.random()
-                            mod_npcsFixed.setdefault(modFile.GName,set()).add(recordId)
+                            mod_npcsFixed.setdefault(modFile.GName, set()).add(
+                                recordId)
                 npc.UnloadRecord()
             pstate += 1
 
 class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
-    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods.  Any non-active, non-merged mods in the following list will be IGNORED.") +
-            u'\n\n' +
-            _(u"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods.  It will also randomly assign hairs and eyes to npcs that are otherwise missing them.")
+    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
+              u" mods.  Any non-active, non-merged mods in the following list"
+              u" will be IGNORED.") + u'\n\n' +
+            _(u"Even if none of the below mods are checked, this will sort"
+              u" hairs and eyes and attempt to remove googly eyes from all"
+              u" active mods.  It will also randomly assign hairs and eyes to"
+              u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-    autoKey = set(('Hair','Eyes-D','Eyes-R','Eyes-E','Eyes','Body-M','Body-F',
-        'Voice-M','Voice-F','R.Relations','R.Teeth','R.Mouth','R.Ears', 'R.Head',
-        'R.Attributes-F', 'R.Attributes-M', 'R.Skills', 'R.Description',
-        'R.AddSpells', 'R.ChangeSpells','Body-Size-M','Body-Size-F',))
+    autoKey = {'Hair', 'Eyes-D', 'Eyes-R', 'Eyes-E', 'Eyes', 'Body-M',
+               'Body-F', 'Voice-M', 'Voice-F', 'R.Relations', 'R.Teeth',
+               'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
+               'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells',
+               'R.ChangeSpells', 'Body-Size-M', 'Body-Size-F'}
     forceAuto = True
     tweakers = [
         CBash_RacePatcher_Relations(),
@@ -1653,7 +1824,9 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
         CBash_RacePatcher_Spells(),
         CBash_RacePatcher_Eyes(),
         ]
-    defaultConfig = {'isEnabled':True,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
+                     'configItems': [], 'configChecks': {},
+                     'configChoices': {}}
     subLabel = _(u'Race Tweaks')
     tweaks = sorted([
         CBash_RaceTweaker_BiggerOrcsandNords(),
@@ -1668,9 +1841,9 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
-        #This single tweak is broken into several parts to make it easier to manage
+        #This single tweak is broken into several parts to make it easier to
+        # manage
         #Each part is a group of tags that are processed similarly
         for tweak in self.tweakers:
             tweak.initPatchFile(self.srcs,patchFile,loadMods)
@@ -1678,13 +1851,11 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
             tweak.patchFile = patchFile
 
     def initData(self,group_patchers,progress):
-        """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         for tweak in self.tweakers:
             tweak.initData(group_patchers,progress)
         for tweak in self.enabledTweaks:
             for type in tweak.getTypes():
                 group_patchers.setdefault(type,[]).append(tweak)
-
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatchLog(self,log):
@@ -1727,7 +1898,8 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
         if not racesFiltered:
             log(u'. ~~%s~~'%_(u'None'))
         else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have been removed from the following races."))
+            log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
+                  u"been removed from the following races."))
             for eid in sorted(racesFiltered):
                 log(u'* '+eid)
         if mod_npcsFixed:
