@@ -25,14 +25,25 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO:DOCS
-# TODO: common logging pattern ! Superclass _AMultiTweakItem_Names!
 import re
 import bash # had to do this so bash.bosh.modInfos is resolved (DUH)
-from bash.patcher.base import AMultiTweakItem
+from bash.patcher.base import AMultiTweakItem, AMultiTweaker
 from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
 from bash.patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
+
+class _AMultiTweakItem_Names(MultiTweakItem):
+
+    def _patchLog(self, log, count):
+        # --Log - Notice self.logMsg is not used - so (apart from
+        # NamesTweak_BodyTags and NamesTweak_Body where it is not defined in
+        # the ANamesTweakXX common superclass) self.logMsg wastes space and the
+        # CBash implementations which _do_ use it produce different logs. TODO:
+        # unify C/P logs by using self.logMsg (mind the classes mentioned)
+        log(u'* %s: %d' % (self.label,sum(count.values())))
+        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------
 class ANamesTweak_BodyTags(AMultiTweakItem):
@@ -47,32 +58,19 @@ class ANamesTweak_BodyTags(AMultiTweakItem):
             (u'ABGHINOPSL',u'ABGHINOPSL'),)
 
 class NamesTweak_BodyTags(ANamesTweak_BodyTags,MultiTweakItem):
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return tuple()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return tuple()
-
-    def scanModFile(self,modFile,progress,patchFile):
-        return
 
     def buildPatch(self,log,progress,patchFile):
         """Edits patch file as desired. Will write to log."""
         patchFile.bodyTags = self.choiceValues[self.chosen][0]
 
 class CBash_NamesTweak_BodyTags(ANamesTweak_BodyTags,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return []
 
     def buildPatchLog(self,log):
         """Will write to log."""
         pass
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body(MultiTweakItem):
+class NamesTweak_Body(_AMultiTweakItem_Names):
     """Names tweaker for armor and clothes."""
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -126,14 +124,18 @@ class NamesTweak_Body(MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Body(CBash_MultiTweakItem):
     """Names tweaker for armor and clothes."""
+
     #--Config Phase -----------------------------------------------------------
+    def __init__(self, label, tip, key, *choices, **kwargs):
+        super(CBash_NamesTweak_Body, self).__init__(label, tip, key, *choices,
+                                                    **kwargs)
+        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
+            'record_type': (u'%s ' % self.key)} + u': %d'
+
     def getTypes(self):
         return [self.key]
 
@@ -171,16 +173,6 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class ANamesTweak_Potions(AMultiTweakItem):
     """Names tweaker for potions."""
@@ -197,8 +189,10 @@ class ANamesTweak_Potions(AMultiTweakItem):
             (_(u'XD - Illness'),u'%s - '),
             (_(u'(XD) Illness'),u'(%s) '),
             )
+        self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
+            'record_type': (u'%s ' % self.key)} + u': %d'
 
-class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
+class NamesTweak_Potions(ANamesTweak_Potions,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -256,10 +250,7 @@ class NamesTweak_Potions(ANamesTweak_Potions,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -308,16 +299,6 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(u'* '+_(u'%s Renamed: %d') % (self.key,sum(mod_count.values()),))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once (TODO:
 #  should be faster ? name ?)
@@ -341,7 +322,7 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
             (_(u'.D - Fire Ball'),u'.%s - '),
             (_(u'.(D) Fire Ball'),u'.(%s) '),
             )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -350,7 +331,7 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
         self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
 
-class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
+class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -411,10 +392,7 @@ class NamesTweak_Scrolls(ANamesTweak_Scrolls,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
@@ -486,9 +464,9 @@ class ANamesTweak_Spells(AMultiTweakItem):
             (_(u'D2 - Fire Ball'),u'%s%d - '),
             (_(u'(D2) Fire Ball'),u'(%s%d) '),
             )
-        self.logMsg = u'* '+_(u'Spells Renamed: %d')
+        self.logMsg = u'* '+_(u'Spells Renamed') + u': %d'
 
-class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
+class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -539,10 +517,7 @@ class NamesTweak_Spells(ANamesTweak_Spells,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -607,9 +582,9 @@ class ANamesTweak_Weapons(AMultiTweakItem):
             (_(u'B08 - Iron Bow'),u'%s%02d - '),
             (_(u'(B08) Iron Bow'),u'(%s%02d) '),
             )
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
-class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
+class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -657,10 +632,7 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,MultiTweakItem):
             keep(record.fid)
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -706,9 +678,9 @@ class ATextReplacer(AMultiTweakItem):
         super(ATextReplacer, self).__init__(label, tip, key, choices)
         self.reMatch = reMatch
         self.reReplace = reReplace
-        self.logMsg = u'* '+_(u'Items Renamed: %d')
+        self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
-class TextReplacer(ATextReplacer,MultiTweakItem):
+class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
     #--Config Phase -----------------------------------------------------------
     def __init__(self, reMatch, reReplace, label, tip, key, choices):
         super(TextReplacer, self).__init__(reMatch, reReplace, label, tip, key,
@@ -841,10 +813,7 @@ class TextReplacer(ATextReplacer,MultiTweakItem):
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
-        #--Log
-        log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -997,63 +966,58 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-# TODO: MI for those patchers
-class NamesTweaker(MultiTweaker):
+class _ANamesTweaker(AMultiTweaker):
     """Tweaks record full names in various ways."""
     scanOrder = 32
     editOrder = 32
     name = _(u'Tweak Names')
     text = _(u"Tweak object names in various ways such as lore friendliness or"
              u" show type/quality.")
-    tweaks = sorted([
-        NamesTweak_Body(_(u"Armor"),_(u"Rename armor to sort by type."),'ARMO',
-            (_(u'BL Leather Boots'),  u'%s '),
-            (_(u'BL. Leather Boots'), u'%s. '),
-            (_(u'BL - Leather Boots'),u'%s - '),
-            (_(u'(BL) Leather Boots'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'BL02 Leather Boots'),  u'%s%02d '),
-            (_(u'BL02. Leather Boots'), u'%s%02d. '),
-            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
-            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
-            ),
-        NamesTweak_Body(_(u"Clothes"),
-                        _(u"Rename clothes to sort by type."),'CLOT',
-            (_(u'P Grey Trousers'),  u'%s '),
-            (_(u'P. Grey Trousers'), u'%s. '),
-            (_(u'P - Grey Trousers'),u'%s - '),
-            (_(u'(P) Grey Trousers'),u'(%s) '),
-            ),
-        NamesTweak_Potions(),
-        NamesTweak_Scrolls(),
-        NamesTweak_Spells(),
-        NamesTweak_Weapons(),
-        TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
-            ur'\1wemer',
-            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurrences of the words "Dwarf" or "Dwarven" '
-              u'with "Dwemer" to better follow lore.'),
-            u'Dwemer',
-            (u'Lore Friendly Text: Dwarven -> Dwemer',  u'Dwemer'),
-            ),
-        TextReplacer(ur'\b(d|D)(?:warfs)\b',
-            ur'\1warves',
-            _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurrences of the words "Dwarfs" with '
-              u'"Dwarves" to better follow proper English.'),
-            u'Dwarfs',
-            (u'Proper English Text: Dwarfs -> Dwarves',  u'Dwarves'),
-            ),
-        TextReplacer(ur'\b(s|S)(?:taffs)\b',
-            ur'\1taves',
-            _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurrences of the words "Staffs" with "Staves" '
-              u'to better follow proper English.'),
-            u'Staffs',
-            (u'Proper English Text: Staffs -> Staves',  u'Staves'),
-            ),
-        ],key=lambda a: a.label.lower())
-    tweaks.insert(0,NamesTweak_BodyTags())
+    _namesTweaksBody = ((_(u"Armor"),
+                         _(u"Rename armor to sort by type."),
+                         'ARMO',
+                         (_(u'BL Leather Boots'), u'%s '),
+                         (_(u'BL. Leather Boots'), u'%s. '),
+                         (_(u'BL - Leather Boots'), u'%s - '),
+                         (_(u'(BL) Leather Boots'), u'(%s) '),
+                         (u'----', u'----'),
+                         (_(u'BL02 Leather Boots'), u'%s%02d '),
+                         (_(u'BL02. Leather Boots'), u'%s%02d. '),
+                         (_(u'BL02 - Leather Boots'), u'%s%02d - '),
+                         (_(u'(BL02) Leather Boots'), u'(%s%02d) '),),
+                        (_(u"Clothes"),
+                         _(u"Rename clothes to sort by type."),
+                         'CLOT',
+                         (_(u'P Grey Trousers'),  u'%s '),
+                         (_(u'P. Grey Trousers'), u'%s. '),
+                         (_(u'P - Grey Trousers'),u'%s - '),
+                         (_(u'(P) Grey Trousers'),u'(%s) '),),)
+    _txtReplacer = ((ur'\b(d|D)(?:warven|warf)\b', ur'\1wemer',
+                     _(u"Lore Friendly Text: Dwarven -> Dwemer"),
+                     _(u'Replace any occurrences of the words "Dwarf" or'
+                       u' "Dwarven" with "Dwemer" to better follow lore.'),
+                     u'Dwemer',
+                     (u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer'),),
+                    (ur'\b(d|D)(?:warfs)\b',ur'\1warves',
+                     _(u"Proper English Text: Dwarfs -> Dwarves"),
+                     _(u'Replace any occurrences of the words "Dwarfs" with '
+                       u'"Dwarves" to better follow proper English.'),
+                     u'Dwarfs',
+                     (u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves'),),
+                    (ur'\b(s|S)(?:taffs)\b',ur'\1taves',
+                     _(u"Proper English Text: Staffs -> Staves"),
+                     _(u'Replace any occurrences of the words "Staffs" with'
+                       u' "Staves" to better follow proper English.'),
+                     u'Staffs',
+                    (u'Proper English Text: Staffs -> Staves', u'Staves'),),)
+
+class NamesTweaker(_ANamesTweaker,MultiTweaker):
+    tweaks = sorted(
+        [NamesTweak_Body(*x) for x in _ANamesTweaker._namesTweaksBody] + [
+            TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
+            NamesTweak_Potions(), NamesTweak_Scrolls(), NamesTweak_Spells(),
+            NamesTweak_Weapons()], key=lambda a: a.label.lower())
+    tweaks.insert(0, NamesTweak_BodyTags())
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -1073,62 +1037,13 @@ class NamesTweaker(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.scanModFile(modFile,progress,self.patchFile)
 
-class CBash_NamesTweaker(CBash_MultiTweaker):
-    """Tweaks record full names in various ways."""
-    scanOrder = 32
-    editOrder = 32
-    name = _(u'Tweak Names')
-    text = _(u"Tweak object names in various ways such as lore friendliness or"
-             u" show type/quality.")
-    tweaks = sorted([
-        CBash_NamesTweak_Body(_(u"Armor"),
-                              _(u"Rename armor to sort by type."),'ARMO',
-            (_(u'BL Leather Boots'),  u'%s '),
-            (_(u'BL. Leather Boots'), u'%s. '),
-            (_(u'BL - Leather Boots'),u'%s - '),
-            (_(u'(BL) Leather Boots'),u'(%s) '),
-            (u'----',u'----'),
-            (_(u'BL02 Leather Boots'),  u'%s%02d '),
-            (_(u'BL02. Leather Boots'), u'%s%02d. '),
-            (_(u'BL02 - Leather Boots'),u'%s%02d - '),
-            (_(u'(BL02) Leather Boots'),u'(%s%02d) '),
-            ),
-        CBash_NamesTweak_Body(_(u"Clothes"),
-                              _(u"Rename clothes to sort by type."),'CLOT',
-            (_(u'P Grey Trousers'),  u'%s '),
-            (_(u'P. Grey Trousers'), u'%s. '),
-            (_(u'P - Grey Trousers'),u'%s - '),
-            (_(u'(P) Grey Trousers'),u'(%s) '),
-            ),
-        CBash_NamesTweak_Potions(),
-        CBash_NamesTweak_Scrolls(),
-        CBash_NamesTweak_Spells(),
-        CBash_NamesTweak_Weapons(),
-        CBash_TextReplacer(ur'\b(d|D)(?:warven|warf)\b',
-            ur'\1wemer',
-            _(u"Lore Friendly Text: Dwarven -> Dwemer"),
-            _(u'Replace any occurrences of the words "Dwarf" or "Dwarven" '
-              u'with "Dwemer" to better follow lore.'),
-            u'Dwemer',
-            (u'Lore Friendly Text: Dwarven -> Dwemer',  u'Dwemer'),
-            ),
-        CBash_TextReplacer(ur'\b(d|D)(?:warfs)\b',
-            ur'\1warves',
-            _(u"Proper English Text: Dwarfs -> Dwarves"),
-            _(u'Replace any occurrences of the words "Dwarfs" with '
-              u'"Dwarves" to better follow proper English.'),
-            u'Dwarfs',
-            (u'Proper English Text: Dwarfs -> Dwarves',  u'Dwarves'),
-            ),
-        CBash_TextReplacer(ur'\b(s|S)(?:taffs)\b',
-            ur'\1taves',
-            _(u"Proper English Text: Staffs -> Staves"),
-            _(u'Replace any occurrences of the words "Staffs" with "Staves" '
-              u'to better follow proper English.'),
-            u'Staffs',
-            (u'Proper English Text: Staffs -> Staves',  u'Staves'),
-            ),
-        ],key=lambda a: a.label.lower())
+class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
+    tweaks = sorted(
+        [CBash_NamesTweak_Body(*x) for x in _ANamesTweaker._namesTweaksBody] +
+        [CBash_TextReplacer(*x) for x in _ANamesTweaker._txtReplacer] + [
+            CBash_NamesTweak_Potions(), CBash_NamesTweak_Scrolls(),
+            CBash_NamesTweak_Spells(), CBash_NamesTweak_Weapons()],
+        key=lambda a: a.label.lower())
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
 
     #--Config Phase -----------------------------------------------------------

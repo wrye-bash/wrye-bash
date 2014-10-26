@@ -364,13 +364,6 @@ class AMultiTweakItem(object):
             label += u' [' + self.choiceLabels[self.chosen] + u']'
         return label
 
-    def _patchLog(self,log,count):
-        #--Log - must define self.logMsg in subclasses - TODO: move up ? down ?
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
-
 class ADoublePatcher(AListPatcher):
     """docs - what's this about ?""" # TODO
 

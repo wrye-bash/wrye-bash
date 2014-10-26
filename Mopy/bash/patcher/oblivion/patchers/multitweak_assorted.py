@@ -46,7 +46,7 @@ class AssortedTweak_ArmorShows(MultiTweakItem):
     def __init__(self,label,tip,key):
         super(AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hidesBit = {u'armorShowsRings':16,u'armorShowsAmulets':17}[key]
-        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
+        self.logMsg = u'* '+_(u'Armor Pieces Tweaked') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -88,7 +88,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
         super(CBash_AssortedTweak_ArmorShows, self).__init__(label,tip,key)
         self.hideFlag = {u'armorShowsRings': 'IsHideRings',
                          u'armorShowsAmulets': 'IsHideAmulets'}[key]
-        self.logMsg = u'* '+_(u'Armor Pieces Tweaked: %d')
+        self.logMsg = u'* '+_(u'Armor Pieces Tweaked') + u': %d'
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -116,7 +116,7 @@ class AssortedTweak_ClothingShows(MultiTweakItem):
         super(AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hidesBit = \
             {u'ClothingShowsRings': 16, u'ClothingShowsAmulets': 17}[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -158,7 +158,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
         super(CBash_AssortedTweak_ClothingShows, self).__init__(label,tip,key)
         self.hideFlag = {u'ClothingShowsRings': 'IsHideRings',
                          u'ClothingShowsAmulets': 'IsHideAmulets'}[key]
-        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked: %d')
+        self.logMsg = u'* '+_(u'Clothing Pieces Tweaked') + u': %d'
 
     def getTypes(self):
         return ['CLOT']
@@ -189,7 +189,7 @@ class AAssortedTweak_BowReach(AMultiTweakItem):
             (u'1.0',  u'1.0'),
             )
         self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Bows fixed: %d')
+        self.logMsg = u'* '+_(u'Bows fixed') + u': %d'
 
 class AssortedTweak_BowReach(AAssortedTweak_BowReach,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -251,7 +251,7 @@ class AAssortedTweak_SkyrimStyleWeapons(AMultiTweakItem):
             _(u"Skyrim-style Weapons"),
             _(u'Sets all one handed weapons as blades, two handed weapons '
               u'as blunt.'), u'skyrimweaponsstyle', (u'1.0', u'1.0'), )
-        self.logMsg = u'* '+_(u'Weapons Adjusted: %d')
+        self.logMsg = u'* '+_(u'Weapons Adjusted') + u': %d'
 
 class AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
                                        MultiTweakItem):
@@ -323,7 +323,7 @@ class AAssortedTweak_ConsistentRings(AMultiTweakItem):
             _(u'Fixes rings to unequip consistently by making them prefer '
               u'the right hand.'), u'ConsistentRings', (u'1.0', u'1.0'), )
         self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Rings fixed: %d')
+        self.logMsg = u'* '+_(u'Rings fixed') + u': %d'
 
 class AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                                     MultiTweakItem):
@@ -394,7 +394,7 @@ class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
             _(u'Sets all clothing to be playable.'), u'PlayableClothing',
             (u'1.0', u'1.0'), )
         self.logHeader = u'=== '+_(u'Playable Clothes')
-        self.logMsg = u'* '+_(u'Clothes set as playable: %d')
+        self.logMsg = u'* '+_(u'Clothes set as playable') + u': %d'
 
 class AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
                                      MultiTweakItem):
@@ -485,7 +485,7 @@ class AAssortedTweak_ArmorPlayable(AMultiTweakItem):
             _(u"All Armor Playable"), _(u'Sets all armor to be playable.'),
             u'PlayableArmor', (u'1.0', u'1.0'), )
         self.logHeader = u'=== '+_(u'Playable Armor')
-        self.logMsg = u'* '+_(u'Armor pieces set as playable: %d')
+        self.logMsg = u'* '+_(u'Armor pieces set as playable') + u': %d'
 
 class AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -584,7 +584,7 @@ class AAssortedTweak_DarnBooks(AMultiTweakItem):
             u'DarnBooks',
             (u'default',  u'default'),
             )
-        self.logMsg = u'* '+_(u'Books DarNified: %d')
+        self.logMsg = u'* '+_(u'Books DarNified') + u': %d'
 
 class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -833,7 +833,7 @@ class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
             u'NoLightFlicker',
             (u'1.0',  u'1.0'),
             )
-        self.logMsg = u'* '+_(u'Lights unflickered: %d')
+        self.logMsg = u'* '+_(u'Lights unflickered') + u': %d'
 
 class AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
                                    MultiTweakItem):
@@ -946,8 +946,8 @@ class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
-        self.logWeightValue = _(u'Potions set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
+        self.logWeightValue = _(u'Potions set to maximum weight of ') + u'%f'
+        self.logMsg = u'* '+_(u'Potions Reweighed') + u': %d'
 
 class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -1033,8 +1033,9 @@ class AAssortedTweak_IngredientWeight(AMultiTweakItem_Weight):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
-        self.logWeightValue = _(u'Ingredients set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Ingredients Reweighed: %d')
+        self.logWeightValue = _(u'Ingredients set to maximum weight of') + \
+                              u' %f'
+        self.logMsg = u'* '+_(u'Ingredients Reweighed') + u': %d'
 
 class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
                                      MultiTweakItem):
@@ -1115,8 +1116,8 @@ class AAssortedTweak_PotionWeightMinimum(AMultiTweakItem_Weight):
             (u'4',  4),
             (_(u'Custom'),0.0),
             )
-        self.logWeightValue = _(u'Potions set to minimum weight of %f')
-        self.logMsg = u'* '+_(u'Potions Reweighed: %d')
+        self.logWeightValue = _(u'Potions set to minimum weight of ') + u'%f'
+        self.logMsg = u'* '+_(u'Potions Reweighed') + u': %d'
 
 class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,
                                         MultiTweakItem):
@@ -1196,8 +1197,9 @@ class AAssortedTweak_StaffWeight(AMultiTweakItem_Weight):
             (u'8',  8.0),
             (_(u'Custom'),0.0),
             )
-        self.logWeightValue = _(u'Staffs/Staves set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Staffs/Staves Reweighed: %d')
+        self.logWeightValue = _(u'Staffs/Staves set to maximum weight of') + \
+                              u' %f'
+        self.logMsg = u'* '+_(u'Staffs/Staves Reweighed') + u': %d'
 
 class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -1270,8 +1272,8 @@ class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
             (u'0.6',  0.6),
             (_(u'Custom'),0.0),
             )
-        self.logWeightValue = _(u'Arrows set to maximum weight of %f')
-        self.logMsg = u'* '+_(u'Arrows Reweighed: %d')
+        self.logWeightValue = _(u'Arrows set to maximum weight of ') + u'%f'
+        self.logMsg = u'* '+_(u'Arrows Reweighed') + u': %d'
 
 class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -1408,7 +1410,7 @@ class CBash_AssortedTweak_ScriptEffectSilencer(
         self.SEFF = MGEFCode('SEFF')
         # TODO THIS IS ONE OF THE FEW THAT HAS no self.mod_count = {} - maybe
         # should call the constructor directly instead of super() ?
-        self.buildPatchLog=self._patchLog # TODO : maybe a simple override ?
+        self.buildPatchLog=self._patchLog # AAssortedTweak_ScriptEffectSilencer
 
     def getTypes(self):
         return ['MGEF']
@@ -1450,7 +1452,7 @@ class AAssortedTweak_HarvestChance(AMultiTweakItem):
             (u'100%', 100),
             (_(u'Custom'),0),
             )
-        self.logMsg = u'* '+_(u'Harvest Chances Changed: %d')
+        self.logMsg = u'* '+_(u'Harvest Chances Changed') + u': %d'
 
 class AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -1527,7 +1529,7 @@ class AAssortedTweak_WindSpeed(AMultiTweakItem):
             u'windSpeed',
             (_(u'Disable'),  0),
             )
-        self.logMsg = u'* '+_(u'Winds Disabled: %d')
+        self.logMsg = u'* '+_(u'Winds Disabled') + u': %d'
 
 class AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -1594,7 +1596,7 @@ class AAssortedTweak_UniformGroundcover(AMultiTweakItem):
             u'UniformGroundcover',
             (u'1.0', u'1.0'),
             )
-        self.logMsg = u'* '+_(u'Grasses Normalized: %d')
+        self.logMsg = u'* '+_(u'Grasses Normalized') + u': %d'
 
 class AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
                                        MultiTweakItem):
@@ -1677,7 +1679,7 @@ class AAssortedTweak_SetCastWhenUsedEnchantmentCosts(AMultiTweakItem):
             (_(u'Custom'),0),
             )
         self.logHeader = u'=== '+_(u'Set Enchantment Number of Uses')
-        self.logMsg = u'* '+_(u'Enchantments set: %d')
+        self.logMsg = u'* '+_(u'Enchantments set') + u': %d'
 
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(
     AAssortedTweak_SetCastWhenUsedEnchantmentCosts, MultiTweakItem):
@@ -1759,7 +1761,7 @@ class AAssortedTweak_DefaultIcons(AMultiTweakItem):
             (u'1', 1),
             )
         self.defaultEnabled = True
-        self.logMsg = u'* '+_(u'Default Icons set: %d')
+        self.logMsg = u'* '+_(u'Default Icons set') + u': %d'
 
 class AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
@@ -2086,7 +2088,7 @@ class AAssortedTweak_SetSoundAttenuationLevels(AMultiTweakItem):
             (u'80%', 80),
             (_(u'Custom'),0),
             )
-        self.logMsg = u'* '+_(u'Sounds Modified: %d')
+        self.logMsg = u'* '+_(u'Sounds Modified') + u': %d'
 
 class AssortedTweak_SetSoundAttenuationLevels(
     AAssortedTweak_SetSoundAttenuationLevels, MultiTweakItem):
@@ -2166,7 +2168,7 @@ class AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(AMultiTweakItem):
             (u'80%', 80),
             (_(u'Custom'),0),
             )
-        self.logMsg = u'* '+_(u'Sounds Modified: %d')
+        self.logMsg = u'* '+_(u'Sounds Modified') + u': %d'
 
 class AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
     AAssortedTweak_SetSoundAttenuationLevels_NirnrootOnly, MultiTweakItem):
@@ -2241,7 +2243,7 @@ class AAssortedTweak_FactioncrimeGoldMultiplier(AMultiTweakItem):
             u'FactioncrimeGoldMultiplier',
             (u'1.0',  u'1.0'),
             )
-        self.logMsg = u'* '+_(u'Factions fixed: %d')
+        self.logMsg = u'* '+_(u'Factions fixed') + u': %d'
 
 class AssortedTweak_FactioncrimeGoldMultiplier(
     AAssortedTweak_FactioncrimeGoldMultiplier, MultiTweakItem):
@@ -2307,7 +2309,7 @@ class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
             u'NoLightFadeValueFix',
             (u'1.0',  u'1.0'),
             )
-        self.logMsg = u'* '+_(u'Lights with fade values added: %d')
+        self.logMsg = u'* '+_(u'Lights with fade values added') + u': %d'
 
 class AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
                                       MultiTweakItem):
@@ -2371,7 +2373,7 @@ class AAssortedTweak_TextlessLSCRs(AMultiTweakItem):
             u'NoDescLSCR',
             (u'1.0',  u'1.0'),
             )
-        self.logMsg = u'* '+_(u'Loading screens tweaked: %d')
+        self.logMsg = u'* '+_(u'Loading screens tweaked') + u': %d'
 
 class AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------

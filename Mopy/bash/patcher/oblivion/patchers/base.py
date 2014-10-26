@@ -28,9 +28,36 @@ from bash.patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher
 from bash.bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt
 
-class MultiTweakItem(AMultiTweakItem): pass # TODO: should it inherit from
-#  Patcher ? Should I define the  getWriteClasses, getReadClasses here ?
-# TODO: scanModFile() have VERY similar code - use getReadClasses here ?
+class MultiTweakItem(AMultiTweakItem):
+    # Notice the differences from Patcher in scanModFile and buildPatch
+    # would it make any sense to make getRead/WriteClasses() into classmethods
+    # see comments in Patcher
+    # TODO: scanModFile() have VERY similar code - use getReadClasses here ?
+    #--Patch Phase ------------------------------------------------------------
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ()  # raise AbstractError ? NO: see NamesTweak_BodyTags
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ()
+
+    def scanModFile(self,modFile,progress,patchFile): # extra param: patchFile
+        """Scans specified mod file to extract info. May add record to patch
+        mod, but won't alter it. If adds record, should first convert it to
+        long fids."""
+        pass
+
+    def buildPatch(self,log,progress,patchFile): # extra param: patchFile
+        """Edits patch file as desired. Should write to log."""
+        pass  # TODO raise AbstractError ?
+
+    def _patchLog(self, log, count):
+        #--Log - must define self.logMsg in subclasses
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CBash_MultiTweakItem(AMultiTweakItem):
     # extra CBash_MultiTweakItem class variables
@@ -45,6 +72,14 @@ class CBash_MultiTweakItem(AMultiTweakItem):
         super(CBash_MultiTweakItem, self).__init__(label, tip, key, *choices,
                                                    **kwargs)
         self.mod_count = {} # extra CBash_MultiTweakItem instance variable
+
+    #--Patch Phase ------------------------------------------------------------
+    def getTypes(self):
+        """Returns the group types that this patcher checks"""
+        return []
+
+    # def apply(self,modFile,record): # TODO bashTags argument is unused in
+    # all subclasses
 
     def buildPatchLog(self,log):
         """Will write to log."""
