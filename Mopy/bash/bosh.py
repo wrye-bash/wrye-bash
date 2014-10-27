@@ -11550,9 +11550,12 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
+        self._clog(log)
+
+    def _clog(self,log): # type 0
+        mod_count = self.mod_count
+        log(u'* ' + self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -11995,13 +11998,7 @@ class GraphicsPatcher(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         id_data = None
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.sourceMods:
-            log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log(u'* %s: %d' % (type,count))
+        self._patchLog(log,type_count)
 
 class CBash_GraphicsPatcher(CBash_ImportPatcher):
     """Merges changes to graphics (models and icons)."""
@@ -12101,12 +12098,8 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
+    def _clog(self,log): # type 1
         class_mod_count = self.class_mod_count
-        log.setHeader(u'= ' +self.__class__.name)
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
             log(u'* '+mod.s)
@@ -12289,13 +12282,7 @@ class ActorImporter(ImportPatcher):
                     setattr(reduce(getattr,attr.split('.')[:-1],record),attr.split('.')[-1], value)
                 keep(fid)
                 type_count[type] += 1
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.sourceMods:
-            log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log(u'* %s: %d' % (type,count))
+        self._patchLog(log,type_count)
 
 class CBash_ActorImporter(CBash_ImportPatcher):
     """Merges changes to actors."""
@@ -12382,12 +12369,8 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
+    def _clog(self,log): # type 1
         class_mod_count = self.class_mod_count
-        log.setHeader(u'= ' +self.__class__.name)
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
             log(u'* '+mod.s)
@@ -12999,19 +12982,11 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
+    def _clog(self,log): # type 2
+        log(u'=== ' + _(u'Source Mods'))
         for mod in self.srcs:
-            log(u'* '+mod.s)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+            log(u'* ' + mod.s)
+        super(CBash_DeathItemPatcher, self)._clog(log)
 
 #------------------------------------------------------------------------------
 from patcher.oblivion.utilities import ActorFactions, CBash_ActorFactions
@@ -14840,12 +14815,8 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
+    def _clog(self,log): # type 1
         class_mod_count = self.class_mod_count
-        log.setHeader(u'= ' +self.__class__.name)
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
             log(u'* '+mod.s)
