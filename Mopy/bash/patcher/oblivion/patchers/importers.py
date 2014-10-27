@@ -28,26 +28,31 @@
 import operator
 from bash.bosh import LoadFactory, modInfos, ModFile, CountDict
 from bash.brec import MreRecord
-from bash.patcher.base import Patcher
+from bash.patcher.base import AImportPatcher
 from bash.patcher.oblivion.patchers.base import ImportPatcher, \
     CBash_ImportPatcher
 from bash.cint import ValidateDict
 
-class CellImporter(ImportPatcher):
+class ACellImporter(AImportPatcher):
     """Merges changes to cells (climate, lighting, and water.)"""
-    name = _(u'Import Cells')
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
-    autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
+    name = _(u'Import Cells')
+
+class CellImporter(ACellImporter, ImportPatcher):
+    autoKey = (u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
+               u'C.RecordFlags', u'C.Music')  # ,u'C.Maps')
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CellImporter, self).initPatchFile(patchFile,loadMods)
         self.cellData = {}
         self.sourceMods = self.getConfigChecked()
         self.isActive = bool(self.sourceMods)
+        # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
+        # 'unused1','unused2','unused3'
         self.recAttrs = {
             u'C.Climate': ('climate',),
             u'C.Music': ('music',),
@@ -227,11 +232,7 @@ class CellImporter(ImportPatcher):
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_CellImporter(CBash_ImportPatcher):
-    """Merges changes to cells (climate, lighting, and water.)"""
-    name = _(u'Import Cells')
-    text = _(u"Import cells (climate, lighting, and water) from source mods.")
-    tip = text
+class CBash_CellImporter(ACellImporter,CBash_ImportPatcher):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
     logMsg = u'* ' + _(u'Cells/Worlds Patched') + u': %d'
@@ -239,7 +240,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
         self.mod_count = {}
