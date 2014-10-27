@@ -11546,8 +11546,16 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
                     self.scan(mod,conflict,tags)
             else: return
 
-# TODO: The buildPatchLog() methods of CBash_ImportPatcher subclasses vary in such
-# a degree that I can't extract a common - 6 are the same though - see CBash_CellImporter
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
+        for srcMod in modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class CellImporter(ImportPatcher):
@@ -11808,17 +11816,6 @@ class CBash_CellImporter(CBash_ImportPatcher):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class GraphicsPatcher(ImportPatcher):
@@ -12564,17 +12561,6 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class NPCAIPackagePatcher(ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
@@ -12835,17 +12821,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class DeathItemPatcher(ImportPatcher):
@@ -13432,17 +13407,6 @@ class CBash_ImportRelations(CBash_ImportPatcher):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class ImportScripts(ImportPatcher):
@@ -14685,17 +14649,6 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
-
 #------------------------------------------------------------------------------
 class SoundPatcher(ImportPatcher):
     """Imports sounds from source mods into patch."""
@@ -15290,17 +15243,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
                     mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 # Patchers: 30 ----------------------------------------------------------------
 ################################### MOVED #####################################
