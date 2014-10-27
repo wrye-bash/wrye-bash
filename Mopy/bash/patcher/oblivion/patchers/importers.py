@@ -120,20 +120,25 @@ def _scanModFile(self, modFile):
                     break
 
 # Logging Functions -----------------------------------------------------------
-# TODO(ut): remove header - not yet adds noice to the patch comparisons
-def _clog(self, log, header=u'=== ' + _(u'Source Mods')):
+# TODO(ut): remove header, logModRecs - not yet though - adds noise to the
+# patch comparisons
+def _clog(self, log, header=u'=== ' + _(u'Source Mods'),
+          logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
+          listSrcs=True):
     """Common logging pattern of CBash loggers.
 
     Used in: CBash_SoundPatcher, CBash_ImportScripts, CBash_ActorImporter,
     CBash_GraphicsPatcher. Adding a (tmp!) header parameter also absorbed
-    CBash_NamesPatcher and CBash_StatsPatcher.
+    CBash_NamesPatcher and CBash_StatsPatcher. Adding (tmp!) logModRecs,
+    listSrcs parameters absorbs CBash_ImportFactions and CBash_ImportInventory.
     """
     mod_count = self.mod_count
-    self._srcMods(log,header=header)
-    log(self.__class__.logMsg)
+    if listSrcs:
+        self._srcMods(log,header=header)
+        log(self.__class__.logMsg)
     for type in mod_count.keys():
-        log(u'* ' + _(u'Modified %s Records: %d') % (
-            type, sum(mod_count[type].values())))
+        log(logModRecs % {'type': u'%s ' % type,
+                          'count': sum(mod_count[type].values())})
         for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
             log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
     self.mod_count = {}
@@ -1603,6 +1608,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
     autoKey = {u'Factions'}
+    # no logMsg here ! - listSrcs=False
+    logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1700,14 +1707,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 12
-        mod_count = self.mod_count
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Refactioned %s Records: %d') % (
-                type, sum(mod_count[type].values()),))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self,log):
+        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
 class ImportRelations(ImportPatcher):
@@ -2186,7 +2187,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
-    logMsg = u'%s ' +_(u'Inventories Changed') + u': %d'
+    # no logMsg here ! - listSrcs=False
+    logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2275,14 +2277,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 12
-        mod_count = self.mod_count
-        for type in mod_count.keys():
-            log(u'* ' + self.__class__.logMsg % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self,log):
+        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
