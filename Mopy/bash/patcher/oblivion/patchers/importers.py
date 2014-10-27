@@ -347,6 +347,11 @@ class CellImporter(_ACellImporter, ImportPatcher):
                 keep(worldBlock.world.fid)
         self._patchLog(log, count)
 
+    def _plog(self,log,count): # type 1?
+        log(self.__class__.logMsg)
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
+
 class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
@@ -3552,7 +3557,7 @@ class SpellsPatcher(ImportPatcher):
         log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'SPEL':_(u'Spells'),}[type] # TODO: needed ?
+            typeName = {'SPEL':_(u'Spells'),}[type] #TODO: typeName=u'Spells' ?
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
