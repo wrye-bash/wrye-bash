@@ -12109,7 +12109,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 1
+    def _clog(self, log):  # type 11
         mod_count = self.mod_count
         self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
@@ -12379,7 +12379,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 1
+    def _clog(self, log):  # type 11
         mod_count = self.mod_count
         self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
@@ -13189,10 +13189,11 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 69, ggrrr
+    def _clog(self,log): # type 12
         mod_count = self.mod_count
         for type in mod_count.keys():
-            log(u'* '+_(u'Refactioned %s Records: %d') % (type,sum(mod_count[type].values()),))
+            log(u'* ' + _(u'Refactioned %s Records: %d') % (
+                type, sum(mod_count[type].values()),))
             for srcMod in modInfos.getOrdered(mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
         self.mod_count = {}
@@ -13558,7 +13559,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 1
+    def _clog(self, log):  # type 11
         mod_count = self.mod_count
         self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
@@ -13782,12 +13783,13 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log):
+    def _clog(self,log): # type 12
         mod_count = self.mod_count
         for type in mod_count.keys():
-            log(u'* '+ self.__class__.logMsg % (type,sum(mod_count[type].values())))
+            log(u'* ' + self.__class__.logMsg % (
+                type, sum(mod_count[type].values())))
             for srcMod in modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
+                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -14029,13 +14031,9 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log):
-        mod_count = self.mod_count
+    def _clog(self,log): # type 2
         self._srcMods(log)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        super(CBash_ImportActorsSpells, self)._clog(log)
 
 #------------------------------------------------------------------------------
 from patcher.oblivion.utilities import FullNames, CBash_FullNames
@@ -14433,13 +14431,9 @@ class CBash_NpcFacePatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self,log):
-        mod_count = self.mod_count
+    def _clog(self,log): # type 2
         self._srcMods(log)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        super(CBash_NpcFacePatcher, self)._clog(log)
 
 #------------------------------------------------------------------------------
 class RoadImporter(ImportPatcher):
@@ -14776,7 +14770,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 1
+    def _clog(self, log):  # type 11
         mod_count = self.mod_count
         self._srcMods(log)
         log(u'\n=== ' + _(u'Modified Records'))
@@ -14990,7 +14984,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     def _clog(self, log):  # type 1
         mod_count = self.mod_count
         self._srcMods(log, header=u'=== ' + _(u'Source Mods/Files'))
-        log(u'\n=== ' + _(u'Imported Stats'))  # peculiarity 2
+        log(u'\n=== ' + _(u'Imported Stats'))
         for type in mod_count.keys():
             log(u'* ' + _(u'Modified %s Records: %d') % (
             type, sum(mod_count[type].values())))
