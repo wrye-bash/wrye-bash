@@ -11520,6 +11520,15 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         return tuple(
             x.classType for x in self.srcClasses) if self.isActive else ()
 
+    def _patchLog(self,log,type_count):
+        log.setHeader(u'= ' + self.__class__.name)
+        log(u'=== ' + _(u'Source Mods'))
+        for mod in self.sourceMods:
+            log(u'* ' + mod.s)
+        log(u'\n=== ' + _(u'Modified Records'))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log(u'* %s: %d' % (type,count))
+
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
@@ -11547,6 +11556,7 @@ class CellImporter(ImportPatcher):
     text = _(u"Import cells (climate, lighting, and water) from source mods.")
     tip = text
     autoKey = (u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
+    logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -11706,7 +11716,6 @@ class CellImporter(ImportPatcher):
                 cellBlock.cell.setChanged()
                 keep(cellBlock.cell.fid)
             return modified
-
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData,count = self.cellData, CountDict()
@@ -11733,7 +11742,7 @@ class CellImporter(ImportPatcher):
         log(u'=== '+_(u'Source Mods'))
         for mod in self.sourceMods:
             log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Cells/Worlds Patched'))
+        log(u'\n=== '+ self.__class__.logMsg)
         for srcMod in modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
@@ -11744,6 +11753,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
     tip = text
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
                u'C.RecordFlags', u'C.Music'}  #,u'C.Maps'
+    logMsg = _(u'Cells/Worlds Patched: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -11805,7 +11815,7 @@ class CBash_CellImporter(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Cells/Worlds Patched: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -12514,13 +12524,7 @@ class KFFZPatcher(ImportPatcher):
                     record.__setattr__(attr,value)
                 keep(fid)
                 type_count[type] += 1
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.sourceMods:
-            log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log(u'* %s: %d' % (type,count))
+        self._patchLog(log,type_count)
 
 class CBash_KFFZPatcher(CBash_ImportPatcher):
     """Merges changes to actor animations."""
@@ -12528,6 +12532,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor animations from source mods.")
     tip = text
     autoKey = {u'Actors.Anims'}
+    logMsg = _(u'Imported Animations: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12565,7 +12570,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Imported Animations: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -12577,6 +12582,7 @@ class NPCAIPackagePatcher(ImportPatcher):
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
     autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
+    logMsg = _(u'AI Package Lists Changed: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12745,7 +12751,7 @@ class NPCAIPackagePatcher(ImportPatcher):
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
             log(u'* '+mod.s)
-        log(u'\n=== '+_(u'AI Package Lists Changed: %d') % sum(mod_count.values()))
+        log(u'\n=== ' + self.__class__.logMsg % sum(mod_count.values()))
         for mod in modInfos.getOrdered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
@@ -12756,6 +12762,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     tip = text
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
     scanRequiresChecked = False
+    logMsg = _(u'AI Package Lists Changed: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -12835,7 +12842,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'AI Package Lists Changed: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -12979,6 +12986,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
     text = _(u"Import Actor death items from source mods.")
     tip = text
     autoKey = {u'Actors.DeathItem'}
+    logMsg = _(u'Imported Death Items: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13025,7 +13033,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcs:
             log(u'* '+mod.s)
-        log(u'* '+_(u'Imported Death Items: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -13360,6 +13368,8 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
     autoKey = {u'Relations'}
+    logMsg = _(u'Re-Relationed Records: %d')
+
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
@@ -13429,7 +13439,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Re-Relationed Records: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -13561,14 +13571,7 @@ class ImportScripts(ImportPatcher):
                 type_count[type] += 1
         #cleanup to save memory
         id_data = None
-        #logging
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.sourceMods:
-            log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log(u'* %s: %d' % (type,count))
+        self._patchLog(log,type_count)
 
 class CBash_ImportScripts(CBash_ImportPatcher):
     """Imports attached scripts on objects."""
@@ -13646,6 +13649,7 @@ class ImportInventory(ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = (u'Invent',u'InventOnly')
     iiMode = True
+    logMsg = _(u'Inventories Changed: %d')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13764,7 +13768,7 @@ class ImportInventory(ImportPatcher):
         log(u'=== '+_(u'Source Mods'))
         for mod in self.srcMods:
             log(u'* '+mod.s)
-        log(u'\n=== '+_(u'Inventories Changed: %d') % sum(mod_count.values()))
+        log(u'\n=== '+ self.__class__.logMsg % sum(mod_count.values()))
         for mod in modInfos.getOrdered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
@@ -13774,6 +13778,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
+    logMsg = _(u'%s Inventories Changed: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -13859,7 +13864,7 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         class_mod_count = self.class_mod_count
         log.setHeader(u'= ' +self.__class__.name)
         for type in class_mod_count.keys():
-            log(u'* '+_(u'%s Inventories Changed: %d') % (type,sum(class_mod_count[type].values())))
+            log(u'* '+ self.__class__.logMsg % (type,sum(class_mod_count[type].values())))
             for srcMod in modInfos.getOrdered(class_mod_count[type].keys()):
                 log(u'  * %s: %d' % (srcMod.s,class_mod_count[type][srcMod]))
         self.class_mod_count = {}
@@ -14622,6 +14627,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
     text = _(u"Import roads from source mods.")
     tip = text
     autoKey = {u'Roads'}
+    logMsg = _(u'Roads Imported: %d')
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
     #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
@@ -14685,7 +14691,7 @@ class CBash_RoadImporter(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Roads Imported: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
@@ -14823,13 +14829,7 @@ class SoundPatcher(ImportPatcher):
                 keep(fid)
                 type_count[type] += 1
         id_data = None
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.sourceMods:
-            log(u'* ' +mod.s)
-        log(u'\n=== '+_(u'Modified Records'))
-        for type,count in sorted(type_count.iteritems()):
-            if count: log(u'* %s: %d' % (type,count))
+        self._patchLog(log,type_count)
 
 class CBash_SoundPatcher(CBash_ImportPatcher):
     """Imports sounds from source mods into patch."""
@@ -15227,6 +15227,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = {u'Spells', u'SpellStats'}
+    logMsg = _(u'Modified SPEL Stats: %d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -15296,7 +15297,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'* '+_(u'Modified SPEL Stats: %d') % sum(mod_count.values()))
+        log(u'* '+ self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
