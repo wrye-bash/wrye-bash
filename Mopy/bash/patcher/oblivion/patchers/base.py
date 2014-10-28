@@ -484,6 +484,8 @@ class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
 
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(AImportPatcher, ListPatcher):
+    # Override in subclasses as needed
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -495,17 +497,21 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         return tuple(
             x.classType for x in self.srcClasses) if self.isActive else ()
 
-    def _patchLog(self,log,type_count,modsHeader=u'=== ' + _(u'Source Mods'),
-                  logMsg=u'\n=== ' + _(u'Modified Records')):
+    def _patchLog(self,log,type_count):
         log.setHeader(u'= ' + self.__class__.name)
-        log(modsHeader)
+        log(self.__class__.modsHeader)
         for mod in self.sourceMods:
             log(u'* ' + mod.s)
-        self._plog(log,logMsg,type_count)
+        self._plog(log,type_count)
 
-    def _plog(self,log,logMsg,type_count):
-        """Most common logging pattern - override as needed"""
-        log(logMsg)
+    def _plog(self,log,type_count):
+        """Most common logging pattern - override as needed.
+
+        Used in:
+        GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
+        ImportFactions, ImportScripts, NamesPatcher, SoundPatcher.
+        """
+        log(self.__class__.logMsg)
         for type_,count in sorted(type_count.iteritems()):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
                           % {'type': type_, 'count': count})
@@ -535,16 +541,23 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         self._clog(log)
 
     def _clog(self,log):
-        """Most common logging pattern - override as needed"""
+        """Most common logging pattern - override as needed.
+
+        Used in:
+        CBash_CellImporter, CBash_KFFZPatcher, CBash_NPCAIPackagePatcher,
+        CBash_ImportRelations, CBash_RoadImporter, CBash_SpellsPatcher.
+        You must define logMsg as a class attribute in subclasses except
+        CBash_ImportFactions and CBash_ImportInventory.
+        """
         mod_count = self.mod_count
         log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-    def _srcMods(self,log,header=u'=== ' + _(u'Source Mods')):
+    def _srcMods(self,log):
         """Logs the Source mods for this patcher - patcher must have `srcs`
         attribute otherwise an AttributeError will be raised."""
-        log(header)
+        log(self.__class__.modsHeader)
         for mod in self.srcs:
             log(u'* ' + mod.s)

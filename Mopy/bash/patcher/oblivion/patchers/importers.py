@@ -46,13 +46,13 @@ from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
 # procedure. If need be inline them as default methods arguments in
 # buildPatch or scanMorFile.
 # TODO(ut): document parameters, generify more - maybe move some of it to base?
-def __inner_loop(id_data, keep, modFileTops, type, type_count):
+def _inner_loop(id_data, keep, records, type, type_count):
     """Most common pattern for the internal buildPatch() loop.
 
     In:
         KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
     """
-    for record in modFileTops[type].records:
+    for record in records:
         fid = record.fid
         if fid not in id_data: continue
         for attr, value in id_data[fid].iteritems():
@@ -63,33 +63,40 @@ def __inner_loop(id_data, keep, modFileTops, type, type_count):
         keep(fid)
         type_count[type] += 1
 
-def _buildPatch(self,log,inner_loop=__inner_loop):
+def _buildPatch(self, log, inner_loop=_inner_loop, types=None):
     """Common buildPatch() pattern of:
 
         GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
         ImportScripts, SoundPatcher
     Consists of a type selection loop which could be rewritten to support
     more patchers (maybe using filter()) and an inner loop that should be
-    provided by a patcher specific static _inner_loop method."""
+    provided by a patcher specific, static _inner_loop() method (except for
+    KFFZPatcher, DeathItemPatcher, ImportScripts and SoundPatcher which share
+    the module level _inner_loop() above).
+    Adding `types` and `modsHeader` parameters absorbed ImportRelations and
+    ImportFactions.
+    """
     if not self.isActive: return
     modFileTops = self.patchFile.tops
     keep = self.patchFile.getKeeper()
     id_data = self.id_data
     type_count = {}
-    for recClass in self.srcClasses:
-        type = recClass.classType
-        if type not in modFileTops: continue
+    types = filter(lambda x: x in modFileTops,
+               types if types else map(lambda x: x.classType, self.srcClasses))
+    for type in types:
         type_count[type] = 0
-        inner_loop(id_data, keep, modFileTops, type, type_count)
+        records = modFileTops[type].records
+        inner_loop(id_data, keep, records, type, type_count)
     # noinspection PyUnusedLocal
     id_data = None # cleanup to save memory
+    # Log
     self._patchLog(log,type_count)
 
 def _scanModFile(self, modFile):
     """Identical scanModFile() pattern of :
 
         GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
-        SoundPatcher
+        SoundPatcher.
     """
     if not self.isActive: return
     id_data = self.id_data
@@ -109,6 +116,93 @@ def _scanModFile(self, modFile):
                 if record.__getattribute__(attr) != value:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
                     break
+
+# Logging Functions -----------------------------------------------------------
+# TODO(ut): remove logModRecs - not yet though - adds noise to the
+# patch comparisons
+def _clog(self, log,
+          logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
+          listSrcs=True):
+    """Common logging pattern of CBash loggers.
+
+    Used in: CBash_SoundPatcher, CBash_ImportScripts, CBash_ActorImporter,
+    CBash_GraphicsPatcher. Adding AImportPatcher.modsHeader attribute absorbed
+    CBash_NamesPatcher and CBash_StatsPatcher. Adding (tmp!) logModRecs,
+    listSrcs parameters absorbs CBash_ImportFactions and CBash_ImportInventory.
+    """
+    mod_count = self.mod_count
+    if listSrcs:
+        self._srcMods(log)
+        log(self.__class__.logMsg)
+    for type in mod_count.keys():
+        log(logModRecs % {'type': u'%s ' % type,
+                          'count': sum(mod_count[type].values())})
+        for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
+            log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+    self.mod_count = {}
+
+# Common initData pattern -----------------------------------------------------
+def _initData(self,progress):
+    """Common initData pattern.
+
+    Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts.
+    """
+    if not self.isActive: return
+    self.classestemp = set()
+    id_data = self.id_data
+    recAttrs_class = self.recAttrs_class
+    loadFactory = LoadFactory(False,*recAttrs_class.keys())
+    longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+    progress.setFull(len(self.sourceMods))
+    cachedMasters = {}
+    for index,srcMod in enumerate(self.sourceMods):
+        temp_id_data = {}
+        if srcMod not in bosh.modInfos: continue
+        srcInfo = bosh.modInfos[srcMod]
+        srcFile = ModFile(srcInfo,loadFactory)
+        masters = srcInfo.header.masters
+        srcFile.load(True)
+        srcFile.convertToLongFids(longTypes)
+        mapper = srcFile.getLongMapper()
+        for recClass,recAttrs in recAttrs_class.iteritems():
+            if recClass.classType not in srcFile.tops: continue
+            self.srcClasses.add(recClass)
+            self.classestemp.add(recClass)
+            for record in srcFile.tops[
+                recClass.classType].getActiveRecords():
+                fid = mapper(record.fid)
+                temp_id_data[fid] = dict(
+                    (attr, record.__getattribute__(attr)) for attr in recAttrs)
+        for master in masters:
+            if not master in bosh.modInfos: continue # or break filter mods
+            if master in cachedMasters:
+                masterFile = cachedMasters[master]
+            else:
+                masterInfo = bosh.modInfos[master]
+                masterFile = ModFile(masterInfo,loadFactory)
+                masterFile.load(True)
+                masterFile.convertToLongFids(longTypes)
+                cachedMasters[master] = masterFile
+            mapper = masterFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in masterFile.tops: continue
+                if recClass not in self.classestemp: continue
+                for record in masterFile.tops[
+                    recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    if fid not in temp_id_data: continue
+                    for attr, value in temp_id_data[fid].iteritems():
+                        if value == record.__getattribute__(attr): continue
+                        else:
+                            if fid not in id_data: id_data[fid] = dict()
+                            try:
+                                id_data[fid][attr] = temp_id_data[fid][attr]
+                            except KeyError:
+                                id_data[fid].setdefault(attr,value)
+        progress.plus()
+    temp_id_data = None
+    self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+    self.isActive = bool(self.srcClasses)
 
 # Patchers: 20 ----------------------------------------------------------------
 class _ACellImporter(AImportPatcher):
@@ -312,7 +406,12 @@ class CellImporter(_ACellImporter, ImportPatcher):
                     # keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
-        self._patchLog(log, count, logMsg=u'\n=== ' + self.__class__.logMsg)
+        self._patchLog(log, count)
+
+    def _plog(self,log,count): # type 1?
+        log(self.__class__.logMsg)
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     autoKey = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
@@ -520,8 +619,8 @@ class GraphicsPatcher(ImportPatcher):
          _scanModFile(self,modFile)
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
@@ -556,6 +655,7 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
     autoKey = {u'Graphics'}
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -651,17 +751,8 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 11
-        mod_count = self.mod_count
-        self._srcMods(log)
-        log(u'\n=== ' + _(u'Modified Records'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(
-                    mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class ActorImporter(ImportPatcher):
@@ -829,8 +920,8 @@ class ActorImporter(ImportPatcher):
                         break
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
@@ -854,6 +945,7 @@ class CBash_ActorImporter(CBash_ImportPatcher):
     autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
                u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
                u'Actors.Skeleton'}
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -931,16 +1023,8 @@ class CBash_ActorImporter(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 11
-        mod_count = self.mod_count
-        self._srcMods(log)
-        log(u'\n=== ' + _(u'Modified Records'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class KFFZPatcher(ImportPatcher):
@@ -958,7 +1042,6 @@ class KFFZPatcher(ImportPatcher):
         #  mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
-        self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
@@ -968,64 +1051,7 @@ class KFFZPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get actor animation lists from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[
-                    recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict(
-                        (attr, record.__getattribute__(attr)) for attr in
-                        recAttrs)
-            for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] =temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
+        _initData(self, progress)
 
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
@@ -1246,10 +1272,10 @@ class NPCAIPackagePatcher(ImportPatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
-        self._patchLog(log,mod_count,logMsg=u'\n=== ' + self.__class__.logMsg)
+        self._patchLog(log,mod_count)
 
-    def _plog(self,log,logMsg,mod_count): # type 1
-        log(logMsg % sum(mod_count.values()))
+    def _plog(self,log,mod_count): # type 1
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in bosh.modInfos.getOrdered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
@@ -1369,59 +1395,7 @@ class DeathItemPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get actor death items from source files."""
-        if not self.isActive: return
-        self.classestemp = set()
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-            for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
+        _initData(self, progress)
 
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
@@ -1490,6 +1464,7 @@ class ImportFactions(ImportPatcher):
     text = _(u"Import factions from source mods/files.")
     logMsg = _(u'Refactioned Actors')
     autoKey = u'Factions'
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1551,8 +1526,8 @@ class ImportFactions(ImportPatcher):
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
     @staticmethod
-    def _inner_loop(id_data, keep, modFileTops, type, type_count):
-        for record in modFileTops[type].records:
+    def _inner_loop(id_data, keep, records, type, type_count):
+        for record in records:
             fid = record.fid
             if fid not in id_data: continue
             newFactions = set(id_data[fid])
@@ -1580,26 +1555,17 @@ class ImportFactions(ImportPatcher):
                 type_count[type] += 1
                 keep(fid)
 
-    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        modFileTops = self.patchFile.tops
-        keep = self.patchFile.getKeeper()
-        id_data= self.id_data
-        type_count = {}
-        for type in self.activeTypes: # TODO: activeTypes in all patchers ?
-            if type not in modFileTops: continue
-            type_count[type] = 0
-            self._inner_loop(id_data, keep, modFileTops, type, type_count)
-        self._patchLog(log, type_count,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=(u'\n=== ' + self.__class__.logMsg))
+    def buildPatch(self,log,progress):
+        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
+                    types=self.activeTypes)
 
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
     autoKey = {u'Factions'}
+    # no logMsg here ! - listSrcs=False
+    logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1697,14 +1663,8 @@ class CBash_ImportFactions(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 12
-        mod_count = self.mod_count
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Refactioned %s Records: %d') % (
-                type, sum(mod_count[type].values()),))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s,mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self,log):
+        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
 class ImportRelations(ImportPatcher):
@@ -1712,12 +1672,14 @@ class ImportRelations(ImportPatcher):
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
     autoKey = u'Relations'
+    logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         Patcher.initPatchFile(self,patchFile,loadMods)
-        self.id_relations = {}  #--[(otherLongid0,disp0),(...)] =
-        # id_relations[mainLongid].
+        self.id_data = {}  #--[(otherLongid0,disp0),(...)] =
+        # id_relations[mainLongid]. # WAS id_relations -renamed for _buildPatch
         self.sourceMods = self.getConfigChecked()
         self.isActive = bool(self.sourceMods)
 
@@ -1746,8 +1708,8 @@ class ImportRelations(ImportPatcher):
                                      relation[0][0] is not None and
                                      relation[0][0] in self.patchFile.loadSet)]
                 if filteredRelations:
-                    self.id_relations[fid] = filteredRelations
-        self.isActive = bool(self.id_relations)
+                    self.id_data[fid] = filteredRelations
+        self.isActive = bool(self.id_data)
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -1760,7 +1722,7 @@ class ImportRelations(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Scan modFile."""
         if not self.isActive: return
-        id_relations= self.id_relations
+        id_relations= self.id_data
         modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in ('FACT',):
@@ -1774,48 +1736,41 @@ class ImportRelations(ImportPatcher):
                 if fid not in id_relations: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress): # buildPatch2:LOG, for type in ...
-        """Make changes to patchfile."""
-        if not self.isActive: return
-        modFileTops = self.patchFile.tops
-        keep = self.patchFile.getKeeper()
-        id_relations= self.id_relations
-        type_count = {}
-        for type in ('FACT',):
-            if type not in modFileTops: continue # if 'FACT' in modFileTops ?
-            type_count[type] = 0
-            for record in modFileTops[type].records:
-                fid = record.fid
-                if fid in id_relations:
-                    newRelations = set(id_relations[fid])
-                    curRelations = set(
-                        (x.faction, x.mod) for x in record.relations)
-                    changed = newRelations - curRelations
-                    if not changed: continue
-                    doKeep = False
-                    for faction,disp in changed:
-                        for entry in record.relations:
-                            if entry.faction == faction:
-                                if entry.mod != disp:
-                                    entry.mod = disp
-                                    doKeep = True
-                                    keep(fid)
-                                break
-                        else:
-                            entry = MelObject()
-                            entry.faction = faction
-                            entry.mod = disp
-                            record.relations.append(entry)
-                            doKeep = True
-                    if doKeep:
-                        type_count[type] += 1
-                        keep(fid)
-        self._patchLog(log, type_count,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=u'\n=== ' + _(u'Modified Factions') + u': %d')
+    @staticmethod
+    def _inner_loop(id_relations, keep, records, type, type_count):
+        for record in records:
+            fid = record.fid
+            if fid in id_relations:
+                newRelations = set(id_relations[fid])
+                curRelations = set(
+                    (x.faction, x.mod) for x in record.relations)
+                changed = newRelations - curRelations
+                if not changed: continue
+                doKeep = False
+                for faction, disp in changed:
+                    for entry in record.relations:
+                        if entry.faction == faction:
+                            if entry.mod != disp:
+                                entry.mod = disp
+                                doKeep = True
+                                keep(fid)
+                            break
+                    else:
+                        entry = MelObject()
+                        entry.faction = faction
+                        entry.mod = disp
+                        record.relations.append(entry)
+                        doKeep = True
+                if doKeep:
+                    type_count[type] += 1
+                    keep(fid)
 
-    def _plog(self,log,logMsg,type_count):
-        log(logMsg % type_count['FACT'])
+    def buildPatch(self,log,progress):
+        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
+                    types=('FACT',))
+
+    def _plog(self,log,type_count):
+        log(self.__class__.logMsg % type_count['FACT'])
 
 class CBash_ImportRelations(CBash_ImportPatcher):
     """Import faction relations to factions."""
@@ -1919,65 +1874,7 @@ class ImportScripts(ImportPatcher):
 
     def initData(self,progress):
         """Get script links from source files."""
-        if not self.isActive: return
-        self.classestemp = set()
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[
-                    recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict(
-                        (attr, record.__getattribute__(attr)) for attr in
-                        recAttrs)
-            for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] =temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
+        _initData(self, progress)
 
     def scanModFile(self, modFile, progress):
          _scanModFile(self,modFile)
@@ -1993,6 +1890,7 @@ class CBash_ImportScripts(CBash_ImportPatcher):
              u"source mods.")
     tip = text
     autoKey = {u'Scripts'}
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2047,16 +1945,8 @@ class CBash_ImportScripts(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 11
-        mod_count = self.mod_count
-        self._srcMods(log)
-        log(u'\n=== ' + _(u'Modified Records'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class ImportInventory(ImportPatcher):
@@ -2182,10 +2072,10 @@ class ImportInventory(ImportPatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
-        self._patchLog(log,mod_count,logMsg=u'\n=== ' + self.__class__.logMsg)
+        self._patchLog(log,mod_count)
 
-    def _plog(self,log,logMsg,mod_count): # type 1
-        log(logMsg % sum(mod_count.values()))
+    def _plog(self,log,mod_count): # type 1
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in bosh.modInfos.getOrdered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
@@ -2195,7 +2085,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
     text = _(u"Merges changes to NPC, creature and container inventories.")
     autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
-    logMsg = u'%s ' +_('Inventories Changed') + u': %d'
+    # no logMsg here ! - listSrcs=False
+    logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2284,14 +2175,8 @@ class CBash_ImportInventory(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log): # type 12
-        mod_count = self.mod_count
-        for type in mod_count.keys():
-            log(u'* ' + self.__class__.logMsg % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self,log):
+        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
 class ImportActorsSpells(ImportPatcher):
@@ -2464,10 +2349,10 @@ class ImportActorsSpells(ImportPatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] = mod_count.get(mod,0) + 1
-        self._patchLog(log,mod_count,logMsg=u'\n=== ' + self.__class__.logMsg)
+        self._patchLog(log,mod_count)
 
-    def _plog(self,log,logMsg,mod_count): # type 1
-        log(logMsg % sum(mod_count.values()))
+    def _plog(self,log,mod_count): # type 1
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in bosh.modInfos.getOrdered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
@@ -2546,6 +2431,8 @@ class NamesPatcher(ImportPatcher):
     text = _(u"Import names from source mods/files.")
     autoRe = game.namesPatcherMaster
     autoKey = u'Names'
+    logMsg =  u'\n=== ' + _(u'Renamed Items')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2654,9 +2541,7 @@ class NamesPatcher(ImportPatcher):
                     record.full = id_full[fid]
                     keep(fid)
                     type_count[type] += 1
-        logMsg = u'\n=== ' + _(u'Renamed Items')
-        modsHeader = u'=== ' + _(u'Source Mods/Files')
-        self._patchLog(log,type_count,modsHeader=modsHeader,logMsg=logMsg)
+        self._patchLog(log,type_count)
 
 class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
@@ -2664,6 +2549,8 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     text = _(u"Import names from source mods/files.")
     autoRe = game.namesPatcherMaster
     autoKey = {u'Names'}
+    logMsg = u'\n=== ' + _(u'Renamed Items')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2725,16 +2612,8 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self, log): # type 1
-        mod_count = self.mod_count
-        self._srcMods(log, header=u'=== ' + _(u'Source Mods/Files'))
-        log(u'\n=== ' + _(u'Renamed Items'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _ANpcFacePatcher(AImportPatcher):
@@ -2754,6 +2633,7 @@ class _ANpcFacePatcher(AImportPatcher):
 class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
     autoKey = (u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
         u'Npc.EyesOnly')
+    logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2874,10 +2754,10 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     npc.setChanged()
                     keep(npc.fid)
                     count += 1
-        self._patchLog(log,count,logMsg=u'\n=== '+_(u'Faces Patched')+ u': %d')
+        self._patchLog(log,count)
 
-    def _plog(self,log,logMsg,count):
-        log(logMsg % count)
+    def _plog(self,log,count):
+        log(self.__class__.logMsg % count)
 
 class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
@@ -3032,10 +2912,10 @@ class RoadImporter(ImportPatcher):
                 keep(worldId)
                 keep(newRoad.fid)
                 worldsPatched.add((worldId[0].s,worldBlock.world.eid))
-        self._patchLog(log,worldsPatched,logMsg=u'\n=== '+ self.__class__.logMsg)
+        self._patchLog(log,worldsPatched)
 
-    def _plog(self,log,logMsg,worldsPatched):
-        log(logMsg)
+    def _plog(self,log,worldsPatched):
+        log(self.__class__.logMsg)
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
@@ -3120,7 +3000,6 @@ class SoundPatcher(ImportPatcher):
         #  mods/files.
         self.sourceMods = self.getConfigChecked()
         self.isActive = len(self.sourceMods) != 0
-        self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
@@ -3139,65 +3018,7 @@ class SoundPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get sounds from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
-            temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                for record in srcFile.tops[
-                    recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict(
-                        (attr, record.__getattribute__(attr)) for attr in
-                        recAttrs)
-            for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][
-                                        attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
+        _initData(self, progress)
 
     def scanModFile(self, modFile, progress):
         _scanModFile(self,modFile)
@@ -3213,6 +3034,7 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
              u" Lights, Magic Effects and Weathers) from source mods.")
     tip = text
     autoKey = {u'Sound'}
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3270,16 +3092,8 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 11
-        mod_count = self.mod_count
-        self._srcMods(log)
-        log(u'\n=== ' + _(u'Modified Records'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-                type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class StatsPatcher(ImportPatcher):
@@ -3289,6 +3103,8 @@ class StatsPatcher(ImportPatcher):
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = u'Stats'
+    logMsg = u'\n=== ' + _(u'Modified Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3356,7 +3172,7 @@ class StatsPatcher(ImportPatcher):
                 if oldValues != itemStats:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,log,progress):# buildPatch1:
+    def buildPatch(self,log,progress):# buildPatch2 !!!!
         """Adds merged lists to patchfile."""
         if not self.isActive: return
         patchFile = self.patchFile
@@ -3379,12 +3195,10 @@ class StatsPatcher(ImportPatcher):
                     count += 1
                     counts[fid[0]] = 1 + counts.get(fid[0],0)
             allCounts.append((group,count,counts))
-        self._patchLog(log, allCounts,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=u'\n=== ' + _(u'Modified Stats'))
+        self._patchLog(log, allCounts)
 
-    def _plog(self,log,logMsg,allCounts):
-        log(logMsg)
+    def _plog(self,log,allCounts):
+        log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
             typeName = {'ALCH':_(u'Potions'),
@@ -3412,6 +3226,8 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = {u'Stats'}
+    logMsg = u'\n=== ' + _(u'Imported Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3479,16 +3295,8 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
-    def _clog(self, log):  # type 1
-        mod_count = self.mod_count
-        self._srcMods(log, header=u'=== ' + _(u'Source Mods/Files'))
-        log(u'\n=== ' + _(u'Imported Stats'))
-        for type in mod_count.keys():
-            log(u'* ' + _(u'Modified %s Records: %d') % (
-            type, sum(mod_count[type].values())))
-            for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
-                log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
-        self.mod_count = {}
+    def _clog(self, log):
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class SpellsPatcher(ImportPatcher):
@@ -3498,6 +3306,8 @@ class SpellsPatcher(ImportPatcher):
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = (u'Spells',u'SpellStats')
+    logMsg = u'\n=== ' + _(u'Modified Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3577,15 +3387,13 @@ class SpellsPatcher(ImportPatcher):
             count += 1
             counts[fid[0]] = 1 + counts.get(fid[0],0)
         allCounts.append(('SPEL',count,counts))
-        self._patchLog(log, allCounts,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'),
-                       logMsg=u'\n=== ' + _(u'Modified Stats'))
+        self._patchLog(log, allCounts)
 
-    def _plog(self,log,logMsg,allCounts):
-        log(logMsg)
+    def _plog(self,log,allCounts):
+        log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'SPEL':_(u'Spells'),}[type] # TODO: needed ?
+            typeName = {'SPEL':_(u'Spells'),}[type] #TODO: typeName=u'Spells' ?
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))

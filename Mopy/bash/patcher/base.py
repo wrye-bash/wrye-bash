@@ -402,6 +402,7 @@ class AImportPatcher(AListPatcher):
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
     # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
     # ImportRelations, ImportFactions
+    modsHeader = u'=== ' + _(u'Source Mods')
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
