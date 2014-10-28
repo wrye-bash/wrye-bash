@@ -30,16 +30,16 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """ # TODO:DOCS
 import random
 import re
+# Internal
 from .... import bush # for fullLoadOrder, defaultEyes (?)
 from .... import bosh # for modInfos
 from ....bolt import SubProgress, BoltError, GPath, deprint
-from ....bosh import SpecialPatcher, PatchFile, LoadFactory, \
-    ModFile
+from ....bosh import PatchFile, LoadFactory, ModFile
 from ....brec import MreRecord, MelObject, strFid
 from ....cint import ValidateDict, FormID
 from ....patcher.base import AMultiTweakItem, Patcher
 from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem
+    CBash_MultiTweakItem, SpecialPatcher
 from ....patcher.oblivion.patchers.base import DoublePatcher, \
     CBash_DoublePatcher, CBash_ListPatcher
 

@@ -31,6 +31,7 @@ import ctypes
 from operator import attrgetter, itemgetter
 import re
 import struct
+# Internal
 from ... import bush # for game and actorValues
 from ...balt import Progress
 from ...bolt import GPath, _unicode, deprint, CsvReader, csvFormat

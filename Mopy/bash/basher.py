@@ -76,6 +76,13 @@ from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
     CBash_GmstTweaker
 from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
+from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
+    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
+    CBash_MFactMarker, SEWorldEnforcer, CBash_SEWorldEnforcer, ContentsChecker, \
+    CBash_ContentsChecker
+from patcher.oblivion.patchers.special import ListsMerger as ListsMerger_
+from patcher.oblivion.patchers.special import \
+    CBash_ListsMerger as CBash_ListsMerger_
 
 startupinfo = bolt.startupinfo
 
@@ -8091,28 +8098,28 @@ class TweakActors(TweakActors,TweakPatcher): pass
 class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
-class AlchemicalCatalogs(bosh.AlchemicalCatalogs,Patcher): pass
-class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
+class AlchemicalCatalogs(AlchemicalCatalogs,Patcher): pass
+class CBash_AlchemicalCatalogs(CBash_AlchemicalCatalogs,Patcher): pass
 
-class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
-class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
+class CoblExhaustion(CoblExhaustion,ListPatcher): pass
+class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
 
 class UpdateReferences(UpdateReferences,ListPatcher): pass
 class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
-class ListsMerger(bosh.ListsMerger,ListPatcher):
+class ListsMerger(ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
-class CBash_ListsMerger(bosh.CBash_ListsMerger,ListPatcher):
+class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
 
-class MFactMarker(bosh.MFactMarker,ListPatcher): pass
-class CBash_MFactMarker(bosh.CBash_MFactMarker,ListPatcher): pass
+class MFactMarker(MFactMarker,ListPatcher): pass
+class CBash_MFactMarker(CBash_MFactMarker,ListPatcher): pass
 
-class SEWorldEnforcer(bosh.SEWorldEnforcer,Patcher): pass
-class CBash_SEWorldEnforcer(bosh.CBash_SEWorldEnforcer,Patcher): pass
+class SEWorldEnforcer(SEWorldEnforcer,Patcher): pass
+class CBash_SEWorldEnforcer(CBash_SEWorldEnforcer,Patcher): pass
 
-class ContentsChecker(bosh.ContentsChecker,Patcher): pass
-class CBash_ContentsChecker(bosh.CBash_ContentsChecker,Patcher): pass
+class ContentsChecker(ContentsChecker,Patcher): pass
+class CBash_ContentsChecker(CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # Init Patchers
@@ -14325,7 +14332,7 @@ class Mod_ListPatchConfig(Link):
                         else:
                             log(u'. ~~%s~~' % label)
                             clip.write(u'    %s\n' % label)
-            elif isinstance(patcher, (bosh.CBash_ListsMerger,bosh.ListsMerger)):
+            elif isinstance(patcher, (CBash_ListsMerger_, ListsMerger_)):
                 # Leveled Lists
                 patcher.configChoices = conf.get('configChoices',{})
                 for item in conf.get('configItems',[]):
