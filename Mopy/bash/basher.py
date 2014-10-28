@@ -52,7 +52,18 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
 from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
-    AliasesPatcher, CBash_AliasesPatcher
+    AliasesPatcher, CBash_AliasesPatcher, PatchMerger, CBash_PatchMerger, \
+    UpdateReferences, CBash_UpdateReferences
+from patcher.oblivion.patchers.importers import CellImporter, \
+    CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
+    CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher, NPCAIPackagePatcher, \
+    CBash_NPCAIPackagePatcher, DeathItemPatcher, CBash_DeathItemPatcher, \
+    ImportFactions, CBash_ImportFactions, ImportRelations, \
+    CBash_ImportRelations, ImportScripts, CBash_ImportScripts, ImportInventory, \
+    CBash_ImportInventory, ImportActorsSpells, CBash_ImportActorsSpells, \
+    NamesPatcher, CBash_NamesPatcher, NpcFacePatcher, CBash_NpcFacePatcher, \
+    RoadImporter, CBash_RoadImporter, SoundPatcher, CBash_SoundPatcher, \
+    StatsPatcher, CBash_StatsPatcher, SpellsPatcher, CBash_SpellsPatcher
 from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
 from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
@@ -8002,66 +8013,66 @@ class DoublePatcher(TweakPatcher,ListPatcher):
 
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
-class PatchMerger(bosh.PatchMerger,ListPatcher):
+class PatchMerger(PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
-class CBash_PatchMerger(bosh.CBash_PatchMerger,ListPatcher):
+class CBash_PatchMerger(CBash_PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
 # Patchers 20 ------------------------------------------------------------------
-class GraphicsPatcher(bosh.GraphicsPatcher,ListPatcher): pass
-class CBash_GraphicsPatcher(bosh.CBash_GraphicsPatcher,ListPatcher): pass
+class GraphicsPatcher(GraphicsPatcher,ListPatcher): pass
+class CBash_GraphicsPatcher(CBash_GraphicsPatcher,ListPatcher): pass
 
-class KFFZPatcher(bosh.KFFZPatcher,ListPatcher): pass
-class CBash_KFFZPatcher(bosh.CBash_KFFZPatcher,ListPatcher): pass
+class KFFZPatcher(KFFZPatcher,ListPatcher): pass
+class CBash_KFFZPatcher(CBash_KFFZPatcher,ListPatcher): pass
 
-class NPCAIPackagePatcher(bosh.NPCAIPackagePatcher,ListPatcher): pass
-class CBash_NPCAIPackagePatcher(bosh.CBash_NPCAIPackagePatcher,ListPatcher): pass
+class NPCAIPackagePatcher(NPCAIPackagePatcher,ListPatcher): pass
+class CBash_NPCAIPackagePatcher(CBash_NPCAIPackagePatcher,ListPatcher): pass
 
-class ActorImporter(bosh.ActorImporter,ListPatcher): pass
-class CBash_ActorImporter(bosh.CBash_ActorImporter,ListPatcher): pass
+class ActorImporter(ActorImporter,ListPatcher): pass
+class CBash_ActorImporter(CBash_ActorImporter,ListPatcher): pass
 
-class DeathItemPatcher(bosh.DeathItemPatcher,ListPatcher): pass
-class CBash_DeathItemPatcher(bosh.CBash_DeathItemPatcher,ListPatcher): pass
+class DeathItemPatcher(DeathItemPatcher,ListPatcher): pass
+class CBash_DeathItemPatcher(CBash_DeathItemPatcher,ListPatcher): pass
 
-class CellImporter(bosh.CellImporter,ListPatcher): pass
-class CBash_CellImporter(bosh.CBash_CellImporter,ListPatcher): pass
+class CellImporter(CellImporter,ListPatcher): pass
+class CBash_CellImporter(CBash_CellImporter,ListPatcher): pass
 
-class ImportFactions(bosh.ImportFactions,ListPatcher): pass
-class CBash_ImportFactions(bosh.CBash_ImportFactions,ListPatcher): pass
+class ImportFactions(ImportFactions,ListPatcher): pass
+class CBash_ImportFactions(CBash_ImportFactions,ListPatcher): pass
 
-class ImportRelations(bosh.ImportRelations,ListPatcher): pass
-class CBash_ImportRelations(bosh.CBash_ImportRelations,ListPatcher): pass
+class ImportRelations(ImportRelations,ListPatcher): pass
+class CBash_ImportRelations(CBash_ImportRelations,ListPatcher): pass
 
-class ImportInventory(bosh.ImportInventory,ListPatcher): pass
-class CBash_ImportInventory(bosh.CBash_ImportInventory,ListPatcher): pass
+class ImportInventory(ImportInventory,ListPatcher): pass
+class CBash_ImportInventory(CBash_ImportInventory,ListPatcher): pass
 
-class ImportActorsSpells(bosh.ImportActorsSpells,ListPatcher): pass
-class CBash_ImportActorsSpells(bosh.CBash_ImportActorsSpells,ListPatcher): pass
+class ImportActorsSpells(ImportActorsSpells,ListPatcher): pass
+class CBash_ImportActorsSpells(CBash_ImportActorsSpells,ListPatcher): pass
 
-class NamesPatcher(bosh.NamesPatcher,ListPatcher): pass
-class CBash_NamesPatcher(bosh.CBash_NamesPatcher,ListPatcher): pass
+class NamesPatcher(NamesPatcher,ListPatcher): pass
+class CBash_NamesPatcher(CBash_NamesPatcher,ListPatcher): pass
 
-class NpcFacePatcher(bosh.NpcFacePatcher,ListPatcher): pass
-class CBash_NpcFacePatcher(bosh.CBash_NpcFacePatcher,ListPatcher): pass
+class NpcFacePatcher(NpcFacePatcher,ListPatcher): pass
+class CBash_NpcFacePatcher(CBash_NpcFacePatcher,ListPatcher): pass
 
 class RacePatcher(RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 class CBash_RacePatcher(CBash_RacePatcher,DoublePatcher):
     listLabel = _(u'Race Mods')
 
-class RoadImporter(bosh.RoadImporter,ListPatcher): pass
-class CBash_RoadImporter(bosh.CBash_RoadImporter,ListPatcher): pass
+class RoadImporter(RoadImporter,ListPatcher): pass
+class CBash_RoadImporter(CBash_RoadImporter,ListPatcher): pass
 
-class SoundPatcher(bosh.SoundPatcher,ListPatcher): pass
-class CBash_SoundPatcher(bosh.CBash_SoundPatcher,ListPatcher): pass
+class SoundPatcher(SoundPatcher,ListPatcher): pass
+class CBash_SoundPatcher(CBash_SoundPatcher,ListPatcher): pass
 
-class StatsPatcher(bosh.StatsPatcher,ListPatcher): pass
-class CBash_StatsPatcher(bosh.CBash_StatsPatcher,ListPatcher): pass
+class StatsPatcher(StatsPatcher,ListPatcher): pass
+class CBash_StatsPatcher(CBash_StatsPatcher,ListPatcher): pass
 
-class ImportScripts(bosh.ImportScripts,ListPatcher):pass
-class CBash_ImportScripts(bosh.CBash_ImportScripts,ListPatcher):pass
+class ImportScripts(ImportScripts,ListPatcher):pass
+class CBash_ImportScripts(CBash_ImportScripts,ListPatcher):pass
 
-class SpellsPatcher(bosh.SpellsPatcher,ListPatcher):pass
-class CBash_SpellsPatcher(bosh.CBash_SpellsPatcher,ListPatcher):pass
+class SpellsPatcher(SpellsPatcher,ListPatcher):pass
+class CBash_SpellsPatcher(CBash_SpellsPatcher,ListPatcher):pass
 
 # Patchers 30 ------------------------------------------------------------------
 class AssortedTweaker(AssortedTweaker,TweakPatcher): pass
@@ -8086,8 +8097,8 @@ class CBash_AlchemicalCatalogs(bosh.CBash_AlchemicalCatalogs,Patcher): pass
 class CoblExhaustion(bosh.CoblExhaustion,ListPatcher): pass
 class CBash_CoblExhaustion(bosh.CBash_CoblExhaustion,ListPatcher): pass
 
-class UpdateReferences(bosh.UpdateReferences,ListPatcher): pass
-class CBash_UpdateReferences(bosh.CBash_UpdateReferences,ListPatcher): pass
+class UpdateReferences(UpdateReferences,ListPatcher): pass
+class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
 class ListsMerger(bosh.ListsMerger,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')

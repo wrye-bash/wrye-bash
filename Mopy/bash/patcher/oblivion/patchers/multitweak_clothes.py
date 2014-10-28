@@ -25,11 +25,11 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
 # TODO:DOCS
-import bash # FIXME - why ?
-from bash.patcher.base import AMultiTweakItem, AMultiTweaker
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from .... import bosh # for modInfos
+from ....patcher.base import AMultiTweakItem, AMultiTweaker
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+from ....patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
@@ -135,7 +135,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (
                 srcMod.s, maxWeight, mod_count[srcMod]))
         self.mod_count = {}

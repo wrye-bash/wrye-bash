@@ -28,14 +28,15 @@ to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
 import random
 import re
 
-from bash.bolt import GPath
-from bash.brec import MreRecord
-import bash.bush
-from bash.cint import MGEFCode
-from bash.patcher.base import AMultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweakItem, \
+from ....bolt import GPath
+from ....brec import MreRecord
+from .... import bosh # for modInfos
+from .... import bush # from ....bush import game ? # should be set by now !
+from ....cint import MGEFCode
+from ....patcher.base import AMultiTweakItem
+from ....patcher.oblivion.patchers.base import MultiTweakItem, \
     CBash_MultiTweakItem
-from bash.patcher.oblivion.patchers.base import MultiTweaker, \
+from ....patcher.oblivion.patchers.base import MultiTweaker, \
     CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
@@ -785,7 +786,7 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
                     count[cell.fid[0]] += 1
         #--Log
         log.setHeader(self.logHeader)
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
@@ -817,7 +818,7 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
         #--Log
         mod_count = self.mod_count
         log.setHeader(self.logHeader)
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
@@ -915,7 +916,7 @@ class AMultiTweakItem_Weight(AMultiTweakItem):
         log.setHeader(self.logHeader)
         log(self.logWeightValue % weight)
         log(self.logMsg % sum(count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem):
@@ -927,7 +928,7 @@ class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem):
         log.setHeader(self.logHeader)
         log(self.logWeightValue % self.weight)
         log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bash.bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
@@ -2432,7 +2433,7 @@ class AssortedTweaker(MultiTweaker):
     name = _(u'Tweak Assorted')
     text = _(u"Tweak various records in miscellaneous ways.")
     defaultConfig = {'isEnabled':True}
-    if bash.bush.game.fsName == u'Oblivion':
+    if bush.game.fsName == u'Oblivion':
         tweaks = sorted([
             AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
                 _(u"Prevents armor from hiding amulets."),
