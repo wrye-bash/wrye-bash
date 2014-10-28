@@ -497,9 +497,9 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         return tuple(
             x.classType for x in self.srcClasses) if self.isActive else ()
 
-    def _patchLog(self,log,type_count,modsHeader=u'=== ' + _(u'Source Mods')):
+    def _patchLog(self,log,type_count):
         log.setHeader(u'= ' + self.__class__.name)
-        log(modsHeader)
+        log(self.__class__.modsHeader)
         for mod in self.sourceMods:
             log(u'* ' + mod.s)
         self._plog(log,type_count)
@@ -555,9 +555,9 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
-    def _srcMods(self,log,header=u'=== ' + _(u'Source Mods')):
+    def _srcMods(self,log):
         """Logs the Source mods for this patcher - patcher must have `srcs`
         attribute otherwise an AttributeError will be raised."""
-        log(header)
+        log(self.__class__.modsHeader)
         for mod in self.srcs:
             log(u'* ' + mod.s)

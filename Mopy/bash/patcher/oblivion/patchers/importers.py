@@ -63,8 +63,7 @@ def _inner_loop(id_data, keep, records, type, type_count):
         keep(fid)
         type_count[type] += 1
 
-def _buildPatch(self, log, inner_loop=_inner_loop, types=None,
-                modsHeader=None):
+def _buildPatch(self, log, inner_loop=_inner_loop, types=None):
     """Common buildPatch() pattern of:
 
         GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
@@ -90,9 +89,8 @@ def _buildPatch(self, log, inner_loop=_inner_loop, types=None,
         inner_loop(id_data, keep, records, type, type_count)
     # noinspection PyUnusedLocal
     id_data = None # cleanup to save memory
-    # Log - modsHeader must go!
-    if modsHeader: self._patchLog(log,type_count,modsHeader=modsHeader)
-    else: self._patchLog(log,type_count)
+    # Log
+    self._patchLog(log,type_count)
 
 def _scanModFile(self, modFile):
     """Identical scanModFile() pattern of :
@@ -120,21 +118,21 @@ def _scanModFile(self, modFile):
                     break
 
 # Logging Functions -----------------------------------------------------------
-# TODO(ut): remove header, logModRecs - not yet though - adds noise to the
+# TODO(ut): remove logModRecs - not yet though - adds noise to the
 # patch comparisons
-def _clog(self, log, header=u'=== ' + _(u'Source Mods'),
+def _clog(self, log,
           logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
           listSrcs=True):
     """Common logging pattern of CBash loggers.
 
     Used in: CBash_SoundPatcher, CBash_ImportScripts, CBash_ActorImporter,
-    CBash_GraphicsPatcher. Adding a (tmp!) header parameter also absorbed
+    CBash_GraphicsPatcher. Adding AImportPatcher.modsHeader attribute absorbed
     CBash_NamesPatcher and CBash_StatsPatcher. Adding (tmp!) logModRecs,
     listSrcs parameters absorbs CBash_ImportFactions and CBash_ImportInventory.
     """
     mod_count = self.mod_count
     if listSrcs:
-        self._srcMods(log,header=header)
+        self._srcMods(log)
         log(self.__class__.logMsg)
     for type in mod_count.keys():
         log(logModRecs % {'type': u'%s ' % type,
@@ -1513,6 +1511,7 @@ class ImportFactions(ImportPatcher):
     text = _(u"Import factions from source mods/files.")
     logMsg = _(u'Refactioned Actors')
     autoKey = u'Factions'
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1605,8 +1604,7 @@ class ImportFactions(ImportPatcher):
 
     def buildPatch(self,log,progress):
         _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
-                    types=self.activeTypes,
-                    modsHeader=u'=== ' + _(u'Source Mods/Files'))
+                    types=self.activeTypes)
 
 class CBash_ImportFactions(CBash_ImportPatcher):
     """Import factions to creatures and NPCs."""
@@ -1722,6 +1720,7 @@ class ImportRelations(ImportPatcher):
     text = _(u"Import relations from source mods/files.")
     autoKey = u'Relations'
     logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1815,8 +1814,7 @@ class ImportRelations(ImportPatcher):
 
     def buildPatch(self,log,progress):
         _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
-                    types=('FACT',),
-                    modsHeader=u'=== ' + _(u'Source Mods/Files'))
+                    types=('FACT',))
 
     def _plog(self,log,type_count):
         log(self.__class__.logMsg % type_count['FACT'])
@@ -2539,6 +2537,7 @@ class NamesPatcher(ImportPatcher):
     autoRe = game.namesPatcherMaster
     autoKey = u'Names'
     logMsg =  u'\n=== ' + _(u'Renamed Items')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2647,8 +2646,7 @@ class NamesPatcher(ImportPatcher):
                     record.full = id_full[fid]
                     keep(fid)
                     type_count[type] += 1
-        modsHeader = u'=== ' + _(u'Source Mods/Files')
-        self._patchLog(log,type_count,modsHeader=modsHeader)
+        self._patchLog(log,type_count)
 
 class CBash_NamesPatcher(CBash_ImportPatcher):
     """Import names from source mods/files."""
@@ -2657,6 +2655,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     autoRe = game.namesPatcherMaster
     autoKey = {u'Names'}
     logMsg = u'\n=== ' + _(u'Renamed Items')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2719,7 +2718,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
                 record._RecordID = override._RecordID
 
     def _clog(self, log):
-        _clog(self, log, header=u'=== ' + _(u'Source Mods/Files'))
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _ANpcFacePatcher(AImportPatcher):
@@ -3269,6 +3268,7 @@ class StatsPatcher(ImportPatcher):
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = u'Stats'
     logMsg = u'\n=== ' + _(u'Modified Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3359,8 +3359,7 @@ class StatsPatcher(ImportPatcher):
                     count += 1
                     counts[fid[0]] = 1 + counts.get(fid[0],0)
             allCounts.append((group,count,counts))
-        self._patchLog(log, allCounts,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'))
+        self._patchLog(log, allCounts)
 
     def _plog(self,log,allCounts):
         log(self.__class__.logMsg)
@@ -3392,6 +3391,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = {u'Stats'}
     logMsg = u'\n=== ' + _(u'Imported Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3460,7 +3460,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
     def _clog(self, log):
-        _clog(self, log, header=u'=== ' + _(u'Source Mods/Files'))
+        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class SpellsPatcher(ImportPatcher):
@@ -3471,6 +3471,7 @@ class SpellsPatcher(ImportPatcher):
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = (u'Spells',u'SpellStats')
     logMsg = u'\n=== ' + _(u'Modified Stats')
+    modsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3550,8 +3551,7 @@ class SpellsPatcher(ImportPatcher):
             count += 1
             counts[fid[0]] = 1 + counts.get(fid[0],0)
         allCounts.append(('SPEL',count,counts))
-        self._patchLog(log, allCounts,
-                       modsHeader=u'=== ' + _(u'Source Mods/Files'))
+        self._patchLog(log, allCounts)
 
     def _plog(self,log,allCounts):
         log(self.__class__.logMsg)
