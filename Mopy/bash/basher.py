@@ -42,8 +42,6 @@ has its own data store)."""
 import bush
 import bosh
 import bolt
-from game.oblivion.patcher.special import AlchemicalCatalogs, \
-    CBash_AlchemicalCatalogs
 import loot
 import barb
 import bass
@@ -8019,6 +8017,9 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.SetTweaks()
         return gConfigPanel
 
+# TODO: dynamically create those (game independent ?) UI patchers based on
+# dictionaries in bash.patcher.__init__.py (see the game specific creation
+# below)
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(PatchMerger,ListPatcher):
@@ -8099,9 +8100,6 @@ class TweakActors(TweakActors,TweakPatcher): pass
 class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
-class AlchemicalCatalogs(AlchemicalCatalogs,Patcher): pass
-class CBash_AlchemicalCatalogs(CBash_AlchemicalCatalogs,Patcher): pass
-
 class CoblExhaustion(CoblExhaustion,ListPatcher): pass
 class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
 
@@ -8123,20 +8121,12 @@ class ContentsChecker(ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Init Patchers
-def initPatchers():
-    PatchDialog.patchers.extend((
-        globals()[x]() for x in bush.game.patchers
-        ))
-    PatchDialog.CBash_patchers.extend((
-        globals()[x]() for x in bush.game.CBash_patchers
-        ))
-
+# TODO: what is this about ? Can we bin it ?? Complicates the dynamic
+# patcher types creation...
 otherPatcherDict = {
     AliasesPatcher().__class__.__name__ : CBash_AliasesPatcher(),
     AssortedTweaker().__class__.__name__ : CBash_AssortedTweaker(),
     PatchMerger().__class__.__name__ : CBash_PatchMerger(),
-    AlchemicalCatalogs().__class__.__name__ : CBash_AlchemicalCatalogs(),
     KFFZPatcher().__class__.__name__ : CBash_KFFZPatcher(),
     ActorImporter().__class__.__name__ : CBash_ActorImporter(),
     DeathItemPatcher().__class__.__name__ : CBash_DeathItemPatcher(),
@@ -8168,7 +8158,6 @@ otherPatcherDict = {
     CBash_AliasesPatcher().__class__.__name__ : AliasesPatcher(),
     CBash_AssortedTweaker().__class__.__name__ : AssortedTweaker(),
     CBash_PatchMerger().__class__.__name__ : PatchMerger(),
-    CBash_AlchemicalCatalogs().__class__.__name__ : AlchemicalCatalogs(),
     CBash_KFFZPatcher().__class__.__name__ : KFFZPatcher(),
     CBash_ActorImporter().__class__.__name__ : ActorImporter(),
     CBash_DeathItemPatcher().__class__.__name__ : DeathItemPatcher(),
@@ -8198,6 +8187,27 @@ otherPatcherDict = {
     CBash_SEWorldEnforcer().__class__.__name__ : SEWorldEnforcer(),
     CBash_ContentsChecker().__class__.__name__ : ContentsChecker(),
     }
+
+# Dynamically create game specific UI patcher classes and add them to basher's
+# scope
+from importlib import import_module
+gamePatcher = import_module('.patcher', # TODO: move in bush.py !
+                       package=bush.game.__name__)
+for name, typeInfo in gamePatcher.game_specific.items():
+    globals()[name] = type(name, (typeInfo[0], Patcher), {})
+    if typeInfo[1]:
+        otherPatcherDict[name] = typeInfo[1]() # TODO: works ? - I don't really
+        # get otherPatcherDict purpose
+
+# Init Patchers
+def initPatchers():
+    PatchDialog.patchers.extend((
+        globals()[x]() for x in bush.game.patchers
+        ))
+    PatchDialog.CBash_patchers.extend((
+        globals()[x]() for x in bush.game.CBash_patchers
+        ))
+
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 def SetUAC(item):

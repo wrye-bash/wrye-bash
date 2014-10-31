@@ -22,12 +22,8 @@
 #
 # =============================================================================
 
-"""This package contains the Oblivion specific patchers. This module
+"""This package contains the Skyrim specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from .special import AlchemicalCatalogs, CBash_AlchemicalCatalogs
 
-game_specific = {
-    "AlchemicalCatalogs": (AlchemicalCatalogs, CBash_AlchemicalCatalogs),
-    "CBash_AlchemicalCatalogs": (CBash_AlchemicalCatalogs, AlchemicalCatalogs)
-    }
+game_specific = {}
