@@ -25,9 +25,18 @@
 """This package contains the Oblivion specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from .special import AlchemicalCatalogs, CBash_AlchemicalCatalogs
+from .special import *
 
-game_specific = {
+gameSpecificPatchers = {
+    # special
     "AlchemicalCatalogs": (AlchemicalCatalogs, CBash_AlchemicalCatalogs),
-    "CBash_AlchemicalCatalogs": (CBash_AlchemicalCatalogs, AlchemicalCatalogs)
+    "CBash_AlchemicalCatalogs": (CBash_AlchemicalCatalogs, AlchemicalCatalogs),
+    "SEWorldEnforcer": (SEWorldEnforcer, CBash_SEWorldEnforcer),
+    "CBash_SEWorldEnforcer": (CBash_SEWorldEnforcer, SEWorldEnforcer),
+    }
+gameSpecificListPatchers = {
+    "CoblExhaustion": (CoblExhaustion, CBash_CoblExhaustion),
+    "CBash_CoblExhaustion": (CBash_CoblExhaustion, CoblExhaustion),
+    "MFactMarker": (MFactMarker, CBash_MFactMarker),
+    "CBash_MFactMarker": (CBash_MFactMarker, MFactMarker),
     }

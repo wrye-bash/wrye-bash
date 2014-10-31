@@ -24,14 +24,16 @@
 
 import os
 import re
-from ....bolt import GPath, sio, SubProgress, StateError
-from ....bosh import PrintFormID
-from ....brec import MreRecord, ModReader
+from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
+from ....bosh import PrintFormID, getPatchesList, getPatchesPath, LoadFactory, \
+    ModFile
+from ....brec import MreRecord, ModReader, null4
 # from  bush import  genericAVEffects
-from .... import bush
+from .... import bush, bosh
 from ....cint import MGEFCode, FormID
 from ....patcher.base import Patcher, CBash_Patcher
-from ....patcher.patchers.base import SpecialPatcher
+from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
+    CBash_ListPatcher
 
 class _AAlchemicalCatalogs(SpecialPatcher):
     """Updates COBL alchemical catalogs."""
@@ -326,3 +328,578 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
+#------------------------------------------------------------------------------
+class _ACoblExhaustion(SpecialPatcher):
+    """Modifies most Greater power to work with Cobl's power exhaustion
+    feature."""
+    # TODO: readFromText differ only in (PBash -> CBash):
+    # -         longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+    # +         longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
+    name = _(u'Cobl Exhaustion')
+    text = (_(u"Modify greater powers to use Cobl's Power Exhaustion feature.")
+            + u'\n\n' + _(u'Will only run if Cobl Main v1.66 (or higher) is'
+                          u' active.'))
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+class CoblExhaustion(_ACoblExhaustion,ListPatcher):
+    autoKey = u'Exhaust'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cobl = GPath(u'Cobl Main.esm')
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles) and (
+            self.cobl in loadMods and bosh.modInfos.getVersionFloat(
+                self.cobl) > 1.65)
+        self.id_exhaustion = {}
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        aliases = self.patchFile.aliases
+        id_exhaustion = self.id_exhaustion
+        textPath = GPath(textPath)
+        with CsvReader(textPath) as ins:
+            reNum = re.compile(ur'\d+',re.U)
+            for fields in ins:
+                if len(fields) < 4 or fields[1][:2] != u'0x' or \
+                        not reNum.match(fields[3]):
+                    continue
+                mod,objectIndex,eid,time = fields[:4]
+                mod = GPath(mod)
+                longid = (aliases.get(mod,mod),int(objectIndex[2:],16))
+                id_exhaustion[longid] = int(time)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        progress.setFull(len(self.srcFiles))
+        for srcFile in self.srcFiles:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('SPEL',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('SPEL',) if self.isActive else ()
+
+    def scanModFile(self,modFile,progress):
+        if not self.isActive: return
+        mapper = modFile.getLongMapper()
+        patchRecords = self.patchFile.SPEL
+        for record in modFile.SPEL.getActiveRecords():
+            if not record.spellType == 2: continue
+            record = record.getTypeCopy(mapper)
+            if record.fid in self.id_exhaustion:
+                patchRecords.setRecord(record)
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        count = {}
+        exhaustId = (self.cobl,0x05139B)
+        keep = self.patchFile.getKeeper()
+        for record in self.patchFile.SPEL.records:
+            #--Skip this one?
+            duration = self.id_exhaustion.get(record.fid,0)
+            if not (duration and record.spellType == 2): continue
+            isExhausted = False
+            for effect in record.effects:
+                if effect.name == 'SEFF' and effect.scriptEffect.script == \
+                        exhaustId:
+                    duration = 0
+                    break
+            if not duration: continue
+            #--Okay, do it
+            record.full = '+'+record.full
+            record.spellType = 3 #--Lesser power
+            effect = record.getDefault('effects')
+            effect.name = 'SEFF'
+            effect.duration = duration
+            scriptEffect = record.getDefault('effects.scriptEffect')
+            scriptEffect.full = u"Power Exhaustion"
+            scriptEffect.script = exhaustId
+            scriptEffect.school = 2
+            scriptEffect.visual = null4
+            scriptEffect.flags.hostile = False
+            effect.scriptEffect = scriptEffect
+            record.effects.append(effect)
+            keep(record.fid)
+            srcMod = record.fid[0]
+            count[srcMod] = count.get(srcMod,0) + 1
+        #--Log
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Powers Tweaked') + u': %d' % sum(count.values()))
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+
+class CBash_CoblExhaustion(_ACoblExhaustion,CBash_ListPatcher):
+    autoKey = {u'Exhaust'}
+    unloadedText = ""
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.cobl = GPath(u'Cobl Main.esm')
+        self.isActive = (self.cobl in loadMods and
+                         bosh.modInfos.getVersionFloat(self.cobl) > 1.65)
+        self.id_exhaustion = {}
+        self.mod_count = {}
+        self.SEFF = MGEFCode('SEFF')
+        self.exhaustionId = FormID(self.cobl, 0x05139B)
+
+    def initData(self,group_patchers,progress):
+        if not self.isActive: return
+        for type in self.getTypes():
+            group_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['SPEL']
+
+    def readFromText(self,textPath):
+        """Imports type_id_name from specified text file."""
+        aliases = self.patchFile.aliases
+        id_exhaustion = self.id_exhaustion
+        textPath = GPath(textPath)
+        with CsvReader(textPath) as ins:
+            reNum = re.compile(ur'\d+',re.U)
+            for fields in ins:
+                if len(fields) < 4 or fields[1][:2] != u'0x' or \
+                        not reNum.match(fields[3]):
+                    continue
+                mod,objectIndex,eid,time = fields[:4]
+                mod = GPath(mod)
+                longid = FormID(aliases.get(mod,mod),int(objectIndex[2:],16))
+                id_exhaustion[longid] = int(time)
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        if record.IsPower:
+            #--Skip this one?
+            duration = self.id_exhaustion.get(record.fid,0)
+            if not duration: return
+            for effect in record.effects:
+                if effect.name == self.SEFF and effect.script == \
+                        self.exhaustionId:
+                    return
+            #--Okay, do it
+            override = record.CopyAsOverride(self.patchFile)
+            if override:
+                override.full = u'+' + override.full
+                override.IsLesserPower = True
+                effect = override.create_effect()
+                effect.name = self.SEFF
+                effect.duration = duration
+                effect.full = u'Power Exhaustion'
+                effect.script = self.exhaustionId
+                effect.IsDestruction = True
+                effect.visual = MGEFCode(None,None)
+                effect.IsHostile = False
+
+                mod_count = self.mod_count
+                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                record.UnloadRecord()
+                record._RecordID = override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'* '+_(u'Powers Tweaked') + u': %d' % (sum(mod_count.values()),))
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class _AMFactMarker(SpecialPatcher):
+    """Mark factions that player can acquire while morphing."""
+    name = _(u'Morph Factions')
+    text = (_(u"Mark factions that player can acquire while morphing.") +
+            u'\n\n' +
+            _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
+            )
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default
+
+class MFactMarker(_AMFactMarker,ListPatcher):
+    autoKey = 'MFact'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.srcFiles = self.getConfigChecked()
+        self.isActive = bool(self.srcFiles) and GPath(
+            u"Cobl Main.esm") in bosh.modInfos.ordered
+        self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
+
+    def initData(self,progress):
+        """Get names from source files."""
+        if not self.isActive: return
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        for srcFile in self.srcFiles:
+            textPath = getPatchesPath(srcFile)
+            if not textPath.exists(): continue
+            with CsvReader(textPath) as ins:
+                for fields in ins:
+                    if len(fields) < 6 or fields[1][:2] != u'0x':
+                        continue
+                    mod,objectIndex = fields[:2]
+                    mod = GPath(mod)
+                    longid = (aliases.get(mod,mod),int(objectIndex,0))
+                    morphName = fields[4].strip()
+                    rankName = fields[5].strip()
+                    if not morphName: continue
+                    if not rankName: rankName = _(u'Member')
+                    id_info[longid] = (morphName,rankName)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('FACT',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('FACT',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Scan modFile."""
+        if not self.isActive: return
+        id_info = self.id_info
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        patchBlock = self.patchFile.FACT
+        if modFile.fileInfo.name == GPath(u"Cobl Main.esm"):
+            modFile.convertToLongFids(('FACT',))
+            record = modFile.FACT.getRecord(self.mFactLong)
+            if record:
+                patchBlock.setRecord(record.getTypeCopy())
+        for record in modFile.FACT.getActiveRecords():
+            fid = record.fid
+            if not record.longFids: fid = mapper(fid)
+            if fid in id_info:
+                patchBlock.setRecord(record.getTypeCopy(mapper))
+
+    def buildPatch(self,log,progress):
+        """Make changes to patchfile."""
+        if not self.isActive: return
+        mFactLong = self.mFactLong
+        id_info = self.id_info
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        changed = {}
+        mFactable = []
+        for record in modFile.FACT.getActiveRecords():
+            if record.fid not in id_info: continue
+            if record.fid == mFactLong: continue
+            mFactable.append(record.fid)
+            #--Update record if it doesn't have an existing relation with
+            # mFactLong
+            if mFactLong not in [relation.faction for relation in
+                                 record.relations]:
+                record.flags.hiddenFromPC = False
+                relation = record.getDefault('relations')
+                relation.faction = mFactLong
+                relation.mod = 10
+                record.relations.append(relation)
+                mname,rankName = id_info[record.fid]
+                record.full = mname
+                if not record.ranks:
+                    record.ranks = [record.getDefault('ranks')]
+                for rank in record.ranks:
+                    if not rank.male: rank.male = rankName
+                    if not rank.female: rank.female = rank.male
+                    if not rank.insigniaPath:
+                        rank.insigniaPath = \
+                            u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
+                keep(record.fid)
+                mod = record.fid[0]
+                changed[mod] = changed.setdefault(mod,0) + 1
+        #--MFact record
+        record = modFile.FACT.getRecord(mFactLong)
+        if record:
+            relations = record.relations
+            del relations[:]
+            for faction in mFactable:
+                relation = record.getDefault('relations')
+                relation.faction = faction
+                relation.mod = 10
+                relations.append(relation)
+            keep(record.fid)
+        modsHeader = u'=== ' + _(u'Source Mods/Files')
+        log.setHeader(u'= ' + self.__class__.name)
+        log(modsHeader)
+        for file in self.srcFiles:
+            log(u'* ' +file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
+        for mod in sorted(changed):
+            log(u'* %s: %d' % (mod.s,changed[mod]))
+
+class CBash_MFactMarker(_AMFactMarker,CBash_ListPatcher):
+    autoKey = {'MFact'}
+    unloadedText = u""
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        if not self.isActive: return
+        self.cobl = GPath(u'Cobl Main.esm')
+        self.isActive = self.cobl in loadMods and \
+                        bosh.modInfos.getVersionFloat(self.cobl) > 1.27
+        self.id_info = {} #--Morphable factions keyed by fid
+        self.mFactLong = FormID(self.cobl,0x33FB)
+        self.mod_count = {}
+        self.mFactable = set()
+
+    def initData(self,group_patchers,progress):
+        if not self.isActive: return
+        for type in self.getTypes():
+            group_patchers.setdefault(type,[]).append(self)
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            patchesList = getPatchesList()
+            if srcPath not in patchesList: continue
+            self.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+
+    def getTypes(self):
+        return ['FACT']
+
+    def readFromText(self,textPath):
+        """Imports id_info from specified text file."""
+        aliases = self.patchFile.aliases
+        id_info = self.id_info
+        textPath = GPath(textPath)
+        if not textPath.exists(): return
+        with CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) < 6 or fields[1][:2] != u'0x':
+                    continue
+                mod,objectIndex = fields[:2]
+                mod = GPath(mod)
+                longid = FormID(aliases.get(mod,mod),int(objectIndex,0))
+                morphName = fields[4].strip()
+                rankName = fields[5].strip()
+                if not morphName: continue
+                if not rankName: rankName = _(u'Member')
+                id_info[longid] = (morphName,rankName)
+
+    #--Patch Phase ------------------------------------------------------------
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired. """
+        id_info = self.id_info
+        recordId = record.fid
+        mFactLong = self.mFactLong
+        if recordId in id_info and recordId != mFactLong:
+            self.mFactable.add(recordId)
+            if mFactLong not in [relation.faction for relation in
+                                 record.relations]:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    override.IsHiddenFromPC = False
+                    relation = override.create_relation()
+                    relation.faction = mFactLong
+                    relation.mod = 10
+                    mname,rankName = id_info[recordId]
+                    override.full = mname
+                    ranks = override.ranks or [override.create_rank()]
+                    for rank in ranks:
+                        if not rank.male: rank.male = rankName
+                        if not rank.female: rank.female = rank.male
+                        if not rank.insigniaPath:
+                            rank.insigniaPath = \
+                            u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
+                    mod_count = self.mod_count
+                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
+                                                             0) + 1
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def finishPatch(self,patchFile,progress):
+        """Edits the bashed patch file directly."""
+        mFactable = self.mFactable
+        if not mFactable: return
+        subProgress = SubProgress(progress)
+        subProgress.setFull(max(len(mFactable),1))
+        pstate = 0
+        coblMod = patchFile.Current.LookupModFile(self.cobl.s)
+
+        record = coblMod.LookupRecord(self.mFactLong)
+        if record.recType != 'FACT':
+            print PrintFormID(self.mFactLong)
+            print patchFile.Current.Debug_DumpModFiles()
+            print record
+            raise StateError(u"Cobl Morph Factions: Unable to lookup morphable"
+                             u" faction record in Cobl Main.esm!")
+
+        override = record.CopyAsOverride(patchFile)
+        if override:
+            override.relations = None
+            pstate = 0
+            for faction in mFactable:
+                subProgress(pstate, _(u'Marking Morphable Factions...')+u'\n')
+                relation = override.create_relation()
+                relation.faction = faction
+                relation.mod = 10
+                pstate += 1
+        mFactable.clear()
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_count = self.mod_count
+        log.setHeader(u'= '+self.__class__.name)
+        log(u'=== '+_(u'Source Mods/Files'))
+        for file in self.srcs:
+            log(u'* '+file.s)
+        log(u'\n=== '+_(u'Morphable Factions'))
+        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+            log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self.mod_count = {}
+
+#------------------------------------------------------------------------------
+class _ASEWorldEnforcer(SpecialPatcher):
+    """Suspends Cyrodiil quests while in Shivering Isles."""
+    name = _(u'SEWorld Tests')
+    text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
+             u"re-instates GetPlayerInSEWorld tests as necessary.")
+    defaultConfig = {'isEnabled': True}
+
+class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cyrodiilQuests = set()
+        if GPath(u'Oblivion.esm') in loadMods:
+            loadFactory = LoadFactory(False,MreRecord.type_class['QUST'])
+            modInfo = bosh.modInfos[GPath(u'Oblivion.esm')]
+            modFile = ModFile(modInfo,loadFactory)
+            modFile.load(True)
+            mapper = modFile.getLongMapper()
+            for record in modFile.QUST.getActiveRecords():
+                for condition in record.conditions:
+                    if condition.ifunc == 365 and condition.compValue == 0:
+                        self.cyrodiilQuests.add(mapper(record.fid))
+                        break
+        self.isActive = bool(self.cyrodiilQuests)
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return ('QUST',) if self.isActive else ()
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return ('QUST',) if self.isActive else ()
+
+    def scanModFile(self,modFile,progress):
+        if not self.isActive: return
+        if modFile.fileInfo.name == GPath(u'Oblivion.esm'): return
+        cyrodiilQuests = self.cyrodiilQuests
+        mapper = modFile.getLongMapper()
+        patchBlock = self.patchFile.QUST
+        for record in modFile.QUST.getActiveRecords():
+            fid = mapper(record.fid)
+            if fid not in cyrodiilQuests: continue
+            for condition in record.conditions:
+                if condition.ifunc == 365: break #--365: playerInSeWorld
+            else:
+                record = record.getTypeCopy(mapper)
+                patchBlock.setRecord(record)
+
+    def buildPatch(self,log,progress):
+        """Edits patch file as desired. Will write to log."""
+        if not self.isActive: return
+        cyrodiilQuests = self.cyrodiilQuests
+        patchFile = self.patchFile
+        keep = patchFile.getKeeper()
+        patched = []
+        for record in patchFile.QUST.getActiveRecords():
+            if record.fid not in cyrodiilQuests: continue
+            for condition in record.conditions:
+                if condition.ifunc == 365: break #--365: playerInSeWorld
+            else:
+                condition = record.getDefault('conditions')
+                condition.ifunc = 365
+                record.conditions.insert(0,condition)
+                keep(record.fid)
+                patched.append(record.eid)
+        log.setHeader('= '+self.__class__.name)
+        log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
+
+class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
+    scanRequiresChecked = True
+    applyRequiresChecked = False
+
+    #--Config Phase -----------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        self.cyrodiilQuests = set()
+        self.srcs = [GPath(u'Oblivion.esm')]
+        self.isActive = self.srcs[0] in loadMods
+        self.mod_eids = {}
+
+    def getTypes(self):
+        return ['QUST']
+
+    #--Patch Phase ------------------------------------------------------------
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        for condition in record.conditions:
+            if condition.ifunc == 365 and condition.compValue == 0:
+                self.cyrodiilQuests.add(record.fid)
+                return
+
+    def apply(self,modFile,record,bashTags):
+        """Edits patch file as desired."""
+        if modFile.GName in self.srcs: return
+
+        recordId = record.fid
+        if recordId in self.cyrodiilQuests:
+            for condition in record.conditions:
+                if condition.ifunc == 365: return #--365: playerInSeWorld
+            else:
+                override = record.CopyAsOverride(self.patchFile)
+                if override:
+                    conditions = override.conditions
+                    condition = override.create_condition()
+                    condition.ifunc = 365
+                    conditions.insert(0,condition)
+                    override.conditions = conditions
+                    self.mod_eids.setdefault(modFile.GName, []).append(
+                        override.eid)
+                    record.UnloadRecord()
+                    record._RecordID = override._RecordID
+
+    def buildPatchLog(self,log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        mod_eids = self.mod_eids
+        log.setHeader(u'= ' +self.__class__.name)
+        log(u'\n=== '+_(u'Quests Patched'))
+        for mod,eids in mod_eids.iteritems():
+            log(u'* %s: %d' % (mod.s,len(eids)))
+            for eid in sorted(eids):
+                log(u'  * %s' % eid)
+        self.mod_eids = {}
+
+#------------------------------------------------------------------------------

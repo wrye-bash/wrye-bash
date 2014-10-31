@@ -76,9 +76,7 @@ from patcher.patchers.multitweak_settings import GmstTweaker, \
     CBash_GmstTweaker
 from patcher.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
-from patcher.patchers.special import CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
-    CBash_MFactMarker, SEWorldEnforcer, CBash_SEWorldEnforcer, ContentsChecker, \
-    CBash_ContentsChecker
+from patcher.patchers.special import ContentsChecker, CBash_ContentsChecker
 from patcher.patchers.special import ListsMerger as ListsMerger_
 from patcher.patchers.special import \
     CBash_ListsMerger as CBash_ListsMerger_
@@ -8100,9 +8098,6 @@ class TweakActors(TweakActors,TweakPatcher): pass
 class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
-class CoblExhaustion(CoblExhaustion,ListPatcher): pass
-class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
-
 class UpdateReferences(UpdateReferences,ListPatcher): pass
 class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
@@ -8110,12 +8105,6 @@ class ListsMerger(ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
 class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
-
-class MFactMarker(MFactMarker,ListPatcher): pass
-class CBash_MFactMarker(CBash_MFactMarker,ListPatcher): pass
-
-class SEWorldEnforcer(SEWorldEnforcer,Patcher): pass
-class CBash_SEWorldEnforcer(CBash_SEWorldEnforcer,Patcher): pass
 
 class ContentsChecker(ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(CBash_ContentsChecker,Patcher): pass
@@ -8131,7 +8120,6 @@ otherPatcherDict = {
     ActorImporter().__class__.__name__ : CBash_ActorImporter(),
     DeathItemPatcher().__class__.__name__ : CBash_DeathItemPatcher(),
     NPCAIPackagePatcher().__class__.__name__ : CBash_NPCAIPackagePatcher(),
-    CoblExhaustion().__class__.__name__ : CBash_CoblExhaustion(),
     UpdateReferences().__class__.__name__ : CBash_UpdateReferences(),
     CellImporter().__class__.__name__ : CBash_CellImporter(),
     ClothesTweaker().__class__.__name__ : CBash_ClothesTweaker(),
@@ -8145,7 +8133,6 @@ otherPatcherDict = {
     ImportScripts().__class__.__name__ : CBash_ImportScripts(),
     ImportActorsSpells().__class__.__name__ : CBash_ImportActorsSpells(),
     ListsMerger().__class__.__name__ : CBash_ListsMerger(),
-    MFactMarker().__class__.__name__ : CBash_MFactMarker(),
     NamesPatcher().__class__.__name__ : CBash_NamesPatcher(),
     NamesTweaker().__class__.__name__ : CBash_NamesTweaker(),
     NpcFacePatcher().__class__.__name__ : CBash_NpcFacePatcher(),
@@ -8153,7 +8140,6 @@ otherPatcherDict = {
     RoadImporter().__class__.__name__ : CBash_RoadImporter(),
     SoundPatcher().__class__.__name__ : CBash_SoundPatcher(),
     StatsPatcher().__class__.__name__ : CBash_StatsPatcher(),
-    SEWorldEnforcer().__class__.__name__ : CBash_SEWorldEnforcer(),
     ContentsChecker().__class__.__name__ : CBash_ContentsChecker(),
     CBash_AliasesPatcher().__class__.__name__ : AliasesPatcher(),
     CBash_AssortedTweaker().__class__.__name__ : AssortedTweaker(),
@@ -8162,7 +8148,6 @@ otherPatcherDict = {
     CBash_ActorImporter().__class__.__name__ : ActorImporter(),
     CBash_DeathItemPatcher().__class__.__name__ : DeathItemPatcher(),
     CBash_NPCAIPackagePatcher().__class__.__name__ : NPCAIPackagePatcher(),
-    CBash_CoblExhaustion().__class__.__name__ : CoblExhaustion(),
     CBash_UpdateReferences().__class__.__name__ : UpdateReferences(),
     CBash_CellImporter().__class__.__name__ : CellImporter(),
     CBash_ClothesTweaker().__class__.__name__ : ClothesTweaker(),
@@ -8176,7 +8161,6 @@ otherPatcherDict = {
     CBash_ImportScripts().__class__.__name__ : ImportScripts(),
     CBash_ImportActorsSpells().__class__.__name__ : ImportActorsSpells(),
     CBash_ListsMerger().__class__.__name__ : ListsMerger(),
-    CBash_MFactMarker().__class__.__name__ : MFactMarker(),
     CBash_NamesPatcher().__class__.__name__ : NamesPatcher(),
     CBash_NamesTweaker().__class__.__name__ : NamesTweaker(),
     CBash_NpcFacePatcher().__class__.__name__ : NpcFacePatcher(),
@@ -8184,7 +8168,6 @@ otherPatcherDict = {
     CBash_RoadImporter().__class__.__name__ : RoadImporter(),
     CBash_SoundPatcher().__class__.__name__ : SoundPatcher(),
     CBash_StatsPatcher().__class__.__name__ : StatsPatcher(),
-    CBash_SEWorldEnforcer().__class__.__name__ : SEWorldEnforcer(),
     CBash_ContentsChecker().__class__.__name__ : ContentsChecker(),
     }
 
@@ -8193,11 +8176,14 @@ otherPatcherDict = {
 from importlib import import_module
 gamePatcher = import_module('.patcher', # TODO: move in bush.py !
                        package=bush.game.__name__)
-for name, typeInfo in gamePatcher.game_specific.items():
+for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
     globals()[name] = type(name, (typeInfo[0], Patcher), {})
     if typeInfo[1]:
-        otherPatcherDict[name] = typeInfo[1]() # TODO: works ? - I don't really
-        # get otherPatcherDict purpose
+        otherPatcherDict[name] = typeInfo[1]()
+for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
+    globals()[name] = type(name, (typeInfo[0], ListPatcher), {})
+    if typeInfo[1]:
+        otherPatcherDict[name] = typeInfo[1]()
 
 # Init Patchers
 def initPatchers():

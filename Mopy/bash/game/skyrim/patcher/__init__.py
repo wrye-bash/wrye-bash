@@ -26,4 +26,5 @@
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 
-game_specific = {}
+gameSpecificPatchers = {}
+gameSpecificListPatchers = {}
