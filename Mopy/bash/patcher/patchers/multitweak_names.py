@@ -26,12 +26,11 @@
 to the Names Multitweaker - as well as the NamesTweaker itself."""
 # TODO:DOCS
 import re
-from .... import bosh # for modInfos
-from ....patcher.base import AMultiTweakItem, AMultiTweaker
-from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweaker, \
-    CBash_MultiTweaker
+# Internal
+from ... import bosh # for modInfos
+from ...patcher.base import AMultiTweakItem, AMultiTweaker
+from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
+from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 class _AMultiTweakItem_Names(MultiTweakItem):
 

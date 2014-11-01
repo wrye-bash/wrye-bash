@@ -69,7 +69,7 @@ from brec import *
 from brec import _coerce # Since it wont get imported by the import * (it
 # begins with _)
 from chardet.universaldetector import UniversalDetector
-from patcher.oblivion.record_groups import MobWorlds, MobDials, MobICells, \
+from patcher.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
 import libbsa

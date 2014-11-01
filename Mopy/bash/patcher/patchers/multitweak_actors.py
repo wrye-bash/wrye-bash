@@ -27,13 +27,12 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 # TODO:DOCS
 import random
 import re
-from .... import bosh # for modInfos, dirs
-from ....bolt import AbstractError, GPath
-from ....cint import FormID
-from ....patcher.base import AMultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem
-from ....patcher.oblivion.patchers.base import MultiTweaker, \
+# Internal
+from ... import bosh # for modInfos, dirs
+from ...bolt import AbstractError, GPath
+from ...cint import FormID
+from ...patcher.base import AMultiTweakItem
+from .base import MultiTweakItem, CBash_MultiTweakItem, MultiTweaker, \
     CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------

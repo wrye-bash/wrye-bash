@@ -51,10 +51,10 @@ from bosh import formatInteger,formatDate
 from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
 from bolt import LString, GPath, SubProgress, deprint, sio
 from cint import *
-from patcher.oblivion.patchers.base import MultiTweaker, CBash_MultiTweaker, \
+from patcher.patchers.base import MultiTweaker, CBash_MultiTweaker, \
     AliasesPatcher, CBash_AliasesPatcher, PatchMerger, CBash_PatchMerger, \
     UpdateReferences, CBash_UpdateReferences
-from patcher.oblivion.patchers.importers import CellImporter, \
+from patcher.patchers.importers import CellImporter, \
     CBash_CellImporter, GraphicsPatcher, CBash_GraphicsPatcher, ActorImporter, \
     CBash_ActorImporter, KFFZPatcher, CBash_KFFZPatcher, NPCAIPackagePatcher, \
     CBash_NPCAIPackagePatcher, DeathItemPatcher, CBash_DeathItemPatcher, \
@@ -64,24 +64,21 @@ from patcher.oblivion.patchers.importers import CellImporter, \
     NamesPatcher, CBash_NamesPatcher, NpcFacePatcher, CBash_NpcFacePatcher, \
     RoadImporter, CBash_RoadImporter, SoundPatcher, CBash_SoundPatcher, \
     StatsPatcher, CBash_StatsPatcher, SpellsPatcher, CBash_SpellsPatcher
-from patcher.oblivion.patchers.multitweak_actors import TweakActors, \
+from patcher.patchers.multitweak_actors import TweakActors, \
     CBash_TweakActors
-from patcher.oblivion.patchers.multitweak_assorted import AssortedTweaker, \
+from patcher.patchers.multitweak_assorted import AssortedTweaker, \
     CBash_AssortedTweaker
-from patcher.oblivion.patchers.multitweak_clothes import ClothesTweaker, \
+from patcher.patchers.multitweak_clothes import ClothesTweaker, \
     CBash_ClothesTweaker
-from patcher.oblivion.patchers.multitweak_names import NamesTweaker, \
+from patcher.patchers.multitweak_names import NamesTweaker, \
     CBash_NamesTweaker
-from patcher.oblivion.patchers.multitweak_settings import GmstTweaker, \
+from patcher.patchers.multitweak_settings import GmstTweaker, \
     CBash_GmstTweaker
-from patcher.oblivion.patchers.races_multitweaks import RacePatcher, \
+from patcher.patchers.races_multitweaks import RacePatcher, \
     CBash_RacePatcher
-from patcher.oblivion.patchers.special import AlchemicalCatalogs, \
-    CBash_AlchemicalCatalogs, CoblExhaustion, CBash_CoblExhaustion, MFactMarker, \
-    CBash_MFactMarker, SEWorldEnforcer, CBash_SEWorldEnforcer, ContentsChecker, \
-    CBash_ContentsChecker
-from patcher.oblivion.patchers.special import ListsMerger as ListsMerger_
-from patcher.oblivion.patchers.special import \
+from patcher.patchers.special import ContentsChecker, CBash_ContentsChecker
+from patcher.patchers.special import ListsMerger as ListsMerger_
+from patcher.patchers.special import \
     CBash_ListsMerger as CBash_ListsMerger_
 
 startupinfo = bolt.startupinfo
@@ -8018,6 +8015,9 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.SetTweaks()
         return gConfigPanel
 
+# TODO: dynamically create those (game independent ?) UI patchers based on
+# dictionaries in bash.patcher.__init__.py (see the game specific creation
+# below)
 #------------------------------------------------------------------------------
 # Patchers 10 ------------------------------------------------------------------
 class PatchMerger(PatchMerger,ListPatcher):
@@ -8098,12 +8098,6 @@ class TweakActors(TweakActors,TweakPatcher): pass
 class CBash_TweakActors(CBash_TweakActors,TweakPatcher): pass
 
 # Patchers 40 ------------------------------------------------------------------
-class AlchemicalCatalogs(AlchemicalCatalogs,Patcher): pass
-class CBash_AlchemicalCatalogs(CBash_AlchemicalCatalogs,Patcher): pass
-
-class CoblExhaustion(CoblExhaustion,ListPatcher): pass
-class CBash_CoblExhaustion(CBash_CoblExhaustion,ListPatcher): pass
-
 class UpdateReferences(UpdateReferences,ListPatcher): pass
 class CBash_UpdateReferences(CBash_UpdateReferences,ListPatcher): pass
 
@@ -8112,35 +8106,20 @@ class ListsMerger(ListsMerger_,ListPatcher):
 class CBash_ListsMerger(CBash_ListsMerger_,ListPatcher):
     listLabel = _(u'Override Delev/Relev Tags')
 
-class MFactMarker(MFactMarker,ListPatcher): pass
-class CBash_MFactMarker(CBash_MFactMarker,ListPatcher): pass
-
-class SEWorldEnforcer(SEWorldEnforcer,Patcher): pass
-class CBash_SEWorldEnforcer(CBash_SEWorldEnforcer,Patcher): pass
-
 class ContentsChecker(ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(CBash_ContentsChecker,Patcher): pass
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-# Init Patchers
-def initPatchers():
-    PatchDialog.patchers.extend((
-        globals()[x]() for x in bush.game.patchers
-        ))
-    PatchDialog.CBash_patchers.extend((
-        globals()[x]() for x in bush.game.CBash_patchers
-        ))
-
+# TODO: what is this about ? Can we bin it ?? Complicates the dynamic
+# patcher types creation...
 otherPatcherDict = {
     AliasesPatcher().__class__.__name__ : CBash_AliasesPatcher(),
     AssortedTweaker().__class__.__name__ : CBash_AssortedTweaker(),
     PatchMerger().__class__.__name__ : CBash_PatchMerger(),
-    AlchemicalCatalogs().__class__.__name__ : CBash_AlchemicalCatalogs(),
     KFFZPatcher().__class__.__name__ : CBash_KFFZPatcher(),
     ActorImporter().__class__.__name__ : CBash_ActorImporter(),
     DeathItemPatcher().__class__.__name__ : CBash_DeathItemPatcher(),
     NPCAIPackagePatcher().__class__.__name__ : CBash_NPCAIPackagePatcher(),
-    CoblExhaustion().__class__.__name__ : CBash_CoblExhaustion(),
     UpdateReferences().__class__.__name__ : CBash_UpdateReferences(),
     CellImporter().__class__.__name__ : CBash_CellImporter(),
     ClothesTweaker().__class__.__name__ : CBash_ClothesTweaker(),
@@ -8154,7 +8133,6 @@ otherPatcherDict = {
     ImportScripts().__class__.__name__ : CBash_ImportScripts(),
     ImportActorsSpells().__class__.__name__ : CBash_ImportActorsSpells(),
     ListsMerger().__class__.__name__ : CBash_ListsMerger(),
-    MFactMarker().__class__.__name__ : CBash_MFactMarker(),
     NamesPatcher().__class__.__name__ : CBash_NamesPatcher(),
     NamesTweaker().__class__.__name__ : CBash_NamesTweaker(),
     NpcFacePatcher().__class__.__name__ : CBash_NpcFacePatcher(),
@@ -8162,17 +8140,14 @@ otherPatcherDict = {
     RoadImporter().__class__.__name__ : CBash_RoadImporter(),
     SoundPatcher().__class__.__name__ : CBash_SoundPatcher(),
     StatsPatcher().__class__.__name__ : CBash_StatsPatcher(),
-    SEWorldEnforcer().__class__.__name__ : CBash_SEWorldEnforcer(),
     ContentsChecker().__class__.__name__ : CBash_ContentsChecker(),
     CBash_AliasesPatcher().__class__.__name__ : AliasesPatcher(),
     CBash_AssortedTweaker().__class__.__name__ : AssortedTweaker(),
     CBash_PatchMerger().__class__.__name__ : PatchMerger(),
-    CBash_AlchemicalCatalogs().__class__.__name__ : AlchemicalCatalogs(),
     CBash_KFFZPatcher().__class__.__name__ : KFFZPatcher(),
     CBash_ActorImporter().__class__.__name__ : ActorImporter(),
     CBash_DeathItemPatcher().__class__.__name__ : DeathItemPatcher(),
     CBash_NPCAIPackagePatcher().__class__.__name__ : NPCAIPackagePatcher(),
-    CBash_CoblExhaustion().__class__.__name__ : CoblExhaustion(),
     CBash_UpdateReferences().__class__.__name__ : UpdateReferences(),
     CBash_CellImporter().__class__.__name__ : CellImporter(),
     CBash_ClothesTweaker().__class__.__name__ : ClothesTweaker(),
@@ -8186,7 +8161,6 @@ otherPatcherDict = {
     CBash_ImportScripts().__class__.__name__ : ImportScripts(),
     CBash_ImportActorsSpells().__class__.__name__ : ImportActorsSpells(),
     CBash_ListsMerger().__class__.__name__ : ListsMerger(),
-    CBash_MFactMarker().__class__.__name__ : MFactMarker(),
     CBash_NamesPatcher().__class__.__name__ : NamesPatcher(),
     CBash_NamesTweaker().__class__.__name__ : NamesTweaker(),
     CBash_NpcFacePatcher().__class__.__name__ : NpcFacePatcher(),
@@ -8194,9 +8168,32 @@ otherPatcherDict = {
     CBash_RoadImporter().__class__.__name__ : RoadImporter(),
     CBash_SoundPatcher().__class__.__name__ : SoundPatcher(),
     CBash_StatsPatcher().__class__.__name__ : StatsPatcher(),
-    CBash_SEWorldEnforcer().__class__.__name__ : SEWorldEnforcer(),
     CBash_ContentsChecker().__class__.__name__ : ContentsChecker(),
     }
+
+# Dynamically create game specific UI patcher classes and add them to basher's
+# scope
+from importlib import import_module
+gamePatcher = import_module('.patcher', # TODO: move in bush.py !
+                       package=bush.game.__name__)
+for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
+    globals()[name] = type(name, (typeInfo[0], Patcher), {})
+    if typeInfo[1]:
+        otherPatcherDict[name] = typeInfo[1]()
+for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
+    globals()[name] = type(name, (typeInfo[0], ListPatcher), {})
+    if typeInfo[1]:
+        otherPatcherDict[name] = typeInfo[1]()
+
+# Init Patchers
+def initPatchers():
+    PatchDialog.patchers.extend((
+        globals()[x]() for x in bush.game.patchers
+        ))
+    PatchDialog.CBash_patchers.extend((
+        globals()[x]() for x in bush.game.CBash_patchers
+        ))
+
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 def SetUAC(item):
@@ -12142,7 +12139,7 @@ class StatusBar_Hide(Link):
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import ActorLevels, CBash_ActorLevels
+from patcher.utilities import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(Link):
     """Export actor levels from mod to text file."""
@@ -13163,7 +13160,7 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import FactionRelations, CBash_FactionRelations
+from patcher.utilities import FactionRelations, CBash_FactionRelations
 
 class Mod_FactionRelations_Export(Link):
     """Export faction relations from mod to text file."""
@@ -13255,7 +13252,7 @@ class Mod_FactionRelations_Import(Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import ActorFactions, CBash_ActorFactions
+from patcher.utilities import ActorFactions, CBash_ActorFactions
 
 class Mod_Factions_Export(Link):
     """Export factions from mod to text file."""
@@ -13775,7 +13772,7 @@ class Mod_Groups_Import(Link):
             _(u"Import Groups"))
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import EditorIds, CBash_EditorIds
+from patcher.utilities import EditorIds, CBash_EditorIds
 
 class Mod_EditorIds_Export(Link):
     """Export editor ids from mod to text file."""
@@ -13942,7 +13939,7 @@ class Mod_DecompileAll(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import FidReplacer, CBash_FidReplacer
+from patcher.utilities import FidReplacer, CBash_FidReplacer
 
 class Mod_Fids_Replace(Link):
     """Replace fids according to text file."""
@@ -13988,7 +13985,7 @@ class Mod_Fids_Replace(Link):
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import FullNames, CBash_FullNames
+from patcher.utilities import FullNames, CBash_FullNames
 
 class Mod_FullNames_Export(Link):
     """Export full names from mod to text file."""
@@ -14521,7 +14518,7 @@ class Mod_ShowReadme(Link):
         docBrowser.Raise()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import ScriptText, CBash_ScriptText
+from patcher.utilities import ScriptText, CBash_ScriptText
 
 class Mod_Scripts_Export(Link):
     """Export scripts from mod to text file."""
@@ -14650,7 +14647,7 @@ class Mod_Scripts_Import(Link):
             balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import ItemStats, CBash_ItemStats
+from patcher.utilities import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(Link):
     """Export armor and weapon stats from mod to text file."""
@@ -14741,7 +14738,7 @@ class Mod_Stats_Import(Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import CompleteItemData, CBash_CompleteItemData
+from patcher.utilities import CompleteItemData, CBash_CompleteItemData
 
 class Mod_ItemData_Export(Link):
     """Export pretty much complete item data from mod to text file."""
@@ -14832,7 +14829,7 @@ class Mod_ItemData_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import ItemPrices, CBash_ItemPrices
+from patcher.utilities import ItemPrices, CBash_ItemPrices
 
 class Mod_Prices_Export(Link):
     """Export item prices from mod to text file."""
@@ -14927,7 +14924,7 @@ class Mod_Prices_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import CBash_MapMarkers
+from patcher.utilities import CBash_MapMarkers
 
 class CBash_Mod_MapMarkers_Export(Link):
     """Export map marker stats from mod to text file."""
@@ -15013,7 +15010,7 @@ class CBash_Mod_MapMarkers_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import CBash_CellBlockInfo
+from patcher.utilities import CBash_CellBlockInfo
 
 class CBash_Mod_CellBlockInfo(Link):
     """Export Cell Block Info to text file.
@@ -15049,7 +15046,7 @@ class CBash_Mod_CellBlockInfo(Link):
             progress(1.0,_(u"Done."))
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+from patcher.utilities import SigilStoneDetails, CBash_SigilStoneDetails
 
 class Mod_SigilStoneDetails_Export(Link):
     """Export Sigil Stone details from mod to text file."""
@@ -15145,7 +15142,7 @@ class Mod_SigilStoneDetails_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import SpellRecords, CBash_SpellRecords
+from patcher.utilities import SpellRecords, CBash_SpellRecords
 
 class Mod_SpellRecords_Export(Link):
     """Export Spell details from mod to text file."""
@@ -15248,7 +15245,7 @@ class Mod_SpellRecords_Import(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from patcher.oblivion.utilities import IngredientDetails, CBash_IngredientDetails
+from patcher.utilities import IngredientDetails, CBash_IngredientDetails
 
 class Mod_IngredientDetails_Export(Link):
     """Export Ingredient details from mod to text file."""

@@ -27,10 +27,10 @@
 from operator import itemgetter
 import struct
 # Wrye Bash imports
-from ...bolt import AbstractError, ArgumentError
-from ...brec import ModError, ModReader
-from ...bolt import GPath, sio
-from ... import bush # for groupTypes
+from ..bolt import AbstractError, ArgumentError
+from ..brec import ModError, ModReader
+from ..bolt import GPath, sio
+from .. import bush # for groupTypes
 import bash # TODO: this file is imported to bosh still...
 
 class MobBase(object):

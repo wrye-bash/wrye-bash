@@ -31,17 +31,15 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 import random
 import re
 # Internal
-from .... import bush # for fullLoadOrder, defaultEyes (?)
-from .... import bosh # for modInfos
-from ....bolt import SubProgress, BoltError, GPath, deprint
-from ....bosh import PatchFile, LoadFactory, ModFile
-from ....brec import MreRecord, MelObject, strFid
-from ....cint import ValidateDict, FormID
-from ....patcher.base import AMultiTweakItem, Patcher
-from ....patcher.oblivion.patchers.base import MultiTweakItem, \
-    CBash_MultiTweakItem, SpecialPatcher
-from ....patcher.oblivion.patchers.base import DoublePatcher, \
-    CBash_DoublePatcher, CBash_ListPatcher
+from ... import bush # for fullLoadOrder, defaultEyes (?)
+from ... import bosh # for modInfos
+from ...bolt import SubProgress, BoltError, GPath, deprint
+from ...bosh import PatchFile, LoadFactory, ModFile
+from ...brec import MreRecord, MelObject, strFid
+from ...cint import ValidateDict, FormID
+from ...patcher.base import AMultiTweakItem, Patcher
+from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
+    DoublePatcher, CBash_DoublePatcher, CBash_ListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):

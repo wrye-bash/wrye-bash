@@ -32,12 +32,12 @@ from operator import attrgetter, itemgetter
 import re
 import struct
 # Internal
-from ... import bush # for game and actorValues
-from ...balt import Progress
-from ...bolt import GPath, _unicode, deprint, CsvReader, csvFormat
-from ...bosh import LoadFactory, ModFile, dirs, inisettings
-from ...brec import MreRecord, MelObject, _coerce, genFid, ModReader
-from ...cint import ObCollection, FormID, aggregateTypes, validTypes, \
+from .. import bush # for game and actorValues
+from ..balt import Progress
+from ..bolt import GPath, _unicode, deprint, CsvReader, csvFormat
+from ..bosh import LoadFactory, ModFile, dirs, inisettings
+from ..brec import MreRecord, MelObject, _coerce, genFid, ModReader
+from ..cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
 

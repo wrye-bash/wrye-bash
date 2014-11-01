@@ -22,5 +22,28 @@
 #
 # =============================================================================
 
-"""This module contains the oblivion specific code. WIP - detailed docs when
- done"""
+"""This module contains the patcher classes
+
+# Patchers 1 ------------------------------------------------------------------
+In patchers/base.py except Patcher and CBash_Patcher which are in
+patcher/base.py
+
+# Patchers 10 -----------------------------------------------------------------
+In patchers/base.py
+
+# Patchers: 20 ----------------------------------------------------------------
+importers.py
+
+# Patchers: 30 ----------------------------------------------------------------
+# MultiTweakItem and MultiTweaker classes except from races_multitweaks
+multitweak_actors.py
+multitweak_assorted.py
+multitweak_clothes.py
+multitweak_names.py
+multitweak_settings.py
+
+# Patchers: 40 ----------------------------------------------------------------
+# SpecialPatcher is used in those
+races_multitweaks.py
+special.py
+"""

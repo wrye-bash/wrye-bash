@@ -25,12 +25,13 @@
 """This module contains oblivion base patcher classes.""" # TODO:DOCS
 import struct
 from operator import itemgetter
-from .... import bosh # for bosh.modInfos, dirs
-from ....bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt, \
+# Internal
+from ... import bosh # for bosh.modInfos, dirs
+from ...bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt, \
     getPatchesPath, CountDict
-from ....bolt import GPath, CsvReader
-from ....brec import MreRecord
-from ....patcher.base import AMultiTweakItem, AMultiTweaker, Patcher, \
+from ...bolt import GPath, CsvReader
+from ...brec import MreRecord
+from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
     AImportPatcher, APatchMerger, AUpdateReferences
 
@@ -563,7 +564,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'* ' + mod.s)
 
 # Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher:
+class SpecialPatcher(object):
     """Provides default group, scan and edit orders."""
     group = _(u'Special')
     scanOrder = 40
