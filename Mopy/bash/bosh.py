@@ -7486,7 +7486,7 @@ class InstallerConverter(object):
             if len(errorLine) or regErrMatch(line):
                 errorLine.append(line)
             if maExtracting:
-                extracted = unicode(GPath(maExtracting.group(1).strip()), 'utf8')
+                extracted = GPath(maExtracting.group(1).strip())
                 if progress:
                     progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
                 if extracted.cext in readExts:
