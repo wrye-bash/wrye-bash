@@ -18,7 +18,9 @@ plugins:
   - name: Unofficial Skyrim Patch.esp
     tag:
       - Delev
+      - Names
       - Relev
+      - Stats
   - name: Dawnguard.esm
     tag:
       - Delev
@@ -38,7 +40,8 @@ plugins:
   - name: Unofficial Dawnguard Patch.esp
     tag:
       - Delev
-      - Relev
+      - Names
+      - Stats
   - name: Hearthfires.esm
     dirty:
       - crc: 0xaf82ce6a
@@ -46,6 +49,9 @@ plugins:
         itm: 184
         udr: 11
         nav: 5
+  - name: Unofficial Hearthfire Patch.esp
+    tag:
+      - Names
   - name: Dragonborn.esm
     dirty:
       - crc: 0xa9f83bff
@@ -56,6 +62,8 @@ plugins:
   - name: Unofficial Dragonborn Patch.esp
     tag:
       - Delev
+      - Names
+      - Stats
   - name: Wyrmstooth.esp
     dirty:
       - crc: 0x54f43cef
@@ -745,6 +753,9 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
   - name: Cutting Room Floor.esp
+    tag:
+      - Delev
+      - Names
     dirty:
       - crc: 0x6a765402
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -786,10 +797,6 @@ plugins:
       - crc: 0xc3c5505
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 16
-  - name: (83Willows_)?101BUGs.+\.esp
-    tag:
-      - Delev
-      - Relev
   - name: ADV HB-Style.esp
     dirty:
       - crc: 0x4ae9efe5
@@ -7068,6 +7075,7 @@ plugins:
       - crc: 0x8e258333
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 8
+        nav: 2
   - name: throneroom.esp
     dirty:
       - crc: 0x2f04b129
