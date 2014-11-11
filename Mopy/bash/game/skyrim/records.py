@@ -4196,10 +4196,27 @@ class MreMisc(MelRecord):
 class MreMovt(MelRecord):
     """Movt Item"""
     classType = 'MOVT'
+    class MelMovtSped(MelStruct):
+        """Handle older truncated SPED for MOVT subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 44:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 40:
+                unpacked = ins.unpack('10f',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,44,size,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('MNAM','mnam_n'),
-        MelStruct('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
+        MelMovtSped('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
                   'forwardWalk','forwardRun','backWalk','backRun',
                   'rotateInPlaceWalk','rotateInPlaceRun',
                   'rotateWhileMovingRun'),
