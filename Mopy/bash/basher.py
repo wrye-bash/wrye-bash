@@ -7436,8 +7436,8 @@ class Patcher:
             self.gConfigPanel.Layout()
 
 #------------------------------------------------------------------------------
-class AliasesPatcher(Patcher, AliasesPatcher):
-    """Basic patcher panel with no options."""
+class _AliasesPatcher(Patcher):
+    """Basic patcher panel with no options.""" # TODO(ut): what ?
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
@@ -7445,46 +7445,9 @@ class AliasesPatcher(Patcher, AliasesPatcher):
         #--Tip
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
-        text = fill(self.__class__.text,70)
-        gText = staticText(gConfigPanel,text)
-        #gExample = staticText(gConfigPanel,
-        #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
-        #--Aliases Text
-        self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
-        self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
-        self.SetAliasText()
-        #--Sizing
-        gSizer = vSizer(
-            gText,
-            #(gExample,0,wx.EXPAND|wx.TOP,8),
-            (self.gAliases,1,wx.EXPAND|wx.TOP,4))
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
-        return self.gConfigPanel
-
-    def SetAliasText(self):
-        """Sets alias text according to current aliases."""
-        self.gAliases.SetValue(u'\n'.join([
-            u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())]))
-
-    def OnEditAliases(self,event):
-        text = self.gAliases.GetValue()
-        self.aliases.clear()
-        for line in text.split(u'\n'):
-            fields = map(string.strip,line.split(u'>>'))
-            if len(fields) != 2 or not fields[0] or not fields[1]: continue
-            self.aliases[GPath(fields[0])] = GPath(fields[1])
-        self.SetAliasText()
-
-class CBash_AliasesPatcher(Patcher, CBash_AliasesPatcher):
-    """Basic patcher panel with no options."""
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
-        """Show config."""
-        if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        #--Tip
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        # PBASH -> CBASH difference:
+        # -        text = fill(self.__class__.text,70)
+        # +        text = fill(self.text,70)
         text = fill(self.text,70)
         gText = staticText(gConfigPanel,text)
         #gExample = staticText(gConfigPanel,
@@ -7515,6 +7478,9 @@ class CBash_AliasesPatcher(Patcher, CBash_AliasesPatcher):
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
+
+class AliasesPatcher(_AliasesPatcher, AliasesPatcher): pass
+class CBash_AliasesPatcher(_AliasesPatcher, CBash_AliasesPatcher): pass
 
 #------------------------------------------------------------------------------
 class ListPatcher(Patcher):
