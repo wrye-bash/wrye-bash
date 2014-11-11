@@ -1191,10 +1191,10 @@ class MreHeader(MreHeaderBase):
         MelUnicode('SNAM','description',u'',512),
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'), # 8 Bytes in Length
-        MelFidList('ONAM','overrides'),
-        MelBase('SCRN', 'ingv_p'),
-        MelBase('INTV','ingv_p'),
-        MelBase('INCC', 'ingv_p'),
+        MelFidList('ONAM','overrides',),
+        MelBase('SCRN', 'scrn_p'),
+        MelBase('INTV','intv_p'),
+        MelBase('INCC', 'incc_p'),
         )
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
