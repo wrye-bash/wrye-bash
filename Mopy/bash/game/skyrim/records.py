@@ -2082,15 +2082,12 @@ class MreClmt(MelRecord):
     """Climate"""
     classType = 'CLMT'
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelGroups('weatherTypes',
-            MelStruct('WLST','IiI',(FID,'weather',None),'chance',(FID,'global',None),),
-            ),
-        MelLString('FNAM','sunPath'),
-        MelLString('GNAM','glarePath'),
+        MelString('EDID','eid',),
+        MelStructA('WLST','IiI','weatherTypes',(FID,'weather',None),'chance',(FID,'global',None),),
+        MelString('FNAM','sunPath',),
+        MelString('GNAM','glarePath',),
         MelModel(),
-        MelStruct('TNAM','6B','riseBegin','riseEnd','setBegin','setEnd',
-                  'volatility','phaseLength',),
+        MelStruct('TNAM','6B','riseBegin','riseEnd','setBegin','setEnd','volatility','phaseLength',),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
