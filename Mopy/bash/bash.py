@@ -31,8 +31,6 @@ import atexit
 import os
 from time import time, sleep
 import sys
-import codecs
-import re
 import traceback
 import StringIO
 
@@ -41,8 +39,9 @@ import barg
 opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import GPath, deprint
+from bolt import GPath
 basherImported = False
+bashFrame = None # introduced to avoid importing basher to barb.py
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -74,11 +73,12 @@ def cmdBackup():
     # backup settings if app version has changed or on user request
     if not basherImported:
         import basher, barb
-    backup = None
+        global bashFrame
+        bashFrame = basher.bashFrame
     path = None
     quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
-    backup = barb.BackupSettings(basher.bashFrame,path,quit,opts.backup_images)
+    backup = barb.BackupSettings(bashFrame,path,quit,opts.backup_images)
     if backup.PromptMismatch() or opts.backup:
         try:
             backup.Apply()
@@ -95,14 +95,17 @@ def cmdBackup():
 
 def cmdRestore():
     # restore settings on user request
-    if not basherImported: import basher, barb
+    if not basherImported:
+        import basher, barb
+        global bashFrame
+        bashFrame = basher.bashFrame
     backup = None
     path = None
     quit = opts.restore and opts.quietquit
     if opts.restore: path = GPath(opts.filename)
     if opts.restore:
         try:
-            backup = barb.RestoreSettings(basher.bashFrame,path,quit,
+            backup = barb.RestoreSettings(bashFrame,path,quit,
                                           opts.backup_images)
             backup.Apply()
         except barb.BackupCancelled:
@@ -630,8 +633,9 @@ def main():
     quit = cmdRestore() or quit
     if quit: return
 
-    global basherImported
+    global basherImported, bashFrame
     basherImported = True
+    bashFrame = basher.bashFrame
 
     basher.isUAC = isUAC
     if isUAC:

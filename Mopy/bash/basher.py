@@ -84,7 +84,6 @@ from patcher.patchers.special import \
 startupinfo = bolt.startupinfo
 
 #--Python
-import ConfigParser
 import StringIO
 import copy
 import datetime
@@ -94,26 +93,23 @@ import shutil
 import string
 import struct
 import sys
-import textwrap
 import time
 import subprocess
 import locale
 import win32gui
-import multiprocessing
 import webbrowser
 from types import *
-from operator import attrgetter,itemgetter
+from operator import attrgetter
 
 #--wxPython
 import wx
 import wx.gizmos
-from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 
 #--Balt
 import balt
 from balt import tooltip, fill, bell
 from balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
-from balt import spacer, hSizer, vSizer, hsbSizer, vsbSizer
+from balt import spacer, hSizer, vSizer, hsbSizer
 from balt import colors, images, Image
 from balt import Links, Link, SeparatorLink, MenuLink
 from balt import ListCtrl
