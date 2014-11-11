@@ -1269,40 +1269,283 @@ patchers = (
 #--CBash patchers available when building a Bashed Patch
 CBash_patchers = tuple()
 
-# For ListsMerger
+#-------------------------------------------------------------------------------
+# ListsMerger
+#-------------------------------------------------------------------------------
 listTypes = ('LVLI','LVLN','LVSP',)
+#-------------------------------------------------------------------------------
+# NamesPatcher
+#-------------------------------------------------------------------------------
+# remaining to add: 'PERK', 'RACE',
+namesTypes = {
+    'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'CLFM',
+    'CONT', 'DIAL', 'DOOR', 'ENCH', 'EXPL', 'EYES', 'FACT', 'FLOR', 'FURN', 'HAZD',
+    'HDPT', 'INGR', 'KEYM', 'LCTN', 'LIGH', 'MESG', 'MGEF', 'MISC', 'MSTT', 'NPC_',
+    'PROJ', 'SCRL', 'SHOU', 'SLGM', 'SNCT', 'SPEL', 'TACT', 'TREE', 'WATR', 'WEAP',
+    'WOOP'
+    }
+#-------------------------------------------------------------------------------
+# ItemPrices Patcher
+#-------------------------------------------------------------------------------
+pricesTypes = {
+    'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'INGR':{},'KEYM':{},
+    'LIGH':{},'MISC':{},'SLGM':{},'WEAP':{}
+    }
 
-namesTypes = {'ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',}
-pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
 #-------------------------------------------------------------------------------
 # StatsImporter
 #-------------------------------------------------------------------------------
 statsTypes = {
-            'AMMO':('eid', 'value', 'damage'),
-            'ARMO':('eid', 'weight', 'value', 'armorRating'),
-            'APPA':('eid', 'weight', 'value'),
-            'MISC':('eid', 'weight', 'value'),
-            }
+        'ALCH':('eid', 'weight', 'value'),
+        'AMMO':('eid', 'value', 'damage'),
+        'APPA':('eid', 'weight', 'value'),
+        'ARMO':('eid', 'weight', 'value', 'armorRating'),
+        'BOOK':('eid', 'weight', 'value'),
+        'INGR':('eid', 'weight', 'value'),
+        'KEYM':('eid', 'weight', 'value'),
+        'LIGH':('eid', 'weight', 'value', 'duration'),
+        'MISC':('eid', 'weight', 'value'),
+        'SLGM':('eid', 'weight', 'value'),
+        'WEAP':('eid', 'weight', 'value', 'damage', 'speed', 'reach',
+                'enchantPoints', 'stagger', 'critDamage','criticalMultiplier',
+                'criticalEffect',),
+    }
 statsHeaders = (
+                #--Alch
+                (u'ALCH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Ammo
                 (u'AMMO',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Apparatus
+                (u'APPA',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
                     _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 #--Armo
                 (u'ARMO',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
                     _(u'Editor Id'),_(u'Weight'),_(u'Value'),_('armorRating'))) + u'"\n')),
-                (u'APPA',
+                #Books
+                (u'BOOK',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
                     _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                    #Ingredients
+                (u'INGR',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Keys
+                (u'KEYM',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #Lights
+                (u'LIGH',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
+                #--Misc
                 (u'MISC',
                     (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
                     _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #Soulgems
+                (u'SLGM',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+                #--Weapons
+                (u'WEAP',
+                    (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+                    _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),
+                    _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
                 )
 
+#-------------------------------------------------------------------------------
+# SoundPatcher
+#-------------------------------------------------------------------------------
+# Needs longs in SoundPatcher
+soundsLongsTypes = set((
+    'ACTI', 'ADDN', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO', 'ASPC', 'BOOK', 'CONT',
+    'DOOR', 'EFSH', 'EXPL', 'FLOR', 'HAZD', 'INGR', 'IPCT', 'KEYM', 'LIGH', 'MGEF',
+    'MISC', 'MSTT', 'SCRL', 'SLGM', 'SNCT', 'SNDR', 'SOPM', 'SOUN', 'TACT', 'TREE',
+    'WATR', 'WEAP', 'WTHR',
+))
+soundsTypes = {
+    "ACTI": ('dropSound','pickupSound',),
+    "ADDN": ('ambientSound',),
+    "ALCH": ('dropSound','pickupSound','soundConsume',),
+    "AMMO": ('pickupSound','dropSound',),
+    "APPA": ('pickupSound','dropSound',),
+    "ARMA": ('footstepSound',),
+    "ARMO": ('pickupSound','dropSound',),
+    "ASPC": ('ambientSound','regionData','reverb',),
+    "BOOK": ('pickupSound','dropSound',),
+    "CONT": ('soundOpen','soundClose',),
+    "DOOR": ('soundOpen','soundClose','soundLoop',),
+    "EFSH": ('ambientSound',),
+    "EXPL": ('sound1','sound2',),
+    "FLOR": ('harvestSound',),
+    "HAZD": ('sound',),
+    "INGR": ('pickupSound','dropSound',),
+    "IPCT": ('sound1','sound2',),
+    "KEYM": ('pickupSound','dropSound',),
+    "LIGH": ('sound',),
+    #Needs to loop over all the sounds
+    "MGEF": ('sounds',),
+    # "REGN": ('entries',),
+    "MISC": ('pickupSound','dropSound',),
+    "MSTT": ('sound',),
+    "SCRL": ('pickupSound','dropSound',),
+    "SLGM": ('pickupSound','dropSound',),
+    "SNCT": ('parent','staticVolumeMultiplier',),
+    # Sounds does not need to loop here
+    "SNDR": ('category','outputModel','sounds','looping','rumbleSendValue',
+             'pctFrequencyShift','pctFrequencyVariance','priority',
+             'dbVariance','staticAttenuation',),
+    "SOPM": ('reverbSendpct','outputType','ch0_l','ch0_r','ch0_c','ch0_lFE',
+             'ch0_rL','ch0_rR','ch0_bL','ch0_bR','ch1_l','ch1_r','ch1_c',
+             'ch1_lFE','ch1_rL','ch1_rR','ch1_bL','ch1_bR','ch2_l','ch2_r',
+             'ch2_c','ch2_lFE','ch2_rL','ch2_rR','ch2_bL','ch2_bR',
+             'minDistance','maxDistance','curve1','curve2','curve3',
+             'curve4','curve5',),
+    "SOUN": ('soundDescriptor',),
+    "TACT": ('soundLoop',),
+    "TREE": ('harvestSound',),
+    "WATR": ('openSound',),
+    "WEAP": ('pickupSound','dropSound','attackSound','attackSound2D',
+             'attackLoopSound','attackFailSound','idleSound',
+             'equipSound','unequipSound','detectionSoundLevel',),
+    #Needs to loop over all the sounds
+    "WTHR": ('sounds',),
+}
+soundsFidTypes = {
+}
+
+#-------------------------------------------------------------------------------
+# Strings SoundPatcher
+#-------------------------------------------------------------------------------
+stringSoundsRecs = ()
+#-------------------------------------------------------------------------------
+# CellImporter
+#-------------------------------------------------------------------------------
+cellAutoKeys = (
+    u'C.Acoustic', u'C.Climate', u'C.Light', u'C.Location', u'C.Music', u'C.Name', u'C.Owner',
+    u'C.RecordFlags', u'C.SkyLighting', u'C.Water',)#,u'C.Maps')
+
+cellRecAttrs = {
+            u'C.Acoustic': ('acousticSpace',),
+            u'C.Climate': ('climate',),
+            u'C.Encounter': ('encounterZone',),
+            u'C.ImageSpace': ('imageSpace',),
+            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
+                 'directionalRed','directionalGreen','directionalBlue','unused2',
+                 'fogRed','fogGreen','fogBlue','unused3',
+                 'fogNear','fogFar','directionalXY','directionalZ',
+                 'directionalFade','fogClip','fogPower',
+                 'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+                 'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+                 'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+                 'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+                 'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+                 'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+                 'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+                 'fresnelPower', # Fresnel Power
+                 'fogColorFarRed','fogColorFarGreen','fogColorFarBlue','unused4',
+                 'fogMax','lightFadeBegin','lightFadeEnd','inherits','lightTemplate',),
+            u'C.Location': ('location',),
+            u'C.Music': ('music',),
+            u'C.Name': ('full',),
+            u'C.Owner': ('ownership',),
+            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+            u'C.Water': ('water','waterHeight','waterNoiseTexture','waterEnvironmentMap',),
+            }
+cellRecFlags = {
+            u'C.Acoustic': '',
+            u'C.Climate': 'showSky',
+            u'C.Encounter': '',
+            u'C.ImageSpace': '',
+            u'C.Light': '',
+            u'C.Location': '',
+            u'C.Music': '',
+            u'C.Name': '',
+            u'C.Owner': 'publicPlace',
+            u'C.RecordFlags': '',
+            u'C.SkyLighting': 'useSkyLighting',
+            u'C.Water': 'hasWater',
+            }
+#-------------------------------------------------------------------------------
+# GraphicsPatcher
+#-------------------------------------------------------------------------------
+graphicsLongsTypes = set((
+    'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO', 'BOOK', 'CLAS', 'CONT', 'DOOR',
+    'EFSH', 'FLOR', 'FURN', 'GRAS', 'INGR', 'KEYM', 'LIGH', 'LSCR', 'SLGM', 'STAT',
+    'TREE', 'WEAP', 'WTHR', 'MGEF',
+))
+graphicsTypes = {
+    "ACTI": ('model',),
+    "ALCH": ('iconPath','model',),
+    "AMMO": ('iconPath','model',),
+    "APPA": ('iconPath','model',),
+    "ARMA": ('male_model','female_model','male_model_1st','female_model_1st',),
+    "ARMO": ('model2','maleIconPath','model4','femaleIconPath','addons',),
+    "BOOK": ('iconPath','model','inventoryArt',),
+    "CLAS": ('iconPath',),
+    "CONT": ('model',),
+    "DOOR": ('model',),
+    "EFSH": ('unused1','memSBlend','memBlendOp','memZFunc','fillRed',
+    'fillGreen','fillBlue','unused2','fillAlphaIn','fillFullAlpha',
+    'fillAlphaOut','fillAlphaRatio','fillAlphaAmp','fillAlphaPulse',
+    'fillAnimSpeedU','fillAnimSpeedV','edgeEffectOff','edgeRed',
+    'edgeGreen','edgeBlue','unused3','edgeAlphaIn','edgeFullAlpha',
+    'edgeAlphaOut','edgeAlphaRatio','edgeAlphaAmp','edgeAlphaPulse',
+    'fillFullAlphaRatio','edgeFullAlphaRatio','memDestBlend',
+    'partSourceBlend','partBlendOp','partZTestFunc','partDestBlend',
+    'partBSRampUp','partBSFull','partBSRampDown','partBSRatio',
+    'partBSPartCount','partBSLifetime','partBSLifetimeDelta',
+    'partSSpeedNorm','partSAccNorm','partSVel1','partSVel2',
+    'partSVel3','partSAccel1','partSAccel2','partSAccel3',
+    'partSKey1','partSKey2','partSKey1Time','partSKey2Time',
+    'key1Red','key1Green','key1Blue','unused4','key2Red',
+    'key2Green','key2Blue','unused5','key3Red','key3Green',
+    'key3Blue','unused6','colorKey1Alpha','colorKey2Alpha',
+    'colorKey3Alpha','colorKey1KeyTime','colorKey2KeyTime',
+    'colorKey3KeyTime','partSSpeedNormDelta','partSSpeedRotDeg',
+    'partSSpeedRotDegDelta','partSRotDeg','partSRotDegDelta',
+    'addonModels','holesStart','holesEnd','holesStartVal',
+    'holesEndVal','edgeWidthAlphaUnit','edgeAlphRed',
+    'edgeAlphGreen','edgeAlphBlue','unused7','expWindSpeed',
+    'textCountU','textCountV','addonModelIn','addonModelOut',
+    'addonScaleStart','addonScaleEnd','addonScaleIn','addonScaleOut',
+    'ambientSound','key2FillRed','key2FillGreen',
+    'key2FillBlue','unused8','key3FillRed','key3FillGreen',
+    'key3FillBlue','unused9','key1ScaleFill','key2ScaleFill',
+    'key3ScaleFill','key1FillTime','key2FillTime','key3FillTime',
+    'colorScale','birthPosOffset','birthPosOffsetRange','startFrame',
+    'startFrameVariation','endFrame','loopStartFrame',
+    'loopStartVariation','frameCount','frameCountVariation',
+    'flags','fillTextScaleU',
+    'fillTextScaleV','sceneGraphDepthLimit',),
+    "FLOR": ('model',),
+    "FURN": ('model',),
+    "GRAS": ('model',),
+    "INGR": ('iconPath','model',),
+    "KEYM": ('iconPath','model',),
+    "LIGH": ('iconPath','model',),
+    "LSCR": ('iconPath',),
+    "SLGM": ('iconPath','model',),
+    "STAT": ('model',),
+    "TREE": ('model',),
+    "WEAP": ('model1','model2','iconPath','firstPersonModelObject',),
+    "WTHR": ('wthrAmbientColors',),
+}
+graphicsFidTypes = {
+    "MGEF": ('castingLight','hitShader','enchantShader',)
+}
+#-------------------------------------------------------------------------------
+# Inventory Patcher
+#-------------------------------------------------------------------------------
+inventoryTypes = ('NPC_','CONT',)
+#-------------------------------------------------------------------------------
 # Mod Record Elements ----------------------------------------------------------
 #-------------------------------------------------------------------------------
-# Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Magic Info ------------------------------------------------------------------
