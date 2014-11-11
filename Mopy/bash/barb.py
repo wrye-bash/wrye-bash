@@ -22,7 +22,7 @@
 #
 # =============================================================================
 
-# Rollback library.
+"""Rollback library."""
 
 import os
 import re
@@ -33,7 +33,6 @@ from subprocess import Popen, PIPE
 import bash
 import bass
 import bosh
-import basher
 import bolt
 import bush
 from bosh import startupinfo, dirs
@@ -49,9 +48,9 @@ class BackupCancelled(BoltError):
 #------------------------------------------------------------------------------
 class BaseBackupSettings:
     def __init__(self, parent=None, path=None, quit=False):
-        if path != None and path.ext == u'' and not path.exists(): path = None
-        if path == None: path = basher.settings['bash.backupPath']
-        if path == None: path = dirs['modsBash']
+        if path is not None and path.ext == u'' and not path.exists(): path = None
+        if path is None: path = bosh.settings['bash.backupPath']
+        if path is None: path = dirs['modsBash']
         self.quit = quit
         self.dir = path
         self.archive = None
@@ -60,7 +59,7 @@ class BaseBackupSettings:
             self.archive = path.tail
         #end if
         self.parent = parent
-        self.verDat = basher.settings['bash.version']
+        self.verDat = bosh.settings['bash.version']
         self.verApp = bass.AppVersion
         self.files = {}
         self.tmp = None
@@ -87,12 +86,12 @@ class BaseBackupSettings:
         raise AbstractError
 
     def CmpDataVersion(self):
-        return cmp(self.verDat, basher.settings['bash.version'])
+        return cmp(self.verDat, bosh.settings['bash.version'])
 
     def CmpAppVersion(self):
         # Changed to prompt updating on any version change
         # Needs to check the cached value in settings for the initial upgrade check
-        return cmp(self.verApp, basher.settings['bash.version'])
+        return cmp(self.verApp, bosh.settings['bash.version'])
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
@@ -202,13 +201,13 @@ class BackupSettings(BaseBackupSettings):
         except StateError, e:
             raise
         #end try
-        basher.settings['bash.backupPath'] = self.dir
+        bosh.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
 
     def PromptFile(self):
         #prompt for backup filename
         #returns False if user cancels
-        if self.archive == None or self.dir.join(self.archive).exists():
+        if self.archive is None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
             file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (bush.game.fsName,dt.strftime(u'%Y-%m-%d %H.%M.%S'),self.verDat,self.verApp)
             if not self.quit:
@@ -228,10 +227,10 @@ class BackupSettings(BaseBackupSettings):
 
     def PromptMismatch(self):
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if basher.settings['bash.version'] == 0: return False
+        if bosh.settings['bash.version'] == 0: return False
         return not self.SameAppVersion() and self.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
-            _(u'Previous Version: ')+(u'%s\n' % basher.settings['bash.version']) +
+            _(u'Previous Version: ')+(u'%s\n' % bosh.settings['bash.version']) +
             _(u'Current Version: ')+(u'%s\n' % self.verApp) +
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
@@ -351,13 +350,13 @@ class RestoreSettings(BaseBackupSettings):
 
         # tell the user the restore is compete and warn about restart
         self.WarnRestart()
-        if basher.bashFrame: # should always exist
-            basher.bashFrame.Destroy()
+        if bash.bashFrame: # should always exist
+            bash.bashFrame.Destroy()
 
     def PromptFile(self):
         #prompt for backup filename
         #returns False if user cancels
-        if self.archive == None or not self.dir.join(self.archive).exists():
+        if self.archive is None or not self.dir.join(self.archive).exists():
             path = askOpen(self.parent,_(u'Restore Bash Settings'),self.dir,u'',u'*.7z')
             if not path: return False
             self.dir = path.head
@@ -376,7 +375,7 @@ class RestoreSettings(BaseBackupSettings):
         # return True if same app version or user confirms
         return self.SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
-              _(u'Backup v%s does not match v%s') % (self.verApp, basher.settings['bash.version']) + u'\n' +
+              _(u'Backup v%s does not match v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
               u'\n' +
               _(u'Do you want to restore this backup anyway?'),
               _(u'Warning: Version Mismatch!'))
@@ -386,7 +385,7 @@ class RestoreSettings(BaseBackupSettings):
         if self.CmpDataVersion() > 0:
             showError(self.parent,
                   _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
-                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, basher.settings['bash.version']) + u'\n' +
+                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
                   u'\n' +
                   _(u'You cannot use this backup with this version of Bash.'),
                   _(u'Error: Version Conflict!'))
@@ -409,7 +408,7 @@ class RestoreSettings(BaseBackupSettings):
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
-        basher.bashFrame.Restart()
+        bash.bashFrame.Restart()
 
 #------------------------------------------------------------------------------
 def pack7z(dstFile, srcDir, progress=None):
