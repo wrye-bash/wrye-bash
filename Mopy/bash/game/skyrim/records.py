@@ -6832,6 +6832,26 @@ class MreWthr(MelRecord):
             (5, 'skyStaticsFollowsSunPosition'),
         ))
 
+    class MelWthrDalc(MelStructs):
+        """Handle older truncated DALC for WTHR subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 32:
+                MelStructs.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 24:
+                unpacked = ins.unpack('=4B4B4B4B4B4B',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,32,size,True)
+            unpacked += self.defaults[len(unpacked):]
+            target = MelObject()
+            record.__getattribute__(self.attr).append(target)
+            target.__slots__ = self.attrs
+            setter = target.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('\x300TX','cloudTextureLayer_0'),
@@ -6863,19 +6883,29 @@ class MreWthr(MelRecord):
         MelString('J0TX','cloudTextureLayer_26'),
         MelString('K0TX','cloudTextureLayer_27'),
         MelString('L0TX','cloudTextureLayer_28'),
-        MelBase('DNAM','unused'),
-        MelBase('CNAM','unused'),
-        MelBase('ANAM','unused'),
-        MelBase('BNAM','unused'),
+        MelBase('DNAM','dnam_p'),
+        MelBase('CNAM','cnam_p'),
+        MelBase('ANAM','anam_p'),
+        MelBase('BNAM','bnam_p'),
         MelBase('LNAM','lnam_p'),
         MelFid('MNAM','precipitationType',),
         MelFid('NNAM','visualEffect',),
-        MelBase('ONAM','unused'),
+        MelBase('ONAM','onam_p'),
         MelBase('RNAM','cloudSpeedY'),
         MelBase('QNAM','cloudSpeedX'),
-        MelBase('PNAM','cloudColors'),
-        MelBase('JNAM','cloudAlphas'),
-        MelBase('NAM0','weatherColors'),
+        MelStructA('PNAM','3Bs3Bs3Bs3Bs','cloudColors',
+            'riseRedPnam','riseGreenPnam','riseBluePnam',('unused1',null1),
+            'dayRedPnam','dayGreenPnam','dayBluePnam',('unused2',null1),
+            'setRedPnam','setGreenPnam','setBluePnam',('unused3Pnam',null1),
+            'nightRedPnam','nightGreenPnam','nightBluePnam',('unused4',null1),
+            ),
+        MelStructA('JNAM','4f','cloudAlphas','sunAlpha','dayAlpha','setAlpha','nightAlpha',),
+        MelStructA('NAM0','3Bs3Bs3Bs3Bs','daytimeColors',
+            'riseRed','riseGreen','riseBlue',('unused5',null1),
+            'dayRed','dayGreen','dayBlue',('unused6',null1),
+            'setRed','setGreen','setBlue',('unused7',null1),
+            'nightRed','nightGreen','nightBlue',('unused8',null1),
+            ),
         MelStruct('FNAM','8f','dayNear','dayFar','nightNear','nightFar',
                   'dayPower','nightPower','dayMax','nightMax',),
         MelStruct('DATA','B2s16B','windSpeed',('unknown',null2),'transDelta',
@@ -6890,9 +6920,18 @@ class MreWthr(MelRecord):
         MelFids('TNAM','skyStatics',),
         MelStruct('IMSP','4I',(FID,'imageSpacesSunrise'),(FID,'imageSpacesDay'),
                   (FID,'imageSpacesSunset'),(FID,'imageSpacesNight'),),
-        MelBase('DALC','directionalAmbientLightingColors'),
-        MelBase('NAM2','unused'),
-        MelBase('NAM3','unused'),
+        MelWthrDalc('DALC','=4B4B4B4B4B4B4Bf','wthrAmbientColors',
+            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+            'fresnelPower', # Fresnel Power
+            ),
+        MelBase('NAM2','nam2_p'),
+        MelBase('NAM3','nam3_p'),
         MelModel('aurora','MODL'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
