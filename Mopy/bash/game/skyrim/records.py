@@ -5274,20 +5274,215 @@ class MreRace(MelRecord):
 
 # Needs Updating
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# REFR ------------------------------------------------------------------------
 class MreRefr(MelRecord):
     """Placed Object"""
     classType = 'REFR'
+    _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo','showAllHidden',))
+    _parentFlags = Flags(0L,Flags.getNames('oppositeParent','popIn',))
+    _actFlags = Flags(0L,Flags.getNames('useDefault', 'activate','open','openByDefault'))
+    _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
+    _destinationFlags = Flags(0L,Flags.getNames('noAlarm'))
+    _parentActivate = Flags(0L,Flags.getNames('parentActivateOnly'))
+    reflectFlags = Flags(0L,Flags.getNames('reflection', 'refraction'))
+    roomDataFlags = Flags(0L,Flags.getNames(
+        (6,'hasImageSpace'),
+        (7,'hasLightingTemplate'),
+    ))
+
+    class MelRefrXloc(MelOptStruct):
+        """Handle older truncated XLOC for REFR subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 20:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 16:
+                unpacked = ins.unpack('B3sIB3s4s',size,readId)
+            elif size == 12:
+                unpacked = ins.unpack('B3sIB3s',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,20,size,True)
+            #     print ins.unpack(('%dB' % size),size)
+            #     raise ModError(ins.inName,_('Unexpected size encountered for REFR:XLOC subrecord: ')+str(size))
+            # unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
+            # setter = record.__setattr__
+            # for attr,value,action in zip(self.attrs,unpacked,self.actions):
+            #     if callable(action): value = action(value)
+            #     setter(attr,value)
+            # if self._debug: print unpacked
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    class MelRefrXmrk(MelStruct):
+        """Handler for xmrk record. Conditionally loads next items."""
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            junk = ins.read(size,readId)
+            record.hasXmrk = True
+            insTell = ins.tell
+            insUnpack = ins.unpack
+            pos = insTell()
+            (type,size) = insUnpack('4sH',6,readId+'.FULL')
+            while type in ['FNAM','FULL','TNAM',]: # 'WMI1'
+                if type == 'FNAM':
+                    value = insUnpack('B',size,readId)
+                    record.flags = MreRefr._flags(*value)
+                elif type == 'FULL':
+                    record.full = ins.readString(size,readId)
+                elif type == 'TNAM':
+                    record.markerType, record.unused5 = insUnpack('Bs',size,readId)
+                # elif type == 'WMI1':
+                #     record.reputation = insUnpack('I',size,readId)
+                pos = insTell()
+                (type,size) = insUnpack('4sH',6,readId+'.FULL')
+            ins.seek(pos)
+            if self._debug: print ' ',record.flags,record.full,record.markerType
+        def dumpData(self,record,out):
+            if (record.flags,record.full,record.markerType,record.unused5,record.reputation) != self.defaults[1:]:
+                record.hasXmrk = True
+            if record.hasXmrk:
+                try:
+                    out.write(struct.pack('=4sH','XMRK',0))
+                    out.packSub('FNAM','B',record.flags.dump())
+                    value = record.full
+                    if value != None:
+                        out.packSub0('FULL',value)
+                    out.packSub('TNAM','Bs',record.markerType, record.unused5)
+                    # out.packRef('WMI1',record.reputation)
+                except struct.error:
+                    print self.subType,self.format,record.flags,record.full,record.markerType
+                    raise
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
+        MelFid('NAME','base'),
 
+        # {--- Bound Contents ---}
+        # {--- Bound Data ---}
+        MelOptStruct('XMBO','3f','boundHalfExtentsX','boundHalfExtentsY','boundHalfExtentsZ'),
+
+        # {--- Primitive ---}
+        MelOptStruct('XPRM','fffffffI','primitiveBoundX','primitiveBoundY','primitiveBoundZ',
+                     'primitiveColorRed','primitiveColorGreen','primitiveColorBlue',
+                     'primitiveUnknown','primitiveType'),
+        MelBase('XORD','xord_p'),
+        MelOptStruct('XOCP','9f','occlusionPlaneWidth','occlusionPlaneHeight',
+                     'occlusionPlanePosX','occlusionPlanePosY','occlusionPlanePosZ',
+                     'occlusionPlaneRot1','occlusionPlaneRot2','occlusionPlaneRot3',
+                     'occlusionPlaneRot4'),
+        MelStructA('XPOD','II','portalData',(FID,'portalOrigin'),(FID,'portalDestination')),
+        MelOptStruct('XPTL','9f','portalWidth','portalHeight','portalPosX','portalPosY','portalPosZ',
+                     'portalRot1','portalRot2','portalRot3','portalRot4'),
+
+        MelGroup('roomData',
+            MelStruct('XRMR','BB2s','linkedRoomsCount',(roomDataFlags,'roomFlags'),'unknown'),
+            MelFid('LNAM', 'lightingTemplate'),
+            MelFid('INAM', 'imageSpace'),
+            MelFids('XLRM','linkedRoom'),
+            ),
+        MelBase('XMBP','multiboundPrimitiveMarker'),
+
+        MelBase('XRGD','ragdollData'),
+        MelBase('XRGB','ragdollBipedData'),
+        MelOptStruct('XRDS','f','radius'),
+
+        # {--- Reflected By / Refracted By ---}
+        MelStructs('XPWR','II','reflectedByWaters',(FID,'reference'),(reflectFlags,'type',),),
+
+        # {--- Lit Water ---}
+        MelFids('XLTW','litWaters'),
+
+        # {--- Emittance ---}
+        MelOptStruct('XEMI','I',(FID,'emittance')),
+        MelOptStruct('XLIG','ff4sf4s','fov90Delta','fadeDelta','unknown','shadowDepthBias','unknown',),
+        MelOptStruct('XALP','BB','cutoffAlpha','baseAlpha',),
+
+        # {--- Teleport ---}
+        MelOptStruct('XTEL','I6fI',(FID,'destinationFid'),'destinationPosX',
+                     'destinationPosY','destinationPosZ','destinationRotX',
+                     'destinationRotY','destinationRotZ',
+                     (_destinationFlags,'destinationFlags')),
+        MelFids('XTNM','teleportMessageBox'),
+
+        # {--- MultiBound ---}
+        MelFid('XMBR','multiboundReference'),
+
+        MelBase('XWCN', 'xwcn_p',),
+        MelBase('XWCS', 'xwcs_p',),
+        MelOptStruct('XWCU','3f4s3f4s','offsetX','offsetY','offsetZ','unknown',
+                     'angleX','angleY','angleZ','unknown'),
+        MelOptStruct('XCVL','4sf4s','unknown','angleX','unknown',),
+        MelFid('XCZR','unknownRef'),
+        MelBase('XCZA', 'xcza_p',),
+        MelFid('XCZC','unknownRef2'),
+        MelOptStruct('XSCL','f',('scale',1.0)),
+        MelFid('XSPC','spawnContainer'),
+
+        # {--- Activate Parents ---}
+        MelGroup('activateParents',
+            MelStruct('XAPD','B',(_parentActivate,'flags',None),),
+            MelStructs('XAPR','If','activateParentRefs',(FID,'reference'),'delay')
+            ),
+
+        MelFid('XLIB','leveledItemBaseObject'),
+        MelStruct('XLCM','i','levelModifier'),
+        MelFid('XLCN','persistentLocation',),
+        MelOptStruct('XTRI','I','collisionLayer'),
+
+        # {--- Lock ---}
+        # {>>Lock Tab for REFR when 'Locked' is Unchecked this record is not present <<<}
+        MelRefrXloc('XLOC','B3sIB3s8s','lockLevel',('unused1',null3),
+                    (FID,'lockKey'),(_lockFlags,'lockFlags'),('unused3',null3),
+                    ('unused4',null4+null4)),
+        MelFid('XEZN','encounterZone'),
+
+        # {--- Generated Data ---}
+        MelOptStruct('XNDP','IH2s',(FID,'navMesh'),'teleportMarkerTriangle','unknown'),
+        MelFidList('XLRT','locationRefType',),
+        MelNull('XIS2',),
+
+        # {--- Ownership ---}
+        MelOwnership(),
+        MelOptStruct('XCNT','i','count'),
+        MelOptStruct('XCHG','f',('charge',None)),
+        MelFid('XLRL','locationReference'),
+        MelOptStruct('XESP','IB3s',(FID,'parent'),(_parentFlags,'parentFlags'),('unused6',null3)),
+        MelStructs('XLKR','II','linkedReference',(FID,'keywordRef'),(FID,'linkedRef')),
+        MelGroup('patrolData',
+            MelStruct('XPRD','f','idleTime'),
+            MelBase('XPPA','patrolScriptMarker'),
+            MelFid('INAM', 'idle'),
+            MelBase('SCHR','schr_p',),
+            MelBase('SCTX','sctx_p',),
+            MelStructs('PDTO','2I','topicData','type',(FID,'data'),),
+            ),
+
+        # {--- Flags ---}
+        MelOptStruct('XACT','I',(_actFlags,'actFlags',0L)),
+        MelOptStruct('XHTW','f','headTrackingWeight',),
+        MelOptStruct('XFVC','f','favorCost',),
+        MelBase('ONAM','onam_p'),
+
+        # {--- Map Data ---}
+        MelGroup('markerData',
+            MelNull('XMRK',),
+            MelOptStruct('FNAM','B','mapFlags',),
+            MelString('FULL','full'),
+            MelOptStruct('TNAM','Bs','markerType','unknown',),
+            ),
+
+        # {--- Attach reference ---}
+        MelFid('XATR', 'attachRef'),
+        MelOptStruct('XLOD','3f',('lod1',None),('lod2',None),('lod3',None)),
+        MelOptStruct('DATA','=6f',('posX',None),('posY',None),('posZ',None),
+                     ('rotX',None),('rotY',None),('rotZ',None)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Needs Updating
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # REGN ------------------------------------------------------------------------
