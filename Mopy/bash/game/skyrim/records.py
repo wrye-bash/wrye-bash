@@ -5484,20 +5484,117 @@ class MreRefr(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# REGN ------------------------------------------------------------------------
 class MreRegn(MelRecord):
-    """Placed Object"""
+    """Region record."""
     classType = 'REGN'
+    obflags = Flags(0L,Flags.getNames(
+        ( 0,'conform'),
+        ( 1,'paintVertices'),
+        ( 2,'sizeVariance'),
+        ( 3,'deltaX'),
+        ( 4,'deltaY'),
+        ( 5,'deltaZ'),
+        ( 6,'Tree'),
+        ( 7,'hugeRock'),))
+    sdflags = Flags(0L,Flags.getNames(
+        ( 0,'pleasant'),
+        ( 1,'cloudy'),
+        ( 2,'rainy'),
+        ( 3,'snowy'),))
+    rdatFlags = Flags(0L,Flags.getNames(
+        ( 0,'Override'),))
+
+    ####Lazy hacks to correctly read/write regn data
+    class MelRegnStructA(MelStructA):
+        """Handler for regn record. Conditionally dumps next items."""
+        def loadData(self,record,ins,type,size,readId):
+            if record.entryType == 2 and self.subType == 'RDOT':
+                MelStructA.loadData(self,record,ins,type,size,readId)
+            elif record.entryType == 3 and self.subType == 'RDWT':
+                MelStructA.loadData(self,record,ins,type,size,readId)
+            elif record.entryType == 6 and self.subType == 'RDGS':
+                MelStructA.loadData(self,record,ins,type,size,readId)
+            elif record.entryType == 7 and self.subType == 'RDSA':
+                MelStructA.loadData(self,record,ins,type,size,readId)
+
+        def dumpData(self,record,out):
+            """Conditionally dumps data."""
+            if record.entryType == 2 and self.subType == 'RDOT':
+                MelStructA.dumpData(self,record,out)
+            elif record.entryType == 3 and self.subType == 'RDWT':
+                MelStructA.dumpData(self,record,out)
+            elif record.entryType == 6 and self.subType == 'RDGS':
+                MelStructA.dumpData(self,record,out)
+            elif record.entryType == 7 and self.subType == 'RDSA':
+                MelStructA.dumpData(self,record,out)
+
+    class MelRegnString(MelString):
+        """Handler for regn record. Conditionally dumps next items."""
+        def loadData(self,record,ins,type,size,readId):
+            if record.entryType == 4 and self.subType == 'RDMP':
+                MelString.loadData(self,record,ins,type,size,readId)
+            # elif record.entryType == 5 and self.subType == 'ICON':
+            #     MelString.loadData(self,record,ins,type,size,readId)
+
+        def dumpData(self,record,out):
+            """Conditionally dumps data."""
+            if record.entryType == 4 and self.subType == 'RDMP':
+                MelString.dumpData(self,record,out)
+            # elif record.entryType == 5 and self.subType == 'ICON':
+            #     MelString.dumpData(self,record,out)
+
+    class MelRegnGroups(MelGroups):
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            if type == self.type0:
+                target = self.getDefault()
+                record.__getattribute__(self.attr).append(target)
+            else:
+                targets = record.__getattribute__(self.attr)
+                if targets:
+                    target = targets[-1]
+                # BPNN for NVVoidBodyPartData, NVraven02
+                # What does this do?
+                elif type == 'RDSA':
+                    target = self.getDefault()
+                    record.__getattribute__(self.attr).append(target)
+            slots = []
+            for element in self.elements:
+                slots.extend(element.getSlotsUsed())
+            target.__slots__ = slots
+            self.loaders[type].loadData(target,ins,type,size,readId)
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelVmad(),
-
+        MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
+        MelFid('WNAM','worldspace'),
+        MelGroups('areas',
+            MelStruct('RPLI','I','edgeFalloff'),
+            MelStructA('RPLD','2f','points','posX','posY')),
+        MelRegnGroups('entries',
+            MelStruct('RDAT', 'I2B2s','entryType', (rdatFlags,'flags'), 'priority',
+                     ('unused1',null2)),
+            MelString('ICON','iconPath'),
+            # Dont Show RDMO and RDSA when entryType is <> 7
+            MelFid('RDMO','music'),
+            MelRegnStructA('RDSA', '2If', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
+            # Dont Show RDMP is <> 4
+            MelRegnString('RDMP', 'mapName'),
+            # Dont Show RDOT is <> 2
+            MelRegnStructA('RDOT', 'IH2sfBBBBH4sffffHHH2s4s', 'objects',
+                          (FID,'objectId'),
+                           'parentIndex',('unused1',null2), 'density', 'clustering',
+                           'minSlope', 'maxSlope',(obflags, 'flags'), 'radiusWRTParent',
+                           'radius', ('unk1',null4),'maxHeight', 'sink', 'sinkVar',
+                           'sizeVar', 'angleVarX','angleVarY',  'angleVarZ',
+                           ('unused2',null2), ('unk2',null4)),
+            # Dont Show RDGS is <> 6
+            MelRegnStructA('RDGS', 'I4s', 'grass', ('unknown',null4)),
+            # Dont Show RDWT is <> 3
+            MelRegnStructA('RDWT', '3I', 'weather', (FID, 'weather', None), 'chance', (FID, 'global', None)),
+        ),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Needs Updating
 #------------------------------------------------------------------------------
 class MreRela(MelRecord):
     """Relationship"""
