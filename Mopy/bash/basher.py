@@ -13120,42 +13120,50 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
+class _Mod_Export_Link(Link):
+    def Execute(self, event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
+        textName = fileName.root + self.__class__.csvFile
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
+                                textName, u'*' + self.__class__.csvFile)
+        if not textPath: return
+        (textDir, textName) = textPath.headTail
+        #--Export
+        with balt.Progress(self.__class__.progressTitle) as progress:
+            parser = self._parser()
+            readProgress = SubProgress(progress, 0.1, 0.8)
+            readProgress.setFull(len(self.data))
+            for index, fileName in enumerate(map(GPath, self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
+                parser.readFromMod(fileInfo)
+            progress(0.8, _(u'Exporting to') + u' ' + textName.s + u'.')
+            parser.writeToText(textPath)
+            progress(1.0, _(u'Done.'))
+
+    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
+
+#------------------------------------------------------------------------------
 from patcher.utilities import FactionRelations, CBash_FactionRelations
 
-class Mod_FactionRelations_Export(Link):
+class Mod_FactionRelations_Export(_Mod_Export_Link):
     """Export faction relations from mod to text file."""
+    askTitle = _(u'Export faction relations to:')
+    csvFile = u'_Relations.csv'
+    progressTitle = _(u'Export Relations')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Relations...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Relations.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export faction relations to:'),
-                                textDir,textName, u'*_Relations.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Relations')) as progress:
-            if CBash:
-                factionRelations = CBash_FactionRelations()
-            else:
-                factionRelations = FactionRelations()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                factionRelations.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            factionRelations.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self):
+        return CBash_FactionRelations() if CBash else FactionRelations()
 
 #------------------------------------------------------------------------------
 class Mod_FactionRelations_Import(Link):
@@ -13214,40 +13222,20 @@ class Mod_FactionRelations_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import ActorFactions, CBash_ActorFactions
 
-class Mod_Factions_Export(Link):
+class Mod_Factions_Export(_Mod_Export_Link):
     """Export factions from mod to text file."""
+    askTitle = _(u'Export factions to:')
+    csvFile = u'_Factions.csv'
+    progressTitle = _(u'Export Factions')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Factions...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Factions.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export factions to:'),textDir,
-                                textName, u'*_Factions.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Factions')) as progress:
-            if CBash:
-                actorFactions = CBash_ActorFactions()
-            else:
-                actorFactions = ActorFactions()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                actorFactions.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to ')+u' '+textName.s+u'.')
-            actorFactions.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self):
+        return CBash_ActorFactions() if CBash else ActorFactions()
 
 #------------------------------------------------------------------------------
 class Mod_Factions_Import(Link):
@@ -13671,6 +13659,9 @@ class Mod_Groups(Mod_Labels):
 #------------------------------------------------------------------------------
 class Mod_Groups_Export(Link):
     """Export mod groups to text file."""
+    askTitle = _(u'Export groups to:')
+    csvFile = u'_Groups.csv'
+
     def AppendToMenu(self,menu,window,data):
         data = bosh.ModGroups.filter(data)
         Link.AppendToMenu(self,menu,window,data)
@@ -13681,11 +13672,11 @@ class Mod_Groups_Export(Link):
     def Execute(self,event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = u'My_Groups.csv'
+        textName = u'My' + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export groups to:'),textDir,textName, u'*_Groups.csv')
+        textPath = balt.askSave(self.window,self.__class__.askTitle,textDir,textName,u'*' + self.__class__.csvFile)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
@@ -13734,39 +13725,20 @@ class Mod_Groups_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import EditorIds, CBash_EditorIds
 
-class Mod_EditorIds_Export(Link):
+class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
+    askTitle = _(u'Export eids to:')
+    csvFile = u'_Eids.csv'
+    progressTitle = _(u"Export Editor Ids")
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Editor Ids...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Eids.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export eids to:'),textDir,textName, u'*_Eids.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u"Export Editor Ids")) as progress:
-            if CBash:
-                editorIds = CBash_EditorIds()
-            else:
-                editorIds = EditorIds()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u"Reading %s.") % (fileName.s,))
-                editorIds.readFromMod(fileInfo)
-            progress(0.8,_(u"Exporting to %s.") % (textName.s,))
-            editorIds.writeToText(textPath)
-            progress(1.0,_(u"Done."))
+    def _parser(self):
+        return CBash_EditorIds() if CBash else EditorIds()
 
 #------------------------------------------------------------------------------
 class Mod_EditorIds_Import(Link):
@@ -13947,40 +13919,20 @@ class Mod_Fids_Replace(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import FullNames, CBash_FullNames
 
-class Mod_FullNames_Export(Link):
+class Mod_FullNames_Export(_Mod_Export_Link):
     """Export full names from mod to text file."""
+    askTitle = _(u'Export names to:')
+    csvFile = u'_Names.csv'
+    progressTitle = _(u"Export Names")
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Names...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Names.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export names to:'),
-            textDir,textName, u'*_Names.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u"Export Names")) as progress:
-            if CBash:
-                fullNames = CBash_FullNames()
-            else:
-                fullNames = FullNames()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u"Reading %s.") % fileName.s)
-                fullNames.readFromMod(fileInfo)
-            progress(0.8,_(u"Exporting to %s.") % textName.s)
-            fullNames.writeToText(textPath)
-            progress(1.0,_(u"Done."))
+    def _parser(self):
+        return CBash_FullNames() if CBash else FullNames()
 
 #------------------------------------------------------------------------------
 class Mod_FullNames_Import(Link):
@@ -14609,40 +14561,20 @@ class Mod_Scripts_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import ItemStats, CBash_ItemStats
 
-class Mod_Stats_Export(Link):
+class Mod_Stats_Export(_Mod_Export_Link):
     """Export armor and weapon stats from mod to text file."""
+    askTitle = _(u'Export stats to:')
+    csvFile = u'_Stats.csv'
+    progressTitle = _(u"Export Stats")
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Stats...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Stats.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export stats to:'),
-            textDir, textName, u'*_Stats.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u"Export Stats")) as progress:
-            if CBash:
-                itemStats = CBash_ItemStats()
-            else:
-                itemStats = ItemStats()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u"Reading %s.") % fileName.s)
-                itemStats.readFromMod(fileInfo)
-            progress(0.8,_(u"Exporting to %s.") % textName.s)
-            itemStats.writeToText(textPath)
-            progress(1.0,_(u"Done."))
+    def _parser(self):
+        return CBash_ItemStats() if CBash else ItemStats()
 
 #------------------------------------------------------------------------------
 class Mod_Stats_Import(Link):
@@ -14700,40 +14632,20 @@ class Mod_Stats_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import CompleteItemData, CBash_CompleteItemData
 
-class Mod_ItemData_Export(Link):
+class Mod_ItemData_Export(_Mod_Export_Link):
     """Export pretty much complete item data from mod to text file."""
+    askTitle = _(u'Export item data to:')
+    csvFile = u'_ItemData.csv'
+    progressTitle = _(u"Export Item Data")
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Item Data...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_ItemData.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export item data to:'),
-            textDir, textName, u'*_ItemData.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u"Export Item Data")) as progress:
-            if CBash:
-                itemStats = CBash_CompleteItemData()
-            else:
-                itemStats = CompleteItemData()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u"Reading %s.") % fileName.s)
-                itemStats.readFromMod(fileInfo)
-            progress(0.8,_(u"Exporting to %s.") % textName.s)
-            itemStats.writeToText(textPath)
-            progress(1.0,_(u"Done."))
+    def _parser(self):
+        return CBash_CompleteItemData() if CBash else CompleteItemData()
 
 #------------------------------------------------------------------------------
 class Mod_ItemData_Import(Link):
@@ -14791,40 +14703,20 @@ class Mod_ItemData_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import ItemPrices, CBash_ItemPrices
 
-class Mod_Prices_Export(Link):
+class Mod_Prices_Export(_Mod_Export_Link):
     """Export item prices from mod to text file."""
+    askTitle = _(u'Export prices to:')
+    csvFile = u'_Prices.csv'
+    progressTitle = _(u'Export Prices')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Prices...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Prices.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export prices to:'),
-            textDir, textName, u'*_Prices.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Prices')) as progress:
-            if CBash:
-                itemPrices = CBash_ItemPrices()
-            else:
-                itemPrices = ItemPrices()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                itemPrices.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+'.')
-            itemPrices.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self):
+        return CBash_ItemPrices() if CBash else ItemPrices()
 
 #------------------------------------------------------------------------------
 class Mod_Prices_Import(Link):
@@ -14886,37 +14778,19 @@ class Mod_Prices_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import CBash_MapMarkers
 
-class CBash_Mod_MapMarkers_Export(Link):
+class CBash_Mod_MapMarkers_Export(_Mod_Export_Link):
     """Export map marker stats from mod to text file."""
+    askTitle = _(u'Export Map Markers to:')
+    csvFile = u'_MapMarkers.csv'
+    progressTitle = _(u'Export Map Markers')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Map Markers...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data) and bool(CBash))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_MapMarkers.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export Map Markers to:'),
-            textDir, textName, u'*_MapMarkers.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Map Markers')) as progress:
-            mapMarkers = CBash_MapMarkers()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                mapMarkers.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            mapMarkers.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self): return CBash_MapMarkers()
 
 #------------------------------------------------------------------------------
 class CBash_Mod_MapMarkers_Import(Link):
@@ -14972,77 +14846,38 @@ class CBash_Mod_MapMarkers_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import CBash_CellBlockInfo
 
-class CBash_Mod_CellBlockInfo(Link):
-    """Export Cell Block Info to text file.
-    (in the form of Cell, block, subblock"""
+class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link):
+    """Export Cell Block Info to text file
+    (in the form of Cell, block, subblock)."""
+    askTitle = _(u'Export Cell Block Info to:')
+    csvFile = u'_CellBlockInfo.csv'
+    progressTitle = _(u"Export Cell Block Info")
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Cell Block Info...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data) and bool(CBash))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_CellBlockInfo.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export Cell Block Info to:'),
-            textDir, textName, u'*_CellBlockInfo.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u"Export Cell Block Info")) as progress:
-            cellblocks = CBash_CellBlockInfo()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u"Reading %s.") % fileName.s)
-                cellblocks.readFromMod(fileInfo)
-            progress(0.8,_(u"Exporting to %s.") % textName.s)
-            cellblocks.writeToText(textPath)
-            progress(1.0,_(u"Done."))
+    def _parser(self): return CBash_CellBlockInfo()
 
 #------------------------------------------------------------------------------
 from patcher.utilities import SigilStoneDetails, CBash_SigilStoneDetails
 
-class Mod_SigilStoneDetails_Export(Link):
+class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     """Export Sigil Stone details from mod to text file."""
+    askTitle = _(u'Export Sigil Stone details to:')
+    csvFile = u'_SigilStones.csv'
+    progressTitle = _(u'Export Sigil Stone details')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Sigil Stones...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_SigilStones.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,
-            _(u'Export Sigil Stone details to:'),
-            textDir,textName, u'*_SigilStones.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Sigil Stone details')) as progress:
-            if CBash:
-                sigilStones = CBash_SigilStoneDetails()
-            else:
-                sigilStones = SigilStoneDetails()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                sigilStones.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            sigilStones.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self):
+        return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
 
 #------------------------------------------------------------------------------
 class Mod_SigilStoneDetails_Import(Link):
@@ -15208,40 +15043,20 @@ class Mod_SpellRecords_Import(Link):
 #------------------------------------------------------------------------------
 from patcher.utilities import IngredientDetails, CBash_IngredientDetails
 
-class Mod_IngredientDetails_Export(Link):
+class Mod_IngredientDetails_Export(_Mod_Export_Link):
     """Export Ingredient details from mod to text file."""
+    askTitle = _(u'Export Ingredient details to:')
+    csvFile = u'_Ingredients.csv'
+    progressTitle = _(u'Export Ingredient details')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Ingredients...'))
         menu.AppendItem(menuItem)
         menuItem.Enable(bool(self.data))
 
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Ingredients.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export Ingredient details to:'),
-                                textDir,textName,u'*_Ingredients.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Ingredient details')) as progress:
-            if CBash:
-                Ingredients = CBash_IngredientDetails()
-            else:
-                Ingredients = IngredientDetails()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                Ingredients.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            Ingredients.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+    def _parser(self):
+        return CBash_IngredientDetails() if CBash else IngredientDetails()
 
 class Mod_IngredientDetails_Import(Link):
     """Import Ingredient details from text file."""
@@ -18615,9 +18430,9 @@ def InitModLinks():
         ModList.itemMenu.append(SeparatorLink())
         if True: #--Export
             exportMenu = MenuLink(_(u"Export"))
-            exportMenu.links.append(CBash_Mod_CellBlockInfo())
+            exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
-            exportMenu.links.append(Mod_Groups_Export())
+            exportMenu.links.append(Mod_Groups_Export()) # TODO(ut): not here
     ##        exportMenu.links.append(Mod_ItemData_Export())
             if bush.game.fsName == u'Skyrim':
                 exportMenu.links.append(Mod_FullNames_Export())
