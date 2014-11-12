@@ -8272,7 +8272,6 @@ class Installer_HasExtraData(InstallerLink):
         installer.refreshStatus(self.data)
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
-##### REST OF INSTALLER LINKS NEED APPEND TO MENU TWEAKED
 
 #------------------------------------------------------------------------------
 class Installer_OverrideSkips(InstallerLink):
@@ -8479,70 +8478,76 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
                 for link in self.links:
                     link.AppendToMenu(subMenu,window,data)
 
-class Installer_OpenNexus(InstallerLink):
-    """Open selected file(s)."""
+class _Installer_OpenAt(InstallerLink):
+    group = 2  # the regexp group we are interested in - 2 is id, 1 is modname
+
+    def _enable(self):
+        x = self.__class__.regexp.search(self.selected[0].s)
+        if not bool(self.isSingleArchive() and x): return False
+        self._id = x.group(self.__class__.group)
+        return bool(self._id)
+
+    def _url(self): return self.__class__.baseUrl + self._id
+
+    def Execute(self, event):
+        if balt.askContinue(self.gTank, self.message, self.key, self.askTitle):
+            webbrowser.open(self._url())
+
+class Installer_OpenNexus(_Installer_OpenAt):
+    regexp = bosh.reTesNexus
+    text = _(bush.game.nexusName)
+    message = _(
+        u"Attempt to open this as a mod at %(nexusName)s? This assumes that "
+        u"the trailing digits in the package's name are actually the id "
+        u"number of the mod at %(nexusName)s. If this assumption is wrong, "
+        u"you'll just get a random mod page (or error notice) at %("
+        u"nexusName)s.") % {'nexusName': bush.game.nexusName}
+    key = bush.game.nexusKey
+    askTitle = _(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}
+    baseUrl = bush.game.nexusUrl + u'mods/'
+
     def AppendToMenu(self,menu,window,data):
-        if not bush.game.nexusUrl:
-            return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(bush.game.nexusName))
-        menu.AppendItem(menuItem)
-        x = bosh.reTesNexus.search(data[0].s)
-        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
+        if not bush.game.nexusUrl: return
+        _Installer_OpenAt.AppendToMenu(self, menu, window, data)
 
-    def Execute(self,event):
-        """Handle selection."""
-        message = _(u"Attempt to open this as a mod at %(nexusName)s? This assumes that the trailing digits in the package's name are actually the id number of the mod at %(nexusName)s. If this assumption is wrong, you'll just get a random mod page (or error notice) at %(nexusName)s.") % {'nexusName':bush.game.nexusName}
-        if balt.askContinue(self.gTank,message, bush.game.nexusKey,_(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}):
-            id = bosh.reTesNexus.search(self.selected[0].s).group(2)
-            webbrowser.open(bush.game.nexusUrl+u'mods/'+id)
+class Installer_OpenSearch(_Installer_OpenAt):
+    group = 1
+    regexp = bosh.reTesNexus
+    text = _(u'Google...')
+    key = 'bash.installers.opensearch'
+    askTitle = _(u'Open a search')
+    message = _(u"Open a search for this on Google?")
 
-class Installer_OpenSearch(InstallerLink):
-    """Open selected file(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Google...'))
-        menu.AppendItem(menuItem)
-        x = bosh.reTesNexus.search(data[0].s)
-        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(1)))
+    def _url(self):
+        return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
+            re.split(ur'\W+|_+', self._id))
 
-    def Execute(self,event):
-        """Handle selection."""
-        message = _(u"Open a search for this on Google?")
-        if balt.askContinue(self.gTank,message,'bash.installers.opensearch',_(u'Open a search')):
-            webbrowser.open(u'http://www.google.com/search?hl=en&q='+u'+'.join(re.split(ur'\W+|_+',bosh.reTesNexus.search(self.selected[0].s).group(1))))
+class Installer_OpenTESA(_Installer_OpenAt):
+    regexp = bosh.reTESA
+    text = _(u'TES Alliance...')
+    key = 'bash.installers.openTESA'
+    askTitle = _(u'Open at TES Alliance')
+    message = _(
+        u"Attempt to open this as a mod at TES Alliance? This assumes that "
+        u"the trailing digits in the package's name are actually the id "
+        u"number of the mod at TES Alliance. If this assumption is wrong, "
+        u"you'll just get a random mod page (or error notice) at TES "
+        u"Alliance.")
+    baseUrl =u'http://tesalliance.org/forums/index.php?app=downloads&showfile='
 
-class Installer_OpenTESA(InstallerLink):
-    """Open selected file(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'TES Alliance...'))
-        menu.AppendItem(menuItem)
-        x = bosh.reTESA.search(data[0].s)
-        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
-
-    def Execute(self,event):
-        """Handle selection."""
-        message = _(u"Attempt to open this as a mod at TES Alliance? This assumes that the trailing digits in the package's name are actually the id number of the mod at TES Alliance. If this assumption is wrong, you'll just get a random mod page (or error notice) at TES Alliance.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openTESA',_(u'Open at TES Alliance')):
-            id = bosh.reTESA.search(self.selected[0].s).group(2)
-            webbrowser.open(u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+id)
-
-class Installer_OpenPES(InstallerLink):
-    """Open selected file(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Planet Elderscrolls...'))
-        menu.AppendItem(menuItem)
-        x = bosh.reTESA.search(data[0].s)
-        menuItem.Enable(bool(self.isSingleArchive() and x and x.group(2)))
-
-    def Execute(self,event):
-        """Handle selection."""
-        message = _(u"Attempt to open this as a mod at Planet Elderscrolls? This assumes that the trailing digits in the package's name are actually the id number of the mod at Planet Elderscrolls. If this assumption is wrong, you'll just get a random mod page (or error notice) at Planet Elderscrolls.")
-        if balt.askContinue(self.gTank,message,'bash.installers.openPES',_(u'Open at Planet Elderscrolls')):
-            id = bosh.reTESA.search(self.selected[0].s).group(2)
-            webbrowser.open(u'http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&id='+id)
+class Installer_OpenPES(_Installer_OpenAt):
+    regexp = bosh.reTESA
+    text = _(u'Planet Elderscrolls...')
+    key = 'bash.installers.openPES'
+    askTitle = _(u'Open at Planet Elderscrolls')
+    message = _(
+        u"Attempt to open this as a mod at Planet Elderscrolls? This assumes "
+        u"that the trailing digits in the package's name are actually the id "
+        u"number of the mod at Planet Elderscrolls. If this assumption is "
+        u"wrong, you'll just get a random mod page (or error notice) at "
+        u"Planet Elderscrolls.")
+    baseUrl = u'http://planetelderscrolls.gamespy.com/View.php' \
+               u'?view=OblivionMods.Detail&id='
 
 #------------------------------------------------------------------------------
 class Installer_Refresh(InstallerLink):
