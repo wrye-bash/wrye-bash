@@ -7848,103 +7848,6 @@ class List_Columns(Link): # FIXME: wx in AppendToMenu !!!
             List_Column(self.columnsKey,self.allColumnsKey,col,enable).AppendToMenu(subMenu,window,data)
 
 #------------------------------------------------------------------------------
-class Installers_Skip(BoolLink):
-    """Toggle various skip settings and update."""
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
-            progress.setFull(len(self.data))
-            for index,dataItem in enumerate(self.data.iteritems()):
-                progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
-                dataItem[1].refreshDataSizeCrc()
-        self.data.refresh(what='NS')
-        self.gTank.RefreshUI()
-
-#------------------------------------------------------------------------------
-class Installers_SkipScreenshots(Installers_Skip):
-    """Toggle skipScreenshots setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Screenshots'),
-                                          'bash.installers.skipScreenshots',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_SkipImages(Installers_Skip):
-    """Toggle skipImages setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Images'),
-                                          'bash.installers.skipImages',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_SkipDocs(Installers_Skip):
-    """Toggle skipDocs setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Docs'),
-                                          'bash.installers.skipDocs',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_SkipDistantLOD(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip DistantLOD'),
-                                          'bash.installers.skipDistantLOD',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_skipLandscapeLODMeshes(Installers_Skip):
-    """Toggle skipLandscapeLODMeshes setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Meshes'),
-                                          'bash.installers.skipLandscapeLODMeshes',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_skipLandscapeLODTextures(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Textures'),
-                                          'bash.installers.skipLandscapeLODTextures',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_skipLandscapeLODNormals(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Normals'),
-                                          'bash.installers.skipLandscapeLODNormals',
-                                          )
-
-#------------------------------------------------------------------------------
-class Installers_SkipOBSEPlugins(Installers_Skip):
-    """Toggle allowOBSEPlugins setting and update."""
-    kind=wx.ITEM_CHECK
-
-    def __init__(self):
-        BoolLink.__init__(self,_(u'Skip %s Plugins') % bush.game.se_sd,
-                          'bash.installers.allowOBSEPlugins')
-
-    def AppendToMenu(self,menu,window,data):
-        if not bush.game.se_sd: return
-        menuItem = BoolLink.AppendToMenu(self,menu,window,data)
-        menuItem.Check(not settings[self.key])
-        bosh.installersWindow = self.gTank
-
-#------------------------------------------------------------------------------
-class Installers_RenameStrings(Installers_Skip):
-    """Toggle auto-renaming of .STRINGS files"""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-name String Translation Files'),
-                          'bash.installers.renameStrings',
-                          )
-
-    def AppendToMenu(self,menu,window,data):
-        if bush.game.esp.stringsFiles:
-            Installers_Skip.AppendToMenu(self,menu,window,data)
-
-#------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerLink(_Link):
@@ -16825,9 +16728,9 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_SkipImages())
     InstallersPanel.mainMenu.append(Installers_SkipDocs())
     InstallersPanel.mainMenu.append(Installers_SkipDistantLOD())
-    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODMeshes())
-    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODTextures())
-    InstallersPanel.mainMenu.append(Installers_skipLandscapeLODNormals())
+    InstallersPanel.mainMenu.append(Installers_SkipLandscapeLODMeshes())
+    InstallersPanel.mainMenu.append(Installers_SkipLandscapeLODTextures())
+    InstallersPanel.mainMenu.append(Installers_SkipLandscapeLODNormals())
     InstallersPanel.mainMenu.append(Installers_RenameStrings())
 
     #--Item links
