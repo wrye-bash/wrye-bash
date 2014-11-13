@@ -2094,24 +2094,32 @@ class Link:
 
     def __init__(self):
         self.id = None
+        self._dataInitialized = False
 
-    def AppendToMenu(self,menu,window,data):
-        """Append self to menu as menu item."""
+    def _initData(self, window, data):
+        """Hack to separate data from presentation"""
+        # TODO: Move to _Link subclass ? - init data and (Tank) gTank,
+        # selected and data set (!) - document attributes...
+        self.window = window
         if isinstance(window,Tank):
             self.gTank = window
-            self.window = window
             self.selected = window.GetSelected()
             self.data = window.data
             self.title = window.data.title
-        else:
-            self.window = window
+        else:  # else ?
             self.data = data
+        self._dataInitialized = True
+
+    def AppendToMenu(self,menu,window,data):
+        """Append self to menu as menu item."""
+        if not self._dataInitialized: self._initData(window, data)
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId()
         Link.Popup = menu
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
         wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
+        self._dataInitialized = False # init runs ONCE !
 
     def Execute(self, event):
         """Event: link execution."""
