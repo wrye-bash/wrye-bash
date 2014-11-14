@@ -22,7 +22,6 @@
 #
 # =============================================================================
 import copy
-import wx
 from .. import bosh, balt, bush
 from ..balt import fill
 from . import _Link, ListBoxes, BoolLink, refreshData
@@ -129,9 +128,9 @@ class Installers_MonitorInstall(_Link):
             group.extend(delFiles)
         dialog = ListBoxes(self.gTank,_(u'External Installation'),
                            _(u'The following changes were detected in the Data directory'),
-                           checklists,changedlabels={wx.ID_OK:_(u'Create Project')})
+                           checklists,changedlabels={ListBoxes.ID_OK:_(u'Create Project')})
         choice = dialog.ShowModal()
-        if choice == wx.ID_CANCEL:
+        if choice == ListBoxes.ID_CANCEL:
             dialog.Destroy()
             return
         include = set()

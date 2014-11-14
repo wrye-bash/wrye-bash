@@ -24,9 +24,8 @@
 from operator import attrgetter
 import re
 import time
-import wx # FIXME wx
 from .. import balt, bosh, bush, bolt
-from . import _Link, ListBoxes, bashBlue, refreshData
+from . import _Link, ListBoxes, bashBlue, refreshData, RadioLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
@@ -47,9 +46,8 @@ class Files_Open(_Link):
         dir.makedirs()
         dir.start()
 
-class Files_SortBy(_Link):
+class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
-    kind=wx.ITEM_RADIO
 
     def __init__(self,sortCol,prefix=''):
         _Link.__init__(self)
@@ -156,7 +154,7 @@ class File_Delete(_Link):
         dialog = ListBoxes(self.window,_(u'Delete Files'),
                      _(u'Delete these files? This operation cannot be undone.'),
                      [message])
-        if dialog.ShowModal() != wx.ID_CANCEL:
+        if dialog.ShowModal() != ListBoxes.ID_CANCEL:
             id = dialog.ids[message[0]]
             checks = dialog.FindWindowById(id)
             if checks:

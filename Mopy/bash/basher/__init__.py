@@ -5361,6 +5361,9 @@ class CheckList_SelectAll(Link):
 #------------------------------------------------------------------------------
 class ListBoxes(wx.Dialog):
     """A window with 1 or more lists."""
+    ID_OK = wx.ID_OK
+    ID_CANCEL = wx.ID_CANCEL
+
     def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={},Cancel=True):
         """lists is in this format:
         if liststyle == 'check' or 'list'
@@ -7737,9 +7740,14 @@ class _Link(Link): # TODO: merge with balt.Link !
         menu.AppendItem(menuItem)
         return menuItem
 
-class BoolLink(_Link):
+class RadioLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
+    kind = wx.ITEM_RADIO
+
+class CheckLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
+    kind = wx.ITEM_CHECK
+
+class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
-    kind=wx.ITEM_CHECK
     text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
 
     def __init__(self, opposite=False):
