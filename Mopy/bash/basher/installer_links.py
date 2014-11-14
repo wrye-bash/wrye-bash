@@ -25,8 +25,8 @@ import copy
 import re
 import webbrowser
 import wx
-from . import _Link, settingDefaults, bashBlue, refreshData # TODO(ut): avoid
-# importing Link - one reason are the wx.check items, another is Open
+# TODO(ut): avoid importing Link - one reason are the wx.check items, another is Open
+from . import _Link, settingDefaults, bashBlue, refreshData, EnabledLink
 from .. import bosh, bush, balt
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
@@ -38,19 +38,8 @@ gInstallers = None
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerLink(_Link):
+class InstallerLink(EnabledLink):
     """Common functions for installer links..."""
-    help = u''
-
-    def _enable(self):
-        """"Override as needed to enable or disable the menu item (enabled
-        by default)."""
-        return True
-
-    def AppendToMenu(self, menu, window, data):
-        menuItem = _Link.AppendToMenu(self, menu, window, data)
-        menuItem.Enable(self._enable())
-        return menuItem
 
     def isSingleInstallable(self):
         if len(self.selected) == 1:

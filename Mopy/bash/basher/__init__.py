@@ -7765,6 +7765,19 @@ class BoolLink(CheckLink):
     def Execute(self,event):
         settings[self.key] ^= True
 
+class EnabledLink(_Link):
+    help = u'' # subclasses MUST define self.text
+
+    def _enable(self):
+        """"Override as needed to enable or disable the menu item (enabled
+        by default)."""
+        return True
+
+    def AppendToMenu(self, menu, window, data):
+        menuItem = _Link.AppendToMenu(self, menu, window, data)
+        menuItem.Enable(self._enable())
+        return menuItem
+
 #------------------------------------------------------------------------------
 class File_RevertToBackup:
     """Revert to last or first backup."""
@@ -7883,14 +7896,11 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
 # InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installer_Espm_SelectAll(InstallerLink):
+class Installer_Espm_SelectAll(EnabledLink):
     """Select All Esp/ms in installer for installation."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Select All'))
-        menu.AppendItem(menuItem)
-        if len(gInstallers.espms) == 0:
-            menuItem.Enable(False)
+    text = _(u'Select All')
+
+    def _enable(self): return len(gInstallers.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
@@ -7900,14 +7910,11 @@ class Installer_Espm_SelectAll(InstallerLink):
             gInstallers.gEspmList.Check(i, True)
         gInstallers.refreshCurrent(installer)
 
-class Installer_Espm_DeselectAll(InstallerLink):
+class Installer_Espm_DeselectAll(EnabledLink):
     """Deselect All Esp/ms in installer for installation."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Deselect All'))
-        menu.AppendItem(menuItem)
-        if len(gInstallers.espms) == 0:
-            menuItem.Enable(False)
+    text = _(u'Deselect All')
+
+    def _enable(self): return len(gInstallers.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
@@ -7919,14 +7926,12 @@ class Installer_Espm_DeselectAll(InstallerLink):
             espmNots.add(espm)
         gInstallers.refreshCurrent(installer)
 
-class Installer_Espm_Rename(InstallerLink):
+class Installer_Espm_Rename(EnabledLink):
     """Changes the installed name for an Esp/m."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'))
-        menu.AppendItem(menuItem)
-        if data == -1:
-            menuItem.Enable(False)
+    text = _(u'Rename...')
+
+    def _enable(self):
+        return self.data != -1 #self.data == data param of AppendToMenu (spero)
 
     def Execute(self,event):
         """Handle selection."""
@@ -7942,38 +7947,28 @@ class Installer_Espm_Rename(InstallerLink):
         installer.setEspmName(curName,newName+file.cext)
         gInstallers.refreshCurrent(installer)
 
-class Installer_Espm_Reset(InstallerLink):
+class Installer_Espm_Reset(EnabledLink):
     """Resets the installed name for an Esp/m."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Reset Name'))
-        menu.AppendItem(menuItem)
-        if data == -1:
-            menuItem.Enable(False)
-            return
-        installer = gInstallers.data[gInstallers.detailsItem]
-        curName = gInstallers.gEspmList.GetString(self.data).replace(u'&&',u'&')
-        if curName[0] == u'*':
-            curName = curName[1:]
-        menuItem.Enable(installer.isEspmRenamed(curName))
+    text = _(u'Reset Name')
+
+    def _enable(self):
+        if self.data == -1: return False  # FIXME ?
+        self.installer = installer = gInstallers.data[gInstallers.detailsItem]
+        curName =gInstallers.gEspmList.GetString(self.data).replace(u'&&',u'&')
+        if curName[0] == u'*': curName = curName[1:]
+        self.curName = curName
+        return installer.isEspmRenamed(curName)
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
-        curName = gInstallers.gEspmList.GetString(self.data).replace(u'&&',u'&')
-        if curName[0] == u'*':
-            curName = curName[1:]
-        installer.resetEspmName(curName)
-        gInstallers.refreshCurrent(installer)
+        self.installer.resetEspmName(self.curName)
+        gInstallers.refreshCurrent(self.installer)
 
-class Installer_Espm_ResetAll(InstallerLink):
+class Installer_Espm_ResetAll(EnabledLink):
     """Resets all renamed Esp/ms."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Reset All Names'))
-        menu.AppendItem(menuItem)
-        if len(gInstallers.espms) == 0:
-            menuItem.Enable(False)
+    text = _(u'Reset All Names')
+
+    def _enable(self): return len(gInstallers.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
@@ -7981,14 +7976,11 @@ class Installer_Espm_ResetAll(InstallerLink):
         installer.resetAllEspmNames()
         gInstallers.refreshCurrent(installer)
 
-class Installer_Espm_List(InstallerLink):
+class Installer_Espm_List(EnabledLink):
     """Lists all Esp/ms in installer for user information/w/e."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'List Esp/ms'))
-        menu.AppendItem(menuItem)
-        if len(gInstallers.espms) == 0:
-            menuItem.Enable(False)
+    text = _(u'List Esp/ms')
+
+    def _enable(self): return len(gInstallers.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
@@ -7996,22 +7988,18 @@ class Installer_Espm_List(InstallerLink):
         for index in range(gInstallers.gEspmList.GetCount()):
             subs += [u'   ',u'** '][gInstallers.gEspmList.IsChecked(index)] + gInstallers.gEspmList.GetString(index) + '\n'
         subs += u'[/spoiler]'
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(subs))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(subs)
         balt.showLog(self.window,subs,_(u'Esp/m List'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installer_Subs_SelectAll(InstallerLink):
+class _Installer_Subs(EnabledLink):
+    def _enable(self): return gInstallers.gSubList.GetCount() > 1
+
+class Installer_Subs_SelectAll(_Installer_Subs):
     """Select All sub-packages in installer for installation."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Select All'))
-        menu.AppendItem(menuItem)
-        if gInstallers.gSubList.GetCount() < 2:
-            menuItem.Enable(False)
+    text = _(u'Select All')
 
     def Execute(self,event):
         """Handle selection."""
@@ -8021,14 +8009,9 @@ class Installer_Subs_SelectAll(InstallerLink):
             installer.subActives[index + 1] = True
         gInstallers.refreshCurrent(installer)
 
-class Installer_Subs_DeselectAll(InstallerLink):
+class Installer_Subs_DeselectAll(_Installer_Subs):
     """Deselect All sub-packages in installer for installation."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Deselect All'))
-        menu.AppendItem(menuItem)
-        if gInstallers.gSubList.GetCount() < 2:
-            menuItem.Enable(False)
+    text = _(u'Deselect All')
 
     def Execute(self,event):
         """Handle selection."""
@@ -8038,14 +8021,10 @@ class Installer_Subs_DeselectAll(InstallerLink):
             installer.subActives[index + 1] = False
         gInstallers.refreshCurrent(installer)
 
-class Installer_Subs_ToggleSelection(InstallerLink):
-    """Toggles selection state of all sub-packages in installer for installation."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Toggle Selection'))
-        menu.AppendItem(menuItem)
-        if gInstallers.gSubList.GetCount() < 2:
-            menuItem.Enable(False)
+class Installer_Subs_ToggleSelection(_Installer_Subs):
+    """Toggles selection state of all sub-packages in installer for
+    installation."""
+    text = _(u'Toggle Selection')
 
     def Execute(self,event):
         """Handle selection."""
@@ -8056,21 +8035,18 @@ class Installer_Subs_ToggleSelection(InstallerLink):
             installer.subActives[index + 1] = check
         gInstallers.refreshCurrent(installer)
 
-class Installer_Subs_ListSubPackages(InstallerLink):
+class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'List Sub-packages'))
-        menu.AppendItem(menuItem)
-        if gInstallers.gSubList.GetCount() < 2:
-            menuItem.Enable(False)
+    text = _(u'List Sub-packages')
 
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        subs = _(u'Sub-Packages List for %s:') % installer.archive + u'\n[spoiler]\n'
+        subs = _(
+            u'Sub-Packages List for %s:') % installer.archive + u'\n[spoiler]\n'
         for index in xrange(gInstallers.gSubList.GetCount()):
-            subs += [u'   ',u'** '][gInstallers.gSubList.IsChecked(index)] + gInstallers.gSubList.GetString(index) + u'\n'
+            subs += [u'   ', u'** '][gInstallers.gSubList.IsChecked(
+                index)] + gInstallers.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
         if wx.TheClipboard.Open():
             wx.TheClipboard.SetData(wx.TextDataObject(subs))
