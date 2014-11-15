@@ -21,16 +21,19 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import StringIO
 import copy
 import re
 import webbrowser
 import wx
 # TODO(ut): avoid importing Link - one reason are the wx.check items, another is Open
-from . import _Link, settingDefaults, bashBlue, refreshData, EnabledLink
+from . import _Link, settingDefaults, bashBlue, refreshData, EnabledLink, \
+    InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress
+    SubProgress, UncodedError, LogFile
+from ..bosh import formatInteger
 # FIXME(ut): globals
 iniList = None
 gInstallers = None
@@ -851,8 +854,8 @@ class Installer_CopyConflicts(InstallerLink):
                     data.refresh(what='I') # InstallersData.refresh()
                     self.gTank.RefreshUI()
 
-# InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
+# InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
 class Installer_Espm_SelectAll(EnabledLink):
     """Select All Esp/ms in installer for installation."""
@@ -954,8 +957,8 @@ class Installer_Espm_List(EnabledLink):
         balt.showLog(self.window, subs, _(u'Esp/m List'), asDialog=False,
                      fixedFont=False, icons=bashBlue)
 
-# InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
+# InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Subs(EnabledLink):
     def _enable(self): return gInstallers.gSubList.GetCount() > 1
@@ -1014,3 +1017,438 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
         balt.copyToClipboard(subs)
         balt.showLog(self.window, subs, _(u'Sub-Package Lists'),
                      asDialog=False, fixedFont=False, icons=bashBlue)
+
+#------------------------------------------------------------------------------
+# InstallerArchive Links ------------------------------------------------------
+#------------------------------------------------------------------------------
+class InstallerArchive_Unpack(InstallerLink):
+    """Install selected packages."""
+    text = _(u'Unpack to Project(s)...')
+
+    def AppendToMenu(self,menu,window,data):
+        self._initData(window, data)
+        if not self.isSelectedArchives(): return
+        InstallerLink.AppendToMenu(self,menu,window,data)
+
+    def Execute(self,event):
+        if self.isSingleArchive():
+            archive = self.selected[0]
+            installer = self.data[archive]
+            project = archive.root
+            result = balt.askText(self.gTank,_(u"Unpack %s to Project:") % archive.s,
+                self.text,project.s)
+            result = (result or u'').strip()
+            if not result: return
+            #--Error checking
+            project = GPath(result).tail
+            if not project.s or project.cext in bosh.readExts:
+                balt.showWarning(self.gTank,_(u"%s is not a valid project name.") % result)
+                return
+            if self.data.dir.join(project).isfile():
+                balt.showWarning(self.gTank,_(u"%s is a file.") % project.s)
+                return
+            if project in self.data:
+                if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
+                    return
+        #--Copy to Build
+        with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
+            if self.isSingleArchive():
+                installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
+                if project not in self.data:
+                    self.data[project] = bosh.InstallerProject(project)
+                iProject = self.data[project]
+                pProject = bosh.dirs['installers'].join(project)
+                iProject.refreshed = False
+                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                if iProject.order == -1:
+                    self.data.moveArchives([project],installer.order+1)
+                self.data.refresh(what='NS')
+                self.gTank.RefreshUI()
+                #pProject.start()
+            else:
+                for archive in self.selected:
+                    project = archive.root
+                    installer = self.data[archive]
+                    if project in self.data:
+                        if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
+                            continue
+                    installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
+                    if project not in self.data:
+                        self.data[project] = bosh.InstallerProject(project)
+                    iProject = self.data[project]
+                    pProject = bosh.dirs['installers'].join(project)
+                    iProject.refreshed = False
+                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                    if iProject.order == -1:
+                        self.data.moveArchives([project],installer.order+1)
+                self.data.refresh(what='NS')
+                self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+# InstallerProject Links ------------------------------------------------------
+#------------------------------------------------------------------------------
+class InstallerProject_OmodConfig(InstallerLink):
+    """Install selected packages.""" # TODO docs
+    text = _(u'Omod Info...')
+
+    def _enable(self): return self.isSingleProject()
+
+    def Execute(self,event):
+        project = self.selected[0]
+        dialog =InstallerProject_OmodConfigDialog(self.gTank,self.data,project)
+        dialog.Show()
+
+#------------------------------------------------------------------------------
+class InstallerProject_Sync(InstallerLink):
+    """Install selected packages.""" # TODO docs
+    text = _(u'Sync from Data')
+
+    def _enable(self):
+        if not self.isSingleProject(): return False
+        project = self.selected[0]
+        installer = self.data[project]
+        return bool(installer.missingFiles or installer.mismatchedFiles)
+
+    def Execute(self,event):
+        project = self.selected[0]
+        installer = self.data[project]
+        missing = installer.missingFiles
+        mismatched = installer.mismatchedFiles
+        message = (_(u'Update %s according to data directory?')
+                   + u'\n' +
+                   _(u'Files to delete:')
+                   + u'%d\n' +
+                   _(u'Files to update:')
+                   + u'%d') % (project.s,len(missing),len(mismatched))
+        if not balt.askWarning(self.gTank,message,self.text): return
+        #--Sync it, baby!
+        with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
+            progress(0.1,_(u'Updating files.'))
+            installer.syncToData(project,missing|mismatched)
+            pProject = bosh.dirs['installers'].join(project)
+            installer.refreshed = False
+            installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
+            self.data.refresh(what='NS')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class InstallerProject_SyncPack(InstallerLink):
+    """Install selected packages.""" # TODO docs
+    text = _(u'Sync and Pack')
+
+    def _enable(self): return self.projectExists()
+
+    def Execute(self,event):
+        raise UncodedError
+
+#------------------------------------------------------------------------------
+class InstallerProject_Pack(InstallerLink):
+    """Pack project to an archive."""
+    text = _(u'Pack to Archive...')
+
+    def AppendToMenu(self,menu,window,data):
+        #--Pack is appended whenever Unpack isn't, and vice-versa
+        self._initData(window, data)
+        if not self.isSingleProject(): return
+        InstallerLink.AppendToMenu(self,menu,window,data)
+
+    def Execute(self,event):
+        #--Generate default filename from the project name and the default extension
+        project = self.selected[0]
+        installer = self.data[project]
+        archive = bosh.GPath(project.s + bosh.defaultExt)
+        #--Confirm operation
+        result = balt.askText(self.gTank,_(u'Pack %s to Archive:') % project.s,
+            self.text,archive.s)
+        result = (result or u'').strip()
+        if not result: return
+        #--Error checking
+        archive = GPath(result).tail
+        if not archive.s:
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            return
+        if self.data.dir.join(archive).isdir():
+            balt.showWarning(self.gTank,_(u'%s is a directory.') % archive.s)
+            return
+        if archive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
+            archive = GPath(archive.sroot + bosh.defaultExt).tail
+        if archive in self.data:
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % archive.s,self.text,False): return
+        #--Archive configuration options
+        blockSize = None
+        if archive.cext in bosh.noSolidExts:
+            isSolid = False
+        else:
+            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.text,False)
+                if isSolid:
+                    blockSize = balt.askNumber(self.gTank,
+                        _(u'Use what maximum size for each solid block?')
+                        + u'\n' +
+                        _(u"Enter '0' to use 7z's default size.")
+                        ,u'MB',self.text,0,0,102400)
+            else: isSolid = True
+        with balt.Progress(_(u'Packing to Archive...'),u'\n'+u' '*60) as progress:
+            #--Pack
+            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8))
+            #--Add the new archive to Bash
+            if archive not in self.data:
+                self.data[archive] = bosh.InstallerArchive(archive)
+            #--Refresh UI
+            iArchive = self.data[archive]
+            pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
+            if iArchive.order == -1:
+                self.data.moveArchives([archive],installer.order+1)
+            #--Refresh UI
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class InstallerProject_ReleasePack(InstallerLink):
+    """Pack project to an archive for release. Ignores dev files/folders."""
+    text = _(u'Package for Release...')
+
+    def _enable(self): return self.isSingleProject()
+
+    def Execute(self,event):
+        #--Generate default filename from the project name and the default extension
+        project = self.selected[0]
+        installer = self.data[project]
+        archive = bosh.GPath(project.s + bosh.defaultExt)
+        #--Confirm operation
+        result = balt.askText(self.gTank,_(u"Pack %s to Archive:") % project.s,
+            self.text,archive.s)
+        result = (result or u'').strip()
+        if not result: return
+        #--Error checking
+        archive = GPath(result).tail
+        if not archive.s:
+            balt.showWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
+            return
+        if self.data.dir.join(archive).isdir():
+            balt.showWarning(self.gTank,_(u"%s is a directory.") % archive.s)
+            return
+        if archive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank,_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
+            archive = GPath(archive.sroot + bosh.defaultExt).tail
+        if archive in self.data:
+            if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % archive.s,self.text,False): return
+        #--Archive configuration options
+        blockSize = None
+        if archive.cext in bosh.noSolidExts:
+            isSolid = False
+        else:
+            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = balt.askYes(self.gTank,_(u"Use solid compression for %s?") % archive.s,self.text,False)
+                if isSolid:
+                    blockSize = balt.askNumber(self.gTank,
+                        _(u'Use what maximum size for each solid block?')
+                        + u'\n' +
+                        _(u"Enter '0' to use 7z's default size."),'MB',self.text,0,0,102400)
+            else: isSolid = True
+        with balt.Progress(_(u"Packing to Archive..."),u'\n'+u' '*60) as progress:
+            #--Pack
+            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8),release=True)
+            #--Add the new archive to Bash
+            if archive not in self.data:
+                self.data[archive] = bosh.InstallerArchive(archive)
+            #--Refresh UI
+            iArchive = self.data[archive]
+            pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
+            if iArchive.order == -1:
+                self.data.moveArchives([archive],installer.order+1)
+            #--Refresh UI
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class InstallerConverter_Apply(InstallerLink):
+    """Apply a Bain Conversion File."""
+    dialogTitle = _(u'Apply BCF...') # title used in dialog
+
+    def __init__(self,converter,numAsterisks):
+        InstallerLink.__init__(self)
+        self.converter = converter
+        #--Add asterisks to indicate the number of unselected archives that the BCF uses
+        self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))
+        self.text = self.dispName
+
+    def Execute(self,event):
+        #--Generate default filename from BCF filename
+        result = self.converter.fullPath.sbody[:-4]
+        #--List source archives
+        message = _(u'Using:')+u'\n* '
+        message += u'\n* '.join(sorted(u'(%08X) - %s' % (x,self.data.crc_installer[x].archive) for x in self.converter.srcCRCs)) + u'\n'
+        #--Confirm operation
+        result = balt.askText(self.gTank,message,self.dialogTitle,result + bosh.defaultExt)
+        result = (result or u'').strip()
+        if not result: return
+        #--Error checking
+        destArchive = GPath(result).tail
+        if not destArchive.s:
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            return
+        if destArchive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
+            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
+        if destArchive in self.data:
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,self.dialogTitle,False): return
+        with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
+            #--Perform the conversion
+            self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
+            if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
+                deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
+                balt.showWarning(self.gTank,
+                    _(u'%s: An error occured while applying an Auto-BCF.' % destArchive.s))
+                # hasBCF will be set to False if there is an error while
+                # rearranging files
+                return
+            #--Add the new archive to Bash
+            if destArchive not in self.data:
+                self.data[destArchive] = bosh.InstallerArchive(destArchive)
+            #--Apply settings from the BCF to the new InstallerArchive
+            iArchive = self.data[destArchive]
+            self.converter.applySettings(iArchive)
+            #--Refresh UI
+            pArchive = bosh.dirs['installers'].join(destArchive)
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
+            if iArchive.order == -1:
+                lastInstaller = self.data[self.selected[-1]]
+                self.data.moveArchives([destArchive],lastInstaller.order+1)
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+#------------------------------------------------------------------------------
+class InstallerConverter_ApplyEmbedded(InstallerLink):
+    text = _(u'Embedded BCF')
+
+    def Execute(self,event):
+        name = self.selected[0]
+        archive = self.data[name]
+        #--Ask for an output filename
+        destArchive = balt.askText(self.gTank, _(u'Output file:'),
+                                   _(u'Apply BCF...'), name.stail)
+        destArchive = (destArchive if destArchive else u'').strip()
+        if not destArchive: return
+        destArchive = GPath(destArchive)
+        #--Error checking
+        if not destArchive.s:
+            balt.showWarning(self.gTank, _(
+                u'%s is not a valid archive name.') % destArchive.s)
+            return
+        if destArchive.cext not in bosh.writeExts:
+            balt.showWarning(self.gTank, _(
+                u'The %s extension is unsupported. Using %s instead.') % (
+                                 destArchive.cext, bosh.defaultExt))
+            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
+        if destArchive in self.data:
+            if not balt.askYes(self.gTank, _(
+                    u'%s already exists. Overwrite it?') % destArchive.s,
+                               _(u'Apply BCF...'), False):
+                return
+        with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
+            self.data.applyEmbeddedBCFs([archive],[destArchive],progress)
+            iArchive = self.data[destArchive]
+            if iArchive.order == -1:
+                lastInstaller = self.data[self.selected[-1]]
+                self.data.moveArchives([destArchive],lastInstaller.order+1)
+            self.data.refresh(what='I')
+            self.gTank.RefreshUI()
+
+class InstallerConverter_Create(InstallerLink):
+    """Create BAIN conversion file."""
+    dialogTitle = _(u'Create BCF...') # title used in dialog
+    text = _(u'Create...')
+
+    def Execute(self,event):
+        #--Generate allowable targets
+        readTypes = u'*%s' % u';*'.join(bosh.readExts)
+        #--Select target archive
+        destArchive = balt.askOpen(self.gTank,_(u"Select the BAIN'ed Archive:"),
+                                   self.data.dir,u'', readTypes,mustExist=True)
+        if not destArchive: return
+        #--Error Checking
+        BCFArchive = destArchive = destArchive.tail
+        if not destArchive.s or destArchive.cext not in bosh.readExts:
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % destArchive.s)
+            return
+        if destArchive not in self.data:
+            balt.showWarning(self.gTank,_(u'%s must be in the Bash Installers directory.') % destArchive.s)
+            return
+        if BCFArchive.csbody[-4:] != u'-bcf':
+            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bosh.defaultExt).tail
+        #--List source archives and target archive
+        message = _(u'Convert:')
+        message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.data[x].crc,x.s) for x in self.selected))
+        message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.data[destArchive].crc,destArchive.s) + u'\n'
+        #--Confirm operation
+        result = balt.askText(self.gTank,message,self.dialogTitle,BCFArchive.s)
+        result = (result or u'').strip()
+        if not result: return
+        #--Error checking
+        BCFArchive = GPath(result).tail
+        if not BCFArchive.s:
+            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            return
+        if BCFArchive.csbody[-4:] != u'-bcf':
+            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
+        if BCFArchive.cext != bosh.defaultExt:
+            balt.showWarning(self.gTank,_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
+            BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
+        if bosh.dirs['converters'].join(BCFArchive).exists():
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % BCFArchive.s,self.dialogTitle,False): return
+            #--It is safe to removeConverter, even if the converter isn't overwritten or removed
+            #--It will be picked back up by the next refresh.
+            self.data.removeConverter(BCFArchive)
+        destInstaller = self.data[destArchive]
+        blockSize = None
+        if destInstaller.isSolid:
+            blockSize = balt.askNumber(self.gTank,u'mb',
+                _(u'Use what maximum size for each solid block?')
+                + u'\n' +
+                _(u"Enter '0' to use 7z's default size."),
+                self.dialogTitle,destInstaller.blockSize or 0,0,102400)
+        progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
+        log = None
+        try:
+            #--Create the converter
+            converter = bosh.InstallerConverter(self.selected, self.data, destArchive, BCFArchive, blockSize, progress)
+            #--Add the converter to Bash
+            self.data.addConverter(converter)
+            #--Refresh UI
+            self.data.refresh(what='C')
+            #--Generate log
+            log = LogFile(StringIO.StringIO())
+            log.setHeader(u'== '+_(u'Overview')+u'\n')
+##            log('{{CSS:wtxt_sand_small.css}}')
+            log(u'. '+_(u'Name')+u': '+BCFArchive.s)
+            log(u'. '+_(u'Size')+u': %s KB'% formatInteger(max(converter.fullPath.size,1024)/1024 if converter.fullPath.size else 0))
+            log(u'. '+_(u'Remapped')+u': %s'%formatInteger(len(converter.convertedFiles))+(_(u'file'),_(u'files'))[len(converter.convertedFiles) > 1])
+            log.setHeader(u'. '+_(u'Requires')+u': %s'%formatInteger(len(converter.srcCRCs))+(_(u'file'),_(u'files'))[len(converter.srcCRCs) > 1])
+            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, self.data.crc_installer[x].archive) for x in converter.srcCRCs if x in self.data.crc_installer)))
+            log.setHeader(u'. '+_(u'Options:'))
+            log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
+            log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
+            if converter.isSolid:
+                if converter.blockSize:
+                    log(u'    *  '+_(u'Solid Block Size')+u' = %d'%converter.blockSize)
+                else:
+                    log(u'    *  '+_(u'Solid Block Size')+u' = 7z default')
+            log(u'  *  '+_(u'Has Comments')+u'  = %s'%bool(converter.comments))
+            log(u'  *  '+_(u'Has Extra Directories')+u' = %s'%bool(converter.hasExtraData))
+            log(u'  *  '+_(u'Has Esps Unselected')+u'   = %s'%bool(converter.espmNots))
+            log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
+            log.setHeader(u'. '+_(u'Contains')+u': %s'%formatInteger(len(converter.missingFiles))+ (_(u'file'),_(u'files'))[len(converter.missingFiles) > 1])
+            log(u'  * '+u'\n  * '.join(sorted(u'%s' % x for x in converter.missingFiles)))
+        finally:
+            progress.Destroy()
+            if log:
+                balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
