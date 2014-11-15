@@ -3029,7 +3029,7 @@ class InstallersList(balt.Tank):
             message += u'\n'
             message += _(u'What would you like to do with them?')
 
-            self.dialog = dialog= wx.Dialog(self,wx.ID_ANY,_(u'Move or Copy?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            dialog= wx.Dialog(self,wx.ID_ANY,_(u'Move or Copy?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
             icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
             gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
 
@@ -3041,13 +3041,13 @@ class InstallersList(balt.Tank):
                 (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                 (hSizer(
                     spacer,
-                    button(dialog,label=_(u'Move'),onClick=self.OnClickMove),
-                    (button(dialog,label=_(u'Copy'),onClick=self.OnClickCopy),0,wx.LEFT,4),
+                    button(dialog,label=_(u'Move'),onClick=lambda x: dialog.EndModal(1)),
+                    (button(dialog,label=_(u'Copy'),onClick=lambda x: dialog.EndModal(2)),0,wx.LEFT,4),
                     (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
                     ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                 )
             dialog.SetSizer(sizer)
-            result = dialog.ShowModal()
+            result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
             if result == 1:
                 action = 'MOVE'
             elif result == 2:
@@ -3078,12 +3078,6 @@ class InstallersList(balt.Tank):
                 iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.OnShow()
-
-    def OnClickMove(self,event):
-        self.dialog.EndModal(1)
-
-    def OnClickCopy(self,event):
-        self.dialog.EndModal(2)
 
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
@@ -7825,8 +7819,7 @@ class File_RevertToBackup:
                 self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
-class List_Column(_Link):
-    kind = wx.ITEM_CHECK
+class List_Column(CheckLink):
 
     def __init__(self,columnsKey,allColumnsKey,colName,enable=True):
         Link.__init__(self)
@@ -7898,12 +7891,12 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(InstallerLink):
     """Install selected packages."""
+    text = _(u'Unpack to Project(s)...')
+
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if self.isSelectedArchives():
-            self.title = _(u'Unpack to Project(s)...')
-            menuItem = wx.MenuItem(menu,self.id,self.title)
-            menu.AppendItem(menuItem)
+        self._initData(window, data)
+        if not self.isSelectedArchives(): return
+        InstallerLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         if self.isSingleArchive():
@@ -7911,7 +7904,7 @@ class InstallerArchive_Unpack(InstallerLink):
             installer = self.data[archive]
             project = archive.root
             result = balt.askText(self.gTank,_(u"Unpack %s to Project:") % archive.s,
-                self.title,project.s)
+                self.text,project.s)
             result = (result or u'').strip()
             if not result: return
             #--Error checking
@@ -7923,7 +7916,7 @@ class InstallerArchive_Unpack(InstallerLink):
                 balt.showWarning(self.gTank,_(u"%s is a file.") % project.s)
                 return
             if project in self.data:
-                if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.title,False):
+                if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
                     return
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
@@ -7945,7 +7938,7 @@ class InstallerArchive_Unpack(InstallerLink):
                     project = archive.root
                     installer = self.data[archive]
                     if project in self.data:
-                        if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.title,False):
+                        if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
                             continue
                     installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                     if project not in self.data:
@@ -8040,33 +8033,26 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
 
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfig(InstallerLink):
-    """Install selected packages."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        self.title = _(u'Omod Info...')
-        menuItem = wx.MenuItem(menu,self.id,self.title)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingleProject())
+    """Install selected packages.""" # TODO docs
+    text = _(u'Omod Info...')
+
+    def _enable(self): return self.isSingleProject()
 
     def Execute(self,event):
         project = self.selected[0]
-        dialog = InstallerProject_OmodConfigDialog(self.gTank,self.data,project)
+        dialog =InstallerProject_OmodConfigDialog(self.gTank,self.data,project)
         dialog.Show()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(InstallerLink):
-    """Install selected packages."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        self.title = _(u'Sync from Data')
-        menuItem = wx.MenuItem(menu,self.id,self.title)
-        menu.AppendItem(menuItem)
-        enabled = False
-        if self.isSingleProject():
-            project = self.selected[0]
-            installer = self.data[project]
-            enabled = bool(installer.missingFiles or installer.mismatchedFiles)
-        menuItem.Enable(enabled)
+    """Install selected packages.""" # TODO docs
+    text = _(u'Sync from Data')
+
+    def _enable(self):
+        if not self.isSingleProject(): return False
+        project = self.selected[0]
+        installer = self.data[project]
+        return bool(installer.missingFiles or installer.mismatchedFiles)
 
     def Execute(self,event):
         project = self.selected[0]
@@ -8079,9 +8065,9 @@ class InstallerProject_Sync(InstallerLink):
                    + u'%d\n' +
                    _(u'Files to update:')
                    + u'%d') % (project.s,len(missing),len(mismatched))
-        if not balt.askWarning(self.gTank,message,self.title): return
+        if not balt.askWarning(self.gTank,message,self.text): return
         #--Sync it, baby!
-        with balt.Progress(self.title,u'\n'+u' '*60) as progress:
+        with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
             pProject = bosh.dirs['installers'].join(project)
@@ -8092,12 +8078,10 @@ class InstallerProject_Sync(InstallerLink):
 
 #------------------------------------------------------------------------------
 class InstallerProject_SyncPack(InstallerLink):
-    """Install selected packages."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Sync and Pack'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(self.projectExists())
+    """Install selected packages.""" # TODO docs
+    text = _(u'Sync and Pack')
+
+    def _enable(self): return self.projectExists()
 
     def Execute(self,event):
         raise UncodedError
@@ -8105,13 +8089,13 @@ class InstallerProject_SyncPack(InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(InstallerLink):
     """Pack project to an archive."""
+    text = _(u'Pack to Archive...')
+
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
         #--Pack is appended whenever Unpack isn't, and vice-versa
-        if self.isSingleProject():
-            self.title = _(u'Pack to Archive...')
-            menuItem = wx.MenuItem(menu,self.id,self.title)
-            menu.AppendItem(menuItem)
+        self._initData(window, data)
+        if not self.isSingleProject(): return
+        InstallerLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
@@ -8120,7 +8104,7 @@ class InstallerProject_Pack(InstallerLink):
         archive = bosh.GPath(project.s + bosh.defaultExt)
         #--Confirm operation
         result = balt.askText(self.gTank,_(u'Pack %s to Archive:') % project.s,
-            self.title,archive.s)
+            self.text,archive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
@@ -8135,20 +8119,20 @@ class InstallerProject_Pack(InstallerLink):
             balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
             archive = GPath(archive.sroot + bosh.defaultExt).tail
         if archive in self.data:
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % archive.s,self.title,False): return
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % archive.s,self.text,False): return
         #--Archive configuration options
         blockSize = None
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
             if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.title,False)
+                isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.text,False)
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,
                         _(u'Use what maximum size for each solid block?')
                         + u'\n' +
                         _(u"Enter '0' to use 7z's default size.")
-                        ,u'MB',self.title,0,0,102400)
+                        ,u'MB',self.text,0,0,102400)
             else: isSolid = True
         with balt.Progress(_(u'Packing to Archive...'),u'\n'+u' '*60) as progress:
             #--Pack
@@ -8171,12 +8155,9 @@ class InstallerProject_Pack(InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerLink):
     """Pack project to an archive for release. Ignores dev files/folders."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        self.title = _(u'Package for Release...')
-        menuItem = wx.MenuItem(menu,self.id,self.title)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(self.isSingleProject())
+    text = _(u'Package for Release...')
+
+    def _enable(self): return self.isSingleProject()
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
@@ -8185,7 +8166,7 @@ class InstallerProject_ReleasePack(InstallerLink):
         archive = bosh.GPath(project.s + bosh.defaultExt)
         #--Confirm operation
         result = balt.askText(self.gTank,_(u"Pack %s to Archive:") % project.s,
-            self.title,archive.s)
+            self.text,archive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
@@ -8200,19 +8181,19 @@ class InstallerProject_ReleasePack(InstallerLink):
             balt.showWarning(self.gTank,_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
             archive = GPath(archive.sroot + bosh.defaultExt).tail
         if archive in self.data:
-            if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % archive.s,self.title,False): return
+            if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % archive.s,self.text,False): return
         #--Archive configuration options
         blockSize = None
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
             if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = balt.askYes(self.gTank,_(u"Use solid compression for %s?") % archive.s,self.title,False)
+                isSolid = balt.askYes(self.gTank,_(u"Use solid compression for %s?") % archive.s,self.text,False)
                 if isSolid:
                     blockSize = balt.askNumber(self.gTank,
                         _(u'Use what maximum size for each solid block?')
                         + u'\n' +
-                        _(u"Enter '0' to use 7z's default size."),'MB',self.title,0,0,102400)
+                        _(u"Enter '0' to use 7z's default size."),'MB',self.text,0,0,102400)
             else: isSolid = True
         with balt.Progress(_(u"Packing to Archive..."),u'\n'+u' '*60) as progress:
             #--Pack
@@ -8236,7 +8217,6 @@ class InstallerProject_ReleasePack(InstallerLink):
 class InstallerConverter_Apply(InstallerLink):
     """Apply a Bain Conversion File."""
     title = _(u'Apply BCF...') # title !
-    help=_(u"Rename selected installer(s).")
 
     def __init__(self,converter,numAsterisks):
         InstallerLink.__init__(self)
@@ -8294,29 +8274,31 @@ class InstallerConverter_Apply(InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(InstallerLink):
     text = _(u'Embedded BCF')
-    help=_(u"")
 
     def Execute(self,event):
         name = self.selected[0]
         archive = self.data[name]
-
         #--Ask for an output filename
-        destArchive = balt.askText(self.gTank,_(u'Output file:'),_(u'Apply BCF...'),name.stail)
+        destArchive = balt.askText(self.gTank, _(u'Output file:'),
+                                   _(u'Apply BCF...'), name.stail)
         destArchive = (destArchive if destArchive else u'').strip()
         if not destArchive: return
         destArchive = GPath(destArchive)
-
         #--Error checking
         if not destArchive.s:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % destArchive.s)
+            balt.showWarning(self.gTank, _(
+                u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
+            balt.showWarning(self.gTank, _(
+                u'The %s extension is unsupported. Using %s instead.') % (
+                                 destArchive.cext, bosh.defaultExt))
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.data:
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,_(u'Apply BCF...'),False):
+            if not balt.askYes(self.gTank, _(
+                    u'%s already exists. Overwrite it?') % destArchive.s,
+                               _(u'Apply BCF...'), False):
                 return
-
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
             self.data.applyEmbeddedBCFs([archive],[destArchive],progress)
             iArchive = self.data[destArchive]
