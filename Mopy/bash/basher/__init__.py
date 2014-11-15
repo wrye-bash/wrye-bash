@@ -8216,7 +8216,7 @@ class InstallerProject_ReleasePack(InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(InstallerLink):
     """Apply a Bain Conversion File."""
-    title = _(u'Apply BCF...') # title !
+    dialogTitle = _(u'Apply BCF...') # title used in dialog
 
     def __init__(self,converter,numAsterisks):
         InstallerLink.__init__(self)
@@ -8232,7 +8232,7 @@ class InstallerConverter_Apply(InstallerLink):
         message = _(u'Using:')+u'\n* '
         message += u'\n* '.join(sorted(u'(%08X) - %s' % (x,self.data.crc_installer[x].archive) for x in self.converter.srcCRCs)) + u'\n'
         #--Confirm operation
-        result = balt.askText(self.gTank,message,self.title,result + bosh.defaultExt)
+        result = balt.askText(self.gTank,message,self.dialogTitle,result + bosh.defaultExt)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
@@ -8244,7 +8244,7 @@ class InstallerConverter_Apply(InstallerLink):
             balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.data:
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,self.title,False): return
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,self.dialogTitle,False): return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
@@ -8351,9 +8351,8 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 #------------------------------------------------------------------------------
 class InstallerConverter_Create(InstallerLink):
     """Create BAIN conversion file."""
-    title = _(u'Create BCF...') # title !
+    dialogTitle = _(u'Create BCF...') # title used in dialog
     text = _(u'Create...')
-    help=_(u"")
 
     def Execute(self,event):
         #--Generate allowable targets
@@ -8377,7 +8376,7 @@ class InstallerConverter_Create(InstallerLink):
         message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.data[x].crc,x.s) for x in self.selected))
         message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.data[destArchive].crc,destArchive.s) + u'\n'
         #--Confirm operation
-        result = balt.askText(self.gTank,message,self.title,BCFArchive.s)
+        result = balt.askText(self.gTank,message,self.dialogTitle,BCFArchive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
@@ -8391,7 +8390,7 @@ class InstallerConverter_Create(InstallerLink):
             balt.showWarning(self.gTank,_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
         if bosh.dirs['converters'].join(BCFArchive).exists():
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % BCFArchive.s,self.title,False): return
+            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % BCFArchive.s,self.dialogTitle,False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
             self.data.removeConverter(BCFArchive)
@@ -8402,7 +8401,7 @@ class InstallerConverter_Create(InstallerLink):
                 _(u'Use what maximum size for each solid block?')
                 + u'\n' +
                 _(u"Enter '0' to use 7z's default size."),
-                self.title,destInstaller.blockSize or 0,0,102400)
+                self.dialogTitle,destInstaller.blockSize or 0,0,102400)
         progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
         log = None
         try:
@@ -13936,17 +13935,19 @@ class Message_Delete(Link):
 #------------------------------------------------------------------------------
 class People_AddNew(Link):
     """Add a new record."""
+    dialogTitle = _(u'Add New Person')
+    text = _(u'Add...')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Add...'))
         menu.AppendItem(menuItem)
-        self.title = _(u'Add New Person')
 
     def Execute(self,event):
-        name = balt.askText(self.gTank,_(u"Add new person:"),self.title)
+        name = balt.askText(self.gTank,_(u"Add new person:"),self.dialogTitle)
         if not name: return
         if name in self.data:
-            return balt.showInfo(self.gTank,name+_(u" already exists."),self.title)
+            return balt.showInfo(self.gTank,name+_(u" already exists."),self.dialogTitle)
         self.data[name] = (time.time(),0,u'')
         self.gTank.RefreshUI(details=name)
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
@@ -13955,11 +13956,13 @@ class People_AddNew(Link):
 #------------------------------------------------------------------------------
 class People_Export(Link):
     """Export people to text archive."""
+    dialogTitle = _(u"Export People")
+    text = _(u'Export...')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Export...'))
         menu.AppendItem(menuItem)
-        self.title = _(u"Export People")
 
     def Execute(self,event):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
@@ -13969,16 +13972,18 @@ class People_Export(Link):
         if not path: return
         settings['bash.workDir'] = path.head
         self.data.dumpText(path,self.selected)
-        balt.showInfo(self.gTank,_(u'Records exported: %d.') % len(self.selected),self.title)
+        balt.showInfo(self.gTank,_(u'Records exported: %d.') % len(self.selected),self.dialogTitle)
 
 #------------------------------------------------------------------------------
 class People_Import(Link):
     """Import people from text archive."""
+    dialogTitle = _(u"Import People")
+    text = _(u'Import...')
+
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
         menuItem = wx.MenuItem(menu,self.id,_(u'Import...'))
         menu.AppendItem(menuItem)
-        self.title = _(u"Import People")
 
     def Execute(self,event):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
@@ -13988,7 +13993,7 @@ class People_Import(Link):
         if not path: return
         settings['bash.workDir'] = path.head
         newNames = self.data.loadText(path)
-        balt.showInfo(self.gTank,_(u"People imported: %d") % len(newNames),self.title)
+        balt.showInfo(self.gTank,_(u"People imported: %d") % len(newNames),self.dialogTitle)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------

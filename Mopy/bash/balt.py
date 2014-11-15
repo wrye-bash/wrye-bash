@@ -2108,7 +2108,6 @@ class Link:
             self.gTank = window
             self.selected = window.GetSelected()
             self.data = window.data
-            self.title = window.data.title
         else:  # (ut) else ?
             self.data = data
         self._dataInitialized = True

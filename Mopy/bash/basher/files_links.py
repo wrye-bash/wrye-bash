@@ -173,7 +173,6 @@ class File_Duplicate(_Link):
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(data) == 1]
         self.help = _(u"Make a copy of '%s'") % (data[0])
         _Link.AppendToMenu(self,menu,window,data)
-        self.title = self.text # TODO: is title used ? Link.AppendToMenu will reset it
 
     def Execute(self,event):
         data = self.data
@@ -367,7 +366,6 @@ class File_Snapshot(_Link):
     def AppendToMenu(self,menu,window,data):
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
         _Link.AppendToMenu(self,menu,window,data)
-        self.title = self.text # TODO: is title used ? Link.AppendToMenu will reset it
 
     def Execute(self,event):
         data = self.data

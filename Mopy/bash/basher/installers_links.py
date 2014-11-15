@@ -196,7 +196,7 @@ class Installers_UninstallAllPackages(_Link):
 
     def Execute(self,event):
         """Handle selection."""
-        if not balt.askYes(self.gTank,fill(_(u"Really uninstall All Packages?"),70),self.title): return
+        if not balt.askYes(self.gTank,fill(_(u"Really uninstall All Packages?"),70),self.text): return
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.data.uninstall(unArchives='ALL',progress=progress)
@@ -247,7 +247,7 @@ class Installers_UninstallAllUnknownFiles(_Link):
             u'Note that if you use TES4LODGen, this will also clean out the '
             u'DistantLOD folder, so on completion please run TES4LodGen '
             u'again.') % u'Oblivion Mods\\Bash Installers\\Bash\\Data Folder Contents <date>'
-        if balt.askYes(self.gTank,fill(fullMessage,70),self.title):
+        if balt.askYes(self.gTank,fill(fullMessage,70),self.text):
             try:
                 with balt.Progress(_(u"Cleaning Data Files..."),
                                    u'\n' + u' ' * 65) as progress:
@@ -311,7 +311,7 @@ class Installers_AutoRefreshBethsoft(BoolLink):
             message = balt.fill(_(u"Enable installation of Bethsoft Content?") + u'\n\n' +
                                 _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculatted.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
                                 )
-            if not balt.askYes(self.gTank,fill(message,80),self.title): return
+            if not balt.askYes(self.gTank,fill(message,80),self.text): return
         BoolLink.Execute(self,event)
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
@@ -339,6 +339,7 @@ class Installers_Enabled(BoolLink):
     """Flips installer state."""
     text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
+    dialogTitle = _('Enable Installers')
 
     def Execute(self,event):
         """Handle selection."""
@@ -347,7 +348,7 @@ class Installers_Enabled(BoolLink):
                    + u'\n\n\t' +
                    _(u"If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.")
                    )
-        if not enabled and not balt.askYes(self.gTank,fill(message,80),self.title):
+        if not enabled and not balt.askYes(self.gTank,fill(message,80),self.dialogTitle):
             return
         enabled = bosh.settings[self.key] = not enabled
         if enabled:

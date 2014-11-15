@@ -586,7 +586,7 @@ class Installer_Move(InstallerLink):
                    + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
-        newPos = balt.askText(self.gTank,message,self.title,unicode(curPos))
+        newPos = balt.askText(self.gTank,message,self.text,unicode(curPos))
         if not newPos: return
         newPos = newPos.strip()
         try:
