@@ -144,6 +144,14 @@ class Image:
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
+
+    typesDict = {'png': wx.BITMAP_TYPE_PNG,
+                 'jpg': wx.BITMAP_TYPE_JPEG,
+                 'ico': wx.BITMAP_TYPE_ICO,
+                 'bmp': wx.BITMAP_TYPE_BMP,
+                 'tif': wx.BITMAP_TYPE_TIF,
+                }
+
     def __init__(self,file,type=wx.BITMAP_TYPE_ANY,iconSize=16):
         self.file = GPath(file)
         self.type = type

@@ -155,7 +155,8 @@ def refreshData(): bashFrame.RefreshData() # TODO(ut): bashFrame is None in link
 settings = None
 
 # Constants --------------------------------------------------------------------
-from .constants import colorInfo, tabInfo, settingDefaults
+from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
+    installercons, PNG, JPEG, ICO, BMP, TIF
 
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
@@ -201,7 +202,7 @@ class ColorChecks(balt.ImageList):
                 shortKey = status+u'.'+state
                 imageKey = u'checkbox.'+shortKey
                 file = GPath(bosh.dirs['images'].join(u'checkbox_'+status+u'_'+state+u'.png'))
-                image = images[imageKey] = Image(file,wx.BITMAP_TYPE_PNG)
+                image = images[imageKey] = Image(file,PNG)
                 self.Add(image,shortKey)
 
     def Get(self,status,on):
@@ -236,83 +237,7 @@ class ColorChecks(balt.ImageList):
             else: shortKey = 'red.off'
         return self.indices[shortKey]
 
-#--Image lists
 colorChecks = ColorChecks()
-karmacons = balt.ImageList(16,16)
-karmacons.data.extend({
-    'karma+5': Image(GPath(bosh.dirs['images'].join(u'checkbox_purple_inc.png')),wx.BITMAP_TYPE_PNG),
-    'karma+4': Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_inc.png')),wx.BITMAP_TYPE_PNG),
-    'karma+3': Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_inc.png')),wx.BITMAP_TYPE_PNG),
-    'karma+2': Image(GPath(bosh.dirs['images'].join(u'checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
-    'karma+1': Image(GPath(bosh.dirs['images'].join(u'checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
-    'karma+0': Image(GPath(bosh.dirs['images'].join(u'checkbox_white_off.png')),wx.BITMAP_TYPE_PNG),
-    'karma-1': Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
-    'karma-2': Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
-    'karma-3': Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
-    'karma-4': Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
-    'karma-5': Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),wx.BITMAP_TYPE_PNG),
-    }.items())
-installercons = balt.ImageList(16,16)
-installercons.data.extend({
-    #--Off/Archive
-    'off.green':  Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.grey':   Image(GPath(bosh.dirs['images'].join(u'checkbox_grey_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.red':    Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.white':  Image(GPath(bosh.dirs['images'].join(u'checkbox_white_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.orange': Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.yellow': Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_off.png')),wx.BITMAP_TYPE_PNG),
-    #--Off/Archive - Wizard
-    'off.green.wiz':    Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #grey
-    'off.red.wiz':      Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.white.wiz':    Image(GPath(bosh.dirs['images'].join(u'checkbox_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.orange.wiz':   Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.yellow.wiz':   Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #--On/Archive
-    'on.green':  Image(GPath(bosh.dirs['images'].join(u'checkbox_green_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.grey':   Image(GPath(bosh.dirs['images'].join(u'checkbox_grey_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.red':    Image(GPath(bosh.dirs['images'].join(u'checkbox_red_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.white':  Image(GPath(bosh.dirs['images'].join(u'checkbox_white_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.orange': Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.yellow': Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_inc.png')),wx.BITMAP_TYPE_PNG),
-    #--On/Archive - Wizard
-    'on.green.wiz':  Image(GPath(bosh.dirs['images'].join(u'checkbox_green_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #grey
-    'on.red.wiz':    Image(GPath(bosh.dirs['images'].join(u'checkbox_red_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.white.wiz':  Image(GPath(bosh.dirs['images'].join(u'checkbox_white_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.orange.wiz': Image(GPath(bosh.dirs['images'].join(u'checkbox_orange_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.yellow.wiz': Image(GPath(bosh.dirs['images'].join(u'checkbox_yellow_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #--Off/Directory
-    'off.green.dir':  Image(GPath(bosh.dirs['images'].join(u'diamond_green_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.grey.dir':   Image(GPath(bosh.dirs['images'].join(u'diamond_grey_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.red.dir':    Image(GPath(bosh.dirs['images'].join(u'diamond_red_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.white.dir':  Image(GPath(bosh.dirs['images'].join(u'diamond_white_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.orange.dir': Image(GPath(bosh.dirs['images'].join(u'diamond_orange_off.png')),wx.BITMAP_TYPE_PNG),
-    'off.yellow.dir': Image(GPath(bosh.dirs['images'].join(u'diamond_yellow_off.png')),wx.BITMAP_TYPE_PNG),
-    #--Off/Directory - Wizard
-    'off.green.dir.wiz':  Image(GPath(bosh.dirs['images'].join(u'diamond_green_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #grey
-    'off.red.dir.wiz':    Image(GPath(bosh.dirs['images'].join(u'diamond_red_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.white.dir.wiz':  Image(GPath(bosh.dirs['images'].join(u'diamond_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.orange.dir.wiz': Image(GPath(bosh.dirs['images'].join(u'diamond_orange_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'off.yellow.dir.wiz': Image(GPath(bosh.dirs['images'].join(u'diamond_yellow_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #--On/Directory
-    'on.green.dir':  Image(GPath(bosh.dirs['images'].join(u'diamond_green_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.grey.dir':   Image(GPath(bosh.dirs['images'].join(u'diamond_grey_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.red.dir':    Image(GPath(bosh.dirs['images'].join(u'diamond_red_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.white.dir':  Image(GPath(bosh.dirs['images'].join(u'diamond_white_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.orange.dir': Image(GPath(bosh.dirs['images'].join(u'diamond_orange_inc.png')),wx.BITMAP_TYPE_PNG),
-    'on.yellow.dir': Image(GPath(bosh.dirs['images'].join(u'diamond_yellow_inc.png')),wx.BITMAP_TYPE_PNG),
-    #--On/Directory - Wizard
-    'on.green.dir.wiz':  Image(GPath(bosh.dirs['images'].join(u'diamond_green_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #grey
-    'on.red.dir.wiz':    Image(GPath(bosh.dirs['images'].join(u'diamond_red_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.white.dir.wiz':  Image(GPath(bosh.dirs['images'].join(u'diamond_white_off_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.orange.dir.wiz': Image(GPath(bosh.dirs['images'].join(u'diamond_orange_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    'on.yellow.dir.wiz': Image(GPath(bosh.dirs['images'].join(u'diamond_yellow_inc_wiz.png')),wx.BITMAP_TYPE_PNG),
-    #--Broken
-    'corrupt':   Image(GPath(bosh.dirs['images'].join(u'red_x.png')),wx.BITMAP_TYPE_PNG),
-    }.items())
 
 #--Icon Bundles
 bashRed = None
@@ -6337,7 +6262,7 @@ class ImportFaceDialog(wx.Dialog):
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
         bitmap = (itemImagePath.exists() and
-            wx.Bitmap(itemImagePath.s,wx.BITMAP_TYPE_JPEG)) or None
+            wx.Bitmap(itemImagePath.s,JPEG)) or None
         self.picture.SetBitmap(bitmap)
 
     def DoImport(self,event):
@@ -10879,7 +10804,7 @@ class Mod_Face_Import(Link):
             image = wx.EmptyImage(width,height)
             image.SetData(data)
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s,wx.BITMAP_TYPE_JPEG)
+            image.SaveFile(imagePath.s,JPEG)
         self.window.RefreshUI()
         balt.showOk(self.window,_(u'Imported face to: %s') % npc.eid,fileName.s)
 
@@ -12980,7 +12905,7 @@ class Save_ExportScreenshot(Link):
         width,height,data = saveInfo.header.image
         image = wx.EmptyImage(width,height)
         image.SetData(data)
-        image.SaveFile(imagePath.s,wx.BITMAP_TYPE_JPEG)
+        image.SaveFile(imagePath.s,JPEG)
 
 #------------------------------------------------------------------------------
 class Save_DiffMasters(Link):
@@ -14865,7 +14790,7 @@ class CreateNewProject(wx.Dialog):
         okButton.Bind(wx.EVT_BUTTON,self.OnClose)
         cancelButton.Bind(wx.EVT_BUTTON,self.OnClose)
         # Dialog Icon Handlers
-        self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,wx.BITMAP_TYPE_PNG))
+        self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
         self.OnCheckBoxChange(self)
 
     def OnCheckProjectsColorTextCtrl(self,event):
@@ -14883,11 +14808,11 @@ class CreateNewProject(wx.Dialog):
         be when created. """
         if self.checkEsp.IsChecked():
             if self.checkWizard.IsChecked():
-                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off_wiz.png').s,wx.BITMAP_TYPE_PNG))
+                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off_wiz.png').s,PNG))
             else:
-                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,wx.BITMAP_TYPE_PNG))
+                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
         else:
-            self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_grey_off.png').s,wx.BITMAP_TYPE_PNG))
+            self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_grey_off.png').s,PNG))
 
     def OnClose(self,event):
         """ Create the New Project and add user specified extras. """
@@ -14982,52 +14907,52 @@ def InitImages():
         colors[key] = value
 
     #--Standard
-    images['save.on'] = Image(GPath(bosh.dirs['images'].join(u'save_on.png')),wx.BITMAP_TYPE_PNG)
-    images['save.off'] = Image(GPath(bosh.dirs['images'].join(u'save_off.png')),wx.BITMAP_TYPE_PNG)
+    images['save.on'] = Image(GPath(bosh.dirs['images'].join(u'save_on.png')),PNG)
+    images['save.off'] = Image(GPath(bosh.dirs['images'].join(u'save_off.png')),PNG)
     #--Misc
-    #images['oblivion'] = Image(GPath(bosh.dirs['images'].join(u'oblivion.png')),wx.BITMAP_TYPE_PNG)
+    #images['oblivion'] = Image(GPath(bosh.dirs['images'].join(u'oblivion.png')),png)
     images['help.16'] = Image(GPath(bosh.dirs['images'].join(u'help16.png')))
     images['help.24'] = Image(GPath(bosh.dirs['images'].join(u'help24.png')))
     images['help.32'] = Image(GPath(bosh.dirs['images'].join(u'help32.png')))
     #--ColorChecks
-    images['checkbox.red.x'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.16'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.24'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_24.png')),wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.x.32'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_32.png')),wx.BITMAP_TYPE_PNG)
-    images['checkbox.red.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.red.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_24.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.red.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_32.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.red.x'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
+    images['checkbox.red.x.16'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
+    images['checkbox.red.x.24'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_24.png')),PNG)
+    images['checkbox.red.x.32'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_32.png')),PNG)
+    images['checkbox.red.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),PNG))
+    images['checkbox.red.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_24.png')),PNG))
+    images['checkbox.red.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_32.png')),PNG))
 
-    images['checkbox.green.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_24.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_24.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_32.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_32.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.green.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on.png')),PNG))
+    images['checkbox.green.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off.png')),PNG))
+    images['checkbox.green.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_24.png')),PNG))
+    images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_24.png')),PNG))
+    images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_32.png')),PNG))
+    images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_32.png')),PNG))
 
-    images['checkbox.blue.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_24.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_32.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_24.png')),wx.BITMAP_TYPE_PNG))
-    images['checkbox.blue.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_32.png')),wx.BITMAP_TYPE_PNG))
+    images['checkbox.blue.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on.png')),PNG))
+    images['checkbox.blue.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_24.png')),PNG))
+    images['checkbox.blue.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_32.png')),PNG))
+    images['checkbox.blue.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off.png')),PNG))
+    images['checkbox.blue.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_24.png')),PNG))
+    images['checkbox.blue.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_32.png')),PNG))
     #--Bash
-    images['bash.16'] = Image(GPath(bosh.dirs['images'].join(u'bash_16.png')),wx.BITMAP_TYPE_PNG)
-    images['bash.24'] = Image(GPath(bosh.dirs['images'].join(u'bash_24.png')),wx.BITMAP_TYPE_PNG)
-    images['bash.32'] = Image(GPath(bosh.dirs['images'].join(u'bash_32.png')),wx.BITMAP_TYPE_PNG)
-    images['bash.16.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_16_blue.png')),wx.BITMAP_TYPE_PNG)
-    images['bash.24.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_24_blue.png')),wx.BITMAP_TYPE_PNG)
-    images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),wx.BITMAP_TYPE_PNG)
+    images['bash.16'] = Image(GPath(bosh.dirs['images'].join(u'bash_16.png')),PNG)
+    images['bash.24'] = Image(GPath(bosh.dirs['images'].join(u'bash_24.png')),PNG)
+    images['bash.32'] = Image(GPath(bosh.dirs['images'].join(u'bash_32.png')),PNG)
+    images['bash.16.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_16_blue.png')),PNG)
+    images['bash.24.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_24_blue.png')),PNG)
+    images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),PNG)
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),wx.BITMAP_TYPE_JPEG)
-    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),wx.BITMAP_TYPE_JPEG)
+    images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),JPEG)
+    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),JPEG)
     #--DocBrowser
-    images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),wx.BITMAP_TYPE_PNG)
-    images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),wx.BITMAP_TYPE_PNG)
-    images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),wx.BITMAP_TYPE_PNG)
+    images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),PNG)
+    images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),PNG)
+    images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),PNG)
     #--UAC icons
-    #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),wx.BITMAP_TYPE_ICO)
-    #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),wx.BITMAP_TYPE_ICO)
+    #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
+    #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)
     #--Applications Icons
     global bashRed
     bashRed = balt.ImageBundle()
@@ -15569,7 +15494,7 @@ def InitStatusBar():
             else:
                 if icon.exists():
                     fileName = u';'.join((icon.s,idex))
-                    icon = [Image(fileName,wx.BITMAP_TYPE_ICO,x) for x in (16,24,32)]
+                    icon = [Image(fileName,ICO,x) for x in (16,24,32)]
             # Last, use the 'x' icon
                 else:
                     icon = badIcons
@@ -16111,10 +16036,10 @@ def InitScreenLinks():
     ScreensList.itemMenu.append(SeparatorLink())
     if True: #--Convert
         convertMenu = MenuLink(_(u'Convert'))
-        convertMenu.links.append(Screen_ConvertTo(u'jpg',wx.BITMAP_TYPE_JPEG))
-        convertMenu.links.append(Screen_ConvertTo(u'png',wx.BITMAP_TYPE_PNG))
-        convertMenu.links.append(Screen_ConvertTo(u'bmp',wx.BITMAP_TYPE_BMP))
-        convertMenu.links.append(Screen_ConvertTo(u'tif',wx.BITMAP_TYPE_TIF))
+        convertMenu.links.append(Screen_ConvertTo(u'jpg',JPEG))
+        convertMenu.links.append(Screen_ConvertTo(u'png',PNG))
+        convertMenu.links.append(Screen_ConvertTo(u'bmp',BMP))
+        convertMenu.links.append(Screen_ConvertTo(u'tif',TIF))
         ScreensList.itemMenu.append(convertMenu)
 
 def InitMessageLinks():
