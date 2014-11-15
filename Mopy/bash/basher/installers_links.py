@@ -24,7 +24,7 @@
 import copy
 from .. import bosh, balt, bush
 from ..balt import fill
-from . import _Link, ListBoxes, BoolLink, refreshData
+from . import _Link, ListBoxes, BoolLink, refreshData, CreateNewProject
 from ..bolt import GPath, SubProgress
 
 gInstallers = None
@@ -495,4 +495,14 @@ class Installers_RenameStrings(Installers_Skip):
     def AppendToMenu(self,menu,window,data):
         if bush.game.esp.stringsFiles:
             Installers_Skip.AppendToMenu(self,menu,window,data)
+
+class Installers_CreateNewProject(_Link):
+    """Open the Create New Project Dialog"""
+    text = _(u'Create New Project...')
+    help = _(u'Create a new project...')
+
+    def Execute(self, event):
+        dialog = CreateNewProject()
+        dialog.ShowModal()
+        dialog.Destroy()
 

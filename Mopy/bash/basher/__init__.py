@@ -6069,6 +6069,7 @@ class WryeBashSplashScreen(wx.SplashScreen):
         self.Hide()
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
+
 #------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
@@ -7809,8 +7810,6 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
                 for link in self.links:
                     link.AppendToMenu(subMenu,window,data)
 
-# InstallerProject Links ------------------------------------------------------
-#------------------------------------------------------------------------------
 class InstallerProject_OmodConfigDialog(wx.Frame):
     """Dialog for editing omod configuration data."""
     def __init__(self,parent,data,project):
@@ -7888,7 +7887,6 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.data[self.project].writeOmodConfig(self.project,self.config)
         self.Destroy()
 
-#------------------------------------------------------------------------------
 from . installer_links import * # Needs to be after InstallerProject_OmodConfigDialog
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
@@ -7930,7 +7928,6 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             newMenu = InstallerConverter_Apply(converter,numAsterisks)
             newMenu.AppendToMenu(subMenu,window,data)
 
-#------------------------------------------------------------------------------
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     def AppendToMenu(self,menu,window,data):
@@ -13889,6 +13886,7 @@ class App_OblivionBookCreator(App_Button):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.__class__ = App_Button
+
 #------------------------------------------------------------------------------
 class App_Tes4View(App_Button):
     """Allow some extra args for Tes4View."""
@@ -14308,7 +14306,7 @@ class App_ModChecker(StatusBar_Button):
 
 #------------------------------------------------------------------------------
 class CreateNewProject(wx.Dialog):
-    def __init__(self,parent,id,title):
+    def __init__(self,parent=None,id=wx.ID_ANY,title=_(u'Create New Project')):
         wx.Dialog.__init__(self,parent,id,title=_(u'Create New Project'),size=wx.DefaultSize,style=wx.DEFAULT_DIALOG_STYLE)
 
         #--Build a list of existind directories
@@ -14433,19 +14431,6 @@ class CreateNewProject(wx.Dialog):
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
         gInstallers.OnShow()
-
-class Installer_CreateNewProject(InstallerLink):
-    """Open the Create New Project Dialog"""
-    def AppendToMenu(self, menu, window, data):
-        Link.AppendToMenu(self, menu, window, data)
-        title = _(u'Create New Project...')
-        menuItem = wx.MenuItem(menu,self.id,title,help=_(u'Create a new project...'))
-        menu.AppendItem(menuItem)
-
-    def Execute(self, event):
-        dialog = CreateNewProject(None,wx.ID_ANY,_(u'Create New Project'))
-        dialog.ShowModal()
-        dialog.Destroy()
 
 # Initialization --------------------------------------------------------------
 from .files_links import *
@@ -15131,7 +15116,7 @@ def InitInstallerLinks():
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersPanel.mainMenu.append(Installers_Refresh(fullRefresh=True))
     InstallersPanel.mainMenu.append(Installers_AddMarker())
-    InstallersPanel.mainMenu.append(Installer_CreateNewProject())
+    InstallersPanel.mainMenu.append(Installers_CreateNewProject())
     InstallersPanel.mainMenu.append(Installers_MonitorInstall())
     InstallersPanel.mainMenu.append(SeparatorLink())
     InstallersPanel.mainMenu.append(Installer_ListPackages())

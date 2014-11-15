@@ -41,7 +41,7 @@ gInstallers = None
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerLink(EnabledLink):
+class _InstallerLink(EnabledLink):
     """Common functions for installer links..."""
 
     def isSingleInstallable(self):
@@ -99,7 +99,7 @@ class InstallerLink(EnabledLink):
         return self.getProjectPath().exists()
 
 #------------------------------------------------------------------------------
-class Installer_EditWizard(InstallerLink):
+class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
     help = _(u"Edit the wizard.txt associated with this project.")
 
@@ -111,7 +111,7 @@ class Installer_EditWizard(InstallerLink):
         self._initData(window, data)
         self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
-        InstallerLink.AppendToMenu(self, menu, window, data)
+        _InstallerLink.AppendToMenu(self, menu, window, data)
 
     def Execute(self, event):
         path = self.selected[0]
@@ -135,7 +135,7 @@ class Installer_EditWizard(InstallerLink):
                     # quitting.
                     pass
 
-class Installer_Wizard(InstallerLink):
+class Installer_Wizard(_InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
     help = _(u"Run the install wizard.")
@@ -145,7 +145,7 @@ class Installer_Wizard(InstallerLink):
                                         self.selected[0]]).hasWizard != False
 
     def __init__(self, bAuto):
-        InstallerLink.__init__(self)
+        _InstallerLink.__init__(self)
         self.bAuto = bAuto
         self.text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
 
@@ -279,7 +279,7 @@ class Installer_Wizard(InstallerLink):
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
             balt.showInfo(self.gTank,message)
 
-class Installer_OpenReadme(InstallerLink):
+class Installer_OpenReadme(_InstallerLink):
     """Opens the installer's readme if BAIN can find one"""
     text = _(u'Open Readme')
     help = _(u"Opens the installer's readme.")
@@ -302,7 +302,7 @@ class Installer_OpenReadme(InstallerLink):
             archive.getTempDir().join(archive.hasReadme).start()
 
 #------------------------------------------------------------------------------
-class Installer_Anneal(InstallerLink):
+class Installer_Anneal(_InstallerLink):
     """Anneal all packages."""
     text = _(u'Anneal')
     help = _(u"Anneal all packages.")
@@ -322,7 +322,7 @@ class Installer_Anneal(InstallerLink):
             gInstallers.RefreshUIMods()
             refreshData()
 
-class Installer_Duplicate(InstallerLink):
+class Installer_Duplicate(_InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')
 
@@ -365,7 +365,7 @@ class Installer_Duplicate(InstallerLink):
             self.data.refresh(what='N')
             self.gTank.RefreshUI()
 
-class Installer_Hide(InstallerLink):
+class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
     text = _(u'Hide...')
     help = _(u"Hide selected installer(s).")
@@ -395,7 +395,7 @@ class Installer_Hide(InstallerLink):
         self.data.refresh(what='ION')
         self.gTank.RefreshUI()
 
-class Installer_Rename(InstallerLink):
+class Installer_Rename(_InstallerLink):
     """Renames files by pattern."""
     text = _(u'Rename...')
     help = _(u"Rename selected installer(s).")
@@ -423,7 +423,7 @@ class Installer_Rename(InstallerLink):
             if index != -1:
                 self.gTank.gList.EditLabel(index)
 
-class Installer_HasExtraData(InstallerLink):
+class Installer_HasExtraData(_InstallerLink):
     """Toggle hasExtraData flag on installer."""
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
@@ -447,7 +447,7 @@ class Installer_HasExtraData(InstallerLink):
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
 
-class Installer_OverrideSkips(InstallerLink):
+class Installer_OverrideSkips(_InstallerLink):
     """Toggle overrideSkips flag on installer."""
     text = _(u'Override Skips')
     help = _(u"Allow installation of files in non-standard directories.")
@@ -475,7 +475,7 @@ class Installer_OverrideSkips(InstallerLink):
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
 
-class Installer_SkipRefresh(InstallerLink):
+class Installer_SkipRefresh(_InstallerLink):
     """Toggle skipRefresh flag on installer."""
     text = _(u"Don't Refresh")
     help = _(u"Don't automatically refresh project.")
@@ -504,7 +504,7 @@ class Installer_SkipRefresh(InstallerLink):
                 self.data.refresh(what='N')
                 self.gTank.RefreshUI()
 
-class Installer_Install(InstallerLink):
+class Installer_Install(_InstallerLink):
     """Install selected packages."""
     mode_title = {'DEFAULT':_(u'Install'),'LAST':_(u'Install Last'),'MISSING':_(u'Install Missing')}
 
@@ -542,7 +542,7 @@ class Installer_Install(InstallerLink):
             gInstallers.RefreshUIMods()
             refreshData()
 
-class Installer_ListPackages(InstallerLink):
+class Installer_ListPackages(_InstallerLink):
     """Copies list of Bain files to clipboard."""
     text = _(u'List Packages...')
     help = _(u'Displays a list of all packages.  Also copies that list to the '
@@ -560,7 +560,7 @@ class Installer_ListPackages(InstallerLink):
         balt.copyToClipboard(text)
         balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=bashBlue)
 
-class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
+class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
     text = _(u"List Structure...")
 
@@ -576,7 +576,7 @@ class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
         balt.copyToClipboard(text)
         balt.showLog(self.gTank,text,_(u'Package Structure'),asDialog=False,fixedFont=False,icons=bashBlue)
 
-class Installer_Move(InstallerLink):
+class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     text = _(u'Move To...')
 
@@ -622,7 +622,7 @@ class Installer_Open(_Link): # TODO(ut): ex Tank_Open and now Link subclass...
             dir.join(file).start()
 
 #------------------------------------------------------------------------------
-class _Installer_OpenAt(InstallerLink):
+class _Installer_OpenAt(_InstallerLink):
     group = 2  # the regexp group we are interested in - 2 is id, 1 is modname
 
     def _enable(self):
@@ -694,7 +694,7 @@ class Installer_OpenPES(_Installer_OpenAt):
                u'?view=OblivionMods.Detail&id='
 
 #------------------------------------------------------------------------------
-class Installer_Refresh(InstallerLink):
+class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     text = _(u'Refresh')
 
@@ -716,7 +716,7 @@ class Installer_Refresh(InstallerLink):
         self.data.refresh(what='NSC')
         self.gTank.RefreshUI()
 
-class Installer_SkipVoices(InstallerLink):
+class Installer_SkipVoices(_InstallerLink):
     """Toggle skipVoices flag on installer."""
     text = _(u'Skip Voices')
     kind = wx.ITEM_CHECK
@@ -738,7 +738,7 @@ class Installer_SkipVoices(InstallerLink):
         self.data.refresh(what='NS')
         self.gTank.RefreshUI()
 
-class Installer_Uninstall(InstallerLink):
+class Installer_Uninstall(_InstallerLink):
     """Uninstall selected Installers."""
     text = _(u'Uninstall')
 
@@ -758,7 +758,7 @@ class Installer_Uninstall(InstallerLink):
             gInstallers.RefreshUIMods()
             refreshData()
 
-class Installer_CopyConflicts(InstallerLink):
+class Installer_CopyConflicts(_InstallerLink):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
 
@@ -1021,14 +1021,14 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerArchive_Unpack(InstallerLink):
+class InstallerArchive_Unpack(_InstallerLink):
     """Install selected packages."""
     text = _(u'Unpack to Project(s)...')
 
     def AppendToMenu(self,menu,window,data):
         self._initData(window, data)
         if not self.isSelectedArchives(): return
-        InstallerLink.AppendToMenu(self,menu,window,data)
+        _InstallerLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         if self.isSingleArchive():
@@ -1087,7 +1087,7 @@ class InstallerArchive_Unpack(InstallerLink):
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfig(InstallerLink):
+class InstallerProject_OmodConfig(_InstallerLink):
     """Install selected packages.""" # TODO docs
     text = _(u'Omod Info...')
 
@@ -1099,7 +1099,7 @@ class InstallerProject_OmodConfig(InstallerLink):
         dialog.Show()
 
 #------------------------------------------------------------------------------
-class InstallerProject_Sync(InstallerLink):
+class InstallerProject_Sync(_InstallerLink):
     """Install selected packages.""" # TODO docs
     text = _(u'Sync from Data')
 
@@ -1132,7 +1132,7 @@ class InstallerProject_Sync(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerProject_SyncPack(InstallerLink):
+class InstallerProject_SyncPack(_InstallerLink):
     """Install selected packages.""" # TODO docs
     text = _(u'Sync and Pack')
 
@@ -1142,7 +1142,7 @@ class InstallerProject_SyncPack(InstallerLink):
         raise UncodedError
 
 #------------------------------------------------------------------------------
-class InstallerProject_Pack(InstallerLink):
+class InstallerProject_Pack(_InstallerLink):
     """Pack project to an archive."""
     text = _(u'Pack to Archive...')
 
@@ -1150,7 +1150,7 @@ class InstallerProject_Pack(InstallerLink):
         #--Pack is appended whenever Unpack isn't, and vice-versa
         self._initData(window, data)
         if not self.isSingleProject(): return
-        InstallerLink.AppendToMenu(self,menu,window,data)
+        _InstallerLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
@@ -1208,7 +1208,7 @@ class InstallerProject_Pack(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerProject_ReleasePack(InstallerLink):
+class InstallerProject_ReleasePack(_InstallerLink):
     """Pack project to an archive for release. Ignores dev files/folders."""
     text = _(u'Package for Release...')
 
@@ -1269,12 +1269,12 @@ class InstallerProject_ReleasePack(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerConverter_Apply(InstallerLink):
+class InstallerConverter_Apply(_InstallerLink):
     """Apply a Bain Conversion File."""
     dialogTitle = _(u'Apply BCF...') # title used in dialog
 
     def __init__(self,converter,numAsterisks):
-        InstallerLink.__init__(self)
+        _InstallerLink.__init__(self)
         self.converter = converter
         #--Add asterisks to indicate the number of unselected archives that the BCF uses
         self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))
@@ -1327,7 +1327,7 @@ class InstallerConverter_Apply(InstallerLink):
             self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerConverter_ApplyEmbedded(InstallerLink):
+class InstallerConverter_ApplyEmbedded(_InstallerLink):
     text = _(u'Embedded BCF')
 
     def Execute(self,event):
@@ -1363,7 +1363,7 @@ class InstallerConverter_ApplyEmbedded(InstallerLink):
             self.data.refresh(what='I')
             self.gTank.RefreshUI()
 
-class InstallerConverter_Create(InstallerLink):
+class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""
     dialogTitle = _(u'Create BCF...') # title used in dialog
     text = _(u'Create...')
