@@ -2123,13 +2123,14 @@ class Link:
     def AppendToMenu(self,menu,window,data):
         """Append self to menu as menu item."""
         if not self._dataInitialized: self._initData(window, data)
+        self._dataInitialized = False # init runs ONCE !
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId()
+        # is below MenuItem (_Link) specific ?
         Link.Popup = menu
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
         wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
-        self._dataInitialized = False # init runs ONCE !
 
     def Execute(self, event):
         """Event: link execution."""
@@ -2173,23 +2174,29 @@ class SeparatorLink(Link):
 #------------------------------------------------------------------------------
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
+    help = u'UNUSED'
+
+    def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
 
     def __init__(self,name,oneDatumOnly=False):
         """Initialize. Submenu items should append to self.links."""
         Link.__init__(self)
-        self.name = name
+        self.text = name # class attribute really (see _Link)
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
     def AppendToMenu(self,menu,window,data):
         """Add self as submenu (along with submenu items) to menu."""
+        # notice that by calling Link.Append a bunch of wx lines are run
+        Link.AppendToMenu(self,menu,window,data)
         subMenu = wx.Menu()
-        for link in self.links:
-            link.AppendToMenu(subMenu,window,data)
-        menu.AppendMenu(-1,self.name,subMenu)
-        if self.oneDatumOnly and len(data) != 1:
-            id = menu.FindItem(self.name)
-            menu.Enable(id,False)
+        menu.AppendMenu(self.id, self.text, subMenu)
+        if not self._enable():
+            menu.Enable(self.id, False)
+        else:
+            # do not append sub links unless submenu enabled
+            for link in self.links:
+                link.AppendToMenu(subMenu,window,data)
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

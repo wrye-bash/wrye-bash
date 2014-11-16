@@ -7787,15 +7787,15 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
     def AppendToMenu(self,menu,window,data):
         subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.name,subMenu)
+        menu.AppendMenu(-1,self.text,subMenu)
         #--Only enable the menu and append the subMenu's if one archive is selected
         if len(window.GetSelected()) > 1:
-            id = menu.FindItem(self.name)
+            id = menu.FindItem(self.text)
             menu.Enable(id,False)
         else:
             for item in window.GetSelected():
                 if not isinstance(window.data[item],bosh.InstallerArchive):
-                    id = menu.FindItem(self.name)
+                    id = menu.FindItem(self.text)
                     menu.Enable(id,False)
                     break
             else:
@@ -7885,7 +7885,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     def AppendToMenu(self,menu,window,data):
         subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.name,subMenu)
+        menu.AppendMenu(-1,self.text,subMenu)
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
@@ -7910,7 +7910,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             newMenu.AppendToMenu(subMenu,window,data)
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
-            id = menu.FindItem(self.name)
+            id = menu.FindItem(self.text)
             menu.Enable(id,False)
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
@@ -7924,11 +7924,11 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     def AppendToMenu(self,menu,window,data):
         subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.name,subMenu)
+        menu.AppendMenu(-1,self.text,subMenu)
         #--Only enable the menu and append the subMenu's if all of the selected items are archives
         for item in window.GetSelected():
             if not isinstance(window.data[item],bosh.InstallerArchive):
-                id = menu.FindItem(self.name)
+                id = menu.FindItem(self.text)
                 menu.Enable(id,False)
                 break
         else:
