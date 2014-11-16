@@ -2065,8 +2065,8 @@ class Links(list):
     """List of menu or button links."""
     class LinksPoint:
         """Point in a link list. For inserting, removing, appending items."""
-        def __init__(self,list,index):
-            self._list = list
+        def __init__(self,_list,index):
+            self._list = _list
             self._index = index
         def remove(self):
             del self._list[self._index]
@@ -2149,6 +2149,18 @@ class Link:
                 Link.Frame.GetStatusBar().SetText(item.GetHelp())
             else:
                 Link.Frame.GetStatusBar().SetText(u'')
+
+class _Link(Link): # TODO: merge with balt.Link !
+    """TMP class to factor out duplicate code and wx dependencies."""
+    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
+    # subclasses MUST define self.text, self.help OR override AppendToMenu()
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
+                               self.__class__.kind)
+        menu.AppendItem(menuItem)
+        return menuItem
 
 #------------------------------------------------------------------------------
 class SeparatorLink(Link):

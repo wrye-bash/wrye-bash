@@ -23,8 +23,8 @@
 # =============================================================================
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill
-from . import _Link, ListBoxes, BoolLink, refreshData, CreateNewProject
+from ..balt import fill, _Link
+from . import ListBoxes, BoolLink, refreshData, CreateNewProject
 from ..bolt import GPath, SubProgress
 
 gInstallers = None

@@ -7650,17 +7650,7 @@ def SetUAC(item):
         else:
             balt.setUAC(item,isUAC)
 
-class _Link(Link): # TODO: merge with balt.Link !
-    """TMP class to factor out duplicate code and wx dependencies."""
-    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
-    # subclasses MUST define self.text, self.help OR override AppendToMenu()
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
-                               self.__class__.kind)
-        menu.AppendItem(menuItem)
-        return menuItem
+from ..balt import _Link
 
 class RadioLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
     kind = wx.ITEM_RADIO
@@ -9564,6 +9554,7 @@ class Mod_AllowInvertGhosting(_Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
+
 class Mod_AllowGhosting(Link):
     """Toggles Ghostability."""
 

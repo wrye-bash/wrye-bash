@@ -27,9 +27,10 @@ import re
 import webbrowser
 import wx
 # TODO(ut): avoid importing Link - one reason are the wx.check items, another is Open
-from . import _Link, settingDefaults, bashBlue, refreshData, EnabledLink, \
+from . import settingDefaults, bashBlue, refreshData, EnabledLink, \
     InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
+from ..balt import _Link
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
