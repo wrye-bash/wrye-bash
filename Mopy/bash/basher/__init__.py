@@ -7782,22 +7782,10 @@ class List_Columns(MenuLink):
 #------------------------------------------------------------------------------
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
-    def AppendToMenu(self,menu,window,data):
-        subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.text,subMenu)
-        #--Only enable the menu and append the subMenu's if one archive is selected
-        if len(window.GetSelected()) > 1:
-            id = menu.FindItem(self.text)
-            menu.Enable(id,False)
-        else:
-            for item in window.GetSelected():
-                if not isinstance(window.data[item],bosh.InstallerArchive):
-                    id = menu.FindItem(self.text)
-                    menu.Enable(id,False)
-                    break
-            else:
-                for link in self.links:
-                    link.AppendToMenu(subMenu,window,data)
+
+    def _enable(self):
+        if not balt.MenuLink._enable(self): return False # one  selected only
+        return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
 
 class InstallerProject_OmodConfigDialog(wx.Frame):
     """Dialog for editing omod configuration data."""
@@ -7919,18 +7907,11 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
-    def AppendToMenu(self,menu,window,data):
-        subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.text,subMenu)
-        #--Only enable the menu and append the subMenu's if all of the selected items are archives
-        for item in window.GetSelected():
-            if not isinstance(window.data[item],bosh.InstallerArchive):
-                id = menu.FindItem(self.text)
-                menu.Enable(id,False)
-                break
-        else:
-            for link in self.links:
-                link.AppendToMenu(subMenu,window,data)
+    def _enable(self):
+        for item in self.selected:
+            if not isinstance(self.data[item],bosh.InstallerArchive):
+                return False
+        return True
 
 # Mods Links ------------------------------------------------------------------
 class Mods_ReplacersData:
@@ -14801,7 +14782,7 @@ def InitInstallerLinks():
     InstallersPanel.itemMenu.append(Installer_Duplicate())
     InstallersPanel.itemMenu.append(balt.Tank_Delete())
     if True: #--Open At...
-        openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"))
+        openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"), oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
