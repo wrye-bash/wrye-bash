@@ -7780,13 +7780,6 @@ class List_Columns(MenuLink):
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerOpenAt_MainMenu(balt.MenuLink):
-    """Main Open At Menu"""
-
-    def _enable(self):
-        if not balt.MenuLink._enable(self): return False # one  selected only
-        return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
-
 class InstallerProject_OmodConfigDialog(wx.Frame):
     """Dialog for editing omod configuration data."""
     def __init__(self,parent,data,project):
@@ -7865,53 +7858,6 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.Destroy()
 
 from . installer_links import * # Needs to be after InstallerProject_OmodConfigDialog
-
-class InstallerConverter_ConvertMenu(balt.MenuLink):
-    """Apply BCF SubMenu."""
-    def _enable(self): # TODO(ut) untested for multiple selections
-        """Return False to disable the converter menu otherwise populate its links attribute and return True."""
-        linkSet = set()
-        #--Converters are linked by CRC, not archive name
-        #--So, first get all the selected archive CRCs
-        selected = self.selected # window.GetSelected()
-        instData = self.data # window.data, InstallersData singleton
-        selectedCRCs = set(instData[archive].crc for archive in selected)
-        crcInstallers = set(instData.crc_installer)
-        srcCRCs = set(instData.srcCRC_converters)
-        #--There is no point in testing each converter unless
-        #--every selected archive has an associated converter
-        if selectedCRCs <= srcCRCs:
-            #--Test every converter for every selected archive
-            #--Only add a link to the converter if it uses all selected archives,
-            #--and all of its required archives are available (but not necessarily selected)
-            linkSet = set( #--List comprehension is faster than unrolling the for loops, but readability suffers
-                [converter for installerCRC in selectedCRCs for converter in
-                 instData.srcCRC_converters[installerCRC] if
-                 selectedCRCs <= converter.srcCRCs <= crcInstallers])
-##            for installerCRC in selectedCRCs:
-##                for converter in window.data.srcCRC_converters[installerCRC]:
-##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
-        #--If the archive is a single archive with an embedded BCF, add that
-        if len(selected) == 1 and instData[selected[0]].hasBCF:
-            self.links.append(InstallerConverter_ApplyEmbedded())
-        #--Disable the menu if there were no valid converters found
-        elif not linkSet:
-            return False
-        #--Otherwise add each link in alphabetical order, and
-        #--indicate the number of additional, unselected archives
-        #--that the converter requires
-        for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
-            numAsterisks = len(converter.srcCRCs - selectedCRCs)
-            self.links.append(InstallerConverter_Apply(converter, numAsterisks))
-        return True
-
-class InstallerConverter_MainMenu(balt.MenuLink):
-    """Main BCF Menu"""
-    def _enable(self):
-        for item in self.selected:
-            if not isinstance(self.data[item],bosh.InstallerArchive):
-                return False
-        return True
 
 # Mods Links ------------------------------------------------------------------
 class Mods_ReplacersData:
