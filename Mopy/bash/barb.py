@@ -33,8 +33,8 @@ from subprocess import Popen, PIPE
 import bash
 import bass
 import bosh
-import bolt
 import bush
+from . import images_list
 from bosh import startupinfo, dirs
 from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
@@ -151,8 +151,8 @@ class BackupSettings(BaseBackupSettings):
                 fullname = path.join(name)
                 if fullname.isfile():
                     changed = True
-                    for ver_list in bolt.images_list:
-                        if name.s in bolt.images_list[ver_list] and bolt.images_list[ver_list][name.s] == fullname.size:
+                    for ver_list in images_list:
+                        if name.s in images_list[ver_list] and images_list[ver_list][name.s] == fullname.size:
                             changed = False
                     if changed and not name.s.lower() == u'thumbs.db':
                         self.files[tmpdir.join(name)] = fullname
