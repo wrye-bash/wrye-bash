@@ -9444,20 +9444,47 @@ class Mod_AllowNoGhosting(_Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(_Link):
-    text = _(u"Ghost")
-    help = _(u"Ghost selected mod(s)")
+class Mod_Ghost(EnabledLink):
+
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
+        if len(data) == 1:
+            self.help = _(u"Ghost/Unghost selected mod.  Active mods can't be ghosted")
+            self.path = data[0]
+            self.fileInfo = bosh.modInfos[self.path]
+            self.isGhost = self.fileInfo.isGhost
+            self.text = _(u"Ghost") if not self.isGhost else _(u"Unghost")
+        else:
+            self.help = _(u"Ghost selected mods.  Active mods can't be ghosted")
+            self.text = _(u"Ghost")
+
+    def _enable(self):
+        # only enable ghosting for one item if not active
+        if len(self.data) == 1 and not self.isGhost:
+            return self.path not in bosh.modInfos.ordered
+        return True
+
+    def AppendToMenu(self,menu,window,data):
+        # if not len(data) == 1: return
+        return EnabledLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         files = []
-        for fileName in self.data:
-            fileInfo = bosh.modInfos[fileName]
-            allowGhosting = True
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = fileName not in bosh.modInfos.ordered
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
-                files.append(fileName)
+        if len(self.data) == 1:
+            # toggle
+            if not self.isGhost: # ghosting - override allowGhosting with True
+                bosh.modInfos.table.setItem(self.path,'allowGhosting',True)
+            self.fileInfo.setGhost(not self.isGhost)
+            files.append(self.path)
+        else:
+            for fileName in self.data:
+                fileInfo = bosh.modInfos[fileName]
+                allowGhosting = True
+                bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
+                toGhost = fileName not in bosh.modInfos.ordered
+                oldGhost = fileInfo.isGhost
+                if fileInfo.setGhost(toGhost) != oldGhost:
+                    files.append(fileName)
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
@@ -9483,18 +9510,27 @@ class Mod_AllowGhosting(Link):
     """Toggles Ghostability."""
 
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+        Link._initData(self, window, data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't Ghost"),kind=wx.ITEM_CHECK)
-            menu.AppendItem(menuItem)
+            _self = self
+            class _CheckLink(CheckLink):
+                text = _(u"Disallow Ghosting")
+                help = _(u"Toggle Ghostability")
+
+                def Execute(self, event):
+                    _self.Execute(event)
+
+            cl = _CheckLink()
+            menuItem = cl.AppendToMenu(menu,window,data)
             self.allowGhosting = bosh.modInfos.table.getItem(data[0],'allowGhosting',True)
             menuItem.Check(not self.allowGhosting)
         else:
-            subMenu = wx.Menu()
-            menu.AppendMenu(-1,_(u"Ghosting"),subMenu)
-            Mod_AllowAllGhosting().AppendToMenu(subMenu,window,data)
-            Mod_AllowNoGhosting().AppendToMenu(subMenu,window,data)
-            Mod_AllowInvertGhosting().AppendToMenu(subMenu,window,data)
+            subMenu = balt.MenuLink(_(u"Ghosting"))
+            subMenu.links.append(Mod_AllowAllGhosting())
+            subMenu.links.append(Mod_AllowNoGhosting())
+            subMenu.links.append(Mod_AllowInvertGhosting())
+            menuItem = subMenu.AppendToMenu(menu,window,data)
+        return menuItem
 
     def Execute(self,event):
         fileName = self.data[0]
@@ -9550,18 +9586,27 @@ class Mod_SkipDirtyCheck(Link):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+        Link._initData(self, window, data)
         if len(data) == 1:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
-            menu.AppendItem(menuItem)
+            _self = self
+            class _CheckLink(CheckLink):
+                text = _(u"Don't check against LOOT's dirty mod list")
+                help = _(u"Toggles scanning for dirty mods on a per-mod basis")
+
+                def Execute(self, event):
+                    _self.Execute(event)
+
+            cl = _CheckLink()
+            menuItem = cl.AppendToMenu(menu,window,data)
             self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
             menuItem.Check(self.ignoreDirty)
         else:
-            subMenu = wx.Menu()
-            menu.AppendMenu(-1,_(u"Dirty edit scanning"),subMenu)
-            Mod_SkipDirtyCheckAll(True).AppendToMenu(subMenu,window,data)
-            Mod_SkipDirtyCheckAll(False).AppendToMenu(subMenu,window,data)
-            Mod_SkipDirtyCheckInvert().AppendToMenu(subMenu,window,data)
+            subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
+            subMenu.links.append(Mod_SkipDirtyCheckAll(True))
+            subMenu.links.append(Mod_SkipDirtyCheckAll(False))
+            subMenu.links.append(Mod_SkipDirtyCheckInvert())
+            menuItem = subMenu.AppendToMenu(menu,window,data)
+        return menuItem
 
     def Execute(self,event):
         fileName = self.data[0]
@@ -9863,34 +9908,25 @@ class Mod_Factions_Import(_Mod_Import_Link):
             balt.showLog(self.window,text,_(u'Import Factions'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_MarkLevelers(Link):
+class Mod_MarkLevelers(EnabledLink):
     """Marks (tags) selected mods as Delevs and/or Relevs according to Leveled Lists.csv."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Mark Levelers...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(data))
+    text = _(u'Mark Levelers...')
+
+    def _enable(self): return bool(self.data)
 
     def Execute(self,event):
         message = _(u'Obsolete. Mods are now automatically tagged when possible.')
         balt.showInfo(self.window,message,_(u'Mark Levelers'))
 
 #------------------------------------------------------------------------------
-class Mod_MarkMergeable(Link):
+class Mod_MarkMergeable(EnabledLink):
     """Returns true if can act as patch mod."""
     def __init__(self,doCBash):
         Link.__init__(self)
         self.doCBash = doCBash
+        self.text = _(u'Mark Mergeable (CBash)...') if doCBash else _(u'Mark Mergeable...')
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if self.doCBash:
-            title = _(u'Mark Mergeable (CBash)...')
-        else:
-            title = _(u'Mark Mergeable...')
-        menuItem = wx.MenuItem(menu,self.id,title)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(data))
+    def _enable(self): return bool(self.data)
 
     def Execute(self,event):
         yes,no = [],[]
