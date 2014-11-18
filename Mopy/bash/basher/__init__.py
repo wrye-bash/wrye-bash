@@ -8805,14 +8805,12 @@ class StatusBar_Hide(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ActorLevels, CBash_ActorLevels
 
-class Mod_ActorLevels_Export(Link):
+class Mod_ActorLevels_Export(EnabledLink):
     """Export actor levels from mod to text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'),
-                help=_(u"Export NPC level info from mod to text file."))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'NPC Levels...')
+    help = _(u"Export NPC level info from mod to text file.")
+
+    def _enable(self): return bool(self.data)
 
     def Execute(self,event):
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
@@ -8849,14 +8847,12 @@ class Mod_ActorLevels_Export(Link):
             progress(1.0,_(u'Done.'))
 
 #------------------------------------------------------------------------------
-class Mod_ActorLevels_Import(Link):
+class Mod_ActorLevels_Import(EnabledLink):
     """Imports actor levels from text file to mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'NPC Levels...'),
-                help=_(u"Import NPC level info from text fiile to mod"))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'NPC Levels...')
+    help = _(u"Import NPC level info from text file to mod")
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         message = (_(u'This command will import NPC level info from a previously exported file.')
@@ -8903,12 +8899,10 @@ class Mod_ActorLevels_Import(Link):
                          icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class MasterList_AddMasters(Link):
+class MasterList_AddMasters(_Link):
     """Adds a master."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Add Masters...'))
-        menu.AppendItem(menuItem)
+    text = _(u'Add Masters...')
+    help = _(u'Adds specified master to list of masters')
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master.  Useful for splitting mods into esm/esp pairs.")
@@ -8939,13 +8933,13 @@ class MasterList_AddMasters(Link):
         self.window.InitEdit()
 
 #------------------------------------------------------------------------------
-class MasterList_CleanMasters(Link):
+class MasterList_CleanMasters(_Link):
     """Remove unneeded masters."""
+    text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
+
     def AppendToMenu(self,menu,window,data):
         if not settings['bash.CBashEnabled']: return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Clean Masters...'))
-        menu.AppendItem(menuItem)
+        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")
@@ -8992,13 +8986,11 @@ class MasterList_CleanMasters(Link):
                             _(u'Clean Masters'))
 
 #------------------------------------------------------------------------------
-class Mod_FullLoad(Link):
+class Mod_FullLoad(EnabledLink):
     """Tests all record definitions against a specific mod"""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Test Full Record Definitions...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data)==1)
+    text = _(u'Test Full Record Definitions...')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9011,16 +9003,14 @@ class Mod_FullLoad(Link):
             try:
                 modFile.load(True,progress)
             except:
-                deprint('execption:\n', traceback=True)
+                deprint('exception:\n', traceback=True)
 
 #------------------------------------------------------------------------------
-class Mod_AddMaster(Link):
+class Mod_AddMaster(EnabledLink):
     """Adds master."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Add Master...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data)==1)
+    text = _(u'Add Master...')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
@@ -9316,11 +9306,8 @@ class Mod_BaloGroups:
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class Mod_AllowAllGhosting(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Allow Ghosting"))
-        menu.AppendItem(menuItem)
+class Mod_AllowAllGhosting(_Link):
+    text, help = _(u"Allow Ghosting"), u''
 
     def Execute(self,event):
         files = []
@@ -9335,13 +9322,13 @@ class Mod_AllowAllGhosting(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_CreateBOSSReport(Link):
+class Mod_CreateBOSSReport(EnabledLink):
     """Copies appropriate information for making a report in the BOSS thread."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Create BOSS Report..."))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (not bosh.reOblivion.match(self.data[0].s)))
+    text = _(u"Create BOSS Report...")
+
+    def _enable(self):
+        return len(self.data) != 1 or (
+            not bosh.reOblivion.match(self.data[0].s))
 
     def Execute(self,event):
         text = u''
@@ -9404,12 +9391,10 @@ class Mod_CreateBOSSReport(Link):
         balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_CopyModInfo(Link):
+class Mod_CopyModInfo(_Link):
     """Copies the basic info about selected mod(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Copy Mod Info...'))
-        menu.AppendItem(menuItem)
+    text = _(u'Copy Mod Info...')
+    help = _(u'Copies the basic info about selected mod(s)')
 
     def Execute(self,event):
         text = u''
@@ -9476,19 +9461,16 @@ class Mod_CopyModInfo(Link):
             if version:
                 text += u'\n'+_(u'Version')+u': %s' % version
         if spoiler: text += u'[/spoiler]'
-
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'Mod Info Report'),asDialog=False,
                      fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_ListBashTags(Link):
+class Mod_ListBashTags(_Link):
     """Copies list of bash tags to clipboard."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."))
-        menu.AppendItem(menuItem)
+    text = _(u"List Bash Tags...")
+    help = _(u'Copies list of bash tags to clipboard')
 
     def Execute(self,event):
         #--Get masters list
@@ -9500,11 +9482,9 @@ class Mod_ListBashTags(Link):
         balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_AllowNoGhosting(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Disallow Ghosting"))
-        menu.AppendItem(menuItem)
+class Mod_AllowNoGhosting(_Link):
+    text = _(u'Disallow Ghosting')
+    help = _(u'Disallow Ghosting for selected mod(s)')
 
     def Execute(self,event):
         files = []
@@ -9519,11 +9499,9 @@ class Mod_AllowNoGhosting(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Ghost"))
-        menu.AppendItem(menuItem)
+class Mod_Ghost(_Link):
+    text = _(u"Ghost")
+    help = _(u"Ghost selected mod(s)")
 
     def Execute(self,event):
         files = []
@@ -9538,11 +9516,9 @@ class Mod_Ghost(Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_AllowInvertGhosting(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Invert Ghosting"))
-        menu.AppendItem(menuItem)
+class Mod_AllowInvertGhosting(_Link):
+    text = _(u'Invert Ghosting')
+    help = _(u'Invert Ghosting for selected mod(s)')
 
     def Execute(self,event):
         files = []
@@ -9585,18 +9561,19 @@ class Mod_AllowGhosting(Link):
             self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
-class Mod_SkipDirtyCheckAll(Link):
+class Mod_SkipDirtyCheckAll(CheckLink):
+    help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
+             u"dirty mod list")
+
     def __init__(self, bSkip):
-        Link.__init__(self)
+        CheckLink.__init__(self)
         self.skip = bSkip
+        self.text = _(
+            u"Don't check against LOOT's dirty mod list") if self.skip else _(
+            u"Check against LOOT's dirty mod list")
 
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if self.skip:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Don't check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
-        else:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Check against LOOT's dirty mod list"),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
+        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
         for fileName in self.data:
             if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
                 menuItem.Check(False)
@@ -9605,20 +9582,19 @@ class Mod_SkipDirtyCheckAll(Link):
 
     def Execute(self,event):
         for fileName in self.data:
-            fileInfo = bosh.modInfos[fileName]
+            fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
         self.window.RefreshUI(self.data)
 
 #------------------------------------------------------------------------------
-class Mod_SkipDirtyCheckInvert(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Invert checking against LOOT's dirty mod list"))
-        menu.AppendItem(menuItem)
+class Mod_SkipDirtyCheckInvert(_Link):
+    text = _(u"Invert checking against LOOT's dirty mod list")
+    help = _(
+        u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
     def Execute(self,event):
         for fileName in self.data:
-            fileInfo = bosh.modInfos[fileName]
+            fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             ignoreDiry = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDiry)
         self.window.RefreshUI(self.data)
@@ -9649,13 +9625,13 @@ class Mod_SkipDirtyCheck(Link):
         self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
-class Mod_CleanMod(Link):
-    """Fix fog on selected csll."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Nvidia Fog Fix'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+class Mod_CleanMod(EnabledLink):
+    """Fix fog on selected cells."""
+    text = _(u'Nvidia Fog Fix')
+    help = _(u'Modify fog values in interior cells to avoid the Nvidia black '
+             u'screen bug')
+
+    def _enable(self): return bool(self.data)
 
     def Execute(self,event):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
@@ -9682,12 +9658,9 @@ class Mod_CleanMod(Link):
             balt.showOk(self.window,message,_(u'Nvidia Fog Fix'))
 
 #------------------------------------------------------------------------------
-class Mod_CreateBlankBashedPatch(Link):
+class Mod_CreateBlankBashedPatch(_Link):
     """Create a new bashed patch."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'New Bashed Patch...'))
-        menu.AppendItem(menuItem)
+    text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
     def Execute(self,event):
         newPatchName = bosh.PatchFile.generateNextBashedPatch(self.window)
@@ -9695,12 +9668,9 @@ class Mod_CreateBlankBashedPatch(Link):
             self.window.RefreshUI(detail=newPatchName)
 
 #------------------------------------------------------------------------------
-class Mod_CreateBlank(Link):
+class Mod_CreateBlank(_Link):
     """Create a new blank mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'New Mod...'))
-        menu.AppendItem(menuItem)
+    text, help = _(u'New Mod...'), _(u'Create a new blank mod')
 
     def Execute(self,event):
         data = self.window.GetSelected()
@@ -9725,16 +9695,15 @@ class Mod_CreateBlank(Link):
         self.window.RefreshUI(detail=newName)
 
 #------------------------------------------------------------------------------
-class Mod_CreateDummyMasters(Link):
+class Mod_CreateDummyMasters(EnabledLink):
     """TES4Edit tool, makes dummy plugins for each missing master, for use if looking at a 'Filter' patch."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Create Dummy Masters...'))
-        if len(data) == 1 and bosh.modInfos[data[0]].getStatus() == 30: # Missing masters
-            menuItem.Enable(True)
-        else:
-            menuItem.Enable(False)
-        menu.AppendItem(menuItem)
+    text = _(u'Create Dummy Masters...')
+    help = _(u"TES4Edit tool, makes dummy plugins for each missing master of"
+             u" the selected mod, for use if looking at a 'Filter' patch")
+
+    def _enable(self):
+        return len(self.data) == 1 and bosh.modInfos[self.data[
+            0]].getStatus() == 30  # Missing masters
 
     def Execute(self,event):
         """Handle execution."""
@@ -9778,18 +9747,17 @@ class Mod_CreateDummyMasters(Link):
         bashFrame.RefreshData()
         self.window.RefreshUI()
 
-class Mods_CleanDummyMasters(Link):
-    """Clean up after using a 'Create Dummy Masters...' command"""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Remove Dummy Masters...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(False)
+class Mods_CleanDummyMasters(EnabledLink):
+    """Clean up after using a 'Create Dummy Masters...' command."""
+    text = _(u'Remove Dummy Masters...')
+    help = _(u"Clean up after using a 'Create Dummy Masters...' command")
+
+    def _enable(self):
         for fileName in bosh.modInfos.data:
             fileInfo = bosh.modInfos[fileName]
             if fileInfo.header.author == u'BASHED DUMMY':
-                menuItem.Enable(True)
-                break
+                return True
+        return False
 
     def Execute(self,event):
         """Handle execution."""
@@ -9818,7 +9786,10 @@ class Mods_CleanDummyMasters(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class _Mod_Export_Link(Link):
+class _Mod_Export_Link(EnabledLink):
+
+    def _enable(self): return bool(self.data)
+
     def Execute(self, event):
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
@@ -9853,12 +9824,8 @@ class Mod_FactionRelations_Export(_Mod_Export_Link):
     askTitle = _(u'Export faction relations to:')
     csvFile = u'_Relations.csv'
     progressTitle = _(u'Export Relations')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Relations...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Relations...')
+    help = _(u'Export faction relations from mod to text file')
 
     def _parser(self):
         return CBash_FactionRelations() if CBash else FactionRelations()
@@ -9925,12 +9892,8 @@ class Mod_Factions_Export(_Mod_Export_Link):
     askTitle = _(u'Export factions to:')
     csvFile = u'_Factions.csv'
     progressTitle = _(u'Export Factions')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Factions...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Factions...')
+    help = _(u'Export factions from mod to text file')
 
     def _parser(self):
         return CBash_ActorFactions() if CBash else ActorFactions()
@@ -10427,12 +10390,8 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     askTitle = _(u'Export eids to:')
     csvFile = u'_Eids.csv'
     progressTitle = _(u"Export Editor Ids")
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Editor Ids...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Editor Ids...')
+    help = _(u'Export faction editor ids from mod to text file')
 
     def _parser(self):
         return CBash_EditorIds() if CBash else EditorIds()
@@ -10621,12 +10580,8 @@ class Mod_FullNames_Export(_Mod_Export_Link):
     askTitle = _(u'Export names to:')
     csvFile = u'_Names.csv'
     progressTitle = _(u"Export Names")
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Names...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Names...')
+    help = _(u'Export full names from mod to text file')
 
     def _parser(self):
         return CBash_FullNames() if CBash else FullNames()

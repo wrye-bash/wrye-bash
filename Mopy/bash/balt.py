@@ -2115,8 +2115,8 @@ class Link:
         if isinstance(window,Tank):
             self.gTank = window
             self.selected = window.GetSelected()
-            self.data = window.data
-        else:  # (ut) else ?
+            self.data = window.data #TODO(ut)the same instance of InstallerData
+        else:  # In mod list a list<Path>, in subpackage the index of the right clicked item
             self.data = data
         self._dataInitialized = True
 
