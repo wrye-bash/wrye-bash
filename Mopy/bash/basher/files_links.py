@@ -25,7 +25,7 @@ from operator import attrgetter
 import re
 import time
 from .. import balt, bosh, bush, bolt
-from . import ListBoxes, bashBlue, refreshData, RadioLink
+from . import ListBoxes, bashBlue, refreshData, RadioLink, EnabledLink
 from ..balt import _Link
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
@@ -37,9 +37,9 @@ class Files_Open(_Link):
     """Opens data directory in explorer."""
     text = _(u'Open...')
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.help = _(u"Open '%s'") % window.data.dir.tail
-        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         """Handle selection."""
@@ -58,7 +58,7 @@ class Files_SortBy(RadioLink):
         self.text = self.prefix + self.sortName
         self.help = _(u'Sort by %s') % self.sortName
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self,menu,window,data): # TODO(ut) AppendToMenu
         menuItem = _Link.AppendToMenu(self,menu,window,data)
         if window.sort == self.sortCol: menuItem.Check()
 
@@ -145,9 +145,9 @@ class File_Delete(_Link):
     """Delete the file and all backups."""
     text = _(u'Delete')
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.help = _(u"Delete %(filename)s.") % ({'filename': data[0]})
-        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
@@ -170,10 +170,11 @@ class File_Delete(_Link):
 
 class File_Duplicate(_Link):
     """Create a duplicate of the file."""
-    def AppendToMenu(self,menu,window,data):
+
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(data) == 1]
         self.help = _(u"Make a copy of '%s'") % (data[0])
-        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         data = self.data
@@ -237,9 +238,9 @@ class File_Hide(_Link):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     text = _(u'Hide')
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]})
-        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -270,14 +271,15 @@ class File_Hide(_Link):
         #--Refresh stuff
         refreshData()
 
-class File_ListMasters(_Link):
+class File_ListMasters(EnabledLink):
     """Copies list of masters to clipboard."""
     text = _(u"List Masters...")
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.help = _(u"Copies list of %(filename)s's masters to the clipboard.") % ({'filename':data[0]})
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if len(data) != 1: menuItem.Enable(False)
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -324,14 +326,12 @@ class File_Redate(_Link):
         modInfos.refreshInfoLists()
         self.window.RefreshUI()
 
-class File_Sort(_Link):
+class File_Sort(EnabledLink):
     """Sort the selected files."""
     text = _(u'Sort')
     help = _(u"Sort the selected files.")
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if len(data) < 2: menuItem.Enable(False)
+    def _enable(self): return len(self.data) > 1
 
     def Execute(self,event):
         message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
@@ -364,9 +364,9 @@ class File_Snapshot(_Link):
     """Take a snapshot of the file."""
     help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
-        _Link.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         data = self.data
@@ -399,14 +399,12 @@ class File_Snapshot(_Link):
             #--Copy file
             self.window.data.copy(fileName,destDir,destName)
 
-class File_RevertToSnapshot(_Link):
+class File_RevertToSnapshot(EnabledLink):
     """Revert to Snapshot."""
     text = _(u'Revert to Snapshot...')
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(len(self.data) == 1)
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         """Handle menu item selection."""
@@ -447,15 +445,16 @@ class File_Backup(_Link):
             fileInfo = self.window.data[item]
             fileInfo.makeBackup(True)
 
-class File_Open(_Link):
+class File_Open(EnabledLink):
     """Open specified file(s)."""
     text = _(u'Open...')
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         self.help = _(u"Open '%s' with the system's default program.") % data[
             0] if len(data) == 1 else _(u'Open the selected files.')
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(len(self.data)>0)
+
+    def _enable(self): return len(self.data) > 0
 
     def Execute(self,event):
         """Handle selection."""

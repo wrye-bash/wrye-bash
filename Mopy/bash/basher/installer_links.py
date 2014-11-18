@@ -30,7 +30,7 @@ import wx
 from . import settingDefaults, bashBlue, refreshData, EnabledLink, \
     InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
-from ..balt import _Link
+from ..balt import _Link, Link
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
@@ -108,11 +108,10 @@ class Installer_EditWizard(_InstallerLink):
         return self.isSingleInstallable() and bool(
             self.data[self.selected[0]].hasWizard)
 
-    def AppendToMenu(self, menu, window, data):
-        self._initData(window, data)
+    def _initData(self, window, data):
+        Link._initData(self, window, data)
         self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
-        _InstallerLink.AppendToMenu(self, menu, window, data)
 
     def Execute(self, event):
         path = self.selected[0]
@@ -325,7 +324,7 @@ class Installer_Duplicate(_InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self,menu,window,data): # TODO(ut) MI
         self._initData(window, data)
         self.help = _(u"Duplicate selected %(installername)s.") % ({'installername':self.selected[0]})
         menuItem = _Link.AppendToMenu(self,menu,window,data)

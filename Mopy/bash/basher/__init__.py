@@ -8924,20 +8924,21 @@ class Mod_BaloGroups_Edit(wx.Dialog):
 from . mod_links import *
 from . mod_links import _Mod_Export_Link, _Mod_Import_Link
 #------------------------------------------------------------------------------
-class Mod_CopyToEsmp(Link):
+class Mod_CopyToEsmp(EnabledLink):
     """Create an esp(esm) copy of selected esm(esp)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         fileInfo = bosh.modInfos[data[0]]
-        isEsm = fileInfo.isEsm()
-        self.label = _(u'Copy to Esp') if fileInfo.isEsm() else _(u'Copy to Esm')
-        menuItem = wx.MenuItem(menu,self.id,self.label)
-        menu.AppendItem(menuItem)
-        for item in data:
+        self.isEsm = fileInfo.isEsm()
+        self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
+
+    def _enable(self):
+        for item in self.data:
             fileInfo = bosh.modInfos[item]
-            if fileInfo.isInvertedMod() or fileInfo.isEsm() != isEsm:
-                menuItem.Enable(False)
-                return
+            if fileInfo.isInvertedMod() or fileInfo.isEsm() != self.isEsm:
+                return False
+        return True
 
     def Execute(self,event):
         for item in self.data:
@@ -8948,7 +8949,7 @@ class Mod_CopyToEsmp(Link):
             newName = curName.root+u'.'+newType
             #--Replace existing file?
             if modsDir.join(newName).exists():
-                if not balt.askYes(self.window,_(u'Replace existing %s?') % (newName.s,),self.label):
+                if not balt.askYes(self.window,_(u'Replace existing %s?') % (newName.s,),self.text):
                     continue
                 bosh.modInfos[newName].makeBackup()
             #--New Time
@@ -9001,35 +9002,38 @@ class Mod_Face_Import(Link):
         balt.showOk(self.window,_(u'Imported face to: %s') % npc.eid,fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(Link):
+class Mod_FlipMasters(EnabledLink):
     """Swaps masters between esp and esm versions."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Esmify Masters'))
-        menu.AppendItem(menuItem)
+
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         #--FileInfo
-        fileInfo = self.fileInfo = window.data[data[0]]
-        menuItem.Enable(False)
-        self.toEsp = False
+        self.fileName = fileName = GPath(self.data[0]) # TODO(ut): was data[0]
+        self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
+        self.text = _(u'Esmify Masters')
         if len(data) == 1 and len(fileInfo.header.masters) > 1:
             espMasters = [master for master in fileInfo.header.masters if bosh.reEspExt.search(master.s)]
             if not espMasters: return
             for masterName in espMasters:
                 masterInfo = bosh.modInfos.get(GPath(masterName),None)
                 if masterInfo and masterInfo.isInvertedMod():
-                    menuItem.SetText(_(u'Espify Masters'))
+                    self.text = _(u'Espify Masters')
                     self.toEsm = False
                     break
             else:
                 self.toEsm = True
-            menuItem.Enable(True)
+
+    def _enable(self):
+        return len(self.data) == 1 and len(self.fileInfo.header.masters) > 1
 
     def Execute(self,event):
-        message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods.")
+        message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
+                    u" esp masters to convert them to/from esm state. Useful"
+                    u" for building/analyzing esp mastered mods.")
         if not balt.askContinue(self.window,message,'bash.flipMasters.continue'):
             return
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
+        fileName= self.fileName
+        fileInfo = self.fileInfo
         updated = [fileName]
         espMasters = [GPath(master) for master in fileInfo.header.masters
             if bosh.reEspExt.search(master.s)]
@@ -9042,20 +9046,21 @@ class Mod_FlipMasters(Link):
         self.window.RefreshUI(updated,fileName)
 
 #------------------------------------------------------------------------------
-class Mod_FlipSelf(Link):
+class Mod_FlipSelf(EnabledLink):
     """Flip an esp(esm) to an esm(esp)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+
+    def _initData(self, window, data):
+        _Link._initData(self, window, data)
         fileInfo = bosh.modInfos[data[0]]
-        isEsm = fileInfo.isEsm()
-        self.label = _(u'Espify Self') if isEsm else _(u'Esmify Self')
-        menuItem = wx.MenuItem(menu,self.id,self.label)
-        menu.AppendItem(menuItem)
-        for item in data:
+        self.isEsm = fileInfo.isEsm()
+        self.text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
+
+    def _enable(self):
+        for item in self.data:
             fileInfo = bosh.modInfos[item]
-            if fileInfo.isEsm() != isEsm or not item.cext[-1] == u'p':
-                menuItem.Enable(False)
-                return
+            if fileInfo.isEsm() != self.isEsm or not item.cext[-1] == u'p':
+                return False
+        return True
 
     def Execute(self,event):
         message = (_(u'WARNING! For advanced modders only!')
@@ -9222,17 +9227,17 @@ class Mod_Groups(Mod_Labels):
             Mod_Labels.AppendToMenu(self,menu,window,data)
 
 #------------------------------------------------------------------------------
-class Mod_Groups_Export(Link):
+class Mod_Groups_Export(EnabledLink):
     """Export mod groups to text file."""
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
+    text = _(u'Groups...')
 
-    def AppendToMenu(self,menu,window,data):
+    def _enable(self): return bool(self.data)
+
+    def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
         data = bosh.ModGroups.filter(data)
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Groups...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+        return EnabledLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9253,14 +9258,15 @@ class Mod_Groups_Export(Link):
             _(u"Export Groups"))
 
 #------------------------------------------------------------------------------
-class Mod_Groups_Import(Link):
+class Mod_Groups_Import(EnabledLink):
     """Import editor ids from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
+    text = _(u'Groups...')
+
+    def _enable(self): return bool(self.data)
+
+    def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
         data = bosh.ModGroups.filter(data)
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Groups...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+        return EnabledLink.AppendToMenu(self,menu,window,data)
 
     def Execute(self,event):
         message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
@@ -9363,16 +9369,14 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             balt.showWarning(self.window,'%'%e)
 
 #------------------------------------------------------------------------------
-class Mod_DecompileAll(Link):
+class Mod_DecompileAll(EnabledLink):
     """Removes effects of a "recompile all" on the mod."""
+    text = _(u'Decompile All')
+    help = _(u'Removes effects of a "recompile all" on the mod')
 
-    def AppendToMenu(self,menu,window,data):
-        """Append link to a menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Decompile All'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (not bosh.reOblivion.match(self.data[0].s)))
-
+    def _enable(self):
+        return len(self.data) != 1 or (
+        not bosh.reOblivion.match(self.data[0].s)) # disable on Oblivion.esm
 
     def Execute(self,event):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
@@ -9429,13 +9433,12 @@ class Mod_DecompileAll(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import FidReplacer, CBash_FidReplacer
 
-class Mod_Fids_Replace(Link):
+class Mod_Fids_Replace(EnabledLink):
     """Replace fids according to text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Form IDs...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Form IDs...')
+    help = _(u'Replace fids according to text file')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         message = _(u"For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file.")
