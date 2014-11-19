@@ -1120,7 +1120,7 @@ class ListEditorData:
 #------------------------------------------------------------------------------
 class ListEditor(wx.Dialog):
     """Dialog for editing lists."""
-    def __init__(self,parent,id,title,data,type='list'):
+    def __init__(self, parent, title, data, id=wx.ID_ANY, type='list'):
         #--Data
         self.data = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
@@ -1185,6 +1185,17 @@ class ListEditor(wx.Dialog):
             self.SetSize(sizes[className])
         else:
             self.SetSizerAndFit(sizer)
+
+    # __enter__ and __exit__ for use with the 'with' statement
+    def __enter__(self):
+        return self
+    def __exit__(self,type,value,traceback):
+        self.Destroy()
+
+    @staticmethod
+    def Display(window, title, data):
+        with ListEditor(window, title, data) as dialog:
+            dialog.ShowModal()
 
     def GetSelected(self):
         return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)

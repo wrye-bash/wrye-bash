@@ -497,10 +497,10 @@ class List(wx.Panel):
             else:
                 message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
                 message.extend(sorted(items))
-                dialog = ListBoxes(self,_(u'Delete Items'),
-                             _(u'Delete these items?  This operation cannot be undone.'),
-                             [message])
-                if dialog.ShowModal() != wx.ID_CANCEL:
+                with ListBoxes(self, _(u'Delete Items'), _(
+                        u'Delete these items?  This operation cannot be '
+                        u'undone.'), [message]) as dialog:
+                    if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
                     id = dialog.ids[message[0]]
                     checks = dialog.FindWindowById(id)
                     if checks:
@@ -5043,11 +5043,10 @@ class BashFrame(wx.Frame):
                 if not bosh.inisettings['SkipResetTimeNotifications']:
                     message = [u'',_(u'Modified dates have been reset for some mod files')]
                     message.extend(sorted(bosh.modInfos.mtimesReset))
-                    dialog = ListBoxes(self,_(u'Modified Dates Reset'),
+                    with ListBoxes(self,_(u'Modified Dates Reset'),
                             _(u'Modified dates have been reset for some mod files.'),
-                            [message],liststyle='list',Cancel=False)
-                    dialog.ShowModal()
-                    dialog.Destroy()
+                            [message],liststyle='list',Cancel=False) as dialog:
+                        dialog.ShowModal()
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Mods autogrouped?
@@ -5057,11 +5056,10 @@ class BashFrame(wx.Frame):
             ordered = bosh.modInfos.getOrdered(agDict.keys())
             message.extend(ordered)
             agDict.clear()
-            dialog = ListBoxes(self,_(u'Some mods have been auto-grouped:'),
-                               _(u'Some mods have been auto-grouped:'),
-                               [message],liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
+            with ListBoxes(self, _(u'Some mods have been auto-grouped:'),
+                           _(u'Some mods have been auto-grouped:'), [message],
+                           liststyle='list', Cancel=False) as dialog:
+                dialog.ShowModal()
         #--Check savegames directory...
         if bosh.saveInfos.refresh():
             popSaves = 'ALL'
@@ -5144,11 +5142,11 @@ class BashFrame(wx.Frame):
             message.append(m)
             bosh.modInfos.new_missing_strings.clear()
         if message:
-            dialog = ListBoxes(self,_(u'Warning: Corrupt/Unrecognized Files'),
-                     _(u'Some files have corrupted headers or TES4 header versions:'),
-                     message,liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
+            with ListBoxes(self, _(u'Warning: Corrupt/Unrecognized Files'), _(
+                    u'Some files have corrupted headers or TES4 header '
+                    u'versions:'), message, liststyle='list',
+                           Cancel=False) as dialog:
+                dialog.ShowModal()
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -5159,11 +5157,11 @@ class BashFrame(wx.Frame):
         if bolt.Path.mtimeResets:
             message = [u'',_(u"Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
-            dialog = ListBoxes(self,_(u'Warning: Dates Reset'),
-                     _(u'Modified dates have been reset to an earlier date for  these files'),
-                     [message],liststyle='list',Cancel=False)
-            dialog.ShowModal()
-            dialog.Destroy()
+            with ListBoxes(self, _(u'Warning: Dates Reset'), _(
+                    u'Modified dates have been reset to an earlier date for  '
+                    u'these files'), [message], liststyle='list',
+                           Cancel=False) as dialog:
+                dialog.ShowModal()
             del bolt.Path.mtimeResets[:]
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
@@ -5282,8 +5280,16 @@ class CheckList_SelectAll(Link):
 #------------------------------------------------------------------------------
 class ListBoxes(wx.Dialog):
     """A window with 1 or more lists."""
+    # TODO(ut): attrs below must go - askContinue method ? Also eliminate destroy calls
     ID_OK = wx.ID_OK
     ID_CANCEL = wx.ID_CANCEL
+
+    # TODO(ut):USE THOSE
+    #  __enter__ and __exit__ for use with the 'with' statement
+    def __enter__(self):
+        return self
+    def __exit__(self,type,value,traceback):
+        self.Destroy()
 
     def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={},Cancel=True):
         """lists is in this format:
@@ -8013,9 +8019,7 @@ class Mods_LoadList:
 
     def DoEdit(self,event):
         data = Mods_LoadListData(self.window)
-        dialog = balt.ListEditor(self.window,-1,_(u'Load Lists'),data)
-        dialog.ShowModal()
-        dialog.Destroy()
+        balt.ListEditor.Display(self.window,_(u'Load Lists'), data)
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -8906,15 +8910,8 @@ class Mod_LabelsData(balt.ListEditorData):
     def add(self):
         """Adds a new group."""
         #--Name Dialog
-        #--Dialog
-        dialog = wx.TextEntryDialog(self.parent,self.addPrompt)
-        result = dialog.ShowModal()
-        #--Okay?
-        if result != wx.ID_OK:
-            dialog.Destroy()
-            return
-        newName = dialog.GetValue()
-        dialog.Destroy()
+        newName = balt.askText(self.parent,self.addPrompt)
+        if not newName: return
         if newName in self.data:
             balt.showError(self.parent,_(u'Name must be unique.'))
             return False
@@ -9007,9 +9004,7 @@ class Mod_Labels:
     def DoEdit(self,event):
         """Show label editing dialog."""
         data = Mod_LabelsData(self.window,self)
-        dialog = balt.ListEditor(self.window,-1,self.editWindow,data)
-        dialog.ShowModal()
-        dialog.Destroy()
+        balt.ListEditor.Display(self.window, self.editWindow, data)
 
 #------------------------------------------------------------------------------
 class Mod_Groups(Mod_Labels):
@@ -9469,8 +9464,8 @@ class Mod_Patch_Update(Link):
         if checklists:
             dialog = ListBoxes(bashFrame,_(u"Deactivate these mods prior to patching"),
                 _(u"The following mods should be deactivated prior to building the patch."),
-                checklists,changedlabels={wx.ID_CANCEL:_(u'Skip')})
-            if dialog.ShowModal() != wx.ID_CANCEL:
+                checklists,changedlabels={ListBoxes.ID_CANCEL:_(u'Skip')})
+            if dialog.ShowModal() != ListBoxes.ID_CANCEL:
                 deselect = set()
                 for (list,key) in [(unfiltered,unfilteredKey),
                                    (merge,mergeKey),
@@ -10051,9 +10046,7 @@ class Saves_Profiles:
     def DoEdit(self,event):
         """Show profiles editing dialog."""
         data = Saves_ProfilesData(self.window)
-        dialog = balt.ListEditor(self.window,wx.ID_ANY,_(u'Save Profiles'),data)
-        dialog.ShowModal()
-        dialog.Destroy()
+        balt.ListEditor.Display(self.window, _(u'Save Profiles'), data)
 
     def DoDefault(self,event):
         """Handle selection of Default."""
@@ -10428,9 +10421,7 @@ class Save_EditCreated(Link):
             return
         #--Open editor dialog
         data = Save_EditCreatedData(self.window,saveFile,recordTypes)
-        dialog = balt.ListEditor(self.window,-1,self.menuName,data)
-        dialog.ShowModal()
-        dialog.Destroy()
+        balt.ListEditor.Display(self.window, self.menuName, data)
 
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):
@@ -10484,9 +10475,7 @@ class Save_EditPCSpells(Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         data = Save_EditPCSpellsData(self.window,fileInfo)
-        dialog = balt.ListEditor(self.window,wx.ID_ANY,_(u'Player Spells'),data)
-        dialog.ShowModal()
-        dialog.Destroy()
+        balt.ListEditor.Display(self.window, _(u'Player Spells'), data)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedEnchantmentCosts(Link):

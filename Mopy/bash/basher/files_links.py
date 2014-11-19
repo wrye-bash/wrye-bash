@@ -152,10 +152,10 @@ class File_Delete(_Link):
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
         message.extend(sorted(self.data))
-        dialog = ListBoxes(self.window,_(u'Delete Files'),
+        with ListBoxes(self.window,_(u'Delete Files'),
                      _(u'Delete these files? This operation cannot be undone.'),
-                     [message])
-        if dialog.ShowModal() != ListBoxes.ID_CANCEL:
+                     [message]) as dialog:
+            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
             id = dialog.ids[message[0]]
             checks = dialog.FindWindowById(id)
             if checks:
@@ -166,7 +166,6 @@ class File_Delete(_Link):
                         except BoltError as e:
                             balt.showError(self.window, _(u'%s') % e)
             self.window.RefreshUI()
-        dialog.Destroy()
 
 class File_Duplicate(_Link):
     """Create a duplicate of the file."""
