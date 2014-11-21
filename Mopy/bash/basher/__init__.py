@@ -6147,7 +6147,8 @@ class WryeBashSplashScreen(wx.SplashScreen):
 #------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
-    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instanced
+    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instanciated
+        """Initialize the application data, create and return the BashFrame."""
         global appRestart
         appRestart = False
         """wxWindows: Initialization handler."""
@@ -6156,7 +6157,7 @@ class BashApp(wx.App):
         splashScreen = None
         progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
              style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
-        #   Any users who prefer the progress dialog can rename or delete wryesplash.png
+        # Is splash enabled in ini ?
         if bosh.inisettings['EnableSplashScreen']:
             if bosh.dirs['images'].join(u'wryesplash.png').exists():
                 try:
@@ -6173,7 +6174,7 @@ class BashApp(wx.App):
         self.InitVersion()
         #--MWFrame
         progress.Update(80,_(u'Initializing Windows'))
-        frame = BashFrame(
+        frame = BashFrame( # basher.bashFrame global set here
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
         progress.Destroy()
@@ -6182,6 +6183,7 @@ class BashApp(wx.App):
         self.SetTopWindow(frame)
         frame.Show()
         balt.ensureDisplayed(frame)
+        return frame
 
     def InitResources(self):
         """Init application resources."""

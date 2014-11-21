@@ -633,9 +633,8 @@ def main():
     quit = cmdRestore() or quit
     if quit: return
 
-    global basherImported, bashFrame
+    global basherImported
     basherImported = True
-    bashFrame = basher.bashFrame
 
     basher.isUAC = isUAC
     if isUAC:
@@ -691,7 +690,8 @@ def main():
             basher.uacRestart = True
             return
 
-    app.Init()
+    global bashFrame
+    bashFrame = app.Init() # basher.bashFrame is set here !
     app.MainLoop()
 
 if __name__ == '__main__':
