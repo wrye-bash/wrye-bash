@@ -2238,3 +2238,7 @@ def copyToClipboard(text):
     if wx.TheClipboard.Open():
         wx.TheClipboard.SetData(wx.TextDataObject(text))
         wx.TheClipboard.Close()
+
+def getKeyState(key): return wx.GetKeyState(key)
+def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
+def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)

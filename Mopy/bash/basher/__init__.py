@@ -150,6 +150,7 @@ obseButton = None
 laaButton = None
 
 def refreshData(): bashFrame.RefreshData() # TODO(ut): bashFrame is None in links files, ugly
+def bashFrameSetTitle(): bashFrame.SetTitle()
 
 # Settings --------------------------------------------------------------------
 settings = None
@@ -2224,7 +2225,8 @@ class ModPanel(SashPanel):
         SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=150)
         left,right = self.left, self.right
         global modList
-        modList = ModList(left)
+        from . import mods_links
+        mods_links.modList = modList = ModList(left)
         self.list = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
@@ -3612,7 +3614,7 @@ class InstallersPanel(SashTankPanel):
         self.gSubList.SetSelection(index)
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
-        if not wx.GetKeyState(wx.WXK_SHIFT):
+        if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 
     def SelectionMenu(self,event):
@@ -3647,7 +3649,7 @@ class InstallersPanel(SashTankPanel):
         else:
             espmNots.add(espm)
         self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
-        if not wx.GetKeyState(wx.WXK_SHIFT):
+        if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
@@ -8290,247 +8292,6 @@ class INI_CreateNew(Link):
         target.saveSettings(settings)
         iniList.RefreshUI(detail=path)
         self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
-
-#------------------------------------------------------------------------------
-class Mods_EsmsFirst(Link):
-    """Sort esms to the top."""
-    def __init__(self,prefix=u''):
-        Link.__init__(self)
-        self.prefix = prefix
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.prefix+_(u'Type'),_(u'Sort masters by type'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(window.esmsFirst)
-
-    def Execute(self,event):
-        self.window.esmsFirst = not self.window.esmsFirst
-        self.window.PopulateItems()
-
-#------------------------------------------------------------------------------
-class Mods_SelectedFirst(Link):
-    """Sort loaded mods to the top."""
-    def __init__(self,prefix=u''):
-        Link.__init__(self)
-        self.prefix = prefix
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.prefix+_(u'Selection'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        if window.selectedFirst: menuItem.Check()
-
-    def Execute(self,event):
-        self.window.selectedFirst = not self.window.selectedFirst
-        self.window.PopulateItems()
-
-#------------------------------------------------------------------------------
-class Mods_ScanDirty(BoolLink):
-    """Read mod CRC's to check for dirty mods."""
-    text, key = _(u"Check mods against BOSS's dirty mod list"), \
-                'bash.mods.scanDirty',
-
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        self.window.PopulateItems()
-
-#------------------------------------------------------------------------------
-class Mods_AutoGhost(BoolLink):
-    """Toggle Auto-ghosting."""
-    text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
-
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        files = bosh.modInfos.autoGhost(True)
-        self.window.RefreshUI(files)
-
-#------------------------------------------------------------------------------
-class Mods_AutoGroup(BoolLink):
-    """Turn on autogrouping."""
-    text, key = _(u'Auto Group (Deprecated -- Please use BOSS instead)'), \
-                'bash.balo.autoGroup',
-
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        bosh.modInfos.updateAutoGroups()
-
-#------------------------------------------------------------------------------
-class Mods_Deprint(Link):
-    """Turn on deprint/delist."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Debug Mode'),kind=wx.ITEM_CHECK,
-            help=_(u"Turns on extra debug prints to help debug an error or just for advanced testing."))
-        menu.AppendItem(menuItem)
-        menuItem.Check(bolt.deprintOn)
-
-    def Execute(self,event):
-        deprint(_(u'Debug Printing: Off'))
-        bolt.deprintOn = not bolt.deprintOn
-        deprint(_(u'Debug Printing: On'))
-
-#------------------------------------------------------------------------------
-class Mods_FullBalo(BoolLink):
-    """Turn Full Balo off/on."""
-    text, key = _(u'Full Balo (Deprecated -- Please use BOSS instead)'), \
-                'bash.balo.full'
-
-    def Execute(self,event):
-        if not settings[self.key]:
-            message = (_(u'Activate Full Balo?')
-                       + u'\n\n' +
-                       _(u'Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order.  Full Balo is still in development and may have some rough edges.')
-                       )
-            if balt.askContinue(self.window,message,'bash.balo.full.continue',_(u'Balo Groups')):
-                dialog = Mod_BaloGroups_Edit(self.window)
-                dialog.ShowModal()
-                dialog.Destroy()
-            return
-        else:
-            settings[self.key] = False
-            bosh.modInfos.fullBalo = False
-            bosh.modInfos.refresh(doInfos=False)
-
-#------------------------------------------------------------------------------
-class Mods_DumpTranslator(Link):
-    """Dumps new translation key file using existing key, value pairs."""
-    def AppendToMenu(self,menu,window,data):
-        if not hasattr(sys,'frozen'):
-            # Can't dump the strings if the files don't exist.
-            Link.AppendToMenu(self,menu,window,data)
-            menuItem = wx.MenuItem(menu,self.id,_(u'Dump Translator'),
-                help=_(u"Generate a new version of the translator file for your locale."))
-            menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        message = (_(u'Generate Bash program translator file?')
-                   + u'\n\n' +
-                   _(u'This function is for translating Bash itself (NOT mods) into non-English languages.  For more info, see Internationalization section of Bash readme.')
-                   )
-        if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
-            return
-        language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
-        outPath = bosh.dirs['l10n']
-        bashPath = GPath(u'bash')
-        files = [bashPath.join(x+u'.py').s for x in (u'bolt',
-                                                     u'balt',
-                                                     u'bush',
-                                                     u'bosh',
-                                                     u'bash',
-                                                     u'basher',
-                                                     u'bashmon',
-                                                     u'belt',
-                                                     u'bish',
-                                                     u'barg',
-                                                     u'barb',
-                                                     u'bass',
-                                                     u'cint',
-                                                     u'ScriptParser')]
-        # Include Game files
-        bashPath = bashPath.join(u'game')
-        files.extend([bashPath.join(x).s for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
-        with balt.BusyCursor():
-            outFile = bolt.dumpTranslator(outPath.s,language,*files)
-        balt.showOk(self.window,
-            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outFile,
-            _(u'Dump Translator')+u': '+outPath.stail)
-
-#------------------------------------------------------------------------------
-class Mods_ListMods(Link):
-    """Copies list of mod files to clipboard."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Mods..."),
-            help=_(u"Copies list of active mod files to clipboard."))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        #--Get masters list
-        text = bosh.modInfos.getModList(showCRC=wx.GetKeyState(67))
-        balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=bashBlue)
-
-#------------------------------------------------------------------------------
-class Mods_ListBashTags(Link):
-    """Copies list of bash tags to clipboard."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"List Bash Tags..."),
-            help=_(u"Copies list of bash tags to clipboard."))
-        menu.AppendItem(menuItem)
-
-    def Execute(self,event):
-        #--Get masters list
-        text = bosh.modInfos.getTagList()
-        balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
-
-#------------------------------------------------------------------------------
-class Mods_LockTimes(Link):
-    """Turn on resetMTimes feature."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Lock Load Order'),kind=wx.ITEM_CHECK,
-            help=_(u"Will reset mod Load Order to whatever Wrye Bash has saved for them whenever Wrye Bash refreshs data/starts up."))
-        menu.AppendItem(menuItem)
-        menuItem.Check(bosh.modInfos.lockLO)
-
-    def Execute(self,event):
-        lockLO = not bosh.modInfos.lockLO
-        if not lockLO: bosh.modInfos.mtimes.clear()
-        settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
-        bosh.modInfos.refresh(doInfos=False)
-        modList.RefreshUI()
-
-#------------------------------------------------------------------------------
-class Mods_OblivionVersion(Link):
-    """Specify/set Oblivion version."""
-    def __init__(self,key,setProfile=False):
-        Link.__init__(self)
-        self.key = key
-        self.setProfile = setProfile
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.key,kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bosh.modInfos.voCurrent is not None and self.key in bosh.modInfos.voAvailable)
-        if bosh.modInfos.voCurrent == self.key: menuItem.Check()
-
-    def Execute(self,event):
-        """Handle selection."""
-        if bosh.modInfos.voCurrent == self.key: return
-        bosh.modInfos.setOblivionVersion(self.key)
-        bosh.modInfos.refresh()
-        modList.RefreshUI()
-        if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
-        bashFrame.SetTitle()
-
-#------------------------------------------------------------------------------
-class Mods_Tes4ViewExpert(BoolLink):
-    """Toggle Tes4Edit expert mode (when launched via Bash)."""
-    text, key = _(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing'
-
-#------------------------------------------------------------------------------
-class Mods_Tes5ViewExpert(BoolLink):
-    """Toggle Tes5Edit expert mode (when launched via Bash)."""
-    text, key = _(u'Tes5Edit Expert'), 'tes5View.iKnowWhatImDoing'
-
-#------------------------------------------------------------------------------
-class Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    text = _(u'BOSS Disable Lock Load Order')
-    key = 'BOSS.ClearLockTimes'
-    help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
-             u" when running BOSS through Bash.")
-
-#------------------------------------------------------------------------------
-class Mods_BOSSLaunchGUI(BoolLink):
-    """If BOSS.exe is available then BOSS GUI.exe should be too."""
-    text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
-                      _(u"If selected, Bash will run BOSS's GUI.")
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -13942,9 +13703,9 @@ class App_Tes4View(App_Button):
 
     def Execute(self,event):
         extraArgs = []
-        if wx.GetKeyState(wx.WXK_CONTROL):
+        if balt.getKeyState_Control():
             extraArgs.append(u'-FixupPGRD')
-        if wx.GetKeyState(wx.WXK_SHIFT):
+        if balt.getKeyState_Shift():
             extraArgs.append(u'-skipbsa')
         if bush.game.fsName == 'Oblivion' or bush.game.fsName == 'Nehrim':
             if settings['tes4View.iKnowWhatImDoing']:
@@ -13955,6 +13716,8 @@ class App_Tes4View(App_Button):
         App_Button.Execute(self,event,tuple(extraArgs))
 
 #------------------------------------------------------------------------------
+from .mods_links import *
+
 class App_BOSS(App_Button):
     """loads BOSS"""
     def __init__(self, *args, **kwdargs):
@@ -13965,18 +13728,15 @@ class App_BOSS(App_Button):
     def Execute(self,event,extraArgs=None):
         if settings['BOSS.UseGUI']:
             self.exePath = self.exePath.head.join(u'BOSS GUI.exe')
-        if settings['BOSS.ClearLockTimes']:
-            wait = True
-        else:
-            wait = False
+        wait = bool(settings['BOSS.ClearLockTimes'])
         extraArgs = []
-        if wx.GetKeyState(82) and wx.GetKeyState(wx.WXK_SHIFT):
+        if balt.getKeyState(82) and balt.getKeyState_Shift():
             extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
-        elif wx.GetKeyState(82):
+        elif balt.getKeyState(82):
             extraArgs.append(u'-r 1',) # Revert level 1 - BOSS version 1.6+
-        if wx.GetKeyState(83):
+        if balt.getKeyState(83):
             extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
-        if wx.GetKeyState(67): #c - print crc calculations in BOSS log.
+        if balt.getKeyState(67): #c - print crc calculations in BOSS log.
             extraArgs.append(u'-c',)
         if bosh.tooldirs['boss'].version >= (2,0,0,0):
             # After version 2.0, need to pass in the -g argument
