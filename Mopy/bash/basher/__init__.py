@@ -7733,23 +7733,25 @@ class _Link(Link): # TODO: merge with balt.Link !
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help, self.kind)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
+                               self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
 
 class BoolLink(_Link):
     """Simple link that just toggles a setting."""
     kind=wx.ITEM_CHECK
+    text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
 
-    def __init__(self, text, key, help='', opposite=False):
+    def __init__(self, opposite=False):
         Link.__init__(self)
-        self.text = text
-        self.help = help
-        self.key = key
         self.opposite = opposite
 
     def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu, self.id, self.__class__.text,
+                               self.__class__.help, self.__class__.kind)
+        menu.AppendItem(menuItem)
         menuItem.Check(settings[self.key] ^ self.opposite)
         return menuItem
 
@@ -9628,11 +9630,8 @@ class Mods_LoadList:
 #------------------------------------------------------------------------------
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Valid Tweaks First'),
-                                          'bash.ini.sortValid',
-                                          _(u'Valid tweak files will be shown first.')
-                                          )
+    text, key, help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
+                      _(u'Valid tweak files will be shown first.')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -9641,11 +9640,9 @@ class INI_SortValid(BoolLink):
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Allow Tweaks with New Lines'),
-                                          'bash.ini.allowNewLines',
-                                          _(u'Tweak files with new lines are considered valid..')
-                                          )
+    text, key, help = _(u'Allow Tweaks with New Lines'), \
+                      'bash.ini.allowNewLines', \
+                       _(u'Tweak files with new lines are considered valid..')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -9872,10 +9869,8 @@ class Mods_SelectedFirst(Link):
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u"Check mods against BOSS's dirty mod list"),
-                                          'bash.mods.scanDirty',
-                                          )
+    text, key = _(u"Check mods against BOSS's dirty mod list"), \
+                'bash.mods.scanDirty',
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -9884,10 +9879,7 @@ class Mods_ScanDirty(BoolLink):
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Auto-Ghost'),
-                                          'bash.mods.autoGhost',
-                                          )
+    text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -9897,10 +9889,8 @@ class Mods_AutoGhost(BoolLink):
 #------------------------------------------------------------------------------
 class Mods_AutoGroup(BoolLink):
     """Turn on autogrouping."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Auto Group (Deprecated -- Please use BOSS instead)'),
-                                          'bash.balo.autoGroup',
-                                          )
+    text, key = _(u'Auto Group (Deprecated -- Please use BOSS instead)'), \
+                'bash.balo.autoGroup',
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -9924,10 +9914,8 @@ class Mods_Deprint(Link):
 #------------------------------------------------------------------------------
 class Mods_FullBalo(BoolLink):
     """Turn Full Balo off/on."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Full Balo (Deprecated -- Please use BOSS instead)'),
-                                          'bash.balo.full',
-                                          )
+    text, key = _(u'Full Balo (Deprecated -- Please use BOSS instead)'), \
+                'bash.balo.full'
 
     def Execute(self,event):
         if not settings[self.key]:
@@ -10068,35 +10056,26 @@ class Mods_OblivionVersion(Link):
 #------------------------------------------------------------------------------
 class Mods_Tes4ViewExpert(BoolLink):
     """Toggle Tes4Edit expert mode (when launched via Bash)."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Tes4Edit Expert'),
-                                          'tes4View.iKnowWhatImDoing',
-                                          )
+    text, key = _(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing'
+
 #------------------------------------------------------------------------------
 class Mods_Tes5ViewExpert(BoolLink):
     """Toggle Tes5Edit expert mode (when launched via Bash)."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Tes5Edit Expert'),
-                                          'tes5View.iKnowWhatImDoing',
-                                          )
+    text, key = _(u'Tes5Edit Expert'), 'tes5View.iKnowWhatImDoing'
 
 #------------------------------------------------------------------------------
 class Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'BOSS Disable Lock Load Order'),
-                                          'BOSS.ClearLockTimes',
-                                          _(u"If selected, will temporarily disable Bash's Lock Load Order when running BOSS through Bash.")
-                                          )
+    text = _(u'BOSS Disable Lock Load Order')
+    key = 'BOSS.ClearLockTimes'
+    help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
+             u" when running BOSS through Bash.")
 
 #------------------------------------------------------------------------------
 class Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then BOSS GUI.exe should be too."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Launch using GUI'),
-                                          'BOSS.UseGUI',
-                                          _(u"If selected, Bash will run BOSS's GUI.")
-                                          )
+    text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
+                      _(u"If selected, Bash will run BOSS's GUI.")
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -10567,10 +10546,9 @@ class Settings_UnHideButton(Link):
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):
-    def __init__(self): BoolLink.__init__(
-        self,_(u'Use Alternate Wrye Bash Name'),
-        'bash.useAltName',
-        _(u'Use an alternate display name for Wrye Bash based on the game it is managing.'))
+    text, key, help = _(u'Use Alternate Wrye Bash Name'), 'bash.useAltName', \
+        _(u'Use an alternate display name for Wrye Bash based on the game it'
+          u' is managing.')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)

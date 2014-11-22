@@ -263,20 +263,14 @@ class Installers_UninstallAllUnknownFiles(_Link):
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-Anneal'),
-                          'bash.installers.autoAnneal',
-                          _(u"Enable/Disable automatic annealing of packages.")
-                          )
+    text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
+        u"Enable/Disable automatic annealing of packages.")
 
 class Installers_AutoWizard(BoolLink):
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-Anneal/Install Wizards'),
-                          'bash.installers.autoWizard',
-                          _(u"Enable/Disable automatic installing or anneal (as applicable) of packages after running its wizard.")
-                          )
+    text = _(u'Auto-Anneal/Install Wizards')
+    key = 'bash.installers.autoWizard'
+    help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
+             u" of packages after running its wizard.")
 
 class _Installers_BoolLink_Refresh(BoolLink):
     def Execute(self,event):
@@ -285,29 +279,22 @@ class _Installers_BoolLink_Refresh(BoolLink):
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Wizard Icon Overlay'),
-                          'bash.installers.wizardOverlay',
-                          _(u"Enable/Disable the magic wand icon overlay for packages with Wizards.")
-                          )
+    text  = _(u'Wizard Icon Overlay')
+    key = 'bash.installers.wizardOverlay'
+    help =_(u"Enable/Disable the magic wand icon overlay for packages with"
+            u" Wizards.")
 
 class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-Refresh Projects'),
-                          'bash.installers.autoRefreshProjects',
-                          )
+    text = _(u'Auto-Refresh Projects')
+    key = 'bash.installers.autoRefreshProjects'
 
 class Installers_AutoApplyEmbeddedBCFs(BoolLink):
     """Toggle autoApplyEmbeddedBCFs setting and update."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-Apply Embedded BCFs'),
-                          'bash.installers.autoApplyEmbeddedBCFs',
-                          _(u'If enabled, embedded BCFs will automatically be applied to archives.')
-                          )
+    text = _(u'Auto-Apply Embedded BCFs')
+    key = 'bash.installers.autoApplyEmbeddedBCFs'
+    help = _(u'If enabled, embedded BCFs will automatically be applied to '
+        u'archives.')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -315,12 +302,11 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
 
 class Installers_AutoRefreshBethsoft(BoolLink):
     """Toggle refreshVanilla setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Bethsoft Content'),
-                                         'bash.installers.autoRefreshBethsoft',
-                                         u'Skip installing Bethesda ESMs, ESPs, and BSAs.',
-                                         True
-                                         )
+    text = _(u'Skip Bethsoft Content')
+    key = 'bash.installers.autoRefreshBethsoft'
+    help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
+
+    def __init__(self): BoolLink.__init__(self,True)
 
     def Execute(self,event):
         if not bosh.settings[self.key]:
@@ -353,11 +339,8 @@ class Installers_AutoRefreshBethsoft(BoolLink):
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    def __init__(self): BoolLink.__init__(self,
-                                         _(u'Enabled'),
-                                         'bash.installers.enabled',
-                                         _(u'Enable/Disable the Installers tab.')
-                                         )
+    text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
+        u'Enable/Disable the Installers tab.')
 
     def Execute(self,event):
         """Handle selection."""
@@ -379,11 +362,7 @@ class Installers_Enabled(BoolLink):
 
 class Installers_BsaRedirection(BoolLink):
     """Toggle BSA Redirection."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'BSA Redirection'),
-                          'bash.bsaRedirection',
-                          )
+    text, key = _(u'BSA Redirection'),'bash.bsaRedirection',
 
     def AppendToMenu(self,menu,window,data):
         section,key = bush.game.ini.bsaRedirection
@@ -403,50 +382,33 @@ class Installers_BsaRedirection(BoolLink):
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Show Inactive Conflicts'),
-                          'bash.installers.conflictsReport.showInactive',
-                          )
+    text = _(u'Show Inactive Conflicts')
+    key = 'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Show Lower Conflicts'),
-                          'bash.installers.conflictsReport.showLower',
-                          )
+    text, key = _(u'Show Lower Conflicts'), \
+                'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Show BSA Conflicts'),
-                          'bash.installers.conflictsReport.showBSAConflicts',
-                          )
+    text, key = _(u'Show BSA Conflicts'), \
+                'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Avoid at Startup'),
-                                          'bash.installers.fastStart',
-                                          _(u"Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning.")
-                                          )
+    text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
+        u"Toggles Wrye Bash to avoid the Installers tab on startup,"
+        u" avoiding unnecessary data scanning.")
 
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Clean Data Directory'),
-                                          'bash.installers.removeEmptyDirs',
-                                          )
+    text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
 
 class Installers_SortActive(BoolLink):
     """Sort by type."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Sort by Active'),
-                                          'bash.installers.sortActive',
-                                          _(u'If selected, active installers will be sorted to the top of the list.')
-                                          )
+    text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
+        u'If selected, active installers will be sorted to the top of the list.')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -454,11 +416,8 @@ class Installers_SortActive(BoolLink):
 
 class Installers_SortProjects(BoolLink):
     """Sort dirs to the top."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Projects First'),
-                                          'bash.installers.sortProjects',
-                                          _(u'If selected, projects will be sorted to the top of the list.')
-                                          )
+    text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
+        u'If selected, projects will be sorted to the top of the list.')
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -466,10 +425,7 @@ class Installers_SortProjects(BoolLink):
 
 class Installers_SortStructure(BoolLink):
     """Sort by type."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Sort by Structure'),
-                                          'bash.installers.sortStructure',
-                                          )
+    text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
@@ -492,59 +448,39 @@ class Installers_Skip(BoolLink):
 
 class Installers_SkipScreenshots(Installers_Skip):
     """Toggle skipScreenshots setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Screenshots'),
-                                          'bash.installers.skipScreenshots',
-                                          )
+    text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
 class Installers_SkipImages(Installers_Skip):
     """Toggle skipImages setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Images'),
-                                          'bash.installers.skipImages',
-                                          )
+    text, key = _(u'Skip Images'), 'bash.installers.skipImages'
 
 class Installers_SkipDocs(Installers_Skip):
     """Toggle skipDocs setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip Docs'),
-                                          'bash.installers.skipDocs',
-                                          )
+    text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
 class Installers_SkipDistantLOD(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip DistantLOD'),
-                                          'bash.installers.skipDistantLOD',
-                                          )
+    text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
 
 class Installers_SkipLandscapeLODMeshes(Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Meshes'),
-                                          'bash.installers.skipLandscapeLODMeshes',
-                                          )
+    text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
 
 class Installers_SkipLandscapeLODTextures(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Textures'),
-                                          'bash.installers.skipLandscapeLODTextures',
-                                          )
+    text, key = _(u'Skip LOD Textures'), \
+                'bash.installers.skipLandscapeLODTextures',
 
 class Installers_SkipLandscapeLODNormals(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    def __init__(self): BoolLink.__init__(self,
-                                          _(u'Skip LOD Normals'),
-                                          'bash.installers.skipLandscapeLODNormals',
-                                          )
+    text, key = _(u'Skip LOD Normals'), \
+                'bash.installers.skipLandscapeLODNormals',
 
 class Installers_SkipOBSEPlugins(Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
 
-    def __init__(self):
-        BoolLink.__init__(self,_(u'Skip %s Plugins') % bush.game.se_sd,
-                          'bash.installers.allowOBSEPlugins')
+    text, key = _(u'Skip %s Plugins') % bush.game.se_sd, \
+                          'bash.installers.allowOBSEPlugins'
 
     def AppendToMenu(self,menu,window,data):
         if not bush.game.se_sd: return
@@ -554,11 +490,8 @@ class Installers_SkipOBSEPlugins(Installers_Skip):
 
 class Installers_RenameStrings(Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
-    def __init__(self):
-        BoolLink.__init__(self,
-                          _(u'Auto-name String Translation Files'),
-                          'bash.installers.renameStrings',
-                          )
+    text, key = _(u'Auto-name String Translation Files'), \
+                'bash.installers.renameStrings'
 
     def AppendToMenu(self,menu,window,data):
         if bush.game.esp.stringsFiles:
