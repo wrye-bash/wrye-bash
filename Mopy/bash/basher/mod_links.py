@@ -26,10 +26,9 @@ import StringIO
 import os
 import wx
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
-    spacer, hSizer, button
+    spacer, hSizer, button, CheckLink, EnabledLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError
-from . import bashBlue, EnabledLink, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, \
-    CheckLink, refreshData
+from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, refreshData
 from ..bosh import formatDate, formatInteger
 from ..cint import ObCollection, CBash # TODO(ut): CBash...should be in bosh
 

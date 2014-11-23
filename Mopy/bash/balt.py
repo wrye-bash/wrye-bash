@@ -2175,6 +2175,57 @@ class _Link(Link): # TODO: merge with balt.Link !
         menu.AppendItem(menuItem)
         return menuItem
 
+class RadioLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
+    kind = wx.ITEM_RADIO
+
+class CheckLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
+    kind = wx.ITEM_CHECK
+
+    def _check(self): return True
+
+    def AppendToMenu(self,menu,window,data):
+        menuItem = _Link.AppendToMenu(self,menu,window,data)
+        menuItem.Check(self._check())
+        return menuItem
+
+class BoolLink(CheckLink):
+    """Simple link that just toggles a setting."""
+    text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
+
+    def __init__(self, opposite=False):
+        Link.__init__(self)
+        self.opposite = opposite
+
+    def AppendToMenu(self,menu,window,data):
+        Link.AppendToMenu(self,menu,window,data)
+        menuItem = wx.MenuItem(menu, self.id, self.__class__.text,
+                               self.__class__.help, self.__class__.kind)
+        menu.AppendItem(menuItem)
+        menuItem.Check(bosh.settings[self.key] ^ self.opposite)
+        return menuItem
+
+    def Execute(self,event):
+        bosh.settings[self.key] ^= True
+
+class EnabledLink(_Link):
+    """A menu item that may be disabled.
+
+    The item is by default enabled. Override _enable() to disable\enable
+    based on some condition. Subclasses MUST define self.text, preferably as
+    a class attribute.
+    """
+    help = u''
+
+    def _enable(self):
+        """"Override as needed to enable or disable the menu item (enabled
+        by default)."""
+        return True
+
+    def AppendToMenu(self, menu, window, data):
+        menuItem = _Link.AppendToMenu(self, menu, window, data)
+        menuItem.Enable(self._enable())
+        return menuItem
+
 #------------------------------------------------------------------------------
 class SeparatorLink(Link):
     """Link that acts as a separator item in menus."""

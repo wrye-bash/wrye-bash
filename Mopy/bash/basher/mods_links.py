@@ -21,12 +21,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import CheckLink, BoolLink, Mod_BaloGroups_Edit, bashBlue, \
-    bashFrameSetTitle
+from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle
 from .. import bosh, bolt, balt, bass
 import locale
 import sys
-from ..balt import _Link
+from ..balt import _Link, CheckLink, BoolLink
 from ..bolt import deprint, GPath
 
 modList = None

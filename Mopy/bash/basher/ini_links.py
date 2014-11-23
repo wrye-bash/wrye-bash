@@ -21,8 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import BoolLink, EnabledLink, ListBoxes, bashBlue
-from ..balt import _Link, Link
+from . import ListBoxes, bashBlue
+from ..balt import _Link, Link, BoolLink, EnabledLink
 from .. import bosh, balt, bush
 
 #------------------------------------------------------------------------------

@@ -25,8 +25,8 @@ from operator import attrgetter
 import re
 import time
 from .. import balt, bosh, bush, bolt
-from . import ListBoxes, bashBlue, refreshData, RadioLink, EnabledLink
-from ..balt import _Link
+from . import ListBoxes, bashBlue, refreshData
+from ..balt import _Link, RadioLink, EnabledLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
