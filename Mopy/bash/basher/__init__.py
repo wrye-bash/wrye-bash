@@ -8781,13 +8781,11 @@ class Mod_CopyToEsmp(EnabledLink):
             self.window.RefreshUI(detail=newName)
 
 #------------------------------------------------------------------------------
-class Mod_Face_Import(Link):
+class Mod_Face_Import(EnabledLink):
     """Imports a face from a save to an esp."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Face...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+    text = _(u'Face...')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--Select source face file
@@ -9352,35 +9350,41 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                 balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_Patch_Update(Link):
+class _Mod_BP_Link(EnabledLink):
+    """Enabled on Bashed patch items."""
+    def _enable(self):
+        return (len(self.data) == 1 and
+            bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',
+                                                          u'BASHED LISTS'))
+
+class Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
     def __init__(self,doCBash=False):
         Link.__init__(self)
         self.doCBash = doCBash
         self.CBashMismatch = False
+        self.text = _(u'Rebuild Patch (CBash *BETA*)...') if doCBash else _(
+            u'Rebuild Patch...')
 
-    def AppendToMenu(self,menu,window,data):
-        """Append link to a menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        if self.doCBash:
-            title = _(u'Rebuild Patch (CBash *BETA*)...')
-        else:
-            title = _(u'Rebuild Patch...')
-        enable = (len(self.data) == 1 and
-            bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',u'BASHED LISTS'))
-        check = False
+    def _initData(self, window, data):
+        Link._initData(self, window, data)
+        enable = self._enable()
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
         thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
         if enable and settings['bash.CBashEnabled']:
-            menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_RADIO)
-        else:
-            menuItem = wx.MenuItem(menu,self.id,title)
-        menuItem.Enable(enable)
-        menu.AppendItem(menuItem)
-        if enable and settings['bash.CBashEnabled']:
-            menuItem.Check(not self.CBashMismatch)
+            self.kind = wx.ITEM_RADIO
+
+    def _check(self):
+        return self._enable() and settings[
+            'bash.CBashEnabled'] and not self.CBashMismatch
+
+    def AppendToMenu(self,menu,window,data): # TODO(ut): MI
+        """Append link to a menu."""
+        menuItem = _Mod_BP_Link.AppendToMenu(self,menu,window,data)
+        if self.kind == wx.ITEM_RADIO: menuItem.Check(self._check()) # FIXME(ut)
+        return menuItem
 
     def Execute(self,event):
         """Handle activation event."""
@@ -9524,17 +9528,11 @@ class Mod_Patch_Update(Link):
         BashFrame.SaveSettings(bashFrame)
 
 #------------------------------------------------------------------------------
-class Mod_ListPatchConfig(Link):
+class Mod_ListPatchConfig(_Mod_BP_Link):
     """Lists the Bashed Patch configuration and copies to the clipboard."""
-    def AppendToMenu(self,menu,window,data):
-        """Append link to a menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'List Patch Config...'))
-        menu.AppendItem(menuItem)
-        enable = (len(self.data) == 1 and
-            bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',
-                                                          u'BASHED LISTS'))
-        menuItem.Enable(enable)
+    text = _(u'List Patch Config...')
+    help = _(
+        u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
     def Execute(self,event):
         """Handle execution."""
@@ -9627,9 +9625,7 @@ class Mod_ListPatchConfig(Link):
                         clip.write(u'    %s\n' % item)
         #-- Show log
         clip.write(u'[/xml][/spoiler]')
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(clip.getvalue()))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(clip.getvalue())
         clip.close()
         text = log.out.getvalue()
         log.out.close()
@@ -9637,17 +9633,11 @@ class Mod_ListPatchConfig(Link):
                          icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_ExportPatchConfig(Link):
+class Mod_ExportPatchConfig(_Mod_BP_Link):
     """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
-    def AppendToMenu(self,menu,window,data):
-        """Append link to a menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Export Patch Config...'))
-        menu.AppendItem(menuItem)
-        enable = (len(self.data) == 1 and
-            bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',
-                                                          u'BASHED LISTS'))
-        menuItem.Enable(enable)
+    text = _(u'Export Patch Config...')
+    help = _(
+        u'Exports the Bashed Patch configuration to a Wrye Bash readable file')
 
     def Execute(self,event):
         """Handle execution."""
@@ -9678,15 +9668,18 @@ class Mod_Ratings(Mod_Labels):
         Mod_Labels.__init__(self)
 
 #------------------------------------------------------------------------------
-class Mod_SetVersion(Link):
+class Mod_SetVersion(EnabledLink):
     """Sets version of file back to 0.8."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+    text = _(u'Version 0.8')
+    help = _(u'Sets version of file back to 0.8')
+
+    def _initData(self, window, data):
+        Link._initData(self, window, data)
         self.fileInfo = window.data[data[0]]
-        menuItem = wx.MenuItem(menu,self.id,_(u'Version 0.8'))
-        menu.AppendItem(menuItem)
-        #print self.fileInfo.header.version
-        menuItem.Enable((len(data) == 1) and (int(10*self.fileInfo.header.version) != 8))
+
+    def _enable(self):
+        return (len(self.data) == 1) and (
+            int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
@@ -9699,14 +9692,12 @@ class Mod_SetVersion(Link):
         self.window.RefreshUI(detail=self.fileInfo.name)
 
 #------------------------------------------------------------------------------
-class Mod_Details(Link):
+class Mod_Details(EnabledLink):
     """Show Mod Details"""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        self.fileInfo = window.data[data[0]]
-        menuItem = wx.MenuItem(menu,self.id,_(u'Details...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable((len(data) == 1))
+    text = _(u'Details...')
+    help = _(u'Show Mod Details')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         modName = GPath(self.data[0])
@@ -9732,13 +9723,14 @@ class Mod_Details(Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-class Mod_RemoveWorldOrphans(Link):
+class Mod_RemoveWorldOrphans(EnabledLink):
     """Remove orphaned cell records."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Remove World Orphans'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (not bosh.reOblivion.match(self.data[0].s)))
+    text = _(u'Remove World Orphans')
+    help = _(u'Remove orphaned cell records')
+
+    def _enable(self):
+        return len(self.data) != 1 or (
+            not bosh.reOblivion.match(self.data[0].s))
 
     def Execute(self,event):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
@@ -9769,13 +9761,12 @@ class Mod_RemoveWorldOrphans(Link):
                 balt.showOk(self.window,_(u"No changes required."),fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_ShowReadme(Link):
+class Mod_ShowReadme(EnabledLink):
     """Open the readme."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Readme...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+    text = _(u'Readme...')
+    help = _(u'Open the readme')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9787,13 +9778,14 @@ class Mod_ShowReadme(Link):
         docBrowser.SetMod(fileInfo.name)
         docBrowser.Raise()
 
-class Mod_UndeleteRefs(Link):
+class Mod_UndeleteRefs(EnabledLink):
     """Undeletes refs in cells."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Undelete Refs'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) != 1 or (not bosh.reOblivion.match(self.data[0].s)))
+    text = _(u'Undelete Refs')
+    help = _(u'Undeletes refs in cells')
+
+    def _enable(self):
+        return len(self.data) != 1 or (
+            not bosh.reOblivion.match(self.data[0].s))
 
     def Execute(self,event):
         message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
@@ -9826,15 +9818,18 @@ class Mod_UndeleteRefs(Link):
         log.out.close()
 
 #------------------------------------------------------------------------------
-class Mod_ScanDirty(Link):
-    """Give detailed printout of what Wrye Bash is detecting as UDR and ITM records"""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if settings['bash.CBashEnabled']:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Scan for Dirty Edits'))
-        else:
-            menuItem = wx.MenuItem(menu,self.id,_(u"Scan for UDR's"))
-        menu.AppendItem(menuItem)
+class Mod_ScanDirty(_Link):
+    """Give detailed printout of what Wrye Bash is detecting as UDR and ITM
+    records"""
+    help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR'
+             u' and ITM records')
+
+    def _initData(self, window, data):
+        Link._initData(self,window,data)
+        # settings['bash.CBashEnabled'] is set once in BashApp.Init() AFTER
+        # InitLinks() is called in bash.py
+        self.text = _(u'Scan for Dirty Edits') if settings[
+            'bash.CBashEnabled'] else _(u"Scan for UDR's")
 
     def Execute(self,event):
         """Handle execution"""

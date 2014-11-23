@@ -2171,8 +2171,7 @@ class _Link(Link): # TODO: merge with balt.Link !
 
     def AppendToMenu(self,menu,window,data):
         Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
-                               self.__class__.kind)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help, self.kind)
         menu.AppendItem(menuItem)
         return menuItem
 
