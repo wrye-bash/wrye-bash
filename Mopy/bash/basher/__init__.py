@@ -6075,7 +6075,7 @@ class WryeBashSplashScreen(wx.SplashScreen):
 #------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
-    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instanciated
+    def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
         """Initialize the application data, create and return the BashFrame."""
         global appRestart
         appRestart = False
@@ -7678,7 +7678,13 @@ class BoolLink(CheckLink):
         settings[self.key] ^= True
 
 class EnabledLink(_Link):
-    help = u'' # subclasses MUST define self.text
+    """A menu item that may be disabled.
+
+    The item is by default enabled. Override _enable() to disable\enable
+    based on some condition. Subclasses MUST define self.text, preferably as
+    a class attribute.
+    """
+    help = u''
 
     def _enable(self):
         """"Override as needed to enable or disable the menu item (enabled
@@ -9292,14 +9298,15 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     text = _(u'Editor Ids...')
     help = _(u'Export faction editor ids from mod to text file')
 
-    def _parser(self):
-        return CBash_EditorIds() if CBash else EditorIds()
+    def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
 #------------------------------------------------------------------------------
 class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file or other mod."""
     text = _(u'Editor Ids...')
     help = _(u'Import faction editor ids from text file or other mod')
+
+    def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
     def Execute(self,event):
         message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
@@ -9325,10 +9332,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         try:
             changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
-                if CBash:
-                    editorIds = CBash_EditorIds()
-                else:
-                    editorIds = EditorIds()
+                editorIds = self._parser()
                 progress(0.1,_(u"Reading %s.") % (textName.s,))
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_(u"Applying to %s.") % (fileName.s,))

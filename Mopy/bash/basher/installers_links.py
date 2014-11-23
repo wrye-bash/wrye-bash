@@ -81,8 +81,8 @@ class Installers_MonitorInstall(_Link):
         newFiles = curFiles - oldFiles
         delFiles = oldFiles - curFiles
         sameFiles = curFiles & oldFiles
-        changedFiles = set(file for file in sameFiles if data[file][1] != curData[file][1])
-        touchedFiles = set(file for file in sameFiles if data[file][2] != curData[file][2])
+        changedFiles = set(file_ for file_ in sameFiles if data[file_][1] != curData[file_][1])
+        touchedFiles = set(file_ for file_ in sameFiles if data[file_][2] != curData[file_][2])
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
@@ -139,12 +139,12 @@ class Installers_MonitorInstall(_Link):
                            (touchedFiles,touchedFilesKey),
                            ]:
             if lst:
-                id = dialog.ids[key]
-                checks = dialog.FindWindowById(id)
+                id_ = dialog.ids[key]
+                checks = dialog.FindWindowById(id_)
                 if checks:
-                    for i,file in enumerate(lst):
+                    for i,file_ in enumerate(lst):
                         if checks.IsChecked(i):
-                            include.add(file)
+                            include.add(file_)
         dialog.Destroy()
         # Create Project
         if not include:
@@ -309,7 +309,7 @@ class Installers_AutoRefreshBethsoft(BoolLink):
     def Execute(self,event):
         if not bosh.settings[self.key]:
             message = balt.fill(_(u"Enable installation of Bethsoft Content?") + u'\n\n' +
-                                _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculatted.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
+                                _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculated.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
                                 )
             if not balt.askYes(self.gTank,fill(message,80),self.text): return
         BoolLink.Execute(self,event)

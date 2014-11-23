@@ -118,8 +118,7 @@ class Installer_EditWizard(_InstallerLink):
         path = self.selected[0]
         if self.isSingleProject():
             # Project, open for edit
-            dir = self.data.dir
-            dir.join(path.s, self.data[path].hasWizard).start()
+            self.data.dir.join(path.s, self.data[path].hasWizard).start()
         else:
             # Archive, open for viewing
             archive = self.data[path]
@@ -292,8 +291,7 @@ class Installer_OpenReadme(_InstallerLink):
         installer = self.selected[0]
         if self.isSingleProject():
             # Project, open for edit
-            dir = self.data.dir
-            dir.join(installer.s, self.data[installer].hasReadme).start()
+            self.data.dir.join(installer.s, self.data[installer].hasReadme).start()
         else:
             # Archive, open for viewing
             archive = self.data[installer]
@@ -369,7 +367,8 @@ class Installer_Duplicate(_InstallerLink):
 class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
     text = _(u'Hide...')
-    help = _(u"Hide selected installer(s).")
+    help = _(
+        u"Hide selected installer(s). No installer markers should be selected")
 
     def _enable(self):
         for item in self.window.GetSelected():
@@ -520,7 +519,6 @@ class Installer_Install(_InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
         try:
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                 last = (self.mode == 'LAST')
@@ -618,9 +616,9 @@ class Installer_Open(_Link): # TODO(ut): ex Tank_Open and now Link subclass...
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
-        for file in self.selected:
-            dir.join(file).start()
+        dir_ = self.data.dir
+        for file_ in self.selected:
+            dir_.join(file_).start()
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -699,9 +697,10 @@ class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     text = _(u'Refresh')
 
+    def _enable(self): return not len(self.selected) == 1 or self.isSingleInstallable()
+
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
         try:
             with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=True) as progress:
                 progress.setFull(len(self.selected))
@@ -747,7 +746,6 @@ class Installer_Uninstall(_InstallerLink):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.data.uninstall(self.filterInstallables(),progress)
@@ -1305,9 +1303,9 @@ class InstallerConverter_Apply(_InstallerLink):
             #--Perform the conversion
             self.converter.apply(destArchive,self.data.crc_installer,SubProgress(progress,0.0,0.99))
             if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
-                deprint(u'An error occued while attempting to apply an Auto-BCF:',traceback=True)
+                deprint(u'An error occurred while attempting to apply an Auto-BCF:',traceback=True)
                 balt.showWarning(self.gTank,
-                    _(u'%s: An error occured while applying an Auto-BCF.' % destArchive.s))
+                    _(u'%s: An error occurred while applying an Auto-BCF.' % destArchive.s))
                 # hasBCF will be set to False if there is an error while
                 # rearranging files
                 return

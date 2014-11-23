@@ -79,6 +79,8 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
+    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
+
     def Execute(self,event): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
                    + u'\n\n' +
@@ -99,10 +101,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u'Export NPC levels')) as progress:
-            if CBash:
-                actorLevels = CBash_ActorLevels()
-            else:
-                actorLevels = ActorLevels()
+            actorLevels = self._parser()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -118,6 +117,8 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     """Imports actor levels from text file to mod."""
     text = _(u'NPC Levels...')
     help = _(u"Import NPC level info from text file to mod")
+
+    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
 
     def Execute(self,event):
         message = (_(u'This command will import NPC level info from a previously exported file.')
@@ -144,10 +145,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
-            if CBash:
-                actorLevels = CBash_ActorLevels()
-            else:
-                actorLevels = ActorLevels()
+            actorLevels = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorLevels.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -919,6 +917,9 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     text = _(u'Relations...')
     help = _(u'Import faction relations from text file to mod')
 
+    def _parser(self):
+        return CBash_FactionRelations() if CBash else FactionRelations()
+
     def Execute(self,event):
         message = (_(u"This command will import faction relation info from a previously exported file.")
                    + u'\n\n' +
@@ -943,10 +944,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
-            if CBash:
-                factionRelations = CBash_FactionRelations()
-            else:
-                factionRelations = FactionRelations()
+            factionRelations =  self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             factionRelations.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -984,6 +982,9 @@ class Mod_Factions_Import(_Mod_Import_Link):
     text = _(u'Factions...')
     help = _(u'Import factions from text file to mod')
 
+    def _parser(self):
+        return CBash_ActorFactions() if CBash else ActorFactions()
+
     def Execute(self,event):
         message = (_(u"This command will import faction ranks from a previously exported file.")
                    + u'\n\n' +
@@ -1009,10 +1010,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
-            if CBash:
-                actorFactions = CBash_ActorFactions()
-            else:
-                actorFactions = ActorFactions()
+            actorFactions = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorFactions.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -1508,6 +1506,9 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     text = _(u'Sigil Stones...')
     help = _(u'Import Sigil Stone details from text file')
 
+    def _parser(self):
+        return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
+
     def Execute(self,event):
         message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,
@@ -1532,10 +1533,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
-            if CBash:
-                sigilStones = CBash_SigilStoneDetails()
-            else:
-                sigilStones = SigilStoneDetails()
+            sigilStones = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             sigilStones.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')

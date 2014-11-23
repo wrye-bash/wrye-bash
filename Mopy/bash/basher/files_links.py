@@ -440,7 +440,7 @@ class File_RevertToSnapshot(_Link):
 class File_Backup(_Link):
     """Backup file."""
     text = _(u'Backup')
-    help = _(u"Create a backup of the slected file(s).")
+    help = _(u"Create a backup of the selected file(s).")
 
     def Execute(self,event):
         for item in self.data:
