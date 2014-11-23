@@ -8039,13 +8039,10 @@ class INI_AllowNewLines(BoolLink):
         iniList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class INI_ListINIs(Link):
+class INI_ListINIs(_Link):
     """List errors that make an INI Tweak invalid."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'List Active INIs...'),_(u'Lists all fully applied tweak files.'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(True)
+    text = _(u'List Active INIs...')
+    help = _(u'Lists all fully applied tweak files.')
 
     def Execute(self,event):
         """Handle printing out the errors."""
@@ -8054,48 +8051,44 @@ class INI_ListINIs(Link):
         balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class INI_ListErrors(Link):
+class INI_ListErrors(EnabledLink):
     """List errors that make an INI Tweak invalid."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'List Errors...'),_(u'Lists any errors in the tweak file causing it to be invalid.'))
-        menu.AppendItem(menuItem)
+    text = _(u'List Errors...')
+    help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
-        bEnable = False
-        for i in data:
+    def _enable(self):
+        for i in self.data:
             if bosh.iniInfos[i].getStatus() < 0:
-                bEnable = True
-                break
-        menuItem.Enable(bEnable)
+                return True
+        return False
 
     def Execute(self,event):
         """Handle printing out the errors."""
-        if wx.TheClipboard.Open():
-            text = u''
-            for i in self.data:
-                fileInfo = bosh.iniInfos[i]
-                text += u'%s\n' % fileInfo.listErrors()
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        text = u''
+        for i in self.data:
+            fileInfo = bosh.iniInfos[i]
+            text += u'%s\n' % fileInfo.listErrors()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class INI_FileOpenOrCopy(Link):
+class INI_FileOpenOrCopy(EnabledLink):
     """Open specified file(s) only if they aren't Bash supplied defaults."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+    def _initData(self, window, data):
+        print data
+        Link._initData(self,window,data)
         if not len(data) == 1:
-            label = _(u'Open/Copy...')
-            help = _(u'Only one INI file can be opened or copied at a time.')
+            self.text = _(u'Open/Copy...')
+            self.help = _(u'Only one INI file can be opened or copied at a time.')
         elif bosh.dirs['tweaks'].join(data[0]).isfile():
-            label = _(u'Open...')
-            help = _(u"Open '%s' with the system's default program.") % data[0]
+            self.text = _(u'Open...')
+            self.help = _(u"Open '%s' with the system's default program.") % data[0]
         else:
-            label = _(u'Copy...')
-            help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
-        menuItem = wx.MenuItem(menu,self.id,label,help)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)>0 and len(data) == 1)
+            self.text = _(u'Copy...')
+            self.help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
+
+    def _enable(self): # TODO(ut) was len(self.data) > 0 and len(data) == 1
+        return len(self.data) == 1
 
     def Execute(self,event):
         """Handle selection."""
@@ -8112,18 +8105,18 @@ class INI_FileOpenOrCopy(Link):
                 iniList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class INI_Delete(Link):
+class INI_Delete(EnabledLink):
     """Delete the file and all backups."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if bosh.dirs['tweaks'].join(data[0]).isfile():
-            menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete'),
-                help=_(u"Delete %(filename)s.") % ({'filename':data[0]})))
-        else:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Delete'),
-                help=_(u'Bash default tweaks can\'t be deleted.'))
-            menu.AppendItem(menuItem)
-            menuItem.Enable(False)
+    text = _(u"Delete")
+
+    def _initData(self, window, data):
+        Link._initData(self,window,data)
+        self.isFile = bosh.dirs['tweaks'].join(data[0]).isfile()
+        self.help = _(u"Delete %(filename)s.") % (
+        {'filename': data[0]}) if self.isFile else _(
+            u'Bash default tweaks can\'t be deleted.')
+
+    def _enable(self): return self.isFile
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
@@ -8142,26 +8135,34 @@ class INI_Delete(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class INI_Apply(Link):
+class INI_Apply(EnabledLink):
     """Apply an INI Tweak."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
-        tweak = data[0]
-        menuItem = wx.MenuItem(menu,self.id,_(u'Apply'),_(u"Applies '%s' to '%s'.") % (tweak, ini))
-        menu.AppendItem(menuItem)
+    text = _(u'Apply')
 
+    def _initData(self, window, data):
+        Link._initData(self,window,data)
+        self.iniPanel = self.window.GetParent().GetParent().GetParent()
+        ini = self.iniPanel.comboBox.GetValue()
+        if len(data) == 1:
+            tweak = data[0]
+            self.help = _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
+                'tweak': tweak, 'ini': ini}
+        else:
+            self.help = _(u"Applies selected tweaks to '%(ini)s'.") % {
+            'ini': ini}
+
+    def _enable(self):
         if not settings['bash.ini.allowNewLines']:
             for i in data:
                 iniInfo = bosh.iniInfos[i]
                 if iniInfo.status < 0:
-                    menuItem.Enable(False) # temp disabled for testing
-                    return
+                    return False # temp disabled for testing
+        return True
 
     def Execute(self,event):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        iniPanel = self.window.GetParent().GetParent().GetParent()
+        iniPanel = self.iniPanel
         choice = iniPanel.GetChoice().tail
         if choice in bush.game.iniFiles:
             message = (_(u'Apply an ini tweak to %s?') % choice
@@ -8186,16 +8187,23 @@ class INI_Apply(Link):
             iniPanel.tweakContents.RefreshUI(self.data[0])
 
 #------------------------------------------------------------------------------
-class INI_CreateNew(Link):
-    """Create a new INI Tweak using the settings from the tweak file, but values from the target INI."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+class INI_CreateNew(EnabledLink):
+    """Create a new INI Tweak using the settings from the tweak file,
+    but values from the target INI."""
+    text = _(u'Create Tweak with current settings...')
+
+    def _initData(self, window, data):
+        Link._initData(self,window,data)
         ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
-        tweak = data[0]
-        menuItem = wx.MenuItem(menu,self.id,_(u'Create Tweak with current settings...'),_(u"Creates a new tweak based on '%s' but with values from '%s'.") % (tweak, ini))
-        menu.AppendItem(menuItem)
-        if len(data) != 1 or bosh.iniInfos[data[0]].status < 0:
-            menuItem.Enable(False)
+        if not len(data) == 1:
+            self.help = _(u'Please choose one Ini Tweak')
+        else:
+            self.help = _(
+                u"Creates a new tweak based on '%(tweak)s' but with values "
+                u"from '%(ini)s'.") % {'tweak': (data[0]), 'ini': ini}
+
+    def _enable(self):
+        return len(data) == 1 and bosh.iniInfos[data[0]].status >= 0
 
     def Execute(self,event):
         """Handle creating a new INI tweak."""
