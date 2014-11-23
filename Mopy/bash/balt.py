@@ -2199,25 +2199,6 @@ class Tank_Delete(Link):
         finally:
             wx.EndBusyCursor()
 #------------------------------------------------------------------------------
-class Tank_Open(Link):
-    """Open selected file(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if len(data) == 1:
-            help = _(u"Open '%s'") % data[0]
-        else:
-            help = _(u"Open selected files.")
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),help)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.selected))
-
-    def Execute(self,event):
-        """Handle selection."""
-        dir = self.data.dir
-        for file in self.selected:
-            dir.join(file).start()
-
-#------------------------------------------------------------------------------
 class Tank_Duplicate(Link):
     """Create a duplicate of a tank item, assuming that tank item is a file,
     and using a SaveAs dialog."""

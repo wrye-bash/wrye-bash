@@ -9448,14 +9448,22 @@ class Installer_Move(InstallerLink):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Installer_Open(balt.Tank_Open):
+class Installer_Open(_Link):
     """Open selected file(s)."""
+    text = _(u'Open...')
+
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open...'), _(u"Open '%s'") % self.data.dir.tail)
-        menu.AppendItem(menuItem)
+        self.help = _(u"Open '%s'") % data[0] if len(data) == 1 else _(
+            u"Open selected files.")
+        menuItem = _Link.AppendToMenu(self,menu,window,data)
         self.selected = [x for x in self.selected if not isinstance(self.data.data[x],bosh.InstallerMarker)]
         menuItem.Enable(bool(self.selected))
+
+    def Execute(self,event):
+        """Handle selection."""
+        dir = self.data.dir
+        for file in self.selected:
+            dir.join(file).start()
 
 #------------------------------------------------------------------------------
 class InstallerOpenAt_MainMenu(balt.MenuLink):
