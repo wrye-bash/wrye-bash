@@ -674,13 +674,11 @@ class Mod_SkipDirtyCheckAll(CheckLink):
             u"Don't check against LOOT's dirty mod list") if self.skip else _(
             u"Check against LOOT's dirty mod list")
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
+    def _check(self):
         for fileName in self.data:
             if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
-                menuItem.Check(False)
-                break
-        else: menuItem.Check(True)
+                return False
+        return True
 
     def Execute(self,event):
         for fileName in self.data:

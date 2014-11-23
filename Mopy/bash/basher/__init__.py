@@ -7658,6 +7658,13 @@ class RadioLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink sub
 class CheckLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
     kind = wx.ITEM_CHECK
 
+    def _check(self): return True
+
+    def AppendToMenu(self,menu,window,data):
+        menuItem = _Link.AppendToMenu(self,menu,window,data)
+        menuItem.Check(self._check())
+        return menuItem
+
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
     text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !

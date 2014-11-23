@@ -40,9 +40,7 @@ class Mods_EsmsFirst(CheckLink):
         self.prefix = prefix
         self.text = self.prefix + _(u'Type')
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
-        menuItem.Check(window.esmsFirst)
+    def _check(self): return self.window.esmsFirst
 
     def Execute(self,event):
         self.window.esmsFirst = not self.window.esmsFirst
@@ -58,9 +56,7 @@ class Mods_SelectedFirst(CheckLink):
         self.prefix = prefix
         self.text = self.prefix + _(u'Selection')
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
-        if window.selectedFirst: menuItem.Check()
+    def _check(self): return self.window.selectedFirst
 
     def Execute(self,event):
         self.window.selectedFirst = not self.window.selectedFirst
@@ -103,9 +99,7 @@ class Mods_Deprint(CheckLink):
     help = _(u"Turns on extra debug prints to help debug an error or just for "
              u"advanced testing.")
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
-        menuItem.Check(bolt.deprintOn)
+    def _check(self): return bolt.deprintOn
 
     def Execute(self,event):
         deprint(_(u'Debug Printing: Off'))
@@ -210,9 +204,7 @@ class Mods_LockTimes(CheckLink):
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
-        menuItem.Check(bosh.modInfos.lockLO)
+    def _check(self): return bosh.modInfos.lockLO
 
     def Execute(self,event):
         lockLO = not bosh.modInfos.lockLO
@@ -231,7 +223,7 @@ class Mods_OblivionVersion(CheckLink):
         self.key = self.text = key
         self.setProfile = setProfile
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self,menu,window,data): # TODO(ut): MI with enabled
         menuItem = CheckLink.AppendToMenu(self,menu,window,data)
         menuItem.Enable(bosh.modInfos.voCurrent is not None and self.key in bosh.modInfos.voAvailable)
         if bosh.modInfos.voCurrent == self.key: menuItem.Check()
