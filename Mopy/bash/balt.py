@@ -2124,6 +2124,7 @@ class Link(object):
     The only valid reason to override AppendToMenu is to prevent the menu to be
     appended.
     """ # TODO(ut): eliminate overrides of AppendToMenu
+    # TODO(ut): change docs = split to +Link and MenuLink
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
 
@@ -2152,20 +2153,30 @@ class Link(object):
         self._dataInitialized = False # init runs ONCE !
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId()
-        # is below MenuItem (_Link) specific ?
+
+# Link subclasses -------------------------------------------------------------
+class _Link(Link): # TODO(ut): rename to ItemLink
+    """TMP class to factor out duplicate code and wx dependencies.
+
+    Subclasses MUST define text, help (preferably class) attributes OR
+    override AppendToMenu().
+    """
+    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
+
+    def AppendToMenu(self,menu,window,data):
+        super(_Link, self).AppendToMenu(menu, window, data)
+        # TODO(ut): is below MenuItem (_Link) specific ?
         Link.Popup = menu
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
-        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
-        wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
+        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,_Link.ShowHelp)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
+                               self.__class__.kind)
+        menu.AppendItem(menuItem)
+        return menuItem
 
     def Execute(self, event):
         """Event: link execution."""
         raise AbstractError
-
-    @staticmethod
-    def OnMenuOpen(event):
-        """Hover over a submenu, clear the status bar text"""
-        Link.Frame.GetStatusBar().SetText('')
 
     @staticmethod
     def ShowHelp(event):
@@ -2176,18 +2187,6 @@ class Link(object):
                 Link.Frame.GetStatusBar().SetText(item.GetHelp())
             else:
                 Link.Frame.GetStatusBar().SetText(u'')
-
-class _Link(Link): # TODO: merge with balt.Link !
-    """TMP class to factor out duplicate code and wx dependencies."""
-    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
-    # subclasses MUST define self.text, self.help OR override AppendToMenu()
-
-    def AppendToMenu(self,menu,window,data):
-        super(_Link, self).AppendToMenu(menu, window, data)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
-                               self.__class__.kind)
-        menu.AppendItem(menuItem)
-        return menuItem
 
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
@@ -2260,6 +2259,7 @@ class MenuLink(Link):
         """Add self as submenu (along with submenu items) to menu."""
         # notice that by calling Link.Append a bunch of wx lines are run
         super(MenuLink, self).AppendToMenu(menu, window, data)
+        wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         menu.AppendMenu(self.id, self.text, subMenu)
         if not self._enable():
@@ -2268,6 +2268,11 @@ class MenuLink(Link):
             # do not append sub links unless submenu enabled
             for link in self.links:
                 link.AppendToMenu(subMenu,window,data)
+
+    @staticmethod
+    def OnMenuOpen(event):
+        """Hover over a submenu, clear the status bar text"""
+        Link.Frame.GetStatusBar().SetText('')
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
