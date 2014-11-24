@@ -32,7 +32,6 @@ import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
 import time
-import operator
 
 # Imports ---------------------------------------------------------------------
 #--Python
@@ -40,20 +39,15 @@ import cPickle
 import ConfigParser
 import copy
 import datetime
-import math
 import os
-import random
 import re
-import shutil
 import string
 import struct
-import sys
-from types import *
-from operator import attrgetter,itemgetter
+from types import NoneType, FloatType, IntType, LongType, BooleanType, \
+    StringType, UnicodeType, ListType, DictType, TupleType
+from operator import attrgetter
 import subprocess
 from subprocess import Popen, PIPE
-import codecs
-import ctypes
 
 #--Local
 import balt
@@ -62,13 +56,15 @@ import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, \
     UncodedError, PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
-    deprint, sio
+    deprint, sio, Path
 from bolt import _unicode, _encode
-from cint import *
-from brec import *
-from brec import _coerce # Since it wont get imported by the import * (it
-# begins with _)
-from chardet.universaldetector import UniversalDetector
+# cint
+from _ctypes import POINTER
+from ctypes import cast, c_ulong
+from cint import ObCollection, ObModFile, MGEFCode, FormID, dump_record, CBash, \
+    ObBaseRecord
+from brec import _coerce, MreRecord, ModReader, ModError, ModWriter, \
+    getModIndex, genFid, getObjectIndex, getFormIndices
 from patcher.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
@@ -225,7 +221,7 @@ class PickleDict(bolt.PickleDict):
         #--Done
         return result
 
-    def updatePaths(self):
+    def updatePaths(self): # CRUFT ?
         """Updates paths from bosh.Path to bolt.Path."""
         import wx
         basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
@@ -261,6 +257,9 @@ class PickleDict(bolt.PickleDict):
             elif isinstance(x,wx.Point): #--Replace old wx.Points w nice python tuples.
                 xnew = x.Get()
             elif isinstance(x,Path):
+             # TODO(ut) since I imported Path from bolt (was from cint) I get
+             # unresolved attribute for Path._path (in x._path below) - should
+             # be older Path class - CRUFT pickled ?
                 changed.add(x._path)
                 xnew = GPath(x._path)
             else:
