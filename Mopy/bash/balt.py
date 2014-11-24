@@ -2148,11 +2148,15 @@ class Link(object):
         self._dataInitialized = True
 
     def AppendToMenu(self,menu,window,data):
-        """Append self to menu as menu item."""
+        """Creates a wx menu item and appends it to :menu.
+
+        Link implementation calls _initData, sets the Link.Popup (this must
+        be moved to Links) generates a wx Id and returns None
+        """
         if not self._dataInitialized: self._initData(window, data)
-        self._dataInitialized = False # init runs ONCE !
+        self._dataInitialized = False # TODO(ut): turn this to a property or bin
         #--Generate self.id if necessary (i.e. usually)
-        if not self.id: self.id = wx.NewId()
+        if not self.id: self.id = wx.NewId() # notice id remains the same - __init___ runs ONCE
 
 # Link subclasses -------------------------------------------------------------
 class _Link(Link): # TODO(ut): rename to ItemLink
@@ -2164,6 +2168,8 @@ class _Link(Link): # TODO(ut): rename to ItemLink
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
 
     def AppendToMenu(self,menu,window,data):
+        """Append self as menu item and set callbacks to be executed when
+        selected."""
         super(_Link, self).AppendToMenu(menu, window, data)
         # TODO(ut): is below MenuItem (_Link) specific ?
         Link.Popup = menu
@@ -2174,6 +2180,7 @@ class _Link(Link): # TODO(ut): rename to ItemLink
         menu.AppendItem(menuItem)
         return menuItem
 
+    # Callbacks ---------------------------------------------------------------
     def Execute(self, event):
         """Event: link execution."""
         raise AbstractError
@@ -2187,6 +2194,62 @@ class _Link(Link): # TODO(ut): rename to ItemLink
                 Link.Frame.GetStatusBar().SetText(item.GetHelp())
             else:
                 Link.Frame.GetStatusBar().SetText(u'')
+
+class MenuLink(Link):
+    """Defines a submenu. Generally used for submenus of large menus."""
+    help = u'UNUSED'
+
+    def __init__(self,name,oneDatumOnly=False):
+        """Initialize. Submenu items should append themselves to self.links."""
+        super(MenuLink, self).__init__()
+        self.text = name # class attribute really (see _Link)
+        self.links = Links()
+        self.oneDatumOnly = oneDatumOnly
+
+    def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
+
+    def AppendToMenu(self,menu,window,data):
+        """Append self as submenu (along with submenu items) to menu."""
+        super(MenuLink, self).AppendToMenu(menu, window, data)
+        wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
+        subMenu = wx.Menu()
+        menu.AppendMenu(self.id, self.text, subMenu)
+        if not self._enable():
+            menu.Enable(self.id, False)
+        else: # do not append sub links unless submenu enabled
+            for link in self.links: link.AppendToMenu(subMenu,window,data)
+
+    @staticmethod
+    def OnMenuOpen(event):
+        """Hover over a submenu, clear the status bar text"""
+        Link.Frame.GetStatusBar().SetText('')
+
+class SeparatorLink(Link):
+    """Link that acts as a separator item in menus."""
+
+    def AppendToMenu(self,menu,window,data):
+        """Add separator to menu."""
+        menu.AppendSeparator()
+
+# _Link subclasses ------------------------------------------------------------
+class EnabledLink(_Link):
+    """A menu item that may be disabled.
+
+    The item is by default enabled. Override _enable() to disable\enable
+    based on some condition. Subclasses MUST define self.text, preferably as
+    a class attribute.
+    """
+    help = u''
+
+    def _enable(self):
+        """"Override as needed to enable or disable the menu item (enabled
+        by default)."""
+        return True
+
+    def AppendToMenu(self, menu, window, data):
+        menuItem = super(EnabledLink, self).AppendToMenu(menu, window, data)
+        menuItem.Enable(self._enable())
+        return menuItem
 
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
@@ -2213,66 +2276,6 @@ class BoolLink(CheckLink):
 
     def Execute(self,event):
         bosh.settings[self.key] ^= True
-
-class EnabledLink(_Link):
-    """A menu item that may be disabled.
-
-    The item is by default enabled. Override _enable() to disable\enable
-    based on some condition. Subclasses MUST define self.text, preferably as
-    a class attribute.
-    """
-    help = u''
-
-    def _enable(self):
-        """"Override as needed to enable or disable the menu item (enabled
-        by default)."""
-        return True
-
-    def AppendToMenu(self, menu, window, data):
-        menuItem = super(EnabledLink, self).AppendToMenu(menu, window, data)
-        menuItem.Enable(self._enable())
-        return menuItem
-
-#------------------------------------------------------------------------------
-class SeparatorLink(Link):
-    """Link that acts as a separator item in menus."""
-
-    def AppendToMenu(self,menu,window,data):
-        """Add separator to menu."""
-        menu.AppendSeparator()
-
-#------------------------------------------------------------------------------
-class MenuLink(Link):
-    """Defines a submenu. Generally used for submenus of large menus."""
-    help = u'UNUSED'
-
-    def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
-
-    def __init__(self,name,oneDatumOnly=False):
-        """Initialize. Submenu items should append to self.links."""
-        super(MenuLink, self).__init__()
-        self.text = name # class attribute really (see _Link)
-        self.links = Links()
-        self.oneDatumOnly = oneDatumOnly
-
-    def AppendToMenu(self,menu,window,data):
-        """Add self as submenu (along with submenu items) to menu."""
-        # notice that by calling Link.Append a bunch of wx lines are run
-        super(MenuLink, self).AppendToMenu(menu, window, data)
-        wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
-        subMenu = wx.Menu()
-        menu.AppendMenu(self.id, self.text, subMenu)
-        if not self._enable():
-            menu.Enable(self.id, False)
-        else:
-            # do not append sub links unless submenu enabled
-            for link in self.links:
-                link.AppendToMenu(subMenu,window,data)
-
-    @staticmethod
-    def OnMenuOpen(event):
-        """Hover over a submenu, clear the status bar text"""
-        Link.Frame.GetStatusBar().SetText('')
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
