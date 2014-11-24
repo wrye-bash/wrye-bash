@@ -2271,12 +2271,13 @@ class MenuLink(Link):
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Tanks_Open(Link):
+class Tanks_Open(_Link):
     """Opens data directory in explorer."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),_(u"Open '%s'") % self.data.dir.tail)
-        menu.AppendItem(menuItem)
+    text = _(u'Open...')
+
+    def _initData(self, window, data):
+        super(Tanks_Open, self)._initData(window, data)
+        self.help = _(u"Open '%s'") % self.data.dir.tail # data is Tank.data
 
     def Execute(self,event):
         """Handle selection."""
@@ -2321,6 +2322,8 @@ class Tank_Duplicate(Link):
         if destDir == srcDir:
             self.gTank.RefreshUI()
 
+# wx Wrappers -----------------------------------------------------------------
+#------------------------------------------------------------------------------
 def copyToClipboard(text):
     if wx.TheClipboard.Open():
         wx.TheClipboard.SetData(wx.TextDataObject(text))
