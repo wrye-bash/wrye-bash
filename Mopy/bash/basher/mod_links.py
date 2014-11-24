@@ -26,7 +26,7 @@ import StringIO
 import os
 import wx
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
-    spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink
+    spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError
 from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, refreshData
 from ..bosh import formatDate, formatInteger
@@ -623,41 +623,36 @@ class Mod_AllowInvertGhosting(_Link):
 
 #------------------------------------------------------------------------------
 
-class Mod_AllowGhosting(Link):
+class Mod_AllowGhosting(TransLink):
     """Toggles Ghostability."""
 
-    def AppendToMenu(self,menu,window,data):
-        Link._initData(self, window, data)
+    def _decide(self, window, data):
         if len(data) == 1:
-            _self = self
             class _CheckLink(CheckLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
 
+                def _initData(self, window, data):
+                    super(_CheckLink, self)._initData(window, data)
+                    self.allowGhosting = bosh.modInfos.table.getItem(
+                        data[0], 'allowGhosting', True)
+                def _check(self): return not self.allowGhosting
                 def Execute(self, event):
-                    _self.Execute(event)
-
-            cl = _CheckLink()
-            menuItem = cl.AppendToMenu(menu,window,data)
-            self.allowGhosting = bosh.modInfos.table.getItem(data[0],'allowGhosting',True)
-            menuItem.Check(not self.allowGhosting)
+                    fileName = self.data[0]
+                    fileInfo = bosh.modInfos[fileName]
+                    allowGhosting = self.allowGhosting ^ True
+                    bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
+                    toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
+                    oldGhost = fileInfo.isGhost
+                    if fileInfo.setGhost(toGhost) != oldGhost:
+                        self.window.RefreshUI(fileName)
+            return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
             subMenu.links.append(Mod_AllowAllGhosting())
             subMenu.links.append(Mod_AllowNoGhosting())
             subMenu.links.append(Mod_AllowInvertGhosting())
-            menuItem = subMenu.AppendToMenu(menu,window,data)
-        return menuItem
-
-    def Execute(self,event):
-        fileName = self.data[0]
-        fileInfo = bosh.modInfos[fileName]
-        allowGhosting = self.allowGhosting ^ True
-        bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-        toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
-        oldGhost = fileInfo.isGhost
-        if fileInfo.setGhost(toGhost) != oldGhost:
-            self.window.RefreshUI(fileName)
+            return subMenu
 
 #------------------------------------------------------------------------------
 class Mod_SkipDirtyCheckAll(CheckLink):
@@ -697,38 +692,33 @@ class Mod_SkipDirtyCheckInvert(_Link):
         self.window.RefreshUI(self.data)
 
 #------------------------------------------------------------------------------
-class Mod_SkipDirtyCheck(Link):
+class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
-    def AppendToMenu(self,menu,window,data):
-        Link._initData(self, window, data)
+    def _decide(self, window, data):
         if len(data) == 1:
-            _self = self
             class _CheckLink(CheckLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")
 
+                def _initData(self, window, data):
+                    super(_CheckLink, self)._initData(window, data)
+                    self.ignoreDirty = bosh.modInfos.table.getItem(
+                        data[0], 'ignoreDirty', False)
+                def _check(self): return self.ignoreDirty
                 def Execute(self, event):
-                    _self.Execute(event)
-
-            cl = _CheckLink()
-            menuItem = cl.AppendToMenu(menu,window,data)
-            self.ignoreDirty = bosh.modInfos.table.getItem(data[0],'ignoreDirty',False)
-            menuItem.Check(self.ignoreDirty)
+                    fileName = self.data[0]
+                    fileInfo = bosh.modInfos[fileName]
+                    self.ignoreDirty ^= True
+                    bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
+                    self.window.RefreshUI(fileName)
+            return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
             subMenu.links.append(Mod_SkipDirtyCheckAll(True))
             subMenu.links.append(Mod_SkipDirtyCheckAll(False))
             subMenu.links.append(Mod_SkipDirtyCheckInvert())
-            menuItem = subMenu.AppendToMenu(menu,window,data)
-        return menuItem
-
-    def Execute(self,event):
-        fileName = self.data[0]
-        fileInfo = bosh.modInfos[fileName]
-        self.ignoreDirty ^= True
-        bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
-        self.window.RefreshUI(fileName)
+            return subMenu
 
 #------------------------------------------------------------------------------
 class Mod_CleanMod(EnabledLink):

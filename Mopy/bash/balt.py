@@ -2224,6 +2224,16 @@ class MenuLink(Link):
         """Hover over a submenu, clear the status bar text"""
         Link.Frame.GetStatusBar().SetText('')
 
+class TransLink(Link):
+    """Transcendental link, can't quite make up its mind."""
+
+    def _decide(self, window, data):
+        """Return a Link subclass instance to call AppendToMenu on."""
+        raise AbstractError
+
+    def AppendToMenu(self,menu,window,data):
+        return self._decide(window, data).AppendToMenu(menu, window, data)
+
 class SeparatorLink(Link):
     """Link that acts as a separator item in menus."""
 

@@ -7657,7 +7657,8 @@ def SetUAC(item):
         else:
             balt.setUAC(item,isUAC)
 
-from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink, AppendableLink
+from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink, \
+    AppendableLink, TransLink
 
 #------------------------------------------------------------------------------
 class File_RevertToBackup:
@@ -9299,10 +9300,10 @@ class _Mod_BP_Link(EnabledLink):
             bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',
                                                           u'BASHED LISTS'))
 
-class Mod_Patch_Update(_Mod_BP_Link):
+class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
     def __init__(self,doCBash=False):
-        super(Mod_Patch_Update, self).__init__()
+        super(_Mod_Patch_Update, self).__init__()
         self.doCBash = doCBash
         self.CBashMismatch = False
         self.text = _(u'Rebuild Patch (CBash *BETA*)...') if doCBash else _(
@@ -9311,28 +9312,11 @@ class Mod_Patch_Update(_Mod_BP_Link):
                     u'Rebuild the Bashed Patch')
 
     def _initData(self, window, data):
-        super(Mod_Patch_Update, self)._initData(window, data)
+        super(_Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
         thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
-
-    def _check(self):
-        return self._enable() and settings[
-            'bash.CBashEnabled'] and not self.CBashMismatch
-
-    def AppendToMenu(self,menu,window,data):
-        """Append a radio button if CBash is enabled a simple item otherwise."""
-        self._initData(window, data)
-        if self._enable() and settings['bash.CBashEnabled']:
-            _self = self
-            class _CheckLink(RadioLink):
-                text = _self.text
-                help = _self.help
-                def _check(self): return _self._check()
-                def Execute(self, event): _self.Execute(event)
-            return (_CheckLink()).AppendToMenu(menu,window,data)
-        return super(Mod_Patch_Update, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         """Handle activation event."""
@@ -9474,6 +9458,19 @@ class Mod_Patch_Update(_Mod_BP_Link):
         self.window.RefreshUI(detail=fileName)
         # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
         BashFrame.SaveSettings(bashFrame)
+
+class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
+
+    def _decide(self, window, data):
+        """Append a radio button if CBash is enabled a simple item otherwise."""
+        # TODO(ut) : test in Skyrim!
+        enable = len(data) == 1 and bosh.modInfos[data[0]].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS')
+        if enable and settings['bash.CBashEnabled']:
+            class _RadioLink(RadioLink, _Mod_Patch_Update):
+                def _check(self): return not self.CBashMismatch
+            return _RadioLink(self.doCBash)
+        return _Mod_Patch_Update(self.doCBash)
 
 #------------------------------------------------------------------------------
 class Mod_ListPatchConfig(_Mod_BP_Link):
