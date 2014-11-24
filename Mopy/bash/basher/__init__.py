@@ -7973,14 +7973,10 @@ class Mods_LoadList:
 
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Settings_BackupSettings(Link):
+class Settings_BackupSettings(_Link): # TODO(ut): was checklink - why ?
     """Saves Bash's settings and user data.."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Backup Settings...'),
-            help=_(u"Backup all of Wrye Bash's settings/data to an archive file."),
-            kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
+    text =_(u'Backup Settings...')
+    help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
 
     def Execute(self,event):
         def OnClickAll(event):
@@ -8020,14 +8016,11 @@ class Settings_BackupSettings(Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_RestoreSettings(Link):
+class Settings_RestoreSettings(_Link): # TODO(ut): was checklink - why ?
     """Saves Bash's settings and user data.."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Restore Settings...'),
-            help=_(u"Restore all of Wrye Bash's settings/data from a backup archive file."),
-            kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
+    text = _(u'Restore Settings...')
+    help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
+             u"file.")
 
     def Execute(self,event):
         try:
@@ -8043,28 +8036,23 @@ class Settings_RestoreSettings(Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_SaveSettings(Link):
+class Settings_SaveSettings(_Link): # TODO(ut): was checklink - why ?
     """Saves Bash's settings and user data."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Save Settings'),
-            help=_(u"Save all of Wrye Bash's settings/data now."),
-            kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
+    text = _(u'Save Settings')
+    help = _(u"Save all of Wrye Bash's settings/data now.")
 
     def Execute(self,event):
         BashFrame.SaveSettings(bashFrame)
 
 #------------------------------------------------------------------------------
-class Settings_ExportDllInfo(Link):
+class Settings_ExportDllInfo(AppendableLink):
     """Exports list of good and bad dll's."""
-    def AppendToMenu(self,menu,window,data):
-        if not bush.game.se_sd: return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,
-            _(u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
-            _(u"Export list of allowed/disallowed plugin dlls to a txt file (for BAIN)."))
-        menu.AppendItem(menuItem)
+    text = _(
+        u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
+    help = _(u"Export list of allowed/disallowed plugin dlls to a txt file"
+        u" (for BAIN).")
+
+    def _append(self, window): return bush.game.se_sd
 
     def Execute(self,event):
         textDir = bosh.dirs['patches']
@@ -8092,15 +8080,14 @@ class Settings_ExportDllInfo(Link):
             else: out.write(u'None\r\n')
 
 #------------------------------------------------------------------------------
-class Settings_ImportDllInfo(Link):
+class Settings_ImportDllInfo(AppendableLink):
     """Imports list of good and bad dll's."""
-    def AppendToMenu(self,menu,window,data):
-        if not bush.game.se_sd: return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,
-            _(u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd,
-            help=_(u"Import list of allowed/disallowed plugin dlls from a txt file (for BAIN)."))
-        menu.AppendItem(menuItem)
+    text = _(
+        u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
+    help = _(u"Import list of allowed/disallowed plugin dlls from a txt file"
+        u" (for BAIN).")
+
+    def _append(self, window): return bush.game.se_sd
 
     def Execute(self,event):
         textDir = bosh.dirs['patches']
@@ -8146,13 +8133,10 @@ class Settings_ImportDllInfo(Link):
             balt.showError(self.window,_(u'Wrye Bash could not load %s, because there was an error in the format of the file.') % textPath.s)
 
 #------------------------------------------------------------------------------
-class Settings_Colors(Link):
+class Settings_Colors(_Link):
     """Shows the color configuration dialog."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Colors...'),
-            help=_(u"Configure the custom colors used in the UI."))
-        menu.AppendItem(menuItem)
+    text = _(u'Colors...')
+    help = _(u"Configure the custom colors used in the UI.")
 
     def Execute(self,event):
         dialog = ColorDialog(bashFrame)
@@ -8160,23 +8144,21 @@ class Settings_Colors(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class Settings_Tab(Link):
+class Settings_Tab(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
     def __init__(self,tabKey,canDisable=True):
-        Link.__init__(self)
+        super(Settings_Tab, self).__init__()
         self.tabKey = tabKey
         self.enabled = canDisable
+        className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
+        self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
+            {'tabtitle': self.text})
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        className,title,item = tabInfo.get(self.tabKey,[None,None,None])
-        if title is None: return
-        help = _(u"Show/Hide the %s Tab.") % title
-        check = settings['bash.tabs'][self.tabKey]
-        menuItem = wx.MenuItem(menu,self.id,title,kind=wx.ITEM_CHECK,help=help)
-        menu.AppendItem(menuItem)
-        menuItem.Check(check)
-        menuItem.Enable(self.enabled)
+    def _append(self, window): return self.text is not None
+
+    def _enable(self): return self.enabled
+
+    def _check(self): return settings['bash.tabs'][self.tabKey]
 
     def Execute(self,event):
         if settings['bash.tabs'][self.tabKey]:
@@ -8222,31 +8204,27 @@ class Settings_Tab(Link):
         settings.setChanged('bash.tabs')
 
 #------------------------------------------------------------------------------
-class Settings_IconSize(Link):
+class Settings_IconSize(RadioLink):
     def __init__(self, size):
-        Link.__init__(self)
+        super(Settings_IconSize, self).__init__()
         self.size = size
+        self.text = unicode(size)
+        self.help = _(u"Sets the status bar icons to %(size)s pixels") % (
+            {'size': unicode(size)})
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,unicode(self.size),kind=wx.ITEM_RADIO,
-            help=_(u"Sets the status bar icons to %(size)s pixels") % ({'size':unicode(self.size)}))
-        menu.AppendItem(menuItem)
-        menuItem.Check(self.size == settings['bash.statusbar.iconSize'])
+    def _check(self): return self.size == settings['bash.statusbar.iconSize']
 
     def Execute(self,event):
         settings['bash.statusbar.iconSize'] = self.size
         bashFrame.GetStatusBar().UpdateIconSizes()
 
 #------------------------------------------------------------------------------
-class Settings_StatusBar_ShowVersions(Link):
+class Settings_StatusBar_ShowVersions(CheckLink):
     """Show/Hide version numbers for buttons on the statusbar."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Show App Version'),kind=wx.ITEM_CHECK,
-            help=_(u"Show/hide version numbers for buttons on the status bar."))
-        menu.AppendItem(menuItem)
-        menuItem.Check(settings['bash.statusbar.showversion'])
+    text = _(u'Show App Version')
+    help = _(u"Show/hide version numbers for buttons on the status bar.")
+
+    def _check(self): return settings['bash.statusbar.showversion']
 
     def Execute(self,event):
         settings['bash.statusbar.showversion'] ^= True
@@ -8259,29 +8237,31 @@ class Settings_StatusBar_ShowVersions(Link):
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
 
 #------------------------------------------------------------------------------
-class Settings_Languages(Link):
+class Settings_Languages(TransLink):
     """Menu for available Languages."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+    # TODO(ut): test
+    def _decide(self, window, data):
         languages = []
         for file in bosh.dirs['l10n'].list():
             if file.cext == u'.txt' and file.csbody[-3:] != u'new':
                 languages.append(file.body)
         if languages:
-            subMenu = wx.Menu()
-            menu.AppendMenu(self.id,_(u'Language'),subMenu)
+            subMenu = MenuLink(_(u'Language'))
             for language in languages:
-                Settings_Language(language.s).AppendToMenu(subMenu,window,data)
+                subMenu.links.append(Settings_Language(language.s))
             if GPath('english') not in languages:
-                Settings_Language('English').AppendToMenu(subMenu,window,data)
+                subMenu.links.append(Settings_Language('English'))
+            return subMenu
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Language'),
-                help=_("Wrye Bash was unable to detect any translation files."))
-            menu.AppendItem(menuItem)
-            menuItem.Enable(False)
+            class _NoLang(EnabledLink):
+                text = _(u'Language')
+                help = _(u"Wrye Bash was unable to detect any translation"
+                         u" files.")
+                def _enable(self): return False
+            return _NoLang()
 
 #------------------------------------------------------------------------------
-class Settings_Language(Link):
+class Settings_Language(RadioLink):
     """Specific language for Wrye Bash."""
     languageMap = {
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
@@ -8294,20 +8274,25 @@ class Settings_Language(Link):
         }
 
     def __init__(self,language):
-        Link.__init__(self)
+        super(Settings_Language, self).__init__()
         self.language = language
+        self.text = self.__class__.languageMap.get(self.language.lower(),
+                                                    self.language)
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        label = self.__class__.languageMap.get(self.language.lower(),self.language)
+    def _initData(self, window, data):
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         if self.language == bassLang:
-            menuItem = wx.MenuItem(menu,self.id,label,kind=wx.ITEM_RADIO,
-                help=_("Currently using %(languagename)s as the active language.") % ({'languagename':label}))
+            self.help = _(
+                "Currently using %(languagename)s as the active language.") % (
+                            {'languagename': self.text})
+            self.check = True
         else:
-            menuItem = wx.MenuItem(menu,self.id,label,
-                help=_("Restart Wrye Bash and use %(languagename)s as the active language.") % ({'languagename':label}))
-        menu.AppendItem(menuItem)
+            self.help = _(
+                "Restart Wrye Bash and use %(languagename)s as the active "
+                "language.") % ({'languagename': self.text})
+            self.check = False
+
+    def _check(self): return self.check
 
     def Execute(self,event):
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
@@ -8318,7 +8303,7 @@ class Settings_Language(Link):
             bashFrame.Restart(('--Language',self.language))
 
 #------------------------------------------------------------------------------
-class Settings_PluginEncodings(Link):
+class Settings_PluginEncodings(MenuLink):
     encodings = {
         'gbk': _(u'Chinese (Simplified)'),
         'big5': _(u'Chinese (Traditional)'),
@@ -8327,98 +8312,80 @@ class Settings_PluginEncodings(Link):
         'cp1252': _(u'Western European (English, French, German, etc)'),
         }
     def __init__(self):
-        Link.__init__(self)
-        bolt.pluginEncoding = settings['bash.pluginEncoding']
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        subMenu = wx.Menu()
-        menu.AppendMenu(self.id,_(u'Plugin Encoding'),subMenu)
-        Settings_PluginEncoding(_(u'Automatic'),None).AppendToMenu(subMenu,window,data)
-        SeparatorLink().AppendToMenu(subMenu,window,data)
+        super(Settings_PluginEncodings, self).__init__(_(u'Plugin Encoding'))
+        bolt.pluginEncoding = settings['bash.pluginEncoding'] # TODO(ut): why is this init here ??
+        self.links.append(Settings_PluginEncoding(_(u'Automatic'),None))
+        # self.links.append(SeparatorLink())
         enc_name = sorted(Settings_PluginEncodings.encodings.items(),key=lambda x: x[1])
         for encoding,name in enc_name:
-            Settings_PluginEncoding(name,encoding).AppendToMenu(subMenu,window,data)
+            self.links.append(Settings_PluginEncoding(name,encoding))
 
 #------------------------------------------------------------------------------
-class Settings_PluginEncoding(Link):
+class Settings_PluginEncoding(RadioLink):
     def __init__(self,name,encoding):
-        Link.__init__(self)
-        self.name = name
+        super(Settings_PluginEncoding, self).__init__()
+        self.text = name
         self.encoding = encoding
+        self.help = _("Select %(encodingname)s encoding for Wrye Bash to use."
+            ) % ({'encodingname': self.text})
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if self.encoding == settings['bash.pluginEncoding']:
-            menuItem = wx.MenuItem(menu,self.id,self.name,kind=wx.ITEM_RADIO,
-                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
-        else:
-            menuItem = wx.MenuItem(menu,self.id,self.name,
-                help=_("Select %(encodingname)s encoding for Wrye Bash to use.") % ({'encodingname':self.name}))
-        menu.AppendItem(menuItem)
+    def _check(self): return self.encoding == settings['bash.pluginEncoding']
 
     def Execute(self,event):
         settings['bash.pluginEncoding'] = self.encoding
         bolt.pluginEncoding = self.encoding
 
 #------------------------------------------------------------------------------
-class Settings_Games(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+class Settings_Games(MenuLink):
+
+    def __init__(self):
+        super(Settings_Games, self).__init__(_(u'Game'))
         foundGames,allGames,name = bush.detectGames()
-        subMenu = wx.Menu()
-        menu.AppendMenu(self.id,_(u'Game'),subMenu)
         for game in foundGames:
             game = game[0].upper()+game[1:]
-            Settings_Game(game).AppendToMenu(subMenu,window,data)
+            self.links.append(Settings_Game(game))
 
-class Settings_Game(Link):
+class Settings_Game(RadioLink):
     def __init__(self,game):
-        Link.__init__(self)
-        self.game = game
+        super(Settings_Game, self).__init__()
+        self.game = self.text = game
+        self.help = _("Restart Wrye Bash to manage %(game)s.") % (
+            {'game': game})
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.game,kind=wx.ITEM_RADIO,
-            help=_("Restart Wrye Bash to manage %(game)s.") % ({'game':self.game}))
-        menu.AppendItem(menuItem)
-        if self.game.lower() == bush.game.fsName.lower():
-            menuItem.Check(True)
+    def _check(self): return self.game.lower() == bush.game.fsName.lower()
 
     def Execute(self,event):
         if self.game.lower() == bush.game.fsName.lower(): return
         bashFrame.Restart(('--game',self.game))
 
 #------------------------------------------------------------------------------
-class Settings_UnHideButtons(Link):
+class Settings_UnHideButtons(TransLink):
     """Menu to unhide a StatusBar button."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+    # TODO(ut): test
+    def _decide(self, window, data):
         hide = settings['bash.statusbar.hide']
         hidden = []
         for link in BashStatusBar.buttons:
             if link.uid in hide:
                 hidden.append(link)
         if hidden:
-            subMenu = wx.Menu()
-            menu.AppendMenu(self.id,_(u'Unhide Buttons'),subMenu)
+            subMenu = MenuLink(_(u'Unhide Buttons'))
             for link in hidden:
-                Settings_UnHideButton(link).AppendToMenu(subMenu,window,data)
+                subMenu.links.append(Settings_UnHideButton(link))
+            return subMenu
         else:
-            menuItem = wx.MenuItem(menu,self.id,_(u'Unhide Buttons'),
-                help=_(u"No hidden buttons available to unhide."))
-            menu.AppendItem(menuItem)
-            menuItem.Enable(False)
+            class _NoButtons(EnabledLink):
+                text = _(u'Unhide Buttons')
+                help = _(u"No hidden buttons available to unhide.")
+                def _enable(self): return False
+            return _NoButtons()
 
 #------------------------------------------------------------------------------
-class Settings_UnHideButton(Link):
+class Settings_UnHideButton(_Link):
     """Unhide a specific StatusBar button."""
     def __init__(self,link):
-        Link.__init__(self)
+        super(Settings_UnHideButton, self).__init__()
         self.link = link
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
         button = self.link.gButton
         # Get a title for the hidden button
         if button:
@@ -8429,11 +8396,10 @@ class Settings_UnHideButton(Link):
             # If the link is an App_Button, it will have a 'tip' attribute
             tip = getattr(self.link,'tip',None)
         if tip is None:
-            # No good, use it's uid as a last resort
+            # No good, use its uid as a last resort
             tip = self.link.uid
-        help = _(u"Unhide the '%s' status bar button.") % tip
-        menuItem = wx.MenuItem(menu,self.id,tip,help)
-        menu.AppendItem(menuItem)
+        self.text = tip
+        self.help = _(u"Unhide the '%s' status bar button.") % tip
 
     def Execute(self,event):
         bashFrame.GetStatusBar().UnhideButton(self.link)
@@ -8449,14 +8415,11 @@ class Settings_UseAltName(BoolLink):
         bashFrame.SetTitle()
 
 #------------------------------------------------------------------------------
-class Settings_UAC(Link):
-    def AppendToMenu(self,menu,window,data):
-        if not isUAC:
-            return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Administrator Mode'),
-                               help=_(u'Restart Wrye Bash with administrator privileges.'))
-        menu.AppendItem(menuItem)
+class Settings_UAC(AppendableLink):
+    text = _(u'Administrator Mode')
+    help = _(u'Restart Wrye Bash with administrator privileges.')
+
+    def _append(self, window): return isUAC
 
     def Execute(self,event):
         if balt.askYes(bashFrame,
@@ -8467,13 +8430,13 @@ class Settings_UAC(Link):
 
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
-class StatusBar_Hide(Link):
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
+class StatusBar_Hide(_Link):
+    def _initData(self, window, data):
+        super(StatusBar_Hide, self)._initData(window, data)
         tip = window.GetToolTip().GetTip()
-        menuItem = wx.MenuItem(menu,self.id,_(u"Hide '%s'") % tip,
-                help=_(u"Hides %(buttonname)s's status bar button (can be restored through the settings menu).") % ({'buttonname':tip}))
-        menu.AppendItem(menuItem)
+        self.text = _(u"Hide '%s'") % tip
+        self.help = _(u"Hides %(buttonname)s's status bar button (can be"
+            u" restored through the settings menu).") % ({'buttonname': tip})
 
     def Execute(self,event):
         sb = bashFrame.GetStatusBar()
