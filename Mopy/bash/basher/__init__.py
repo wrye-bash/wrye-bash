@@ -9376,6 +9376,7 @@ class Mod_ScanDirty(_Link):
 
 # Saves Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+# TODO(ut): oblivion only saves links - subclass AppendableLnk
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
@@ -9549,13 +9550,12 @@ class Saves_Profiles:
             bosh.modInfos.setOblivionVersion(voNew)
 
 #------------------------------------------------------------------------------
-class Save_LoadMasters(Link):
-    """Sets the load list to the save game's masters."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Load Masters'))
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+class Save_LoadMasters(EnabledLink):
+    """Sets the load list to the save game's masters.""" # TODO(ut): test
+    text = _(u'Load Masters')
+    help = _(u"Set the load list to the save game's masters")
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9568,13 +9568,12 @@ class Save_LoadMasters(Link):
             balt.showError(self.window,errorMessage,fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_ImportFace(Link):
+class Save_ImportFace(EnabledLink):
     """Imports a face from another save."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Import Face...'))
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+    text = _(u'Import Face...')
+    help = _(u'Import a face from another save')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -9622,13 +9621,12 @@ class Save_ImportFace(Link):
         dialog.Destroy()
 
 #------------------------------------------------------------------------------
-class Save_RenamePlayer(Link):
+class Save_RenamePlayer(EnabledLink):
     """Renames the Player character in a save game."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Rename Player...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) != 0)
+    text = _(u'Rename Player...')
+    help = _(u'Rename the Player character in a save game')
+
+    def _enable(self): return len(self.data) != 0
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
@@ -9641,13 +9639,12 @@ class Save_RenamePlayer(Link):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
-class Save_ExportScreenshot(Link):
-    """exports the saved screenshot from a save game."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Export Screenshot...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+class Save_ExportScreenshot(EnabledLink):
+    """Exports the saved screenshot from a save game."""
+    text = _(u'Export Screenshot...')
+    help = _(u'Export the saved screenshot from a save game')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
@@ -9659,13 +9656,13 @@ class Save_ExportScreenshot(Link):
         image.SaveFile(imagePath.s,JPEG)
 
 #------------------------------------------------------------------------------
-class Save_DiffMasters(Link):
+class Save_DiffMasters(EnabledLink):
     """Shows how saves masters differ from active mod list."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Diff Masters...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) in (1,2))
+    text = _(u'Diff Masters...')
+    help = _(u"Show how the masters of a save differ from active mod list or"
+             u" another save")
+
+    def _enable(self): return len(self.data) in (1,2)
 
     def Execute(self,event):
         oldNew = map(GPath,self.data)
@@ -9697,13 +9694,11 @@ class Save_DiffMasters(Link):
             balt.showWryeLog(self.window,message,_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------
-class Save_Rename(Link):
+class Save_Rename(EnabledLink):
     """Renames Save File."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) != 0)
+    text = _(u'Rename...')
+    help = _(u'Rename Save File')
+    def _enable(self): return len(self.data) != 0
 
     def Execute(self,event):
         if len(self.data) > 0:
@@ -9712,13 +9707,11 @@ class Save_Rename(Link):
                 self.window.list.EditLabel(index)
 
 #------------------------------------------------------------------------------
-class Save_Renumber(Link):
-    """Renamumbers a whole lot of save files."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Re-number Save(s)...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) != 0)
+class Save_Renumber(EnabledLink):
+    """Renumbers a whole lot of save files."""
+    text = _(u'Re-number Save(s)...')
+    help = _(u'Renumber a whole lot of save files')
+    def _enable(self): return len(self.data) != 0
 
     def Execute(self,event):
         #--File Info
@@ -9843,26 +9836,23 @@ class Save_EditCreatedData(balt.ListEditorData):
             balt.showOk(self.parent, _(u'Names modified: %d.') % count,self.saveFile.fileInfo.name.s)
 
 #------------------------------------------------------------------------------
-class Save_EditCreated(Link):
+class Save_EditCreated(EnabledLink):
     """Allows user to rename custom items (spells, enchantments, etc)."""
     menuNames = {'ENCH':_(u'Rename Enchanted...'),
                  'SPEL':_(u'Rename Spells...'),
                  'ALCH':_(u'Rename Potions...')
                  }
     recordTypes = {'ENCH':('ARMO','CLOT','WEAP')}
+    help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
     def __init__(self,type):
         if type not in Save_EditCreated.menuNames:
             raise ArgumentError
-        Link.__init__(self)
+        super(Save_EditCreated, self).__init__()
         self.type = type
-        self.menuName = Save_EditCreated.menuNames[self.type]
+        self.menuName = self.text = Save_EditCreated.menuNames[self.type]
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id, self.menuName)
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         """Handle menu selection."""
@@ -9922,14 +9912,12 @@ class Save_EditPCSpellsData(balt.ListEditorData):
         self.saveSpells.removePlayerSpells(self.removed)
 
 #------------------------------------------------------------------------------
-class Save_EditPCSpells(Link):
+class Save_EditPCSpells(EnabledLink):
     """Save spell list editing dialog."""
-    def AppendToMenu(self,menu,window,data):
-        """Append ref replacer items to menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Delete Spells...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+    text = _(u'Delete Spells...')
+    # TODO(ut): help + AppendtoMenu had : """Append ref replacer items to menu."""
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9938,14 +9926,12 @@ class Save_EditPCSpells(Link):
         balt.ListEditor.Display(self.window, _(u'Player Spells'), data)
 
 #------------------------------------------------------------------------------
-class Save_EditCreatedEnchantmentCosts(Link):
+class Save_EditCreatedEnchantmentCosts(EnabledLink):
     """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
-    def AppendToMenu(self,menu,window,data):
-        """Append to menu."""
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Set Number of Uses for Weapon Enchantments...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+    text = _(u'Set Number of Uses for Weapon Enchantments...')
+    help = _(u'Set number of uses for Cast When Used Enchantments')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -10034,13 +10020,13 @@ class Save_Move:
             balt.showInfo(self.window,_(u'%d files copied to %s.') % (count,profile),_(u'Copy File'))
 
 #------------------------------------------------------------------------------
-class Save_RepairAbomb(Link):
-    """Repairs animation slowing by resetting counter(?) at end of TesClass data."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Repair Abomb'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+class Save_RepairAbomb(EnabledLink):
+    """Repairs animation slowing by resetting counter(?) at end of TesClass
+    data."""
+    text = _(u'Repair Abomb')
+    help = _(u'Repair animation slowing')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -10067,13 +10053,13 @@ class Save_RepairAbomb(Link):
 
 #------------------------------------------------------------------------------
 ## TODO: This is probably unneccessary now.  v105 was a long time ago
-class Save_RepairFactions(Link):
+class Save_RepairFactions(EnabledLink): # TODO: CRUFT
     """Repair factions from v 105 Bash error, plus mod faction changes."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Repair Factions'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(bosh.modInfos.ordered) and len(data) == 1)
+    text = _(u'Repair Factions')
+    help =_(u'Repair factions from v 105 Bash error, plus mod faction changes')
+
+    def _enable(self):
+        return bool(bosh.modInfos.ordered) and len(self.data) == 1
 
     def Execute(self,event):
         debug = False
@@ -10202,13 +10188,12 @@ class Save_RepairFactions(Link):
         log.out.close()
 
 #------------------------------------------------------------------------------
-class Save_RepairHair(Link):
+class Save_RepairHair(EnabledLink):
     """Repairs hair that has been zeroed due to removal of a hair mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Repair Hair'))
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+    text = _(u'Repair Hair')
+    help = _(u'Repair hair that has been zeroed due to removal of a hair mod.')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -10220,13 +10205,12 @@ class Save_RepairHair(Link):
             balt.showOk(self.window,_(u'No repair necessary.'),fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_ReweighPotions(Link):
+class Save_ReweighPotions(EnabledLink):
     """Changes weight of all player potions to specified value."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Reweigh Potions...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) == 1)
+    text = _(u'Reweigh Potions...')
+    help = _(u'Change weight of all player potions to specified value')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--Query value
@@ -10267,13 +10251,12 @@ class Save_ReweighPotions(Link):
                 balt.showOk(self.window,_(u'No potions to reweigh!'),fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_Stats(Link):
+class Save_Stats(EnabledLink):
     """Show savefile statistics."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Statistics'))
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+    text = _(u'Statistics')
+    help = _(u'Show savefile statistics')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -10289,25 +10272,22 @@ class Save_Stats(Link):
             balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Save_StatObse(Link):
+class Save_StatObse(AppendableLink, EnabledLink):
     """Dump .obse records."""
-    def AppendToMenu(self,menu,window,data):
-        if bush.game.se.shortName == '': return
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'.%s Statistics') % bush.game.se.shortName.lower())
-        menu.AppendItem(menuItem)
-        if len(data) != 1:
-            menuItem.Enable(False)
-        else:
-            fileName = GPath(self.data[0])
-            fileInfo = self.window.data[fileName]
-            fileName = fileInfo.getPath().root+u'.'+bush.game.se.shortName
-            menuItem.Enable(fileName.exists())
+    text = _(u'.%s Statistics') % bush.game.se.shortName.lower()
+    help = _(u'Dump .%s records') % bush.game.se.shortName.lower()
+
+    def _append(self, window): return bool(bush.game.se.shortName)
+
+    def _enable(self):
+        if len(self.data) != 1: return False
+        self.fileName = GPath(self.data[0])
+        self.fileInfo = self.window.data[self.fileName]
+        fileName = self.fileInfo.getPath().root + u'.' + bush.game.se.shortName
+        return fileName.exists()
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = self.window.data[fileName]
-        saveFile = bosh.SaveFile(fileInfo)
+        saveFile = bosh.SaveFile(self.fileInfo)
         with balt.Progress(u'.'+bush.game.se.shortName) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(StringIO.StringIO())
@@ -10315,16 +10295,17 @@ class Save_StatObse(Link):
             saveFile.logStatObse(log)
         text = log.out.getvalue()
         log.out.close()
-        balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window, text, self.fileName.s, asDialog=False,
+                     fixedFont=False, icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Save_Unbloat(Link):
+class Save_Unbloat(EnabledLink):
     """Unbloats savegame."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Remove Bloat...'))
-        menu.AppendItem(menuItem)
-        if len(data) != 1: menuItem.Enable(False)
+    text = _(u'Remove Bloat...')
+    help = _(u'Unbloat savegame. Experimental ! Back up your saves before'
+             u' using it on them')
+
+    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -10368,13 +10349,12 @@ class Save_Unbloat(Link):
         self.window.RefreshUI(saveName)
 
 #------------------------------------------------------------------------------
-class Save_UpdateNPCLevels(Link):
+class Save_UpdateNPCLevels(EnabledLink):
     """Update NPC levels from active mods."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Update NPC Levels...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(data and bosh.modInfos.ordered))
+    text = _(u'Update NPC Levels...')
+    help = _(u'Update NPC levels from active mods')
+
+    def _enable(self): return (bool(self.data and bosh.modInfos.ordered))
 
     def Execute(self,event):
         debug = True
@@ -10695,13 +10675,12 @@ class People_Karma(Link):
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Master_ChangeTo(Link):
+class Master_ChangeTo(EnabledLink):
     """Rename/replace master through file dialog."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Change to..."))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(self.window.edited)
+    text = _(u"Change to...")
+    help = _(u"Rename/replace master through file dialog")
+
+    def _enable(self): return self.window.edited
 
     def Execute(self,event):
         itemId = self.data[0]
