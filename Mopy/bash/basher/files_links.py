@@ -38,7 +38,7 @@ class Files_Open(_Link):
     text = _(u'Open...')
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(Files_Open, self)._initData(window, data)
         self.help = _(u"Open '%s'") % window.data.dir.tail
 
     def Execute(self,event):
@@ -50,17 +50,15 @@ class Files_Open(_Link):
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
 
-    def __init__(self,sortCol,prefix=''):
-        _Link.__init__(self)
+    def __init__(self, sortCol, prefix=''):
+        super(Files_SortBy, self).__init__()
         self.sortCol = sortCol
         self.sortName = bosh.settings['bash.colNames'][sortCol]
         self.prefix = prefix
         self.text = self.prefix + self.sortName
         self.help = _(u'Sort by %s') % self.sortName
 
-    def AppendToMenu(self,menu,window,data): # TODO(ut) AppendToMenu
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if window.sort == self.sortCol: menuItem.Check()
+    def _check(self): return self.window.sort == self.sortCol
 
     def Execute(self,event):
         if hasattr(self, 'gTank'):
@@ -70,10 +68,11 @@ class Files_SortBy(RadioLink):
 
 class Files_Unhide(_Link):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
-    def __init__(self,type):
-        _Link.__init__(self)
-        self.type = type
-        self.text = _(u"Unhide...")
+    text = _(u"Unhide...")
+
+    def __init__(self, type_):
+        super(Files_Unhide, self).__init__()
+        self.type = type_
         self.help = _(u"Unhides hidden %ss.") % self.type
 
     def Execute(self,event):
@@ -146,7 +145,7 @@ class File_Delete(_Link):
     text = _(u'Delete')
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(File_Delete, self)._initData(window, data)
         self.help = _(u"Delete %(filename)s.") % ({'filename': data[0]})
 
     def Execute(self,event):
@@ -171,7 +170,7 @@ class File_Duplicate(_Link):
     """Create a duplicate of the file."""
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(File_Duplicate, self)._initData(window, data)
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(data) == 1]
         self.help = _(u"Make a copy of '%s'") % (data[0])
 
@@ -238,8 +237,9 @@ class File_Hide(_Link):
     text = _(u'Hide')
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
-        self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % ({'filename':data[0]})
+        super(File_Hide, self)._initData(window, data)
+        self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % (
+            {'filename': data[0]})
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -275,8 +275,10 @@ class File_ListMasters(EnabledLink):
     text = _(u"List Masters...")
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
-        self.help = _(u"Copies list of %(filename)s's masters to the clipboard.") % ({'filename':data[0]})
+        super(File_ListMasters, self)._initData(window, data)
+        self.help = _(
+            u"Copies list of %(filename)s's masters to the clipboard.") % (
+                        {'filename': data[0]})
 
     def _enable(self): return len(self.data) == 1
 
@@ -294,7 +296,7 @@ class File_Redate(_Link):
 
     def AppendToMenu(self,menu,window,data):
         if not bosh.lo.LoadOrderMethod == bosh.liblo.LIBLO_METHOD_TEXTFILE:
-            _Link.AppendToMenu(self,menu,window,data)
+            return super(File_Redate, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         #--Get current start time.
@@ -364,7 +366,7 @@ class File_Snapshot(_Link):
     help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(File_Snapshot, self)._initData(window, data)
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
 
     def Execute(self,event):
@@ -449,7 +451,7 @@ class File_Open(EnabledLink):
     text = _(u'Open...')
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(File_Open, self)._initData(window, data)
         self.help = _(u"Open '%s' with the system's default program.") % data[
             0] if len(data) == 1 else _(u'Open the selected files.')
 

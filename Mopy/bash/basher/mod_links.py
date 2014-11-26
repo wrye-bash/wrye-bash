@@ -201,7 +201,8 @@ class MasterList_CleanMasters(_Link):
 
     def AppendToMenu(self,menu,window,data):
         if not bosh.settings['bash.CBashEnabled']: return
-        _Link.AppendToMenu(self,menu,window,data)
+        return super(MasterList_CleanMasters, self).AppendToMenu(menu, window,
+                                                                 data)
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")
@@ -585,7 +586,7 @@ class Mod_Ghost(EnabledLink):
 
     def AppendToMenu(self,menu,window,data):
         # if not len(data) == 1: return
-        return EnabledLink.AppendToMenu(self,menu,window,data)
+        return super(Mod_Ghost, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         files = []
@@ -667,7 +668,7 @@ class Mod_SkipDirtyCheckAll(CheckLink):
              u"dirty mod list")
 
     def __init__(self, bSkip):
-        CheckLink.__init__(self)
+        super(Mod_SkipDirtyCheckAll, self).__init__()
         self.skip = bSkip
         self.text = _(
             u"Don't check against LOOT's dirty mod list") if self.skip else _(

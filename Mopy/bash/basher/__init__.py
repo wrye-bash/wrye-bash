@@ -5266,19 +5266,13 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
-class CheckList_SelectAll(Link):
-    def __init__(self,select=True):
-        Link.__init__(self)
-        self.select = select
+from ..balt import _Link
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if self.select:
-            text = _(u'Select All')
-        else:
-            text = _(u'Select None')
-        menuItem = wx.MenuItem(menu,self.id,text)
-        menu.AppendItem(menuItem)
+class CheckList_SelectAll(_Link):
+    def __init__(self,select=True):
+        super(CheckList_SelectAll, self).__init__()
+        self.select = select
+        self.text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self,event):
         for i in xrange(self.window.GetCount()):
@@ -7663,7 +7657,7 @@ def SetUAC(item):
         else:
             balt.setUAC(item,isUAC)
 
-from ..balt import _Link, EnabledLink, BoolLink, RadioLink, CheckLink
+from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink
 
 #------------------------------------------------------------------------------
 class File_RevertToBackup:
@@ -7712,21 +7706,20 @@ class File_RevertToBackup:
                 self.window.RefreshUI(fileName)
 
 #------------------------------------------------------------------------------
-class List_Column(CheckLink):
+class List_Column(CheckLink, EnabledLink):
 
     def __init__(self,columnsKey,allColumnsKey,colName,enable=True):
-        Link.__init__(self)
+        super(List_Column, self).__init__()
         self.colName = colName
         self.columnsKey = columnsKey
         self.allColumnsKey = allColumnsKey
         self.enable = enable
-
-    def AppendToMenu(self,menu,window,data): # TODO(ut) MI with Enabled
         self.text = settings['bash.colNames'][self.colName]
         self.help = _(u"Show/Hide '%s' column.") % self.text
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(self.enable)
-        menuItem.Check(self.colName in settings[self.columnsKey])
+
+    def _enable(self): return self.enable
+
+    def _check(self): return self.colName in settings[self.columnsKey]
 
     def Execute(self,event):
         if self.colName in settings[self.columnsKey]:
@@ -7744,7 +7737,7 @@ class List_Columns(MenuLink):
     text = _(u"Columns")
 
     def __init__(self,columnsKey,allColumnsKey,persistantColumns=()):
-        balt.MenuLink.__init__(self, self.__class__.text)
+        super(List_Columns, self).__init__(self.__class__.text)
         self.columnsKey = columnsKey
         self.allColumnsKey = allColumnsKey
         self.persistant = persistantColumns
@@ -8692,7 +8685,7 @@ class Mod_CopyToEsmp(EnabledLink):
     """Create an esp(esm) copy of selected esm(esp)."""
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(Mod_CopyToEsmp, self)._initData(window, data)
         fileInfo = bosh.modInfos[data[0]]
         self.isEsm = fileInfo.isEsm()
         self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
@@ -8768,7 +8761,7 @@ class Mod_FlipMasters(EnabledLink):
     """Swaps masters between esp and esm versions."""
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(Mod_FlipMasters, self)._initData(window, data)
         #--FileInfo
         self.fileName = fileName = GPath(self.data[0]) # TODO(ut): was data[0]
         self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
@@ -8812,7 +8805,7 @@ class Mod_FlipSelf(EnabledLink):
     """Flip an esp(esm) to an esm(esp)."""
 
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        super(Mod_FlipSelf, self)._initData(window, data)
         fileInfo = bosh.modInfos[data[0]]
         self.isEsm = fileInfo.isEsm()
         self.text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
@@ -8990,7 +8983,7 @@ class Mod_Groups_Export(EnabledLink):
 
     def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
         data = bosh.ModGroups.filter(data)
-        return EnabledLink.AppendToMenu(self,menu,window,data)
+        return super(Mod_Groups_Export, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -9019,7 +9012,7 @@ class Mod_Groups_Import(EnabledLink):
 
     def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
         data = bosh.ModGroups.filter(data)
-        return EnabledLink.AppendToMenu(self,menu,window,data)
+        return super(Mod_Groups_Import, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
@@ -9309,31 +9302,37 @@ class _Mod_BP_Link(EnabledLink):
 class Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
     def __init__(self,doCBash=False):
-        Link.__init__(self)
+        super(Mod_Patch_Update, self).__init__()
         self.doCBash = doCBash
         self.CBashMismatch = False
         self.text = _(u'Rebuild Patch (CBash *BETA*)...') if doCBash else _(
             u'Rebuild Patch...')
+        self.help = _(u'Rebuild the Bashed Patch (CBash)') if doCBash else _(
+                    u'Rebuild the Bashed Patch')
 
     def _initData(self, window, data):
-        Link._initData(self, window, data)
-        enable = self._enable()
+        super(Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
         thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
-        if enable and settings['bash.CBashEnabled']:
-            self.kind = wx.ITEM_RADIO
 
     def _check(self):
         return self._enable() and settings[
             'bash.CBashEnabled'] and not self.CBashMismatch
 
-    def AppendToMenu(self,menu,window,data): # TODO(ut): MI
-        """Append link to a menu."""
-        menuItem = _Mod_BP_Link.AppendToMenu(self,menu,window,data)
-        if self.kind == wx.ITEM_RADIO: menuItem.Check(self._check()) # FIXME(ut)
-        return menuItem
+    def AppendToMenu(self,menu,window,data):
+        """Append a radio button if CBash is enabled a simple item otherwise."""
+        self._initData(window, data)
+        if self._enable() and settings['bash.CBashEnabled']:
+            _self = self
+            class _CheckLink(RadioLink):
+                text = _self.text
+                help = _self.help
+                def _check(self): return _self._check()
+                def Execute(self, event): _self.Execute(event)
+            return (_CheckLink()).AppendToMenu(menu,window,data)
+        return super(Mod_Patch_Update, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         """Handle activation event."""
@@ -9623,7 +9622,7 @@ class Mod_SetVersion(EnabledLink):
     help = _(u'Sets version of file back to 0.8')
 
     def _initData(self, window, data):
-        Link._initData(self, window, data)
+        super(Mod_SetVersion, self)._initData(window, data)
         self.fileInfo = window.data[data[0]]
 
     def _enable(self):
@@ -9774,7 +9773,7 @@ class Mod_ScanDirty(_Link):
              u' and ITM records')
 
     def _initData(self, window, data):
-        Link._initData(self,window,data)
+        super(Mod_ScanDirty, self)._initData(window, data)
         # settings['bash.CBashEnabled'] is set once in BashApp.Init() AFTER
         # InitLinks() is called in bash.py
         self.text = _(u'Scan for Dirty Edits') if settings[

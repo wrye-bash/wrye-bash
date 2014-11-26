@@ -25,7 +25,7 @@ from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle
 from .. import bosh, bolt, balt, bass
 import locale
 import sys
-from ..balt import _Link, CheckLink, BoolLink
+from ..balt import _Link, CheckLink, BoolLink, EnabledLink
 from ..bolt import deprint, GPath
 
 modList = None
@@ -34,8 +34,8 @@ class Mods_EsmsFirst(CheckLink):
     """Sort esms to the top."""
     help = _(u'Sort masters by type')
 
-    def __init__(self,prefix=u''):
-        CheckLink.__init__(self)
+    def __init__(self, prefix=u''):
+        super(Mods_EsmsFirst, self).__init__()
         self.prefix = prefix
         self.text = self.prefix + _(u'Type')
 
@@ -50,8 +50,8 @@ class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
     help = _(u'Sort loaded mods to the top')
 
-    def __init__(self,prefix=u''):
-        CheckLink.__init__(self)
+    def __init__(self, prefix=u''):
+        super(Mods_SelectedFirst, self).__init__()
         self.prefix = prefix
         self.text = self.prefix + _(u'Selection')
 
@@ -136,7 +136,8 @@ class Mods_DumpTranslator(_Link):
     def AppendToMenu(self,menu,window,data):
         if not hasattr(sys,'frozen'):
             # Can't dump the strings if the files don't exist.
-            _Link.AppendToMenu(self,menu,window,data)
+            return super(Mods_DumpTranslator, self).AppendToMenu(menu, window,
+                                                                 data)
 
     def Execute(self,event):
         message = (_(u'Generate Bash program translator file?')
@@ -213,19 +214,20 @@ class Mods_LockTimes(CheckLink):
         modList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Mods_OblivionVersion(CheckLink):
+class Mods_OblivionVersion(CheckLink, EnabledLink):
     """Specify/set Oblivion version."""
     help = _(u'Specify/set Oblivion version')
 
-    def __init__(self,key,setProfile=False):
-        CheckLink.__init__(self)
+    def __init__(self, key, setProfile=False):
+        super(Mods_OblivionVersion, self).__init__()
         self.key = self.text = key
         self.setProfile = setProfile
 
-    def AppendToMenu(self,menu,window,data): # TODO(ut): MI with enabled
-        menuItem = CheckLink.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(bosh.modInfos.voCurrent is not None and self.key in bosh.modInfos.voAvailable)
-        if bosh.modInfos.voCurrent == self.key: menuItem.Check()
+    def _check(self): return bosh.modInfos.voCurrent == self.key
+
+    def _enable(self):
+        return bosh.modInfos.voCurrent is not None \
+                          and self.key in bosh.modInfos.voAvailable
 
     def Execute(self,event):
         """Handle selection."""

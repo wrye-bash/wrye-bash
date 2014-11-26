@@ -26,11 +26,10 @@ import copy
 import re
 import webbrowser
 import wx
-# TODO(ut): avoid importing Link - one reason are the wx.check items, another is Open
 from . import settingDefaults, bashBlue, refreshData, \
     InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
-from ..balt import _Link, Link, EnabledLink
+from ..balt import EnabledLink, CheckLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
@@ -109,7 +108,7 @@ class Installer_EditWizard(_InstallerLink):
             self.data[self.selected[0]].hasWizard)
 
     def _initData(self, window, data):
-        Link._initData(self, window, data)
+        super(Installer_EditWizard, self)._initData(window, data)
         self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
 
@@ -144,7 +143,7 @@ class Installer_Wizard(_InstallerLink):
                                         self.selected[0]]).hasWizard != False
 
     def __init__(self, bAuto):
-        _InstallerLink.__init__(self)
+        super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
         self.text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
 
@@ -331,11 +330,12 @@ class Installer_Duplicate(_InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')
 
-    def AppendToMenu(self,menu,window,data): # TODO(ut) MI
-        self._initData(window, data)
-        self.help = _(u"Duplicate selected %(installername)s.") % ({'installername':self.selected[0]})
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(self.isSingle() and not self.isSingleMarker())
+    def _initData(self,window,data):
+        super(Installer_Duplicate, self)._initData(window, data)
+        self.help = _(u"Duplicate selected %(installername)s.") % (
+            {'installername': self.selected[0]})
+
+    def _enable(self): return self.isSingle() and not self.isSingleMarker()
 
     def Execute(self,event):
         """Handle selection."""
@@ -429,20 +429,15 @@ class Installer_Rename(_InstallerLink):
             if index != -1:
                 self.gTank.gList.EditLabel(index)
 
-class Installer_HasExtraData(_InstallerLink):
+class Installer_HasExtraData(CheckLink, _InstallerLink):
     """Toggle hasExtraData flag on installer."""
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
-    kind = wx.ITEM_CHECK
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleInstallable():
-            installer = self.data[self.selected[0]]
-            menuItem.Check(installer.hasExtraData)
-            menuItem.Enable(True)
-        else:
-            menuItem.Enable(False)
+    def _enable(self): return self.isSingleInstallable()
+
+    def _check(self): return self.isSingleInstallable() and (
+        self.data[self.selected[0]]).hasExtraData
 
     def Execute(self,event):
         """Handle selection."""
@@ -453,24 +448,21 @@ class Installer_HasExtraData(_InstallerLink):
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
 
-class Installer_OverrideSkips(_InstallerLink):
+class Installer_OverrideSkips(CheckLink, _InstallerLink):
     """Toggle overrideSkips flag on installer."""
     text = _(u'Override Skips')
     help = _(u"Allow installation of files in non-standard directories.")
-    kind = wx.ITEM_CHECK
 
-    def AppendToMenu(self,menu,window,data):
-        self._initData(window, data)
+    def _initData(self, window, data):
+        super(Installer_OverrideSkips, self)._initData(window, data)
         self.help = _(
             u"Override global file type skipping for %(installername)s.") % (
                     {'installername': self.selected[0]})
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleInstallable():
-            installer = self.data[self.selected[0]]
-            menuItem.Check(installer.overrideSkips)
-            menuItem.Enable(True)
-        else:
-            menuItem.Enable(False)
+
+    def _enable(self): return self.isSingleInstallable()
+
+    def _check(self): return self.isSingleInstallable() and (
+        self.data[self.selected[0]]).overrideSkips
 
     def Execute(self,event):
         """Handle selection."""
@@ -481,20 +473,15 @@ class Installer_OverrideSkips(_InstallerLink):
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
 
-class Installer_SkipRefresh(_InstallerLink):
+class Installer_SkipRefresh(CheckLink, _InstallerLink):
     """Toggle skipRefresh flag on installer."""
     text = _(u"Don't Refresh")
     help = _(u"Don't automatically refresh project.")
-    kind = wx.ITEM_CHECK
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleProject():
-            installer = self.data[self.selected[0]]
-            menuItem.Check(installer.skipRefresh)
-            menuItem.Enable(True)
-        else:
-            menuItem.Enable(False)
+    def _enable(self): return self.isSingleProject()
+
+    def _check(self): return self.isSingleProject() and (
+        self.data[self.selected[0]]).skipRefresh
 
     def Execute(self,event):
         """Handle selection."""
@@ -515,13 +502,11 @@ class Installer_Install(_InstallerLink):
     mode_title = {'DEFAULT':_(u'Install'),'LAST':_(u'Install Last'),'MISSING':_(u'Install Missing')}
 
     def __init__(self,mode='DEFAULT'):
-        _Link.__init__(self)
+        super(Installer_Install, self).__init__()
         self.mode = mode
-
-    def AppendToMenu(self,menu,window,data):
         self.text = self.mode_title[self.mode]
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        menuItem.Enable(len(self.filterInstallables()))
+
+    def _enable(self): return len(self.filterInstallables())
 
     def Execute(self,event):
         """Handle selection."""
@@ -609,16 +594,20 @@ class Installer_Move(_InstallerLink):
         self.data.refresh(what='N')
         self.gTank.RefreshUI()
 
-class Installer_Open(_Link): # TODO(ut): ex Tank_Open and now Link subclass...
+class Installer_Open(EnabledLink):
     """Open selected file(s)."""
     text = _(u'Open...')
 
-    def AppendToMenu(self,menu,window,data):
+    def _initData(self, window, data):
+        super(Installer_Open, self)._initData(window, data)
         self.help = _(u"Open '%s'") % data[0] if len(data) == 1 else _(
             u"Open selected files.")
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        self.selected = [x for x in self.selected if not isinstance(self.data.data[x],bosh.InstallerMarker)]
-        menuItem.Enable(bool(self.selected))
+        self.selected = [x for x in self.selected if
+                         not isinstance(self.data.data[x],
+                                        bosh.InstallerMarker)]
+
+
+    def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
         """Handle selection."""
@@ -657,7 +646,8 @@ class Installer_OpenNexus(_Installer_OpenAt):
 
     def AppendToMenu(self,menu,window,data):
         if not bush.game.nexusUrl: return
-        _Installer_OpenAt.AppendToMenu(self, menu, window, data)
+        return super(Installer_OpenNexus, self).AppendToMenu(menu, window,
+                                                             data)
 
 class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
@@ -722,19 +712,14 @@ class Installer_Refresh(_InstallerLink):
         self.data.refresh(what='NSC')
         self.gTank.RefreshUI()
 
-class Installer_SkipVoices(_InstallerLink):
+class Installer_SkipVoices(CheckLink, _InstallerLink):
     """Toggle skipVoices flag on installer."""
     text = _(u'Skip Voices')
-    kind = wx.ITEM_CHECK
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
-        if self.isSingleInstallable():
-            installer = self.data[self.selected[0]]
-            menuItem.Check(installer.skipVoices)
-            menuItem.Enable(True)
-        else:
-            menuItem.Enable(False)
+    def _enable(self): return self.isSingleInstallable()
+
+    def _check(self): return self.isSingleInstallable() and (
+        self.data[self.selected[0]]).skipVoices
 
     def Execute(self,event):
         """Handle selection."""
@@ -1033,7 +1018,8 @@ class InstallerArchive_Unpack(_InstallerLink):
     def AppendToMenu(self,menu,window,data):
         self._initData(window, data)
         if not self.isSelectedArchives(): return
-        _InstallerLink.AppendToMenu(self,menu,window,data)
+        return super(InstallerArchive_Unpack, self).AppendToMenu(menu, window,
+                                                                 data)
 
     def Execute(self,event):
         if self.isSingleArchive():
@@ -1155,7 +1141,8 @@ class InstallerProject_Pack(_InstallerLink):
         #--Pack is appended whenever Unpack isn't, and vice-versa
         self._initData(window, data)
         if not self.isSingleProject(): return
-        _InstallerLink.AppendToMenu(self,menu,window,data)
+        return super(InstallerProject_Pack, self).AppendToMenu(menu, window,
+                                                                 data)
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
@@ -1279,7 +1266,7 @@ class InstallerConverter_Apply(_InstallerLink):
     dialogTitle = _(u'Apply BCF...') # title used in dialog
 
     def __init__(self,converter,numAsterisks):
-        _InstallerLink.__init__(self)
+        super(InstallerConverter_Apply, self).__init__()
         self.converter = converter
         #--Add asterisks to indicate the number of unselected archives that the BCF uses
         self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))

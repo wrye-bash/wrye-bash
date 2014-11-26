@@ -207,8 +207,8 @@ class Installers_UninstallAllPackages(_Link):
 
 class Installers_Refresh(_Link):
     """Refreshes all Installers data."""
-    def __init__(self,fullRefresh=False):
-        _Link.__init__(self)
+    def __init__(self, fullRefresh=False):
+        super(Installers_Refresh, self).__init__()
         self.fullRefresh = fullRefresh
         self.text = (_(u'Refresh Data'),_(u'Full Refresh'))[self.fullRefresh]
         self.help = _(
@@ -304,7 +304,8 @@ class Installers_AutoRefreshBethsoft(BoolLink):
     key = 'bash.installers.autoRefreshBethsoft'
     help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
 
-    def __init__(self): BoolLink.__init__(self,True)
+    def __init__(self):
+        super(Installers_AutoRefreshBethsoft, self).__init__(True)
 
     def Execute(self,event):
         if not bosh.settings[self.key]:

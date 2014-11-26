@@ -2111,14 +2111,27 @@ class Links(list):
         menu.Destroy()
 
 #------------------------------------------------------------------------------
-class Link:
-    """Link is a command to be encapsulated in a graphic element (menu item, button, etc.)"""
+class Link(object):
+    """Link is a command to be encapsulated in a graphic element (menu item,
+    button, etc.).
+
+    Link objects are instantiated once in InitLinks() and then when the menu
+    is popped up their AppendToMenu method creates a wx MenuItem or submenu.
+    AppendToMenu initializes the Link instance data calling _initData
+    (basically the items that are selected + some more if the window owning the
+    menu is a Tank instance) to be used in the Execute method and also in some
+    cases to decide if the menu item is enabled, checked etc (see subclasses).
+    The only valid reason to override AppendToMenu is to prevent the menu to be
+    appended.
+    """ # TODO(ut): eliminate overrides of AppendToMenu
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
 
     def __init__(self):
         self.id = None
-        self._dataInitialized = False
+        self._dataInitialized = False  # TODO(ut): bin - only useful when we
+        # override AppendToMenu and call _initData AND super.AppendToMenu
+        # directly (InstallerArchive_Unpack, InstallerProject_Pack, ...?)
 
     def _initData(self, window, data):
         """Hack to separate data from presentation"""
@@ -2170,39 +2183,34 @@ class _Link(Link): # TODO: merge with balt.Link !
     # subclasses MUST define self.text, self.help OR override AppendToMenu()
 
     def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help, self.kind)
+        super(_Link, self).AppendToMenu(menu, window, data)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
+                               self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
 
-class RadioLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
-    kind = wx.ITEM_RADIO
-
-class CheckLink(_Link): # TODO(ut): MI (so I can use them with InstallerLink subclasses)
+class CheckLink(_Link):
     kind = wx.ITEM_CHECK
 
     def _check(self): return True
 
     def AppendToMenu(self,menu,window,data):
-        menuItem = _Link.AppendToMenu(self,menu,window,data)
+        menuItem = super(CheckLink, self).AppendToMenu(menu, window, data)
         menuItem.Check(self._check())
         return menuItem
+
+class RadioLink(CheckLink):
+    kind = wx.ITEM_RADIO
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
     text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
 
     def __init__(self, opposite=False):
-        Link.__init__(self)
+        super(BoolLink, self).__init__()
         self.opposite = opposite
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu, self.id, self.__class__.text,
-                               self.__class__.help, self.__class__.kind)
-        menu.AppendItem(menuItem)
-        menuItem.Check(bosh.settings[self.key] ^ self.opposite)
-        return menuItem
+    def _check(self): return bosh.settings[self.key] ^ self.opposite
 
     def Execute(self,event):
         bosh.settings[self.key] ^= True
@@ -2222,7 +2230,7 @@ class EnabledLink(_Link):
         return True
 
     def AppendToMenu(self, menu, window, data):
-        menuItem = _Link.AppendToMenu(self, menu, window, data)
+        menuItem = super(EnabledLink, self).AppendToMenu(menu, window, data)
         menuItem.Enable(self._enable())
         return menuItem
 
@@ -2243,7 +2251,7 @@ class MenuLink(Link):
 
     def __init__(self,name,oneDatumOnly=False):
         """Initialize. Submenu items should append to self.links."""
-        Link.__init__(self)
+        super(MenuLink, self).__init__()
         self.text = name # class attribute really (see _Link)
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
@@ -2251,7 +2259,7 @@ class MenuLink(Link):
     def AppendToMenu(self,menu,window,data):
         """Add self as submenu (along with submenu items) to menu."""
         # notice that by calling Link.Append a bunch of wx lines are run
-        Link.AppendToMenu(self,menu,window,data)
+        super(MenuLink, self).AppendToMenu(menu, window, data)
         subMenu = wx.Menu()
         menu.AppendMenu(self.id, self.text, subMenu)
         if not self._enable():

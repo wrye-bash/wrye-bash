@@ -85,7 +85,7 @@ class INI_ListErrors(EnabledLink):
 class INI_FileOpenOrCopy(EnabledLink):
     """Open specified file(s) only if they aren't Bash supplied defaults."""
     def _initData(self, window, data):
-        Link._initData(self,window,data)
+        super(INI_FileOpenOrCopy, self)._initData(window, data)
         if not len(data) == 1:
             self.text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
@@ -118,7 +118,7 @@ class INI_Delete(EnabledLink):
     text = _(u"Delete")
 
     def _initData(self, window, data):
-        Link._initData(self,window,data)
+        super(INI_Delete, self)._initData(window, data)
         self.isFile = bosh.dirs['tweaks'].join(data[0]).isfile()
         self.help = _(u"Delete %(filename)s.") % (
         {'filename': data[0]}) if self.isFile else _(
@@ -147,7 +147,7 @@ class INI_Apply(EnabledLink):
     text = _(u'Apply')
 
     def _initData(self, window, data):
-        Link._initData(self,window,data)
+        super(INI_Apply, self)._initData(window, data)
         self.iniPanel = self.window.GetParent().GetParent().GetParent()
         ini = self.iniPanel.comboBox.GetValue()
         if len(data) == 1:
