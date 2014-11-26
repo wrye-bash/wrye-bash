@@ -4457,6 +4457,11 @@ class PeoplePanel(SashTankPanel):
         left.SetSizer(vSizer((self.gList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
+    def OnShow(self):
+        if bosh.inisettings['AutoSizeListColumns']:
+            for i in xrange(self.gList.gList.GetColumnCount()): # TODO(ut): self.gList.gList ????
+                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
+
     def SetStatusCount(self):
         """Sets status bar count field."""
         text = _(u'People:')+u' %d' % len(self.data.data)
