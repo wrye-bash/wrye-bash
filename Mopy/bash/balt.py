@@ -2251,6 +2251,17 @@ class EnabledLink(_Link):
         menuItem.Enable(self._enable())
         return menuItem
 
+class AppendableLink(_Link):
+    """A menu item that may be appended to a Menu or not."""
+
+    def _append(self, window):
+        """"Override as needed to append or not the menu item."""
+        raise AbstractError
+
+    def AppendToMenu(self,menu,window,data):
+        if not self._append(window): return
+        return super(AppendableLink, self).AppendToMenu(menu, window, data)
+
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
 

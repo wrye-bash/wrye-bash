@@ -7657,7 +7657,7 @@ def SetUAC(item):
         else:
             balt.setUAC(item,isUAC)
 
-from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink
+from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink, AppendableLink
 
 #------------------------------------------------------------------------------
 class File_RevertToBackup:
@@ -11217,14 +11217,14 @@ class Master_ChangeTo(Link):
         settings.getChanged('bash.mods.renames')[masterName] = newName
 
 #------------------------------------------------------------------------------
-class Master_Disable(Link):
+class Master_Disable(AppendableLink, EnabledLink):
     """Rename/replace master through file dialog."""
-    def AppendToMenu(self,menu,window,data):
-        if window.fileInfo.isMod(): return #--Saves only
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u"Disable"))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(self.window.edited)
+    text = _(u"Disable")
+    help = _(u"Disable master")
+
+    def _append(self, window): return not window.fileInfo.isMod() #--Saves only
+
+    def _enable(self): return self.window.edited
 
     def Execute(self,event):
         itemId = self.data[0]

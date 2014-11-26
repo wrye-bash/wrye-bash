@@ -26,7 +26,7 @@ import StringIO
 import os
 import wx
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
-    spacer, hSizer, button, CheckLink, EnabledLink
+    spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError
 from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, refreshData
 from ..bosh import formatDate, formatInteger
@@ -195,14 +195,11 @@ class MasterList_AddMasters(_Link):
         self.window.InitEdit()
 
 #------------------------------------------------------------------------------
-class MasterList_CleanMasters(_Link):
+class MasterList_CleanMasters(AppendableLink):
     """Remove unneeded masters."""
     text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
 
-    def AppendToMenu(self,menu,window,data):
-        if not bosh.settings['bash.CBashEnabled']: return
-        return super(MasterList_CleanMasters, self).AppendToMenu(menu, window,
-                                                                 data)
+    def _append(self, window): return bosh.settings['bash.CBashEnabled']
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")

@@ -25,7 +25,7 @@ from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle
 from .. import bosh, bolt, balt, bass
 import locale
 import sys
-from ..balt import _Link, CheckLink, BoolLink, EnabledLink
+from ..balt import _Link, CheckLink, BoolLink, EnabledLink, AppendableLink
 from ..bolt import deprint, GPath
 
 modList = None
@@ -128,16 +128,14 @@ class Mods_FullBalo(BoolLink):
             bosh.modInfos.refresh(doInfos=False)
 
 #------------------------------------------------------------------------------
-class Mods_DumpTranslator(_Link):
+class Mods_DumpTranslator(AppendableLink):
     """Dumps new translation key file using existing key, value pairs."""
     text = _(u'Dump Translator')
     help = _(u"Generate a new version of the translator file for your locale.")
 
-    def AppendToMenu(self,menu,window,data):
-        if not hasattr(sys,'frozen'):
-            # Can't dump the strings if the files don't exist.
-            return super(Mods_DumpTranslator, self).AppendToMenu(menu, window,
-                                                                 data)
+    def _append(self, window):
+        """Can't dump the strings if the files don't exist."""
+        return not hasattr(sys,'frozen')
 
     def Execute(self,event):
         message = (_(u'Generate Bash program translator file?')

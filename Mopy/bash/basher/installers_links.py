@@ -23,7 +23,7 @@
 # =============================================================================
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill, _Link, BoolLink
+from ..balt import fill, _Link, BoolLink, AppendableLink
 from . import ListBoxes, refreshData, CreateNewProject
 from ..bolt import GPath, SubProgress
 
@@ -205,7 +205,7 @@ class Installers_UninstallAllPackages(_Link):
             gInstallers.RefreshUIMods()
             refreshData()
 
-class Installers_Refresh(_Link):
+class Installers_Refresh(AppendableLink):
     """Refreshes all Installers data."""
     def __init__(self, fullRefresh=False):
         super(Installers_Refresh, self).__init__()
@@ -216,9 +216,7 @@ class Installers_Refresh(_Link):
             u"CRCs.  This can take 5-15 minutes.") if self.fullRefresh else _(
             u"Rescan the Data directory and all project directories.")
 
-    def AppendToMenu(self,menu,window,data):
-        if not bosh.settings['bash.installers.enabled']: return
-        _Link.AppendToMenu(self,menu,window,data)
+    def _append(self, window): return bosh.settings['bash.installers.enabled']
 
     def Execute(self,event):
         """Handle selection."""
@@ -360,14 +358,13 @@ class Installers_Enabled(BoolLink):
             gInstallers.gList.gList.DeleteAllItems()
             gInstallers.RefreshDetails(None)
 
-class Installers_BsaRedirection(BoolLink):
+class Installers_BsaRedirection(AppendableLink, BoolLink):
     """Toggle BSA Redirection."""
     text, key = _(u'BSA Redirection'),'bash.bsaRedirection',
 
-    def AppendToMenu(self,menu,window,data):
+    def _append(self, window):
         section,key = bush.game.ini.bsaRedirection
-        if section and key:
-            BoolLink.AppendToMenu(self,menu,window,data)
+        return True if section and key else False
 
     def Execute(self,event):
         """Handle selection."""

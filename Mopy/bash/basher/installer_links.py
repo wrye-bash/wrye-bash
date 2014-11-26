@@ -29,7 +29,7 @@ import wx
 from . import settingDefaults, bashBlue, refreshData, \
     InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
-from ..balt import EnabledLink, CheckLink
+from ..balt import EnabledLink, CheckLink, AppendableLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
@@ -631,7 +631,7 @@ class _Installer_OpenAt(_InstallerLink):
         if balt.askContinue(self.gTank, self.message, self.key, self.askTitle):
             webbrowser.open(self._url())
 
-class Installer_OpenNexus(_Installer_OpenAt):
+class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
     text = _(bush.game.nexusName)
     message = _(
@@ -644,10 +644,7 @@ class Installer_OpenNexus(_Installer_OpenAt):
     askTitle = _(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}
     baseUrl = bush.game.nexusUrl + u'mods/'
 
-    def AppendToMenu(self,menu,window,data):
-        if not bush.game.nexusUrl: return
-        return super(Installer_OpenNexus, self).AppendToMenu(menu, window,
-                                                             data)
+    def _append(self, window): return bool(bush.game.nexusUrl)
 
 class Installer_OpenSearch(_Installer_OpenAt):
     group = 1

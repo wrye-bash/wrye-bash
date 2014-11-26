@@ -26,7 +26,7 @@ import re
 import time
 from .. import balt, bosh, bush, bolt
 from . import ListBoxes, bashBlue, refreshData
-from ..balt import _Link, RadioLink, EnabledLink
+from ..balt import _Link, RadioLink, EnabledLink, AppendableLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
@@ -289,14 +289,13 @@ class File_ListMasters(EnabledLink):
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
 
-class File_Redate(_Link):
+class File_Redate(AppendableLink):
     """Move the selected files to start at a specified date."""
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")
 
-    def AppendToMenu(self,menu,window,data):
-        if not bosh.lo.LoadOrderMethod == bosh.liblo.LIBLO_METHOD_TEXTFILE:
-            return super(File_Redate, self).AppendToMenu(menu, window, data)
+    def _append(self, window):
+        return bosh.lo.LoadOrderMethod != bosh.liblo.LIBLO_METHOD_TEXTFILE
 
     def Execute(self,event):
         #--Get current start time.
