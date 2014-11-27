@@ -10431,12 +10431,10 @@ class Save_UpdateNPCLevels(EnabledLink):
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Screens_NextScreenShot(Link):
+class Screens_NextScreenShot(_Link):
     """Sets screenshot base name and number."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Next Shot...'))
-        menu.AppendItem(menuItem)
+    text = _(u'Next Shot...')
+    help = _(u'Set screenshot base name and number')
 
     def Execute(self,event):
         oblivionIni = bosh.oblivionIni
@@ -10464,19 +10462,20 @@ class Screens_NextScreenShot(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Screen_ConvertTo(Link):
+class Screen_ConvertTo(EnabledLink):
     """Converts selected images to another type."""
+    help = _(u'Convert selected images to another format')
+
     def __init__(self,ext,imageType):
-        Link.__init__(self)
+        super(Screen_ConvertTo, self).__init__()
         self.ext = ext.lower()
         self.imageType = imageType
+        self.text = _(u'Convert to %s') % self.ext
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Convert to %s') % self.ext)
-        menu.AppendItem(menuItem)
-        convertable = [name for name in self.data if GPath(name).cext != u'.'+self.ext]
-        menuItem.Enable(len(convertable) > 0)
+    def _enable(self):
+        convertable = [name_ for name_ in self.data if
+                       GPath(name_).cext != u'.' + self.ext]
+        return len(convertable) > 0
 
     def Execute(self,event):
         srcDir = bosh.screensData.dir
@@ -10499,19 +10498,17 @@ class Screen_ConvertTo(Link):
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Screen_JpgQuality(Link):
+class Screen_JpgQuality(RadioLink):
     """Sets JPEG quality for saving."""
+    help = _(u'Sets JPEG quality for saving')
+
     def __init__(self,quality):
         Link.__init__(self)
         self.quality = quality
-        self.label = u'%i' % self.quality
+        self.text = u'%i' % self.quality
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,self.label,kind=wx.ITEM_RADIO)
-        menu.AppendItem(menuItem)
-        if self.quality == settings['bash.screens.jpgQuality']:
-            menuItem.Check(True)
+    def _check(self):
+        return self.quality == settings['bash.screens.jpgQuality']
 
     def Execute(self,event):
         settings['bash.screens.jpgQuality'] = self.quality
@@ -10521,24 +10518,23 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
         Screen_JpgQuality.__init__(self,settings['bash.screens.jpgCustomQuality'])
-        self.label = _(u'Custom [%i]') % self.quality
+        self.text = _(u'Custom [%i]') % self.quality
 
     def Execute(self,event):
         quality = balt.askNumber(self.window,_(u'JPEG Quality'),value=self.quality,min=0,max=100)
         if quality is None: return
         self.quality = quality
         settings['bash.screens.jpgCustomQuality'] = self.quality
-        self.label = _(u'Custom [%i]') % quality
+        self.text = _(u'Custom [%i]') % quality
         Screen_JpgQuality.Execute(self,event)
 
 #------------------------------------------------------------------------------
-class Screen_Rename(Link):
+class Screen_Rename(EnabledLink):
     """Renames files by pattern."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Rename...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(data) > 0)
+    text = _(u'Rename...')
+    help = _(u'Renames files by pattern')
+
+    def _enable(self): return len(self.data) > 0
 
     def Execute(self,event):
         if len(self.data) > 0:
@@ -10548,12 +10544,10 @@ class Screen_Rename(Link):
 
 # Messages Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Messages_Archive_Import(Link):
+class Messages_Archive_Import(_Link):
     """Import messages from html message archive."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Import Archives...'))
-        menu.AppendItem(menuItem)
+    text = _(u'Import Archives...')
+    help = _(u'Import messages from html message archive')
 
     def Execute(self,event):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
@@ -10567,11 +10561,10 @@ class Messages_Archive_Import(Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Message_Delete(Link):
+class Message_Delete(_Link):
     """Delete the file and all backups."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
+    text = _(u'Delete')
+    help = _(u'Permanently delete messages')
 
     def Execute(self,event):
         message = _(u'Delete these %d message(s)? This operation cannot be undone.') % len(self.data)
@@ -10585,15 +10578,11 @@ class Message_Delete(Link):
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class People_AddNew(Link):
+class People_AddNew(_Link):
     """Add a new record."""
     dialogTitle = _(u'Add New Person')
     text = _(u'Add...')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Add...'))
-        menu.AppendItem(menuItem)
+    help = _(u'Add a new record')
 
     def Execute(self,event):
         name = balt.askText(self.gTank,_(u"Add new person:"),self.dialogTitle)
@@ -10606,15 +10595,11 @@ class People_AddNew(Link):
         self.data.setChanged()
 
 #------------------------------------------------------------------------------
-class People_Export(Link):
+class People_Export(_Link):
     """Export people to text archive."""
     dialogTitle = _(u"Export People")
     text = _(u'Export...')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Export...'))
-        menu.AppendItem(menuItem)
+    help = _(u'Export people to text archive')
 
     def Execute(self,event):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
@@ -10627,15 +10612,11 @@ class People_Export(Link):
         balt.showInfo(self.gTank,_(u'Records exported: %d.') % len(self.selected),self.dialogTitle)
 
 #------------------------------------------------------------------------------
-class People_Import(Link):
+class People_Import(_Link):
     """Import people from text archive."""
     dialogTitle = _(u"Import People")
     text = _(u'Import...')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Import...'))
-        menu.AppendItem(menuItem)
+    help = _(u'Import people from text archive')
 
     def Execute(self,event):
         textDir = settings.get('bash.workDir',bosh.dirs['app'])
@@ -10649,7 +10630,7 @@ class People_Import(Link):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class People_Karma(Link):
+class People_Karma(_Link):
     """Add Karma setting links."""
 
     def AppendToMenu(self,menu,window,data):
