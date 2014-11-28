@@ -23,9 +23,11 @@
 # =============================================================================
 from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle
 from .. import bosh, bolt, balt, bass
+from .. import bush # for Mods_LoadListData, Mods_LoadList
 import locale
 import sys
-from ..balt import _Link, CheckLink, BoolLink, EnabledLink, AppendableLink
+from ..balt import _Link, CheckLink, BoolLink, EnabledLink, AppendableLink, \
+    ChoiceLink, SeparatorLink
 from ..bolt import deprint, GPath
 
 modList = None
@@ -260,3 +262,145 @@ class Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then BOSS GUI.exe should be too."""
     text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
                       _(u"If selected, Bash will run BOSS's GUI.")
+
+# Mods Links ------------------------------------------------------------------
+class Mods_ReplacersData: # TODO: CRUFT
+    """Empty version of a now removed class. Here for compatibility with
+    older settings files."""
+    pass
+
+class Mod_MergedLists_Data: # TODO: CRUFT
+    """Empty version of a now removed class. Here for compatibility with
+    older settings files."""
+    pass
+
+#------------------------------------------------------------------------------
+class Mods_LoadListData(balt.ListEditorData):
+    """Data capsule for load list editing dialog."""
+    def __init__(self,parent):
+        """Initialize."""
+        self.data = bosh.settings['bash.loadLists.data']
+        self.data['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.bethDataFiles
+            if x.endswith(u'.esm')
+            ]
+        #--GUI
+        balt.ListEditorData.__init__(self,parent)
+        self.showRename = True
+        self.showRemove = True
+
+    def getItemList(self):
+        """Returns load list keys in alpha order."""
+        return sorted(self.data.keys(),key=lambda a: a.lower())
+
+    def rename(self,oldName,newName):
+        """Renames oldName to newName."""
+        #--Right length?
+        if len(newName) == 0 or len(newName) > 64:
+            balt.showError(self.parent,
+                _(u'Name must be between 1 and 64 characters long.'))
+            return False
+        #--Rename
+        bosh.settings.setChanged('bash.loadLists.data')
+        self.data[newName] = self.data[oldName]
+        del self.data[oldName]
+        return newName
+
+    def remove(self,item):
+        """Removes load list."""
+        bosh.settings.setChanged('bash.loadLists.data')
+        del self.data[item]
+        return True
+
+#------------------------------------------------------------------------------
+class Mods_LoadList(ChoiceLink):
+    """Add load list links."""
+    idList = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL') # was ID_LOADERS
+
+    def __init__(self):
+        super(Mods_LoadList, self).__init__()
+        self.loadListsDict = bosh.settings['bash.loadLists.data']
+        self.loadListsDict['Bethesda ESMs'] = [
+            GPath(x) for x in bush.game.bethDataFiles
+            if x.endswith(u'.esm')
+            ]
+        class _SaveLink(EnabledLink):
+            id, text = self.idList.SAVE, _(u'Save List...') # notice self
+            def _enable(self): return bool(bosh.modInfos.ordered)
+        self.extraItems = [_Link(self.idList.ALL, _(u'All')),
+                           _Link(self.idList.NONE, _(u'None')), _SaveLink(),
+                           _Link(self.idList.EDIT, _(u'Edit Lists...')),
+                           SeparatorLink()]
+        self.extraActions = {self.idList.ALL: self.DoAll,
+                             self.idList.NONE: self.DoNone,
+                             self.idList.SAVE: self.DoSave,
+                             self.idList.EDIT: self.DoEdit, }
+
+    def GetItems(self):
+        items = self.loadListsDict.keys()
+        items.sort(lambda a,b: cmp(a.lower(),b.lower()))
+        return items
+
+    def SortWindow(self):
+        self.window.PopulateItems()
+
+    def _range(self):
+        for id,item in zip(self.idList,self.GetItems()):
+            yield _Link(id,item)
+
+    def DoNone(self,event):
+        """Unselect all mods."""
+        bosh.modInfos.selectExact([])
+        modList.RefreshUI()
+
+    def DoAll(self,event):
+        """Select all mods."""
+        modInfos = bosh.modInfos
+        try:
+            # first select the bashed patch(es) and their masters
+            for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in (u'BASHED PATCH',u'BASHED LISTS')]:
+                if not modInfos.isSelected(bashedPatch):
+                    modInfos.select(bashedPatch, False)
+            # then activate mods that are not tagged NoMerge or Deactivate or Filter
+            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and u'Deactivate' not in modInfos[modName].getBashTags() and u'Filter' not in modInfos[modName].getBashTags()]:
+                if not modInfos.isSelected(mod):
+                    modInfos.select(mod, False)
+            # then activate as many of the remaining mods as we can
+            for mod in modInfos.mergeable:
+                if u'Deactivate' in modInfos[mod].getBashTags(): continue
+                if u'Filter' in modInfos[mod].getBashTags(): continue
+                if not modInfos.isSelected(mod):
+                    modInfos.select(mod, False)
+            modInfos.plugins.save()
+            modInfos.refreshInfoLists()
+            modInfos.autoGhost()
+        except bosh.PluginsFullError:
+            balt.showError(self.window, _(u"Mod list is full, so some mods were skipped"), _(u'Select All'))
+        modList.RefreshUI()
+
+    def DoList(self,event):
+        """Select mods in list."""
+        item = self.GetItems()[event.GetId()-self.idList.BASE]
+        selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.loadListsDict[item]]
+        errorMessage = bosh.modInfos.selectExact(selectList)
+        modList.RefreshUI()
+        if errorMessage:
+            balt.showError(self.window,errorMessage,item)
+
+    def DoSave(self,event):
+        #--No slots left?
+        if len(self.loadListsDict) >= (self.idList.MAX - self.idList.BASE + 1):
+            balt.showError(self,_(u'All load list slots are full. Please delete an existing load list before adding another.'))
+            return
+        #--Dialog
+        newItem = (balt.askText(self.window,_(u'Save current load list as:'),u'Wrye Bash') or u'').strip()
+        if not newItem: return
+        if len(newItem) > 64:
+            message = _(u'Load list name must be between 1 and 64 characters long.')
+            return balt.showError(self.window,message)
+        self.loadListsDict[newItem] = bosh.modInfos.ordered[:]
+        bosh.settings.setChanged('bash.loadLists.data')
+
+    def DoEdit(self,event):
+        data = Mods_LoadListData(self.window)
+        balt.ListEditor.Display(self.window,_(u'Load Lists'), data)
