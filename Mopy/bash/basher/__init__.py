@@ -8351,13 +8351,13 @@ from .saves_links import *
 from .misc_links import *
 # App Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class StatusBar_Button(Link):
+class StatusBar_Button(_Link):
     """Launch an application."""
     def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
                and whether they are hidden/shown.
            canHide: True if this button is allowed to be hidden."""
-        Link.__init__(self)
+        super(StatusBar_Button, self).__init__()
         self.mainMenu = Links()
         self.canHide = canHide
         self.gButton = None
