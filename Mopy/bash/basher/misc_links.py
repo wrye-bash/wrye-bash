@@ -25,9 +25,10 @@ import re
 import time
 import wx
 from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
-    ChoiceLink
+    ChoiceLink, MenuLink, CheckLink
 from .. import balt, bosh, bush
 from . import ID_GROUPS
+from .constants import settingDefaults
 from ..bolt import GPath, LString
 
 # Screen Links ----------------------------------------------------------------
@@ -303,3 +304,45 @@ class Master_Disable(AppendableLink, EnabledLink):
         self.window.ReList()
         self.window.PopulateItems()
 
+# Column menu -----------------------------------------------------------------
+#------------------------------------------------------------------------------
+class List_Columns(MenuLink):
+    """Customize visible columns."""
+    text = _(u"Columns")
+
+    def __init__(self,columnsKey,allColumnsKey,persistantColumns=()):
+        super(List_Columns, self).__init__(self.__class__.text)
+        self.columnsKey = columnsKey
+        self.allColumnsKey = allColumnsKey
+        self.persistant = persistantColumns
+        for col in settingDefaults[self.allColumnsKey]:
+            enable = col not in self.persistant
+            self.links.append(
+                List_Column(self.columnsKey, self.allColumnsKey, col, enable))
+
+class List_Column(CheckLink, EnabledLink):
+
+    def __init__(self,columnsKey,allColumnsKey,colName,enable=True):
+        super(List_Column, self).__init__()
+        self.colName = colName
+        self.columnsKey = columnsKey
+        self.allColumnsKey = allColumnsKey
+        self.enable = enable
+        self.text = bosh.settings['bash.colNames'][self.colName]
+        self.help = _(u"Show/Hide '%s' column.") % self.text
+
+    def _enable(self): return self.enable
+
+    def _check(self): return self.colName in bosh.settings[self.columnsKey]
+
+    def Execute(self,event):
+        if self.colName in bosh.settings[self.columnsKey]:
+            bosh.settings[self.columnsKey].remove(self.colName)
+            bosh.settings.setChanged(self.columnsKey)
+        else:
+            #--Ensure the same order each time
+            bosh.settings[self.columnsKey] = [
+                x for x in settingDefaults[self.allColumnsKey]
+                if x in bosh.settings[self.columnsKey] or x == self.colName]
+        self.window.PopulateColumns()
+        self.window.RefreshUI()

@@ -26,7 +26,7 @@ import re
 import time
 from .. import balt, bosh, bush, bolt
 from . import ListBoxes, bashBlue, refreshData
-from ..balt import _Link, RadioLink, EnabledLink, AppendableLink
+from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
@@ -461,3 +461,54 @@ class File_Open(EnabledLink):
         dir = self.window.data.dir
         for file in self.data:
             dir.join(file).start()
+
+class File_RevertToBackup(ChoiceLink):
+    """Revert to last or first backup."""
+    def __init__(self):
+        super(File_RevertToBackup, self).__init__()
+        self.idList = balt.IdList(6100, 0,'REVERT_BACKUP','REVERT_FIRST')
+        self.extraActions = {self.idList.REVERT_BACKUP: self.Execute,
+                            self.idList.REVERT_FIRST: self.Execute,}
+
+    def _initData(self, window, data):
+        super(File_RevertToBackup, self)._initData(window, data)
+        #--Backup Files
+        singleSelect = len(data) == 1
+        self.fileInfo = window.data[data[0]]
+        self.backup = backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
+        self.firstBackup = firstBackup = self.backup +u'f'
+        #--Backup Item
+        class _RevertBackup(EnabledLink):
+            text = _(u'Revert to Backup')
+            id = self.idList.REVERT_BACKUP
+            def _enable(self): return singleSelect and backup.exists()
+        #--First Backup item
+        class _RevertFirstBackup(EnabledLink):
+            text = _(u'Revert to First Backup')
+            id = self.idList.REVERT_FIRST
+            def _enable(self): return singleSelect and firstBackup.exists()
+        self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
+
+    def Execute(self,event):
+        fileInfo = self.fileInfo
+        fileName = fileInfo.name
+        #--Backup/FirstBackup?
+        if event.GetId() == self.idList.REVERT_BACKUP:
+            backup = self.backup
+        else:
+            backup = self.firstBackup
+        #--Warning box
+        message = _(u"Revert %s to backup dated %s?") % (fileName.s,
+            formatDate(backup.mtime))
+        if balt.askYes(self.window,message,_(u'Revert to Backup')):
+            with balt.BusyCursor():
+                dest = fileInfo.dir.join(fileName)
+                backup.copyTo(dest)
+                fileInfo.setmtime()
+                if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
+                    bosh.CoSaves(backup).copy(dest)
+                try:
+                    self.window.data.refreshFile(fileName)
+                except bosh.FileError:
+                    balt.showError(self,_(u'Old file is corrupt!'))
+                self.window.RefreshUI(fileName)
