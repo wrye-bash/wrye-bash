@@ -184,7 +184,7 @@ ID_NEXT   = 6007
 #--File Menu
 ID_REVERT_BACKUP = 6100
 ID_REVERT_FIRST  = 6101
-ID_BACKUP_NOW    = 6102
+ID_BACKUP        = balt.IdList(6100, 0,'REVERT_BACKUP','REVERT_FIRST')
 
 #--Label Menus
 ID_GROUPS    = balt.IdList(10100,290,'EDIT','NONE')
@@ -7668,26 +7668,32 @@ from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink, \
     AppendableLink, TransLink, ChoiceLink
 
 #------------------------------------------------------------------------------
-class File_RevertToBackup:
+class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
-    def AppendToMenu(self,menu,window,data):
-        self.window = window
-        self.data = data
+    def __init__(self):
+        super(File_RevertToBackup, self).__init__()
+        self.idList = ID_BACKUP
+        self.extraActions = {self.idList.REVERT_BACKUP: self.Execute,
+                            self.idList.REVERT_FIRST: self.Execute,}
+
+    def _initData(self, window, data):
+        super(File_RevertToBackup, self)._initData(window, data)
         #--Backup Files
         singleSelect = len(data) == 1
         self.fileInfo = window.data[data[0]]
+        self.backup = backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
+        self.firstBackup = firstBackup = self.backup +u'f'
         #--Backup Item
-        wx.EVT_MENU(window,ID_REVERT_BACKUP,self.Execute)
-        menuItem = wx.MenuItem(menu,ID_REVERT_BACKUP,_(u'Revert to Backup'))
-        self.backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
-        menuItem.Enable(singleSelect and self.backup.exists())
-        menu.AppendItem(menuItem)
+        class _RevertBackup(EnabledLink):
+            text = _(u'Revert to Backup')
+            id = self.idList.REVERT_BACKUP
+            def _enable(self): return singleSelect and backup.exists()
         #--First Backup item
-        wx.EVT_MENU(window,ID_REVERT_FIRST,self.Execute)
-        menuItem = wx.MenuItem(menu,ID_REVERT_FIRST,_(u'Revert to First Backup'))
-        self.firstBackup = self.backup +u'f'
-        menuItem.Enable(singleSelect and self.firstBackup.exists())
-        menu.AppendItem(menuItem)
+        class _RevertFirstBackup(EnabledLink):
+            text = _(u'Revert to First Backup')
+            id = self.idList.REVERT_FIRST
+            def _enable(self): return singleSelect and firstBackup.exists()
+        self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
 
     def Execute(self,event):
         fileInfo = self.fileInfo
