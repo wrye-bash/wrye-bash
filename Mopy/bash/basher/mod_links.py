@@ -232,8 +232,7 @@ class MasterList_CleanMasters(AppendableLink):
                               ]
                 group.extend(removed)
                 checklists = [group]
-                from . import bashFrame # FIXME
-                dialog = ListBoxes(bashFrame,_(u'Remove these masters?'),
+                dialog = ListBoxes(Link.Frame,_(u'Remove these masters?'),
                                         _(u'The following master files can be safely removed.'),
                                         checklists)
                 if dialog.ShowModal() == ListBoxes.ID_CANCEL:
@@ -354,9 +353,8 @@ class Mod_BaloGroups:
                         subMenu.Check(id,offGroup == modGroup)
                     menu.AppendMenu(-1,group,subMenu)
         #--Events
-        from . import bashFrame # FIXME
-        wx.EVT_MENU(bashFrame,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
+        wx.EVT_MENU(Link.Frame,self.idList.EDIT,self.DoEdit)
+        wx.EVT_MENU_RANGE(Link.Frame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -1050,8 +1048,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
             bosh.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
-        from . import bashFrame # FIXME
-        dialog = wx.Dialog(bashFrame,wx.ID_ANY,_(u'Export Scripts Options'),
+        dialog = wx.Dialog(Link.Frame,wx.ID_ANY,_(u'Export Scripts Options'),
                            size=(400,180),style=wx.DEFAULT_DIALOG_STYLE)
         gskip = textCtrl(dialog)
         gdeprefix = textCtrl(dialog)

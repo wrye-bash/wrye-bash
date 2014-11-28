@@ -26,17 +26,16 @@ import sys
 import wx # FIXME(ut): wx
 from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, SeparatorLink, \
-    BoolLink, staticText, tooltip
+    BoolLink, staticText, tooltip, Link
 from .. import barb, bosh, bush, balt, bass, bolt
 from ..bolt import StateError, deprint, GPath
 from . import askYes, BashFrame, ColorDialog, bashFrameSetTitle, getStatusBar, \
     BashStatusBar, App_Button
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
-# FIXME(ut): globals everywhere !
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Settings_BackupSettings(_Link): # TODO(ut): was checklink - why ?
+class Settings_BackupSettings(_Link):
     """Saves Bash's settings and user data.."""
     text =_(u'Backup Settings...')
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
@@ -49,12 +48,11 @@ class Settings_BackupSettings(_Link): # TODO(ut): was checklink - why ?
         def PromptConfirm(msg=None):
             msg = msg or _(u'Do you want to backup your Bash settings now?')
             return askYes(msg,_(u'Backup Bash Settings?'))
-        from . import bashFrame # FIXME(ut): globals
-        BashFrame.SaveSettings(bashFrame)
+        BashFrame.SaveSettings(Link.Frame)
         #backup = barb.BackupSettings(bashFrame)
         try:
             if PromptConfirm():
-                dialog = wx.Dialog(bashFrame,wx.ID_ANY,_(u'Backup Images?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                dialog = wx.Dialog(Link.Frame,wx.ID_ANY,_(u'Backup Images?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
                 icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
                 sizer = vSizer(
                     (hSizer(
@@ -69,7 +67,7 @@ class Settings_BackupSettings(_Link): # TODO(ut): was checklink - why ?
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     )
                 dialog.SetSizer(sizer)
-                backup = barb.BackupSettings(bashFrame,backup_images=dialog.ShowModal())
+                backup = barb.BackupSettings(Link.Frame,backup_images=dialog.ShowModal())
                 backup.Apply()
         except StateError:
             backup.WarnFailed()
@@ -79,7 +77,7 @@ class Settings_BackupSettings(_Link): # TODO(ut): was checklink - why ?
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_RestoreSettings(_Link): # TODO(ut): was checklink - why ?
+class Settings_RestoreSettings(_Link):
     """Saves Bash's settings and user data.."""
     text = _(u'Restore Settings...')
     help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
@@ -87,8 +85,7 @@ class Settings_RestoreSettings(_Link): # TODO(ut): was checklink - why ?
 
     def Execute(self,event):
         try:
-            from . import bashFrame # FIXME(ut): globals
-            backup = barb.RestoreSettings(bashFrame)
+            backup = barb.RestoreSettings(Link.Frame)
             if backup.PromptConfirm():
                 backup.restore_images = askYes(
                     _(u'Do you want to restore saved images as well as settings?'),
@@ -100,14 +97,13 @@ class Settings_RestoreSettings(_Link): # TODO(ut): was checklink - why ?
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_SaveSettings(_Link): # TODO(ut): was checklink - why ?
+class Settings_SaveSettings(_Link):
     """Saves Bash's settings and user data."""
     text = _(u'Save Settings')
     help = _(u"Save all of Wrye Bash's settings/data now.")
 
     def Execute(self,event):
-        from . import bashFrame # FIXME(ut): globals
-        BashFrame.SaveSettings(bashFrame)
+        BashFrame.SaveSettings(Link.Frame)
 
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink):
@@ -204,8 +200,7 @@ class Settings_Colors(_Link):
     help = _(u"Configure the custom colors used in the UI.")
 
     def Execute(self,event):
-        from . import bashFrame # FIXME(ut): globals
-        dialog = ColorDialog(bashFrame)
+        dialog = ColorDialog(Link.Frame)
         dialog.ShowModal()
         dialog.Destroy()
 
@@ -305,8 +300,7 @@ class Settings_Language(RadioLink):
         if self.language == bassLang: return
         if askYes(_(u'Wrye Bash needs to restart to change languages.  Do you '
                     u'want to restart?'), _(u'Restart Wrye Bash')):
-            from . import bashFrame # FIXME(ut): globals
-            bashFrame.Restart(('--Language',self.language))
+            Link.Frame.Restart(('--Language',self.language))
 
 #------------------------------------------------------------------------------
 class Settings_PluginEncodings(MenuLink):
@@ -363,8 +357,7 @@ class Settings_Game(RadioLink):
 
     def Execute(self,event):
         if self.game.lower() == bush.game.fsName.lower(): return
-        from . import bashFrame # FIXME(ut): globals
-        bashFrame.Restart(('--game',self.game))
+        Link.Frame.Restart(('--game',self.game))
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(TransLink):
@@ -434,8 +427,7 @@ class Settings_UAC(AppendableLink):
     def Execute(self,event):
         if askYes(_(u'Restart Wrye Bash with administrator privileges?'),
                   _(u'Administrator Mode'), ):
-            from . import bashFrame # FIXME(ut): globals
-            bashFrame.Restart(True,True)
+            Link.Frame.Restart(True,True)
 
 class Settings_Deprint(CheckLink):
     """Turn on deprint/delist."""

@@ -24,7 +24,8 @@
 from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle, ListBoxes
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
-from ..balt import _Link, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink
+from ..balt import _Link, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
+    Link
 from ..bolt import GPath
 
 modList = None
@@ -263,8 +264,7 @@ class Mods_CleanDummyMasters(EnabledLink):
         remove = bosh.modInfos.getOrdered(remove)
         message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
         message.extend(remove)
-        from . import bashFrame # FIXME
-        dialog = ListBoxes(bashFrame,_(u'Delete Dummy Masters'),
+        dialog = ListBoxes(Link.Frame,_(u'Delete Dummy Masters'),
                      _(u'Delete these items? This operation cannot be undone.'),
                      [message])
         if dialog.ShowModal() == ListBoxes.ID_CANCEL:
@@ -277,7 +277,7 @@ class Mods_CleanDummyMasters(EnabledLink):
                 if checks.IsChecked(i):
                     self.window.data.delete(mod)
         dialog.Destroy()
-        bashFrame.RefreshData()
+        Link.Frame.RefreshData()
         self.window.RefreshUI()
 
 # "Balo" links ----------------------------------------------------------------
