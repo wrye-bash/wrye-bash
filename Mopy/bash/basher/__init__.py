@@ -187,7 +187,6 @@ ID_REVERT_FIRST  = 6101
 ID_BACKUP_NOW    = 6102
 
 #--Label Menus
-ID_LOADERS   = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL')
 ID_GROUPS    = balt.IdList(10100,290,'EDIT','NONE')
 ID_RATINGS   = balt.IdList(10400, 90,'EDIT','NONE')
 ID_TAGS      = balt.IdList(10600, 90,'AUTO','COPY')
@@ -7666,7 +7665,7 @@ def SetUAC(item):
             balt.setUAC(item,isUAC)
 
 from ..balt import EnabledLink, BoolLink, RadioLink, CheckLink, \
-    AppendableLink, TransLink
+    AppendableLink, TransLink, ChoiceLink
 
 #------------------------------------------------------------------------------
 class File_RevertToBackup:
@@ -7886,41 +7885,40 @@ class Mods_LoadListData(balt.ListEditorData):
         return True
 
 #------------------------------------------------------------------------------
-class Mods_LoadList:
+class Mods_LoadList(ChoiceLink):
     """Add load list links."""
+    idList = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL') # was ID_LOADERS
+
     def __init__(self):
-        self.data = settings['bash.loadLists.data']
-        self.data['Bethesda ESMs'] = [
+        super(Mods_LoadList, self).__init__()
+        self.loadListsDict = settings['bash.loadLists.data']
+        self.loadListsDict['Bethesda ESMs'] = [
             GPath(x) for x in bush.game.bethDataFiles
             if x.endswith(u'.esm')
             ]
+        class _SaveLink(EnabledLink):
+            id, text = self.idList.SAVE, _(u'Save List...') # notice self
+            def _enable(self): return bool(bosh.modInfos.ordered)
+        self.extraItems = [_Link(self.idList.ALL, _(u'All')),
+                           _Link(self.idList.NONE, _(u'None')), _SaveLink(),
+                           _Link(self.idList.EDIT, _(u'Edit Lists...')),
+                           SeparatorLink()]
+        self.extraActions = {self.idList.ALL: self.DoAll,
+                             self.idList.NONE: self.DoNone,
+                             self.idList.SAVE: self.DoSave,
+                             self.idList.EDIT: self.DoEdit, }
 
     def GetItems(self):
-        items = self.data.keys()
+        items = self.loadListsDict.keys()
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items
 
     def SortWindow(self):
         self.window.PopulateItems()
 
-    def AppendToMenu(self,menu,window,data):
-        self.window = window
-        menu.Append(ID_LOADERS.ALL,_(u'All'))
-        menu.Append(ID_LOADERS.NONE,_(u'None'))
-        menu.Append(ID_LOADERS.SAVE,_(u'Save List...'))
-        menu.Append(ID_LOADERS.EDIT,_(u'Edit Lists...'))
-        menu.AppendSeparator()
-        for id,item in zip(ID_LOADERS,self.GetItems()):
-            menu.Append(id,item)
-        #--Disable Save?
-        if not bosh.modInfos.ordered:
-            menu.FindItemById(ID_LOADERS.SAVE).Enable(False)
-        #--Events
-        wx.EVT_MENU(bashFrame,ID_LOADERS.NONE,self.DoNone)
-        wx.EVT_MENU(bashFrame,ID_LOADERS.ALL,self.DoAll)
-        wx.EVT_MENU(bashFrame,ID_LOADERS.SAVE,self.DoSave)
-        wx.EVT_MENU(bashFrame,ID_LOADERS.EDIT,self.DoEdit)
-        wx.EVT_MENU_RANGE(bashFrame,ID_LOADERS.BASE,ID_LOADERS.MAX,self.DoList)
+    def _range(self):
+        for id,item in zip(self.idList,self.GetItems()):
+            yield _Link(id,item)
 
     def DoNone(self,event):
         """Unselect all mods."""
@@ -7954,8 +7952,8 @@ class Mods_LoadList:
 
     def DoList(self,event):
         """Select mods in list."""
-        item = self.GetItems()[event.GetId()-ID_LOADERS.BASE]
-        selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.data[item]]
+        item = self.GetItems()[event.GetId()-self.idList.BASE]
+        selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.loadListsDict[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
         modList.RefreshUI()
         if errorMessage:
@@ -7963,7 +7961,7 @@ class Mods_LoadList:
 
     def DoSave(self,event):
         #--No slots left?
-        if len(self.data) >= (ID_LOADERS.MAX - ID_LOADERS.BASE + 1):
+        if len(self.loadListsDict) >= (self.idList.MAX - self.idList.BASE + 1):
             balt.showError(self,_(u'All load list slots are full. Please delete an existing load list before adding another.'))
             return
         #--Dialog
@@ -7972,7 +7970,7 @@ class Mods_LoadList:
         if len(newItem) > 64:
             message = _(u'Load list name must be between 1 and 64 characters long.')
             return balt.showError(self.window,message)
-        self.data[newItem] = bosh.modInfos.ordered[:]
+        self.loadListsDict[newItem] = bosh.modInfos.ordered[:]
         settings.setChanged('bash.loadLists.data')
 
     def DoEdit(self,event):

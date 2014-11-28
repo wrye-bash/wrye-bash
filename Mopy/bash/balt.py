@@ -2125,10 +2125,11 @@ class Link(object):
     # TODO(ut): eliminate overrides of AppendToMenu outside balt
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
+    id = None
 
     def __init__(self, _id=None, _text=None):
         super(Link, self).__init__()
-        self.id = _id
+        self.id = _id or self.__class__.id # TODO(ut) untested - to allow me to specify id directly when creating local Link subclasses
         if _text is not None: self.text = _text
 
     def _initData(self, window, data):
