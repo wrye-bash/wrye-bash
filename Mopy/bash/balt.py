@@ -2130,8 +2130,9 @@ class Link(object):
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
 
-    def __init__(self):
-        self.id = None
+    def __init__(self, _id=None, _text=None):
+        self.id = _id
+        if _text is not None: self.text = _text
         self._dataInitialized = False  # TODO(ut): bin - only useful when we
         # override AppendToMenu and call _initData AND super.AppendToMenu
         # directly (InstallerArchive_Unpack, InstallerProject_Pack, ...?)
@@ -2168,6 +2169,7 @@ class _Link(Link): # TODO(ut): rename to ItemLink
     override AppendToMenu().
     """
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
+    help = None
 
     def AppendToMenu(self,menu,window,data):
         """Append self as menu item and set callbacks to be executed when
@@ -2175,7 +2177,7 @@ class _Link(Link): # TODO(ut): rename to ItemLink
         super(_Link, self).AppendToMenu(menu, window, data)
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,_Link.ShowHelp)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
@@ -2215,11 +2217,37 @@ class MenuLink(Link):
             menu.Enable(self.id, False)
         else: # do not append sub links unless submenu enabled
             for link in self.links: link.AppendToMenu(subMenu,window,data)
+        return subMenu
 
     @staticmethod
     def OnMenuOpen(event):
         """Hover over a submenu, clear the status bar text"""
         Link.Frame.GetStatusBar().SetText('')
+
+class ChoiceLink(Link):
+    """HACK: Choice menu using the IdList class to define its items.
+
+    Here really to de wx classes which are using the IdList ~~hack~~ class.
+    """
+    idList = IdList(0, 0, 'OVERRIDE')
+    extraItems = () # list<Link> that correspond to named idList attributes
+    extraActions = {} # callback actions for extraItems indexed by item.id
+    def _range(self): return ()
+
+    def AppendToMenu(self,menu,window,data):
+        """Append idList items and register their callbacks."""
+        subMenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
+        if subMenu: menu = subMenu # our super is a MenuLink instance not mere Link instance
+        for link in self.extraItems:
+            link.AppendToMenu(menu, window, data)
+        for link in self._range():
+            link.AppendToMenu(menu, window, data)
+        #--Events
+        if hasattr(self, 'DoList'):
+            wx.EVT_MENU_RANGE(_Link.Frame, self.idList.BASE, self.idList.MAX,
+                              self.DoList)
+        for _id, action in self.extraActions.items():
+            wx.EVT_MENU(Link.Frame, _id, action)
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
@@ -2246,7 +2274,6 @@ class EnabledLink(_Link):
     based on some condition. Subclasses MUST define self.text, preferably as
     a class attribute.
     """
-    help = u''
 
     def _enable(self):
         """"Override as needed to enable or disable the menu item (enabled
@@ -2272,7 +2299,7 @@ class AppendableLink(_Link):
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
 
-    def _check(self): return True
+    def _check(self): raise AbstractError
 
     def AppendToMenu(self,menu,window,data):
         menuItem = super(CheckLink, self).AppendToMenu(menu, window, data)

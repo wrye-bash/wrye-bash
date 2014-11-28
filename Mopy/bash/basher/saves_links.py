@@ -28,7 +28,8 @@ import struct
 import wx # FIXME(ut): wx
 from . import bashBlue, ImportFaceDialog, JPEG
 from .. import bosh, bolt, balt, bush
-from ..balt import EnabledLink, AppendableLink, Link, CheckLink
+from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
+    _Link, SeparatorLink
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError
 from ..bosh import formatInteger
 
@@ -141,34 +142,36 @@ class Saves_ProfilesData(balt.ListEditorData):
         return True
 
 #------------------------------------------------------------------------------
-class Saves_Profiles:
+class Saves_Profiles(ChoiceLink):
     """Select a save set profile -- i.e., the saves directory."""
+    local = None
+
     def __init__(self):
-        """Initialize."""
+        super(Saves_Profiles, self).__init__()
         self.idList = ID_PROFILES
+        self.extraActions = {self.idList.EDIT: self.DoEdit,
+                            self.idList.DEFAULT: self.DoDefault,}
 
-    def GetItems(self):
-        return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    @property
+    def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    def AppendToMenu(self,menu,window,data):
-        """Append label list to menu."""
-        self.window = window
-        #--Edit
-        menu.Append(self.idList.EDIT,_(u"Edit Profiles..."))
-        menu.AppendSeparator()
-        #--List
-        localSave = bosh.saveInfos.localSave
-        menuItem = wx.MenuItem(menu,self.idList.DEFAULT,_(u'Default'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Check(localSave == u'Saves\\')
-        for id,item in zip(self.idList,self.GetItems()):
-            menuItem = wx.MenuItem(menu,id,item,kind=wx.ITEM_CHECK)
-            menu.AppendItem(menuItem)
-            menuItem.Check(localSave == (u'Saves\\'+item+u'\\'))
-        #--Events
-        wx.EVT_MENU(Link.Frame,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU(Link.Frame,self.idList.DEFAULT,self.DoDefault)
-        wx.EVT_MENU_RANGE(Link.Frame,self.idList.BASE,self.idList.MAX,self.DoList)
+    def _range(self):
+        class _CheckLink(CheckLink):
+            def _check(self):
+                return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
+        for _id, item in zip(self.idList, self.items):
+            yield _CheckLink(_id=_id, _text=item)
+
+    def _initData(self, window, data):
+        super(Saves_Profiles, self)._initData(window, data)
+        Saves_Profiles.local = bosh.saveInfos.localSave
+        self.extraItems =[_Link(self.idList.EDIT, _(u"Edit Profiles...")),
+                          SeparatorLink()
+        ]
+        class _Default(CheckLink):
+            text = _(u'Default')
+            def _check(self): return Saves_Profiles.local == u'Saves\\'
+        self.extraItems += [_Default(_id=self.idList.DEFAULT)]
 
     def DoEdit(self,event):
         """Show profiles editing dialog."""
@@ -188,7 +191,7 @@ class Saves_Profiles:
 
     def DoList(self,event):
         """Handle selection of label."""
-        profile = self.GetItems()[event.GetId()-self.idList.BASE]
+        profile = self.items[event.GetId()-self.idList.BASE]
         arcSaves = bosh.saveInfos.localSave
         newSaves = u'Saves\\%s\\' % (profile,)
         bosh.saveInfos.setLocalSave(newSaves)
@@ -200,7 +203,8 @@ class Saves_Profiles:
         bosh.modInfos.autoGhost()
         modList.RefreshUI()
 
-    def swapPlugins(self,arcSaves,newSaves):
+    @staticmethod
+    def swapPlugins(arcSaves,newSaves):
         """Saves current plugins into arcSaves directory and loads plugins
         from newSaves directory (if present)."""
         arcPath,newPath = (bosh.dirs['saveBase'].join(saves)
@@ -209,7 +213,8 @@ class Saves_Profiles:
         bosh.modInfos.plugins.copyTo(arcPath)
         bosh.modInfos.plugins.copyFrom(newPath)
 
-    def swapOblivionVersion(self,newSaves):
+    @staticmethod
+    def swapOblivionVersion(newSaves):
         """Swaps Oblivion version to memorized version."""
         voNew = bosh.saveInfos.profiles.setItemDefault(newSaves,'vOblivion',bosh.modInfos.voCurrent)
         if voNew in bosh.modInfos.voAvailable:
@@ -613,32 +618,35 @@ class Save_EditCreatedEnchantmentCosts(EnabledLink):
         Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
 
 #------------------------------------------------------------------------------
-class Save_Move:
+class Save_Move(ChoiceLink):
     """Moves or copies selected files to alternate profile."""
+    local = None
 
     def __init__(self, copyMode=False):
+        super(Save_Move, self).__init__()
         self.idList = ID_PROFILES if copyMode else ID_PROFILES2
         self.copyMode = copyMode
+        self.extraActions = {self.idList.DEFAULT: self.DoDefault}
 
-    def GetItems(self):
+    @property
+    def items(self):
         return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    def AppendToMenu(self,menu,window,data):
-        """Append label list to menu."""
-        self.window = window
-        self.data = data
-        #--List
-        localSave = bosh.saveInfos.localSave
-        menuItem = wx.MenuItem(menu,self.idList.DEFAULT,_(u'Default'),kind=wx.ITEM_CHECK)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(localSave != u'Saves\\')
-        for id,item in zip(self.idList,self.GetItems()):
-            menuItem = wx.MenuItem(menu,id,item,kind=wx.ITEM_CHECK)
-            menu.AppendItem(menuItem)
-            menuItem.Enable(localSave != (u'Saves\\'+item+u'\\'))
-        #--Events
-        wx.EVT_MENU(bashFrame,self.idList.DEFAULT,self.DoDefault)
-        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
+    def _range(self):
+        class _WasCheckLink(EnabledLink): # never checked at that
+            def _enable(self):
+                return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
+
+        for _id, item in zip(self.idList, self.items):
+            yield _WasCheckLink(_id=_id, _text=item)
+
+    def _initData(self, window, data):
+        super(Save_Move, self)._initData(window, data)
+        Save_Move.local = bosh.saveInfos.localSave
+        class _Default(EnabledLink):
+            text = _(u'Default')
+            def _enable(self): return Save_Move.local != u'Saves\\'
+        self.extraItems = [_Default(_id=self.idList.DEFAULT)]
 
     def DoDefault(self,event):
         """Handle selection of Default."""
@@ -646,7 +654,7 @@ class Save_Move:
 
     def DoList(self,event):
         """Handle selection of label."""
-        profile = self.GetItems()[event.GetId()-self.idList.BASE]
+        profile = self.items[event.GetId()-self.idList.BASE]
         self.MoveFiles(profile)
 
     def MoveFiles(self,profile):

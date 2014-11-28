@@ -24,7 +24,8 @@
 import re
 import time
 import wx
-from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink
+from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
+    ChoiceLink
 from .. import balt, bosh, bush
 from . import ID_GROUPS
 from ..bolt import GPath, LString
@@ -230,19 +231,15 @@ class People_Import(_Link):
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class People_Karma(_Link):
+class People_Karma(ChoiceLink):
     """Add Karma setting links."""
+    text = _(u'Karma')
+    idList = ID_GROUPS
+    labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
-    def AppendToMenu(self,menu,window,data):
-        """Append Karma item submenu."""
-        Link.AppendToMenu(self,menu,window,data)
-        idList = ID_GROUPS
-        labels = [u'%+d'%x for x in xrange(5,-6,-1)]
-        subMenu = wx.Menu()
-        for id,item in zip(idList,labels):
-            subMenu.Append(id,item)
-        wx.EVT_MENU_RANGE(_Link.Frame,idList.BASE,idList.MAX,self.DoList)
-        menu.AppendMenu(-1,_(u'Karma'),subMenu)
+    def _range(self):
+        for _id, item in zip(self.idList, self.__class__.labels):
+            yield _Link(_id=_id, _text=item)
 
     def DoList(self,event):
         """Handle selection of label."""
