@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import Mod_BaloGroups_Edit, bashBlue, bashFrameSetTitle, ListBoxes
+from . import Mod_BaloGroups_Edit, bashBlue, ListBoxes
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..balt import _Link, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
@@ -215,7 +215,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         modList.RefreshUI()
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
-        bashFrameSetTitle()
+        Link.Frame.SetTitle()
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(_Link):

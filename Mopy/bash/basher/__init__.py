@@ -149,11 +149,6 @@ SettingsMenu = None
 obseButton = None
 laaButton = None
 
-def refreshData(): bashFrame.RefreshData() # TODO(ut): bashFrame is None in links files, ugly
-def bashFrameSetTitle(): bashFrame.SetTitle()
-def askYes(msg, title): return balt.askYes(bashFrame, msg, title)
-def getStatusBar(): return bashFrame.GetStatusBar()
-
 # Settings --------------------------------------------------------------------
 settings = None
 

@@ -25,8 +25,9 @@ from operator import attrgetter
 import re
 import time
 from .. import balt, bosh, bush, bolt
-from . import ListBoxes, bashBlue, refreshData
-from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink
+from . import ListBoxes, bashBlue
+from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
+    Link
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
@@ -135,7 +136,7 @@ class Files_Unhide(_Link):
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):
             pass
-        refreshData()
+        Link.Frame.RefreshData()
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -268,7 +269,7 @@ class File_Hide(_Link):
             #--Do it
             self.window.data.move(fileName,destDir,False)
         #--Refresh stuff
-        refreshData()
+        Link.Frame.RefreshData()
 
 class File_ListMasters(EnabledLink):
     """Copies list of masters to clipboard."""

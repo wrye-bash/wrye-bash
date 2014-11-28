@@ -23,8 +23,8 @@
 # =============================================================================
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill, _Link, BoolLink, AppendableLink
-from . import ListBoxes, refreshData, CreateNewProject
+from ..balt import fill, _Link, BoolLink, AppendableLink, Link
+from . import ListBoxes, CreateNewProject
 from ..bolt import GPath, SubProgress
 
 gInstallers = None
@@ -187,7 +187,7 @@ class Installers_AnnealAll(_Link):
         finally:
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
 
 class Installers_UninstallAllPackages(_Link):
     """Uninstall all packages."""
@@ -203,7 +203,7 @@ class Installers_UninstallAllPackages(_Link):
         finally:
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
 
 class Installers_Refresh(AppendableLink):
     """Refreshes all Installers data."""
@@ -253,7 +253,7 @@ class Installers_UninstallAllUnknownFiles(_Link):
             finally:
                 self.data.refresh(what='NS')
                 gInstallers.RefreshUIMods()
-                refreshData()
+                Link.Frame.RefreshData()
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

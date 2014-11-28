@@ -29,8 +29,7 @@ from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
     BoolLink, staticText, tooltip, Link
 from .. import barb, bosh, bush, balt, bass, bolt
 from ..bolt import StateError, deprint, GPath
-from . import askYes, BashFrame, ColorDialog, bashFrameSetTitle, getStatusBar, \
-    BashStatusBar, App_Button
+from . import BashFrame, ColorDialog, BashStatusBar, App_Button
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
@@ -47,7 +46,7 @@ class Settings_BackupSettings(_Link):
             dialog.EndModal(1)
         def PromptConfirm(msg=None):
             msg = msg or _(u'Do you want to backup your Bash settings now?')
-            return askYes(msg,_(u'Backup Bash Settings?'))
+            return balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?'))
         BashFrame.SaveSettings(Link.Frame)
         #backup = barb.BackupSettings(bashFrame)
         try:
@@ -87,7 +86,7 @@ class Settings_RestoreSettings(_Link):
         try:
             backup = barb.RestoreSettings(Link.Frame)
             if backup.PromptConfirm():
-                backup.restore_images = askYes(
+                backup.restore_images = balt.askYes(Link.Frame,
                     _(u'Do you want to restore saved images as well as settings?'),
                     _(u'Restore Settings'))
                 backup.Apply()
@@ -217,7 +216,7 @@ class Settings_IconSize(RadioLink):
 
     def Execute(self,event):
         bosh.settings['bash.statusbar.iconSize'] = self.size
-        getStatusBar().UpdateIconSizes()
+        Link.Frame.GetStatusBar().UpdateIconSizes()
 
 #------------------------------------------------------------------------------
 class Settings_StatusBar_ShowVersions(CheckLink):
@@ -298,8 +297,9 @@ class Settings_Language(RadioLink):
     def Execute(self,event):
         bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
         if self.language == bassLang: return
-        if askYes(_(u'Wrye Bash needs to restart to change languages.  Do you '
-                    u'want to restart?'), _(u'Restart Wrye Bash')):
+        if balt.askYes(Link.Frame,
+                _(u'Wrye Bash needs to restart to change languages.  Do you '
+                  u'want to restart?'), _(u'Restart Wrye Bash')):
             Link.Frame.Restart(('--Language',self.language))
 
 #------------------------------------------------------------------------------
@@ -403,7 +403,7 @@ class Settings_UnHideButton(_Link):
         self.help = _(u"Unhide the '%s' status bar button.") % tip
 
     def Execute(self,event):
-        getStatusBar().UnhideButton(self.link)
+        Link.Frame.GetStatusBar().UnhideButton(self.link)
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):
@@ -413,7 +413,7 @@ class Settings_UseAltName(BoolLink):
 
     def Execute(self,event):
         super(Settings_UseAltName, self).Execute(event)
-        bashFrameSetTitle()
+        Link.Frame.SetTitle()
 
 #------------------------------------------------------------------------------
 class Settings_UAC(AppendableLink):
@@ -425,8 +425,9 @@ class Settings_UAC(AppendableLink):
         return isUAC
 
     def Execute(self,event):
-        if askYes(_(u'Restart Wrye Bash with administrator privileges?'),
-                  _(u'Administrator Mode'), ):
+        if balt.askYes(Link.Frame,
+                _(u'Restart Wrye Bash with administrator privileges?'),
+                _(u'Administrator Mode'), ):
             Link.Frame.Restart(True,True)
 
 class Settings_Deprint(CheckLink):

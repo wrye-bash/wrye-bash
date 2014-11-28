@@ -30,8 +30,8 @@ from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError, CancelError
-from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, refreshData, \
-    JPEG, PatchDialog, DocBrowser
+from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, JPEG, \
+    PatchDialog, DocBrowser
 from ..bosh import formatDate, formatInteger
 from ..cint import ObCollection, CBash, \
     FormID  # TODO(ut): CBash...should be in bosh
@@ -842,7 +842,7 @@ class Mod_CreateDummyMasters(EnabledLink):
                 modFile.TES4.author = u'BASHED DUMMY'
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
-        refreshData()
+        Link.Frame.RefreshData()
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

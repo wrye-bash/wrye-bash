@@ -26,10 +26,9 @@ import copy
 import re
 import webbrowser
 import wx
-from . import settingDefaults, bashBlue, refreshData, \
-    InstallerProject_OmodConfigDialog
+from . import settingDefaults, bashBlue, InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
-from ..balt import EnabledLink, CheckLink, AppendableLink
+from ..balt import EnabledLink, CheckLink, AppendableLink, Link
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
@@ -228,7 +227,7 @@ class Installer_Wizard(_InstallerLink):
                 finally:
                     self.data.refresh(what='N')
                     gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
@@ -317,7 +316,7 @@ class Installer_Anneal(_InstallerLink):
         finally:
             self.data.refresh(what='NS')
             gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
 
 class Installer_Delete(_InstallerLink):
     text = _(u'Delete')
@@ -530,7 +529,7 @@ class Installer_Install(_InstallerLink):
         finally:
             self.data.refresh(what='N')
             gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
 
 class Installer_ListPackages(_InstallerLink):
     """Copies list of Bain files to clipboard."""
@@ -743,7 +742,7 @@ class Installer_Uninstall(_InstallerLink):
             self.data.refresh(what='NS')
             bosh.modInfos.plugins.saveLoadOrder()
             gInstallers.RefreshUIMods()
-            refreshData()
+            Link.Frame.RefreshData()
 
 class Installer_CopyConflicts(_InstallerLink):
     """For Modders only - copy conflicts to a new project."""
