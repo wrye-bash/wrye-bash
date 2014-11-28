@@ -205,7 +205,7 @@ class Installers_UninstallAllPackages(_Link):
             gInstallers.RefreshUIMods()
             Link.Frame.RefreshData()
 
-class Installers_Refresh(AppendableLink):
+class Installers_Refresh(AppendableLink, _Link):
     """Refreshes all Installers data."""
     def __init__(self, fullRefresh=False):
         super(Installers_Refresh, self).__init__()

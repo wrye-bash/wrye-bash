@@ -105,7 +105,7 @@ class Settings_SaveSettings(_Link):
         BashFrame.SaveSettings(Link.Frame)
 
 #------------------------------------------------------------------------------
-class Settings_ExportDllInfo(AppendableLink):
+class Settings_ExportDllInfo(AppendableLink, _Link):
     """Exports list of good and bad dll's."""
     text = _(
         u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
@@ -140,7 +140,7 @@ class Settings_ExportDllInfo(AppendableLink):
             else: out.write(u'None\r\n')
 
 #------------------------------------------------------------------------------
-class Settings_ImportDllInfo(AppendableLink):
+class Settings_ImportDllInfo(AppendableLink, _Link):
     """Imports list of good and bad dll's."""
     text = _(
         u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
@@ -416,7 +416,7 @@ class Settings_UseAltName(BoolLink):
         Link.Frame.SetTitle()
 
 #------------------------------------------------------------------------------
-class Settings_UAC(AppendableLink):
+class Settings_UAC(AppendableLink, _Link):
     text = _(u'Administrator Mode')
     help = _(u'Restart Wrye Bash with administrator privileges.')
 
@@ -443,7 +443,7 @@ class Settings_Deprint(CheckLink):
         bolt.deprintOn = not bolt.deprintOn
         deprint(_(u'Debug Printing: On'))
 
-class Settings_DumpTranslator(AppendableLink):
+class Settings_DumpTranslator(AppendableLink, _Link):
     """Dumps new translation key file using existing key, value pairs."""
     text = _(u'Dump Translator')
     help = _(u"Generate a new version of the translator file for your locale.")

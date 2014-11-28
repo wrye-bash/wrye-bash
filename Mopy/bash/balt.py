@@ -2237,9 +2237,16 @@ class ChoiceLink(Link):
     Here really to de wx classes which are using the IdList ~~hack~~ class.
     """
     idList = IdList(0, 0, 'OVERRIDE')
-    extraItems = () # list<Link> that correspond to named idList attributes
+    extraItems = [] # list<Link> that correspond to named idList attributes
     extraActions = {} # callback actions for extraItems indexed by item.id
-    def _range(self): return ()
+    cls = _Link
+
+    def _range(self):
+        for id_, item in zip(self.idList, self.items):
+            yield self.__class__.cls(id_, item)
+
+    @property
+    def items(self): return []
 
     def AppendToMenu(self,menu,window,data):
         """Append idList items and register their callbacks."""
@@ -2253,8 +2260,9 @@ class ChoiceLink(Link):
         if hasattr(self, 'DoList'):
             wx.EVT_MENU_RANGE(_Link.Frame, self.idList.BASE, self.idList.MAX,
                               self.DoList)
-        for _id, action in self.extraActions.items():
-            wx.EVT_MENU(Link.Frame, _id, action)
+        for id_, action in self.extraActions.items():
+            wx.EVT_MENU(Link.Frame, id_, action)
+        # notice it returns None
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
@@ -2272,6 +2280,23 @@ class SeparatorLink(Link):
     def AppendToMenu(self,menu,window,data):
         """Add separator to menu."""
         menu.AppendSeparator()
+
+# Link Mixin ------------------------------------------------------------------
+class AppendableLink(Link):
+    """A menu item or submenu that may be appended to a Menu or not.
+
+    Mixin to be used with Link subclasses that override Link.AppendToMenu.
+    Could use a metaclass in Link and replace AppendToMenu with one that
+    returns if _append() == False.
+    """
+
+    def _append(self, window):
+        """"Override as needed to append or not the menu item."""
+        raise AbstractError
+
+    def AppendToMenu(self,menu,window,data):
+        if not self._append(window): return
+        return super(AppendableLink, self).AppendToMenu(menu, window, data)
 
 # _Link subclasses ------------------------------------------------------------
 class EnabledLink(_Link):
@@ -2291,17 +2316,6 @@ class EnabledLink(_Link):
         menuItem = super(EnabledLink, self).AppendToMenu(menu, window, data)
         menuItem.Enable(self._enable())
         return menuItem
-
-class AppendableLink(_Link):
-    """A menu item that may be appended to a Menu or not."""
-
-    def _append(self, window):
-        """"Override as needed to append or not the menu item."""
-        raise AbstractError
-
-    def AppendToMenu(self,menu,window,data):
-        if not self._append(window): return
-        return super(AppendableLink, self).AppendToMenu(menu, window, data)
 
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK

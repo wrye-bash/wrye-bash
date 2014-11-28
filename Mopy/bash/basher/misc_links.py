@@ -238,9 +238,8 @@ class People_Karma(ChoiceLink):
     idList = ID_GROUPS
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
-    def _range(self):
-        for _id, item in zip(self.idList, self.__class__.labels):
-            yield _Link(_id=_id, _text=item)
+    @property
+    def items(self): return self.__class__.labels
 
     def DoList(self,event):
         """Handle selection of label."""

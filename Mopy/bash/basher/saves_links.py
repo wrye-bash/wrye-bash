@@ -155,12 +155,10 @@ class Saves_Profiles(ChoiceLink):
     @property
     def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    def _range(self):
-        class _CheckLink(CheckLink):
-            def _check(self):
-                return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
-        for _id, item in zip(self.idList, self.items):
-            yield _CheckLink(_id=_id, _text=item)
+    class _CheckLink(CheckLink):
+        def _check(self):
+            return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
+    cls = _CheckLink
 
     def _initData(self, window, data):
         super(Saves_Profiles, self)._initData(window, data)
@@ -632,13 +630,10 @@ class Save_Move(ChoiceLink):
     def items(self):
         return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    def _range(self):
-        class _WasCheckLink(EnabledLink): # never checked at that
-            def _enable(self):
-                return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
-
-        for _id, item in zip(self.idList, self.items):
-            yield _WasCheckLink(_id=_id, _text=item)
+    class _WasCheckLink(EnabledLink): # never checked at that
+        def _enable(self):
+            return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
+    cls = _WasCheckLink
 
     def _initData(self, window, data):
         super(Save_Move, self)._initData(window, data)

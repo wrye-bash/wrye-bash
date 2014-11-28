@@ -203,7 +203,7 @@ class MasterList_AddMasters(_Link):
         self.window.InitEdit()
 
 #------------------------------------------------------------------------------
-class MasterList_CleanMasters(AppendableLink):
+class MasterList_CleanMasters(AppendableLink, _Link):
     """Remove unneeded masters."""
     text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
 

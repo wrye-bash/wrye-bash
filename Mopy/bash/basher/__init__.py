@@ -172,7 +172,7 @@ ID_SET    = 6001
 ID_SELECT = 6002
 ID_BROWSER = 6003
 #ID_NOTES  = 6004
-ID_EDIT   = 6005
+ID_EDIT   = 6005 # TODO(ut): only this is used
 ID_BACK   = 6006
 ID_NEXT   = 6007
 
@@ -7957,7 +7957,6 @@ class Mod_BaloGroups_Edit(wx.Dialog):
 class Mod_LabelsData(balt.ListEditorData):
     """Data capsule for label editing dialog."""
     def __init__(self,parent,strings):
-        """Initialize."""
         #--Strings
         self.column = strings.column
         self.setKey = strings.setKey
@@ -8026,30 +8025,22 @@ class Mod_LabelsData(balt.ListEditorData):
         return True
 
 #------------------------------------------------------------------------------
-class Mod_Labels:
+class Mod_Labels(ChoiceLink):
     """Add mod label links."""
     def __init__(self):
-        """Initialize."""
+        super(Mod_Labels, self).__init__()
         self.labels = settings[self.setKey]
+        self.extraItems = [_Link(self.idList.EDIT, self.editMenuText),
+                           SeparatorLink(),
+                           _Link(self.idList.NONE, _(u'None')), ]
+        self.extraActions = {self.idList.EDIT: self.DoEdit,
+                             self.idList.NONE: self.DoNone, }
 
-    def GetItems(self):
+    @property
+    def items(self):
         items = self.labels[:]
         items.sort(key=lambda a: a.lower())
         return items
-
-    def AppendToMenu(self,menu,window,data):
-        """Append label list to menu."""
-        self.window = window
-        self.data = data
-        menu.Append(self.idList.EDIT,self.editMenu)
-        menu.AppendSeparator()
-        menu.Append(self.idList.NONE,_(u'None'))
-        for id,item in zip(self.idList,self.GetItems()):
-            menu.Append(id,item)
-        #--Events
-        wx.EVT_MENU(bashFrame,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU(bashFrame,self.idList.NONE,self.DoNone)
-        wx.EVT_MENU_RANGE(bashFrame,self.idList.BASE,self.idList.MAX,self.DoList)
 
     def DoNone(self,event):
         """Handle selection of None."""
@@ -8060,7 +8051,7 @@ class Mod_Labels:
 
     def DoList(self,event):
         """Handle selection of label."""
-        label = self.GetItems()[event.GetId()-self.idList.BASE]
+        label = self.items[event.GetId()-self.idList.BASE]
         fileLabels = bosh.modInfos.table.getColumn(self.column)
         for fileName in self.data:
             fileLabels[fileName] = label
@@ -8074,39 +8065,32 @@ class Mod_Labels:
         balt.ListEditor.Display(self.window, self.editWindow, data)
 
 #------------------------------------------------------------------------------
-class Mod_Groups(Mod_Labels):
+class Mod_Groups(AppendableLink, Mod_Labels):
     """Add mod group links."""
     def __init__(self):
-        """Initialize."""
         self.column     = 'group'
         self.setKey     = 'bash.mods.groups'
-        self.editMenu   = _(u'Edit Groups...')
+        self.editMenuText   = _(u'Edit Groups...')
         self.editWindow = _(u'Groups')
         self.addPrompt  = _(u'Add group:')
         self.idList     = ID_GROUPS
-        Mod_Labels.__init__(self)
+        super(Mod_Groups, self).__init__()
 
-    def AppendToMenu(self,menu,window,data):
-        """Append label list to menu."""
-        #--For group labels
-        if not settings.get('bash.balo.full'):
-            Mod_Labels.AppendToMenu(self,menu,window,data)
+    def _append(self, window): return not settings.get('bash.balo.full')
 
-from . mod_links import *
 #------------------------------------------------------------------------------
 class Mod_Ratings(Mod_Labels):
     """Add mod rating links."""
     def __init__(self):
-        """Initialize."""
         self.column     = 'rating'
         self.setKey     = 'bash.mods.ratings'
-        self.editMenu   = _(u'Edit Ratings...')
+        self.editMenuText   = _(u'Edit Ratings...')
         self.editWindow = _(u'Ratings')
         self.addPrompt  = _(u'Add rating:')
         self.idList     = ID_RATINGS
-        Mod_Labels.__init__(self)
+        super(Mod_Ratings, self).__init__()
 
-
+from .mod_links import *
 from .saves_links import *
 from .misc_links import *
 # App Links -------------------------------------------------------------------

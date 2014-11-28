@@ -290,7 +290,7 @@ class File_ListMasters(EnabledLink):
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
 
-class File_Redate(AppendableLink):
+class File_Redate(AppendableLink, _Link):
     """Move the selected files to start at a specified date."""
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")

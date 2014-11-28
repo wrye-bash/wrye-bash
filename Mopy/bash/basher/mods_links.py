@@ -91,17 +91,14 @@ class Mods_LoadList(ChoiceLink):
                              self.idList.SAVE: self.DoSave,
                              self.idList.EDIT: self.DoEdit, }
 
-    def GetItems(self):
+    @property
+    def items(self):
         items = self.loadListsDict.keys()
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items
 
     def SortWindow(self):
         self.window.PopulateItems()
-
-    def _range(self):
-        for id,item in zip(self.idList,self.GetItems()):
-            yield _Link(id,item)
 
     def DoNone(self,event):
         """Unselect all mods."""
@@ -135,7 +132,7 @@ class Mods_LoadList(ChoiceLink):
 
     def DoList(self,event):
         """Select mods in list."""
-        item = self.GetItems()[event.GetId()-self.idList.BASE]
+        item = self.items[event.GetId() - self.idList.BASE]
         selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.loadListsDict[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
         modList.RefreshUI()
