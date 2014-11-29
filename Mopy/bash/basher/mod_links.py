@@ -523,51 +523,43 @@ class Mod_Ratings(_Mod_Labels):
         super(Mod_Ratings, self).__init__()
 
 #------------------------------------------------------------------------------
-class Mod_BaloGroups:
+class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
     """Select Balo group to use."""
     def __init__(self):
-        """Initialize."""
+        super(Mod_BaloGroups, self).__init__()
         self.id_group = {}
         self.idList = ID_GROUPS
+        self.extraItems = [_Link(self.idList.EDIT, _(u'Edit...')), ]
+        self.extraActions = {self.idList.EDIT: self.DoEdit, }
 
-    def GetItems(self):
-        items = self.labels[:]
-        items.sort(key=lambda a: a.lower())
-        return items
+    def _append(self, window): return bool(bosh.settings.get('bash.balo.full'))
 
-    def AppendToMenu(self,menu,window,data):
-        """Append label list to menu."""
-        if not bosh.settings.get('bash.balo.full'): return
-        self.window = window
-        self.data = data
+    def _range(self):
         id_group = self.id_group
-        menu.Append(self.idList.EDIT,_(u'Edit...'))
         setableMods = [GPath(x) for x in self.data if GPath(x) not in bosh.modInfos.autoHeaders]
         if setableMods:
-            menu.AppendSeparator()
+            yield SeparatorLink()
             ids = iter(self.idList)
-            if len(setableMods) == 1:
-                modGroup = bosh.modInfos.table.getItem(setableMods[0],'group')
-            else:
-                modGroup = None
+            modGroup = bosh.modInfos.table.getItem(setableMods[0],'group') \
+                if len(setableMods) == 1 else None
             for group,lower,upper in bosh.modInfos.getBaloGroups():
                 if lower == upper:
-                    id = ids.next()
-                    id_group[id] = group
-                    menu.AppendCheckItem(id,group)
-                    menu.Check(id,group == modGroup)
+                    id_ = ids.next()
+                    id_group[id_] = group
+                    class _GroupLink(CheckLink):
+                        def _check(self): return self.text == modGroup
+                    yield _GroupLink(_id= id_, _text=group)
                 else:
-                    subMenu = wx.Menu()
+                    subMenu = MenuLink(name=group)
                     for x in range(lower,upper+1):
                         offGroup = bosh.joinModGroup(group,x)
-                        id = ids.next()
-                        id_group[id] = offGroup
-                        subMenu.AppendCheckItem(id,offGroup)
-                        subMenu.Check(id,offGroup == modGroup)
-                    menu.AppendMenu(-1,group,subMenu)
-        #--Events
-        wx.EVT_MENU(Link.Frame,self.idList.EDIT,self.DoEdit)
-        wx.EVT_MENU_RANGE(Link.Frame,self.idList.BASE,self.idList.MAX,self.DoList)
+                        id_ = ids.next()
+                        id_group[id_] = offGroup
+                        class _OffGroupLink(CheckLink):
+                            def _check(self): return self.text == modGroup
+                        subMenu.links.append(
+                            _OffGroupLink(_id=id_, _text=offGroup))
+                    yield subMenu
 
     def DoList(self,event):
         """Handle selection of label."""
