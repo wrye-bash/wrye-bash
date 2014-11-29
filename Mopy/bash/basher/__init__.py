@@ -3087,7 +3087,7 @@ class InstallersList(balt.Tank):
 
     def SelectAll(self):
         for itemDex in range(self.gList.GetItemCount()):
-            self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            self.SelectItemAtIndex(itemDex)
 
     def OnChar(self,event):
         """Char event: Reorder."""
@@ -3183,7 +3183,7 @@ class InstallersList(balt.Tank):
                 index = self.GetIndex(GPath(u'===='))
             if index != -1:
                 self.ClearSelected()
-                self.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+                self.SelectItemAtIndex(index)
                 self.gList.EditLabel(index)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
@@ -6058,9 +6058,7 @@ class ModChecker(wx.Frame):
         text = re.sub(u'(__|\*\*|~~)',u'',text,re.U)
         text = re.sub(u'&bull; &bull;',u'**',text,re.U)
         text = re.sub(u'<[^>]+>','',text,re.U)
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
 
     def CheckMods(self,event=None):
         """Do mod check."""
@@ -8990,9 +8988,7 @@ class INI_ListINIs(Link):
     def Execute(self,event):
         """Handle printing out the errors."""
         text = iniList.ListTweaks()
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -9319,9 +9315,7 @@ class Mods_ListMods(Link):
     def Execute(self,event):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=wx.GetKeyState(67))
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -9336,9 +9330,7 @@ class Mods_ListBashTags(Link):
     def Execute(self,event):
         #--Get masters list
         text = bosh.modInfos.getTagList()
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -10514,9 +10506,7 @@ class Mod_CreateBOSSReport(Link):
         if spoiler: text += u'[/spoiler]'
 
         # Show results + copy to clipboard
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------
@@ -10594,9 +10584,7 @@ class Mod_CopyModInfo(Link):
         if spoiler: text += u'[/spoiler]'
 
         # Show results + copy to clipboard
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'Mod Info Report'),asDialog=False,
                      fixedFont=False,icons=bashBlue)
 
@@ -10614,9 +10602,7 @@ class Mod_ListBashTags(Link):
         for fileName in self.data:
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
 
 #------------------------------------------------------------------------------

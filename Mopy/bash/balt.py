@@ -2048,6 +2048,9 @@ class Tank(wx.Panel):
         self.RefreshUI()
         self.data.setChanged()
 
+    def SelectItemAtIndex(self, index, _select=wx.LIST_STATE_SELECTED):
+        self.gList.SetItemState(index, _select, _select)
+
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Links(list):
@@ -2223,3 +2226,8 @@ class Tank_Duplicate(Link):
         self.data.copy(srcName,destName,destDir)
         if destDir == srcDir:
             self.gTank.RefreshUI()
+
+def copyToClipboard(text):
+    if wx.TheClipboard.Open():
+        wx.TheClipboard.SetData(wx.TextDataObject(text))
+        wx.TheClipboard.Close()

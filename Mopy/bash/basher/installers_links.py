@@ -49,7 +49,7 @@ class Installers_AddMarker(_Link):
             index = self.gTank.GetIndex(GPath(u'===='))
         if index != -1:
             self.gTank.ClearSelected()
-            self.gTank.gList.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            self.gTank.SelectItemAtIndex(index)
             self.gTank.gList.EditLabel(index)
 
 class Installers_MonitorInstall(_Link):
@@ -172,8 +172,7 @@ class Installers_MonitorInstall(_Link):
         # Refresh UI
         gInstallers.RefreshUIMods()
         # Select new installer
-        gList = self.gTank.gList
-        gList.SetItemState(gList.GetItemCount()-1,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+        self.gTank.SelectItemAtIndex(self.gTank.gList.GetItemCount()-1)
 
 class Installers_AnnealAll(_Link):
     """Anneal all packages."""

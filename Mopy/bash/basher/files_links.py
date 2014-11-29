@@ -285,9 +285,7 @@ class File_ListMasters(_Link):
         fileName = GPath(self.data[0])
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
 
 class File_Redate(_Link):

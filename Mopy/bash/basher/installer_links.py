@@ -563,9 +563,7 @@ class Installer_ListPackages(InstallerLink):
         if balt.askYes(self.gTank,message,_(u'Only Show Installed?')):
             text = self.data.getPackageList(False)
         else: text = self.data.getPackageList()
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
@@ -581,9 +579,7 @@ class Installer_ListStructure(InstallerLink):   # Provided by Waruddar
         installer = self.data[archive]
         text = installer.listSource(archive)
         #--Get masters list
-        if wx.TheClipboard.Open():
-            wx.TheClipboard.SetData(wx.TextDataObject(text))
-            wx.TheClipboard.Close()
+        balt.copyToClipboard(text)
         balt.showLog(self.gTank,text,_(u'Package Structure'),asDialog=False,fixedFont=False,icons=bashBlue)
 
 class Installer_Move(InstallerLink):
