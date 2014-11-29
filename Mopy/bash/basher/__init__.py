@@ -8803,16 +8803,49 @@ class StatusBar_Hide(Link):
 
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
+class _Mod_Export_Link(EnabledLink):
+
+    def _enable(self): return bool(self.data)
+
+    def Execute(self, event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
+        textName = fileName.root + self.__class__.csvFile
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
+                                textName, u'*' + self.__class__.csvFile)
+        if not textPath: return
+        (textDir, textName) = textPath.headTail
+        #--Export
+        with balt.Progress(self.__class__.progressTitle) as progress:
+            parser = self._parser()
+            readProgress = SubProgress(progress, 0.1, 0.8)
+            readProgress.setFull(len(self.data))
+            for index, fileName in enumerate(map(GPath, self.data)):
+                fileInfo = bosh.modInfos[fileName]
+                readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
+                parser.readFromMod(fileInfo)
+            progress(0.8, _(u'Exporting to') + u' ' + textName.s + u'.')
+            parser.writeToText(textPath)
+            progress(1.0, _(u'Done.'))
+
+    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
+
+class _Mod_Import_Link(EnabledLink):
+
+    def _enable(self): return len(self.data) == 1
+
+#------------------------------------------------------------------------------
 from ..patcher.utilities import ActorLevels, CBash_ActorLevels
 
-class Mod_ActorLevels_Export(EnabledLink):
+class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
-    def _enable(self): return bool(self.data)
-
-    def Execute(self,event):
+    def Execute(self,event): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
@@ -8847,12 +8880,10 @@ class Mod_ActorLevels_Export(EnabledLink):
             progress(1.0,_(u'Done.'))
 
 #------------------------------------------------------------------------------
-class Mod_ActorLevels_Import(EnabledLink):
+class Mod_ActorLevels_Import(_Mod_Import_Link):
     """Imports actor levels from text file to mod."""
     text = _(u'NPC Levels...')
     help = _(u"Import NPC level info from text file to mod")
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         message = (_(u'This command will import NPC level info from a previously exported file.')
@@ -9786,37 +9817,6 @@ class Mods_CleanDummyMasters(EnabledLink):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class _Mod_Export_Link(EnabledLink):
-
-    def _enable(self): return bool(self.data)
-
-    def Execute(self, event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
-                                textName, u'*' + self.__class__.csvFile)
-        if not textPath: return
-        (textDir, textName) = textPath.headTail
-        #--Export
-        with balt.Progress(self.__class__.progressTitle) as progress:
-            parser = self._parser()
-            readProgress = SubProgress(progress, 0.1, 0.8)
-            readProgress.setFull(len(self.data))
-            for index, fileName in enumerate(map(GPath, self.data)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
-                parser.readFromMod(fileInfo)
-            progress(0.8, _(u'Exporting to') + u' ' + textName.s + u'.')
-            parser.writeToText(textPath)
-            progress(1.0, _(u'Done.'))
-
-    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
-
-#------------------------------------------------------------------------------
 from ..patcher.utilities import FactionRelations, CBash_FactionRelations
 
 class Mod_FactionRelations_Export(_Mod_Export_Link):
@@ -9831,13 +9831,10 @@ class Mod_FactionRelations_Export(_Mod_Export_Link):
         return CBash_FactionRelations() if CBash else FactionRelations()
 
 #------------------------------------------------------------------------------
-class Mod_FactionRelations_Import(Link):
+class Mod_FactionRelations_Import(_Mod_Import_Link):
     """Imports faction relations from text file to mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Relations...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Relations...')
+    help = _(u'Import faction relations from text file to mod')
 
     def Execute(self,event):
         message = (_(u"This command will import faction relation info from a previously exported file.")
@@ -9899,13 +9896,10 @@ class Mod_Factions_Export(_Mod_Export_Link):
         return CBash_ActorFactions() if CBash else ActorFactions()
 
 #------------------------------------------------------------------------------
-class Mod_Factions_Import(Link):
+class Mod_Factions_Import(_Mod_Import_Link):
     """Imports factions from text file to mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Factions...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Factions...')
+    help = _(u'Import factions from text file to mod')
 
     def Execute(self,event):
         message = (_(u"This command will import faction ranks from a previously exported file.")
@@ -10397,13 +10391,10 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
         return CBash_EditorIds() if CBash else EditorIds()
 
 #------------------------------------------------------------------------------
-class Mod_EditorIds_Import(Link):
+class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Editor Ids...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Editor Ids...')
+    help = _(u'Import faction editor ids from text file or other mod')
 
     def Execute(self,event):
         message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
@@ -10587,13 +10578,10 @@ class Mod_FullNames_Export(_Mod_Export_Link):
         return CBash_FullNames() if CBash else FullNames()
 
 #------------------------------------------------------------------------------
-class Mod_FullNames_Import(Link):
+class Mod_FullNames_Import(_Mod_Import_Link):
     """Import full names from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Names...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Names...')
+    help = _(u'Import full names from text file or other mod')
 
     def Execute(self,event):
         message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
@@ -11084,15 +11072,12 @@ class Mod_ShowReadme(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ScriptText, CBash_ScriptText
 
-class Mod_Scripts_Export(Link):
+class Mod_Scripts_Export(_Mod_Export_Link):
     """Export scripts from mod to text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Scripts...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Scripts...')
+    help = _(u'Export scripts from mod to text file')
 
-    def Execute(self,event):
+    def Execute(self,event): # overrides _Mod_Export_Link
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
@@ -11154,13 +11139,10 @@ class Mod_Scripts_Export(Link):
                      icons=bashBlue)
 
 #------------------------------------------------------------------------------
-class Mod_Scripts_Import(Link):
+class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Scripts...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Scripts...')
+    help = _(u'Import scripts from text file or other mod')
 
     def Execute(self,event):
         message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
@@ -11214,28 +11196,21 @@ class Mod_Scripts_Import(Link):
 from ..patcher.utilities import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(_Mod_Export_Link):
-    """Export armor and weapon stats from mod to text file."""
+    """Export armor and weapon stats from mod to text file.""" # TODO: armor and weapon ??
     askTitle = _(u'Export stats to:')
     csvFile = u'_Stats.csv'
     progressTitle = _(u"Export Stats")
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Stats...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Stats...')
+    help = _(u'Export stats from mod to text file')
 
     def _parser(self):
         return CBash_ItemStats() if CBash else ItemStats()
 
 #------------------------------------------------------------------------------
-class Mod_Stats_Import(Link):
+class Mod_Stats_Import(_Mod_Import_Link):
     """Import stats from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Stats...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Stats...')
+    help = _(u'Import stats from text file or other mod')
 
     def Execute(self,event):
         message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
@@ -11284,29 +11259,23 @@ class Mod_Stats_Import(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import CompleteItemData, CBash_CompleteItemData
 
-class Mod_ItemData_Export(_Mod_Export_Link):
+class Mod_ItemData_Export(_Mod_Export_Link): # TODO: unused !!
     """Export pretty much complete item data from mod to text file."""
     askTitle = _(u'Export item data to:')
     csvFile = u'_ItemData.csv'
     progressTitle = _(u"Export Item Data")
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Item Data...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Item Data...')
+    help = _(u'Export pretty much complete item data from mod to text file')
 
     def _parser(self):
         return CBash_CompleteItemData() if CBash else CompleteItemData()
 
 #------------------------------------------------------------------------------
-class Mod_ItemData_Import(Link):
+class Mod_ItemData_Import(_Mod_Import_Link): # TODO: unused !!
     """Import stats from text file or other mod."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Item Data...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Item Data...')
+    help = _(u'Import pretty much complete item data from text file or other'
+             u' mod')
 
     def Execute(self,event):
         message = (_(u"Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"))
@@ -11360,24 +11329,17 @@ class Mod_Prices_Export(_Mod_Export_Link):
     askTitle = _(u'Export prices to:')
     csvFile = u'_Prices.csv'
     progressTitle = _(u'Export Prices')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Prices...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Prices...')
+    help = _(u'Export item prices from mod to text file')
 
     def _parser(self):
         return CBash_ItemPrices() if CBash else ItemPrices()
 
 #------------------------------------------------------------------------------
-class Mod_Prices_Import(Link):
+class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Prices...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data)==1)
+    text = _(u'Prices...')
+    help = _(u'Import item prices from text file')
 
     def Execute(self,event):
         message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
@@ -11430,28 +11392,27 @@ class Mod_Prices_Import(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import CBash_MapMarkers
 
-class CBash_Mod_MapMarkers_Export(_Mod_Export_Link):
+class _Mod_Export_Link_CBash(_Mod_Export_Link):
+    def _enable(self): return bool(self.data) and bool(CBash)
+
+class _Mod_Import_Link_CBash(_Mod_Import_Link):
+    def _enable(self): return len(self.data) == 1 and bool(CBash)
+
+class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
     """Export map marker stats from mod to text file."""
     askTitle = _(u'Export Map Markers to:')
     csvFile = u'_MapMarkers.csv'
     progressTitle = _(u'Export Map Markers')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Map Markers...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data) and bool(CBash))
+    text = _(u'Map Markers...')
+    help = _(u'Export map marker stats from mod to text file')
 
     def _parser(self): return CBash_MapMarkers()
 
 #------------------------------------------------------------------------------
-class CBash_Mod_MapMarkers_Import(Link):
+class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
     """Import MapMarkers from text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Map Markers...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) == 1 and bool(CBash))
+    text = _(u'Map Markers...')
+    help = _(u'Import MapMarkers from text file')
 
     def Execute(self,event):
         message = (_(u"Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"))
@@ -11498,18 +11459,15 @@ class CBash_Mod_MapMarkers_Import(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import CBash_CellBlockInfo
 
-class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link):
+class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
     """Export Cell Block Info to text file
     (in the form of Cell, block, subblock)."""
     askTitle = _(u'Export Cell Block Info to:')
     csvFile = u'_CellBlockInfo.csv'
     progressTitle = _(u"Export Cell Block Info")
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Cell Block Info...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data) and bool(CBash))
+    text = _(u'Cell Block Info...')
+    help = _(u'Export Cell Block Info to text file (in the form of Cell,'
+             u' block, subblock)')
 
     def _parser(self): return CBash_CellBlockInfo()
 
@@ -11521,24 +11479,17 @@ class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     askTitle = _(u'Export Sigil Stone details to:')
     csvFile = u'_SigilStones.csv'
     progressTitle = _(u'Export Sigil Stone details')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Sigil Stones...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Sigil Stones...')
+    help = _(u'Export Sigil Stone details from mod to text file')
 
     def _parser(self):
         return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
 
 #------------------------------------------------------------------------------
-class Mod_SigilStoneDetails_Import(Link):
+class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     """Import Sigil Stone details from text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Sigil Stones...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) == 1)
+    text = _(u'Sigil Stones...')
+    help = _(u'Import Sigil Stone details from text file')
 
     def Execute(self,event):
         message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
@@ -11591,15 +11542,12 @@ class Mod_SigilStoneDetails_Import(Link):
 #------------------------------------------------------------------------------
 from ..patcher.utilities import SpellRecords, CBash_SpellRecords
 
-class Mod_SpellRecords_Export(Link):
+class Mod_SpellRecords_Export(_Mod_Export_Link):
     """Export Spell details from mod to text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Spells...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Spells...')
+    help = _(u'Export Spell details from mod to text file')
 
-    def Execute(self,event):
+    def Execute(self,event): # overrides _Mod_Export_Link
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Spells.csv'
@@ -11631,13 +11579,10 @@ class Mod_SpellRecords_Export(Link):
             progress(1.0,_(u'Done.'))
 
 #------------------------------------------------------------------------------
-class Mod_SpellRecords_Import(Link):
+class Mod_SpellRecords_Import(_Mod_Import_Link):
     """Import Spell details from text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Spells...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) == 1)
+    text = _(u'Spells...')
+    help = _(u'Import Spell details from text file')
 
     def Execute(self,event):
         message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
@@ -11700,23 +11645,16 @@ class Mod_IngredientDetails_Export(_Mod_Export_Link):
     askTitle = _(u'Export Ingredient details to:')
     csvFile = u'_Ingredients.csv'
     progressTitle = _(u'Export Ingredient details')
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Ingredients...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.data))
+    text = _(u'Ingredients...')
+    help = _(u'Export Ingredient details from mod to text file')
 
     def _parser(self):
         return CBash_IngredientDetails() if CBash else IngredientDetails()
 
-class Mod_IngredientDetails_Import(Link):
+class Mod_IngredientDetails_Import(_Mod_Import_Link):
     """Import Ingredient details from text file."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Ingredients...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.data) == 1)
+    text = _(u'Ingredients...')
+    help = _(u'Import Ingredient details from text file')
 
     def Execute(self,event):
         message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
