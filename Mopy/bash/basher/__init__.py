@@ -7746,7 +7746,7 @@ class List_Column(CheckLink):
         self.allColumnsKey = allColumnsKey
         self.enable = enable
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self,menu,window,data): # TODO(ut) MI with Enabled
         self.text = settings['bash.colNames'][self.colName]
         self.help = _(u"Show/Hide '%s' column.") % self.text
         menuItem = _Link.AppendToMenu(self,menu,window,data)
@@ -7764,21 +7764,18 @@ class List_Column(CheckLink):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class List_Columns(Link): # FIXME: wx in AppendToMenu !!!
+class List_Columns(MenuLink):
     """Customize visible columns."""
-    def __init__(self,columnsKey,allColumnsKey,persistantColumns=[]):
-        Link.__init__(self)
+    text = _(u"Columns")
+
+    def __init__(self,columnsKey,allColumnsKey,persistantColumns=()):
+        balt.MenuLink.__init__(self, self.__class__.text)
         self.columnsKey = columnsKey
         self.allColumnsKey = allColumnsKey
         self.persistant = persistantColumns
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        subMenu = wx.Menu()
-        menu.AppendMenu(self.id,_(u"Columns"),subMenu)
         for col in settingDefaults[self.allColumnsKey]:
             enable = col not in self.persistant
-            List_Column(self.columnsKey,self.allColumnsKey,col,enable).AppendToMenu(subMenu,window,data)
+            self.links.append(List_Column(self.columnsKey,self.allColumnsKey,col,enable))
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
