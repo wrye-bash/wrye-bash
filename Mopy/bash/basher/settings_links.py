@@ -261,7 +261,10 @@ class Settings_Tab(AppendableLink, CheckLink, EnabledLink):
                     insertAt = i+1
             className,title,panel = tabInfo[self.tabKey]
             if not panel:
-                panel = globals()[className](bashFrame.notebook)
+                # FIXME(ut): ugly as hell - use tabInfo somehow
+                from . import BSAPanel, INIPanel, InstallersPanel, \
+                    MessagePanel, PeoplePanel, SavePanel, ScreensPanel
+                panel = locals()[className](bashFrame.notebook)
                 tabInfo[self.tabKey][2] = panel
             if insertAt > bashFrame.notebook.GetPageCount():
                 bashFrame.notebook.AddPage(panel,title)
