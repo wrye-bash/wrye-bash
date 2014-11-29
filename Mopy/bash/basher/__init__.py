@@ -7868,42 +7868,42 @@ from . installer_links import * # Needs to be after InstallerProject_OmodConfigD
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
-    def AppendToMenu(self,menu,window,data):
-        subMenu = wx.Menu()
-        menu.AppendMenu(-1,self.text,subMenu)
+    def _enable(self): # TODO(ut) untested for multiple selections
+        """Return False to disable the converter menu otherwise populate its links attribute and return True."""
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
-        selected = window.GetSelected()
-        selectedCRCs = set(window.data[archive].crc for archive in selected)
-        crcInstallers = set(window.data.crc_installer)
-        srcCRCs = set(window.data.srcCRC_converters)
+        selected = self.selected # window.GetSelected()
+        instData = self.data # window.data, InstallersData singleton
+        selectedCRCs = set(instData[archive].crc for archive in selected)
+        crcInstallers = set(instData.crc_installer)
+        srcCRCs = set(instData.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
-            #--List comprehension is faster than unrolling the for loops, but readability suffers
             #--Test every converter for every selected archive
             #--Only add a link to the converter if it uses all selected archives,
             #--and all of its required archives are available (but not necessarily selected)
-            linkSet = set([converter for installerCRC in selectedCRCs for converter in window.data.srcCRC_converters[installerCRC] if selectedCRCs <= converter.srcCRCs <= crcInstallers])
+            linkSet = set( #--List comprehension is faster than unrolling the for loops, but readability suffers
+                [converter for installerCRC in selectedCRCs for converter in
+                 instData.srcCRC_converters[installerCRC] if
+                 selectedCRCs <= converter.srcCRCs <= crcInstallers])
 ##            for installerCRC in selectedCRCs:
 ##                for converter in window.data.srcCRC_converters[installerCRC]:
 ##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
         #--If the archive is a single archive with an embedded BCF, add that
-        if len(selected) == 1 and window.data[selected[0]].hasBCF:
-            newMenu = InstallerConverter_ApplyEmbedded()
-            newMenu.AppendToMenu(subMenu,window,data)
+        if len(selected) == 1 and instData[selected[0]].hasBCF:
+            self.links.append(InstallerConverter_ApplyEmbedded())
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
-            id = menu.FindItem(self.text)
-            menu.Enable(id,False)
+            return False
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
         #--that the converter requires
         for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
             numAsterisks = len(converter.srcCRCs - selectedCRCs)
-            newMenu = InstallerConverter_Apply(converter,numAsterisks)
-            newMenu.AppendToMenu(subMenu,window,data)
+            self.links.append(InstallerConverter_Apply(converter, numAsterisks))
+        return True
 
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
