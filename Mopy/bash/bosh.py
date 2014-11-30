@@ -1118,8 +1118,6 @@ class SaveHeader:
         except:
             deprint(u'save file error:',traceback=True)
             raise SaveFileError(path.tail,u'File header is corrupted.')
-        #--Done
-        ins.close()
 
     def writeMasters(self,path):
         """Rewrites masters of existing save file."""
@@ -3294,7 +3292,7 @@ class FileInfo:
         self.ctime = path.ctime
         self.mtime = path.mtime
         self.size  = path.size
-        if self.header: self.getHeader()
+        if self.header: self.getHeader() # if not header remains None
 
     def getHeader(self):
         """Read header for file."""
@@ -3684,7 +3682,7 @@ class ModInfo(FileInfo):
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
-        """Read header for file."""
+        """Read header from file set self.header and return it."""
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
                 recHeader = ins.unpackRecHeader()
@@ -3697,6 +3695,7 @@ class ModInfo(FileInfo):
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
+        return self.header # to honor the method's name
 
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
@@ -3940,7 +3939,7 @@ class SaveInfo(FileInfo):
             return -10
 
     def getHeader(self):
-        """Read header for file."""
+        """Read header from file set self.header and return it."""
         try:
             self.header = SaveHeader(self.getPath())
             #--Master Names/Order
@@ -3948,6 +3947,7 @@ class SaveInfo(FileInfo):
             self.masterOrder = tuple() #--Reset to empty for now
         except struct.error, rex:
             raise SaveFileError(self.name,u'Struct.error: %s' % rex)
+        return self.header # to honor the method's name
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -4638,6 +4638,7 @@ class ModInfos(FileInfos):
                     newFile.tes4.author = u'======'
                     newFile.tes4.description = _(u'Balo group header.')
                     newFile.safeSave()
+                    newInfo.getHeader() # set newInfo.header from the file
                     self[newName] = newInfo
                 mod_group[newName] = offGroup
                 group_header[offGroup] = newName
