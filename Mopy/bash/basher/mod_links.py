@@ -28,7 +28,7 @@ import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink
+    RadioLink, MenuLink, SeparatorLink, ChoiceLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError, CancelError
 from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, JPEG, \
     PatchDialog, DocBrowser
@@ -308,6 +308,219 @@ class Mod_AddMaster(EnabledLink):
         fileInfo.writeHeader()
         bosh.modInfos.refreshFile(fileInfo.name)
         self.window.RefreshUI()
+
+#------------------------------------------------------------------------------
+class _Mod_LabelsData(balt.ListEditorData):
+    """Data capsule for label editing dialog."""
+    def __init__(self,parent,strings):
+        #--Strings
+        self.column = strings.column
+        self.setKey = strings.setKey
+        self.addPrompt = strings.addPrompt
+        #--Key/type
+        self.data = bosh.settings[self.setKey]
+        #--GUI
+        balt.ListEditorData.__init__(self,parent)
+        self.showAdd = True
+        self.showRename = True
+        self.showRemove = True
+
+    def getItemList(self):
+        """Returns load list keys in alpha order."""
+        return sorted(self.data,key=lambda a: a.lower())
+
+    def add(self):
+        """Adds a new group."""
+        #--Name Dialog
+        newName = balt.askText(self.parent,self.addPrompt)
+        if not newName: return
+        if newName in self.data:
+            balt.showError(self.parent,_(u'Name must be unique.'))
+            return False
+        elif len(newName) == 0 or len(newName) > 64:
+            balt.showError(self.parent,
+                _(u'Name must be between 1 and 64 characters long.'))
+            return False
+        bosh.settings.setChanged(self.setKey)
+        self.data.append(newName)
+        self.data.sort()
+        return newName
+
+    def rename(self,oldName,newName):
+        """Renames oldName to newName."""
+        #--Right length?
+        if len(newName) == 0 or len(newName) > 64:
+            balt.showError(self.parent,
+                _(u'Name must be between 1 and 64 characters long.'))
+            return False
+        #--Rename
+        bosh.settings.setChanged(self.setKey)
+        self.data.remove(oldName)
+        self.data.append(newName)
+        self.data.sort()
+        #--Edit table entries.
+        colGroup = bosh.modInfos.table.getColumn(self.column)
+        for fileName in colGroup.keys():
+            if colGroup[fileName] == oldName:
+                colGroup[fileName] = newName
+        self.parent.PopulateItems()
+        #--Done
+        return newName
+
+    def remove(self,item):
+        """Removes group."""
+        bosh.settings.setChanged(self.setKey)
+        self.data.remove(item)
+        #--Edit table entries.
+        colGroup = bosh.modInfos.table.getColumn(self.column)
+        for fileName in colGroup.keys():
+            if colGroup[fileName] == item:
+                del colGroup[fileName]
+        self.parent.PopulateItems()
+        #--Done
+        return True
+
+#------------------------------------------------------------------------------
+class _Mod_Labels(ChoiceLink):
+    """Add mod label links."""
+    def __init__(self):
+        super(_Mod_Labels, self).__init__()
+        self.labels = bosh.settings[self.setKey]
+        self.extraItems = [_Link(self.idList.EDIT, self.editMenuText),
+                           SeparatorLink(),
+                           _Link(self.idList.NONE, _(u'None')), ]
+        self.extraActions = {self.idList.EDIT: self.DoEdit,
+                             self.idList.NONE: self.DoNone, }
+
+    @property
+    def items(self):
+        items = self.labels[:]
+        items.sort(key=lambda a: a.lower())
+        return items
+
+    def DoNone(self,event):
+        """Handle selection of None."""
+        fileLabels = bosh.modInfos.table.getColumn(self.column)
+        for fileName in self.data:
+            fileLabels[fileName] = u''
+        self.window.PopulateItems()
+
+    def DoList(self,event):
+        """Handle selection of label."""
+        label = self.items[event.GetId()-self.idList.BASE]
+        fileLabels = bosh.modInfos.table.getColumn(self.column)
+        for fileName in self.data:
+            fileLabels[fileName] = label
+        if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
+            modList.SortItems()
+        self.window.RefreshUI()
+
+    def DoEdit(self,event):
+        """Show label editing dialog."""
+        data = _Mod_LabelsData(self.window,self)
+        balt.ListEditor.Display(self.window, self.editWindow, data)
+
+#------------------------------------------------------------------------------
+class _Mod_Groups_Export(EnabledLink):
+    """Export mod groups to text file."""
+    askTitle = _(u'Export groups to:')
+    csvFile = u'_Groups.csv'
+    text = _(u'Export Groups')
+
+    def _enable(self): return bool(self.data)
+
+    def _initData(self, window, data):
+        data = bosh.ModGroups.filter(data)
+        super(_Mod_Groups_Export, self)._initData(window, data)
+
+    def Execute(self,event):
+        fileName = GPath(self.data[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = u'My' + self.__class__.csvFile
+        textDir = bosh.dirs['patches']
+        textDir.makedirs()
+        #--File dialog
+        textPath = balt.askSave(self.window,self.__class__.askTitle,textDir,textName,u'*' + self.__class__.csvFile)
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Export
+        modGroups = bosh.ModGroups()
+        modGroups.readFromModInfos(self.data)
+        modGroups.writeToText(textPath)
+        balt.showOk(self.window,
+            _(u"Exported %d mod/groups.") % (len(modGroups.mod_group),),
+            _(u"Export Groups"))
+
+#------------------------------------------------------------------------------
+class _Mod_Groups_Import(EnabledLink):
+    """Import editor ids from text file or other mod."""
+    text = _(u'Import Groups')
+
+    def _enable(self): return bool(self.data)
+
+    def _initData(self, window, data):
+        data = bosh.ModGroups.filter(data)
+        super(_Mod_Groups_Import, self)._initData(window, data)
+
+    def Execute(self,event):
+        message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
+        if not balt.askContinue(self.window,message,'bash.groups.import.continue',
+            _(u'Import Groups')):
+            return
+        textDir = bosh.dirs['patches']
+        #--File dialog
+        textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
+            u'', u'*_Groups.csv',mustExist=True)
+        if not textPath: return
+        (textDir,textName) = textPath.headTail
+        #--Extension error check
+        if textName.cext != u'.csv':
+            balt.showError(self.window,_(u'Source file must be a csv file.'))
+            return
+        #--Import
+        modGroups = bosh.ModGroups()
+        modGroups.readFromText(textPath)
+        changed = modGroups.writeToModInfos(self.data)
+        bosh.modInfos.refresh()
+        self.window.RefreshUI()
+        balt.showOk(self.window,
+            _(u"Imported %d mod/groups (%d changed).") % (len(modGroups.mod_group),changed),
+            _(u"Import Groups"))
+
+#------------------------------------------------------------------------------
+class Mod_Groups(AppendableLink, _Mod_Labels):
+    """Add mod group links."""
+    def __init__(self):
+        self.column     = 'group'
+        self.setKey     = 'bash.mods.groups'
+        self.editMenuText   = _(u'Edit Groups...')
+        self.editWindow = _(u'Groups')
+        self.addPrompt  = _(u'Add group:')
+        self.idList     = ID_GROUPS
+        super(Mod_Groups, self).__init__()
+        self.extraItems = [_Mod_Groups_Export(), _Mod_Groups_Import()] + self.extraItems
+
+    def _initData(self, window, data):
+        super(Mod_Groups, self)._initData(window, data)
+        modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
+            data) == 1 else None
+        class _CheckGroup(CheckLink):
+            def _check(self): return self.text == modGroup
+        self.__class__.cls = _CheckGroup # TODO(ut) untested - hope it does not set ChoiCelink.cls
+
+    def _append(self, window): return not bosh.settings.get('bash.balo.full')
+
+#------------------------------------------------------------------------------
+class Mod_Ratings(_Mod_Labels):
+    """Add mod rating links."""
+    def __init__(self):
+        self.column     = 'rating'
+        self.setKey     = 'bash.mods.ratings'
+        self.editMenuText   = _(u'Edit Ratings...')
+        self.editWindow = _(u'Ratings')
+        self.addPrompt  = _(u'Add rating:')
+        self.idList     = balt.IdList(10400, 90,'EDIT','NONE')
+        super(Mod_Ratings, self).__init__()
 
 #------------------------------------------------------------------------------
 class Mod_BaloGroups:
@@ -1819,73 +2032,6 @@ class Mod_FlipSelf(EnabledLink):
             #--Repopulate
             bosh.modInfos.refresh(doInfos=False)
             self.window.RefreshUI(detail=fileInfo.name)
-
-#------------------------------------------------------------------------------
-class Mod_Groups_Export(EnabledLink):
-    """Export mod groups to text file."""
-    askTitle = _(u'Export groups to:')
-    csvFile = u'_Groups.csv'
-    text = _(u'Groups...')
-
-    def _enable(self): return bool(self.data)
-
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(Mod_Groups_Export, self)._initData(window, data)
-
-    def Execute(self,event):
-        fileName = GPath(self.data[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = u'My' + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,self.__class__.askTitle,textDir,textName,u'*' + self.__class__.csvFile)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        modGroups = bosh.ModGroups()
-        modGroups.readFromModInfos(self.data)
-        modGroups.writeToText(textPath)
-        balt.showOk(self.window,
-            _(u"Exported %d mod/groups.") % (len(modGroups.mod_group),),
-            _(u"Export Groups"))
-
-#------------------------------------------------------------------------------
-class Mod_Groups_Import(EnabledLink):
-    """Import editor ids from text file or other mod."""
-    text = _(u'Groups...')
-
-    def _enable(self): return bool(self.data)
-
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(Mod_Groups_Import, self)._initData(window, data)
-
-    def Execute(self,event):
-        message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
-        if not balt.askContinue(self.window,message,'bash.groups.import.continue',
-            _(u'Import Groups')):
-            return
-        textDir = bosh.dirs['patches']
-        #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
-            u'', u'*_Groups.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        if textName.cext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a csv file.'))
-            return
-        #--Import
-        modGroups = bosh.ModGroups()
-        modGroups.readFromText(textPath)
-        changed = modGroups.writeToModInfos(self.data)
-        bosh.modInfos.refresh()
-        self.window.RefreshUI()
-        balt.showOk(self.window,
-            _(u"Imported %d mod/groups (%d changed).") % (len(modGroups.mod_group),changed),
-            _(u"Import Groups"))
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import EditorIds, CBash_EditorIds

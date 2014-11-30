@@ -178,7 +178,6 @@ ID_NEXT   = 6007
 
 #--Label Menus
 ID_GROUPS    = balt.IdList(10100,290,'EDIT','NONE')
-ID_RATINGS   = balt.IdList(10400, 90,'EDIT','NONE')
 ID_TAGS      = balt.IdList(10600, 90,'AUTO','COPY')
 
 # Images ----------------------------------------------------------------------
@@ -7953,151 +7952,6 @@ class Mod_BaloGroups_Edit(wx.Dialog):
         balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
 
-#------------------------------------------------------------------------------
-class Mod_LabelsData(balt.ListEditorData):
-    """Data capsule for label editing dialog."""
-    def __init__(self,parent,strings):
-        #--Strings
-        self.column = strings.column
-        self.setKey = strings.setKey
-        self.addPrompt = strings.addPrompt
-        #--Key/type
-        self.data = settings[self.setKey]
-        #--GUI
-        balt.ListEditorData.__init__(self,parent)
-        self.showAdd = True
-        self.showRename = True
-        self.showRemove = True
-
-    def getItemList(self):
-        """Returns load list keys in alpha order."""
-        return sorted(self.data,key=lambda a: a.lower())
-
-    def add(self):
-        """Adds a new group."""
-        #--Name Dialog
-        newName = balt.askText(self.parent,self.addPrompt)
-        if not newName: return
-        if newName in self.data:
-            balt.showError(self.parent,_(u'Name must be unique.'))
-            return False
-        elif len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
-            return False
-        settings.setChanged(self.setKey)
-        self.data.append(newName)
-        self.data.sort()
-        return newName
-
-    def rename(self,oldName,newName):
-        """Renames oldName to newName."""
-        #--Right length?
-        if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
-            return False
-        #--Rename
-        settings.setChanged(self.setKey)
-        self.data.remove(oldName)
-        self.data.append(newName)
-        self.data.sort()
-        #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
-        for fileName in colGroup.keys():
-            if colGroup[fileName] == oldName:
-                colGroup[fileName] = newName
-        self.parent.PopulateItems()
-        #--Done
-        return newName
-
-    def remove(self,item):
-        """Removes group."""
-        settings.setChanged(self.setKey)
-        self.data.remove(item)
-        #--Edit table entries.
-        colGroup = bosh.modInfos.table.getColumn(self.column)
-        for fileName in colGroup.keys():
-            if colGroup[fileName] == item:
-                del colGroup[fileName]
-        self.parent.PopulateItems()
-        #--Done
-        return True
-
-#------------------------------------------------------------------------------
-class Mod_Labels(ChoiceLink):
-    """Add mod label links."""
-    def __init__(self):
-        super(Mod_Labels, self).__init__()
-        self.labels = settings[self.setKey]
-        self.extraItems = [_Link(self.idList.EDIT, self.editMenuText),
-                           SeparatorLink(),
-                           _Link(self.idList.NONE, _(u'None')), ]
-        self.extraActions = {self.idList.EDIT: self.DoEdit,
-                             self.idList.NONE: self.DoNone, }
-
-    @property
-    def items(self):
-        items = self.labels[:]
-        items.sort(key=lambda a: a.lower())
-        return items
-
-    def DoNone(self,event):
-        """Handle selection of None."""
-        fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.data:
-            fileLabels[fileName] = u''
-        self.window.PopulateItems()
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        label = self.items[event.GetId()-self.idList.BASE]
-        fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.data:
-            fileLabels[fileName] = label
-        if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            modList.SortItems()
-        self.window.RefreshUI()
-
-    def DoEdit(self,event):
-        """Show label editing dialog."""
-        data = Mod_LabelsData(self.window,self)
-        balt.ListEditor.Display(self.window, self.editWindow, data)
-
-#------------------------------------------------------------------------------
-class Mod_Groups(AppendableLink, Mod_Labels):
-    """Add mod group links."""
-    def __init__(self):
-        self.column     = 'group'
-        self.setKey     = 'bash.mods.groups'
-        self.editMenuText   = _(u'Edit Groups...')
-        self.editWindow = _(u'Groups')
-        self.addPrompt  = _(u'Add group:')
-        self.idList     = ID_GROUPS
-        super(Mod_Groups, self).__init__()
-
-    def _initData(self, window, data):
-        super(Mod_Groups, self)._initData(window, data)
-        modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
-            data) == 1 else None
-        class _CheckGroup(CheckLink):
-            def _check(self): return self.text == modGroup
-        self.__class__.cls = _CheckGroup # TODO(ut) untested - hope it does not set ChoiCelink.cls
-
-    def _append(self, window): return not settings.get('bash.balo.full')
-
-#------------------------------------------------------------------------------
-class Mod_Ratings(Mod_Labels):
-    """Add mod rating links."""
-    def __init__(self):
-        self.column     = 'rating'
-        self.setKey     = 'bash.mods.ratings'
-        self.editMenuText   = _(u'Edit Ratings...')
-        self.editWindow = _(u'Ratings')
-        self.addPrompt  = _(u'Add rating:')
-        self.idList     = ID_RATINGS
-        super(Mod_Ratings, self).__init__()
-
 from .mod_links import *
 from .saves_links import *
 from .misc_links import *
@@ -9904,7 +9758,6 @@ def InitModLinks():
             exportMenu = MenuLink(_(u"Export"))
             exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
-            exportMenu.links.append(Mod_Groups_Export()) # TODO(ut): not here
     ##        exportMenu.links.append(Mod_ItemData_Export())
             if bush.game.fsName == u'Skyrim':
                 exportMenu.links.append(Mod_FullNames_Export())
@@ -9926,7 +9779,6 @@ def InitModLinks():
         if True: #--Import
             importMenu = MenuLink(_(u"Import"))
             importMenu.links.append(Mod_EditorIds_Import())
-            importMenu.links.append(Mod_Groups_Import())
     ##        importMenu.links.append(Mod_ItemData_Import())
             if bush.game.fsName == u'Skyrim':
                 importMenu.links.append(Mod_FullNames_Import())
