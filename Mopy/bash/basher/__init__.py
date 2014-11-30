@@ -8076,6 +8076,14 @@ class Mod_Groups(AppendableLink, Mod_Labels):
         self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
 
+    def _initData(self, window, data):
+        super(Mod_Groups, self)._initData(window, data)
+        modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
+            data) == 1 else None
+        class _CheckGroup(CheckLink):
+            def _check(self): return self.text == modGroup
+        self.__class__.cls = _CheckGroup # TODO(ut) untested - hope it does not set ChoiCelink.cls
+
     def _append(self, window): return not settings.get('bash.balo.full')
 
 #------------------------------------------------------------------------------
