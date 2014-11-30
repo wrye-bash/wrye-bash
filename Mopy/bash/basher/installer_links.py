@@ -320,6 +320,13 @@ class Installer_Anneal(_InstallerLink):
             gInstallers.RefreshUIMods()
             refreshData()
 
+class Installer_Delete(_InstallerLink):
+    text = _(u'Delete')
+    help = _(u'Delete selected item(s)')
+
+    def Execute(self, event): self.gTank.DeleteSelected(shellUI=False,
+                                                        noRecycle=False)
+
 class Installer_Duplicate(_InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')

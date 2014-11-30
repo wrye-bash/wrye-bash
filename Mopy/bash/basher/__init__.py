@@ -483,39 +483,39 @@ class List(wx.Panel):
     def DeleteSelected(self,shellUI=False,dontRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
-        if items:
-            if shellUI:
-                try:
-                    self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
-                except balt.AccessDeniedError:
-                    pass
-                dirJoin = self.data.dir.join
-                for item in items:
-                    itemPath = dirJoin(item)
-                    if not itemPath.exists():
-                        bosh.trackedInfos.track(itemPath)
-            else:
-                message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-                message.extend(sorted(items))
-                with ListBoxes(self, _(u'Delete Items'), _(
-                        u'Delete these items?  This operation cannot be '
-                        u'undone.'), [message]) as dialog:
-                    if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
-                    id = dialog.ids[message[0]]
-                    checks = dialog.FindWindowById(id)
-                    if checks:
-                        dirJoin = self.data.dir.join
-                        for i,mod in enumerate(items):
-                            if checks.IsChecked(i):
-                                try:
-                                    self.data.delete(mod)
-                                    # Temporarily Track this file for BAIN, so BAIN will
-                                    # update the status of its installers
-                                    bosh.trackedInfos.track(dirJoin(mod))
-                                except bolt.BoltError as e:
-                                    balt.showError(self, _(u'%s') % e)
-            bosh.modInfos.plugins.refresh(True)
-            self.RefreshUI()
+        if not items: return
+        if shellUI:
+            try:
+                self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
+            except balt.AccessDeniedError:
+                pass
+            dirJoin = self.data.dir.join
+            for item in items:
+                itemPath = dirJoin(item)
+                if not itemPath.exists():
+                    bosh.trackedInfos.track(itemPath)
+        else:
+            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
+            message.extend(sorted(items))
+            with ListBoxes(self, _(u'Delete Items'), _(
+                    u'Delete these items?  This operation cannot be '
+                    u'undone.'), [message]) as dialog:
+                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
+                id = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id)
+                if checks:
+                    dirJoin = self.data.dir.join
+                    for i,mod in enumerate(items):
+                        if checks.IsChecked(i):
+                            try:
+                                self.data.delete(mod)
+                                # Temporarily Track this file for BAIN, so BAIN will
+                                # update the status of its installers
+                                bosh.trackedInfos.track(dirJoin(mod))
+                            except bolt.BoltError as e:
+                                balt.showError(self, _(u'%s') % e)
+        bosh.modInfos.plugins.refresh(True)
+        self.RefreshUI()
 
     def checkUncheckMod(self, *mods):
         removed = []
@@ -3010,6 +3010,13 @@ class InstallersList(balt.Tank):
         for itemDex in range(self.gList.GetItemCount()):
             self.SelectItemAtIndex(itemDex)
 
+    def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
+        super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
+        with balt.BusyCursor():
+            # below ripped from Installer_Hide
+            self.data.refresh(what='ION')
+            self.RefreshUI()
+
     def OnChar(self,event):
         """Char event: Reorder."""
         code = event.GetKeyCode()
@@ -3086,7 +3093,7 @@ class InstallersList(balt.Tank):
         ##Delete - delete
         elif code in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
             with balt.BusyCursor():
-                self.DeleteSelected(True,event.ShiftDown())
+                self.DeleteSelected(shellUI=True, noRecycle=event.ShiftDown())
         ##F2 - Rename selected.
         elif code == wx.WXK_F2:
             selected = self.GetSelected()
@@ -12881,7 +12888,7 @@ def InitInstallerLinks():
     #--File
     InstallersPanel.itemMenu.append(Installer_Open())
     InstallersPanel.itemMenu.append(Installer_Duplicate())
-    InstallersPanel.itemMenu.append(balt.Tank_Delete())
+    InstallersPanel.itemMenu.append(Installer_Delete())
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"), oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())

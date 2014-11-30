@@ -2049,7 +2049,7 @@ class Tank(wx.Panel):
         self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
     #--Standard data commands -------------------------------------------------
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
+    def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
         """Deletes selected items."""
         items = self.GetSelected()
         if not items: return
@@ -2064,6 +2064,8 @@ class Tank(wx.Panel):
                 self.data.delete(items,askOk=True,dontRecycle=noRecycle)
             except (CancelError,SkipError):
                 pass
+        if not _refresh: return  # TODO(ut): refresh below did not work for
+        # BAIN - let's see with People tab (then delete _refresh parameter)
         self.RefreshUI()
         self.data.setChanged()
 
@@ -2226,18 +2228,15 @@ class Tanks_Open(Link):
 
 # Tank Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Tank_Delete(Link):
+class Tank_Delete(_Link): # was used in BAIN would not refresh - used in People
     """Deletes selected file from tank."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
+    text = _(u'Delete')
+    help = _(u'Delete selected item(s)')
 
     def Execute(self,event):
-        try:
-            wx.BeginBusyCursor()
+        with BusyCursor():
             self.gTank.DeleteSelected()
-        finally:
-            wx.EndBusyCursor()
+
 #------------------------------------------------------------------------------
 class Tank_Duplicate(Link):
     """Create a duplicate of a tank item, assuming that tank item is a file,
