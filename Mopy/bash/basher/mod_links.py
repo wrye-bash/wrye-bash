@@ -847,45 +847,6 @@ class Mod_CreateDummyMasters(EnabledLink):
         refreshData()
         self.window.RefreshUI()
 
-class Mods_CleanDummyMasters(EnabledLink):
-    """Clean up after using a 'Create Dummy Masters...' command."""
-    text = _(u'Remove Dummy Masters...')
-    help = _(u"Clean up after using a 'Create Dummy Masters...' command")
-
-    def _enable(self):
-        for fileName in bosh.modInfos.data:
-            fileInfo = bosh.modInfos[fileName]
-            if fileInfo.header.author == u'BASHED DUMMY':
-                return True
-        return False
-
-    def Execute(self,event):
-        """Handle execution."""
-        remove = []
-        for fileName in bosh.modInfos.data:
-            fileInfo = bosh.modInfos[fileName]
-            if fileInfo.header.author == u'BASHED DUMMY':
-                remove.append(fileName)
-        remove = bosh.modInfos.getOrdered(remove)
-        message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-        message.extend(remove)
-        from . import bashFrame # FIXME
-        dialog = ListBoxes(bashFrame,_(u'Delete Dummy Masters'),
-                     _(u'Delete these items? This operation cannot be undone.'),
-                     [message])
-        if dialog.ShowModal() == ListBoxes.ID_CANCEL:
-            dialog.Destroy()
-            return
-        id = dialog.ids[u'']
-        checks = dialog.FindWindowById(id)
-        if checks:
-            for i,mod in enumerate(remove):
-                if checks.IsChecked(i):
-                    self.window.data.delete(mod)
-        dialog.Destroy()
-        bashFrame.RefreshData()
-        self.window.RefreshUI()
-
 #------------------------------------------------------------------------------
 from ..patcher.utilities import FactionRelations, CBash_FactionRelations
 

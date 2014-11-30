@@ -4584,6 +4584,8 @@ class ModBasePanel(SashTankPanel):
         self.detailsItem = item
 
 #------------------------------------------------------------------------------
+from .misc_links import Tab_Link # TODO(ut) don't want to import here
+
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def __init__(self, parent, id):
         wx.Notebook.__init__(self, parent, id)
@@ -4639,7 +4641,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             menu = Links()
             for key in settings['bash.tabs.order']:
                 canDisable = bool(key != 'Mods')
-                menu.append(Settings_Tab(key,canDisable))
+                menu.append(Tab_Link(key,canDisable))
             menu.PopupMenu(self,bashFrame,None)
         else:
             event.Skip()
@@ -10205,8 +10207,8 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_Games())
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_UseAltName())
-    SettingsMenu.append(Mods_Deprint())
-    SettingsMenu.append(Mods_DumpTranslator())
+    SettingsMenu.append(Settings_Deprint())
+    SettingsMenu.append(Settings_DumpTranslator())
     SettingsMenu.append(Settings_UAC())
 
 

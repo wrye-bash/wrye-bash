@@ -22,12 +22,12 @@
 #
 # =============================================================================
 import locale
+import sys
 import wx # FIXME(ut): wx
 from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, SeparatorLink, \
     BoolLink, staticText, tooltip
 from .. import barb, bosh, bush, balt, bass, bolt
-from .constants import tabInfo
 from ..bolt import StateError, deprint, GPath
 from . import askYes, BashFrame, ColorDialog, bashFrameSetTitle, getStatusBar, \
     BashStatusBar, App_Button
@@ -208,70 +208,6 @@ class Settings_Colors(_Link):
         dialog = ColorDialog(bashFrame)
         dialog.ShowModal()
         dialog.Destroy()
-
-#------------------------------------------------------------------------------
-class Settings_Tab(AppendableLink, CheckLink, EnabledLink):
-    """Handle hiding/unhiding tabs."""
-    def __init__(self,tabKey,canDisable=True):
-        super(Settings_Tab, self).__init__()
-        self.tabKey = tabKey
-        self.enabled = canDisable
-        className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
-        self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
-            {'tabtitle': self.text})
-
-    def _append(self, window): return self.text is not None
-
-    def _enable(self): return self.enabled
-
-    def _check(self): return bosh.settings['bash.tabs'][self.tabKey]
-
-    def Execute(self,event):
-        from . import bashFrame # FIXME(ut): globals
-        if bosh.settings['bash.tabs'][self.tabKey]:
-            # It was enabled, disable it.
-            iMods = None
-            iInstallers = None
-            iDelete = None
-            for i in range(bashFrame.notebook.GetPageCount()):
-                pageTitle = bashFrame.notebook.GetPageText(i)
-                if pageTitle == tabInfo['Mods'][1]:
-                    iMods = i
-                elif pageTitle == tabInfo['Installers'][1]:
-                    iInstallers = i
-                if pageTitle == tabInfo[self.tabKey][1]:
-                    iDelete = i
-            if iDelete == bashFrame.notebook.GetSelection():
-                # We're deleting the current page...
-                if ((iDelete == 0 and iInstallers == 1) or
-                        (iDelete - 1 == iInstallers)):
-                    # The auto-page change will change to
-                    # the 'Installers' tab.  Change to the
-                    # 'Mods' tab instead.
-                    bashFrame.notebook.SetSelection(iMods)
-            page = bashFrame.notebook.GetPage(iDelete)
-            bashFrame.notebook.RemovePage(iDelete)
-            page.Show(False)
-        else:
-            # It was disabled, enable it
-            insertAt = 0
-            for i,key in enumerate(bosh.settings['bash.tabs.order']):
-                if key == self.tabKey: break
-                if bosh.settings['bash.tabs'][key]:
-                    insertAt = i+1
-            className,title,panel = tabInfo[self.tabKey]
-            if not panel:
-                # FIXME(ut): ugly as hell - use tabInfo somehow
-                from . import BSAPanel, INIPanel, InstallersPanel, \
-                    MessagePanel, PeoplePanel, SavePanel, ScreensPanel
-                panel = locals()[className](bashFrame.notebook)
-                tabInfo[self.tabKey][2] = panel
-            if insertAt > bashFrame.notebook.GetPageCount():
-                bashFrame.notebook.AddPage(panel,title)
-            else:
-                bashFrame.notebook.InsertPage(insertAt,panel,title)
-        bosh.settings['bash.tabs'][self.tabKey] ^= True
-        bosh.settings.setChanged('bash.tabs')
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):
@@ -500,3 +436,59 @@ class Settings_UAC(AppendableLink):
                   _(u'Administrator Mode'), ):
             from . import bashFrame # FIXME(ut): globals
             bashFrame.Restart(True,True)
+
+class Settings_Deprint(CheckLink):
+    """Turn on deprint/delist."""
+    text = _(u'Debug Mode')
+    help = _(u"Turns on extra debug prints to help debug an error or just for "
+             u"advanced testing.")
+
+    def _check(self): return bolt.deprintOn
+
+    def Execute(self,event):
+        deprint(_(u'Debug Printing: Off'))
+        bolt.deprintOn = not bolt.deprintOn
+        deprint(_(u'Debug Printing: On'))
+
+class Settings_DumpTranslator(AppendableLink):
+    """Dumps new translation key file using existing key, value pairs."""
+    text = _(u'Dump Translator')
+    help = _(u"Generate a new version of the translator file for your locale.")
+
+    def _append(self, window):
+        """Can't dump the strings if the files don't exist."""
+        return not hasattr(sys,'frozen')
+
+    def Execute(self,event):
+        message = (_(u'Generate Bash program translator file?')
+                   + u'\n\n' +
+                   _(u'This function is for translating Bash itself (NOT mods) into non-English languages.  For more info, see Internationalization section of Bash readme.')
+                   )
+        if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
+            return
+        language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+        outPath = bosh.dirs['l10n']
+        bashPath = GPath(u'bash')
+        # FIXME basher, patcher, game etc... packages - robust detection of all py under bash/
+        files = [bashPath.join(x+u'.py').s for x in (u'bolt',
+                                                     u'balt',
+                                                     u'bush',
+                                                     u'bosh',
+                                                     u'bash',
+                                                     u'basher',
+                                                     u'bashmon',
+                                                     u'belt',
+                                                     u'bish',
+                                                     u'barg',
+                                                     u'barb',
+                                                     u'bass',
+                                                     u'cint',
+                                                     u'ScriptParser')]
+        # Include Game files
+        bashPath = bashPath.join(u'game')
+        files.extend([bashPath.join(x).s for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
+        with balt.BusyCursor():
+            outFile = bolt.dumpTranslator(outPath.s,language,*files)
+        balt.showOk(self.window,
+            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outFile,
+            _(u'Dump Translator')+u': '+outPath.stail)
