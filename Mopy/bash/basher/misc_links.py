@@ -27,8 +27,7 @@ import wx
 from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
     ChoiceLink, MenuLink, CheckLink
 from .. import balt, bosh, bush
-from . import ID_GROUPS
-from .constants import settingDefaults, tabInfo
+from .constants import ID_GROUPS, settingDefaults, tabInfo
 from ..bolt import GPath, LString
 
 # Screen Links ----------------------------------------------------------------

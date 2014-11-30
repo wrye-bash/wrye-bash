@@ -24,7 +24,7 @@
 """This module contains some constants ripped out of basher.py"""
 
 from .. import bush, bosh # I hope this bosh import is valid...
-from ..balt import Image, ImageList
+from ..balt import Image, ImageList, IdList
 from ..bolt import GPath
 import wx # TODO(ut): this must go - also wrap long lines
 
@@ -555,3 +555,7 @@ installercons.data.extend({
     #--Broken
     'corrupt':   Image(GPath((bosh.dirs['images']).join(u'red_x.png')),PNG),
     }.items())
+
+#--Label Menus
+ID_GROUPS    = IdList(10100,290,'EDIT','NONE')
+ID_TAGS      = IdList(10600, 90,'AUTO','COPY')

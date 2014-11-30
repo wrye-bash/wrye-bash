@@ -30,8 +30,8 @@ from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, MenuLink, SeparatorLink, ChoiceLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError, CancelError
-from . import bashBlue, ListBoxes, ID_GROUPS, Mod_BaloGroups_Edit, JPEG, \
-    PatchDialog, DocBrowser
+from . import bashBlue, ListBoxes, Mod_BaloGroups_Edit, PatchDialog, DocBrowser
+from .constants import ID_GROUPS, JPEG
 from ..bosh import formatDate, formatInteger
 from ..cint import ObCollection, CBash, \
     FormID  # TODO(ut): CBash...should be in bosh
