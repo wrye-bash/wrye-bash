@@ -485,14 +485,12 @@ class Installers_SkipOBSEPlugins(Installers_Skip):
         menuItem.Check(not bosh.settings[self.key])
         bosh.installersWindow = self.gTank
 
-class Installers_RenameStrings(Installers_Skip):
+class Installers_RenameStrings(AppendableLink, Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
     text, key = _(u'Auto-name String Translation Files'), \
                 'bash.installers.renameStrings'
 
-    def AppendToMenu(self,menu,window,data):
-        if bush.game.esp.stringsFiles:
-            Installers_Skip.AppendToMenu(self,menu,window,data)
+    def _append(self, window): return bool(bush.game.esp.stringsFiles)
 
 class Installers_CreateNewProject(_Link):
     """Open the Create New Project Dialog"""

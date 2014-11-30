@@ -570,7 +570,7 @@ class Mod_AllowNoGhosting(_Link):
 
 #------------------------------------------------------------------------------
 class Mod_Ghost(EnabledLink):
-
+# TODO(ut) unghost all ?
     def _initData(self, window, data):
         _Link._initData(self, window, data)
         if len(data) == 1:
@@ -588,10 +588,6 @@ class Mod_Ghost(EnabledLink):
         if len(self.data) == 1 and not self.isGhost:
             return self.path not in bosh.modInfos.ordered
         return True
-
-    def AppendToMenu(self,menu,window,data):
-        # if not len(data) == 1: return
-        return super(Mod_Ghost, self).AppendToMenu(menu, window, data)
 
     def Execute(self,event):
         files = []
@@ -1875,9 +1871,9 @@ class Mod_Groups_Export(EnabledLink):
 
     def _enable(self): return bool(self.data)
 
-    def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
+    def _initData(self, window, data):
         data = bosh.ModGroups.filter(data)
-        return super(Mod_Groups_Export, self).AppendToMenu(menu, window, data)
+        super(Mod_Groups_Export, self)._initData(window, data)
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -1904,9 +1900,9 @@ class Mod_Groups_Import(EnabledLink):
 
     def _enable(self): return bool(self.data)
 
-    def AppendToMenu(self,menu,window,data): #(ut): must override, edits data param
+    def _initData(self, window, data):
         data = bosh.ModGroups.filter(data)
-        return super(Mod_Groups_Import, self).AppendToMenu(menu, window, data)
+        super(Mod_Groups_Import, self)._initData(window, data)
 
     def Execute(self,event):
         message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")

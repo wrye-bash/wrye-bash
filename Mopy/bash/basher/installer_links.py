@@ -1008,15 +1008,13 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerArchive_Unpack(_InstallerLink):
+class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     """Install selected packages."""
     text = _(u'Unpack to Project(s)...')
 
-    def AppendToMenu(self,menu,window,data):
-        self._initData(window, data)
-        if not self.isSelectedArchives(): return
-        return super(InstallerArchive_Unpack, self).AppendToMenu(menu, window,
-                                                                 data)
+    def _append(self, window):
+        self.selected = window.GetSelected()
+        return self.isSelectedArchives()
 
     def Execute(self,event):
         if self.isSingleArchive():
@@ -1130,16 +1128,13 @@ class InstallerProject_SyncPack(_InstallerLink):
         raise UncodedError
 
 #------------------------------------------------------------------------------
-class InstallerProject_Pack(_InstallerLink):
+class InstallerProject_Pack(AppendableLink, _InstallerLink):
     """Pack project to an archive."""
     text = _(u'Pack to Archive...')
 
-    def AppendToMenu(self,menu,window,data):
-        #--Pack is appended whenever Unpack isn't, and vice-versa
-        self._initData(window, data)
-        if not self.isSingleProject(): return
-        return super(InstallerProject_Pack, self).AppendToMenu(menu, window,
-                                                                 data)
+    def _append(self, window):
+        self.selected = window.GetSelected()
+        return self.isSingleProject()
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension

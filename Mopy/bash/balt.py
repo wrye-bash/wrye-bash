@@ -2117,47 +2117,53 @@ class Link(object):
     """Link is a command to be encapsulated in a graphic element (menu item,
     button, etc.).
 
-    Link objects are instantiated once in InitLinks() and then when the menu
-    is popped up their AppendToMenu method creates a wx MenuItem or submenu.
-    AppendToMenu initializes the Link instance data calling _initData
-    (basically the items that are selected + some more if the window owning the
-    menu is a Tank instance) to be used in the Execute method and also in some
-    cases to decide if the menu item is enabled, checked etc (see subclasses).
-    The only valid reason to override AppendToMenu is to prevent the menu to be
-    appended.
-    """ # TODO(ut): eliminate overrides of AppendToMenu
-    # TODO(ut): change docs = split to +Link and MenuLink
+    Link objects are _not_ menu items. They are instantiated _once_ in
+    InitLinks() and then when the menu is popped up their AppendToMenu
+    method creates a wx MenuItem or wx submenu and appends this to the
+    currently popped up wx menu.
+    """
+    # TODO(ut): eliminate overrides of AppendToMenu outside balt
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
 
     def __init__(self, _id=None, _text=None):
+        super(Link, self).__init__()
         self.id = _id
         if _text is not None: self.text = _text
-        self._dataInitialized = False  # TODO(ut): bin - only useful when we
-        # override AppendToMenu and call _initData AND super.AppendToMenu
-        # directly (InstallerArchive_Unpack, InstallerProject_Pack, ...?)
 
     def _initData(self, window, data):
-        """Hack to separate data from presentation"""
-        # TODO: Move to _Link subclass ? - init data and (Tank) gTank,
-        # selected and data set (!) - document attributes...
+        """Hack to separate data from presentation.
+
+        Called from :AppendToMenu - DO NOT call directly. Initializes the
+        Link instance data based on UI state when the menu is Popped up -
+        maybe not useful in Button subclasses. Initializes additional
+        attributes for Tank windows - should be moved to a mixin class as
+        self.'data' is _EITHER_ the selected Items (in various types,
+        in mod list a list<Path>, in subpackage list the index of the right
+        clicked item) _OR_ in the case of the installers the same instance
+        of InstallerData- a mess. self.[data|selected|...] are then used in
+        the Execute method and also in some cases to decide if the menu item
+        is enabled, checked etc (see subclasses).
+        :param window: the window the menu is being appended on (type ?)
+        :param data: reflects the selected items when the menu is appended
+        """
+        # TODO(ut): 'data' -> 'selected' and mixin the Tank specific "data"
+        # TODO(ut): document attributes... window type
         self.window = window
         if isinstance(window,Tank):
             self.gTank = window
             self.selected = window.GetSelected()
-            self.data = window.data #TODO(ut)the same instance of InstallerData
-        else:  # In mod list a list<Path>, in subpackage the index of the right clicked item
+            self.data = window.data #installers: same instance of InstallerData
+        else:
+          # modlist: a list<Path> - subpackage: index of the right clicked item
             self.data = data
-        self._dataInitialized = True
 
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
 
-        Link implementation calls _initData, sets the Link.Popup (this must
-        be moved to Links) generates a wx Id and returns None
+        Link implementation calls _initData generates a wx Id and returns None.
         """
-        if not self._dataInitialized: self._initData(window, data)
-        self._dataInitialized = False # TODO(ut): turn this to a property or bin
+        self._initData(window, data)
         #--Generate self.id if necessary (i.e. usually)
         if not self.id: self.id = wx.NewId() # notice id remains the same - __init___ runs ONCE
 
