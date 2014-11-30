@@ -76,7 +76,7 @@ class UnicodeImporter(object):
         if os.path.exists(initfile):
             with open(initfile,'U') as fp:
                 code = fp.read()
-            exec code in mod.__dict__
+            exec compile(code, initfile, 'exec') in mod.__dict__
         return mod
 
 if not hasattr(sys,'frozen'):
