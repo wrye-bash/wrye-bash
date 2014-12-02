@@ -23,8 +23,8 @@
 # =============================================================================
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill, _Link, BoolLink, AppendableLink, Link
-from . import ListBoxes, CreateNewProject
+from ..balt import fill, _Link, BoolLink, AppendableLink, Link, EnabledLink
+from . import ListBoxes, CreateNewProject, Resources
 from ..bolt import GPath, SubProgress
 
 gInstallers = None
@@ -172,6 +172,24 @@ class Installers_MonitorInstall(_Link):
         gInstallers.RefreshUIMods()
         # Select new installer
         self.gTank.SelectItemAtIndex(self.gTank.gList.GetItemCount()-1)
+
+class Installers_ListPackages(EnabledLink):
+    """Copies list of Bain files to clipboard."""
+    text = _(u'List Packages...')
+    help = _(u'Displays a list of all packages.  Also copies that list to the '
+        u'clipboard.  Useful for posting your package order on forums.')
+
+    def Execute(self,event):
+        #--Get masters list
+        message = (_(u'Only show Installed Packages?')
+                   + u'\n' +
+                   _(u'(Else shows all packages)')
+                   )
+        if balt.askYes(self.gTank,message,_(u'Only Show Installed?')):
+            text = self.data.getPackageList(False)
+        else: text = self.data.getPackageList()
+        balt.copyToClipboard(text)
+        balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 class Installers_AnnealAll(_Link):
     """Anneal all packages."""
@@ -501,4 +519,3 @@ class Installers_CreateNewProject(_Link):
         dialog = CreateNewProject()
         dialog.ShowModal()
         dialog.Destroy()
-

@@ -531,24 +531,6 @@ class Installer_Install(_InstallerLink):
             gInstallers.RefreshUIMods()
             Link.Frame.RefreshData()
 
-class Installer_ListPackages(_InstallerLink):
-    """Copies list of Bain files to clipboard."""
-    text = _(u'List Packages...')
-    help = _(u'Displays a list of all packages.  Also copies that list to the '
-        u'clipboard.  Useful for posting your package order on forums.')
-
-    def Execute(self,event):
-        #--Get masters list
-        message = (_(u'Only show Installed Packages?')
-                   + u'\n' +
-                   _(u'(Else shows all packages)')
-                   )
-        if balt.askYes(self.gTank,message,_(u'Only Show Installed?')):
-            text = self.data.getPackageList(False)
-        else: text = self.data.getPackageList()
-        balt.copyToClipboard(text)
-        balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
-
 class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
     text = _(u"List Structure...")
