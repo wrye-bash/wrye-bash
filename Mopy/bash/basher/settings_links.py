@@ -25,11 +25,12 @@ import locale
 import sys
 import wx # FIXME(ut): wx
 from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
-    RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, SeparatorLink, \
-    BoolLink, staticText, tooltip, Link
+    RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
+    staticText, tooltip, Link
 from .. import barb, bosh, bush, balt, bass, bolt
 from ..bolt import StateError, deprint, GPath
-from . import BashFrame, ColorDialog, BashStatusBar, App_Button
+from . import BashFrame, ColorDialog, BashStatusBar
+from .app_buttons import App_Button # TODO(ut): ugly
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------

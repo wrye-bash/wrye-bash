@@ -344,30 +344,6 @@ class Mods_LockTimes(CheckLink):
         bosh.modInfos.refresh(doInfos=False)
         modList.RefreshUI()
 
-# TODO(ut): classes below used by AppButton subclasses ------------------------
-class Mods_Tes4ViewExpert(BoolLink):
-    """Toggle Tes4Edit expert mode (when launched via Bash)."""
-    text, key = _(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing'
-
-#------------------------------------------------------------------------------
-class Mods_Tes5ViewExpert(BoolLink):
-    """Toggle Tes5Edit expert mode (when launched via Bash)."""
-    text, key = _(u'Tes5Edit Expert'), 'tes5View.iKnowWhatImDoing'
-
-#------------------------------------------------------------------------------
-class Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    text = _(u'BOSS Disable Lock Load Order')
-    key = 'BOSS.ClearLockTimes'
-    help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
-             u" when running BOSS through Bash.")
-
-#------------------------------------------------------------------------------
-class Mods_BOSSLaunchGUI(BoolLink):
-    """If BOSS.exe is available then BOSS GUI.exe should be too."""
-    text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
-                      _(u"If selected, Bash will run BOSS's GUI.")
-
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # TODO: CRUFT
     """Empty version of a now removed class. Here for compatibility with
