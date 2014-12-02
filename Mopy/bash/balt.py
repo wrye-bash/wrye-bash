@@ -2105,10 +2105,12 @@ class Links(list):
     def PopupMenu(self,parent,eventWindow=None,*args):
         eventWindow = eventWindow or parent
         menu = wx.Menu()
+        Link.Popup = menu
         for link in self:
             link.AppendToMenu(menu,parent,*args)
         eventWindow.PopupMenu(menu)
         menu.Destroy()
+        Link.Popup = None # do not leak the menu reference
 
 #------------------------------------------------------------------------------
 class Link(object):
@@ -2171,8 +2173,6 @@ class _Link(Link): # TODO(ut): rename to ItemLink
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(_Link, self).AppendToMenu(menu, window, data)
-        # TODO(ut): is below MenuItem (_Link) specific ?
-        Link.Popup = menu
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,_Link.ShowHelp)
         menuItem = wx.MenuItem(menu, self.id, self.text, self.help,
@@ -2186,14 +2186,11 @@ class _Link(Link): # TODO(ut): rename to ItemLink
         raise AbstractError
 
     @staticmethod
-    def ShowHelp(event):
+    def ShowHelp(event): # <wx._core.MenuEvent>
         """Hover over an item, set the statusbar text"""
         if Link.Popup:
-            item = Link.Popup.FindItemById(event.GetId())
-            if item:
-                Link.Frame.GetStatusBar().SetText(item.GetHelp())
-            else:
-                Link.Frame.GetStatusBar().SetText(u'')
+            item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
+            Link.Frame.GetStatusBar().SetText(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
