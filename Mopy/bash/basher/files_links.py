@@ -44,9 +44,9 @@ class Files_Open(_Link):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.window.data.dir
-        dir.makedirs()
-        dir.start()
+        dir_ = self.window.data.dir
+        dir_.makedirs()
+        dir_.start()
 
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
@@ -78,13 +78,15 @@ class Files_Unhide(_Link):
 
     def Execute(self,event):
         srcDir = bosh.dirs['modsBash'].join(u'Hidden')
+        window = self.window
+        destDir = None
         if self.type == 'mod':
             wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = self.window.data.dir
+            destDir = window.data.dir
         elif self.type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = self.window.data.bashDir.join(u'Hidden')
-            destDir = self.window.data.dir
+            srcDir = window.data.bashDir.join(u'Hidden')
+            destDir = window.data.dir
         elif self.type == 'installer':
             window = self.gTank
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
@@ -96,7 +98,6 @@ class Files_Unhide(_Link):
         #--File dialog
         srcDir.makedirs()
         if not self.type == 'installer':
-            window = self.window
             srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'', wildcard)
         if not srcPaths: return
         #--Iterate over Paths
@@ -120,7 +121,7 @@ class Files_Unhide(_Link):
             destPath = destDir.join(srcFileName)
             if destPath.exists():
                 balt.showWarning(window,_(u"File skipped: %s. File is already present.")
-                    % (srcFileName.s,))
+                                 % (srcFileName.s,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
@@ -156,8 +157,8 @@ class File_Delete(_Link):
                      _(u'Delete these files? This operation cannot be undone.'),
                      [message]) as dialog:
             if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-            id = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id)
+            id_ = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id_)
             if checks:
                 for i,mod in enumerate(self.data):
                     if checks.IsChecked(i):
@@ -394,7 +395,7 @@ class File_Snapshot(_Link):
                     newVersion = snapVersion[1:]
                 else:
                     newVersion = fileVersion
-                newDescription = bosh.reVersion.sub(u'\\1 '+newVersion, fileHedr.description,1,flags=re.U)
+                newDescription = bosh.reVersion.sub(u'\\1 '+newVersion, fileHedr.description,1)
                 fileInfo.writeDescription(newDescription)
                 self.window.details.SetFile(fileName)
             #--Copy file
@@ -412,7 +413,6 @@ class File_RevertToSnapshot(EnabledLink):
         fileInfo = self.window.data[self.data[0]]
         fileName = fileInfo.name
         #--Snapshot finder
-        destDir = self.window.data.dir
         srcDir = self.window.data.bashDir.join(u'Snapshots')
         wildcard = fileInfo.getNextSnapshot()[2]
         #--File dialog
@@ -459,9 +459,9 @@ class File_Open(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.window.data.dir
-        for file in self.data:
-            dir.join(file).start()
+        dir_ = self.window.data.dir
+        for file_ in self.data:
+            dir_.join(file_).start()
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
