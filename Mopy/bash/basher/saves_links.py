@@ -26,7 +26,7 @@ import re
 import shutil
 import struct
 import wx # FIXME(ut): wx
-from . import bashBlue, ImportFaceDialog, JPEG
+from . import ImportFaceDialog, JPEG, Resources
 from .. import bosh, bolt, balt, bush
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     _Link, SeparatorLink
@@ -850,7 +850,7 @@ class Save_RepairFactions(EnabledLink): # TODO: CRUFT
                 if unNulledCount or refactionedCount:
                     saveFile.safeSave()
                 message += u'\n%d %d %s' % (refactionedCount,unNulledCount,saveName.s,)
-        balt.showWryeLog(self.window,log.out.getvalue(),_(u'Repair Factions'),icons=bashBlue)
+        balt.showWryeLog(self.window,log.out.getvalue(),_(u'Repair Factions'),icons=Resources.bashBlue)
         log.out.close()
 
 #------------------------------------------------------------------------------
@@ -935,7 +935,7 @@ class Save_Stats(EnabledLink):
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
-            balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
+            balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(AppendableLink, EnabledLink):
@@ -962,7 +962,7 @@ class Save_StatObse(AppendableLink, EnabledLink):
         text = log.out.getvalue()
         log.out.close()
         balt.showLog(self.window, text, self.fileName.s, asDialog=False,
-                     fixedFont=False, icons=bashBlue)
+                     fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(EnabledLink):

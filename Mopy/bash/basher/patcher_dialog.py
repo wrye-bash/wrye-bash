@@ -30,7 +30,7 @@ import wx # TODO(ut): de wx
 from ..balt import button, staticText, vSizer, hSizer, spacer, Link
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
-from . import SetUAC, bashMonkey, bashBlue
+from . import SetUAC, Resources
 from .. import bosh, bolt, balt
 
 modList = None
@@ -128,7 +128,7 @@ class PatchDialog(wx.Dialog):
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
             )
         self.SetSizer(sizer)
-        self.SetIcons(bashMonkey)
+        self.SetIcons(Resources.bashMonkey)
         #--Patcher panels
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
@@ -231,7 +231,7 @@ class PatchDialog(wx.Dialog):
                 docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
                 bolt.WryeText.genHtml(readme,None,docsDir)
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
-                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
+                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
                 #--Select?
                 message = _(u'Activate %s?') % patchName.s
                 if bosh.inisettings['PromptActivateBashedPatch'] \
@@ -340,7 +340,7 @@ class PatchDialog(wx.Dialog):
                 bosh.modInfos.table.setItem(patchName,'doc',readme)
                 #--Convert log/readme to wtxt and show log
                 balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
-                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=bashBlue)
+                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
                 #--Select?
                 message = _(u'Activate %s?') % patchName.s
                 if bosh.inisettings['PromptActivateBashedPatch'] \

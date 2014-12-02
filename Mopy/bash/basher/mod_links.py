@@ -30,7 +30,7 @@ from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, MenuLink, SeparatorLink, ChoiceLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError, CancelError
-from . import bashBlue, ListBoxes, Mod_BaloGroups_Edit, DocBrowser
+from . import ListBoxes, Mod_BaloGroups_Edit, DocBrowser, Resources
 from .constants import ID_GROUPS, JPEG
 from ..bosh import formatDate, formatInteger
 from ..cint import ObCollection, CBash, \
@@ -167,7 +167,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
             balt.showLog(self.window,buff.getvalue(),_(u'Import NPC Levels'),
-                         icons=bashBlue)
+                         icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class MasterList_AddMasters(_Link):
@@ -662,7 +662,7 @@ class Mod_CreateBOSSReport(EnabledLink):
 
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_CopyModInfo(_Link):
@@ -738,7 +738,7 @@ class Mod_CopyModInfo(_Link):
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'Mod Info Report'),asDialog=False,
-                     fixedFont=False,icons=bashBlue)
+                     fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_ListBashTags(_Link):
@@ -753,7 +753,7 @@ class Mod_ListBashTags(_Link):
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_AllowNoGhosting(_Link):
@@ -956,7 +956,7 @@ class Mod_CleanMod(EnabledLink):
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
             balt.showWryeLog(self.window,message,_(u'Nvidia Fog Fix'),
-                             icons=bashBlue)
+                             icons=Resources.bashBlue)
         else:
             message = _(u'No changes required.')
             balt.showOk(self.window,message,_(u'Nvidia Fog Fix'))
@@ -1114,7 +1114,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
             text = buff.getvalue()
             buff.close()
-            balt.showLog(self.window,text,_(u'Import Relations'),icons=bashBlue)
+            balt.showLog(self.window,text,_(u'Import Relations'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ActorFactions, CBash_ActorFactions
@@ -1180,7 +1180,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
                 buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
             text = buff.getvalue()
             buff.close()
-            balt.showLog(self.window,text,_(u'Import Factions'),icons=bashBlue)
+            balt.showLog(self.window,text,_(u'Import Factions'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_MarkLevelers(EnabledLink):
@@ -1236,7 +1236,7 @@ class Mod_MarkMergeable(EnabledLink):
         self.window.RefreshUI(yes)
         self.window.RefreshUI(no)
         if message != u'':
-            balt.showWryeLog(self.window,message,_(u'Mark Mergeable'),icons=bashBlue)
+            balt.showWryeLog(self.window,message,_(u'Mark Mergeable'),icons=Resources.bashBlue)
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ScriptText, CBash_ScriptText
 
@@ -1304,7 +1304,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
         #finally:
         balt.showLog(self.window,exportedScripts,_(u'Export Scripts'),
-                     icons=bashBlue)
+                     icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_Scripts_Import(_Mod_Import_Link):
@@ -1358,7 +1358,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                 report = changedScripts
             elif added:
                 report = addedScripts
-            balt.showLog(self.window,report,_(u'Import Scripts'),icons=bashBlue)
+            balt.showLog(self.window,report,_(u'Import Scripts'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ItemStats, CBash_ItemStats
@@ -1421,7 +1421,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                 buff = StringIO.StringIO()
                 for modName in sorted(changed):
                     buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                balt.showLog(self.window,buff.getvalue(),_(u'Import Stats'),icons=bashBlue)
+                balt.showLog(self.window,buff.getvalue(),_(u'Import Stats'),icons=Resources.bashBlue)
                 buff.close()
 
 #------------------------------------------------------------------------------
@@ -1486,7 +1486,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # TODO: unused !!
             for modName in sorted(changed):
                 buff.write(_(u'Imported Item Data:')
                            + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
-            balt.showLog(self.window,buff.getvalue(),_(u'Import Item Data'),icons=bashBlue)
+            balt.showLog(self.window,buff.getvalue(),_(u'Import Item Data'),icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -1554,7 +1554,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                 buff.write(_(u'Imported Prices:')
                            + u'\n* %s: %d\n' % (modName.s,changed[modName]))
             balt.showLog(self.window,buff.getvalue(),_(u'Import Prices'),
-                         icons=bashBlue)
+                         icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -1621,7 +1621,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             balt.showLog(self.window,buff.getvalue(),_(u'Import Map Markers'),
-                         icons=bashBlue)
+                         icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -1704,7 +1704,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             balt.showLog(self.window,buff.getvalue(),
-                         _(u'Import Sigil Stone details'),icons=bashBlue)
+                         _(u'Import Sigil Stone details'),icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -1802,7 +1802,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                 buff.write(u'* %s\n' % eid)
             balt.showLog(self.window,buff.getvalue(),_(u'Import Spell details'),
 
-                         icons=bashBlue)
+                         icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -1868,7 +1868,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             balt.showLog(self.window,buff.getvalue(),
-                _(u'Import Ingredient details'),icons=bashBlue)
+                _(u'Import Ingredient details'),icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2097,7 +2097,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                         buff.write(u"  '%s'\n" % badEid)
                 text = buff.getvalue()
                 buff.close()
-                balt.showLog(self.window,text,_(u'Objects Changed'),icons=bashBlue)
+                balt.showLog(self.window,text,_(u'Objects Changed'),icons=Resources.bashBlue)
         except bolt.BoltError as e:
             balt.showWarning(self.window,'%'%e)
 
@@ -2206,7 +2206,7 @@ class Mod_Fids_Replace(EnabledLink):
         if not changed:
             balt.showOk(self.window,_(u"No changes required."))
         else:
-            balt.showLog(self.window,changed,_(u'Objects Changed'),icons=bashBlue)
+            balt.showLog(self.window,changed,_(u'Objects Changed'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import FullNames, CBash_FullNames
@@ -2276,7 +2276,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                         buff.write(format % (eid,full,newFull))
                     except:
                         print u'unicode error:', (format, eid, full, newFull)
-                balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=bashBlue)
+                balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(EnabledLink):
@@ -2563,7 +2563,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         text = log.out.getvalue()
         log.out.close()
         balt.showWryeLog(self.window,text,_(u'Bashed Patch Configuration'),
-                         icons=bashBlue)
+                         icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mod_ExportPatchConfig(_Mod_BP_Link):
@@ -2639,7 +2639,7 @@ class Mod_Details(EnabledLink):
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
             balt.showLog(self.window,buff.getvalue(), modInfo.name.s,
-                asDialog=False, fixedFont=True, icons=bashBlue)
+                asDialog=False, fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2734,7 +2734,7 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        balt.showWryeLog(self.window,message,_(u'Undelete Refs'),icons=bashBlue)
+        balt.showWryeLog(self.window,message,_(u'Undelete Refs'),icons=Resources.bashBlue)
         log.out.close()
 
 #------------------------------------------------------------------------------
@@ -2833,5 +2833,5 @@ class Mod_ScanDirty(_Link):
             log(_(u'The following %d mods had errors while scanning:') % len(error))
             for mod in error: log(mod)
         balt.showWryeLog(self.window,log.out.getvalue(),
-            _(u'Dirty Edit Scan Results'),asDialog=False,icons=bashBlue)
+            _(u'Dirty Edit Scan Results'),asDialog=False,icons=Resources.bashBlue)
         log.out.close()

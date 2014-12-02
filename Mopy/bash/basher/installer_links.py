@@ -26,7 +26,7 @@ import copy
 import re
 import webbrowser
 import wx
-from . import settingDefaults, bashBlue, InstallerProject_OmodConfigDialog
+from . import settingDefaults, InstallerProject_OmodConfigDialog, Resources
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link
 from ..belt import InstallerWizard, generateTweakLines
@@ -547,7 +547,7 @@ class Installer_ListPackages(_InstallerLink):
             text = self.data.getPackageList(False)
         else: text = self.data.getPackageList()
         balt.copyToClipboard(text)
-        balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
@@ -563,7 +563,7 @@ class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
         text = installer.listSource(archive)
         #--Get masters list
         balt.copyToClipboard(text)
-        balt.showLog(self.gTank,text,_(u'Package Structure'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.gTank,text,_(u'Package Structure'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
@@ -941,7 +941,7 @@ class Installer_Espm_List(EnabledLink):
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         balt.showLog(self.window, subs, _(u'Esp/m List'), asDialog=False,
-                     fixedFont=False, icons=bashBlue)
+                     fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
@@ -1002,7 +1002,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         balt.showLog(self.window, subs, _(u'Sub-Package Lists'),
-                     asDialog=False, fixedFont=False, icons=bashBlue)
+                     asDialog=False, fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------

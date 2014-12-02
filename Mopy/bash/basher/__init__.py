@@ -187,13 +187,14 @@ class ColorChecks(balt.ImageList):
 
 colorChecks = ColorChecks()
 
-#--Icon Bundles
-bashRed = None
-bashBlue = None
-bashDocBrowser = None
-bashMonkey = None
+class Resources:
+    fonts = None
+    #--Icon Bundles
+    bashRed = None
+    bashBlue = None
+    bashDocBrowser = None
+    bashMonkey = None
 
-fonts = None
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
@@ -1354,9 +1355,9 @@ class ModList(List):
 
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
-            item.SetFont(fonts[2])
+            item.SetFont(Resources.fonts[2])
         else:
-            item.SetFont(fonts[0])
+            item.SetFont(Resources.fonts[0])
         #--Text BG
         if fileName in bosh.modInfos.bad_names:
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -4893,7 +4894,7 @@ class BashFrame(wx.Frame):
         self.SetTitle()
         self.Maximize(settings['bash.frameMax'])
         #--Application Icons
-        self.SetIcons(bashRed)
+        self.SetIcons(Resources.bashRed)
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
@@ -5266,7 +5267,7 @@ class ListBoxes(wx.Dialog):
         self.itemMenu = Links()
         self.itemMenu.append(CheckList_SelectAll())
         self.itemMenu.append(CheckList_SelectAll(False))
-        self.SetIcons(bashBlue)
+        self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
         self.ids = {}
@@ -5397,7 +5398,7 @@ class ColorDialog(wx.Dialog):
             )
         self.comboBox.SetFocus()
         self.SetSizer(sizer)
-        self.SetIcons(bashBlue)
+        self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
     def GetChoice(self):
@@ -5584,7 +5585,7 @@ class DocBrowser(wx.Frame):
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
         #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
-        self.SetIcons(bashDocBrowser)
+        self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
         self.setButton = button(self,_(u'Set Doc...'),onClick=self.DoSet)
         #--Forget Doc
@@ -5881,7 +5882,7 @@ class ModChecker(wx.Frame):
             style=wx.DEFAULT_FRAME_STYLE)
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
-        self.SetIcons(bashBlue)
+        self.SetIcons(Resources.bashBlue)
         #--Data
         self.ordered = None
         self.merged = None
@@ -6085,12 +6086,11 @@ class BashApp(wx.App):
 
     def InitResources(self):
         """Init application resources."""
-        global bashBlue, bashRed, bashDocBrowser, bashMonkey, fonts
-        bashBlue = bashBlue.GetIconBundle()
-        bashRed = bashRed.GetIconBundle()
-        bashDocBrowser = bashDocBrowser.GetIconBundle()
-        bashMonkey = bashMonkey.GetIconBundle()
-        fonts = balt.fonts()
+        Resources.bashBlue = Resources.bashBlue.GetIconBundle()
+        Resources.bashRed = Resources.bashRed.GetIconBundle()
+        Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
+        Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
+        Resources.fonts = balt.fonts()
 
     def InitData(self,progress):
         """Initialize all data. Called by Init()."""
@@ -6277,7 +6277,7 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         #--GUI
         wx.Frame.__init__(self,parent,wx.ID_ANY,_(u'Omod Config: ')+project.s,
             style=(wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |wx.TAB_TRAVERSAL))
-        self.SetIcons(bashBlue)
+        self.SetIcons(Resources.bashBlue)
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
@@ -6757,25 +6757,21 @@ def InitImages():
     #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
     #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)
     #--Applications Icons
-    global bashRed
-    bashRed = balt.ImageBundle()
-    bashRed.Add(images['bash.16'])
-    bashRed.Add(images['bash.24'])
-    bashRed.Add(images['bash.32'])
+    Resources.bashRed = balt.ImageBundle()
+    Resources.bashRed.Add(images['bash.16'])
+    Resources.bashRed.Add(images['bash.24'])
+    Resources.bashRed.Add(images['bash.32'])
     #--Application Subwindow Icons
-    global bashBlue
-    bashBlue = balt.ImageBundle()
-    bashBlue.Add(images['bash.16.blue'])
-    bashBlue.Add(images['bash.24.blue'])
-    bashBlue.Add(images['bash.32.blue'])
-    global bashDocBrowser
-    bashDocBrowser = balt.ImageBundle()
-    bashDocBrowser.Add(images['doc.16'])
-    bashDocBrowser.Add(images['doc.24'])
-    bashDocBrowser.Add(images['doc.32'])
-    global bashMonkey
-    bashMonkey = balt.ImageBundle()
-    bashMonkey.Add(images['monkey.16'])
+    Resources.bashBlue = balt.ImageBundle()
+    Resources.bashBlue.Add(images['bash.16.blue'])
+    Resources.bashBlue.Add(images['bash.24.blue'])
+    Resources.bashBlue.Add(images['bash.32.blue'])
+    Resources.bashDocBrowser = balt.ImageBundle()
+    Resources.bashDocBrowser.Add(images['doc.16'])
+    Resources.bashDocBrowser.Add(images['doc.24'])
+    Resources.bashDocBrowser.Add(images['doc.32'])
+    Resources.bashMonkey = balt.ImageBundle()
+    Resources.bashMonkey.Add(images['monkey.16'])
 
 from .links import * # TODO(ut): move this to links.py - only import InitLinks
 def InitLinks():

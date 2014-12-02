@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import ListBoxes, bashBlue
+from . import ListBoxes, Resources
 from ..balt import _Link, Link, BoolLink, EnabledLink
 from .. import bosh, balt, bush
 
@@ -58,7 +58,7 @@ class INI_ListINIs(_Link):
         """Handle printing out the errors."""
         text = iniList.ListTweaks()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -79,7 +79,7 @@ class INI_ListErrors(EnabledLink):
             fileInfo = bosh.iniInfos[i]
             text += u'%s\n' % fileInfo.listErrors()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(EnabledLink):

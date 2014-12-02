@@ -25,7 +25,7 @@ from operator import attrgetter
 import re
 import time
 from .. import balt, bosh, bush, bolt
-from . import ListBoxes, bashBlue
+from . import ListBoxes, Resources
 from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
     Link
 from ..bolt import CancelError, SkipError, GPath, BoltError
@@ -288,7 +288,7 @@ class File_ListMasters(EnabledLink):
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 class File_Redate(AppendableLink, _Link):
     """Move the selected files to start at a specified date."""

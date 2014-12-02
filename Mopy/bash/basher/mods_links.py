@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import Mod_BaloGroups_Edit, bashBlue, ListBoxes
+from . import Mod_BaloGroups_Edit, ListBoxes, Resources
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..balt import _Link, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
@@ -224,7 +224,7 @@ class Mods_ListMods(_Link):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(_Link):
@@ -236,7 +236,7 @@ class Mods_ListBashTags(_Link):
         #--Get masters list
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=bashBlue)
+        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
