@@ -214,6 +214,42 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         Link.Frame.SetTitle()
 
+# "File" submenu --------------------------------------------------------------
+class Mods_CreateBlankBashedPatch(_Link):
+    """Create a new bashed patch."""
+    text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
+
+    def Execute(self,event):
+        newPatchName = bosh.PatchFile.generateNextBashedPatch(self.window)
+        if newPatchName is not None:
+            self.window.RefreshUI(detail=newPatchName)
+
+class Mods_CreateBlank(_Link):
+    """Create a new blank mod."""
+    text, help = _(u'New Mod...'), _(u'Create a new blank mod')
+
+    def Execute(self,event):
+        data = self.window.GetSelected()
+        fileInfos = self.window.data
+        count = 0
+        newName = GPath(u'New Mod.esp')
+        while newName in fileInfos:
+            count += 1
+            newName = GPath(u'New Mod %d.esp' % count)
+        newInfo = fileInfos.factory(fileInfos.dir,newName)
+        if data:
+            newTime = max(fileInfos[x].mtime for x in data)
+        else:
+            newTime = max(fileInfos[x].mtime for x in fileInfos.data)
+        newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
+        newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+        newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+        newFile.safeSave()
+        mod_group = fileInfos.table.getColumn('group')
+        mod_group[newName] = mod_group.get(newName,u'')
+        bosh.modInfos.refresh()
+        self.window.RefreshUI(detail=newName)
+
 #------------------------------------------------------------------------------
 class Mods_ListMods(_Link):
     """Copies list of mod files to clipboard."""

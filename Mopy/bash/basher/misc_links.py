@@ -345,6 +345,8 @@ class List_Column(CheckLink, EnabledLink):
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
+# Tabs menu -------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
     def __init__(self,tabKey,canDisable=True):

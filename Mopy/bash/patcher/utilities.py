@@ -2911,8 +2911,8 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
 
     # noinspection PyUnreachableCode
     def writeToText(self,textPath):
-        return
         """Writes stats to specified text file."""
+        return
         class_fid_attr_value = self.class_fid_attr_value
         with textPath.open('w',encoding='utf-8-sig') as out:
             def write(out,attrs,values):
