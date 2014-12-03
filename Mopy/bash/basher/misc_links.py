@@ -27,6 +27,7 @@ import wx
 from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
     ChoiceLink, MenuLink, CheckLink
 from .. import balt, bosh, bush
+from .import People_Link
 from .constants import ID_GROUPS, settingDefaults, tabInfo
 from ..bolt import GPath, LString
 
@@ -185,7 +186,7 @@ class Message_Delete(_Link):
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class People_AddNew(_Link):
+class People_AddNew(People_Link):
     """Add a new record."""
     dialogTitle = _(u'Add New Person')
     text = _(u'Add...')
@@ -194,16 +195,16 @@ class People_AddNew(_Link):
     def Execute(self,event):
         name = balt.askText(self.gTank,_(u"Add new person:"),self.dialogTitle)
         if not name: return
-        if name in self.data:
+        if name in self.pdata:
             return balt.showInfo(self.gTank, name + _(u" already exists."),
                                  self.dialogTitle)
-        self.data[name] = (time.time(),0,u'')
+        self.pdata[name] = (time.time(),0,u'')
         self.gTank.RefreshUI(details=name)
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
-        self.data.setChanged()
+        self.pdata.setChanged()
 
 #------------------------------------------------------------------------------
-class People_Export(_Link):
+class People_Export(People_Link):
     """Export people to text archive."""
     dialogTitle = _(u"Export People")
     text = _(u'Export...')
@@ -216,13 +217,13 @@ class People_Export(_Link):
                             textDir, u'People.txt', u'*.txt')
         if not path: return
         bosh.settings['bash.workDir'] = path.head
-        self.data.dumpText(path,self.selected)
+        self.pdata.dumpText(path,self.selected)
         balt.showInfo(self.gTank,
                       _(u'Records exported: %d.') % len(self.selected),
                       self.dialogTitle)
 
 #------------------------------------------------------------------------------
-class People_Import(_Link):
+class People_Import(People_Link):
     """Import people from text archive."""
     dialogTitle = _(u"Import People")
     text = _(u'Import...')
@@ -235,13 +236,13 @@ class People_Import(_Link):
                             textDir, u'', u'*.txt', mustExist=True)
         if not path: return
         bosh.settings['bash.workDir'] = path.head
-        newNames = self.data.loadText(path)
+        newNames = self.pdata.loadText(path)
         balt.showInfo(self.gTank, _(u"People imported: %d") % len(newNames),
                       self.dialogTitle)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
-class People_Karma(ChoiceLink):
+class People_Karma(People_Link, ChoiceLink):
     """Add Karma setting links."""
     text = _(u'Karma')
     idList = ID_GROUPS
@@ -255,10 +256,10 @@ class People_Karma(ChoiceLink):
         idList = ID_GROUPS
         karma = range(5,-6,-1)[event.GetId()-idList.BASE]
         for item in self.selected:
-            text = self.data[item][2]
-            self.data[item] = (time.time(),karma,text)
+            text = self.pdata[item][2]
+            self.pdata[item] = (time.time(),karma,text)
         self.gTank.RefreshUI()
-        self.data.setChanged()
+        self.pdata.setChanged()
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------

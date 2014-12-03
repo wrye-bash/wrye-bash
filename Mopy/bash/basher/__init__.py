@@ -68,7 +68,7 @@ from ..balt import tooltip, fill, bell
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
-from ..balt import Links, ListCtrl
+from ..balt import Links, ListCtrl, _Link
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -108,9 +108,39 @@ gMessageList = None
 bashFrame = None
 docBrowser = None
 modChecker = None
+gPeople = None # New global - yak
 
 # Settings --------------------------------------------------------------------
 settings = None
+
+# Links -----------------------------------------------------------------
+#------------------------------------------------------------------------------
+def SetUAC(item):
+    """Helper function for creating menu items or buttons that need UAC
+       Note: for this to work correctly, it needs to be run BEFORE
+       appending a menu item to a menu (and so, needs to be enabled/
+       diasbled prior to that as well."""
+    if isUAC:
+        if isinstance(item,wx.MenuItem):
+            pass
+            #if item.IsEnabled():
+            #    bitmap = images['uac.small'].GetBitmap()
+            #    item.SetBitmaps(bitmap,bitmap)
+        else:
+            balt.setUAC(item,isUAC)
+
+# Tank link mixins to access the Tank data - not final
+class Installers_Link(_Link):
+    """InstallersData mixin"""
+
+    @property
+    def idata(self): return gInstallers.data # InstallersData singleton
+
+class People_Link(_Link):
+    """PeopleData mixin"""
+
+    @property
+    def pdata(self): return gPeople.data # PeopleData singleton
 
 # Constants --------------------------------------------------------------------
 from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
@@ -4382,6 +4412,8 @@ class PeoplePanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
+        global gPeople
+        gPeople = self
         data = bosh.PeopleData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
@@ -5226,8 +5258,6 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
-from ..balt import _Link
-
 class CheckList_SelectAll(_Link):
     def __init__(self,select=True):
         super(CheckList_SelectAll, self).__init__()
@@ -6667,22 +6697,6 @@ class CreateNewProject(wx.Dialog):
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
         gInstallers.OnShow()
-
-# Links -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-def SetUAC(item):
-    """Helper function for creating menu items or buttons that need UAC
-       Note: for this to work correctly, it needs to be run BEFORE
-       appending a menu item to a menu (and so, needs to be enabled/
-       diasbled prior to that as well."""
-    if isUAC:
-        if isinstance(item,wx.MenuItem):
-            pass
-            #if item.IsEnabled():
-            #    bitmap = images['uac.small'].GetBitmap()
-            #    item.SetBitmaps(bitmap,bitmap)
-        else:
-            balt.setUAC(item,isUAC)
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers

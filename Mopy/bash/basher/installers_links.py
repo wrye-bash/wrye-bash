@@ -23,8 +23,8 @@
 # =============================================================================
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill, _Link, BoolLink, AppendableLink, Link, EnabledLink
-from . import ListBoxes, CreateNewProject, Resources
+from ..balt import fill, BoolLink, AppendableLink, Link
+from . import ListBoxes, CreateNewProject, Resources, Installers_Link
 from ..bolt import GPath, SubProgress
 
 gInstallers = None
@@ -32,7 +32,7 @@ gInstallers = None
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installers_AddMarker(_Link):
+class Installers_AddMarker(Installers_Link):
     """Add an installer marker."""
     text = _(u'Add Marker...')
     help = _(u'Adds a Marker, a special type of package useful for separating'
@@ -42,8 +42,8 @@ class Installers_AddMarker(_Link):
         """Handle selection."""
         index = self.gTank.GetIndex(GPath(u'===='))
         if index == -1:
-            self.data.addMarker(u'====')
-            self.data.refresh(what='OS')
+            self.idata.addMarker(u'====')
+            self.idata.refresh(what='OS')
             gInstallers.RefreshUIMods()
             index = self.gTank.GetIndex(GPath(u'===='))
         if index != -1:
@@ -51,7 +51,7 @@ class Installers_AddMarker(_Link):
             self.gTank.SelectItemAtIndex(index)
             self.gTank.gList.EditLabel(index)
 
-class Installers_MonitorInstall(_Link):
+class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
     text = _(u'Monitor External Installation...')
     help = _(u'Monitors the Data folder during installation via manual install'
@@ -167,13 +167,12 @@ class Installers_MonitorInstall(_Link):
         gInstallers.OnShow()
         # Update the status of the installer (as installer last)
         path = path.relpath(bosh.dirs['installers'])
-        self.data.install([path],None,True,False)
+        self.idata.install([path],None,True,False)
         # Refresh UI
         gInstallers.RefreshUIMods()
         # Select new installer
         self.gTank.SelectItemAtIndex(self.gTank.gList.GetItemCount()-1)
-
-class Installers_ListPackages(EnabledLink):
+class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
     text = _(u'List Packages...')
     help = _(u'Displays a list of all packages.  Also copies that list to the '
@@ -186,12 +185,12 @@ class Installers_ListPackages(EnabledLink):
                    _(u'(Else shows all packages)')
                    )
         if balt.askYes(self.gTank,message,_(u'Only Show Installed?')):
-            text = self.data.getPackageList(False)
-        else: text = self.data.getPackageList()
+            text = self.idata.getPackageList(False)
+        else: text = self.idata.getPackageList()
         balt.copyToClipboard(text)
         balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
-class Installers_AnnealAll(_Link):
+class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
     text = _(u'Anneal All')
     help = _(u'This will install any missing files (for active installers)'
@@ -201,13 +200,13 @@ class Installers_AnnealAll(_Link):
         """Handle selection."""
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.data.anneal(progress=progress)
+                self.idata.anneal(progress=progress)
         finally:
-            self.data.refresh(what='NS')
+            self.idata.refresh(what='NS')
             gInstallers.RefreshUIMods()
             Link.Frame.RefreshData()
 
-class Installers_UninstallAllPackages(_Link):
+class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
     text = _(u'Uninstall All Packages')
     help = _(u'This will uninstall all packages.')
@@ -217,13 +216,13 @@ class Installers_UninstallAllPackages(_Link):
         if not balt.askYes(self.gTank,fill(_(u"Really uninstall All Packages?"),70),self.text): return
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.data.uninstall(unArchives='ALL',progress=progress)
+                self.idata.uninstall(unArchives='ALL',progress=progress)
         finally:
-            self.data.refresh(what='NS')
+            self.idata.refresh(what='NS')
             gInstallers.RefreshUIMods()
             Link.Frame.RefreshData()
 
-class Installers_Refresh(AppendableLink, _Link):
+class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
     def __init__(self, fullRefresh=False):
         super(Installers_Refresh, self).__init__()
@@ -245,7 +244,7 @@ class Installers_Refresh(AppendableLink, _Link):
         gInstallers.fullRefresh = self.fullRefresh
         gInstallers.OnShow()
 
-class Installers_UninstallAllUnknownFiles(_Link):
+class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Oblivion Mods\Bash Installers\Bash\Data
     Folder Contents (date/time)\."""
@@ -267,26 +266,26 @@ class Installers_UninstallAllUnknownFiles(_Link):
             try:
                 with balt.Progress(_(u"Cleaning Data Files..."),
                                    u'\n' + u' ' * 65) as progress:
-                    self.data.clean(progress=progress)
+                    self.idata.clean(progress=progress)
             finally:
-                self.data.refresh(what='NS')
+                self.idata.refresh(what='NS')
                 gInstallers.RefreshUIMods()
                 Link.Frame.RefreshData()
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installers_AutoAnneal(BoolLink):
+class Installers_AutoAnneal(Installers_Link, BoolLink):
     text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
         u"Enable/Disable automatic annealing of packages.")
 
-class Installers_AutoWizard(BoolLink):
+class Installers_AutoWizard(Installers_Link, BoolLink):
     text = _(u'Auto-Anneal/Install Wizards')
     key = 'bash.installers.autoWizard'
     help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
              u" of packages after running its wizard.")
 
-class _Installers_BoolLink_Refresh(BoolLink):
+class _Installers_BoolLink_Refresh(Installers_Link, BoolLink):
     def Execute(self,event):
         super(_Installers_BoolLink_Refresh, self).Execute(event)
         gInstallers.gList.RefreshUI()
@@ -298,12 +297,12 @@ class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     help =_(u"Enable/Disable the magic wand icon overlay for packages with"
             u" Wizards.")
 
-class Installers_AutoRefreshProjects(BoolLink):
+class Installers_AutoRefreshProjects(Installers_Link, BoolLink):
     """Toggle autoRefreshProjects setting and update."""
     text = _(u'Auto-Refresh Projects')
     key = 'bash.installers.autoRefreshProjects'
 
-class Installers_AutoApplyEmbeddedBCFs(BoolLink):
+class Installers_AutoApplyEmbeddedBCFs(Installers_Link, BoolLink):
     """Toggle autoApplyEmbeddedBCFs setting and update."""
     text = _(u'Auto-Apply Embedded BCFs')
     key = 'bash.installers.autoApplyEmbeddedBCFs'
@@ -314,7 +313,7 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
         super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
         gInstallers.OnShow()
 
-class Installers_AutoRefreshBethsoft(BoolLink):
+class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
     """Toggle refreshVanilla setting and update."""
     text = _(u'Skip Bethsoft Content')
     key = 'bash.installers.autoRefreshBethsoft'
@@ -352,7 +351,7 @@ class Installers_AutoRefreshBethsoft(BoolLink):
             gInstallers.data.refresh(what='NSC')
             gInstallers.gList.RefreshUI()
 
-class Installers_Enabled(BoolLink):
+class Installers_Enabled(Installers_Link, BoolLink):
     """Flips installer state."""
     text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
@@ -376,7 +375,7 @@ class Installers_Enabled(BoolLink):
             gInstallers.gList.gList.DeleteAllItems()
             gInstallers.RefreshDetails(None)
 
-class Installers_BsaRedirection(AppendableLink, BoolLink):
+class Installers_BsaRedirection(AppendableLink, Installers_Link, BoolLink):
     """Toggle BSA Redirection."""
     text, key = _(u'BSA Redirection'),'bash.bsaRedirection',
 
@@ -410,17 +409,17 @@ class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     text = _(u'Show BSA Conflicts')
     key = 'bash.installers.conflictsReport.showBSAConflicts'
 
-class Installers_AvoidOnStart(BoolLink):
+class Installers_AvoidOnStart(Installers_Link, BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
     text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
         u"Toggles Wrye Bash to avoid the Installers tab on startup,"
         u" avoiding unnecessary data scanning.")
 
-class Installers_RemoveEmptyDirs(BoolLink):
+class Installers_RemoveEmptyDirs(Installers_Link, BoolLink):
     """Toggles option to remove empty directories on file scan."""
     text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
 
-class Installers_SortActive(BoolLink):
+class Installers_SortActive(Installers_Link, BoolLink):
     """Sort by type."""
     text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
         u'If selected, active installers will be sorted to the top of the list.')
@@ -429,7 +428,7 @@ class Installers_SortActive(BoolLink):
         super(Installers_SortActive, self).Execute(event)
         self.gTank.SortItems()
 
-class Installers_SortProjects(BoolLink):
+class Installers_SortProjects(Installers_Link, BoolLink):
     """Sort dirs to the top."""
     text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
         u'If selected, projects will be sorted to the top of the list.')
@@ -438,7 +437,7 @@ class Installers_SortProjects(BoolLink):
         super(Installers_SortProjects, self).Execute(event)
         self.gTank.SortItems()
 
-class Installers_SortStructure(BoolLink):
+class Installers_SortStructure(Installers_Link, BoolLink):
     """Sort by type."""
     text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
 
@@ -449,16 +448,16 @@ class Installers_SortStructure(BoolLink):
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installers_Skip(BoolLink):
+class Installers_Skip(Installers_Link, BoolLink):
     """Toggle various skip settings and update."""
     def Execute(self,event):
         super(Installers_Skip, self).Execute(event)
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
-            progress.setFull(len(self.data))
-            for index,dataItem in enumerate(self.data.iteritems()):
+            progress.setFull(len(self.idata))
+            for index,dataItem in enumerate(self.idata.iteritems()):
                 progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
                 dataItem[1].refreshDataSizeCrc()
-        self.data.refresh(what='NS')
+        self.idata.refresh(what='NS')
         self.gTank.RefreshUI()
 
 class Installers_SkipScreenshots(Installers_Skip):
@@ -496,10 +495,8 @@ class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
 
-    def __init__(self):
-        super(Installers_SkipOBSEPlugins, self).__init__(True)
-
     def _append(self, window): return bool(bush.game.se_sd)
+    def _check(self): return not bosh.settings[self.key]
 
 class Installers_RenameStrings(AppendableLink, Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
@@ -508,7 +505,7 @@ class Installers_RenameStrings(AppendableLink, Installers_Skip):
 
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
 
-class Installers_CreateNewProject(_Link):
+class Installers_CreateNewProject(Installers_Link):
     """Open the Create New Project Dialog"""
     text = _(u'Create New Project...')
     help = _(u'Create a new project...')
