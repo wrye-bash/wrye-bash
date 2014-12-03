@@ -556,6 +556,10 @@ installercons.data.extend({
     'corrupt':   Image(GPath((bosh.dirs['images']).join(u'red_x.png')),PNG),
     }.items())
 
+# Gui Ids ---------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--Generic
+ID_EDIT   = 6005
 #--Label Menus
 ID_GROUPS    = IdList(10100,290,'EDIT','NONE')
 ID_TAGS      = IdList(10600, 90,'AUTO','COPY')

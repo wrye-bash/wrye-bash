@@ -77,6 +77,8 @@ defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
+splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
+#--Indexed
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
 def fonts():
@@ -184,6 +186,22 @@ class Image:
                 self.icon = wx.EmptyIcon()
                 self.icon.CopyFromBitmap(self.GetBitmap())
         return self.icon
+
+    @staticmethod
+    def GetImage(data, height, width):
+        """Hasty wrapper around wx.EmptyImage - absorb to GetBitmap."""
+        image = wx.EmptyImage(width, height)
+        image.SetData(data)
+        return image
+
+    @staticmethod
+    def Load(srcPath, quality):
+        """Hasty wrapper around wx.Image - loads srcPath with specified
+        quality if a jpeg."""
+        bitmap = wx.Image(srcPath.s)
+        # This only has an effect on jpegs, so it's ok to do it on every kind
+        bitmap.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
+        return bitmap
 
 #------------------------------------------------------------------------------
 class ImageBundle:

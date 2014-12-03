@@ -69,6 +69,11 @@ from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spi
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ListCtrl, _Link
+from ..balt import wxListAligns, splitterStyle
+
+# Constants --------------------------------------------------------------------
+from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
+    installercons, PNG, JPEG, ICO, BMP, TIF, ID_TAGS, ID_EDIT
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -141,30 +146,8 @@ class People_Link(_Link):
 
     @property
     def pdata(self): return gPeople.data # PeopleData singleton
-
-# Constants --------------------------------------------------------------------
-from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
-    installercons, PNG, JPEG, ICO, BMP, TIF, ID_TAGS
-
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
-
-# Gui Ids ---------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Constants
-#--Indexed
-wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
-splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
-
-#--Generic
-ID_RENAME = 6000
-ID_SET    = 6001
-ID_SELECT = 6002
-ID_BROWSER = 6003
-#ID_NOTES  = 6004
-ID_EDIT   = 6005 # TODO(ut): only this is used
-ID_BACK   = 6006
-ID_NEXT   = 6007
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2561,8 +2544,7 @@ class SaveDetails(SashPanel):
             self.picture.SetBitmap(None)
         else:
             width,height,data = self.picData
-            image = wx.EmptyImage(width,height)
-            image.SetData(data)
+            image = Image.GetImage(data, height, width)
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Edit State
         self.edited = 0
@@ -3832,7 +3814,7 @@ class ScreensList(List):
     def OnItemSelected(self,event=None):
         fileName = self.items[event.m_itemIndex]
         filePath = bosh.screensData.dir.join(fileName)
-        bitmap = wx.Bitmap(filePath.s) if filePath.exists() else None
+        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.picture.SetBitmap(bitmap)
 
 #------------------------------------------------------------------------------
@@ -6263,7 +6245,7 @@ class ImportFaceDialog(wx.Dialog):
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
         bitmap = (itemImagePath.exists() and
-            wx.Bitmap(itemImagePath.s,JPEG)) or None
+                  Image(itemImagePath.s, type=JPEG).GetBitmap()) or None
         self.picture.SetBitmap(bitmap)
 
     def DoImport(self,event):

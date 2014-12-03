@@ -25,11 +25,10 @@ import StringIO
 import re
 import shutil
 import struct
-import wx # FIXME(ut): wx
 from . import ImportFaceDialog, JPEG, Resources
 from .. import bosh, bolt, balt, bush
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    _Link, SeparatorLink, OneItemLink
+    _Link, SeparatorLink, OneItemLink, Image
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError
 from ..bosh import formatInteger
 
@@ -42,8 +41,6 @@ ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-# TODO(ut): oblivion only saves links - subclass AppendableLnk
-
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
@@ -314,8 +311,7 @@ class Save_ExportScreenshot(OneItemLink):
         imagePath = balt.askSave(Link.Frame,_(u'Save Screenshot as:'), bosh.dirs['patches'].s,_(u'Screenshot %s.jpg') % self.selected[0].s,u'*.jpg')
         if not imagePath: return
         width,height,data = saveInfo.header.image
-        image = wx.EmptyImage(width,height)
-        image.SetData(data)
+        image = Image.GetImage(data, height, width)
         image.SaveFile(imagePath.s,JPEG)
 
 #------------------------------------------------------------------------------

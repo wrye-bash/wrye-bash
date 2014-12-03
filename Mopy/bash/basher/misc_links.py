@@ -23,9 +23,8 @@
 # =============================================================================
 import re
 import time
-import wx
 from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
-    ChoiceLink, MenuLink, CheckLink
+    ChoiceLink, MenuLink, CheckLink, Image
 from .. import balt, bosh, bush
 from .import People_Link
 from .constants import ID_GROUPS, settingDefaults, tabInfo
@@ -92,9 +91,8 @@ class Screen_ConvertTo(EnabledLink):
                     srcPath = srcDir.join(fileName)
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
-                    bitmap = wx.Image(srcPath.s)
-                    # This only has an effect on jpegs, so it's ok to do it on every kind
-                    bitmap.SetOptionInt(wx.IMAGE_OPTION_QUALITY,bosh.settings['bash.screens.jpgQuality'])
+                    bitmap = Image.Load(srcPath, quality=bosh.settings[
+                        'bash.screens.jpgQuality'])
                     result = bitmap.SaveFile(destPath.s,self.imageType)
                     if not result: continue
                     srcPath.remove()

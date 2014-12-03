@@ -28,7 +28,7 @@ import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink
+    RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from . import  Mod_BaloGroups_Edit, DocBrowser, Resources
 from .constants import ID_GROUPS, JPEG
@@ -1646,8 +1646,7 @@ class Mod_Face_Import(OneItemLink):
         if not imagePath.exists():
             srcInfo.getHeader()
             width,height,data = srcInfo.header.image
-            image = wx.EmptyImage(width,height)
-            image.SetData(data)
+            image = Image.GetImage(data, height, width)
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
         self.window.RefreshUI()
