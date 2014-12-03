@@ -22,7 +22,7 @@
 #
 # =============================================================================
 from . import ListBoxes, Resources
-from ..balt import _Link, Link, BoolLink, EnabledLink
+from ..balt import _Link, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
 
 #------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ class INI_ListErrors(EnabledLink):
         balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class INI_FileOpenOrCopy(EnabledLink):
+class INI_FileOpenOrCopy(OneItemLink):
     """Open specified file(s) only if they aren't Bash supplied defaults."""
     def _initData(self, window, data):
         super(INI_FileOpenOrCopy, self)._initData(window, data)
@@ -95,8 +95,6 @@ class INI_FileOpenOrCopy(EnabledLink):
         else:
             self.text = _(u'Copy...')
             self.help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         """Handle selection."""
@@ -194,7 +192,7 @@ class INI_Apply(EnabledLink):
             iniPanel.tweakContents.RefreshUI(self.data[0])
 
 #------------------------------------------------------------------------------
-class INI_CreateNew(EnabledLink):
+class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
     text = _(u'Create Tweak with current settings...')
@@ -210,8 +208,8 @@ class INI_CreateNew(EnabledLink):
                 u"Creates a new tweak based on '%(tweak)s' but with values "
                 u"from '%(ini)s'.") % {'tweak': (data[0]), 'ini': ini}
 
-    def _enable(self):
-        return len(self.data) == 1 and bosh.iniInfos[self.data[0]].status >= 0
+    def _enable(self): return super(INI_CreateNew, self)._enable() and \
+                              bosh.iniInfos[self.data[0]].status >= 0
 
     def Execute(self,event):
         """Handle creating a new INI tweak."""

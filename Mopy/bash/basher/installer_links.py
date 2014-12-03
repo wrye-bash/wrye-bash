@@ -29,7 +29,7 @@ import wx
 from . import settingDefaults, InstallerProject_OmodConfigDialog, Resources, \
     Installers_Link
 from .. import bosh, bush, balt
-from ..balt import EnabledLink, CheckLink, AppendableLink, Link
+from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, UncodedError, LogFile
@@ -66,16 +66,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 if isinstance(self.idata[i],bosh.InstallerMarker):
                     return True
         return False
-
-    def isSingle(self):
-        """Indicates whether or not is single installer."""
-        return len(self.selected) == 1
-
-    def isSingleMarker(self):
-        """Indicates whether or not is single installer marker."""
-        if len(self.selected) != 1: return False
-        else: return isinstance(self.idata[self.selected[0]],
-                              bosh.InstallerMarker)
 
     def isSingleProject(self):
         """Indicates whether or not is single project."""
@@ -140,7 +130,7 @@ class Installer_EditWizard(_InstallerLink):
                     # quitting.
                     pass
 
-class Installer_Wizard(_InstallerLink):
+class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
     help = _(u"Run the install wizard.")
@@ -151,8 +141,8 @@ class Installer_Wizard(_InstallerLink):
         self.text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
 
     def _enable(self):
-        return self.isSingle() and (self.idata[
-                                        self.selected[0]]).hasWizard != False
+        isSingle = super(Installer_Wizard, self)._enable()
+        return isSingle and (self.idata[self.selected[0]]).hasWizard != False
 
     def Execute(self, event):
         with balt.BusyCursor():
@@ -284,13 +274,14 @@ class Installer_Wizard(_InstallerLink):
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
             balt.showInfo(self.gTank,message)
 
-class Installer_OpenReadme(_InstallerLink):
+class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one"""
     text = _(u'Open Readme')
     help = _(u"Opens the installer's readme.")
 
     def _enable(self):
-        return self.isSingle() and bool(self.idata[self.selected[0]].hasReadme)
+        isSingle = super(Installer_OpenReadme, self)._enable()
+        return isSingle and bool(self.idata[self.selected[0]].hasReadme)
 
     def Execute(self, event):
         installer = self.selected[0]
@@ -333,7 +324,7 @@ class Installer_Delete(_InstallerLink):
     def Execute(self, event): self.gTank.DeleteSelected(shellUI=False,
                                                         noRecycle=False)
 
-class Installer_Duplicate(_InstallerLink):
+class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')
 
@@ -342,7 +333,10 @@ class Installer_Duplicate(_InstallerLink):
         self.help = _(u"Duplicate selected %(installername)s.") % (
             {'installername': self.selected[0]})
 
-    def _enable(self): return self.isSingle() and not self.isSingleMarker()
+    def _enable(self):
+        isSingle = super(Installer_Duplicate, self)._enable()
+        return isSingle and not isinstance(self.idata[self.selected[0]],
+                                           bosh.InstallerMarker)
 
     def Execute(self,event):
         """Handle selection."""
@@ -545,7 +539,8 @@ class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
     text = _(u"List Structure...")
 
     def _enable(self):
-        return self.isSingle() and not isinstance(self.idata[self.selected[0]],
+        isSingle = super(Installer_ListStructure, self)._enable()
+        return isSingle and not isinstance(self.idata[self.selected[0]],
                                                   bosh.InstallerMarker)
 
     def Execute(self,event):

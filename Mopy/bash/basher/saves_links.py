@@ -29,7 +29,7 @@ import wx # FIXME(ut): wx
 from . import ImportFaceDialog, JPEG, Resources
 from .. import bosh, bolt, balt, bush
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    _Link, SeparatorLink
+    _Link, SeparatorLink, OneItemLink
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError
 from ..bosh import formatInteger
 
@@ -219,12 +219,10 @@ class Saves_Profiles(ChoiceLink):
             bosh.modInfos.setOblivionVersion(voNew)
 
 #------------------------------------------------------------------------------
-class Save_LoadMasters(EnabledLink):
+class Save_LoadMasters(OneItemLink):
     """Sets the load list to the save game's masters.""" # TODO(ut): test
     text = _(u'Load Masters')
     help = _(u"Set the load list to the save game's masters")
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -237,12 +235,10 @@ class Save_LoadMasters(EnabledLink):
             balt.showError(self.window,errorMessage,fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_ImportFace(EnabledLink):
+class Save_ImportFace(OneItemLink):
     """Imports a face from another save."""
     text = _(u'Import Face...')
     help = _(u'Import a face from another save')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -308,12 +304,10 @@ class Save_RenamePlayer(EnabledLink):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
-class Save_ExportScreenshot(EnabledLink):
+class Save_ExportScreenshot(OneItemLink):
     """Exports the saved screenshot from a save game."""
     text = _(u'Export Screenshot...')
     help = _(u'Export the saved screenshot from a save game')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.data[0]]
@@ -505,7 +499,7 @@ class Save_EditCreatedData(balt.ListEditorData):
             balt.showOk(self.parent, _(u'Names modified: %d.') % count,self.saveFile.fileInfo.name.s)
 
 #------------------------------------------------------------------------------
-class Save_EditCreated(EnabledLink):
+class Save_EditCreated(OneItemLink):
     """Allows user to rename custom items (spells, enchantments, etc)."""
     menuNames = {'ENCH':_(u'Rename Enchanted...'),
                  'SPEL':_(u'Rename Spells...'),
@@ -520,8 +514,6 @@ class Save_EditCreated(EnabledLink):
         super(Save_EditCreated, self).__init__()
         self.type = type
         self.menuName = self.text = Save_EditCreated.menuNames[self.type]
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         """Handle menu selection."""
@@ -581,12 +573,10 @@ class Save_EditPCSpellsData(balt.ListEditorData):
         self.saveSpells.removePlayerSpells(self.removed)
 
 #------------------------------------------------------------------------------
-class Save_EditPCSpells(EnabledLink):
+class Save_EditPCSpells(OneItemLink):
     """Save spell list editing dialog."""
     text = _(u'Delete Spells...')
     # TODO(ut): help + AppendtoMenu had : """Append ref replacer items to menu."""
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -595,12 +585,10 @@ class Save_EditPCSpells(EnabledLink):
         balt.ListEditor.Display(self.window, _(u'Player Spells'), data)
 
 #------------------------------------------------------------------------------
-class Save_EditCreatedEnchantmentCosts(EnabledLink):
+class Save_EditCreatedEnchantmentCosts(OneItemLink):
     """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
     text = _(u'Set Number of Uses for Weapon Enchantments...')
     help = _(u'Set number of uses for Cast When Used Enchantments')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -686,13 +674,11 @@ class Save_Move(ChoiceLink):
             balt.showInfo(self.window,_(u'%d files copied to %s.') % (count,profile),_(u'Copy File'))
 
 #------------------------------------------------------------------------------
-class Save_RepairAbomb(EnabledLink):
+class Save_RepairAbomb(OneItemLink):
     """Repairs animation slowing by resetting counter(?) at end of TesClass
     data."""
     text = _(u'Repair Abomb')
     help = _(u'Repair animation slowing')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -854,12 +840,10 @@ class Save_RepairFactions(EnabledLink): # CRUFT
         log.out.close()
 
 #------------------------------------------------------------------------------
-class Save_RepairHair(EnabledLink):
+class Save_RepairHair(OneItemLink):
     """Repairs hair that has been zeroed due to removal of a hair mod."""
     text = _(u'Repair Hair')
     help = _(u'Repair hair that has been zeroed due to removal of a hair mod.')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info
@@ -871,12 +855,10 @@ class Save_RepairHair(EnabledLink):
             balt.showOk(self.window,_(u'No repair necessary.'),fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_ReweighPotions(EnabledLink):
+class Save_ReweighPotions(OneItemLink):
     """Changes weight of all player potions to specified value."""
     text = _(u'Reweigh Potions...')
     help = _(u'Change weight of all player potions to specified value')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--Query value
@@ -917,12 +899,10 @@ class Save_ReweighPotions(EnabledLink):
                 balt.showOk(self.window,_(u'No potions to reweigh!'),fileName.s)
 
 #------------------------------------------------------------------------------
-class Save_Stats(EnabledLink):
+class Save_Stats(OneItemLink):
     """Show savefile statistics."""
     text = _(u'Statistics')
     help = _(u'Show savefile statistics')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -965,13 +945,11 @@ class Save_StatObse(AppendableLink, EnabledLink):
                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class Save_Unbloat(EnabledLink):
+class Save_Unbloat(OneItemLink):
     """Unbloats savegame."""
     text = _(u'Remove Bloat...')
     help = _(u'Unbloat savegame. Experimental ! Back up your saves before'
              u' using it on them')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--File Info

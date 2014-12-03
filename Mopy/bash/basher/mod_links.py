@@ -28,7 +28,7 @@ import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
 from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, MenuLink, SeparatorLink, ChoiceLink
+    RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from . import  Mod_BaloGroups_Edit, DocBrowser, Resources
 from .constants import ID_GROUPS, JPEG
@@ -44,11 +44,9 @@ docBrowser = None
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_FullLoad(EnabledLink):
+class Mod_FullLoad(OneItemLink):
     """Tests all record definitions against a specific mod"""
     text = _(u'Test Full Record Definitions...')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -65,15 +63,15 @@ class Mod_FullLoad(EnabledLink):
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
-class Mod_CreateDummyMasters(EnabledLink):
+class Mod_CreateDummyMasters(OneItemLink):
     """TES4Edit tool, makes dummy plugins for each missing master, for use if looking at a 'Filter' patch."""
     text = _(u'Create Dummy Masters...')
     help = _(u"TES4Edit tool, makes dummy plugins for each missing master of"
              u" the selected mod, for use if looking at a 'Filter' patch")
 
     def _enable(self):
-        return len(self.data) == 1 and bosh.modInfos[self.data[
-            0]].getStatus() == 30  # Missing masters
+        return super(Mod_CreateDummyMasters, self)._enable() and \
+               bosh.modInfos[self.data[0]].getStatus() == 30  # Missing masters
 
     def Execute(self,event):
         """Handle execution."""
@@ -385,12 +383,10 @@ class Mod_Ratings(_Mod_Labels):
 
 # Mod info menus --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_Details(EnabledLink):
+class Mod_Details(OneItemLink):
     """Show Mod Details"""
     text = _(u'Details...')
     help = _(u'Show Mod Details')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         modName = GPath(self.data[0])
@@ -415,12 +411,10 @@ class Mod_Details(EnabledLink):
                 asDialog=False, fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
-class Mod_ShowReadme(EnabledLink):
+class Mod_ShowReadme(OneItemLink):
     """Open the readme."""
     text = _(u'Readme...')
     help = _(u'Open the readme')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -1342,11 +1336,9 @@ class Mod_UndeleteRefs(EnabledLink):
 
 # Rest of menu Links ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_AddMaster(EnabledLink):
+class Mod_AddMaster(OneItemLink):
     """Adds master."""
     text = _(u'Add Master...')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
@@ -1517,7 +1509,7 @@ class Mod_FlipSelf(EnabledLink):
             self.window.RefreshUI(detail=fileInfo.name)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(EnabledLink):
+class Mod_FlipMasters(OneItemLink):
     """Swaps masters between esp and esm versions."""
 
     def _initData(self, window, data):
@@ -1538,8 +1530,8 @@ class Mod_FlipMasters(EnabledLink):
             else:
                 self.toEsm = True
 
-    def _enable(self):
-        return len(self.data) == 1 and len(self.fileInfo.header.masters) > 1
+    def _enable(self): return super(Mod_FlipMasters, self)._enable() and \
+                              len(self.fileInfo.header.masters) > 1
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
@@ -1586,15 +1578,14 @@ class Mod_SetVersion(EnabledLink):
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
-#--Import only ----------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--Import only
 from ..patcher.utilities import FidReplacer, CBash_FidReplacer
 
-class Mod_Fids_Replace(EnabledLink):
+class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
     text = _(u'Form IDs...')
     help = _(u'Replace fids according to text file')
-
-    def _enable(self): return len(self.data) == 1
 
     @staticmethod
     def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
@@ -1631,11 +1622,9 @@ class Mod_Fids_Replace(EnabledLink):
         else:
             balt.showLog(self.window,changed,_(u'Objects Changed'),icons=Resources.bashBlue)
 
-class Mod_Face_Import(EnabledLink):
+class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
     text = _(u'Face...')
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         #--Select source face file
@@ -1664,7 +1653,7 @@ class Mod_Face_Import(EnabledLink):
         self.window.RefreshUI()
         balt.showOk(self.window,_(u'Imported face to: %s') % npc.eid,fileName.s)
 
-#--Common ---------------------------------------------------------------------
+#--Common
 class _Mod_Export_Link(EnabledLink):
 
     def _enable(self): return bool(self.data)
@@ -1695,11 +1684,11 @@ class _Mod_Export_Link(EnabledLink):
 
     def _parser(self): raise AbstractError
 
-class _Mod_Import_Link(EnabledLink):
+class _Mod_Import_Link(OneItemLink):
 
-    def _enable(self): return len(self.data) == 1
+    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
 
-#------------------------------------------------------------------------------
+#--Links ----------------------------------------------------------------------
 from ..patcher.utilities import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(_Mod_Export_Link):
@@ -2543,7 +2532,8 @@ class _Mod_Export_Link_CBash(_Mod_Export_Link):
     def _enable(self): return bool(self.data) and bool(CBash)
 
 class _Mod_Import_Link_CBash(_Mod_Import_Link):
-    def _enable(self): return len(self.data) == 1 and bool(CBash)
+    def _enable(self):
+        return super(_Mod_Import_Link_CBash, self)._enable() and bool(CBash)
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import CBash_MapMarkers

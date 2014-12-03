@@ -27,7 +27,7 @@ import time
 from .. import balt, bosh, bush, bolt
 from . import ListBoxes, Resources
 from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
-    Link
+    Link, OneItemLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
@@ -272,7 +272,7 @@ class File_Hide(_Link):
         #--Refresh stuff
         Link.Frame.RefreshData()
 
-class File_ListMasters(EnabledLink):
+class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
     text = _(u"List Masters...")
 
@@ -281,8 +281,6 @@ class File_ListMasters(EnabledLink):
         self.help = _(
             u"Copies list of %(filename)s's masters to the clipboard.") % (
                         {'filename': data[0]})
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         fileName = GPath(self.data[0])
@@ -401,12 +399,10 @@ class File_Snapshot(_Link):
             #--Copy file
             self.window.data.copy(fileName,destDir,destName)
 
-class File_RevertToSnapshot(EnabledLink):
+class File_RevertToSnapshot(OneItemLink):
     """Revert to Snapshot."""
     text = _(u'Revert to Snapshot...')
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
-
-    def _enable(self): return len(self.data) == 1
 
     def Execute(self,event):
         """Handle menu item selection."""

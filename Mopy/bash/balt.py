@@ -2318,6 +2318,13 @@ class EnabledLink(_Link):
         menuItem.Enable(self._enable())
         return menuItem
 
+class OneItemLink(EnabledLink):
+    """Link enabled only when there is one and only one selected item."""
+    # TODO(ut): edit help to add _(u'. Select one item only')
+    def _enable(self):
+        if hasattr(self, 'selected'): return len(self.selected) == 1
+        return len(self.data) == 1
+
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
 
