@@ -6168,17 +6168,12 @@ class ImportFaceDialog(balt.Dialog):
         self.list.SetSizeHints(175,150)
         wx.EVT_LISTBOX(self,wx.ID_OK,self.EvtListBox)
         #--Name,Race,Gender Checkboxes
-        self.nameCheck = checkBox(self,_(u'Name'))
-        self.raceCheck = checkBox(self,_(u'Race'))
-        self.genderCheck = checkBox(self,_(u'Gender'))
-        self.statsCheck = checkBox(self,_(u'Stats'))
-        self.classCheck = checkBox(self,_(u'Class'))
-        flags = bosh.PCFaces.flags(settings.get('bash.faceImport.flags',0x4))
-        self.nameCheck.SetValue(flags.name)
-        self.raceCheck.SetValue(flags.race)
-        self.genderCheck.SetValue(flags.gender)
-        self.statsCheck.SetValue(flags.stats)
-        self.classCheck.SetValue(flags.iclass)
+        flags = bosh.PCFaces.flags(settings.get('bash.faceImport.flags', 0x4))
+        self.nameCheck = checkBox(self, _(u'Name'), checked=flags.name)
+        self.raceCheck = checkBox(self, _(u'Race'), checked=flags.race)
+        self.genderCheck = checkBox(self, _(u'Gender'), checked=flags.gender)
+        self.statsCheck = checkBox(self, _(u'Stats'), checked=flags.stats)
+        self.classCheck = checkBox(self, _(u'Class'), checked=flags.iclass)
         #--Name,Race,Gender Text
         self.nameText  = staticText(self,u'-----------------------------')
         self.raceText  = staticText(self,u'')
@@ -6548,17 +6543,17 @@ class CreateNewProject(balt.Dialog):
 
         #--Attributes
         self.textName = wx.TextCtrl(self,wx.ID_ANY,_(u'New Project Name-#####'))
-        self.checkEsp = wx.CheckBox(self,wx.ID_ANY,_(u'Blank.esp'))
-        self.checkEsp.SetValue(True)
-        self.checkWizard = wx.CheckBox(self,wx.ID_ANY,_(u'Blank wizard.txt'))
-        self.checkWizardImages = wx.CheckBox(self,wx.ID_ANY,_(u'Wizard Images Directory'))
+        self.checkEsp = checkBox(self, _(u'Blank.esp'),
+                                 onCheck=self.OnCheckBoxChange, checked=True)
+        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'), onCheck=self.OnCheckBoxChange)
+        self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
         if not bEnableWizard:
             # pywin32 not installed
             self.checkWizard.Disable()
             self.checkWizardImages.Disable()
-        self.checkDocs = wx.CheckBox(self,wx.ID_ANY,_(u'Docs Directory'))
-        self.checkScreenshot = wx.CheckBox(self,wx.ID_ANY,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
-        self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
+        self.checkDocs = checkBox(self,_(u'Docs Directory'))
+        # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
+        # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
         okButton = wx.Button(self,wx.ID_OK)
         cancelButton = wx.Button(self,wx.ID_CANCEL)
         # Panel Layout
@@ -6573,7 +6568,7 @@ class CreateNewProject(balt.Dialog):
         vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
+        # vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(wx.StaticLine(self,wx.ID_ANY))
         vsizer.AddStretchSpacer()
         vsizer.Add(hsizer,0,wx.ALIGN_CENTER)
@@ -6582,8 +6577,6 @@ class CreateNewProject(balt.Dialog):
         self.SetInitialSize()
         # Event Handlers
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
-        self.checkEsp.Bind(wx.EVT_CHECKBOX,self.OnCheckBoxChange)
-        self.checkWizard.Bind(wx.EVT_CHECKBOX,self.OnCheckBoxChange)
         okButton.Bind(wx.EVT_BUTTON,self.OnClose)
         cancelButton.Bind(wx.EVT_BUTTON,self.OnClose)
         # Dialog Icon Handlers
@@ -6647,9 +6640,9 @@ class CreateNewProject(balt.Dialog):
         if self.checkDocs.IsChecked():
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
-        if self.checkScreenshot.IsChecked():
-            #Copy the dummy default 'Screenshot' into the New Project
-            extrasDir.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
+        # if self.checkScreenshot.IsChecked():
+        #     #Copy the dummy default 'Screenshot' into the New Project
+        #     extrasDir.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
 
         # Move into the target location
         try:
@@ -6659,7 +6652,7 @@ class CreateNewProject(balt.Dialog):
         finally:
             tempDir.rmtree(tempDir.s)
 
-        # Move successfull
+        # Move successful
         self.fullRefresh = False
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh

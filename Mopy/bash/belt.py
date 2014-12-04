@@ -466,15 +466,16 @@ class PageFinish(PageInstaller):
         checkSubSizer = wx.BoxSizer(wx.VERTICAL)
         checkSizer.AddStretchSpacer()
         # Apply the selections
-        self.checkApply = wx.CheckBox(self, wx.ID_ANY, _(u'Apply these selections'))
-        self.checkApply.SetValue(bAuto)
-        self.checkApply.Bind(wx.EVT_CHECKBOX, self.OnCheckApply)
+        self.checkApply = balt.checkBox(self, _(u'Apply these selections'),
+                                        onCheck=self.OnCheckApply,
+                                        checked=bAuto)
         checkSubSizer.Add(self.checkApply,0,wx.BOTTOM,2)
         # Also install/anneal the package
-        self.checkInstall = wx.CheckBox(self, wx.ID_ANY, _(u'Install this package'))
-        self.checkInstall.SetValue(bosh.settings['bash.installers.autoWizard'])
-        self.checkInstall.Bind(wx.EVT_CHECKBOX, self.OnCheckInstall)
-        self.parent.ret.Install = bosh.settings['bash.installers.autoWizard']
+        auto = bosh.settings['bash.installers.autoWizard']
+        self.checkInstall = balt.checkBox(self, _(u'Install this package'),
+                                          onCheck=self.OnCheckInstall,
+                                          checked=auto)
+        self.parent.ret.Install = auto
         checkSubSizer.Add(self.checkInstall)
         checkSizer.Add(checkSubSizer,0,wx.EXPAND)
         sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
@@ -588,8 +589,8 @@ class PageVersions(PageInstaller):
         sizerMain.AddStretchSpacer()
 
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
-        self.checkOk = wx.CheckBox(self, wx.ID_ANY, _(u'Install anyway.'))
-        self.checkOk.Bind(wx.EVT_CHECKBOX, self.OnCheck)
+        self.checkOk = balt.checkBox(self, _(u'Install anyway.'),
+                                     onCheck=self.OnCheck)
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
         sizerCheck.AddStretchSpacer()
         sizerCheck.Add(self.checkOk)

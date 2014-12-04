@@ -146,8 +146,9 @@ class ListPatcher(Patcher):
             gManualSizer = None
             self.SetItems(self.getAutoItems())
         else:
-            self.gAuto = checkBox(gConfigPanel,_(u'Automatic'),onCheck=self.OnAutomatic)
-            self.gAuto.SetValue(self.autoIsChecked)
+            self.gAuto = checkBox(gConfigPanel, _(u'Automatic'),
+                                  onCheck=self.OnAutomatic,
+                                  checked=self.autoIsChecked)
             self.gAdd = button(gConfigPanel,_(u'Add'),onClick=self.OnAdd)
             self.gRemove = button(gConfigPanel,_(u'Remove'),onClick=self.OnRemove)
             self.OnAutomatic()
