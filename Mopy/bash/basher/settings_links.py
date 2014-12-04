@@ -57,7 +57,7 @@ class Settings_BackupSettings(_Link):
                 sizer = vSizer(
                     (hSizer(
                         (icon,0,wx.ALL,6),
-                        (staticText(dialog,_(u'Do you want to backup any images?'),style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                        (staticText(dialog,_(u'Do you want to backup any images?'),noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                         ),1,wx.EXPAND|wx.ALL,6),
                     (hSizer(
                         spacer,

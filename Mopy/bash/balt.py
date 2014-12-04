@@ -365,9 +365,11 @@ def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     gCheckBox.SetValue(checked)
     return gCheckBox
 
-def staticText(parent,label=u'',pos=defPos,size=defSize,style=0,name=u"staticText",id=defId,):
+def staticText(parent, label=u'', pos=defPos, size=defSize, style=0,
+               noAutoResize=True, name=u"staticText"):
     """Static text element."""
-    return wx.StaticText(parent,id,label,pos,size,style,name)
+    if noAutoResize: style |= wx.ST_NO_AUTORESIZE
+    return wx.StaticText(parent, defId, label, pos, size, style, name)
 
 def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
         min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
@@ -448,7 +450,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             (hSizer( #--Save/Cancel
@@ -507,7 +509,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             (hSizer( #--Save/Cancel

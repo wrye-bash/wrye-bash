@@ -1932,7 +1932,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         gdeprefix.SetValue(bosh.settings['bash.mods.export.deprefix'])
         gskipcomments.SetValue(bosh.settings['bash.mods.export.skipcomments'])
         sizer = vSizer(
-            staticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),style=wx.ST_NO_AUTORESIZE),
+            staticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
             gskip,
             spacer,
             staticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
@@ -1940,7 +1940,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                                _(u'as DenockInit.ext rather than as cobDenockInit.ext')
                                + u'\n' +
                                _(u'(Leave blank to not cut any prefix, non-case sensitive):')
-                               ),style=wx.ST_NO_AUTORESIZE),
+                               ),noAutoResize=True),
             gdeprefix,
             spacer,
             gskipcomments,

@@ -30,7 +30,6 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
-import struct, string
 import win32api
 import StringIO
 import traceback
@@ -230,7 +229,7 @@ class PageError(PageInstaller):
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
         textError = wx.TextCtrl(self, wx.ID_ANY, errorMsg, style=wx.TE_READONLY|wx.TE_MULTILINE)
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, title))
+        sizerMain.Add(balt.staticText(title))
         sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
         sizerMain.AddGrowableCol(0)
         sizerMain.AddGrowableRow(1)
@@ -260,11 +259,11 @@ class PageSelect(PageInstaller):
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
-        self.TitleDesc = wx.StaticText(self, wx.ID_ANY, desc)
+        self.TitleDesc = balt.staticText(desc)
         self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _(u'Options:')))
+        sizerMain.Add(balt.staticText(_(u'Options:')))
 
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
         self.textItem = wx.TextCtrl(self, wx.ID_ANY, u'', style=wx.TE_READONLY|wx.TE_MULTILINE)
@@ -288,7 +287,7 @@ class PageSelect(PageInstaller):
         sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
         sizerMain.Add(sizerBoxes, wx.ID_ANY, wx.EXPAND)
 
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _(u'Description:')))
+        sizerMain.Add(balt.staticText(_(u'Description:')))
         sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
 
         self.SetSizer(sizerMain)
@@ -411,7 +410,7 @@ class PageFinish(PageInstaller):
 
         #--Heading
         sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
-        textTitle = wx.StaticText(self, wx.ID_ANY, _(u"The installer script has finished, and will apply the following settings:"))
+        textTitle = balt.staticText(_(u"The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
         sizerMain.Add(sizerTitle,0,wx.EXPAND)
@@ -419,7 +418,7 @@ class PageFinish(PageInstaller):
         #--Subpackages and Espms
         sizerSubsEspms = wx.BoxSizer(wx.HORIZONTAL)
         subPackageSizer = wx.BoxSizer(wx.VERTICAL)
-        subPackageSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Sub-Packages')),0,wx.BOTTOM,2)
+        subPackageSizer.Add(balt.staticText(_(u'Sub-Packages')),0,wx.BOTTOM,2)
         self.listSubs = wx.CheckListBox(self, wx.ID_ANY, choices=subs)
         self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
@@ -429,7 +428,7 @@ class PageFinish(PageInstaller):
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = wx.BoxSizer(wx.VERTICAL)
-        espmSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Esp/ms')),0,wx.BOTTOM,2)
+        espmSizer.Add(balt.staticText(_(u'Esp/ms')),0,wx.BOTTOM,2)
         self.listEspms = wx.CheckListBox(self, wx.ID_ANY, choices=espmShow)
         self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
@@ -445,12 +444,12 @@ class PageFinish(PageInstaller):
         #--Ini tweaks
         sizerIniTweaks = wx.BoxSizer(wx.HORIZONTAL)
         sizerTweaks = wx.BoxSizer(wx.VERTICAL)
-        sizerTweaks.Add(wx.StaticText(self,wx.ID_ANY,_(u'Ini Tweaks:')),0,wx.BOTTOM,2)
+        sizerTweaks.Add(balt.staticText(_(u'Ini Tweaks:')),0,wx.BOTTOM,2)
         self.listInis = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
         sizerContents = wx.BoxSizer(wx.VERTICAL)
-        sizerContents.Add(wx.StaticText(self,wx.ID_ANY,u''),0,wx.BOTTOM,2)
+        sizerContents.Add(balt.staticText(u''),0,wx.BOTTOM,2)
         self.listTweaks = wx.ListBox(self,wx.ID_ANY,style=wx.LB_SINGLE)
         sizerContents.Add(self.listTweaks,1,wx.EXPAND)
         sizerIniTweaks.Add(sizerTweaks,1,wx.EXPAND|wx.RIGHT,5)
@@ -459,7 +458,7 @@ class PageFinish(PageInstaller):
         self.parent.ret.IniEdits = iniedits
 
         #--Notes
-        sizerMain.Add(wx.StaticText(self,wx.ID_ANY,_(u'Notes:')),0,wx.BOTTOM,2)
+        sizerMain.Add(balt.staticText(_(u'Notes:')),0,wx.BOTTOM,2)
         sizerMain.Add(wx.TextCtrl(self,wx.ID_ANY,u''.join(notes),style=wx.TE_READONLY|wx.TE_MULTILINE),1,wx.EXPAND)
 
         checkSizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -527,7 +526,7 @@ class PageVersions(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
-        self.textWarning = wx.StaticText(self, wx.ID_ANY, _(u'WARNING: The following version requirements are not met for using this installer.'))
+        self.textWarning = balt.staticText(_(u'WARNING: The following version requirements are not met for using this installer.'))
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
@@ -536,8 +535,8 @@ class PageVersions(PageInstaller):
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
         sizerVersions.AddStretchSpacer()
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _(u'Need')))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _(u'Have')))
+        sizerVersions.Add(balt.staticText(_(u'Need')))
+        sizerVersions.Add(balt.staticText(_(u'Have')))
         sizerVersions.AddStretchSpacer()
 
         # Game
@@ -545,11 +544,11 @@ class PageVersions(PageInstaller):
             linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
-            linkGame = wx.StaticText(self, wx.ID_ANY, bush.game.displayName)
+            linkGame = balt.staticText(bush.game.displayName)
         linkGame.SetToolTip(wx.ToolTip(bush.game.patchTip))
         sizerVersions.Add(linkGame)
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameNeed))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameHave))
+        sizerVersions.Add(balt.staticText(gameNeed))
+        sizerVersions.Add(balt.staticText(gameHave))
         sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGameOk]))
 
         # Script Extender
@@ -558,8 +557,8 @@ class PageVersions(PageInstaller):
             linkSE.SetVisitedColour(linkSE.GetNormalColour())
             linkSE.SetToolTip(wx.ToolTip(bush.game.se.urlTip))
             sizerVersions.Add(linkSE)
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seNeed))
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seHave))
+            sizerVersions.Add(balt.staticText(seNeed))
+            sizerVersions.Add(balt.staticText(seHave))
             sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bSEOk]))
 
         # Graphics extender
@@ -568,16 +567,16 @@ class PageVersions(PageInstaller):
             linkGE.SetVisitedColour(linkGE.GetNormalColour())
             linkGE.SetToolTip(wx.ToolTip(bush.game.ge.urlTip))
             sizerVersions.Add(linkGE)
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geNeed))
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geHave))
+            sizerVersions.Add(balt.staticText(geNeed))
+            sizerVersions.Add(balt.staticText(geHave))
             sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGEOk]))
 
         linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
         linkWB.SetToolTip(wx.ToolTip(u'http://oblivion.nexusmods.com/'))
         sizerVersions.Add(linkWB)
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbNeed))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbHave))
+        sizerVersions.Add(balt.staticText(wbNeed))
+        sizerVersions.Add(balt.staticText(wbHave))
         sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bWBOk]))
 
         sizerVersions.AddGrowableCol(0)
