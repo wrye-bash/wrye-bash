@@ -31,6 +31,8 @@ from ..balt import _Link, Link, Links, bitmapButton, Image, images, \
     SeparatorLink, tooltip, BoolLink
 from ..bolt import GPath
 
+# TODO(ut): GetBitmapButton factor out duplicate code (and wx dependencies, duh)
+
 docBrowser = None
 modList = None
 modChecker = None
@@ -127,7 +129,7 @@ class App_Button(StatusBar_Button):
 
     @staticmethod
     def getJava():
-        # Locate Java executable
+        """Locate Java executable"""
         win = GPath(os.environ['SYSTEMROOT'])
         # Default location: Windows\System32\javaw.exe
         java = win.join(u'system32', u'javaw.exe')
@@ -204,7 +206,6 @@ class App_Button(StatusBar_Button):
         #--**SE stuff
         self._obseTip = obseTip
         self.obseArg = obseArg
-        exeObse = bosh.dirs['app'].join(bush.game.se.exe)
 
     def IsPresent(self):
         if self.isJava:
@@ -236,6 +237,12 @@ class App_Button(StatusBar_Button):
                         _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
+    def _showUnicodeError(self):
+        balt.showError(Link.Frame, _(
+            u'Execution failed, because one or more of the command line '
+            u'arguments failed to encode.'),
+                       _(u"Could not launch '%s'") % self.exePath.stail)
+
     def Execute(self,event,extraArgs=None,wait=False):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
@@ -249,9 +256,7 @@ class App_Button(StatusBar_Button):
                 try:
                     subprocess.Popen((self.java.stail,u'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
                 except UnicodeError:
-                    balt.showError(Link.Frame,
-                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
-                                   _(u"Could not launch '%s'") % self.exePath.stail)
+                    self._showUnicodeError()
                 except Exception as error:
                     self.ShowError(error)
                 finally:
@@ -287,9 +292,7 @@ class App_Button(StatusBar_Button):
                     if wait:
                         popen.wait()
                 except UnicodeError:
-                    balt.showError(Link.Frame,
-                                   _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
-                                   _(u"Could not launch '%s'") % self.exePath.stail)
+                    self._showUnicodeError()
                 except WindowsError as werr:
                     if werr.winerror != 740:
                         self.ShowError(werr)
@@ -303,24 +306,20 @@ class App_Button(StatusBar_Button):
                 finally:
                     cwd.setcwd()
             else:
+                dir_ = self.workingDir.s if self.workingDir else bolt.Path.getcwd().s
+                args = u'"%s"' % self.exePath.s
+                args += u' '.join([u'%s' % arg for arg in self.exeArgs])
                 try:
-                    if self.workingDir:
-                        dir = self.workingDir.s
-                    else:
-                        dir = bolt.Path.getcwd().s
-
                     import win32api
                     r, executable = win32api.FindExecutable(self.exePath.s)
                     executable = win32api.GetLongPathName(executable)
-                    args = u'"%s"' % self.exePath.s
-                    args += u' '.join([u'%s' % arg for arg in self.exeArgs])
-                    win32api.ShellExecute(0,u"open",executable,args,dir,1)
+                    win32api.ShellExecute(0,u"open",executable,args,dir_,1)
                 except Exception as error:
                     if isinstance(error,WindowsError) and error.winerror == 740:
                         # Requires elevated permissions
                         try:
                             import win32api
-                            win32api.ShellExecute(0,'runas',executable,args,dir,1)
+                            win32api.ShellExecute(0,'runas',executable,args,dir_,1)
                         except Exception as error:
                             self.ShowError(error)
                     else:
@@ -335,9 +334,7 @@ class App_Button(StatusBar_Button):
                         try:
                             webbrowser.open(self.exePath.s)
                         except UnicodeError:
-                            balt.showError(Link.Frame,
-                                           _(u'Execution failed, because one or more of the command line arguments failed to encode.'),
-                                           _(u"Could not launch '%s'") % self.exePath.stail)
+                            self._showUnicodeError()
                         except Exception as error:
                             self.ShowError(error)
                         finally:
@@ -356,21 +353,21 @@ class Tooldir_Button(App_Button):
         App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
 
 #------------------------------------------------------------------------------
-class App_Tes4Gecko(App_Button): # TODO: CRUFT
+class App_Tes4Gecko(App_Button): # CRUFT
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.__class__ = App_Button
 
 #------------------------------------------------------------------------------
-class App_Tes5Gecko(App_Button): # TODO: CRUFT
+class App_Tes5Gecko(App_Button): # CRUFT
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.__class__ = App_Button
 
 #------------------------------------------------------------------------------
-class App_OblivionBookCreator(App_Button): # TODO: CRUFT
+class App_OblivionBookCreator(App_Button): # CRUFT
     """Left in for unpickling compatibility reasons."""
     def __setstate__(self, state):
         self.__dict__.update(state)
@@ -577,7 +574,8 @@ class Obse_Button(StatusBar_Button):
         self.gButton.SetToolTip(tooltip(tip))
         self.UpdateToolTips(state)
 
-    def UpdateToolTips(self,state=None):
+    @staticmethod
+    def UpdateToolTips(state=None):
         if state is None:
             state = bosh.settings.get('bash.obse.on',True)
         tipAttr = ('tip','obseTip')[state]

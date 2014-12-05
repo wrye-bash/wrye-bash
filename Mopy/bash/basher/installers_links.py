@@ -288,7 +288,7 @@ class Installers_AutoWizard(BoolLink):
 
 class _Installers_BoolLink_Refresh(BoolLink):
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(_Installers_BoolLink_Refresh, self).Execute(event)
         gInstallers.gList.RefreshUI()
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
@@ -311,7 +311,7 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
         u'archives.')
 
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
         gInstallers.OnShow()
 
 class Installers_AutoRefreshBethsoft(BoolLink):
@@ -329,7 +329,7 @@ class Installers_AutoRefreshBethsoft(BoolLink):
                                 _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculated.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
                                 )
             if not balt.askYes(self.gTank,fill(message,80),self.text): return
-        BoolLink.Execute(self,event)
+        super(Installers_AutoRefreshBethsoft, self).Execute(event)
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
             gInstallers.refreshed = False
@@ -386,7 +386,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink):
 
     def Execute(self,event):
         """Handle selection."""
-        BoolLink.Execute(self,event)
+        super(Installers_BsaRedirection, self).Execute(event)
         if bosh.settings[self.key]:
             bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
@@ -402,13 +402,13 @@ class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
-    text, key = _(u'Show Lower Conflicts'), \
-                'bash.installers.conflictsReport.showLower'
+    text = _(u'Show Lower Conflicts')
+    key = 'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
-    text, key = _(u'Show BSA Conflicts'), \
-                'bash.installers.conflictsReport.showBSAConflicts'
+    text = _(u'Show BSA Conflicts')
+    key = 'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
@@ -426,7 +426,7 @@ class Installers_SortActive(BoolLink):
         u'If selected, active installers will be sorted to the top of the list.')
 
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(Installers_SortActive, self).Execute(event)
         self.gTank.SortItems()
 
 class Installers_SortProjects(BoolLink):
@@ -435,7 +435,7 @@ class Installers_SortProjects(BoolLink):
         u'If selected, projects will be sorted to the top of the list.')
 
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(Installers_SortProjects, self).Execute(event)
         self.gTank.SortItems()
 
 class Installers_SortStructure(BoolLink):
@@ -443,7 +443,7 @@ class Installers_SortStructure(BoolLink):
     text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
 
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(Installers_SortStructure, self).Execute(event)
         self.gTank.SortItems()
 
 #------------------------------------------------------------------------------
@@ -452,7 +452,7 @@ class Installers_SortStructure(BoolLink):
 class Installers_Skip(BoolLink):
     """Toggle various skip settings and update."""
     def Execute(self,event):
-        BoolLink.Execute(self,event)
+        super(Installers_Skip, self).Execute(event)
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
             progress.setFull(len(self.data))
             for index,dataItem in enumerate(self.data.iteritems()):
@@ -483,30 +483,28 @@ class Installers_SkipLandscapeLODMeshes(Installers_Skip):
 
 class Installers_SkipLandscapeLODTextures(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    text, key = _(u'Skip LOD Textures'), \
-                'bash.installers.skipLandscapeLODTextures',
+    text = _(u'Skip LOD Textures')
+    key = 'bash.installers.skipLandscapeLODTextures'
 
 class Installers_SkipLandscapeLODNormals(Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    text, key = _(u'Skip LOD Normals'), \
-                'bash.installers.skipLandscapeLODNormals',
+    text = _(u'Skip LOD Normals')
+    key = 'bash.installers.skipLandscapeLODNormals'
 
-class Installers_SkipOBSEPlugins(Installers_Skip):
+class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
+    text = _(u'Skip %s Plugins') % bush.game.se_sd
+    key = 'bash.installers.allowOBSEPlugins'
 
-    text, key = _(u'Skip %s Plugins') % bush.game.se_sd, \
-                          'bash.installers.allowOBSEPlugins'
+    def __init__(self):
+        super(Installers_SkipOBSEPlugins, self).__init__(True)
 
-    def AppendToMenu(self,menu,window,data):
-        if not bush.game.se_sd: return
-        menuItem = BoolLink.AppendToMenu(self,menu,window,data)
-        menuItem.Check(not bosh.settings[self.key])
-        bosh.installersWindow = self.gTank
+    def _append(self, window): return bool(bush.game.se_sd)
 
 class Installers_RenameStrings(AppendableLink, Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
-    text, key = _(u'Auto-name String Translation Files'), \
-                'bash.installers.renameStrings'
+    text = _(u'Auto-name String Translation Files')
+    key = 'bash.installers.renameStrings'
 
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
 

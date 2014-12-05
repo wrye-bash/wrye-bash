@@ -46,7 +46,8 @@ class _InstallerLink(EnabledLink):
     def isSingleInstallable(self):
         if len(self.selected) == 1:
             installer = self.data[self.selected[0]]
-            if not isinstance(installer,(bosh.InstallerProject,bosh.InstallerArchive)):
+            if not isinstance(installer,
+                              (bosh.InstallerProject, bosh.InstallerArchive)):
                 return False
             elif installer.type not in (1,2):
                 return False
@@ -102,14 +103,14 @@ class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
     help = _(u"Edit the wizard.txt associated with this project.")
 
-    def _enable(self):
-        return self.isSingleInstallable() and bool(
-            self.data[self.selected[0]].hasWizard)
-
     def _initData(self, window, data):
         super(Installer_EditWizard, self)._initData(window, data)
         self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
+
+    def _enable(self):
+        return self.isSingleInstallable() and bool(
+            self.data[self.selected[0]].hasWizard)
 
     def Execute(self, event):
         path = self.selected[0]
@@ -137,14 +138,14 @@ class Installer_Wizard(_InstallerLink):
     parentWindow = ''
     help = _(u"Run the install wizard.")
 
-    def _enable(self):
-        return self.isSingle() and (self.data[
-                                        self.selected[0]]).hasWizard != False
-
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
         self.text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
+
+    def _enable(self):
+        return self.isSingle() and (self.data[
+                                        self.selected[0]]).hasWizard != False
 
     def Execute(self, event):
         with balt.BusyCursor():
@@ -498,7 +499,8 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
 
 class Installer_Install(_InstallerLink):
     """Install selected packages."""
-    mode_title = {'DEFAULT':_(u'Install'),'LAST':_(u'Install Last'),'MISSING':_(u'Install Missing')}
+    mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
+                  'MISSING': _(u'Install Missing')}
 
     def __init__(self,mode='DEFAULT'):
         super(Installer_Install, self).__init__()
@@ -671,7 +673,8 @@ class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     text = _(u'Refresh')
 
-    def _enable(self): return not len(self.selected) == 1 or self.isSingleInstallable()
+    def _enable(self):
+        return not len(self.selected) == 1 or self.isSingleInstallable()
 
     def Execute(self,event):
         """Handle selection."""
@@ -859,8 +862,7 @@ class Installer_Espm_Rename(EnabledLink):
     """Changes the installed name for an Esp/m."""
     text = _(u'Rename...')
 
-    def _enable(self):
-        return self.data != -1 #self.data == data param of AppendToMenu (spero)
+    def _enable(self): return self.data != -1
 
     def Execute(self,event):
         """Handle selection."""
@@ -1055,7 +1057,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfig(_InstallerLink):
-    """Install selected packages.""" # TODO docs
+    """Install selected packages.""" # TODO(ut): docs
     text = _(u'Omod Info...')
 
     def _enable(self): return self.isSingleProject()
@@ -1067,7 +1069,7 @@ class InstallerProject_OmodConfig(_InstallerLink):
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_InstallerLink):
-    """Install selected packages.""" # TODO docs
+    """Install selected packages.""" # TODO(ut): docs
     text = _(u'Sync from Data')
 
     def _enable(self):
@@ -1100,7 +1102,7 @@ class InstallerProject_Sync(_InstallerLink):
 
 #------------------------------------------------------------------------------
 class InstallerProject_SyncPack(_InstallerLink):
-    """Install selected packages.""" # TODO docs
+    """Install selected packages.""" # TODO(ut): docs
     text = _(u'Sync and Pack')
 
     def _enable(self): return self.projectExists()
@@ -1419,13 +1421,12 @@ class InstallerConverter_Create(_InstallerLink):
                 balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
 
 #------------------------------------------------------------------------------
-# Installer Submenus -------------------------------------------------------------
+# Installer Submenus ----------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
-
     def _enable(self):
-        if not balt.MenuLink._enable(self): return False # one  selected only
+        if not super(InstallerOpenAt_MainMenu, self)._enable(): return False # one  selected only
         return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):

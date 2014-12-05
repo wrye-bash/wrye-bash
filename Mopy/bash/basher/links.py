@@ -1220,3 +1220,17 @@ def InitSettingsLinks():
     SettingsMenu.append(Settings_Deprint())
     SettingsMenu.append(Settings_DumpTranslator())
     SettingsMenu.append(Settings_UAC())
+
+def InitLinks():
+    """Call other link initializers."""
+    InitStatusBar()
+    InitSettingsLinks()
+    InitMasterLinks()
+    InitInstallerLinks()
+    InitINILinks()
+    InitModLinks()
+    InitSaveLinks()
+    InitScreenLinks()
+    InitMessageLinks()
+    InitPeopleLinks()
+    #InitBSALinks()

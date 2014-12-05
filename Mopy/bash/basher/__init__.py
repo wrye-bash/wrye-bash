@@ -37,32 +37,30 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
-#--Localization
-#..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, loot, barb, bass, bweb, patcher
-from ..bosh import formatInteger,formatDate
-from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    UncodedError, CancelError, SkipError
-from ..bolt import LString, GPath, SubProgress, deprint, sio
-from ..cint import *
-
-startupinfo = bolt.startupinfo
-
 #--Python
 import StringIO
 import copy
-import datetime
 import os
 import re
 import string
 import sys
 import time
-from types import *
+from types import StringTypes, ClassType, IntType, LongType
 from operator import attrgetter
 
 #--wxPython
 import wx
 import wx.gizmos
+
+#--Localization
+#..Handled by bosh, so import that.
+from .. import bush, bosh, bolt, bass
+from ..bosh import formatInteger,formatDate
+from ..bolt import BoltError, AbstractError, CancelError, SkipError, GPath, \
+    SubProgress, deprint, Path
+from ..cint import CBash
+
+startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
@@ -70,8 +68,7 @@ from ..balt import tooltip, fill, bell
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
-from ..balt import Links, Link, SeparatorLink, MenuLink
-from ..balt import ListCtrl
+from ..balt import Links, ListCtrl
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -3106,6 +3103,7 @@ class InstallersPanel(SashTankPanel):
         self.gList = InstallersList(left,data,
             installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
             details=self, style=wx.LC_REPORT)
+        bosh.installersWindow = self.gList
         self.gList.SetSizeHints(100,100)
         #--Package
         self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
@@ -6773,20 +6771,7 @@ def InitImages():
     Resources.bashMonkey = balt.ImageBundle()
     Resources.bashMonkey.Add(images['monkey.16'])
 
-from .links import * # TODO(ut): move this to links.py - only import InitLinks
-def InitLinks():
-    """Call other link initializers."""
-    InitStatusBar()
-    InitSettingsLinks()
-    InitMasterLinks()
-    InitInstallerLinks()
-    InitINILinks()
-    InitModLinks()
-    InitSaveLinks()
-    InitScreenLinks()
-    InitMessageLinks()
-    InitPeopleLinks()
-    #InitBSALinks()
+from .links import InitLinks
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':

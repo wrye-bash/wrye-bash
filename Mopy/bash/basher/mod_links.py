@@ -591,7 +591,7 @@ class Mod_CopyModInfo(_Link):
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_AllowAllGhosting(_Link):
+class _Mod_AllowGhosting_All(_Link):
     text, help = _(u"Allow Ghosting"), u'Allow Ghosting for selected mods'
 
     def Execute(self,event):
@@ -607,7 +607,7 @@ class Mod_AllowAllGhosting(_Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_AllowNoGhosting(_Link):
+class _Mod_DisallowGhosting_All(_Link):
     text = _(u'Disallow Ghosting')
     help = _(u'Disallow Ghosting for selected mods')
 
@@ -664,7 +664,7 @@ class Mod_Ghost(EnabledLink):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_AllowInvertGhosting(_Link):
+class _Mod_AllowGhostingInvert_All(_Link):
     text = _(u'Invert Ghosting')
     help = _(u'Invert Ghosting for selected mods')
 
@@ -707,9 +707,9 @@ class Mod_AllowGhosting(TransLink):
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
-            subMenu.links.append(Mod_AllowAllGhosting())
-            subMenu.links.append(Mod_AllowNoGhosting())
-            subMenu.links.append(Mod_AllowInvertGhosting())
+            subMenu.links.append(_Mod_AllowGhosting_All())
+            subMenu.links.append(_Mod_DisallowGhosting_All())
+            subMenu.links.append(_Mod_AllowGhostingInvert_All())
             return subMenu
 
 # BP Links --------------------------------------------------------------------
@@ -913,8 +913,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
                 [[_(u'Missing Master Errors'),_(u'These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now.'),missing],
                 [_(u'Delinquent Master Errors'),_(u'These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now.'),delinquent]],
-                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={wx.ID_OK:_(u'Continue Despite Errors')})
-            if warning.ShowModal() == wx.ID_CANCEL:
+                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={ListBoxes.ID_OK:_(u'Continue Despite Errors')})
+            if warning.ShowModal() == ListBoxes.ID_CANCEL:
                 return
         try:
             patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
@@ -1596,6 +1596,9 @@ class Mod_Fids_Replace(EnabledLink):
 
     def _enable(self): return len(self.data) == 1
 
+    @staticmethod
+    def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
+
     def Execute(self,event):
         message = _(u"For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file.")
         if not balt.askContinue(self.window,message,'bash.formIds.replace.continue',
@@ -1616,10 +1619,7 @@ class Mod_Fids_Replace(EnabledLink):
         #--Export
         changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
-            if CBash:
-                replacer = CBash_FidReplacer()
-            else:
-                replacer = FidReplacer()
+            replacer = self._parser()
             progress(0.1,_(u"Reading %s.") % textName.s)
             replacer.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -1693,7 +1693,7 @@ class _Mod_Export_Link(EnabledLink):
             parser.writeToText(textPath)
             progress(1.0, _(u'Done.'))
 
-    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
+    def _parser(self): raise AbstractError
 
 class _Mod_Import_Link(EnabledLink):
 
@@ -1925,6 +1925,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     text = _(u'Scripts...')
     help = _(u'Export scripts from mod to text file')
 
+    def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
+
     def Execute(self,event): # overrides _Mod_Export_Link
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
@@ -1976,10 +1978,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         if not textDir: return
         #--Export
         #try:
-        if CBash:
-            scriptText = CBash_ScriptText()
-        else:
-            scriptText = ScriptText()
+        scriptText = self._parser()
         scriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
         #finally:
@@ -1990,6 +1989,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file or other mod."""
     text = _(u'Scripts...')
     help = _(u'Import scripts from text file or other mod')
+
+    def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self,event):
         message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
@@ -2009,11 +2010,9 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                    + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
-        makeNew = balt.askYes(self.window,message,_(u'Import Scripts'),icon=wx.ICON_QUESTION)
-        if CBash:
-            scriptText = CBash_ScriptText()
-        else:
-            scriptText = ScriptText()
+        makeNew = balt.askYes(self.window, message, _(u'Import Scripts'),
+                              questionIcon=True)
+        scriptText = self._parser()
         scriptText.readFromText(textDir.s,fileInfo)
         changed, added = scriptText.writeToMod(fileInfo,makeNew)
     #--Log
@@ -2050,13 +2049,14 @@ class Mod_Stats_Export(_Mod_Export_Link):
     text = _(u'Stats...')
     help = _(u'Export stats from mod to text file')
 
-    def _parser(self):
-        return CBash_ItemStats() if CBash else ItemStats()
+    def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
 class Mod_Stats_Import(_Mod_Import_Link):
     """Import stats from text file or other mod."""
     text = _(u'Stats...')
     help = _(u'Import stats from text file or other mod')
+
+    def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
     def Execute(self,event):
         message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
@@ -2080,10 +2080,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
-            if CBash:
-                itemStats = CBash_ItemStats()
-            else:
-                itemStats = ItemStats()
+            itemStats = self._parser()
             progress(0.1,_(u"Reading %s.") % textName.s)
             itemStats.readFromText(textPath)
             progress(0.2,_(u"Applying to %s.") % fileName.s)
@@ -2113,13 +2110,14 @@ class Mod_Prices_Export(_Mod_Export_Link):
     text = _(u'Prices...')
     help = _(u'Export item prices from mod to text file')
 
-    def _parser(self):
-        return CBash_ItemPrices() if CBash else ItemPrices()
+    def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
 class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file."""
     text = _(u'Prices...')
     help = _(u'Import item prices from text file')
+
+    def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
     def Execute(self,event):
         message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
@@ -2143,10 +2141,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Prices')) as progress:
-            if CBash:
-                itemPrices = CBash_ItemPrices()
-            else:
-                itemPrices = ItemPrices()
+            itemPrices = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             if ext == u'.csv':
                 itemPrices.readFromText(textPath)
@@ -2244,6 +2239,16 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
     text = _(u'Spells...')
     help = _(u'Export Spell details from mod to text file')
 
+    def _parser(self):
+        message = (_(u'Export flags and effects?')
+                   + u'\n' +
+                   _(u'(If not they will just be skipped).')
+                   )
+        doDetailed = balt.askYes(self.window, message, _(u'Export Spells'),
+                                 questionIcon=True)
+        return CBash_SpellRecords(detailed=doDetailed) if CBash else \
+            SpellRecords(detailed=doDetailed)
+
     def Execute(self,event): # overrides _Mod_Export_Link
         fileName = GPath(self.data[0])
         fileInfo = bosh.modInfos[fileName]
@@ -2253,18 +2258,10 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
         #--File dialog
         textPath = balt.askSave(self.window,_(u'Export Spell details to:'),textDir,textName, u'*_Spells.csv')
         if not textPath: return
-        message = (_(u'Export flags and effects?')
-                   + u'\n' +
-                   _(u'(If not they will just be skipped).')
-                   )
-        doDetailed = balt.askYes(self.window,message,_(u'Export Spells'),icon=wx.ICON_QUESTION)
         (textDir,textName) = textPath.headTail
         #--Export
         with balt.Progress(_(u'Export Spell details')) as progress:
-            if CBash:
-                spellRecords = CBash_SpellRecords(detailed=doDetailed)
-            else:
-                spellRecords = SpellRecords(detailed=doDetailed)
+            spellRecords = self._parser()
             readProgress = SubProgress(progress,0.1,0.8)
             readProgress.setFull(len(self.data))
             for index,fileName in enumerate(map(GPath,self.data)):
@@ -2280,6 +2277,16 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
     text = _(u'Spells...')
     help = _(u'Import Spell details from text file')
 
+    def _parser(self):
+        message = (_(u'Import flags and effects?')
+                   + u'\n' +
+                   _(u'(If not they will just be skipped).')
+                   )
+        doDetailed = balt.askYes(self.window,message,_(u'Import Spell details'),
+                                 questionIcon=True)
+        return CBash_SpellRecords(detailed=doDetailed) if CBash else \
+            SpellRecords(detailed=doDetailed)
+
     def Execute(self,event):
         message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,
@@ -2294,12 +2301,6 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         textPath = balt.askOpen(self.window,_(u'Import Spell details from:'),
             textDir, textName, u'*_Spells.csv',mustExist=True)
         if not textPath: return
-        message = (_(u'Import flags and effects?')
-                   + u'\n' +
-                   _(u'(If not they will just be skipped).')
-                   )
-        doDetailed = balt.askYes(self.window,message,_(u'Import Spell details'),
-                                 icon=wx.ICON_QUESTION)
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
@@ -2309,10 +2310,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
-            if CBash:
-                spellRecords = CBash_SpellRecords(detailed=doDetailed)
-            else:
-                spellRecords = SpellRecords(detailed=doDetailed)
+            spellRecords = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             spellRecords.readFromText(textPath)
             progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
@@ -2352,6 +2350,9 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     text = _(u'Ingredients...')
     help = _(u'Import Ingredient details from text file')
 
+    def _parser(self):
+        return CBash_IngredientDetails() if CBash else IngredientDetails()
+
     def Execute(self,event):
         message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
         if not balt.askContinue(self.window,message,
@@ -2375,10 +2376,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
         #--Export
         changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
-            if CBash:
-                Ingredients = CBash_IngredientDetails()
-            else:
-                Ingredients = IngredientDetails()
+            Ingredients = self._parser()
             progress(0.1,_(u'Reading %s.') % textName.s)
             Ingredients.readFromText(textPath)
             progress(0.2,_(u'Applying to %s.') % fileName.s)
@@ -2484,13 +2482,14 @@ class Mod_FullNames_Export(_Mod_Export_Link):
     text = _(u'Names...')
     help = _(u'Export full names from mod to text file')
 
-    def _parser(self):
-        return CBash_FullNames() if CBash else FullNames()
+    def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
 class Mod_FullNames_Import(_Mod_Import_Link):
     """Import full names from text file or other mod."""
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
+
+    def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
     def Execute(self,event):
         message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
@@ -2514,10 +2513,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         #--Export
         renamed = None
         with balt.Progress(_(u"Import Names")) as progress:
-            if CBash:
-                fullNames = CBash_FullNames()
-            else:
-                fullNames = FullNames()
+            fullNames = self._parser()
             progress(0.1,_(u"Reading %s.") % textName.s)
             if ext == u'.csv':
                 fullNames.readFromText(textPath)
@@ -2627,7 +2623,7 @@ class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
 # Unused ? --------------------------------------------------------------------
 from ..patcher.utilities import CompleteItemData, CBash_CompleteItemData
 
-class Mod_ItemData_Export(_Mod_Export_Link): # TODO: CRUFT
+class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
     """Export pretty much complete item data from mod to text file."""
     askTitle = _(u'Export item data to:')
     csvFile = u'_ItemData.csv'
@@ -2638,7 +2634,7 @@ class Mod_ItemData_Export(_Mod_Export_Link): # TODO: CRUFT
     def _parser(self):
         return CBash_CompleteItemData() if CBash else CompleteItemData()
 
-class Mod_ItemData_Import(_Mod_Import_Link): # TODO: CRUFT
+class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     """Import stats from text file or other mod."""
     text = _(u'Item Data...')
     help = _(u'Import pretty much complete item data from text file or other'
@@ -2693,7 +2689,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # TODO: CRUFT
             buff.close()
 
 #------------------------------------------------------------------------------
-class Mod_MarkLevelers(EnabledLink): # TODO: CRUFT
+class Mod_MarkLevelers(EnabledLink): # CRUFT
     """Marks (tags) selected mods as Delevs and/or Relevs according to Leveled Lists.csv."""
     text = _(u'Mark Levelers...')
 
@@ -2708,7 +2704,7 @@ from ..bolt import deprint
 from ..cint import ObCollection
 from . import ListBoxes
 
-class MasterList_AddMasters(_Link): # TODO: CRUFT
+class MasterList_AddMasters(_Link): # CRUFT
     """Adds a master."""
     text = _(u'Add Masters...')
     help = _(u'Adds specified master to list of masters')
@@ -2742,7 +2738,7 @@ class MasterList_AddMasters(_Link): # TODO: CRUFT
         self.window.InitEdit()
 
 #------------------------------------------------------------------------------
-class MasterList_CleanMasters(AppendableLink, _Link): # TODO: CRUFT
+class MasterList_CleanMasters(AppendableLink, _Link): # CRUFT
     """Remove unneeded masters."""
     text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
 

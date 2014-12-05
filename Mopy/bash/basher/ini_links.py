@@ -201,7 +201,8 @@ class INI_CreateNew(EnabledLink):
 
     def _initData(self, window, data):
         Link._initData(self,window,data)
-        ini = self.window.GetParent().GetParent().GetParent().comboBox.GetValue()
+        self.parent = self.window.GetParent().GetParent().GetParent()
+        ini = self.parent.comboBox.GetValue()
         if not len(data) == 1:
             self.help = _(u'Please choose one Ini Tweak')
         else:
@@ -216,7 +217,10 @@ class INI_CreateNew(EnabledLink):
         """Handle creating a new INI tweak."""
         pathFrom = self.data[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,_(u'Copy Tweak with current settings...'),bosh.dirs['tweaks'],fileName,_(u'INI Tweak File (*.ini)|*.ini'))
+        path = balt.askSave(self.window,
+                            _(u'Copy Tweak with current settings...'),
+                            bosh.dirs['tweaks'], fileName,
+                            _(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
         bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
@@ -230,8 +234,9 @@ class INI_CreateNew(EnabledLink):
             if section in new_settings:
                 for setting in settings[section]:
                     if setting in new_settings[section]:
-                        settings[section][setting] = new_settings[section][setting]
+                        settings[section][setting] = new_settings[section][
+                            setting]
         target.saveSettings(settings)
         iniList.RefreshUI(detail=path)
-        self.window.GetParent().GetParent().GetParent().tweakContents.RefreshUI(path.tail)
+        self.parent.tweakContents.RefreshUI(path.tail)
 

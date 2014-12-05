@@ -381,12 +381,12 @@ class Mods_LockTimes(CheckLink):
         modList.RefreshUI()
 
 # CRUFT -----------------------------------------------------------------------
-class Mods_ReplacersData: # TODO: CRUFT
+class Mods_ReplacersData: # CRUFT
     """Empty version of a now removed class. Here for compatibility with
     older settings files."""
     pass
 
-class Mod_MergedLists_Data: # TODO: CRUFT
+class Mod_MergedLists_Data: # CRUFT
     """Empty version of a now removed class. Here for compatibility with
     older settings files."""
     pass

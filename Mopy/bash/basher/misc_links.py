@@ -39,24 +39,27 @@ class Screens_NextScreenShot(_Link):
 
     def Execute(self,event):
         oblivionIni = bosh.oblivionIni
-        base = oblivionIni.getSetting(u'Display',u'sScreenShotBaseName',u'ScreenShot')
-        next = oblivionIni.getSetting(u'Display',u'iScreenShotIndex',u'0')
+        base = oblivionIni.getSetting(u'Display', u'sScreenShotBaseName',
+                                      u'ScreenShot')
+        next_ = oblivionIni.getSetting(u'Display',u'iScreenShotIndex',u'0')
         rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
-        pattern = balt.askText(self.window,(_(u"Screenshot base name, optionally with next screenshot number.")
-                                            + u'\n' +
-                                            _(u"E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201.")
-                                            ),_(u"Next Shot..."),base+next)
+        pattern = balt.askText(self.window,(
+            _(u"Screenshot base name, optionally with next screenshot number.")
+            + u'\n' +
+            _(u"E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201.")
+            ),_(u"Next Shot..."),base+next_)
         if not pattern: return
         maPattern = rePattern.match(pattern)
         newBase,newNext = maPattern.groups()
         settings = {LString(u'Display'):{
             LString(u'SScreenShotBaseName'): newBase,
-            LString(u'iScreenShotIndex'): (newNext or next),
+            LString(u'iScreenShotIndex'): (newNext or next_),
             LString(u'bAllowScreenShot'): u'1',
             }}
         screensDir = GPath(newBase).head
         if screensDir:
-            if not screensDir.isabs(): screensDir = bosh.dirs['app'].join(screensDir)
+            if not screensDir.isabs(): screensDir = bosh.dirs['app'].join(
+                screensDir)
             screensDir.makedirs()
         oblivionIni.saveSettings(settings)
         bosh.screensData.refresh()
@@ -103,8 +106,8 @@ class Screen_JpgQuality(RadioLink):
     """Sets JPEG quality for saving."""
     help = _(u'Sets JPEG quality for saving')
 
-    def __init__(self,quality):
-        Link.__init__(self)
+    def __init__(self, quality):
+        super(Screen_JpgQuality, self).__init__()
         self.quality = quality
         self.text = u'%i' % self.quality
 
@@ -118,11 +121,13 @@ class Screen_JpgQuality(RadioLink):
 class Screen_JpgQualityCustom(Screen_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
-        Screen_JpgQuality.__init__(self,bosh.settings['bash.screens.jpgCustomQuality'])
+        super(Screen_JpgQualityCustom, self).__init__(
+            bosh.settings['bash.screens.jpgCustomQuality'])
         self.text = _(u'Custom [%i]') % self.quality
 
     def Execute(self,event):
-        quality = balt.askNumber(self.window,_(u'JPEG Quality'),value=self.quality,min=0,max=100)
+        quality = balt.askNumber(self.window, _(u'JPEG Quality'),
+                                 value=self.quality, min=0, max=100)
         if quality is None: return
         self.quality = quality
         bosh.settings['bash.screens.jpgCustomQuality'] = self.quality
@@ -153,8 +158,8 @@ class Messages_Archive_Import(_Link):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        paths = balt.askOpenMulti(self.window,_(u'Import message archive(s):'),textDir,
-            u'', u'*.html')
+        paths = balt.askOpenMulti(self.window,_(u'Import message archive(s):'),
+                                  textDir, u'', u'*.html')
         if not paths: return
         bosh.settings['bash.workDir'] = paths[0].head
         for path in paths:
@@ -168,7 +173,8 @@ class Message_Delete(_Link):
     help = _(u'Permanently delete messages')
 
     def Execute(self,event):
-        message = _(u'Delete these %d message(s)? This operation cannot be undone.') % len(self.data)
+        message = _(u'Delete these %d message(s)? This operation cannot'
+                    u' be undone.') % len(self.data)
         if not balt.askYes(self.window,message,_(u'Delete Messages')):
             return
         #--Do it
@@ -189,7 +195,8 @@ class People_AddNew(_Link):
         name = balt.askText(self.gTank,_(u"Add new person:"),self.dialogTitle)
         if not name: return
         if name in self.data:
-            return balt.showInfo(self.gTank,name+_(u" already exists."),self.dialogTitle)
+            return balt.showInfo(self.gTank, name + _(u" already exists."),
+                                 self.dialogTitle)
         self.data[name] = (time.time(),0,u'')
         self.gTank.RefreshUI(details=name)
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
@@ -205,12 +212,14 @@ class People_Export(_Link):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        path = balt.askSave(self.gTank,_(u'Export people to text file:'),textDir,
-            u'People.txt', u'*.txt')
+        path = balt.askSave(self.gTank, _(u'Export people to text file:'),
+                            textDir, u'People.txt', u'*.txt')
         if not path: return
         bosh.settings['bash.workDir'] = path.head
         self.data.dumpText(path,self.selected)
-        balt.showInfo(self.gTank,_(u'Records exported: %d.') % len(self.selected),self.dialogTitle)
+        balt.showInfo(self.gTank,
+                      _(u'Records exported: %d.') % len(self.selected),
+                      self.dialogTitle)
 
 #------------------------------------------------------------------------------
 class People_Import(_Link):
@@ -222,12 +231,13 @@ class People_Import(_Link):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        path = balt.askOpen(self.gTank,_(u'Import people from text file:'),textDir,
-            u'', u'*.txt',mustExist=True)
+        path = balt.askOpen(self.gTank, _(u'Import people from text file:'),
+                            textDir, u'', u'*.txt', mustExist=True)
         if not path: return
         bosh.settings['bash.workDir'] = path.head
         newNames = self.data.loadText(path)
-        balt.showInfo(self.gTank,_(u"People imported: %d") % len(newNames),self.dialogTitle)
+        balt.showInfo(self.gTank, _(u"People imported: %d") % len(newNames),
+                      self.dialogTitle)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -264,7 +274,8 @@ class Master_ChangeTo(EnabledLink):
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
         #--File Dialog
-        wildcard = _(u'%s Mod Files')%bush.game.displayName+u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = _(u'%s Mod Files') % bush.game.displayName \
+                   + u' (*.esp;*.esm)|*.esp;*.esm'
         newPath = balt.askOpen(self.window,_(u'Change master name to:'),
             bosh.modInfos.dir, masterName, wildcard,mustExist=True)
         if not newPath: return
@@ -272,7 +283,7 @@ class Master_ChangeTo(EnabledLink):
         #--Valid directory?
         if newDir != bosh.modInfos.dir:
             balt.showError(self.window,
-                _(u"File must be selected from Oblivion Data Files directory."))
+               _(u"File must be selected from Oblivion Data Files directory."))
             return
         elif newName == masterName:
             return
@@ -308,13 +319,12 @@ class List_Columns(MenuLink):
     """Customize visible columns."""
     text = _(u"Columns")
 
-    def __init__(self,columnsKey,allColumnsKey,persistantColumns=()):
+    def __init__(self, columnsKey, allColumnsKey, persistentColumns):
         super(List_Columns, self).__init__(self.__class__.text)
         self.columnsKey = columnsKey
         self.allColumnsKey = allColumnsKey
-        self.persistant = persistantColumns
         for col in settingDefaults[self.allColumnsKey]:
-            enable = col not in self.persistant
+            enable = col not in persistentColumns
             self.links.append(
                 List_Column(self.columnsKey, self.allColumnsKey, col, enable))
 

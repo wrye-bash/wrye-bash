@@ -646,8 +646,10 @@ def askOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
     return askStyled(parent,message,title,wx.OK|wx.CANCEL,**kwdargs)
 
-def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION,**kwdargs):
+def askYes(parent, message, title=u'', default=True, questionIcon=False,
+           **kwdargs):
     """Shows a modal warning or question message."""
+    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_EXCLAMATION
     style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
     return askStyled(parent,message,title,style,**kwdargs)
 
@@ -2122,7 +2124,6 @@ class Link(object):
     method creates a wx MenuItem or wx submenu and appends this to the
     currently popped up wx menu.
     """
-    # TODO(ut): eliminate overrides of AppendToMenu outside balt
     Frame = None    # Frame to update the statusbar of
     Popup = None    # Current popup menu
     id = None
@@ -2172,8 +2173,8 @@ class Link(object):
 class _Link(Link): # TODO(ut): rename to ItemLink
     """TMP class to factor out duplicate code and wx dependencies.
 
-    Subclasses MUST define text, help (preferably class) attributes OR
-    override AppendToMenu().
+    Subclasses MUST define text (preferably class) attribute and should
+    override help.
     """
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
     help = None
@@ -2338,10 +2339,12 @@ class BoolLink(CheckLink):
         super(BoolLink, self).__init__()
         self.opposite = opposite
 
-    def _check(self): return bosh.settings[self.key] ^ self.opposite
+    def _check(self):
+        # check if not the same as self.opposite (so usually check if True)
+        return bosh.settings[self.key] ^ self.opposite
 
     def Execute(self,event):
-        bosh.settings[self.key] ^= True
+        bosh.settings[self.key] ^= True # toggle
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

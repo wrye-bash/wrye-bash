@@ -719,7 +719,7 @@ class Save_RepairAbomb(EnabledLink):
 
 #------------------------------------------------------------------------------
 ## TODO: This is probably unneccessary now.  v105 was a long time ago
-class Save_RepairFactions(EnabledLink): # TODO: CRUFT
+class Save_RepairFactions(EnabledLink): # CRUFT
     """Repair factions from v 105 Bash error, plus mod faction changes."""
     text = _(u'Repair Factions')
     help =_(u'Repair factions from v 105 Bash error, plus mod faction changes')
@@ -1020,7 +1020,7 @@ class Save_UpdateNPCLevels(EnabledLink):
     text = _(u'Update NPC Levels...')
     help = _(u'Update NPC levels from active mods')
 
-    def _enable(self): return (bool(self.data and bosh.modInfos.ordered))
+    def _enable(self): return bool(self.data and bosh.modInfos.ordered)
 
     def Execute(self,event):
         debug = True

@@ -87,7 +87,7 @@ readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
 settings = None
-installersWindow = None
+installersWindow = None # TODO(ut): InstallersList singleton, shouldn't be here
 
 allTags = bush.game.allTags
 allTagsSet = set(allTags)
