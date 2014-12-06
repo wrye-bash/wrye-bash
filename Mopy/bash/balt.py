@@ -293,12 +293,19 @@ def tooltip(text,wrap=50):
     return wx.ToolTip(text)
 
 class textCtrl(wx.TextCtrl):
-    """wx.TextCtrl with automatic tooltip if text goes past the width of the control."""
-    def __init__(self, parent, id=defId, name='', size=defSize, style=0, autotooltip=True):
-        wx.TextCtrl.__init__(self,parent,id,name,size=size,style=style)
+    """wx.TextCtrl with automatic tooltip if text goes past the width of the
+    control."""
+
+    def __init__(self, parent, value=u'', size=defSize, style=0,
+                 multiline=False, autotooltip=True, onKillFocus=None,
+                 onText=None):
+        if multiline: style |= wx.TE_MULTILINE # TODO(ut): would it harm to have them all multiline ?
+        wx.TextCtrl.__init__(self,parent,defId,value,size=size,style=style)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
+        if onKillFocus: self.Bind(wx.EVT_KILL_FOCUS, onKillFocus)
+        if onText: self.Bind(wx.EVT_TEXT, onText) # FIXME(ut): see above binding
 
     def UpdateToolTip(self, text):
         if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
@@ -312,6 +319,25 @@ class textCtrl(wx.TextCtrl):
     def OnSizeChange(self, event):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
+
+class roTextCtrl(textCtrl):
+    """Set some styles to a read only textCtrl.
+
+    Name intentionally ugly - tmp class to accommodate current code - do not
+    use - do not imitate my fishing in kwargs."""
+    def __init__(self, *args, **kwargs):
+        """"To accommodate for common text boxes in Bash code - borderline"""
+        # set some styles
+        style = kwargs.get('style', 0)
+        style |= wx.TE_READONLY
+        special = kwargs.pop('special', False) # used in places
+        if special: style |= wx.TE_RICH2 | wx.SUNKEN_BORDER
+        if kwargs.pop('noborder', False): style |= wx.NO_BORDER
+        if kwargs.pop('hscroll', False): style |= wx.HSCROLL
+        kwargs['style'] = style
+        # override default 'multiline' parameter value, 'False', with 'True'
+        kwargs['multiline'] = kwargs.pop('multiline', True)
+        super(roTextCtrl, self).__init__(*args, **kwargs)
 
 class comboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
@@ -748,15 +774,15 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
     window.Bind(wx.EVT_CLOSE,showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    textCtrl = wx.TextCtrl(window,defId,logText,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
-    textCtrl.SetValue(logText)
+    txtCtrl = roTextCtrl(window, logText, special=True)
+    txtCtrl.SetValue(logText)
     if fixedFont:
         fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
         fixedFont.SetPointSize(8)
         fixedStyle = wx.TextAttr()
         #fixedStyle.SetFlags(0x4|0x80)
         fixedStyle.SetFont(fixedFont)
-        textCtrl.SetStyle(0,textCtrl.GetLastPosition(),fixedStyle)
+        txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
     if question:
         bosh.question = False
         #--Buttons
@@ -768,7 +794,7 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
         #--Layout
         window.SetSizer(
             vSizer(
-                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
                 hSizer((gYesButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
                     (gNoButton,0,wx.ALIGN_RIGHT|wx.ALL,4))
                 )
@@ -780,7 +806,7 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
         #--Layout
         window.SetSizer(
             vSizer(
-                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
                 (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
                 )
             )
@@ -1199,7 +1225,7 @@ class ListEditor(Dialog):
         self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
         #--Infobox
         if data.showInfo:
-            self.gInfoBox = wx.TextCtrl(self,wx.ID_ANY,u" ",size=(130,-1),
+            self.gInfoBox = textCtrl(self,size=(130,-1),
                 style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
             if not self.data.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)

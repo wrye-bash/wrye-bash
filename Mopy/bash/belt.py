@@ -216,7 +216,7 @@ class PageInstaller(wiz.PyWizardPage):
 # End PageInstaller ------------------------------------------
 
 # PageError --------------------------------------------------
-#  Page that shows an error message, hase only a "Cancel"
+#  Page that shows an error message, has only a "Cancel"
 #  button enabled, and cancels any changes made
 #-------------------------------------------------------------
 class PageError(PageInstaller):
@@ -228,7 +228,7 @@ class PageError(PageInstaller):
 
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
-        textError = wx.TextCtrl(self, wx.ID_ANY, errorMsg, style=wx.TE_READONLY|wx.TE_MULTILINE)
+        textError = balt.roTextCtrl(self, errorMsg)
         sizerMain.Add(balt.staticText(title))
         sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
         sizerMain.AddGrowableCol(0)
@@ -266,7 +266,7 @@ class PageSelect(PageInstaller):
         sizerMain.Add(balt.staticText(_(u'Options:')))
 
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
-        self.textItem = wx.TextCtrl(self, wx.ID_ANY, u'', style=wx.TE_READONLY|wx.TE_MULTILINE)
+        self.textItem = balt.roTextCtrl(self)
         self.bmpItem = balt.Picture(self,0,0,background=None)
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
@@ -459,7 +459,7 @@ class PageFinish(PageInstaller):
 
         #--Notes
         sizerMain.Add(balt.staticText(_(u'Notes:')),0,wx.BOTTOM,2)
-        sizerMain.Add(wx.TextCtrl(self,wx.ID_ANY,u''.join(notes),style=wx.TE_READONLY|wx.TE_MULTILINE),1,wx.EXPAND)
+        sizerMain.Add(balt.roTextCtrl(self,u''.join(notes)),1,wx.EXPAND)
 
         checkSizer = wx.BoxSizer(wx.HORIZONTAL)
         checkSubSizer = wx.BoxSizer(wx.VERTICAL)

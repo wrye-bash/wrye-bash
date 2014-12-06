@@ -87,8 +87,8 @@ class _AliasesPatcher(Patcher):
         #gExample = staticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
-        self.gAliases = wx.TextCtrl(gConfigPanel,wx.ID_ANY,u'',style=wx.TE_MULTILINE)
-        self.gAliases.Bind(wx.EVT_KILL_FOCUS, self.OnEditAliases)
+        self.gAliases = balt.textCtrl(gConfigPanel, multiline=True,
+                                      onKillFocus=self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
         gSizer = vSizer(

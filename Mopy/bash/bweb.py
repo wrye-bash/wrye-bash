@@ -26,6 +26,7 @@
    parsing a TESNexus page for files available.  Since items here will be used
    with the multiprocessing module, it needs to not have any dependancies on
    the rest of Wrye Bash's files."""
+# CRUFT, unused - use or bin
 
 import os
 import re

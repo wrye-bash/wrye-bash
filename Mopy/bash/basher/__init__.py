@@ -65,7 +65,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, copyListToClipboard
+    Link, ChoiceLink, copyListToClipboard, roTextCtrl
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
@@ -1575,36 +1575,29 @@ class ModDetails(SashPanel):
         if True: #setup
             #--Version
             self.version = staticText(top,u'v0.00')
-            id = self.fileId = wx.NewId()
             #--File Name
-            self.file = textCtrl(top,id)#,size=(textWidth,-1))
+            self.file = textCtrl(top, onKillFocus=self.OnEditFile,
+                                 onText=self.OnTextEdit)# ,size=(textWidth,-1))
             self.file.SetMaxLength(200)
-            self.file.Bind(wx.EVT_KILL_FOCUS, self.OnEditFile)
-            self.file.Bind(wx.EVT_TEXT, self.OnTextEdit)
             #--Author
-            id = self.authorId = wx.NewId()
-            self.author = textCtrl(top,id)#,size=(textWidth,-1))
+            self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
+                                 onText=self.OnTextEdit)# ,size=(textWidth,-1))
             self.author.SetMaxLength(512)
-            wx.EVT_KILL_FOCUS(self.author,self.OnEditAuthor)
-            wx.EVT_TEXT(self.author,id,self.OnTextEdit)
             #--Modified
-            id = self.modifiedId = wx.NewId()
-            self.modified = textCtrl(top,id,size=(textWidth,-1))
+            self.modified = textCtrl(top,size=(textWidth, -1),
+                                     onKillFocus=self.OnEditModified,
+                                     onText=self.OnTextEdit)
             self.modified.SetMaxLength(32)
-            wx.EVT_KILL_FOCUS(self.modified,self.OnEditModified)
-            wx.EVT_TEXT(self.modified,id,self.OnTextEdit)
             #--Description
-            id = self.descriptionId = wx.NewId()
-            self.description = (
-                wx.TextCtrl(top,id,u'',size=(textWidth,150),style=wx.TE_MULTILINE))
+            self.description = textCtrl(top, size=(textWidth, 150),
+                                        multiline=True,
+                                        onKillFocus=self.OnEditDescription,
+                                        onText=self.OnTextEdit)
             self.description.SetMaxLength(512)
-            wx.EVT_KILL_FOCUS(self.description,self.OnEditDescription)
-            wx.EVT_TEXT(self.description,id,self.OnTextEdit)
             subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            id = self.mastersId = wx.NewId()
             self.masters = MasterList(masterPanel,None,self.SetEdited)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
@@ -1613,9 +1606,7 @@ class ModDetails(SashPanel):
             self.cancel.Disable()
             #--Bash tags
             self.allTags = bosh.allTags
-            id = self.tagsId = wx.NewId()
-            self.gTags = (
-                wx.TextCtrl(tagPanel,id,u'',size=(textWidth,100),style=wx.TE_MULTILINE|wx.TE_READONLY))
+            self.gTags = roTextCtrl(tagPanel, size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
@@ -1952,7 +1943,7 @@ class INIPanel(SashPanel):
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
-        self.tweakName = textCtrl(right, style=wx.TE_READONLY|wx.NO_BORDER)
+        self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
         global iniList
         from . import installer_links, ini_links
@@ -2445,11 +2436,10 @@ class SaveDetails(SashPanel):
         self.edited = False
         textWidth = 200
         #--File Name
-        id = self.fileId = wx.NewId()
-        self.file = wx.TextCtrl(top,id,u'',size=(textWidth,-1))
+        self.file = textCtrl(top, size=(textWidth, -1),
+                             onKillFocus=self.OnEditFile,
+                             onText=self.OnTextEdit)
         self.file.SetMaxLength(256)
-        wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
-        wx.EVT_TEXT(self.file,id,self.OnTextEdit)
         #--Player Info
         self.playerInfo = staticText(top,u" \n \n ")
         self.gCoSaves = staticText(top,u'--\n--')
@@ -2459,12 +2449,11 @@ class SaveDetails(SashPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        id = self.mastersId = wx.NewId()
         self.masters = MasterList(masterPanel,None,self.SetEdited)
         #--Save Info
-        self.gInfo = wx.TextCtrl(notePanel,wx.ID_ANY,u'',size=(textWidth,100),style=wx.TE_MULTILINE)
+        self.gInfo = textCtrl(notePanel, size=(textWidth, 100),
+                              multiline=True, onText=self.OnInfoEdit)
         self.gInfo.SetMaxLength(2048)
-        self.gInfo.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         #--Save/Cancel
         self.save = button(masterPanel,id=wx.ID_SAVE,onClick=self.DoSave)
         self.cancel = button(masterPanel,id=wx.ID_CANCEL,onClick=self.DoCancel)
@@ -3117,7 +3106,7 @@ class InstallersPanel(SashTankPanel):
         bosh.installersWindow = self.gList
         self.gList.SetSizeHints(100,100)
         #--Package
-        self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY|wx.NO_BORDER)
+        self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
@@ -3134,7 +3123,7 @@ class InstallersPanel(SashTankPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = wx.TextCtrl(self.gNotebook,wx.ID_ANY,style=wx.TE_MULTILINE|wx.TE_READONLY|wx.HSCROLL,name=name)
+            gPage = roTextCtrl(self.gNotebook, value=name, hscroll=True)
             self.gNotebook.AddPage(gPage,title)
             self.infoPages.append([gPage,False])
         self.gNotebook.SetSelection(settings['bash.installers.page'])
@@ -3155,7 +3144,7 @@ class InstallersPanel(SashTankPanel):
         #--Comments
         commentsPanel = wx.Panel(commentsSplitter)
         commentsLabel = staticText(commentsPanel, _(u'Comments'))
-        self.gComments = wx.TextCtrl(commentsPanel, wx.ID_ANY, style=wx.TE_MULTILINE)
+        self.gComments = textCtrl(commentsPanel, multiline=True)
         #--Splitter settings
         checkListSplitter.SetMinimumPaneSize(50)
         checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
@@ -3987,16 +3976,15 @@ class BSADetails(wx.Window):
         self.edited = False
         textWidth = 200
         #--File Name
-        id = self.fileId = wx.NewId()
-        self.file = wx.TextCtrl(self,id,u'',size=(textWidth,-1))
+        self.file = textCtrl(self, size=(textWidth, -1),
+                             onText=self.OnTextEdit,
+                             onKillFocus=self.OnEditFile)
         self.file.SetMaxLength(256)
-        wx.EVT_KILL_FOCUS(self.file,self.OnEditFile)
-        wx.EVT_TEXT(self.file,id,self.OnTextEdit)
 
         #--BSA Info
-        self.gInfo = wx.TextCtrl(self,wx.ID_ANY,u'',size=(textWidth,100),style=wx.TE_MULTILINE)
+        self.gInfo = textCtrl(self, size=(textWidth, 100),
+                              multiline=True, onText=self.OnInfoEdit)
         self.gInfo.SetMaxLength(2048)
-        self.gInfo.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         #--Save/Cancel
         self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
         self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)
@@ -4285,8 +4273,8 @@ class MessagePanel(SashPanel):
         gMessageList.SetSizeHints(100,100)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.list = gMessageList
-        #--Search
-        gSearchBox = self.gSearchBox = wx.TextCtrl(gBottom,wx.ID_ANY,u'',style=wx.TE_PROCESS_ENTER)
+        #--Search # TODO(ut): move to textCtrl subclass
+        gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
         gClearButton = button(gBottom,_(u'Clear'),onClick=self.DoClear)
         #--Events
@@ -4398,8 +4386,8 @@ class PeoplePanel(SashTankPanel):
             karmacons, PeoplePanel.mainMenu, PeoplePanel.itemMenu,
             details=self, style=wx.LC_REPORT)
         self.gList.SetSizeHints(100,100)
-        self.gName = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY)
-        self.gText = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_MULTILINE)
+        self.gName = roTextCtrl(right, multiline=False)
+        self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
         #--Layout
@@ -4476,12 +4464,12 @@ class ModBasePanel(SashTankPanel):
             details=self, style=wx.LC_REPORT)
         self.gList.SetSizeHints(100,100)
         #--Right header
-        self.gPackage = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_READONLY)
-        self.gAuthor = wx.TextCtrl(right,wx.ID_ANY)
-        self.gVersion = wx.TextCtrl(right,wx.ID_ANY)
+        self.gPackage = roTextCtrl(right, multiline=False)
+        self.gAuthor = textCtrl(right)
+        self.gVersion = textCtrl(right)
         #--Right tags, abstract, review
-        self.gTags = wx.TextCtrl(right,wx.ID_ANY)
-        self.gAbstract = wx.TextCtrl(right,wx.ID_ANY,style=wx.TE_MULTILINE)
+        self.gTags = textCtrl(right)
+        self.gAbstract = textCtrl(right, multiline=True)
         #--Fields (for zipping)
         self.index_field = {
             1: self.gAuthor,
@@ -5364,7 +5352,7 @@ class ColorDialog(balt.Dialog):
         self.picker.SetColour(colors[choiceKey])
         #--Description
         help = colorInfo[choiceKey][1]
-        self.textCtrl = wx.TextCtrl(self,wx.ID_ANY,help,style=wx.TE_MULTILINE|wx.TE_READONLY)
+        self.textCtrl = roTextCtrl(self, help)
         #--Buttons
         self.default = button(self,_(u'Default'),onClick=self.OnDefault)
         self.defaultAll = button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
@@ -5576,7 +5564,7 @@ class DocBrowser(wx.Frame):
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
         #--Mod Name
-        self.modNameBox = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY)
+        self.modNameBox = roTextCtrl(self, multiline=False)
         self.modNameList = wx.ListBox(self,wx.ID_ANY,choices=sorted(x.s for x in self.data.keys()),style=wx.LB_SINGLE|wx.LB_SORT)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
         #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
@@ -5593,9 +5581,9 @@ class DocBrowser(wx.Frame):
         wx.EVT_TOGGLEBUTTON(self.editButton,ID_EDIT,self.DoEdit)
         self.openButton = button(self,_(u'Open Doc...'),onClick=self.DoOpen,tip=_(u'Open doc in external editor.'))
         #--Doc Name
-        self.docNameBox = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY)
+        self.docNameBox = roTextCtrl(self, multiline=False)
         #--Doc display
-        self.plainText = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+        self.plainText = roTextCtrl(self, special=True)
         if bHaveComTypes:
             self.htmlText = wx.lib.iewin.IEHtmlWindow(self,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
             #--Html Back
@@ -5892,7 +5880,7 @@ class ModChecker(wx.Frame):
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
             gForwardButton = bitmapButton(self,bitmap,onClick=lambda evt: self.gTextCtrl.GoForward())
         else:
-            self.gTextCtrl = wx.TextCtrl(self,wx.ID_ANY,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
+            self.gTextCtrl = roTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
         gUpdateButton = button(self,_(u'Update'),onClick=lambda event: self.CheckMods())
@@ -6263,12 +6251,12 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
-        self.gName = wx.TextCtrl(self,wx.ID_ANY,config.name)
-        self.gVersion = wx.TextCtrl(self,wx.ID_ANY,u'%d.%02d' % (config.vMajor,config.vMinor))
-        self.gWebsite = wx.TextCtrl(self,wx.ID_ANY,config.website)
-        self.gAuthor = wx.TextCtrl(self,wx.ID_ANY,config.author)
-        self.gEmail = wx.TextCtrl(self,wx.ID_ANY,config.email)
-        self.gAbstract = wx.TextCtrl(self,wx.ID_ANY,config.abstract,style=wx.TE_MULTILINE)
+        self.gName = textCtrl(self,config.name)
+        self.gVersion = textCtrl(self,u'%d.%02d' % (config.vMajor,config.vMinor))
+        self.gWebsite = textCtrl(self,config.website)
+        self.gAuthor = textCtrl(self,config.author)
+        self.gEmail = textCtrl(self,config.email)
+        self.gAbstract = textCtrl(self, config.abstract, multiline=True)
         #--Max Lenght
         self.gName.SetMaxLength(100)
         self.gVersion.SetMaxLength(32)
@@ -6536,7 +6524,8 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = wx.TextCtrl(self,wx.ID_ANY,_(u'New Project Name-#####'))
+        self.textName = textCtrl(self, _(u'New Project Name-#####'),
+                                 onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
         self.checkWizard = checkBox(self, _(u'Blank wizard.txt'), onCheck=self.OnCheckBoxChange)
