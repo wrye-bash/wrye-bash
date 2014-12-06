@@ -263,9 +263,7 @@ class Save_ImportFace(OneItemLink):
             progress.Destroy()
             srcFaces = bosh.PCFaces.save_getFaces(saveFile)
             #--Dialog
-            dialog = ImportFaceDialog(self.window,-1,srcName.s,fileInfo,srcFaces)
-            dialog.ShowModal()
-            dialog.Destroy()
+            ImportFaceDialog.Display(self.window,srcName.s,fileInfo,srcFaces)
 
     def FromMod(self,fileInfo,srcPath):
         """Import from a mod."""
@@ -278,9 +276,7 @@ class Save_ImportFace(OneItemLink):
             balt.showOk(self.window,_(u'No player (PC) faces found in %s.') % srcName.s,srcName.s)
             return
         #--Dialog
-        dialog = ImportFaceDialog(self.window,-1,srcName.s,fileInfo,srcFaces)
-        dialog.ShowModal()
-        dialog.Destroy()
+        ImportFaceDialog.Display(self.window, srcName.s, fileInfo, srcFaces)
 
 #------------------------------------------------------------------------------
 class Save_RenamePlayer(EnabledLink):

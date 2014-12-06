@@ -336,9 +336,7 @@ class Mods_FullBalo(BoolLink):
                        _(u'Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order.  Full Balo is still in development and may have some rough edges.')
                        )
             if balt.askContinue(self.window,message,'bash.balo.full.continue',_(u'Balo Groups')):
-                dialog = Mod_BaloGroups_Edit(self.window)
-                dialog.ShowModal()
-                dialog.Destroy()
+                Mod_BaloGroups_Edit.Display(self.window)
             return
         else:
             bosh.settings[self.key] = False

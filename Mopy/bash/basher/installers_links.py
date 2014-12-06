@@ -510,7 +510,4 @@ class Installers_CreateNewProject(Installers_Link):
     text = _(u'Create New Project...')
     help = _(u'Create a new project...')
 
-    def Execute(self, event):
-        dialog = CreateNewProject()
-        dialog.ShowModal()
-        dialog.Destroy()
+    def Execute(self, event): CreateNewProject.Display()

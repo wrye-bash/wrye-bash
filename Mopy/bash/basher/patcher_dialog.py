@@ -35,22 +35,21 @@ from .. import bosh, bolt, balt
 
 modList = None
 
-class PatchDialog(wx.Dialog):
+class PatchDialog(balt.Dialog):
     """Bash Patch update dialog."""
     patchers = []       #--All patchers. These are copied as needed.
     CBash_patchers = [] #--All patchers (CBash mode).  These are copied as needed.
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
-        """Initialized."""
         self.parent = parent
         if (doCBash or doCBash is None) and bosh.settings['bash.CBashEnabled']:
             doCBash = True
         else:
             doCBash = False
         self.doCBash = doCBash
-        size = balt.sizes.get(self.__class__.__name__,(500,600))
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,_(u'Update ')+patchInfo.name.s+[u'',u' (CBash)'][doCBash], size=size,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        title = _(u'Update ') + patchInfo.name.s + [u'', u' (CBash)'][doCBash]
+        size = balt.sizes.get(self.__class__.__name__, (500,600))
+        super(PatchDialog, self).__init__(parent, title=title, size=size)
         self.SetSizeHints(400,300)
         #--Data
         groupOrder = dict([(group,index) for index,group in
@@ -159,7 +158,7 @@ class PatchDialog(wx.Dialog):
 
     def Execute(self,event=None):
         """Do the patch."""
-        self.EndModal(wx.ID_OK)
+        self.EndModalOK()
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
         ###Remove from Bash after CBash integrated

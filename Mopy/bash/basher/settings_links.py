@@ -52,7 +52,7 @@ class Settings_BackupSettings(_Link):
         #backup = barb.BackupSettings(bashFrame)
         try:
             if PromptConfirm():
-                dialog = wx.Dialog(Link.Frame,wx.ID_ANY,_(u'Backup Images?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
                 icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
                 sizer = vSizer(
                     (hSizer(
@@ -199,10 +199,7 @@ class Settings_Colors(_Link):
     text = _(u'Colors...')
     help = _(u"Configure the custom colors used in the UI.")
 
-    def Execute(self,event):
-        dialog = ColorDialog(Link.Frame)
-        dialog.ShowModal()
-        dialog.Destroy()
+    def Execute(self,event): ColorDialog.Display()
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):

@@ -64,7 +64,7 @@ startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
-from ..balt import tooltip, fill, bell
+from ..balt import tooltip, fill, bell, Link
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
@@ -2917,7 +2917,7 @@ class InstallersList(balt.Tank):
             message += u'\n'
             message += _(u'What would you like to do with them?')
 
-            dialog= wx.Dialog(self,wx.ID_ANY,_(u'Move or Copy?'),size=(400,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+            dialog= balt.Dialog(self,_(u'Move or Copy?'),size=(400,200))
             icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
             gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
 
@@ -5024,10 +5024,9 @@ class BashFrame(wx.Frame):
                 if not bosh.inisettings['SkipResetTimeNotifications']:
                     message = [u'',_(u'Modified dates have been reset for some mod files')]
                     message.extend(sorted(bosh.modInfos.mtimesReset))
-                    with ListBoxes(self,_(u'Modified Dates Reset'),
-                            _(u'Modified dates have been reset for some mod files.'),
-                            [message],liststyle='list',Cancel=False) as dialog:
-                        dialog.ShowModal()
+                    ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
+                        u'Modified dates have been reset for some mod files.'),
+                                      [message], liststyle='list',Cancel=False)
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Mods autogrouped?
@@ -5037,10 +5036,9 @@ class BashFrame(wx.Frame):
             ordered = bosh.modInfos.getOrdered(agDict.keys())
             message.extend(ordered)
             agDict.clear()
-            with ListBoxes(self, _(u'Some mods have been auto-grouped:'),
-                           _(u'Some mods have been auto-grouped:'), [message],
-                           liststyle='list', Cancel=False) as dialog:
-                dialog.ShowModal()
+            ListBoxes.Display(self, _(u'Some mods have been auto-grouped:'),
+                              _(u'Some mods have been auto-grouped:'),
+                              [message], liststyle='list', Cancel=False)
         #--Check savegames directory...
         if bosh.saveInfos.refresh():
             popSaves = 'ALL'
@@ -5123,11 +5121,9 @@ class BashFrame(wx.Frame):
             message.append(m)
             bosh.modInfos.new_missing_strings.clear()
         if message:
-            with ListBoxes(self, _(u'Warning: Corrupt/Unrecognized Files'), _(
-                    u'Some files have corrupted headers or TES4 header '
-                    u'versions:'), message, liststyle='list',
-                           Cancel=False) as dialog:
-                dialog.ShowModal()
+            ListBoxes.Display(self, _(u'Warning: Corrupt/Unrecognized Files'),
+                      _(u'Some files have corrupted headers or TES4 header '
+                        u'versions:'), message, liststyle='list', Cancel=False)
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -5251,20 +5247,13 @@ class CheckList_SelectAll(_Link):
             self.window.Check(i,self.select)
 
 #------------------------------------------------------------------------------
-class ListBoxes(wx.Dialog):
+class ListBoxes(balt.Dialog):
     """A window with 1 or more lists."""
-    # TODO(ut): attrs below must go - askContinue method ? Also eliminate destroy calls
+    # TODO(ut): attributes below must go - askContinue method ?
     ID_OK = wx.ID_OK
     ID_CANCEL = wx.ID_CANCEL
 
-    # TODO(ut):USE THOSE
-    #  __enter__ and __exit__ for use with the 'with' statement
-    def __enter__(self):
-        return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
-
-    def __init__(self,parent,title,message,lists,liststyle='check',style=wx.DEFAULT_DIALOG_STYLE,changedlabels={},Cancel=True):
+    def __init__(self,parent,title,message,lists,liststyle='check',style=0,changedlabels={},Cancel=True):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -5273,7 +5262,8 @@ class ListBoxes(wx.Dialog):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,title,style=style)
+        super(ListBoxes, self).__init__(parent, title=title, style=style,
+                                        resize=False)  # TODO(ut): resize = True and drop resize parameter
         self.itemMenu = Links()
         self.itemMenu.append(CheckList_SelectAll())
         self.itemMenu.append(CheckList_SelectAll(False))
@@ -5357,10 +5347,12 @@ class ListBoxes(wx.Dialog):
             event.Skip()
 
 #------------------------------------------------------------------------------
-class ColorDialog(wx.Dialog):
+class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
-    def __init__(self,parent):
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,_(u'Color Configuration'))
+    title = _(u'Color Configuration')
+
+    def __init__(self):
+        super(ColorDialog, self).__init__(parent=Link.Frame, resize=False)
         self.changes = dict()
         #--ComboBox
         keys = [x for x in colors]
@@ -5386,7 +5378,7 @@ class ColorDialog(wx.Dialog):
         self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
         self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
         self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
-        self.ok = button(self,id=wx.ID_OK)
+        self.ok = button(self,id=wx.ID_OK,onClick=self.OnApplyAll) # OK applies all changes
         self.ok.SetDefault()
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
@@ -6158,9 +6150,9 @@ class BashApp(wx.App):
 
 # Misc Dialogs ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ImportFaceDialog(wx.Dialog):
+class ImportFaceDialog(balt.Dialog):
     """Dialog for importing faces."""
-    def __init__(self,parent,id,title,fileInfo,faces):
+    def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
         if faces and isinstance(faces.keys()[0],(IntType,LongType)):
@@ -6169,9 +6161,7 @@ class ImportFaceDialog(wx.Dialog):
             self.data = faces
         self.items = sorted(self.data.keys(),key=string.lower)
         #--GUI
-        wx.Dialog.__init__(self,parent,id,title,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        super(ImportFaceDialog, self).__init__(parent, tile=title)
         self.SetSizeHints(550,300)
         #--List Box
         self.list = wx.ListBox(self,wx.ID_OK,choices=self.items,style=wx.LB_SINGLE)
@@ -6268,14 +6258,7 @@ class ImportFaceDialog(wx.Dialog):
         settings['bash.faceImport.flags'] = int(flags)
         bosh.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
         balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
-        self.EndModal(wx.ID_OK)
-
-    #--Window Closing
-    def OnCloseWindow(self, event):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        balt.sizes['ImportFaceDialog'] = self.GetSizeTuple()
-        self.Destroy()
+        self.EndModalOK()
 
 class InstallerProject_OmodConfigDialog(wx.Frame):
     """Dialog for editing omod configuration data."""
@@ -6354,15 +6337,17 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.data[self.project].writeOmodConfig(self.project,self.config)
         self.Destroy()
 
-class Mod_BaloGroups_Edit(wx.Dialog):
+class Mod_BaloGroups_Edit(balt.Dialog):
     """Dialog for editing Balo groups."""
+    title = _(u"Balo Groups")
+
     def __init__(self,parent):
         #--Data
         self.parent = parent
         self.groups = [list(x) for x in bosh.modInfos.getBaloGroups(True)]
         self.removed = set()
         #--GUI
-        wx.Dialog.__init__(self,parent,wx.ID_ANY,_(u"Balo Groups"),style=wx.CAPTION|wx.RESIZE_BORDER)
+        super(Mod_BaloGroups_Edit, self).__init__(parent, caption=True)
         #--List
         self.gList = wx.ListBox(self,wx.ID_ANY,choices=self.GetItems(),style=wx.LB_SINGLE)
         self.gList.SetSizeHints(125,150)
@@ -6546,18 +6531,18 @@ class Mod_BaloGroups_Edit(wx.Dialog):
         bosh.modInfos.updateAutoGroups()
         bosh.modInfos.refresh()
         modList.RefreshUI()
-        self.EndModal(wx.ID_OK)
+        self.EndModalOK()
 
     def DoCancel(self,event):
         """Handle save button."""
         balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
 
-class CreateNewProject(wx.Dialog):
-    def __init__(self,parent=None,id=wx.ID_ANY,title=_(u'Create New Project')):
-        wx.Dialog.__init__(self,parent,id,title=_(u'Create New Project'),size=wx.DefaultSize,style=wx.DEFAULT_DIALOG_STYLE)
-
-        #--Build a list of existind directories
+class CreateNewProject(balt.Dialog):
+    title = _(u'Create New Project')
+    def __init__(self,parent=None):
+        super(CreateNewProject, self).__init__(parent, resize=False)
+        #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
         self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
 

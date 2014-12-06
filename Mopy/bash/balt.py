@@ -439,7 +439,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
         check = result[1]
         result = result[0]
     else:
-        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
         icon = wx.StaticBitmap(dialog,defId,
             wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
         gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
@@ -488,7 +488,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         check = result[1]
         result = result[0]
     else:
-        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
         icon = wx.StaticBitmap(dialog,defId,
             wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
         gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
@@ -736,8 +736,7 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
         size = _settings.get('balt.LogMessage.size',(400,400))
     #--Dialog or Frame
     if asDialog:
-        window = wx.Dialog(parent,defId,title,pos=pos,size=size,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        window = Dialog(parent, title, pos=pos, size=size)
     else:
         window = wx.Frame(parent,defId,title,pos=pos,size=size,
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
@@ -783,11 +782,8 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
                 )
             )
     #--Show
-    if asDialog:
-        window.ShowModal()
-        window.Destroy()
-    else:
-        window.Show()
+    if asDialog: window.Display()
+    else: window.Show()
     return bosh.question
 
 #------------------------------------------------------------------------------
@@ -815,8 +811,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     size = _settings.get('balt.WryeLog.size',(400,400))
     #--Dialog or Frame
     if asDialog:
-        window = wx.Dialog(parent,defId,title,pos=pos,size=size,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        window = Dialog(parent, title, pos=pos, size=size)
     else:
         window = wx.Frame(parent,defId,title,pos=pos,size=size,
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
@@ -1138,16 +1133,52 @@ class ListEditorData:
         pass
 
 #------------------------------------------------------------------------------
-class ListEditor(wx.Dialog):
+class Dialog(wx.Dialog):
+    title = u'OVERRIDE'
+
+    def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
+                 style=0, resize=True, caption=False, *args, **kwargs):
+        # TODO(ut): drop parent, resize parameters- parent = Link.Frame (test), resize=True
+        self.sizesKey = self.__class__.__name__
+        self.title = title or self.__class__.title
+        style |= wx.DEFAULT_DIALOG_STYLE
+        self.resizable = resize
+        if resize: style |= wx.RESIZE_BORDER
+        if caption: style |= wx.CAPTION
+        super(Dialog, self).__init__(parent, wx.ID_ANY, self.title, size=size,
+                                     pos=pos, style=style, *args, **kwargs)
+        wx.EVT_CLOSE(self, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
+
+    def OnCloseWindow(self, event):
+        """Handle window close event.
+        Remember window size, position, etc."""
+        if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
+        self.Destroy()
+        event.Skip()
+
+    #  __enter__ and __exit__ for use with the 'with' statement
+    def __enter__(self):
+        return self
+    def __exit__(self,type,value,traceback):
+        self.Destroy()
+
+    @classmethod
+    def Display(cls, *args, **kwargs):
+        """Instantiate a dialog, display it and return the ShowModal result."""
+        with cls(*args, **kwargs) as dialog:
+            return dialog.ShowModal()
+
+    def EndModalOK(self): self.EndModal(wx.ID_OK)
+
+class ListEditor(Dialog):
     """Dialog for editing lists."""
-    def __init__(self, parent, title, data, id=wx.ID_ANY, type='list'):
+    def __init__(self, parent, title, data, type='list'):
         #--Data
         self.data = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
         #--GUI
-        wx.Dialog.__init__(self,parent,id,title,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        super(ListEditor, self).__init__(parent, title)
+        self.sizesKey = self.data.__class__.__name__
         #--Caption
         if data.caption:
             captionText = staticText(self,data.caption)
@@ -1205,17 +1236,6 @@ class ListEditor(wx.Dialog):
             self.SetSize(sizes[className])
         else:
             self.SetSizerAndFit(sizer)
-
-    # __enter__ and __exit__ for use with the 'with' statement
-    def __enter__(self):
-        return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
-
-    @staticmethod
-    def Display(window, title, data):
-        with ListEditor(window, title, data) as dialog:
-            dialog.ShowModal()
 
     def GetSelected(self):
         return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
@@ -1317,11 +1337,8 @@ class ListEditor(wx.Dialog):
 
     #--Window Closing
     def OnCloseWindow(self, event):
-        """Handle window close event.
-        Remember window size, position, etc."""
         self.data.close()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
-        self.Destroy()
+        super(ListEditor, self).OnCloseWindow(event)
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()

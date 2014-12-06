@@ -365,9 +365,7 @@ class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
 
     def DoEdit(self,event):
         """Show label editing dialog."""
-        dialog = Mod_BaloGroups_Edit(self.window)
-        dialog.ShowModal()
-        dialog.Destroy()
+        Mod_BaloGroups_Edit.Display(self.window)
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
@@ -1924,8 +1922,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
             bosh.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
-        dialog = wx.Dialog(Link.Frame,wx.ID_ANY,_(u'Export Scripts Options'),
-                           size=(400,180),style=wx.DEFAULT_DIALOG_STYLE)
+        dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
+                             size=(400, 180), resize=False)
         gskip = textCtrl(dialog)
         gdeprefix = textCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
