@@ -2272,6 +2272,7 @@ class ChoiceLink(Link):
 
     Here really to de wx classes which are using the IdList ~~hack~~ class.
     """
+    # TODO(ut): turn to a Links subclass ! Rename to IdListLinks
     idList = IdList(0, 0, 'OVERRIDE')
     extraItems = [] # list<Link> that correspond to named idList attributes
     extraActions = {} # callback actions for extraItems indexed by item.id
@@ -2293,12 +2294,13 @@ class ChoiceLink(Link):
         for link in self._range():
             link.AppendToMenu(menu, window, data)
         #--Events
-        if hasattr(self, 'DoList'):
-            wx.EVT_MENU_RANGE(_Link.Frame, self.idList.BASE, self.idList.MAX,
-                              self.DoList)
+        wx.EVT_MENU_RANGE(_Link.Frame, self.idList.BASE, self.idList.MAX,
+                          self.DoList)
         for id_, action in self.extraActions.items():
             wx.EVT_MENU(Link.Frame, id_, action)
         # notice it returns None
+
+    def DoList(self, event): event.Skip()
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""

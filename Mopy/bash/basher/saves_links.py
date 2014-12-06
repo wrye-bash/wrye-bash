@@ -607,8 +607,7 @@ class Save_Move(ChoiceLink):
         self.extraActions = {self.idList.DEFAULT: self.DoDefault}
 
     @property
-    def items(self):
-        return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
     class _WasCheckLink(EnabledLink): # never checked at that
         def _enable(self):

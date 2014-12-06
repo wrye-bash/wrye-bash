@@ -24,7 +24,8 @@
 import string
 import wx
 from .. import bosh, bush, balt
-from ..balt import fill, staticText, vSizer, checkBox, button, hsbSizer
+from ..balt import fill, staticText, vSizer, checkBox, button, hsbSizer, Links, \
+    SeparatorLink, CheckLink, Link
 from ..bolt import GPath
 from ..patcher.patchers import base
 
@@ -78,7 +79,7 @@ class _AliasesPatcher(Patcher):
         #--Tip
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
-        # PBASH -> CBASH difference:
+        # CRUFT (ut) PBASH -> CBASH difference - kept PBash:
         # -        text = fill(self.__class__.text,70)
         # +        text = fill(self.text,70)
         text = fill(self.text,70)
@@ -277,41 +278,37 @@ class ListPatcher(Patcher):
         NOTE: Assume that configChoice returns a set of chosen items."""
         if not self.choiceMenu: return
         #--Item Index
-        if self.forceItemCheck:
-            itemHeight = self.gList.GetCharHeight()
-        else:
-            itemHeight = self.gList.GetItemHeight()
+        itemHeight = self.gList.GetCharHeight() if self.forceItemCheck else \
+            self.gList.GetItemHeight()
         itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
         if itemIndex >= len(self.items): return
         self.gList.SetSelection(itemIndex)
         self.rightClickItemIndex = itemIndex
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
-        menu = wx.Menu()
+        def _OnItemChoice(event):
+            """Handle choice menu selection."""
+            itemIndex = self.rightClickItemIndex
+            item = self.items[itemIndex]
+            choice = self.choiceMenu[event.GetId()]
+            choiceSet = self.configChoices[item]
+            choiceSet ^= {choice}
+            if choice != u'Auto':
+                choiceSet.discard(u'Auto')
+            elif u'Auto' in self.configChoices[item]:
+                self.getChoice(item)
+            self.gList.SetString(itemIndex, self.getItemLabel(item))
+        links = Links()
         for index,label in enumerate(self.choiceMenu):
             if label == u'----':
-                menu.AppendSeparator()
+                links.append(SeparatorLink())
             else:
-                menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
-                menu.AppendItem(menuItem)
-                if label in choiceSet: menuItem.Check()
-                wx.EVT_MENU(self.gList,index,self.OnItemChoice)
+                class _OnItemChoice(CheckLink):
+                    def _check(self): return label in choiceSet
+                    def Execute(self, event): _OnItemChoice(event)
+                links.append(_OnItemChoice(index, label))
         #--Show/Destroy Menu
-        self.gList.PopupMenu(menu)
-        menu.Destroy()
-
-    def OnItemChoice(self,event):
-        """Handle choice menu selection."""
-        itemIndex = self.rightClickItemIndex
-        item =self.items[itemIndex]
-        choice = self.choiceMenu[event.GetId()]
-        choiceSet = self.configChoices[item]
-        choiceSet ^= {choice}
-        if choice != u'Auto':
-            choiceSet.discard(u'Auto')
-        elif u'Auto' in self.configChoices[item]:
-            self.getChoice(item)
-        self.gList.SetString(itemIndex,self.getItemLabel(item))
+        links.PopupMenu(self.gList, Link.Frame, None)
 
     def SelectAll(self,event=None):
         """'Select All' Button was pressed, update all configChecks states."""
@@ -463,27 +460,27 @@ class TweakPatcher(Patcher):
         chosen = tweaks[tweakIndex].chosen
         self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
-        menu = wx.Menu()
+        links = Links()
         for index,label in enumerate(choiceLabels):
+            _self = self # ugly, OnTweakCustomChoice is too big to make it local though
             if label == u'----':
-                menu.AppendSeparator()
+                links.append(SeparatorLink())
             elif label.startswith(_(u'Custom')):
                 if isinstance(tweaks[tweakIndex].choiceValues[index][0],basestring):
                     menulabel = label + u' %s' % tweaks[tweakIndex].choiceValues[index][0]
                 else:
                     menulabel = label + u' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
-                menuItem = wx.MenuItem(menu,index,menulabel,kind=wx.ITEM_CHECK)
-                menu.AppendItem(menuItem)
-                if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gTweakList,index,self.OnTweakCustomChoice)
+                class _ValueLink(CheckLink):
+                    def _check(self): return index == chosen
+                    def Execute(self, event): _self.OnTweakCustomChoice(event)
+                links.append(_ValueLink(index, menulabel))
             else:
-                menuItem = wx.MenuItem(menu,index,label,kind=wx.ITEM_CHECK)
-                menu.AppendItem(menuItem)
-                if index == chosen: menuItem.Check()
-                wx.EVT_MENU(self.gTweakList,index,self.OnTweakChoice)
+                class _ValueLink(CheckLink):
+                    def _check(self): return index == chosen
+                    def Execute(self, event): _self.OnTweakChoice(event)
+                links.append(_ValueLink(index, label))
         #--Show/Destroy Menu
-        self.gTweakList.PopupMenu(menu)
-        menu.Destroy()
+        links.PopupMenu(self.gTweakList, Link.Frame, None)
 
     def OnTweakChoice(self,event):
         """Handle choice menu selection."""

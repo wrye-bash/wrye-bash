@@ -64,7 +64,8 @@ startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
-from ..balt import tooltip, fill, bell, Link
+from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
+    Link, ChoiceLink
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
@@ -1657,9 +1658,6 @@ class ModDetails(SashPanel):
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
-        wx.EVT_MENU(self,ID_TAGS.AUTO,self.DoAutoBashTags)
-        wx.EVT_MENU(self,ID_TAGS.COPY,self.DoCopyBashTags)
-        wx.EVT_MENU_RANGE(self, ID_TAGS.BASE, ID_TAGS.MAX, self.ToggleBashTag)
 
     def SetFile(self,fileName='SAME'):
         #--Reset?
@@ -1869,26 +1867,42 @@ class ModDetails(SashPanel):
     #--Bash Tags
     def ShowBashTagsMenu(self,event):
         """Show bash tags menu."""
-        if not self.modInfo: return
-        self.modTags = self.modInfo.getBashTags()
+        modInfo = self.modInfo
+        if not modInfo: return
+        self.modTags = modTags = modInfo.getBashTags()
         #--Build menu
-        menu = wx.Menu()
-        #--Revert to auto
-        #--Separator
-        isAuto = bosh.modInfos.table.getItem(self.modInfo.name,'autoBashTags',True)
-        menuItem = wx.MenuItem(menu,ID_TAGS.AUTO,_(u'Automatic'),kind=wx.ITEM_CHECK,
-            help=_(u"Use the tags from the description and masterlist/userlist."))
-        menu.AppendItem(menuItem)
-        menuItem.Check(isAuto)
-        menuItem = wx.MenuItem(menu,ID_TAGS.COPY,_(u'Copy to Description'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(not isAuto and self.modTags != self.modInfo.getBashTagsDesc())
-        menu.AppendSeparator()
-        for id,tag in zip(ID_TAGS,self.allTags):
-            menu.AppendCheckItem(id,tag,help=_(u"Add %(tag)s to %(modname)s") % ({'tag':tag,'modname':self.modInfo.name}))
-            menu.Check(id,tag in self.modTags)
-        self.gTags.PopupMenu(menu)
-        menu.Destroy()
+        # (ut) Not the prettiest code in the world but consider this the limit
+        # I need to de-wx the code - blame IdList - TODO(ut) ChoiceLink(Links)
+        isAuto = bosh.modInfos.table.getItem(modInfo.name,'autoBashTags',True)
+        class _TagsAuto(CheckLink):
+            id, text = ID_TAGS.AUTO, _(u'Automatic')
+            help = _(
+                u"Use the tags from the description and masterlist/userlist.")
+            def _check(self): return isAuto
+        bashTagsDesc = modInfo.getBashTagsDesc()
+        class _CopyDesc(EnabledLink):
+            id, text = ID_TAGS.COPY, _(u'Copy to Description')
+            def _enable(self): return not isAuto and modTags != bashTagsDesc
+        class _TagLink(CheckLink):
+            def _initData(self, window, data):
+                super(_TagLink, self)._initData(window, data)
+                self.help = _(u"Add %(tag)s to %(modname)s") % (
+                    {'tag': self.text, 'modname': modInfo.name})
+            def _check(self): return self.text in modTags
+        _self = self
+        class _TagLinks(ChoiceLink):
+            idList, cls = ID_TAGS, _TagLink
+            def __init__(self):
+                super(_TagLinks, self).__init__()
+                self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
+                self.extraActions = {self.idList.AUTO: _self.DoAutoBashTags,
+                                     self.idList.COPY: _self.DoCopyBashTags, }
+            @property
+            def items(self): return _self.allTags
+            def DoList(self, event): _self.ToggleBashTag(event)
+        tagLinks = Links()
+        tagLinks.append(_TagLinks())
+        tagLinks.PopupMenu(self.gTags, Link.Frame, None)
 
     def DoAutoBashTags(self,event):
         """Handle selection of automatic bash tags."""
