@@ -65,7 +65,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink
+    Link, ChoiceLink, copyListToClipboard
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
@@ -1530,14 +1530,9 @@ class ModList(List):
             self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            selected = self.GetSelected()
-            if selected and not wx.TheClipboard.IsOpened():
-                wx.TheClipboard.Open()
-                clipData = wx.FileDataObject()
-                for mod in selected:
-                    clipData.AddFile(self.data[mod].getPath().s)
-                wx.TheClipboard.SetData(clipData)
-                wx.TheClipboard.Close()
+            sel = map(lambda mod: self.data[mod].getPath().s,
+                      self.GetSelected())
+            copyListToClipboard(sel)
         event.Skip()
 
     def OnColumnResize(self,event):
@@ -2415,14 +2410,9 @@ class SaveList(List):
             self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            selected = self.GetSelected()
-            if selected and not wx.TheClipboard.IsOpened():
-                wx.TheClipboard.Open()
-                clipData = wx.FileDataObject()
-                for save in selected:
-                    clipData.AddFile(self.data[save].getPath().s)
-                wx.TheClipboard.SetData(clipData)
-                wx.TheClipboard.Close()
+            sel = map(lambda save: self.data[save].getPath().s,
+                      self.GetSelected())
+            copyListToClipboard(sel)
         event.Skip()
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3090,14 +3080,9 @@ class InstallersList(balt.Tank):
                 self.gList.EditLabel(index)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            selected = self.GetSelected()
-            if selected and not wx.TheClipboard.IsOpened():
-                wx.TheClipboard.Open()
-                clipData = wx.FileDataObject()
-                for installer in selected:
-                    clipData.AddFile(bosh.dirs['installers'].join(installer).s)
-                wx.TheClipboard.SetData(clipData)
-                wx.TheClipboard.Close()
+            sel = map(lambda x: bosh.dirs['installers'].join(x).s,
+                      self.GetSelected())
+            copyListToClipboard(sel)
         event.Skip()
 
 #------------------------------------------------------------------------------
@@ -3810,14 +3795,9 @@ class ScreensList(List):
             self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            selected = self.GetSelected()
-            if selected and not wx.TheClipboard.IsOpened():
-                wx.TheClipboard.Open()
-                clipData = wx.FileDataObject()
-                for screenshot in selected:
-                    clipData.AddFile(bosh.screensData.dir.join(screenshot).s)
-                wx.TheClipboard.SetData(clipData)
-                wx.TheClipboard.Close()
+            sel = map(lambda x: bosh.screensData.dir.join(x).s,
+                      self.GetSelected())
+            copyListToClipboard(sel)
         event.Skip()
 
     #--Column Resize

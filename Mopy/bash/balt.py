@@ -2451,6 +2451,14 @@ def copyToClipboard(text):
         wx.TheClipboard.SetData(wx.TextDataObject(text))
         wx.TheClipboard.Close()
 
+def copyListToClipboard(selected):
+    if selected and not wx.TheClipboard.IsOpened():
+        wx.TheClipboard.Open()
+        clipData = wx.FileDataObject()
+        for mod in selected: clipData.AddFile(mod)
+        wx.TheClipboard.SetData(clipData)
+        wx.TheClipboard.Close()
+
 def getKeyState(key): return wx.GetKeyState(key)
 def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
 def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)
