@@ -30,13 +30,14 @@ from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, MenuLink, SeparatorLink, ChoiceLink
 from ..bolt import deprint, GPath, SubProgress, AbstractError, CancelError
-from . import bashBlue, ListBoxes, Mod_BaloGroups_Edit, PatchDialog, DocBrowser
+from . import bashBlue, ListBoxes, Mod_BaloGroups_Edit, DocBrowser
 from .constants import ID_GROUPS, JPEG
 from ..bosh import formatDate, formatInteger
 from ..cint import ObCollection, CBash, \
     FormID  # TODO(ut): CBash...should be in bosh
-from . import CBash_MultiTweaker, MultiTweaker, CBash_ListsMerger_, \
-    ListsMerger_, CBash_AliasesPatcher, AliasesPatcher
+from .patcher_dialog import PatchDialog
+from ..patcher.patchers import base
+from ..patcher.patchers import special
 
 modList = None
 docBrowser = None
@@ -2514,7 +2515,8 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             log.setHeader(u'== '+humanName)
             clip.write(u'\n')
             clip.write(u'== '+humanName+u'\n')
-            if isinstance(patcher, (CBash_MultiTweaker, MultiTweaker)):
+            if isinstance(patcher, (base.CBash_MultiTweaker,
+                                    base.MultiTweaker)):
                 # Tweak patcher
                 patcher.getConfig(config)
                 for tweak in patcher.tweaks:
@@ -2527,14 +2529,15 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                         else:
                             log(u'. ~~%s~~' % label)
                             clip.write(u'    %s\n' % label)
-            elif isinstance(patcher, (CBash_ListsMerger_, ListsMerger_)):
+            elif isinstance(patcher, (special.CBash_ListsMerger,
+                                      special.ListsMerger)):
                 # Leveled Lists
                 patcher.configChoices = conf.get('configChoices',{})
                 for item in conf.get('configItems',[]):
                     log(u'. __%s__' % patcher.getItemLabel(item))
                     clip.write(u'    %s\n' % patcher.getItemLabel(item))
-            elif isinstance(patcher, (CBash_AliasesPatcher,
-                                      AliasesPatcher)):
+            elif isinstance(patcher, (base.CBash_AliasesPatcher,
+                                      base.AliasesPatcher)):
                 # Alias mod names
                 aliases = conf.get('aliases',{})
                 for mod in aliases:

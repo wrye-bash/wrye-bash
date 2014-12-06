@@ -29,14 +29,14 @@ from .special import *
 
 gameSpecificPatchers = {
     # special
-    "AlchemicalCatalogs": (AlchemicalCatalogs, CBash_AlchemicalCatalogs),
-    "CBash_AlchemicalCatalogs": (CBash_AlchemicalCatalogs, AlchemicalCatalogs),
-    "SEWorldEnforcer": (SEWorldEnforcer, CBash_SEWorldEnforcer),
-    "CBash_SEWorldEnforcer": (CBash_SEWorldEnforcer, SEWorldEnforcer),
+    "AlchemicalCatalogs": (AlchemicalCatalogs, 'CBash_AlchemicalCatalogs'),
+    "CBash_AlchemicalCatalogs": (CBash_AlchemicalCatalogs, 'AlchemicalCatalogs'),
+    "SEWorldEnforcer": (SEWorldEnforcer, 'CBash_SEWorldEnforcer'),
+    "CBash_SEWorldEnforcer": (CBash_SEWorldEnforcer, 'SEWorldEnforcer'),
     }
 gameSpecificListPatchers = {
-    "CoblExhaustion": (CoblExhaustion, CBash_CoblExhaustion),
-    "CBash_CoblExhaustion": (CBash_CoblExhaustion, CoblExhaustion),
-    "MFactMarker": (MFactMarker, CBash_MFactMarker),
-    "CBash_MFactMarker": (CBash_MFactMarker, MFactMarker),
+    "CoblExhaustion": (CoblExhaustion, 'CBash_CoblExhaustion'),
+    "CBash_CoblExhaustion": (CBash_CoblExhaustion, 'CoblExhaustion'),
+    "MFactMarker": (MFactMarker, 'CBash_MFactMarker'),
+    "CBash_MFactMarker": (CBash_MFactMarker, 'MFactMarker'),
     }
