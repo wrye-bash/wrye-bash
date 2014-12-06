@@ -863,12 +863,12 @@ class Installer_Espm_Rename(EnabledLink):
     """Changes the installed name for an Esp/m."""
     text = _(u'Rename...')
 
-    def _enable(self): return self.data != -1
+    def _enable(self): return self.selected != -1
 
     def Execute(self,event):
         """Handle selection."""
         installer = gInstallers.data[gInstallers.detailsItem]
-        curName =gInstallers.gEspmList.GetString(self.data).replace(u'&&',u'&')
+        curName =gInstallers.gEspmList.GetString(self.selected).replace(u'&&',u'&')
         if curName[0] == u'*':
             curName = curName[1:]
         _file = GPath(curName)
@@ -885,9 +885,9 @@ class Installer_Espm_Reset(EnabledLink):
     text = _(u'Reset Name')
 
     def _enable(self):
-        if self.data == -1: return False  # FIXME ?
+        if self.selected == -1: return False  # FIXME ?
         self.installer = installer = gInstallers.data[gInstallers.detailsItem]
-        curName =gInstallers.gEspmList.GetString(self.data).replace(u'&&',u'&')
+        curName =gInstallers.gEspmList.GetString(self.selected).replace(u'&&',u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
         return installer.isEspmRenamed(curName)

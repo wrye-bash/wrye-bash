@@ -49,7 +49,7 @@ class Mod_FullLoad(OneItemLink):
     text = _(u'Test Full Record Definitions...')
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
             print bosh.MreRecord.type_class
             readClasses = bosh.MreRecord.type_class
@@ -71,7 +71,7 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def _enable(self):
         return super(Mod_CreateDummyMasters, self)._enable() and \
-               bosh.modInfos[self.data[0]].getStatus() == 30  # Missing masters
+               bosh.modInfos[self.selected[0]].getStatus() == 30  # Missing masters
 
     def Execute(self,event):
         """Handle execution."""
@@ -82,7 +82,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                            _(u'Create Files')):
             return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
-        modInfo = bosh.modInfos[self.data[0]]
+        modInfo = bosh.modInfos[self.selected[0]]
         lastTime = modInfo.mtime - 1
         if doCBash:
             newFiles = []
@@ -207,7 +207,7 @@ class _Mod_Labels(ChoiceLink):
     def DoNone(self,event):
         """Handle selection of None."""
         fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.data:
+        for fileName in self.selected:
             fileLabels[fileName] = u''
         self.window.PopulateItems()
 
@@ -215,7 +215,7 @@ class _Mod_Labels(ChoiceLink):
         """Handle selection of label."""
         label = self.items[event.GetId()-self.idList.BASE]
         fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.data:
+        for fileName in self.selected:
             fileLabels[fileName] = label
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
             modList.SortItems()
@@ -233,14 +233,14 @@ class _Mod_Groups_Export(EnabledLink):
     csvFile = u'_Groups.csv'
     text = _(u'Export Groups')
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def _initData(self, window, data):
         data = bosh.ModGroups.filter(data)
         super(_Mod_Groups_Export, self)._initData(window, data)
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = u'My' + self.__class__.csvFile
         textDir = bosh.dirs['patches']
@@ -251,7 +251,7 @@ class _Mod_Groups_Export(EnabledLink):
         (textDir,textName) = textPath.headTail
         #--Export
         modGroups = bosh.ModGroups()
-        modGroups.readFromModInfos(self.data)
+        modGroups.readFromModInfos(self.selected)
         modGroups.writeToText(textPath)
         balt.showOk(self.window,
             _(u"Exported %d mod/groups.") % (len(modGroups.mod_group),),
@@ -261,7 +261,7 @@ class _Mod_Groups_Import(EnabledLink):
     """Import editor ids from text file or other mod."""
     text = _(u'Import Groups')
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def _initData(self, window, data):
         data = bosh.ModGroups.filter(data)
@@ -285,7 +285,7 @@ class _Mod_Groups_Import(EnabledLink):
         #--Import
         modGroups = bosh.ModGroups()
         modGroups.readFromText(textPath)
-        changed = modGroups.writeToModInfos(self.data)
+        changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
         self.window.RefreshUI()
         balt.showOk(self.window,
@@ -327,7 +327,7 @@ class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
 
     def _range(self):
         id_group = self.id_group
-        setableMods = [GPath(x) for x in self.data if GPath(x) not in bosh.modInfos.autoHeaders]
+        setableMods = [GPath(x) for x in self.selected if GPath(x) not in bosh.modInfos.autoHeaders]
         if setableMods:
             yield SeparatorLink()
             ids = iter(self.idList)
@@ -356,7 +356,7 @@ class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
         """Handle selection of label."""
         label = self.id_group[event.GetId()]
         mod_group = bosh.modInfos.table.getColumn('group')
-        for mod in self.data:
+        for mod in self.selected:
             if mod not in bosh.modInfos.autoHeaders:
                 mod_group[mod] = label
         if bosh.modInfos.refresh(doInfos=False):
@@ -389,7 +389,7 @@ class Mod_Details(OneItemLink):
     help = _(u'Show Mod Details')
 
     def Execute(self,event):
-        modName = GPath(self.data[0])
+        modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
             modDetails = bosh.ModDetails()
@@ -417,7 +417,7 @@ class Mod_ShowReadme(OneItemLink):
     help = _(u'Open the readme')
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         if not docBrowser:
             DocBrowser().Show()
@@ -434,7 +434,7 @@ class Mod_ListBashTags(_Link):
     def Execute(self,event):
         #--Get masters list
         files = []
-        for fileName in self.data:
+        for fileName in self.selected:
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
@@ -445,25 +445,25 @@ class Mod_CreateBOSSReport(EnabledLink):
     text = _(u"Create BOSS Report...")
 
     def _enable(self):
-        return len(self.data) != 1 or (
-            not bosh.reOblivion.match(self.data[0].s))
+        return len(self.selected) != 1 or (
+            not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self,event):
         text = u''
-        if len(self.data) > 5:
+        if len(self.selected) > 5:
             spoiler = True
             text += u'[spoiler]\n'
         else:
             spoiler = False
         # Scan for ITM and UDR's
-        modInfos = [bosh.modInfos[x] for x in self.data]
+        modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
                 udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
         except bolt.CancelError:
             return
         # Create the report
-        for i,fileName in enumerate(self.data):
+        for i,fileName in enumerate(self.selected):
             if fileName == u'Oblivion.esm': continue
             fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
@@ -515,14 +515,14 @@ class Mod_CopyModInfo(_Link):
 
     def Execute(self,event):
         text = u''
-        if len(self.data) > 5:
+        if len(self.selected) > 5:
             spoiler = True
             text += u'[spoiler]'
         else:
             spoiler = False
         # Create the report
         isFirst = True
-        for i,fileName in enumerate(self.data):
+        for i,fileName in enumerate(self.selected):
             # add a blank line in between mods
             if isFirst: isFirst = False
             else: text += u'\n\n'
@@ -590,7 +590,7 @@ class _Mod_AllowGhosting_All(_Link):
 
     def Execute(self,event):
         files = []
-        for fileName in self.data:
+        for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = True
             bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
@@ -607,7 +607,7 @@ class _Mod_DisallowGhosting_All(_Link):
 
     def Execute(self,event):
         files = []
-        for fileName in self.data:
+        for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = False
             bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
@@ -634,20 +634,20 @@ class Mod_Ghost(EnabledLink):
 
     def _enable(self):
         # only enable ghosting for one item if not active
-        if len(self.data) == 1 and not self.isGhost:
+        if len(self.selected) == 1 and not self.isGhost:
             return self.path not in bosh.modInfos.ordered
         return True
 
     def Execute(self,event):
         files = []
-        if len(self.data) == 1:
+        if len(self.selected) == 1:
             # toggle
             if not self.isGhost: # ghosting - override allowGhosting with True
                 bosh.modInfos.table.setItem(self.path,'allowGhosting',True)
             self.fileInfo.setGhost(not self.isGhost)
             files.append(self.path)
         else:
-            for fileName in self.data:
+            for fileName in self.selected:
                 fileInfo = bosh.modInfos[fileName]
                 allowGhosting = True
                 bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
@@ -664,7 +664,7 @@ class _Mod_AllowGhostingInvert_All(_Link):
 
     def Execute(self,event):
         files = []
-        for fileName in self.data:
+        for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName]
             allowGhosting = bosh.modInfos.table.getItem(fileName,'allowGhosting',True) ^ True
             bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
@@ -690,7 +690,7 @@ class Mod_AllowGhosting(TransLink):
                         data[0], 'allowGhosting', True)
                 def _check(self): return not self.allowGhosting
                 def Execute(self, event):
-                    fileName = self.data[0]
+                    fileName = self.selected[0]
                     fileInfo = bosh.modInfos[fileName]
                     allowGhosting = self.allowGhosting ^ True
                     bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
@@ -715,12 +715,12 @@ class Mod_MarkMergeable(EnabledLink):
         self.doCBash = doCBash
         self.text = _(u'Mark Mergeable (CBash)...') if doCBash else _(u'Mark Mergeable...')
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
-        for fileName in map(GPath,self.data):
+        for fileName in map(GPath,self.selected):
             if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
             fileInfo = bosh.modInfos[fileName]
             if self.doCBash:
@@ -756,8 +756,8 @@ class Mod_MarkMergeable(EnabledLink):
 class _Mod_BP_Link(EnabledLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return (len(self.data) == 1 and
-            bosh.modInfos[self.data[0]].header.author in (u'BASHED PATCH',
+        return (len(self.selected) == 1 and
+            bosh.modInfos[self.selected[0]].header.author in (u'BASHED PATCH',
                                                           u'BASHED LISTS'))
 
 class _Mod_Patch_Update(_Mod_BP_Link):
@@ -774,7 +774,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, data):
         super(_Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
-        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
@@ -790,7 +790,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             bush.fullLoadOrder[name] = index
             index += 1
 
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
             balt.showWarning(self.window,
@@ -809,7 +809,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         if self.CBashMismatch:
             if not balt.askYes(self.window,
                     _(u"The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Should Wrye Bash attempt to import your settings (some may not be copied correctly)?  Selecting 'No' will load the bashed patch defaults.")
-                        % (self.data[0].s,[u'CBash',u'Python'][self.doCBash],[u'Python',u'CBash'][self.doCBash]),
+                        % (self.selected[0].s,[u'CBash',u'Python'][self.doCBash],[u'Python',u'CBash'][self.doCBash]),
                     'bash.patch.CBashMismatch'):
                 importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
@@ -945,7 +945,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             enumerate((_(u'General'),_(u'Importers'),
                        _(u'Tweakers'),_(u'Special')))])
         #--Config
-        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
         doCBash = bosh.CBash_PatchFile.configIsCBash(config)
         if doCBash:
@@ -957,10 +957,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         patcherNames = [x.__class__.__name__ for x in patchers]
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(u'= %s %s' % (self.data[0],_(u'Config')))
+        log.setHeader(u'= %s %s' % (self.selected[0],_(u'Config')))
         log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
         clip = StringIO.StringIO()
-        clip.write(u'%s %s:\n' % (self.data[0],_(u'Config')))
+        clip.write(u'%s %s:\n' % (self.selected[0],_(u'Config')))
         clip.write(u'[spoiler][xml]\n')
         # CBash/Python patch?
         log.setHeader(u'== '+_(u'Patch Mode'))
@@ -1047,8 +1047,8 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
     def Execute(self,event):
         """Handle execution."""
         #--Config
-        config = bosh.modInfos.table.getItem(self.data[0],'bash.patch.configs',{})
-        patchName = self.data[0].s + u'_Configuration.dat'
+        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
+        patchName = self.selected[0].s + u'_Configuration.dat'
         outDir = bosh.dirs['patches']
         outDir.makedirs()
         #--File dialog
@@ -1073,16 +1073,16 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
             u"Check against LOOT's dirty mod list")
 
     def _check(self):
-        for fileName in self.data:
+        for fileName in self.selected:
             if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
                 return False
         return True
 
     def Execute(self,event):
-        for fileName in self.data:
+        for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
-        self.window.RefreshUI(self.data)
+        self.window.RefreshUI(self.selected)
 
 class _Mod_SkipDirtyCheckInvert(_Link):
     text = _(u"Invert checking against LOOT's dirty mod list")
@@ -1090,11 +1090,11 @@ class _Mod_SkipDirtyCheckInvert(_Link):
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
     def Execute(self,event):
-        for fileName in self.data:
+        for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
-        self.window.RefreshUI(self.data)
+        self.window.RefreshUI(self.selected)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1111,7 +1111,7 @@ class Mod_SkipDirtyCheck(TransLink):
                         data[0], 'ignoreDirty', False)
                 def _check(self): return self.ignoreDirty
                 def Execute(self, event):
-                    fileName = self.data[0]
+                    fileName = self.selected[0]
                     fileInfo = bosh.modInfos[fileName]
                     self.ignoreDirty ^= True
                     bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
@@ -1140,7 +1140,7 @@ class Mod_ScanDirty(_Link):
 
     def Execute(self,event):
         """Handle execution"""
-        modInfos = [bosh.modInfos[x] for x in self.data]
+        modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
                 ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress,detailed=True)
@@ -1230,14 +1230,14 @@ class Mod_RemoveWorldOrphans(EnabledLink):
     help = _(u'Remove orphaned cell records')
 
     def _enable(self):
-        return len(self.data) != 1 or (
-            not bosh.reOblivion.match(self.data[0].s))
+        return len(self.selected) != 1 or (
+            not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self,event):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
         if not balt.askContinue(self.window,message,'bash.removeWorldOrphans.continue',_(u'Remove World Orphans')):
             return
-        for item in self.data:
+        for item in self.selected:
             fileName = GPath(item)
             if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Remove World Orphans'))
@@ -1268,7 +1268,7 @@ class Mod_CleanMod(EnabledLink):
     help = _(u'Modify fog values in interior cells to avoid the Nvidia black '
              u'screen bug')
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
@@ -1276,9 +1276,9 @@ class Mod_CleanMod(EnabledLink):
             _(u'Nvidia Fog Fix')):
             return
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
-            progress.setFull(len(self.data))
+            progress.setFull(len(self.selected))
             fixed = []
-            for index,fileName in enumerate(map(GPath,self.data)):
+            for index,fileName in enumerate(map(GPath,self.selected)):
                 if fileName.cs in bush.game.masterFiles: continue
                 progress(index,_(u'Scanning')+fileName.s)
                 fileInfo = bosh.modInfos[fileName]
@@ -1301,8 +1301,8 @@ class Mod_UndeleteRefs(EnabledLink):
     help = _(u'Undeletes refs in cells')
 
     def _enable(self):
-        return len(self.data) != 1 or (
-            not bosh.reOblivion.match(self.data[0].s))
+        return len(self.selected) != 1 or (
+            not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self,event):
         message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
@@ -1310,10 +1310,10 @@ class Mod_UndeleteRefs(EnabledLink):
             _(u'Undelete Refs')):
             return
         with balt.Progress(_(u'Undelete Refs')) as progress:
-            progress.setFull(len(self.data))
+            progress.setFull(len(self.selected))
             hasFixed = False
             log = bolt.LogFile(StringIO.StringIO())
-            for index,fileName in enumerate(map(GPath,self.data)):
+            for index,fileName in enumerate(map(GPath,self.selected)):
                 if bosh.reOblivion.match(fileName.s):
                     balt.showWarning(self.window,_(u'Skipping')+u' '+fileName.s,
                                      _(u'Undelete Refs'))
@@ -1344,7 +1344,7 @@ class Mod_AddMaster(OneItemLink):
         message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
         if not balt.askContinue(self.window,message,'bash.addMaster.continue',_(u'Add Master')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         wildcard = _(u'%s Masters')%bush.game.displayName+u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = balt.askOpenMulti(self.window,_(u'Add master:'),fileInfo.dir, u'', wildcard)
@@ -1380,14 +1380,14 @@ class Mod_CopyToEsmp(EnabledLink):
         self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
 
     def _enable(self):
-        for item in self.data:
+        for item in self.selected:
             fileInfo = bosh.modInfos[item]
             if fileInfo.isInvertedMod() or fileInfo.isEsm() != self.isEsm:
                 return False
         return True
 
     def Execute(self,event):
-        for item in self.data:
+        for item in self.selected:
             fileInfo = bosh.modInfos[item]
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
             modsDir = fileInfo.dir
@@ -1420,14 +1420,14 @@ class Mod_DecompileAll(EnabledLink):
     help = _(u'Removes effects of a "recompile all" on the mod')
 
     def _enable(self):
-        return len(self.data) != 1 or (
-        not bosh.reOblivion.match(self.data[0].s)) # disable on Oblivion.esm
+        return len(self.selected) != 1 or (
+        not bosh.reOblivion.match(self.selected[0].s)) # disable on Oblivion.esm
 
     def Execute(self,event):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
         if not balt.askContinue(self.window,message,'bash.decompileAll.continue',_(u'Decompile All')):
             return
-        for item in self.data:
+        for item in self.selected:
             fileName = GPath(item)
             if bosh.reOblivion.match(fileName.s):
                 balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Decompile All'))
@@ -1486,7 +1486,7 @@ class Mod_FlipSelf(EnabledLink):
         self.text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
 
     def _enable(self):
-        for item in self.data:
+        for item in self.selected:
             fileInfo = bosh.modInfos[item]
             if fileInfo.isEsm() != self.isEsm or not item.cext[-1] == u'p':
                 return False
@@ -1499,7 +1499,7 @@ class Mod_FlipSelf(EnabledLink):
                    )
         if not balt.askContinue(self.window,message,'bash.flipToEsmp.continue',_(u'Flip to Esm')):
             return
-        for item in self.data:
+        for item in self.selected:
             fileInfo = bosh.modInfos[item]
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
@@ -1515,7 +1515,7 @@ class Mod_FlipMasters(OneItemLink):
     def _initData(self, window, data):
         super(Mod_FlipMasters, self)._initData(window, data)
         #--FileInfo
-        self.fileName = fileName = GPath(self.data[0]) # TODO(ut): was data[0]
+        self.fileName = fileName = GPath(self.selected[0]) # TODO(ut): was data[0]
         self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
         self.text = _(u'Esmify Masters')
         if len(data) == 1 and len(fileInfo.header.masters) > 1:
@@ -1563,7 +1563,7 @@ class Mod_SetVersion(EnabledLink):
         self.fileInfo = window.data[data[0]]
 
     def _enable(self):
-        return (len(self.data) == 1) and (
+        return (len(self.selected) == 1) and (
             int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
@@ -1595,7 +1595,7 @@ class Mod_Fids_Replace(OneItemLink):
         if not balt.askContinue(self.window,message,'bash.formIds.replace.continue',
             _(u'Import Form IDs')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textDir = bosh.dirs['patches']
         #--File dialog
@@ -1638,7 +1638,7 @@ class Mod_Face_Import(OneItemLink):
         srcInfo = bosh.SaveInfo(srcDir,srcName)
         srcFace = bosh.PCFaces.save_getFace(srcInfo)
         #--Save Face
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         npc = bosh.PCFaces.mod_addFace(fileInfo,srcFace)
         #--Save Face picture?
@@ -1656,10 +1656,10 @@ class Mod_Face_Import(OneItemLink):
 #--Common
 class _Mod_Export_Link(EnabledLink):
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def Execute(self, event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
         textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
@@ -1673,8 +1673,8 @@ class _Mod_Export_Link(EnabledLink):
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)
-            readProgress.setFull(len(self.data))
-            for index, fileName in enumerate(map(GPath, self.data)):
+            readProgress.setFull(len(self.selected))
+            for index, fileName in enumerate(map(GPath, self.selected)):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
                 parser.readFromMod(fileInfo)
@@ -1706,7 +1706,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
                 'bash.actorLevels.export.continue',
                 _(u'Export NPC Levels')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_NPC_Levels.csv'
         textDir = bosh.dirs['patches']
@@ -1720,8 +1720,8 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
         with balt.Progress(_(u'Export NPC levels')) as progress:
             actorLevels = self._parser()
             readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
+            readProgress.setFull(len(self.selected))
+            for index,fileName in enumerate(map(GPath,self.selected)):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index,_(u'Reading')+u' '+fileName.s)
                 actorLevels.readFromMod(fileInfo)
@@ -1744,7 +1744,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
                 'bash.actorLevels.import.continue',
                 _(u'Import NPC Levels')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_NPC_Levels.csv'
         textDir = bosh.dirs['patches']
@@ -1806,7 +1806,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,
                 'bash.factionRelations.import.continue',_(u'Import Relations')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Relations.csv'
         textDir = bosh.dirs['patches']
@@ -1870,7 +1870,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,
                 'bash.factionRanks.import.continue',_(u'Import Factions')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Factions.csv'
         textDir = bosh.dirs['patches']
@@ -1917,7 +1917,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self,event): # overrides _Mod_Export_Link
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
         def OnOk(event):
@@ -1986,7 +1986,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,'bash.scripts.import.continue',
             _(u'Import Scripts')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
         if not defaultPath.exists():
@@ -2052,7 +2052,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,'bash.stats.import.continue',
             _(u'Import Stats')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Stats.csv'
         textDir = bosh.dirs['patches']
@@ -2113,7 +2113,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,
             'bash.prices.import.continue',_(u'Import prices')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Prices.csv'
         textDir = bosh.dirs['patches']
@@ -2181,7 +2181,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             'bash.SigilStone.import.continue',
             _(u'Import Sigil Stones details')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_SigilStones.csv'
         textDir = bosh.dirs['patches']
@@ -2239,7 +2239,7 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
             SpellRecords(detailed=doDetailed)
 
     def Execute(self,event): # overrides _Mod_Export_Link
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Spells.csv'
         textDir = bosh.dirs['patches']
@@ -2252,8 +2252,8 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
         with balt.Progress(_(u'Export Spell details')) as progress:
             spellRecords = self._parser()
             readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.data))
-            for index,fileName in enumerate(map(GPath,self.data)):
+            readProgress.setFull(len(self.selected))
+            for index,fileName in enumerate(map(GPath,self.selected)):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
                 spellRecords.readFromMod(fileInfo)
@@ -2282,7 +2282,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             'bash.SpellRecords.import.continue',
             _(u'Import Spell details')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Spells.csv'
         textDir = bosh.dirs['patches']
@@ -2348,7 +2348,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             'bash.Ingredient.import.continue',
             _(u'Import Ingredients details')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Ingredients.csv'
         textDir = bosh.dirs['patches']
@@ -2411,7 +2411,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,'bash.editorIds.import.continue',
             _(u'Import Editor Ids')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Eids.csv'
         textDir = bosh.dirs['patches']
@@ -2485,7 +2485,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         if not balt.askContinue(self.window,message,'bash.fullNames.import.continue',
             _(u'Import Names')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Names.csv'
         textDir = bosh.dirs['patches']
@@ -2529,7 +2529,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
-    def _enable(self): return bool(self.data) and bool(CBash)
+    def _enable(self): return bool(self.selected) and bool(CBash)
 
 class _Mod_Import_Link_CBash(_Mod_Import_Link):
     def _enable(self):
@@ -2558,7 +2558,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
         if not balt.askContinue(self.window,message,
             'bash.MapMarkers.import.continue',_(u'Import Map Markers')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_MapMarkers.csv'
         textDir = bosh.dirs['patches']
@@ -2639,7 +2639,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
         if not balt.askContinue(self.window,message,'bash.itemdata.import.continue',
             _(u'Import Item Data')):
             return
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_ItemData.csv'
         textDir = bosh.dirs['patches']
@@ -2683,7 +2683,7 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
     """Marks (tags) selected mods as Delevs and/or Relevs according to Leveled Lists.csv."""
     text = _(u'Mark Levelers...')
 
-    def _enable(self): return bool(self.data)
+    def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
         message = _(u'Obsolete. Mods are now automatically tagged when possible.')

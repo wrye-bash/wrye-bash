@@ -225,7 +225,7 @@ class Save_LoadMasters(OneItemLink):
     help = _(u"Set the load list to the save game's masters")
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
         modList.PopulateItems()
@@ -242,7 +242,7 @@ class Save_ImportFace(OneItemLink):
 
     def Execute(self,event):
         #--File Info
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         #--Select source face file
         srcDir = fileInfo.dir
@@ -291,14 +291,14 @@ class Save_RenamePlayer(EnabledLink):
     text = _(u'Rename Player...')
     help = _(u'Rename the Player character in a save game')
 
-    def _enable(self): return len(self.data) != 0
+    def _enable(self): return len(self.selected) != 0
 
     def Execute(self,event):
-        saveInfo = bosh.saveInfos[self.data[0]]
+        saveInfo = bosh.saveInfos[self.selected[0]]
         newName = balt.askText(self.window,_(u"Enter new player name. E.g. Conan the Bold"),
             _(u"Rename player"),saveInfo.header.pcName)
         if not newName: return
-        for save in self.data:
+        for save in self.selected:
             savedPlayer = bosh.Save_NPCEdits(self.window.data[GPath(save)])
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
@@ -310,8 +310,8 @@ class Save_ExportScreenshot(OneItemLink):
     help = _(u'Export the saved screenshot from a save game')
 
     def Execute(self,event):
-        saveInfo = bosh.saveInfos[self.data[0]]
-        imagePath = balt.askSave(Link.Frame,_(u'Save Screenshot as:'), bosh.dirs['patches'].s,_(u'Screenshot %s.jpg') % self.data[0].s,u'*.jpg')
+        saveInfo = bosh.saveInfos[self.selected[0]]
+        imagePath = balt.askSave(Link.Frame,_(u'Save Screenshot as:'), bosh.dirs['patches'].s,_(u'Screenshot %s.jpg') % self.selected[0].s,u'*.jpg')
         if not imagePath: return
         width,height,data = saveInfo.header.image
         image = wx.EmptyImage(width,height)
@@ -325,15 +325,15 @@ class Save_DiffMasters(EnabledLink):
     help = _(u"Show how the masters of a save differ from active mod list or"
              u" another save")
 
-    def _enable(self): return len(self.data) in (1,2)
+    def _enable(self): return len(self.selected) in (1,2)
 
     def Execute(self,event):
-        oldNew = map(GPath,self.data)
+        oldNew = map(GPath,self.selected)
         oldNew.sort(key = lambda x: bosh.saveInfos.dir.join(x).mtime)
         oldName = oldNew[0]
         oldInfo = self.window.data[GPath(oldName)]
         oldMasters = set(oldInfo.masterNames)
-        if len(self.data) == 1:
+        if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
             newMasters = set(bosh.modInfos.ordered)
         else:
@@ -361,11 +361,11 @@ class Save_Rename(EnabledLink):
     """Renames Save File."""
     text = _(u'Rename...')
     help = _(u'Rename Save File')
-    def _enable(self): return len(self.data) != 0
+    def _enable(self): return len(self.selected) != 0
 
     def Execute(self,event):
-        if len(self.data) > 0:
-            index = self.window.list.FindItem(0,self.data[0].s)
+        if len(self.selected) > 0:
+            index = self.window.list.FindItem(0,self.selected[0].s)
             if index != -1:
                 self.window.list.EditLabel(index)
 
@@ -374,7 +374,7 @@ class Save_Renumber(EnabledLink):
     """Renumbers a whole lot of save files."""
     text = _(u'Re-number Save(s)...')
     help = _(u'Renumber a whole lot of save files')
-    def _enable(self): return len(self.data) != 0
+    def _enable(self): return len(self.selected) != 0
 
     def Execute(self,event):
         #--File Info
@@ -382,7 +382,7 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'),title=_(u'Re-number Saves'),value=1,min=1,max=10000)
         if not newNumber: return
         rePattern = re.compile(ur'^(save )(\d*)(.*)',re.I|re.U)
-        for index, name in enumerate(self.data):
+        for index, name in enumerate(self.selected):
             maPattern = rePattern.match(name.s)
             if not maPattern: continue
             maPattern = maPattern.groups()
@@ -518,7 +518,7 @@ class Save_EditCreated(OneItemLink):
     def Execute(self,event):
         """Handle menu selection."""
         #--Get save info for file
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         #--Get SaveFile
         with balt.Progress(_(u"Loading...")) as progress:
@@ -579,7 +579,7 @@ class Save_EditPCSpells(OneItemLink):
     # TODO(ut): help + AppendtoMenu had : """Append ref replacer items to menu."""
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         data = Save_EditPCSpellsData(self.window,fileInfo)
         balt.ListEditor.Display(self.window, _(u'Player Spells'), data)
@@ -591,7 +591,7 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
     help = _(u'Set number of uses for Cast When Used Enchantments')
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         dialog = balt.askNumber(self.window,
             (_(u'Enter the number of uses you desire per recharge for all custom made enchantments.')
@@ -653,7 +653,7 @@ class Save_Move(ChoiceLink):
         destTable = bolt.Table(bosh.PickleDict(destDir.join('Bash','Table.dat')))
         count = 0
         ask = True
-        for fileName in self.data:
+        for fileName in self.selected:
             if ask and not self.window.data.moveIsSafe(fileName,destDir):
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
                     % (fileName.s,profile))
@@ -682,7 +682,7 @@ class Save_RepairAbomb(OneItemLink):
 
     def Execute(self,event):
         #--File Info
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         #--Check current value
         saveFile = bosh.SaveFile(fileInfo)
@@ -711,7 +711,7 @@ class Save_RepairFactions(EnabledLink): # CRUFT
     help =_(u'Repair factions from v 105 Bash error, plus mod faction changes')
 
     def _enable(self):
-        return bool(bosh.modInfos.ordered) and len(self.data) == 1
+        return bool(bosh.modInfos.ordered) and len(self.selected) == 1
 
     def Execute(self,event):
         debug = False
@@ -759,9 +759,9 @@ class Save_RepairFactions(EnabledLink): # CRUFT
                     if not fid: continue
                     fact_eid[fid] = fact.eid
             #--Loop over savefiles
-            subProgress = SubProgress(progress,0.4,1.0,len(self.data))
+            subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             message = _(u'NPC Factions Restored/UnNulled:')
-            for index,saveName in enumerate(self.data):
+            for index,saveName in enumerate(self.selected):
                 log.setHeader(u'== '+saveName.s,True)
                 subProgress(index,_(u'Updating ') + saveName.s)
                 saveInfo = self.window.data[saveName]
@@ -847,7 +847,7 @@ class Save_RepairHair(OneItemLink):
 
     def Execute(self,event):
         #--File Info
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         if bosh.PCFaces.save_repairHair(fileInfo):
             balt.showOk(self.window,_(u'Hair repaired.'))
@@ -876,7 +876,7 @@ class Save_ReweighPotions(OneItemLink):
             return
         bosh.settings['bash.reweighPotions.newWeight'] = newWeight
         #--Do it
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         with balt.Progress(_(u"Reweigh Potions")) as progress:
             saveFile = bosh.SaveFile(fileInfo)
@@ -905,7 +905,7 @@ class Save_Stats(OneItemLink):
     help = _(u'Show savefile statistics')
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         saveFile = bosh.SaveFile(fileInfo)
         with balt.Progress(_(u"Statistics")) as progress:
@@ -926,8 +926,8 @@ class Save_StatObse(AppendableLink, EnabledLink):
     def _append(self, window): return bool(bush.game.se.shortName)
 
     def _enable(self):
-        if len(self.data) != 1: return False
-        self.fileName = GPath(self.data[0])
+        if len(self.selected) != 1: return False
+        self.fileName = GPath(self.selected[0])
         self.fileInfo = self.window.data[self.fileName]
         fileName = self.fileInfo.getPath().root + u'.' + bush.game.se.shortName
         return fileName.exists()
@@ -953,7 +953,7 @@ class Save_Unbloat(OneItemLink):
 
     def Execute(self,event):
         #--File Info
-        saveName = GPath(self.data[0])
+        saveName = GPath(self.selected[0])
         saveInfo = self.window.data[saveName]
         delObjRefs = 0
         with balt.Progress(_(u'Scanning for Bloat')) as progress:
@@ -998,7 +998,7 @@ class Save_UpdateNPCLevels(EnabledLink):
     text = _(u'Update NPC Levels...')
     help = _(u'Update NPC levels from active mods')
 
-    def _enable(self): return bool(self.data and bosh.modInfos.ordered)
+    def _enable(self): return bool(self.selected and bosh.modInfos.ordered)
 
     def Execute(self,event):
         debug = True
@@ -1030,9 +1030,9 @@ class Save_UpdateNPCLevels(EnabledLink):
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level, npc.calcMin, npc.calcMax, npc.flags.pcLevelOffset)
             #--Loop over savefiles
-            subProgress = SubProgress(progress,0.4,1.0,len(self.data))
+            subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             message = _(u'NPCs Releveled:')
-            for index,saveName in enumerate(self.data):
+            for index,saveName in enumerate(self.selected):
                 subProgress(index,_(u'Updating ') + saveName.s)
                 saveInfo = self.window.data[saveName]
                 saveFile = bosh.SaveFile(saveInfo)

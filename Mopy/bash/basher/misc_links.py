@@ -78,7 +78,7 @@ class Screen_ConvertTo(EnabledLink):
         self.text = _(u'Convert to %s') % self.ext
 
     def _enable(self):
-        convertable = [name_ for name_ in self.data if
+        convertable = [name_ for name_ in self.selected if
                        GPath(name_).cext != u'.' + self.ext]
         return len(convertable) > 0
 
@@ -86,8 +86,8 @@ class Screen_ConvertTo(EnabledLink):
         srcDir = bosh.screensData.dir
         try:
             with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
-                progress.setFull(len(self.data))
-                for index,fileName in enumerate(self.data):
+                progress.setFull(len(self.selected))
+                for index,fileName in enumerate(self.selected):
                     progress(index,fileName.s)
                     srcPath = srcDir.join(fileName)
                     destPath = srcPath.root+u'.'+self.ext
@@ -141,11 +141,11 @@ class Screen_Rename(EnabledLink):
     text = _(u'Rename...')
     help = _(u'Renames files by pattern')
 
-    def _enable(self): return len(self.data) > 0
+    def _enable(self): return len(self.selected) > 0
 
     def Execute(self,event):
-        if len(self.data) > 0:
-            index = self.window.list.FindItem(0,self.data[0].s)
+        if len(self.selected) > 0:
+            index = self.window.list.FindItem(0,self.selected[0].s)
             if index != -1:
                 self.window.list.EditLabel(index)
 
@@ -175,11 +175,11 @@ class Message_Delete(_Link):
 
     def Execute(self,event):
         message = _(u'Delete these %d message(s)? This operation cannot'
-                    u' be undone.') % len(self.data)
+                    u' be undone.') % len(self.selected)
         if not balt.askYes(self.window,message,_(u'Delete Messages')):
             return
         #--Do it
-        for message in self.data:
+        for message in self.selected:
             self.window.data.delete(message)
         #--Refresh stuff
         self.window.RefreshUI()
@@ -271,7 +271,7 @@ class Master_ChangeTo(EnabledLink):
     def _enable(self): return self.window.edited
 
     def Execute(self,event):
-        itemId = self.data[0]
+        itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
         #--File Dialog
@@ -305,7 +305,7 @@ class Master_Disable(AppendableLink, EnabledLink):
     def _enable(self): return self.window.edited
 
     def Execute(self,event):
-        itemId = self.data[0]
+        itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
         newName = GPath(re.sub(u'[mM]$','p',u'XX'+masterName.s))

@@ -67,7 +67,7 @@ class INI_ListErrors(EnabledLink):
     help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        for i in self.data:
+        for i in self.selected:
             if bosh.iniInfos[i].getStatus() < 0:
                 return True
         return False
@@ -75,7 +75,7 @@ class INI_ListErrors(EnabledLink):
     def Execute(self,event):
         """Handle printing out the errors."""
         text = u''
-        for i in self.data:
+        for i in self.selected:
             fileInfo = bosh.iniInfos[i]
             text += u'%s\n' % fileInfo.listErrors()
         balt.copyToClipboard(text)
@@ -99,7 +99,7 @@ class INI_FileOpenOrCopy(OneItemLink):
     def Execute(self,event):
         """Handle selection."""
         dir = self.window.data.dir
-        for file in self.data:
+        for file in self.selected:
             if bosh.dirs['tweaks'].join(file).isfile():
                 dir.join(file).start()
             else:
@@ -126,7 +126,7 @@ class INI_Delete(EnabledLink):
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
-        message.extend(sorted(self.data))
+        message.extend(sorted(self.selected))
         with ListBoxes(self.window,_(u'Delete Files'),
                      _(u'Delete these files? This operation cannot be undone.'),
                      [message]) as dialog:
@@ -134,7 +134,7 @@ class INI_Delete(EnabledLink):
             id = dialog.ids[message[0]]
             checks = dialog.FindWindowById(id)
             if checks:
-                for i,mod in enumerate(self.data):
+                for i,mod in enumerate(self.selected):
                     if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
                         self.window.data.delete(mod)
             self.window.RefreshUI()
@@ -158,7 +158,7 @@ class INI_Apply(EnabledLink):
 
     def _enable(self):
         if not bosh.settings['bash.ini.allowNewLines']:
-            for i in self.data:
+            for i in self.selected:
                 iniInfo = bosh.iniInfos[i]
                 if iniInfo.status < 0:
                     return False # temp disabled for testing
@@ -177,7 +177,7 @@ class INI_Apply(EnabledLink):
             if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                 return
         needsRefresh = False
-        for item in self.data:
+        for item in self.selected:
             #--No point applying a tweak that's already applied
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
@@ -189,7 +189,7 @@ class INI_Apply(EnabledLink):
             #--Refresh status of all the tweaks valid for this ini
             iniList.RefreshUI('VALID')
             iniPanel.iniContents.RefreshUI()
-            iniPanel.tweakContents.RefreshUI(self.data[0])
+            iniPanel.tweakContents.RefreshUI(self.selected[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
@@ -209,11 +209,11 @@ class INI_CreateNew(OneItemLink):
                 u"from '%(ini)s'.") % {'tweak': (data[0]), 'ini': ini}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              bosh.iniInfos[self.data[0]].status >= 0
+                              bosh.iniInfos[self.selected[0]].status >= 0
 
     def Execute(self,event):
         """Handle creating a new INI tweak."""
-        pathFrom = self.data[0]
+        pathFrom = self.selected[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
         path = balt.askSave(self.window,
                             _(u'Copy Tweak with current settings...'),

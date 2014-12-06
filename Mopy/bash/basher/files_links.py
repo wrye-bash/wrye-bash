@@ -152,7 +152,7 @@ class File_Delete(_Link):
 
     def Execute(self,event):
         message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
-        message.extend(sorted(self.data))
+        message.extend(sorted(self.selected))
         with ListBoxes(self.window,_(u'Delete Files'),
                      _(u'Delete these files? This operation cannot be undone.'),
                      [message]) as dialog:
@@ -160,7 +160,7 @@ class File_Delete(_Link):
             id_ = dialog.ids[message[0]]
             checks = dialog.FindWindowById(id_)
             if checks:
-                for i,mod in enumerate(self.data):
+                for i,mod in enumerate(self.selected):
                     if checks.IsChecked(i):
                         try:
                             self.window.data.delete(mod)
@@ -177,7 +177,7 @@ class File_Duplicate(_Link):
         self.help = _(u"Make a copy of '%s'") % (data[0])
 
     def Execute(self,event):
-        data = self.data
+        data = self.selected
         for item in data:
             fileName = GPath(item)
             fileInfos = self.window.data
@@ -251,7 +251,7 @@ class File_Hide(_Link):
         destRoot = self.window.data.bashDir.join(u'Hidden')
         fileInfos = self.window.data
         fileGroups = fileInfos.table.getColumn('group')
-        for fileName in self.data:
+        for fileName in self.selected:
             destDir = destRoot
             #--Use author subdirectory instead?
             author = getattr(fileInfos[fileName].header,'author',u'NOAUTHOR') #--Hack for save files.
@@ -283,7 +283,7 @@ class File_ListMasters(OneItemLink):
                         {'filename': data[0]})
 
     def Execute(self,event):
-        fileName = GPath(self.data[0])
+        fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
@@ -300,7 +300,7 @@ class File_Redate(AppendableLink, _Link):
     def Execute(self,event):
         #--Get current start time.
         modInfos = self.window.data
-        fileNames = [mod for mod in self.data if mod not in modInfos.autoSorted]
+        fileNames = [mod for mod in self.selected if mod not in modInfos.autoSorted]
         if not fileNames: return
         #--Ask user for revised time.
         newTimeStr = balt.askText(self.window,_(u'Redate selected mods starting at...'),
@@ -331,7 +331,7 @@ class File_Sort(EnabledLink):
     text = _(u'Sort')
     help = _(u"Sort the selected files.")
 
-    def _enable(self): return len(self.data) > 1
+    def _enable(self): return len(self.selected) > 1
 
     def Execute(self,event):
         message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
@@ -342,13 +342,13 @@ class File_Sort(EnabledLink):
             return
         #--Get first time from first selected file.
         modInfos = self.window.data
-        fileNames = [mod for mod in self.data if mod not in modInfos.autoSorted]
+        fileNames = [mod for mod in self.selected if mod not in modInfos.autoSorted]
         if not fileNames: return
         dotTimes = [modInfos[fileName].mtime for fileName in fileNames if fileName.s[0] in u'.=+']
         if dotTimes:
             newTime = min(dotTimes)
         else:
-            newTime = min(modInfos[fileName].mtime for fileName in self.data)
+            newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
         fileNames.sort(key=lambda a: a.cext)
         fileNames.sort(key=lambda a: a.s[0] not in u'.=')
@@ -369,7 +369,7 @@ class File_Snapshot(_Link):
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
 
     def Execute(self,event):
-        data = self.data
+        data = self.selected
         for item in data:
             fileName = GPath(item)
             fileInfo = self.window.data[fileName]
@@ -406,7 +406,7 @@ class File_RevertToSnapshot(OneItemLink):
 
     def Execute(self,event):
         """Handle menu item selection."""
-        fileInfo = self.window.data[self.data[0]]
+        fileInfo = self.window.data[self.selected[0]]
         fileName = fileInfo.name
         #--Snapshot finder
         srcDir = self.window.data.bashDir.join(u'Snapshots')
@@ -438,7 +438,7 @@ class File_Backup(_Link):
     help = _(u"Create a backup of the selected file(s).")
 
     def Execute(self,event):
-        for item in self.data:
+        for item in self.selected:
             fileInfo = self.window.data[item]
             fileInfo.makeBackup(True)
 
@@ -451,12 +451,12 @@ class File_Open(EnabledLink):
         self.help = _(u"Open '%s' with the system's default program.") % data[
             0] if len(data) == 1 else _(u'Open the selected files.')
 
-    def _enable(self): return len(self.data) > 0
+    def _enable(self): return len(self.selected) > 0
 
     def Execute(self,event):
         """Handle selection."""
         dir_ = self.window.data.dir
-        for file_ in self.data:
+        for file_ in self.selected:
             dir_.join(file_).start()
 
 class File_RevertToBackup(ChoiceLink):

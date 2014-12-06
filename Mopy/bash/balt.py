@@ -2124,41 +2124,38 @@ class Link(object):
     method creates a wx MenuItem or wx submenu and appends this to the
     currently popped up wx menu.
     """
-    Frame = None    # Frame to update the statusbar of
+    Frame = None    # BashFrame singleton, set once and for all in BashFrame()
     Popup = None    # Current popup menu
-    id = None
+    id = None       # Specify id as a class attribute in local Link subclasses
 
-    def __init__(self, _id=None, _text=None):
+    def __init__(self, _id=None, _text=None): # parameters underscored cause
+    # their use should be avoided - prefer to specify text as a class attribute
+    # (or set in_initData()) while messing with id should be confined in balt
         super(Link, self).__init__()
-        self.id = _id or self.__class__.id # TODO(ut) untested - to allow me to specify id directly when creating local Link subclasses
-        if _text is not None: self.text = _text
+        self.id = _id or self.__class__.id
+        if _text is not None: self.text = _text # the menu item label - MUST be
+        #  set in _initData() if not set here - used when appending the item
 
     def _initData(self, window, data):
-        """Hack to separate data from presentation.
+        """Initializes the Link instance data based on UI state when the
+        menu is Popped up.
 
-        Called from :AppendToMenu - DO NOT call directly. Initializes the
-        Link instance data based on UI state when the menu is Popped up -
-        maybe not useful in Button subclasses. Initializes additional
-        attributes for Tank windows - should be moved to a mixin class as
-        self.'data' is _EITHER_ the selected Items (in various types,
-        in mod list a list<Path>, in subpackage list the index of the right
-        clicked item) _OR_ in the case of the installers the same instance
-        of InstallerData- a mess. self.[data|selected|...] are then used in
-        the Execute method and also in some cases to decide if the menu item
-        is enabled, checked etc (see subclasses).
-        :param window: the window the menu is being appended on (type ?)
-        :param data: reflects the selected items when the menu is appended
+        Called from :AppendToMenu - DO NOT call directly. Override and
+        _always_ call super if you need to use the initialized data in setting
+        instance attributes to be used in appending the menu. Initializes
+        additional attributes for Tank windows (to be eliminated).
+        :param window: the element the menu is being popped from (usually a
+        List or Tank subclass)
+        :param data: None or the selected items when the menu is appended.
+        In modlist/installers it's a list<Path> while in subpackage it's the
+        index of the right clicked item - set in Links.PopupMenu calls.
         """
-        # TODO(ut): 'data' -> 'selected' and mixin the Tank specific "data"
-        # TODO(ut): document attributes... window type
+        # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
-        if isinstance(window,Tank):
+        self.selected = data
+        if isinstance(window,Tank): # TODO(ut): eliminate this
             self.gTank = window
-            self.selected = window.GetSelected()
-            self.data = window.data #installers: same instance of InstallerData
-        else:
-          # modlist: a list<Path> - subpackage: index of the right clicked item
-            self.data = data
+            self.data = window.data # still used in places, should go for good
 
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
@@ -2319,11 +2316,12 @@ class EnabledLink(_Link):
         return menuItem
 
 class OneItemLink(EnabledLink):
-    """Link enabled only when there is one and only one selected item."""
+    """Link enabled only when there is one and only one selected item.
+
+    To be used in Link subclasses where self.selected is a list instance.
+    """
     # TODO(ut): edit help to add _(u'. Select one item only')
-    def _enable(self):
-        if hasattr(self, 'selected'): return len(self.selected) == 1
-        return len(self.data) == 1
+    def _enable(self): return len(self.selected) == 1
 
 class CheckLink(_Link):
     kind = wx.ITEM_CHECK
