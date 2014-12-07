@@ -26,7 +26,7 @@ import sys
 import wx # FIXME(ut): wx
 from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
-    staticText, tooltip, Link
+    staticText, tooltip, Link, staticBitmap
 from .. import barb, bosh, bush, balt, bass, bolt
 from ..bolt import StateError, deprint, GPath
 from . import BashFrame, ColorDialog, BashStatusBar
@@ -53,7 +53,7 @@ class Settings_BackupSettings(_Link):
         try:
             if PromptConfirm():
                 dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
-                icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+                icon = staticBitmap(dialog)
                 sizer = vSizer(
                     (hSizer(
                         (icon,0,wx.ALL,6),

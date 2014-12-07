@@ -405,6 +405,18 @@ def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
 
+def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
+    """Tailored to current usages - IAW: do not use."""
+    if bitmap is None:
+        bmp = wx.ArtProvider_GetBitmap
+        if special == 'warn':
+            bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
+        elif special == 'undo':
+            return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
+        else: raise ArgumentError(u'special must be either warn or undo: ' +
+                                  unicode(special, "utf-8") + u' given')
+    return wx.StaticBitmap(parent, defId, bitmap)
+
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
 
@@ -469,8 +481,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
         result = result[0]
     else:
         dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        icon = staticBitmap(dialog)
         gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
         #--Layout
         sizer = vSizer(
@@ -518,8 +529,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         result = result[0]
     else:
         dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+        icon = staticBitmap(dialog)
         gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
         #--Layout
         buttonSizer = hSizer(spacer)

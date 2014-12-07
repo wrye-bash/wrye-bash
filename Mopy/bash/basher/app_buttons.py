@@ -28,7 +28,7 @@ import wx # FIXME: wx
 from . import DocBrowser, ModChecker, BashStatusBar
 from .. import bosh, bolt, balt, bush
 from ..balt import _Link, Link, Links, bitmapButton, Image, images, \
-    SeparatorLink, tooltip, BoolLink
+    SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 
 # TODO(ut): GetBitmapButton factor out duplicate code (and wx dependencies, duh)
@@ -722,10 +722,9 @@ class App_Restart(StatusBar_Button):
     def GetBitmapButton(self,window,style=0):
         if not self.id: self.id = wx.NewId()
         if self.gButton is not None: self.gButton.Destroy()
+        size = bosh.settings['bash.statusbar.iconSize']
         self.gButton = bitmapButton(window,
-            wx.ArtProvider.GetBitmap(wx.ART_UNDO,wx.ART_TOOLBAR,
-                (bosh.settings['bash.statusbar.iconSize'],
-                 bosh.settings['bash.statusbar.iconSize'])),
+            staticBitmap(window, special='undo', size=(size,size)),
             style=style,
             tip=_(u'Restart'),
             onClick = self.Execute,

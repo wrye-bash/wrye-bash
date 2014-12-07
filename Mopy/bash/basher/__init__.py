@@ -65,7 +65,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, copyListToClipboard, roTextCtrl
+    Link, ChoiceLink, copyListToClipboard, roTextCtrl, staticBitmap
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
@@ -2911,7 +2911,7 @@ class InstallersList(balt.Tank):
             message += _(u'What would you like to do with them?')
 
             dialog= balt.Dialog(self,_(u'Move or Copy?'),size=(400,200))
-            icon = wx.StaticBitmap(dialog,wx.ID_ANY,wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
+            icon = staticBitmap(dialog)
             gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
 
             sizer = vSizer(

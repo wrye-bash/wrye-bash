@@ -549,7 +549,7 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(linkGame)
         sizerVersions.Add(balt.staticText(gameNeed))
         sizerVersions.Add(balt.staticText(gameHave))
-        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGameOk]))
+        sizerVersions.Add(balt.staticBitmap(self, bmp[bGameOk]))
 
         # Script Extender
         if bush.game.se.shortName != u'':
@@ -559,7 +559,7 @@ class PageVersions(PageInstaller):
             sizerVersions.Add(linkSE)
             sizerVersions.Add(balt.staticText(seNeed))
             sizerVersions.Add(balt.staticText(seHave))
-            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bSEOk]))
+            sizerVersions.Add(balt.staticBitmap(self, bmp[bSEOk]))
 
         # Graphics extender
         if bush.game.ge.shortName != u'':
@@ -569,7 +569,7 @@ class PageVersions(PageInstaller):
             sizerVersions.Add(linkGE)
             sizerVersions.Add(balt.staticText(geNeed))
             sizerVersions.Add(balt.staticText(geHave))
-            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGEOk]))
+            sizerVersions.Add(balt.staticBitmap(self, bmp[bGEOk]))
 
         linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
@@ -577,7 +577,7 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(linkWB)
         sizerVersions.Add(balt.staticText(wbNeed))
         sizerVersions.Add(balt.staticText(wbHave))
-        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bWBOk]))
+        sizerVersions.Add(balt.staticBitmap(self, bmp[bWBOk]))
 
         sizerVersions.AddGrowableCol(0)
         sizerVersions.AddGrowableCol(1)
