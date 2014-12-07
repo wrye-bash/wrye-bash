@@ -24,14 +24,13 @@
 import os
 import subprocess
 import webbrowser
-import wx # FIXME: wx
 from . import DocBrowser, ModChecker, BashStatusBar
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 
-# TODO(ut): GetBitmapButton factor out duplicate code (and wx dependencies, duh)
+# TODO(ut): GetBitmapButton factor out duplicate code
 
 docBrowser = None
 modList = None
@@ -664,7 +663,6 @@ class AutoQuit_Button(StatusBar_Button):
 class App_Help(StatusBar_Button):
     """Show help browser."""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         self.createButton(
             window,
             images[u'help.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap(),
@@ -684,7 +682,6 @@ class App_Help(StatusBar_Button):
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         self.createButton(
             window,
             images[u'doc.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap(),
@@ -704,7 +701,6 @@ class App_DocBrowser(StatusBar_Button):
 class App_Settings(StatusBar_Button):
     """Show color configuration dialog."""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         self.createButton(
             window,
             Image(GPath(bosh.dirs['images'].join(u'settingsbutton%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
@@ -720,7 +716,6 @@ class App_Settings(StatusBar_Button):
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         if self.gButton is not None: self.gButton.Destroy()
         size = bosh.settings['bash.statusbar.iconSize']
         self.gButton = bitmapButton(window,
@@ -738,7 +733,6 @@ class App_Restart(StatusBar_Button):
 class App_GenPickle(StatusBar_Button):
     """Generate PKL File. Ported out of bish.py which wasn't working."""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         return self.createButton(
             window,
             Image(GPath(bosh.dirs['images'].join(u'pickle%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
@@ -795,7 +789,6 @@ class App_GenPickle(StatusBar_Button):
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     def GetBitmapButton(self,window,style=0):
-        if not self.id: self.id = wx.NewId()
         return self.createButton(
             window,
             Image(GPath(bosh.dirs['images'].join(u'ModChecker%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
