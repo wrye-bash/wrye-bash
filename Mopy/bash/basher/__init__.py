@@ -69,7 +69,7 @@ from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
 from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
-from ..balt import Links, ListCtrl, _Link
+from ..balt import Links, ListCtrl, ItemLink
 from ..balt import wxListAligns, splitterStyle
 
 # Constants --------------------------------------------------------------------
@@ -136,13 +136,13 @@ def SetUAC(item):
             balt.setUAC(item,isUAC)
 
 # Tank link mixins to access the Tank data - not final
-class Installers_Link(_Link):
+class Installers_Link(ItemLink):
     """InstallersData mixin"""
 
     @property
     def idata(self): return gInstallers.data # InstallersData singleton
 
-class People_Link(_Link):
+class People_Link(ItemLink):
     """PeopleData mixin"""
 
     @property
@@ -2560,7 +2560,9 @@ class SaveDetails(SashPanel):
     def OnInfoEdit(self,event):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.IsModified():
-            bosh.saveInfos.table.setItem(self.saveInfo.name,'info',self.gInfo.GetValue())
+            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info',
+                                         self.gInfo.GetValue())
+        event.Skip() # not strictly needed - no other handler for onKillFocus
 
     def OnTextEdit(self,event):
         """Event: Editing file or save name text."""
@@ -4043,6 +4045,7 @@ class BSADetails(wx.Window):
         """Info field was edited."""
         if self.BSAInfo and self.gInfo.IsModified():
             bosh.BSAInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
+        event.Skip()
 
     def OnTextEdit(self,event):
         """Event: Editing file or save name text."""
@@ -5218,7 +5221,7 @@ class BashFrame(wx.Frame):
                     path.remove()
 
 #------------------------------------------------------------------------------
-class CheckList_SelectAll(_Link):
+class CheckList_SelectAll(ItemLink):
     def __init__(self,select=True):
         super(CheckList_SelectAll, self).__init__()
         self.select = select
@@ -6212,7 +6215,7 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
         bitmap = (itemImagePath.exists() and
-                  Image(itemImagePath.s, type=JPEG).GetBitmap()) or None
+                  Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
         self.picture.SetBitmap(bitmap)
 
     def DoImport(self,event):
@@ -6575,6 +6578,7 @@ class CreateNewProject(balt.Dialog):
             self.textName.SetBackgroundColour('#FFFFFF')
             self.textName.SetToolTip(None)
         self.textName.Refresh()
+        event.Skip()
 
     def OnCheckBoxChange(self, event):
         """ Change the Dialog Icon to represent what the project status will
@@ -6650,7 +6654,8 @@ def InitSettings(): # this must run first !
     balt._settings = bosh.settings
     balt.sizes = bosh.settings.getChanged('bash.window.sizes',{})
     settings = bosh.settings
-    settings.loadDefaults(settingDefaults) # TODO(ut) this is called in bosh.initSettings() also !
+    settings.loadDefaults(settingDefaults) # called in bosh.initSettings() also
+    # with bosh.settingDefaults passed in - TODO(ut) unify
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')

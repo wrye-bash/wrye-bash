@@ -1896,7 +1896,7 @@ class CoSaves:
         """Deletes cofiles."""
         for path in self.paths:
             if path.exists():
-                balt.shellDelete(path,askOk=askOk,recycle=not dontRecycle)
+                balt.shellDelete(path, askOk_=askOk,recycle=not dontRecycle)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -4168,7 +4168,7 @@ class FileInfos(DataDict):
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
         try:
-            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             #--Table
             for filePath in toDelete:
@@ -6226,7 +6226,7 @@ class ScreensData(DataDict):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath,askOk=askOk,recycle=not dontRecycle)
+        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=not dontRecycle)
         if deleted is not None:
             for file in filePath:
                 del self.data[file.tail]
@@ -8252,7 +8252,7 @@ class InstallersData(bolt.TankData, DataDict):
         if item == self.lastKey: return
         installer = self.data[item]
         apath = self.dir.join(item)
-        balt.shellDelete(apath,askOk=False)
+        balt.shellDelete(apath, askOk_=False)
         del self.data[item]
 
     def delete(self,items,askOk=False,dontRecycle=False):
@@ -8266,7 +8266,7 @@ class InstallersData(bolt.TankData, DataDict):
             toDeleteAppend(dirJoin(item))
         #--Delete
         try:
-            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             for item in toDelete:
                 if not item.exists():

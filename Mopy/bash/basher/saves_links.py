@@ -28,7 +28,7 @@ import struct
 from . import ImportFaceDialog, JPEG, Resources
 from .. import bosh, bolt, balt, bush
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    _Link, SeparatorLink, OneItemLink, Image
+    ItemLink, SeparatorLink, OneItemLink, Image
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError
 from ..bosh import formatInteger
 
@@ -160,7 +160,7 @@ class Saves_Profiles(ChoiceLink):
     def _initData(self, window, data):
         super(Saves_Profiles, self)._initData(window, data)
         Saves_Profiles.local = bosh.saveInfos.localSave
-        self.extraItems =[_Link(self.idList.EDIT, _(u"Edit Profiles...")),
+        self.extraItems =[ItemLink(self.idList.EDIT, _(u"Edit Profiles...")),
                           SeparatorLink()
         ]
         class _Default(CheckLink):

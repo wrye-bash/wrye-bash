@@ -27,7 +27,7 @@ import webbrowser
 import wx # FIXME: wx
 from . import DocBrowser, ModChecker, BashStatusBar
 from .. import bosh, bolt, balt, bush
-from ..balt import _Link, Link, Links, bitmapButton, Image, images, \
+from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 
@@ -40,7 +40,7 @@ modChecker = None
 #------------------------------------------------------------------------------
 #  StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
-class StatusBar_Hide(_Link):
+class StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, data):
         super(StatusBar_Hide, self)._initData(window, data)
@@ -53,7 +53,7 @@ class StatusBar_Hide(_Link):
         sb = Link.Frame.GetStatusBar()
         sb.HideButton(self.window)
 
-class StatusBar_Button(_Link):
+class StatusBar_Button(ItemLink):
     """Launch an application."""
     def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons

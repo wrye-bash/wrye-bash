@@ -24,7 +24,7 @@
 import locale
 import sys
 import wx # FIXME(ut): wx
-from ..balt import _Link, vSizer, hSizer, spacer, button, AppendableLink, \
+from ..balt import ItemLink, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     staticText, tooltip, Link, staticBitmap
 from .. import barb, bosh, bush, balt, bass, bolt
@@ -35,7 +35,7 @@ from .app_buttons import App_Button # TODO(ut): ugly
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Settings_BackupSettings(_Link):
+class Settings_BackupSettings(ItemLink):
     """Saves Bash's settings and user data.."""
     text =_(u'Backup Settings...')
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
@@ -77,7 +77,7 @@ class Settings_BackupSettings(_Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_RestoreSettings(_Link):
+class Settings_RestoreSettings(ItemLink):
     """Saves Bash's settings and user data.."""
     text = _(u'Restore Settings...')
     help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
@@ -97,7 +97,7 @@ class Settings_RestoreSettings(_Link):
         backup = None
 
 #------------------------------------------------------------------------------
-class Settings_SaveSettings(_Link):
+class Settings_SaveSettings(ItemLink):
     """Saves Bash's settings and user data."""
     text = _(u'Save Settings')
     help = _(u"Save all of Wrye Bash's settings/data now.")
@@ -106,7 +106,7 @@ class Settings_SaveSettings(_Link):
         BashFrame.SaveSettings(Link.Frame)
 
 #------------------------------------------------------------------------------
-class Settings_ExportDllInfo(AppendableLink, _Link):
+class Settings_ExportDllInfo(AppendableLink, ItemLink):
     """Exports list of good and bad dll's."""
     text = _(
         u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
@@ -141,7 +141,7 @@ class Settings_ExportDllInfo(AppendableLink, _Link):
             else: out.write(u'None\r\n')
 
 #------------------------------------------------------------------------------
-class Settings_ImportDllInfo(AppendableLink, _Link):
+class Settings_ImportDllInfo(AppendableLink, ItemLink):
     """Imports list of good and bad dll's."""
     text = _(
         u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
@@ -194,7 +194,7 @@ class Settings_ImportDllInfo(AppendableLink, _Link):
             balt.showError(self.window,_(u'Wrye Bash could not load %s, because there was an error in the format of the file.') % textPath.s)
 
 #------------------------------------------------------------------------------
-class Settings_Colors(_Link):
+class Settings_Colors(ItemLink):
     """Shows the color configuration dialog."""
     text = _(u'Colors...')
     help = _(u"Configure the custom colors used in the UI.")
@@ -380,7 +380,7 @@ class Settings_UnHideButtons(TransLink):
             return _NoButtons()
 
 #------------------------------------------------------------------------------
-class Settings_UnHideButton(_Link):
+class Settings_UnHideButton(ItemLink):
     """Unhide a specific StatusBar button."""
     def __init__(self,link):
         super(Settings_UnHideButton, self).__init__()
@@ -414,7 +414,7 @@ class Settings_UseAltName(BoolLink):
         Link.Frame.SetTitle()
 
 #------------------------------------------------------------------------------
-class Settings_UAC(AppendableLink, _Link):
+class Settings_UAC(AppendableLink, ItemLink):
     text = _(u'Administrator Mode')
     help = _(u'Restart Wrye Bash with administrator privileges.')
 
@@ -441,7 +441,7 @@ class Settings_Deprint(CheckLink):
         bolt.deprintOn = not bolt.deprintOn
         deprint(_(u'Debug Printing: On'))
 
-class Settings_DumpTranslator(AppendableLink, _Link):
+class Settings_DumpTranslator(AppendableLink, ItemLink):
     """Dumps new translation key file using existing key, value pairs."""
     text = _(u'Dump Translator')
     help = _(u"Generate a new version of the translator file for your locale.")

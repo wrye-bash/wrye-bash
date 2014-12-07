@@ -24,7 +24,7 @@
 from . import Mod_BaloGroups_Edit, ListBoxes, Resources
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
-from ..balt import _Link, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
+from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
     Link
 from ..bolt import GPath
 
@@ -82,9 +82,9 @@ class Mods_LoadList(ChoiceLink):
         class _SaveLink(EnabledLink):
             id, text = self.idList.SAVE, _(u'Save List...') # notice self
             def _enable(self): return bool(bosh.modInfos.ordered)
-        self.extraItems = [_Link(self.idList.ALL, _(u'All')),
-                           _Link(self.idList.NONE, _(u'None')), _SaveLink(),
-                           _Link(self.idList.EDIT, _(u'Edit Lists...')),
+        self.extraItems = [ItemLink(self.idList.ALL, _(u'All')),
+                           ItemLink(self.idList.NONE, _(u'None')), _SaveLink(),
+                           ItemLink(self.idList.EDIT, _(u'Edit Lists...')),
                            SeparatorLink()]
         self.extraActions = {self.idList.ALL: self.DoAll,
                              self.idList.NONE: self.DoNone,
@@ -215,7 +215,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         Link.Frame.SetTitle()
 
 # "File" submenu --------------------------------------------------------------
-class Mods_CreateBlankBashedPatch(_Link):
+class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
     text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
@@ -224,7 +224,7 @@ class Mods_CreateBlankBashedPatch(_Link):
         if newPatchName is not None:
             self.window.RefreshUI(detail=newPatchName)
 
-class Mods_CreateBlank(_Link):
+class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
     text, help = _(u'New Mod...'), _(u'Create a new blank mod')
 
@@ -251,7 +251,7 @@ class Mods_CreateBlank(_Link):
         self.window.RefreshUI(detail=newName)
 
 #------------------------------------------------------------------------------
-class Mods_ListMods(_Link):
+class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
     text = _(u"List Mods...")
     help = _(u"Copies list of active mod files to clipboard.")
@@ -263,7 +263,7 @@ class Mods_ListMods(_Link):
         balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class Mods_ListBashTags(_Link):
+class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
     text = _(u"List Bash Tags...")
     help = _(u"Copies list of bash tags to clipboard.")

@@ -34,8 +34,6 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedErr
 import cPickle
 import StringIO
 import string
-import struct
-import sys
 import os
 import textwrap
 import time
@@ -46,7 +44,7 @@ import wx.lib.newevent
 
 # Basics ---------------------------------------------------------------------
 class IdList:
-    """Provides sequences of semi-unique ids. Useful for choice menus.
+    """DEPRECATED: Provides sequences of semi-unique ids. Useful for choice menus.
 
     Sequence ids come in range from baseId up through (baseId + size - 1).
     Named ids will be assigned ids starting at baseId + size.
@@ -68,8 +66,7 @@ class IdList:
 
     def __iter__(self):
         """Return iterator."""
-        for id in xrange(self.BASE,self.MAX+1):
-            yield id
+        for id_ in xrange(self.BASE,self.MAX+1): yield id_
 
 # Constants -------------------------------------------------------------------
 defId = wx.ID_ANY
@@ -91,7 +88,7 @@ def fonts():
     except: #OLD wxpython!
         font_bold.SetWeight(wx.BOLD)
         font_italic.SetStyle(wx.SLANT)
-    return (font_default, font_bold, font_italic)
+    return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
@@ -154,9 +151,9 @@ class Image:
                  'tif': wx.BITMAP_TYPE_TIF,
                 }
 
-    def __init__(self,file,type=wx.BITMAP_TYPE_ANY,iconSize=16):
-        self.file = GPath(file)
-        self.type = type
+    def __init__(self, filename, imageType=wx.BITMAP_TYPE_ANY, iconSize=16):
+        self.file = GPath(filename)
+        self.type = imageType
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -298,14 +295,14 @@ class textCtrl(wx.TextCtrl):
 
     def __init__(self, parent, value=u'', size=defSize, style=0,
                  multiline=False, autotooltip=True, onKillFocus=None,
-                 onText=None):
+                 onText=None): # event handlers must call event.Skip()
         if multiline: style |= wx.TE_MULTILINE # TODO(ut): would it harm to have them all multiline ?
         wx.TextCtrl.__init__(self,parent,defId,value,size=size,style=style)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
         if onKillFocus: self.Bind(wx.EVT_KILL_FOCUS, onKillFocus)
-        if onText: self.Bind(wx.EVT_TEXT, onText) # FIXME(ut): see above binding
+        if onText: self.Bind(wx.EVT_TEXT, onText)
 
     def UpdateToolTip(self, text):
         if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
@@ -424,9 +421,9 @@ def aSizer(sizer,*elements):
     """Adds elements to a sizer."""
     for element in elements:
         if isinstance(element,tuple):
-            if element[0] != None:
+            if element[0] is not None:
                 sizer.Add(*element)
-        elif element != None:
+        elif element is not None:
             sizer.Add(element)
     return sizer
 
@@ -473,7 +470,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
                              buttons=[(wx.ID_OK,'ok'),
                                       (wx.ID_CANCEL,'cancel'),
                                       ],
-                             checkBox=_(u"Don't show this in the future."),
+                             checkBox_=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
                              )
@@ -521,7 +518,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
                              title=title,
                              message=message,
                              buttons=buttons,
-                             checkBox=_(u"Don't show this for the rest of operation."),
+                             checkBox_=_(u"Don't show this for the rest of operation."),
                              icon='warning',
                              heading=u'',
                              )
@@ -631,14 +628,14 @@ def getUACIcon(size='small'):
     path,idex = windows.GetStockIconLocation(windows.SIID_SHIELD,flag)
     return path+u';%s' % idex
 
-def setUAC(button,uac=True):
-    windows.setUAC(button.GetHandle(),uac)
+def setUAC(button_,uac=True):
+    windows.setUAC(button_.GetHandle(),uac)
 
 def _vistaDialog_Hyperlink(*args):
     file = args[1]
     windows.StartURL(file)
 
-def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+def vistaDialog(parent,message,title,buttons=[],checkBox_=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
     dialog = windows.TaskDialog(title,heading,message,
@@ -650,20 +647,20 @@ def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandL
         dialog.set_footer(footer)
     if expander:
         dialog.set_expander(expander,False,not footer)
-    if checkBox:
-        if isinstance(checkBox,basestring):
-            dialog.set_check_box(checkBox,False)
+    if checkBox_:
+        if isinstance(checkBox_,basestring):
+            dialog.set_check_box(checkBox_,False)
         else:
-            dialog.set_check_box(checkBox[0],checkBox[1])
+            dialog.set_check_box(checkBox_[0],checkBox_[1])
     result = dialog.show(commandLinks)
     for id,title in buttons:
         if title.startswith(u'+'): title = title[1:]
         if title == result[0]:
-            if checkBox:
-                return (id,result[2])
+            if checkBox_:
+                return id,result[2]
             else:
                 return id
-    return (None,result[2])
+    return None,result[2]
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
@@ -858,7 +855,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     window.SetSizeHints(200,200)
     window.Bind(wx.EVT_CLOSE,showLogClose)
     #--Text
-    textCtrl = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+    textCtrl_ = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
     if not isinstance(logText,bolt.Path):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
@@ -867,12 +864,12 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
             bolt.WryeText.genHtml(ins,out,cssDir)
         ins.close()
         logText = logPath
-    textCtrl.Navigate(logText.s,0x2) #--0x2: Clear History
+    textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoBack())
+    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoForward())
+    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
     gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
     gOkButton.SetDefault()
     if not asDialog:
@@ -880,7 +877,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     #--Layout
     window.SetSizer(
         vSizer(
-            (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+            (textCtrl_,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
             (hSizer(
                 gBackButton,
                 gForwardButton,
@@ -997,7 +994,7 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
 
         # Delete
         if operation == FO_DELETE:
-            # allowUndo - no effect, can't use recyle bin this way
+            # allowUndo - no effect, can't use recycle bin this way
             # noConfirm - ask if noConfirm is False
             # renameOnCollision - no effect, deleting files
             # silent - no real effect, since we don't show visuals when deleting this way
@@ -1031,11 +1028,11 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             if collisions:
                 pass
 
-def shellDelete(files,parent=None,askOk=True,recycle=True):
+def shellDelete(files, parent=None, askOk_=True, recycle=True):
     try:
-        return fileOperation(FO_DELETE,files,None,recycle,not askOk,True,False,parent)
+        return fileOperation(FO_DELETE,files,None,recycle,not askOk_,True,False,parent)
     except CancelError:
-        if askOk:
+        if askOk_:
             return None
         raise
 
@@ -1774,7 +1771,7 @@ class Tank(wx.Panel):
             dndList=False,dndFiles=False,dndColumns=[]):
         wx.Panel.__init__(self,parent,id,style=wx.WANTS_CHARS)
         #--Data
-        if icons == None: icons = {}
+        if icons is None: icons = {}
         self.data = data
         self.icons = icons #--Default to balt image collection.
         self.mainMenu = mainMenu or self.__class__.mainMenu
@@ -2058,7 +2055,7 @@ class Tank(wx.Panel):
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
                 self.MouseOverItem(mouseItem)
-        elif event.Leaving() and self.mouseItem != None:
+        elif event.Leaving() and self.mouseItem is not None:
             self.mouseItem = None
             self.MouseOverItem(None)
         event.Skip()
@@ -2241,11 +2238,11 @@ class Link(object):
         if not self.id: self.id = wx.NewId() # notice id remains the same - __init___ runs ONCE
 
 # Link subclasses -------------------------------------------------------------
-class _Link(Link): # TODO(ut): rename to ItemLink
-    """TMP class to factor out duplicate code and wx dependencies.
+class ItemLink(Link):
+    """Create and append a wx menu item.
 
     Subclasses MUST define text (preferably class) attribute and should
-    override help.
+    override help. Registers the Execute() and ShowHelp methods on menu events.
     """
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
     help = None
@@ -2253,9 +2250,9 @@ class _Link(Link): # TODO(ut): rename to ItemLink
     def AppendToMenu(self,menu,window,data):
         """Append self as menu item and set callbacks to be executed when
         selected."""
-        super(_Link, self).AppendToMenu(menu, window, data)
+        super(ItemLink, self).AppendToMenu(menu, window, data)
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
-        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,_Link.ShowHelp)
+        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
         menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
@@ -2312,7 +2309,7 @@ class ChoiceLink(Link):
     idList = IdList(0, 0, 'OVERRIDE')
     extraItems = [] # list<Link> that correspond to named idList attributes
     extraActions = {} # callback actions for extraItems indexed by item.id
-    cls = _Link
+    cls = ItemLink
 
     def _range(self):
         for id_, item in zip(self.idList, self.items):
@@ -2330,7 +2327,7 @@ class ChoiceLink(Link):
         for link in self._range():
             link.AppendToMenu(menu, window, data)
         #--Events
-        wx.EVT_MENU_RANGE(_Link.Frame, self.idList.BASE, self.idList.MAX,
+        wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
                           self.DoList)
         for id_, action in self.extraActions.items():
             wx.EVT_MENU(Link.Frame, id_, action)
@@ -2373,7 +2370,7 @@ class AppendableLink(Link):
         return super(AppendableLink, self).AppendToMenu(menu, window, data)
 
 # _Link subclasses ------------------------------------------------------------
-class EnabledLink(_Link):
+class EnabledLink(ItemLink):
     """A menu item that may be disabled.
 
     The item is by default enabled. Override _enable() to disable\enable
@@ -2399,7 +2396,7 @@ class OneItemLink(EnabledLink):
     # TODO(ut): edit help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
-class CheckLink(_Link):
+class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK
 
     def _check(self): raise AbstractError
@@ -2429,7 +2426,7 @@ class BoolLink(CheckLink):
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Tanks_Open(_Link):
+class Tanks_Open(ItemLink):
     """Opens data directory in explorer."""
     text = _(u'Open...')
 
@@ -2439,13 +2436,13 @@ class Tanks_Open(_Link):
 
     def Execute(self,event):
         """Handle selection."""
-        dir = self.data.dir
-        dir.makedirs()
-        dir.start()
+        dir_ = self.data.dir
+        dir_.makedirs()
+        dir_.start()
 
 # Tank Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Tank_Delete(_Link): # was used in BAIN would not refresh - used in People
+class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in People
     """Deletes selected file from tank."""
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')

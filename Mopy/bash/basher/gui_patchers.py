@@ -27,7 +27,6 @@ from .. import bosh, bush, balt
 from ..balt import fill, staticText, vSizer, checkBox, button, hsbSizer, Links, \
     SeparatorLink, CheckLink, Link
 from ..bolt import GPath
-from ..patcher.patchers import base
 
 class Patcher:
     """Basic patcher panel with no options."""
@@ -112,9 +111,6 @@ class _AliasesPatcher(Patcher):
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
-
-class AliasesPatcher(_AliasesPatcher, base.AliasesPatcher): pass
-class CBash_AliasesPatcher(_AliasesPatcher, base.CBash_AliasesPatcher): pass
 
 #------------------------------------------------------------------------------
 class ListPatcher(Patcher):
@@ -609,19 +605,22 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         return gConfigPanel
 
 #------------------------------------------------------------------------------
-# Mixin patcher classes with Patcher gui classes
+# GUI Patcher classes - mixins of patchers and the GUI patchers defined above -
+#------------------------------------------------------------------------------
+# TODO(ut): dynamically create those (game independent ?) UI patchers based on
+# dictionaries in bash.patcher.__init__.py (see the game specific creation
+# below)
+from ..patcher.patchers import base
 from ..patcher.patchers import importers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
     races_multitweaks
 from ..patcher.patchers import special
 
-# TODO: dynamically create those (game independent ?) UI patchers based on
-# dictionaries in bash.patcher.__init__.py (see the game specific creation
-# below)
-#------------------------------------------------------------------------------
 # Patchers 10 -----------------------------------------------------------------
-#------------------------------------------------------------------------------
+class AliasesPatcher(_AliasesPatcher, base.AliasesPatcher): pass
+class CBash_AliasesPatcher(_AliasesPatcher, base.CBash_AliasesPatcher): pass
+
 class PatchMerger(base.PatchMerger,ListPatcher):
     listLabel = _(u'Mergeable Mods')
 class CBash_PatchMerger(base.CBash_PatchMerger,ListPatcher):
@@ -717,6 +716,9 @@ class CBash_ListsMerger(special.CBash_ListsMerger,ListPatcher):
 class ContentsChecker(special.ContentsChecker,Patcher): pass
 class CBash_ContentsChecker(special.CBash_ContentsChecker,Patcher): pass
 
+#------------------------------------------------------------------------------
+# Game specific GUI Patchers --------------------------------------------------
+#------------------------------------------------------------------------------
 from .patcher_dialog import PatchDialog, otherPatcherDict
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope

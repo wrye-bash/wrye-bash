@@ -23,7 +23,7 @@
 # =============================================================================
 import re
 import time
-from ..balt import EnabledLink, AppendableLink, _Link, Link, RadioLink, \
+from ..balt import EnabledLink, AppendableLink, ItemLink, Link, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image
 from .. import balt, bosh, bush
 from .import People_Link
@@ -32,7 +32,7 @@ from ..bolt import GPath, LString
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Screens_NextScreenShot(_Link):
+class Screens_NextScreenShot(ItemLink):
     """Sets screenshot base name and number."""
     text = _(u'Next Shot...')
     help = _(u'Set screenshot base name and number')
@@ -149,7 +149,7 @@ class Screen_Rename(EnabledLink):
 
 # Messages Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Messages_Archive_Import(_Link):
+class Messages_Archive_Import(ItemLink):
     """Import messages from html message archive."""
     text = _(u'Import Archives...')
     help = _(u'Import messages from html message archive')
@@ -166,7 +166,7 @@ class Messages_Archive_Import(_Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Message_Delete(_Link):
+class Message_Delete(ItemLink):
     """Delete the file and all backups."""
     text = _(u'Delete')
     help = _(u'Permanently delete messages')

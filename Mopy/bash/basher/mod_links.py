@@ -26,7 +26,7 @@ import copy
 import os
 import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
-from ..balt import _Link, Link, textCtrl, toggleButton, vSizer, staticText, \
+from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
@@ -192,9 +192,9 @@ class _Mod_Labels(ChoiceLink):
     def __init__(self):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
-        self.extraItems = [_Link(self.idList.EDIT, self.editMenuText),
+        self.extraItems = [ItemLink(self.idList.EDIT, self.editMenuText),
                            SeparatorLink(),
-                           _Link(self.idList.NONE, _(u'None')), ]
+                           ItemLink(self.idList.NONE, _(u'None')), ]
         self.extraActions = {self.idList.EDIT: self.DoEdit,
                              self.idList.NONE: self.DoNone, }
 
@@ -246,9 +246,9 @@ class _Mod_Groups_Export(EnabledLink):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,self.__class__.askTitle,textDir,textName,u'*' + self.__class__.csvFile)
+        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
+                                textName, u'*' + self.__class__.csvFile)
         if not textPath: return
-        (textDir,textName) = textPath.headTail
         #--Export
         modGroups = bosh.ModGroups()
         modGroups.readFromModInfos(self.selected)
@@ -320,7 +320,7 @@ class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
         super(Mod_BaloGroups, self).__init__()
         self.id_group = {}
         self.idList = ID_GROUPS
-        self.extraItems = [_Link(self.idList.EDIT, _(u'Edit...')), ]
+        self.extraItems = [ItemLink(self.idList.EDIT, _(u'Edit...')), ]
         self.extraActions = {self.idList.EDIT: self.DoEdit, }
 
     def _append(self, window): return bool(bosh.settings.get('bash.balo.full'))
@@ -424,7 +424,7 @@ class Mod_ShowReadme(OneItemLink):
         docBrowser.SetMod(fileInfo.name)
         docBrowser.Raise()
 
-class Mod_ListBashTags(_Link):
+class Mod_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
     text = _(u"List Bash Tags...")
     help = _(u'Copies list of bash tags to clipboard')
@@ -437,6 +437,22 @@ class Mod_ListBashTags(_Link):
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+
+def _getUrl(fileName, installer, text):
+    """"Try to get the url of the file (order of priority will be: TESNexus,
+    TESAlliance)."""
+    url = None
+    ma = bosh.reTesNexus.search(installer)
+    if ma and ma.group(2):
+        url = bush.game.nexusUrl + u'downloads/file.php?id=' + ma.group(2)
+    if not url:
+        ma = bosh.reTESA.search(installer)
+        if ma and ma.group(2):
+            url = u'http://tesalliance.org/forums/index.php?app' \
+                  u'=downloads&showfile=' + ma.group(2)
+    if url: text += u'[url=' + url + u']' + fileName.s + u'[/url]'
+    else: text += fileName.s
+    return text
 
 class Mod_CreateBOSSReport(EnabledLink):
     """Copies appropriate information for making a report in the BOSS thread."""
@@ -466,25 +482,8 @@ class Mod_CreateBOSSReport(EnabledLink):
             fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            if not installer:
-                text += fileName.s
-            else:
-                # Try to get the url of the file
-                # Order of priority will be:
-                #  TESNexus
-                #  TESAlliance
-                url = None
-                ma = bosh.reTesNexus.search(installer)
-                if ma and ma.group(2):
-                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
-                if not url:
-                    ma = bosh.reTESA.search(installer)
-                    if ma and ma.group(2):
-                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
-                if url:
-                    text += u'[url='+url+u']'+fileName.s+u'[/url]'
-                else:
-                    text += fileName.s
+            if not installer: text += fileName.s
+            else: text = _getUrl(fileName, installer, text)
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
@@ -506,7 +505,7 @@ class Mod_CreateBOSSReport(EnabledLink):
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
-class Mod_CopyModInfo(_Link):
+class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
     text = _(u'Copy Mod Info...')
     help = _(u'Copies the basic info about selected mod(s)')
@@ -527,25 +526,8 @@ class Mod_CopyModInfo(_Link):
             fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            if not installer:
-                text += fileName.s
-            else:
-                # Try to get the url of the file
-                # Order of priority will be:
-                #  TESNexus
-                #  TESAlliance
-                url = None
-                ma = bosh.reTesNexus.search(installer)
-                if ma and ma.group(2):
-                    url = bush.game.nexusUrl+u'downloads/file.php?id='+ma.group(2)
-                if not url:
-                    ma = bosh.reTESA.search(installer)
-                    if ma and ma.group(2):
-                        url = u'http://tesalliance.org/forums/index.php?app=downloads&showfile='+ma.group(2)
-                if url:
-                    text += u'[url=%s]%s[/url]' % (url, fileName.s)
-                else:
-                    text += fileName.s
+            if not installer: text += fileName.s
+            else: text = _getUrl(fileName, installer, text)
             for col in bosh.settings['bash.mods.cols']:
                 if col == 'File': continue
                 elif col == 'Rating':
@@ -583,7 +565,7 @@ class Mod_CopyModInfo(_Link):
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Mod_AllowGhosting_All(_Link):
+class _Mod_AllowGhosting_All(ItemLink):
     text, help = _(u"Allow Ghosting"), u'Allow Ghosting for selected mods'
 
     def Execute(self,event):
@@ -599,7 +581,7 @@ class _Mod_AllowGhosting_All(_Link):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class _Mod_DisallowGhosting_All(_Link):
+class _Mod_DisallowGhosting_All(ItemLink):
     text = _(u'Disallow Ghosting')
     help = _(u'Disallow Ghosting for selected mods')
 
@@ -619,7 +601,7 @@ class _Mod_DisallowGhosting_All(_Link):
 class Mod_Ghost(EnabledLink):
 # TODO(ut) unghost all ?
     def _initData(self, window, data):
-        _Link._initData(self, window, data)
+        ItemLink._initData(self, window, data)
         if len(data) == 1:
             self.help = _(u"Ghost/Unghost selected mod.  Active mods can't be ghosted")
             self.path = data[0]
@@ -656,7 +638,7 @@ class Mod_Ghost(EnabledLink):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class _Mod_AllowGhostingInvert_All(_Link):
+class _Mod_AllowGhostingInvert_All(ItemLink):
     text = _(u'Invert Ghosting')
     help = _(u'Invert Ghosting for selected mods')
 
@@ -1082,7 +1064,7 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
         self.window.RefreshUI(self.selected)
 
-class _Mod_SkipDirtyCheckInvert(_Link):
+class _Mod_SkipDirtyCheckInvert(ItemLink):
     text = _(u"Invert checking against LOOT's dirty mod list")
     help = _(
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
@@ -1123,7 +1105,7 @@ class Mod_SkipDirtyCheck(TransLink):
             return subMenu
 
 #------------------------------------------------------------------------------
-class Mod_ScanDirty(_Link):
+class Mod_ScanDirty(ItemLink):
     """Give detailed printout of what Wrye Bash is detecting as UDR and ITM
     records"""
     help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR'
@@ -1246,7 +1228,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
             with balt.Progress(_(u"Remove World Orphans")) as progress:
                 loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
                 modFile = bosh.ModFile(fileInfo,loadFactory)
-                progress(0,_(u"Reading %s.") % fileName.s)
+                progress(0,_(u'Reading') + u' ' + fileName.s + u'.')
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
                 if orphans:
@@ -1609,9 +1591,9 @@ class Mod_Fids_Replace(OneItemLink):
         changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             replacer = self._parser()
-            progress(0.1,_(u"Reading %s.") % textName.s)
+            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
             replacer.readFromText(textPath)
-            progress(0.2,_(u"Applying to %s.") % fileName.s)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = replacer.updateMod(fileInfo)
             progress(1.0,_(u"Done."))
         #--Log
@@ -1683,7 +1665,7 @@ class _Mod_Export_Link(EnabledLink):
 
 class _Mod_Import_Link(OneItemLink):
 
-    def _parser(self): raise AbstractError # TODO(ut): class attribute ? initialised once...
+    def _parser(self): raise AbstractError
 
 #--Links ----------------------------------------------------------------------
 from ..patcher.utilities import ActorLevels, CBash_ActorLevels
@@ -1759,9 +1741,9 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             actorLevels = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
+            progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
             actorLevels.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = actorLevels.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -1823,7 +1805,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             factionRelations =  self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             factionRelations.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = factionRelations.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -1888,7 +1870,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
             actorFactions = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             actorFactions.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = actorFactions.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2067,9 +2049,9 @@ class Mod_Stats_Import(_Mod_Import_Link):
         changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             itemStats = self._parser()
-            progress(0.1,_(u"Reading %s.") % textName.s)
+            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
             itemStats.readFromText(textPath)
-            progress(0.2,_(u"Applying to %s.") % fileName.s)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = itemStats.writeToMod(fileInfo)
             progress(1.0,_(u"Done."))
         #--Log
@@ -2134,7 +2116,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
             else:
                 srcInfo = bosh.ModInfo(textDir,textName)
                 itemPrices.readFromMod(srcInfo)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = itemPrices.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2199,7 +2181,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             sigilStones = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             sigilStones.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = sigilStones.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2222,6 +2204,9 @@ from ..patcher.utilities import SpellRecords, CBash_SpellRecords
 
 class Mod_SpellRecords_Export(_Mod_Export_Link):
     """Export Spell details from mod to text file."""
+    askTitle = _(u'Export Spell details to:')
+    csvFile = u'_Spells.csv'
+    progressTitle = _(u'Export Spell details')
     text = _(u'Spells...')
     help = _(u'Export Spell details from mod to text file')
 
@@ -2234,29 +2219,6 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
                                  questionIcon=True)
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
-
-    def Execute(self,event): # overrides _Mod_Export_Link
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Spells.csv'
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export Spell details to:'),textDir,textName, u'*_Spells.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export Spell details')) as progress:
-            spellRecords = self._parser()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.selected))
-            for index,fileName in enumerate(map(GPath,self.selected)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s+u'.')
-                spellRecords.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            spellRecords.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
 
 class Mod_SpellRecords_Import(_Mod_Import_Link):
     """Import Spell details from text file."""
@@ -2299,7 +2261,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             spellRecords = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
             spellRecords.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = spellRecords.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2428,7 +2390,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 editorIds = self._parser()
-                progress(0.1,_(u"Reading %s.") % (textName.s,))
+                progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
                 progress(0.2,_(u"Applying to %s.") % (fileName.s,))
                 changed = editorIds.writeToMod(fileInfo)
@@ -2500,13 +2462,13 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         renamed = None
         with balt.Progress(_(u"Import Names")) as progress:
             fullNames = self._parser()
-            progress(0.1,_(u"Reading %s.") % textName.s)
+            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
             if ext == u'.csv':
                 fullNames.readFromText(textPath)
             else:
                 srcInfo = bosh.ModInfo(textDir,textName)
                 fullNames.readFromMod(srcInfo)
-            progress(0.2,_(u"Applying to %s.") % fileName.s)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             renamed = fullNames.writeToMod(fileInfo)
             progress(1.0,_(u"Done."))
         #--Log
@@ -2575,7 +2537,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)
             MapMarkers.readFromText(textPath)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = MapMarkers.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2660,7 +2622,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
             else:
                 srcInfo = bosh.ModInfo(textDir,textName)
                 itemStats.readFromMod(srcInfo)
-            progress(0.2,_(u'Applying to')+u' '+fileName.s+u'.')
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = itemStats.writeToMod(fileInfo)
             progress(1.0,_(u'Done.'))
         #--Log
@@ -2691,7 +2653,7 @@ from ..bolt import deprint
 from ..cint import ObCollection
 from . import ListBoxes
 
-class MasterList_AddMasters(_Link): # CRUFT
+class MasterList_AddMasters(ItemLink): # CRUFT
     """Adds a master."""
     text = _(u'Add Masters...')
     help = _(u'Adds specified master to list of masters')
@@ -2725,7 +2687,7 @@ class MasterList_AddMasters(_Link): # CRUFT
         self.window.InitEdit()
 
 #------------------------------------------------------------------------------
-class MasterList_CleanMasters(AppendableLink, _Link): # CRUFT
+class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
     """Remove unneeded masters."""
     text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
 

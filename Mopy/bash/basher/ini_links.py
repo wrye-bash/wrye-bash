@@ -22,7 +22,7 @@
 #
 # =============================================================================
 from . import ListBoxes, Resources
-from ..balt import _Link, Link, BoolLink, EnabledLink, OneItemLink
+from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
 
 #------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ class INI_AllowNewLines(BoolLink):
         iniList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class INI_ListINIs(_Link):
+class INI_ListINIs(ItemLink):
     """List errors that make an INI Tweak invalid."""
     text = _(u'List Active INIs...')
     help = _(u'Lists all fully applied tweak files.')

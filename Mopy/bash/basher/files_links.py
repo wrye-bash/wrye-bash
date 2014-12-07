@@ -26,7 +26,7 @@ import re
 import time
 from .. import balt, bosh, bush, bolt
 from . import ListBoxes, Resources
-from ..balt import _Link, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
+from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
     Link, OneItemLink
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
@@ -34,7 +34,7 @@ from ..bosh import formatDate
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Files_Open(_Link):
+class Files_Open(ItemLink):
     """Opens data directory in explorer."""
     text = _(u'Open...')
 
@@ -67,7 +67,7 @@ class Files_SortBy(RadioLink):
         else:
             self.window.PopulateItems(self.sortCol,-1)
 
-class Files_Unhide(_Link):
+class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
     text = _(u"Unhide...")
 
@@ -142,7 +142,7 @@ class Files_Unhide(_Link):
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class File_Delete(_Link):
+class File_Delete(ItemLink):
     """Delete the file and all backups."""
     text = _(u'Delete')
 
@@ -168,7 +168,7 @@ class File_Delete(_Link):
                             balt.showError(self.window, _(u'%s') % e)
             self.window.RefreshUI()
 
-class File_Duplicate(_Link):
+class File_Duplicate(ItemLink):
     """Create a duplicate of the file."""
 
     def _initData(self, window, data):
@@ -234,7 +234,7 @@ class File_Duplicate(_Link):
                     fileInfos.autoSort()
             self.window.RefreshUI()
 
-class File_Hide(_Link):
+class File_Hide(ItemLink):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     text = _(u'Hide')
 
@@ -289,7 +289,7 @@ class File_ListMasters(OneItemLink):
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
-class File_Redate(AppendableLink, _Link):
+class File_Redate(AppendableLink, ItemLink):
     """Move the selected files to start at a specified date."""
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")
@@ -360,7 +360,7 @@ class File_Sort(EnabledLink):
         modInfos.refreshInfoLists()
         self.window.RefreshUI()
 
-class File_Snapshot(_Link):
+class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
     help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
 
@@ -432,7 +432,7 @@ class File_RevertToSnapshot(OneItemLink):
                 self.window.details.SetFile(None)
             self.window.RefreshUI(fileName)
 
-class File_Backup(_Link):
+class File_Backup(ItemLink):
     """Backup file."""
     text = _(u'Backup')
     help = _(u"Create a backup of the selected file(s).")
