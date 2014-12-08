@@ -204,7 +204,7 @@ if CBash:
         print "CBash encountered an error", raisedString, "Check the log."
 ##        raise CBashError("Check the log.")
         return
-    
+
     try:
         _CGetVersionMajor = CBash.GetVersionMajor
         _CGetVersionMinor = CBash.GetVersionMinor
@@ -10591,7 +10591,7 @@ class ObBaseRecord(object):
 
     def HasInvalidFormIDs(self):
         return _CIsRecordFormIDsInvalid(self._RecordID) > 0
-    
+
     def Conflicts(self, GetExtendedConflicts=False):
         numRecords = _CGetNumRecordConflicts(self._RecordID, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 1):

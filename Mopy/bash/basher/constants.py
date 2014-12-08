@@ -23,7 +23,9 @@
 # =============================================================================
 """This module contains some constants ripped out of basher.py"""
 
-from .. import bush
+from .. import bush, bosh # I hope this bosh import is valid...
+from ..balt import Image, ImageList, IdList
+from ..bolt import GPath
 import wx # TODO(ut): this must go - also wrap long lines
 
 # Color Descriptions ----------------------------------------------------------
@@ -152,7 +154,7 @@ tabInfo = {
     }
 
 #--Load config/defaults
-settingDefaults = {
+settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,u'0'),
@@ -468,3 +470,96 @@ settingDefaults = {
     'BOSS.AlwaysUpdate':True,
     'BOSS.UseGUI':False,
     }
+
+# Images ----------------------------------------------------------------------
+#------------------------------------------------------------------------------
+PNG = Image.typesDict['png']
+JPEG = Image.typesDict['jpg']
+ICO = Image.typesDict['ico']
+BMP = Image.typesDict['bmp']
+TIF = Image.typesDict['tif']
+
+#--Image lists
+karmacons = ImageList(16,16)
+karmacons.data.extend({
+    'karma+5': Image(GPath((bosh.dirs['images']).join(u'checkbox_purple_inc.png')),PNG),
+    'karma+4': Image(GPath((bosh.dirs['images']).join(u'checkbox_blue_inc.png')),PNG),
+    'karma+3': Image(GPath((bosh.dirs['images']).join(u'checkbox_blue_inc.png')),PNG),
+    'karma+2': Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
+    'karma+1': Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
+    'karma+0': Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off.png')),PNG),
+    'karma-1': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
+    'karma-2': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
+    'karma-3': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
+    'karma-4': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
+    'karma-5': Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off.png')),PNG),
+    }.items())
+installercons = ImageList(16,16)
+installercons.data.extend({
+    #--Off/Archive
+    'off.green':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_off.png')),PNG),
+    'off.grey':   Image(GPath((bosh.dirs['images']).join(u'checkbox_grey_off.png')),PNG),
+    'off.red':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off.png')),PNG),
+    'off.white':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off.png')),PNG),
+    'off.orange': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
+    'off.yellow': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
+    #--Off/Archive - Wizard
+    'off.green.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_green_off_wiz.png')),PNG),
+    #grey
+    'off.red.wiz':      Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off_wiz.png')),PNG),
+    'off.white.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off_wiz.png')),PNG),
+    'off.orange.wiz':   Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off_wiz.png')),PNG),
+    'off.yellow.wiz':   Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off_wiz.png')),PNG),
+    #--On/Archive
+    'on.green':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
+    'on.grey':   Image(GPath((bosh.dirs['images']).join(u'checkbox_grey_inc.png')),PNG),
+    'on.red':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_inc.png')),PNG),
+    'on.white':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_inc.png')),PNG),
+    'on.orange': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_inc.png')),PNG),
+    'on.yellow': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_inc.png')),PNG),
+    #--On/Archive - Wizard
+    'on.green.wiz':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc_wiz.png')),PNG),
+    #grey
+    'on.red.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_inc_wiz.png')),PNG),
+    'on.white.wiz':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_inc_wiz.png')),PNG),
+    'on.orange.wiz': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_inc_wiz.png')),PNG),
+    'on.yellow.wiz': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_inc_wiz.png')),PNG),
+    #--Off/Directory
+    'off.green.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_off.png')),PNG),
+    'off.grey.dir':   Image(GPath((bosh.dirs['images']).join(u'diamond_grey_off.png')),PNG),
+    'off.red.dir':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_off.png')),PNG),
+    'off.white.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off.png')),PNG),
+    'off.orange.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_off.png')),PNG),
+    'off.yellow.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_off.png')),PNG),
+    #--Off/Directory - Wizard
+    'off.green.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_off_wiz.png')),PNG),
+    #grey
+    'off.red.dir.wiz':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_off_wiz.png')),PNG),
+    'off.white.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off_wiz.png')),PNG),
+    'off.orange.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_off_wiz.png')),PNG),
+    'off.yellow.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_off_wiz.png')),PNG),
+    #--On/Directory
+    'on.green.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_inc.png')),PNG),
+    'on.grey.dir':   Image(GPath((bosh.dirs['images']).join(u'diamond_grey_inc.png')),PNG),
+    'on.red.dir':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_inc.png')),PNG),
+    'on.white.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_inc.png')),PNG),
+    'on.orange.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_inc.png')),PNG),
+    'on.yellow.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_inc.png')),PNG),
+    #--On/Directory - Wizard
+    'on.green.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_inc_wiz.png')),PNG),
+    #grey
+    'on.red.dir.wiz':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_inc_wiz.png')),PNG),
+    'on.white.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off_wiz.png')),PNG),
+    'on.orange.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_inc_wiz.png')),PNG),
+    'on.yellow.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_inc_wiz.png')),PNG),
+    #--Broken
+    'corrupt':   Image(GPath((bosh.dirs['images']).join(u'red_x.png')),PNG),
+    }.items())
+
+# Gui Ids ---------------------------------------------------------------------
+#------------------------------------------------------------------------------
+#--Generic
+ID_EDIT   = 6005
+#--Label Menus
+ID_GROUPS    = IdList(10100,290,'EDIT','NONE')
+ID_TAGS      = IdList(10600, 90,'AUTO','COPY')

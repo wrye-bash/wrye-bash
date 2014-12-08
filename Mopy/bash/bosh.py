@@ -32,7 +32,6 @@ import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
 import time
-import operator
 
 # Imports ---------------------------------------------------------------------
 #--Python
@@ -40,20 +39,15 @@ import cPickle
 import ConfigParser
 import copy
 import datetime
-import math
 import os
-import random
 import re
-import shutil
 import string
 import struct
-import sys
-from types import *
-from operator import attrgetter,itemgetter
+from types import NoneType, FloatType, IntType, LongType, BooleanType, \
+    StringType, UnicodeType, ListType, DictType, TupleType
+from operator import attrgetter
 import subprocess
 from subprocess import Popen, PIPE
-import codecs
-import ctypes
 
 #--Local
 import balt
@@ -62,13 +56,15 @@ import bush
 from bolt import BoltError, AbstractError, ArgumentError, StateError, \
     UncodedError, PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
-    deprint, sio
+    deprint, sio, Path
 from bolt import _unicode, _encode
-from cint import *
-from brec import *
-from brec import _coerce # Since it wont get imported by the import * (it
-# begins with _)
-from chardet.universaldetector import UniversalDetector
+# cint
+from _ctypes import POINTER
+from ctypes import cast, c_ulong
+from cint import ObCollection, ObModFile, MGEFCode, FormID, dump_record, CBash, \
+    ObBaseRecord
+from brec import _coerce, MreRecord, ModReader, ModError, ModWriter, \
+    getModIndex, genFid, getObjectIndex, getFormIndices
 from patcher.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
@@ -87,7 +83,7 @@ readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
 settings = None
-installersWindow = None
+installersWindow = None # TODO(ut): InstallersList singleton, shouldn't be here
 
 allTags = bush.game.allTags
 allTagsSet = set(allTags)
@@ -225,7 +221,7 @@ class PickleDict(bolt.PickleDict):
         #--Done
         return result
 
-    def updatePaths(self):
+    def updatePaths(self): # CRUFT ?
         """Updates paths from bosh.Path to bolt.Path."""
         import wx
         basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
@@ -261,6 +257,9 @@ class PickleDict(bolt.PickleDict):
             elif isinstance(x,wx.Point): #--Replace old wx.Points w nice python tuples.
                 xnew = x.Get()
             elif isinstance(x,Path):
+             # TODO(ut) since I imported Path from bolt (was from cint) I get
+             # unresolved attribute for Path._path (in x._path below) - should
+             # be older Path class - CRUFT pickled ?
                 changed.add(x._path)
                 xnew = GPath(x._path)
             else:
@@ -1118,8 +1117,6 @@ class SaveHeader:
         except:
             deprint(u'save file error:',traceback=True)
             raise SaveFileError(path.tail,u'File header is corrupted.')
-        #--Done
-        ins.close()
 
     def writeMasters(self,path):
         """Rewrites masters of existing save file."""
@@ -1898,7 +1895,7 @@ class CoSaves:
         """Deletes cofiles."""
         for path in self.paths:
             if path.exists():
-                balt.shellDelete(path,askOk=askOk,recycle=not dontRecycle)
+                balt.shellDelete(path, askOk_=askOk,recycle=not dontRecycle)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -3294,7 +3291,7 @@ class FileInfo:
         self.ctime = path.ctime
         self.mtime = path.mtime
         self.size  = path.size
-        if self.header: self.getHeader()
+        if self.header: self.getHeader() # if not header remains None
 
     def getHeader(self):
         """Read header for file."""
@@ -3684,7 +3681,7 @@ class ModInfo(FileInfo):
 
     #--Header Editing ---------------------------------------------------------
     def getHeader(self):
-        """Read header for file."""
+        """Read header from file set self.header and return it."""
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
                 recHeader = ins.unpackRecHeader()
@@ -3697,6 +3694,7 @@ class ModInfo(FileInfo):
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
+        return self.header # to honor the method's name
 
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
@@ -3940,7 +3938,7 @@ class SaveInfo(FileInfo):
             return -10
 
     def getHeader(self):
-        """Read header for file."""
+        """Read header from file set self.header and return it."""
         try:
             self.header = SaveHeader(self.getPath())
             #--Master Names/Order
@@ -3948,6 +3946,7 @@ class SaveInfo(FileInfo):
             self.masterOrder = tuple() #--Reset to empty for now
         except struct.error, rex:
             raise SaveFileError(self.name,u'Struct.error: %s' % rex)
+        return self.header # to honor the method's name
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -4168,7 +4167,7 @@ class FileInfos(DataDict):
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
         try:
-            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             #--Table
             for filePath in toDelete:
@@ -4638,6 +4637,7 @@ class ModInfos(FileInfos):
                     newFile.tes4.author = u'======'
                     newFile.tes4.description = _(u'Balo group header.')
                     newFile.safeSave()
+                    newInfo.getHeader() # set newInfo.header from the file
                     self[newName] = newInfo
                 mod_group[newName] = offGroup
                 group_header[offGroup] = newName
@@ -6225,7 +6225,7 @@ class ScreensData(DataDict):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath,askOk=askOk,recycle=not dontRecycle)
+        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=not dontRecycle)
         if deleted is not None:
             for file in filePath:
                 del self.data[file.tail]
@@ -8251,7 +8251,7 @@ class InstallersData(bolt.TankData, DataDict):
         if item == self.lastKey: return
         installer = self.data[item]
         apath = self.dir.join(item)
-        balt.shellDelete(apath,askOk=False)
+        balt.shellDelete(apath, askOk_=False)
         del self.data[item]
 
     def delete(self,items,askOk=False,dontRecycle=False):
@@ -8265,7 +8265,7 @@ class InstallersData(bolt.TankData, DataDict):
             toDeleteAppend(dirJoin(item))
         #--Delete
         try:
-            balt.shellDelete(toDelete,askOk=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             for item in toDelete:
                 if not item.exists():

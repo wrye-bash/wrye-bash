@@ -26,7 +26,7 @@
 import zlib
 import StringIO
 import os
-import re
+import re # flagged as unused but game detection fails if deleted
 import struct
 import copy
 import cPickle
