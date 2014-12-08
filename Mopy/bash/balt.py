@@ -2451,32 +2451,6 @@ class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in Peop
         with BusyCursor():
             self.gTank.DeleteSelected()
 
-#------------------------------------------------------------------------------
-class Tank_Duplicate(Link):
-    """Create a duplicate of a tank item, assuming that tank item is a file,
-    and using a SaveAs dialog."""
-
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Duplicate...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.selected) == 1)
-
-    def Execute(self,event):
-        srcDir = self.data.dir
-        srcName = self.selected[0]
-        (root,ext) = srcName.rootExt
-        (destDir,destName,wildcard) = (srcDir, root+u' Copy'+ext,u'*'+ext)
-        destPath = askSave(self.gTank,_(u'Duplicate as:'),destDir,destName,wildcard)
-        if not destPath: return
-        destDir,destName = destPath.headTail
-        if (destDir == srcDir) and (destName == srcName):
-            self.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
-            return
-        self.data.copy(srcName,destName,destDir)
-        if destDir == srcDir:
-            self.gTank.RefreshUI()
-
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 def copyToClipboard(text):
