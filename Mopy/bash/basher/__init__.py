@@ -416,13 +416,17 @@ class List(wx.Panel):
         while self.list.GetItemCount() > len(self.items):
             self.list.DeleteItem(self.list.GetItemCount()-1)
 
+    def SelectItemAtIndex(self, index, select=True,
+                          _select=wx.LIST_STATE_SELECTED):
+        self.list.SetItemState(index, select * _select, _select)
+
     def ClearSelected(self):
         for itemDex in xrange(self.list.GetItemCount()):
-            self.list.SetItemState(itemDex, 0, wx.LIST_STATE_SELECTED)
+            self.SelectItemAtIndex(itemDex, False)
 
     def SelectAll(self):
         for itemDex in range(self.list.GetItemCount()):
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+            self.SelectItemAtIndex(itemDex)
 
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
@@ -774,10 +778,7 @@ class MasterList(List):
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
         self.list.SetItemImage(itemDex,self.checkboxes.Get(status,oninc))
         #--Selection State
-        if masterName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, masterName in selected)
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
@@ -1021,10 +1022,7 @@ class INIList(List):
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
         self.list.SetItem(item)
-        if fileName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     def SortItems(self,col=None,reverse=-2):
         (col, reverse) = self.GetSortSettings(col,reverse)
@@ -1413,10 +1411,7 @@ class ModList(List):
         self.list.SetItem(item)
         self.mouseTexts[itemDex] = mouseText
         #--Selection State
-        if fileName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
         #--Status bar text
 
     #--Sort Items
@@ -2342,10 +2337,7 @@ class SaveList(List):
         on = fileName.cext == u'.ess'
         self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
         #--Selection State
-        if fileName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
@@ -3028,8 +3020,7 @@ class InstallersList(balt.Tank):
                 if isinstance(installer,bosh.InstallerMarker):
                     break
                 itemDex = self.GetIndex(nextItem)
-                self.gList.SetItemState(itemDex,wx.LIST_STATE_SELECTED,
-                                        wx.LIST_STATE_SELECTED)
+                self.SelectItemAtIndex(itemDex)
         else:
             path = self.data.dir.join(self.GetItem(hitItem))
             if path.exists(): path.start()
@@ -3691,7 +3682,7 @@ class ScreensList(List):
             for file in newselected:
                 index = self.list.FindItem(0,file.s)
                 if index != -1:
-                    self.list.SetItemState(index,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
+                    self.SelectItemAtIndex(index)
             event.Veto()
 
     def RefreshUI(self,files='ALL',detail='SAME'):
@@ -3733,10 +3724,7 @@ class ScreensList(List):
                 self.list.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
-        if fileName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
@@ -3910,13 +3898,10 @@ class BSAList(List):
                 self.list.SetStringItem(itemDex, colDex, value)
         #--Image
         #status = fileInfo.getStatus()
-        on = fileName.cext == u'.bsa'
+        # on = fileName.cext == u'.bsa'
         #self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
         #--Selection State
-        if fileName in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
@@ -4218,10 +4203,7 @@ class MessageList(List):
                 self.list.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
-        if item in selected:
-            self.list.SetItemState(itemDex,wx.LIST_STATE_SELECTED,wx.LIST_STATE_SELECTED)
-        else:
-            self.list.SetItemState(itemDex,0,wx.LIST_STATE_SELECTED)
+        self.SelectItemAtIndex(itemDex, item in selected)
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
