@@ -25,7 +25,8 @@ from operator import attrgetter
 import re
 import time
 from .. import balt, bosh, bush, bolt
-from . import ListBoxes, Resources
+from . import Resources
+from .dialogs import ListBoxes
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, ChoiceLink, \
     Link, OneItemLink
 from ..bolt import CancelError, SkipError, GPath, BoltError

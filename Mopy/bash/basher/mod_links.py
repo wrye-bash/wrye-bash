@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import StringIO
 import copy
 import os
@@ -30,8 +31,9 @@ from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
-from . import  Mod_BaloGroups_Edit, DocBrowser, Resources
+from . import DocBrowser, Resources
 from .constants import ID_GROUPS, JPEG
+from .dialogs import Mod_BaloGroups_Edit
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
 from .patcher_dialog import PatchDialog
@@ -2655,7 +2657,7 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
 #------------------------------------------------------------------------------
 from ..bolt import deprint
 from ..cint import ObCollection
-from . import ListBoxes
+from .dialogs import ListBoxes
 
 class MasterList_AddMasters(ItemLink): # CRUFT
     """Adds a master."""

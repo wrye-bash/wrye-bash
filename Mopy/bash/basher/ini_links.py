@@ -21,7 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import ListBoxes, Resources
+from . import Resources
+from .dialogs import ListBoxes
 from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
 

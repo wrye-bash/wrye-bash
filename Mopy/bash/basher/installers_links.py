@@ -24,7 +24,8 @@
 import copy
 from .. import bosh, balt, bush
 from ..balt import fill, BoolLink, AppendableLink, Link
-from . import ListBoxes, CreateNewProject, Resources, Installers_Link
+from . import Resources, Installers_Link
+from .dialogs import ListBoxes, CreateNewProject
 from ..bolt import GPath, SubProgress
 
 gInstallers = None

@@ -21,7 +21,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import Mod_BaloGroups_Edit, ListBoxes, Resources
+from . import Resources
+from .dialogs import ListBoxes, Mod_BaloGroups_Edit
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
