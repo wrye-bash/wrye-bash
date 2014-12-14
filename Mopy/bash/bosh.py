@@ -6063,55 +6063,6 @@ class Messages(DataDict):
         self.save()
 
 #------------------------------------------------------------------------------
-class ModBaseData(PickleTankData, bolt.TankData, DataDict):
-    """Mod database. (IN DEVELOPMENT.)
-    The idea for this is to provide a mod database. However, I might not finish this."""
-
-    def __init__(self):
-        bolt.TankData.__init__(self,settings)
-        PickleTankData.__init__(self,dirs['saveBase'].join(u'ModBase.dat'))
-        #--Default settings. Subclasses should define these.
-        self.tankKey = 'bash.modBase'
-        self.tankColumns = ['Package','Author','Version','Tags']
-        self.title = _(u'ModBase')
-        self.defaultParam('columns',self.tankColumns[:])
-        self.defaultParam('colWidths',{'Package':60,'Author':30,'Version':20})
-        self.defaultParam('colAligns',{})
-
-    #--Collection
-    def getSorted(self,column,reverse):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Package':
-            items.sort(key=string.lower,reverse=reverse)
-        else:
-            iColumn = self.tankColumns.index(column) #--Column num for Version, tags
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][iColumn],reverse=reverse)
-        return items
-
-    #--Item Info
-    def getColumns(self,item=None):
-        """Returns text labels for item or for row header if item == None.
-        NOTE: Assumes fixed order of columns!"""
-        if item is None:
-            return self.tankColumns[:]
-        else:
-            author,version,karma,tags = self.data[item][1:5]
-            return item,author,version,tags
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        textKey = backKey = None
-        iconKey = u'karma%+d' % self.data[item][1]
-        return iconKey,textKey,backKey
-
-#------------------------------------------------------------------------------
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
     """Data for a People Tank."""
     def __init__(self):
