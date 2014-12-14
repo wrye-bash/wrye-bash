@@ -1718,6 +1718,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 class UIList(wx.Panel):
     """Tmp class to factor out common code in basher.List and balt.Tank."""
     _sizeHints = (100, 100) # min ListCtrl size TODO(ut): random overrides
+    # optional menus
+    mainMenu = None
+    itemMenu = None
     # UI settings keys - cf tankKey in TankData ...
     keyPrefix = 'OVERRIDE'
 
@@ -1851,20 +1854,15 @@ class UIList(wx.Panel):
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
-    #--Class-------------------------------------------------------------------
-    mainMenu = None
-    itemMenu = None
 
     #--Instance ---------------------------------------------------------------
-    def __init__(self, parent, data, icons=None, mainMenu=None, itemMenu=None,
+    def __init__(self, parent, data, icons=None,
                  details=None, style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
                  dndList=False, dndFiles=False, dndColumns=()):
         #--Data
         if icons is None: icons = {}
         self.data = data
         self.icons = icons #--Default to balt image collection.
-        self.mainMenu = mainMenu or self.__class__.mainMenu
-        self.itemMenu = itemMenu or self.__class__.itemMenu
         self.details = details
         #--Item/Id mapping
         self.nextItemId = 1

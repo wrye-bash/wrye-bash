@@ -525,9 +525,6 @@ class MasterList(List):
         self.loadOrderNames = []
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Links
-        self.mainMenu = MasterList.mainMenu
-        self.itemMenu = MasterList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_EDIT_LABELS))
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
@@ -771,9 +768,6 @@ class INIList(List):
         self.sortValid = settings['bash.ini.sortValid']
         #--Data/Items
         self.data = bosh.iniInfos
-        #--Links
-        self.mainMenu = INIList.mainMenu
-        self.itemMenu = INIList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=wx.LC_REPORT)
         #--Events
@@ -1061,9 +1055,6 @@ class ModList(List):
         self.details = None #--Set by panel
         self.esmsFirst = settings['bash.mods.esmsFirst']
         self.selectedFirst = settings['bash.mods.selectedFirst']
-        #--Links
-        self.mainMenu = ModList.mainMenu
-        self.itemMenu = ModList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=wx.LC_REPORT, dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
         #--Image List
@@ -2113,9 +2104,6 @@ class SaveList(List):
         #--Data/Items
         self.data = data = bosh.saveInfos
         self.details = None #--Set by panel
-        #--Links
-        self.mainMenu = SaveList.mainMenu
-        self.itemMenu = SaveList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
         #--Image List
@@ -2543,11 +2531,13 @@ class SavePanel(SashPanel):
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
     keyPrefix = 'bash.installers'
+    mainMenu = Links()
+    itemMenu = Links()
 
-    def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
+    def __init__(self, parent, data, icons=None, details=None,
+                 style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
         self.colReverse = settings['bash.installers.colReverse']
-        balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
+        balt.Tank.__init__(self,parent,data,icons,
             details,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2913,8 +2903,6 @@ class InstallersList(balt.Tank):
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
-    mainMenu = Links()
-    itemMenu = Links()
     espmMenu = Links()
     subsMenu = Links()
 
@@ -2937,9 +2925,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.gList = InstallersList(left,data,
-            installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
+        self.gList = InstallersList(left, data, installercons, details=self,
+                                    style=wx.LC_REPORT)
         bosh.installersWindow = self.gList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
@@ -3460,9 +3447,6 @@ class ScreensList(List):
         self.colReverse = settings.getChanged('bash.screens.colReverse')
         #--Data/Items
         self.data = bosh.screensData = bosh.ScreensData()
-        #--Links
-        self.mainMenu = ScreensList.mainMenu
-        self.itemMenu = ScreensList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
         #--Events
@@ -3672,9 +3656,6 @@ class BSAList(List):
         #--Data/Items
         self.data = data = bosh.BSAInfos
         self.details = None #--Set by panel
-        #--Links
-        self.mainMenu = BSAList.mainMenu
-        self.itemMenu = BSAList.itemMenu
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
         #--Image List
@@ -3965,9 +3946,6 @@ class MessageList(List):
         #--Data/Items
         self.data = bosh.messages = bosh.Messages()
         self.data.refresh()
-        #--Links
-        self.mainMenu = MessageList.mainMenu
-        self.itemMenu = MessageList.itemMenu
         #--Other
         self.gText = None
         self.searchResults = None
@@ -4145,6 +4123,8 @@ class MessagePanel(SashPanel):
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
     keyPrefix = 'bash.people'
+    mainMenu = Links()
+    itemMenu = Links()
 
     def __init__(self,*args,**kwdargs):
         self.colReverse = settings['bash.people.colReverse']
@@ -4170,8 +4150,6 @@ class PeopleList(balt.Tank):
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
-    mainMenu = Links()
-    itemMenu = Links()
 
     def __init__(self,parent):
         """Initialize."""
@@ -4181,9 +4159,8 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = PeopleList(left,data,
-            karmacons, PeoplePanel.mainMenu, PeoplePanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
+        self.gList = PeopleList(left, data, karmacons, details=self,
+                                style=wx.LC_REPORT)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
