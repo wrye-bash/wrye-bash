@@ -10564,7 +10564,7 @@ class CBash_PatchFile(ObModFile):
                       'ACRES','REFRS']
 
         iiModeSet = {u'InventOnly', u'IIM'}
-        levelLists = {'LVLC', 'LVLI', 'LVSP'}
+        levelLists = bush.game.listTypes
         nullProgress = bolt.Progress()
 
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])
