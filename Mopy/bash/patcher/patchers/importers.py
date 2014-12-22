@@ -2985,19 +2985,11 @@ class SoundPatcher(ImportPatcher):
         self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = (
-                'castingSound', 'boltSound', 'hitSound', 'areaSound')
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','LIGH')):
-            recAttrs_class[recClass] = ('sound',)
-        for recClass in (MreRecord.type_class[x] for x in ('WTHR',)):
-            recAttrs_class[recClass] = ('sounds',)
-        for recClass in (MreRecord.type_class[x] for x in ('CONT',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose')
-        for recClass in (MreRecord.type_class[x] for x in ('DOOR',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose','soundLoop')
+        for recType, attrs in game.soundsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
         #--Needs Longs
-        self.longTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR'}
+        self.longTypes = game.soundsLongsTypes
 
     def initData(self,progress):
         """Get sounds from source files."""
