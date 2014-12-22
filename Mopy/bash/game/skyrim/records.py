@@ -3754,6 +3754,31 @@ class MreKywd(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
+# Commented out for performance reasons. Slows down loading quite a bit.
+# If Bash ever wants to be able to add masters to a mod, this minimal definition is required
+# It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
+#
+#class MreLand(MelRecord):
+#    """Land structure. Part of exterior cells."""
+#
+#    classType = 'LAND'
+#    melSet = MelSet(
+#        MelBase('DATA','data_p'),
+#        MelBase('VNML','normals_p'),
+#        MelBase('VHGT','heights_p'),
+#        MelBase('VCLR','vertexColors_p'),
+#        # wbRUnion Needed (BTXT) or ('ATXT' and 'VTXT'), not both
+#        MelStructs('BTXT','IBsh','baseTextures', (FID,'texture'), 'quadrant', 'unknown', 'layer'),
+#        MelGroups('alphaLayers',
+#            MelStruct('ATXT','IBsh',(FID,'texture'), 'quadrant', 'unknown', 'layer'),
+#            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unknown', 'opacity'),
+#        ),
+#        MelFidList('VTEX','vertexTextures'),
+#    )
+#    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+# --
+# Likely not a good idea to use because of performance
+#------------------------------------------------------------------------------
 class MreLcrt(MelRecord):
     """Location Reference Type record."""
     classType = 'LCRT'
