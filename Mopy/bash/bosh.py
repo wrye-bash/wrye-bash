@@ -10219,14 +10219,18 @@ class PatchFile(ModFile):
         mergeIdsAdd = mergeIds.add
         loadSet = self.loadSet
         modFile.convertToLongFids()
-        badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        # Probably Oblivion Only
+        if bush.game.fsName == u'Oblivion':
+            badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        else:
+            badForm = ()
         selfLoadFactoryRecTypes = self.loadFactory.recTypes
         selfMergeFactoryType_class = self.mergeFactory.type_class
         selfReadFactoryAddClass = self.readFactory.addClass
         selfLoadFactoryAddClass = self.loadFactory.addClass
         nullFid = (GPath(modInfos.masterName),0)
         for blockType,block in modFile.tops.iteritems():
-            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
+            iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             #--Make sure block type is also in read and write factories
             if blockType not in selfLoadFactoryRecTypes:
                 recClass = selfMergeFactoryType_class[blockType]
