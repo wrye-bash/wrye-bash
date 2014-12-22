@@ -212,6 +212,10 @@ iniFiles = [
 #--INI setting to setup Save Profiles
 saveProfilesKey = (u'General',u'SLocalSavePath')
 
+# Main master file, does not include Update.esm or DLC
+mainGameMaster = u'Oblivion.esm'
+mainGameMasterLower = u'oblivion.esm'
+
 #--The main plugin Wrye Bash should look for
 masterFiles = [
     u'Oblivion.esm',
