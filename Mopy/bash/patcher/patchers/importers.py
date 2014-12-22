@@ -212,7 +212,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = bush.game.cellAutoKeys
+    autoKey = game.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -223,8 +223,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.isActive = bool(self.sourceMods)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = bush.game.cellRecAttrs
-        self.recFlags = bush.game.cellRecFlags
+        self.recAttrs = game.cellRecAttrs
+        self.recFlags = game.cellRecFlags
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -478,31 +478,31 @@ class GraphicsPatcher(ImportPatcher):
         # Look into why these records are not included, are they part of other patchers?
         # no 'model' attr: 'EYES', 'AVIF', 'MICN',
         # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconOnlyRecs):
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconOnlyRecs):
         #     recAttrs_class[recClass] = ('iconPath',)
         # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
         # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
         # 'PROJ', 'TACT', 'TREE',
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsModelOnlyRecs):
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsModelOnlyRecs):
         #     recAttrs_class[recClass] = ('model',)
         # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
         # Is 'RACE' included in race patcher?
-        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconModelRecs):
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
         #     recAttrs_class[recClass] = ('iconPath','model',)
 
-        for recType, attrs in bush.game.graphicsTypes.iteritems():
+        for recType, attrs in game.graphicsTypes.iteritems():
             recClass = MreRecord.type_class[recType]
             recAttrs_class[recClass] = attrs
 
         # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
         # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-        #     recFidAttrs_class[recClass] = bush.game.graphicsMgefFidAttrs
-        for recType, attrs in bush.game.graphicsFidTypes.iteritems():
+        #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
+        for recType, attrs in game.graphicsFidTypes.iteritems():
             recClass = MreRecord.type_class[recType]
             recFidAttrs_class[recClass] = attrs
 
         #--Needs Longs
-        self.longTypes = bush.game.graphicsLongsTypes
+        self.longTypes = game.graphicsLongsTypes
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -1953,7 +1953,7 @@ class ImportInventory(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.sourceMods: return
-        if bush.game.fsName == u'Skyrim':
+        if game.fsName == u'Skyrim':
             loadFactory = LoadFactory(False,'NPC_','CONT')
         else:
             loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
@@ -1963,7 +1963,7 @@ class ImportInventory(ImportPatcher):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            if bush.game.fsName == u'Skyrim':
+            if game.fsName == u'Skyrim':
                 for block in (srcFile.NPC_, srcFile.CONT):
                     for record in block.getActiveRecords():
                         self.touched.add(mapper(record.fid))
@@ -1975,11 +1975,11 @@ class ImportInventory(ImportPatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return bush.game.inventoryTypes if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return bush.game.inventoryTypes if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1992,8 +1992,8 @@ class ImportInventory(ImportPatcher):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(bush.game.inventoryTypes)
-            for type in bush.game.inventoryTypes:
+            modFile.convertToLongFids(game.inventoryTypes)
+            for type in game.inventoryTypes:
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
@@ -2016,7 +2016,7 @@ class ImportInventory(ImportPatcher):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in bush.game.inventoryTypes:
+            for type in game.inventoryTypes:
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,type).getActiveRecords():
@@ -2030,7 +2030,7 @@ class ImportInventory(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = {}
-        for type in bush.game.inventoryTypes:
+        for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
