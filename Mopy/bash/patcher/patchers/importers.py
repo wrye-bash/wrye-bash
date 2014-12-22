@@ -3178,17 +3178,18 @@ class StatsPatcher(ImportPatcher):
             if not count: continue
             typeName = {'ALCH':_(u'Potions'),
                         'AMMO':_(u'Ammo'),
-                        'ARMO':_(u'Armors'),
-                        'INGR':_(u'Ingredients'),
-                        'MISC':_(u'Misc'),
-                        'WEAP':_(u'Weapons'),
-                        'SLGM':_(u'Soulgems'),
-                        'SGST':_(u'Sigil Stones'),
-                        'LIGH':_(u'Lights'),
-                        'KEYM':_(u'Keys'),
-                        'CLOT':_(u'Clothes'),
-                        'BOOK':_(u'Books'),
+                        'ARMA':_(u'Armature'),
                         'APPA':_(u'Apparatuses'),
+                        'ARMO':_(u'Armors'),
+                        'BOOK':_(u'Books'),
+                        'CLOT':_(u'Clothes'),
+                        'INGR':_(u'Ingredients'),
+                        'KEYM':_(u'Keys'),
+                        'LIGH':_(u'Lights'),
+                        'MISC':_(u'Misc'),
+                        'SGST':_(u'Sigil Stones'),
+                        'SLGM':_(u'Soulgems'),
+                        'WEAP':_(u'Weapons'),
                         }[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
