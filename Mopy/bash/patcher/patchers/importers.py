@@ -212,8 +212,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = (u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
-               u'C.RecordFlags', u'C.Music')  # ,u'C.Maps')
+    autoKey = bush.game.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -224,28 +223,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.isActive = bool(self.sourceMods)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = {
-            u'C.Climate': ('climate',),
-            u'C.Music': ('music',),
-            u'C.Name': ('full',),
-            u'C.Owner': ('ownership',),
-            u'C.Water': ('water','waterHeight'),
-            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                        'directionalRed','directionalGreen','directionalBlue','unused2',
-                        'fogRed','fogGreen','fogBlue','unused3',
-                        'fogNear','fogFar','directionalXY','directionalZ',
-                        'directionalFade','fogClip'),
-            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-            }
-        self.recFlags = {
-            u'C.Climate': 'behaveLikeExterior',
-            u'C.Music': '',
-            u'C.Name': '',
-            u'C.Owner': 'publicPlace',
-            u'C.Water': 'hasWater',
-            u'C.Light': '',
-            u'C.RecordFlags': '',
-            }
+        self.recAttrs = bush.game.cellRecAttrs
+        self.recFlags = bush.game.cellRecFlags
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
