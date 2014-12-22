@@ -255,6 +255,10 @@ iniFiles = [
 #--INI setting to setup Save Profiles
 saveProfilesKey = (u'General',u'SLocalSavePath')
 
+# Main master file, does not include Update.esm or DLC
+mainGameMaster = u'Skyrim.esm'
+mainGameMasterLower = u'skyrim.esm'
+
 #--The main plugin Wrye Bash should look for
 masterFiles = [
     u'Skyrim.esm',
@@ -1258,12 +1262,19 @@ GmstTweaks = [
     ]
 
 #--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
+allTags = sorted((
+    u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace', u'C.Light',
+    u'C.Location', u'C.SkyLighting', u'C.Music', u'C.Name',
+    u'C.Owner', u'C.RecordFlags', u'C.Water', u'Deactivate', u'Delev',
+    u'Filter', u'Graphics', u'Invent', u'NoMerge', u'Relev', u'Sound',
+    u'Stats', u'Names',
+    ))
 
 #--Patchers available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'NamesPatcher', u'StatsPatcher'
+    u'AliasesPatcher', u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
+    u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
+    u'StatsPatcher', u'NamesPatcher',
     )
 
 #--CBash patchers available when building a Bashed Patch
@@ -1684,9 +1695,21 @@ from records import * # MUST BE HERE otherwise all hell breaks loose
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        # MreAchr, MreDial, MreInfo,
+        # MreFact,
+        MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
+        MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj,
+        MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual,
+        MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFlor, MreFlst, MreFstp,
+        MreFsts, MreFurn, MreGlob, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad,
+        MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
+        MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc,
+        MreMovt, MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb,
+        MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm,
+        MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap,
+        MreWoop, MreWthr,
+        ####### for debug
+        MreQust,
     )
 
 #--Extra read classes: need info from magic effects
@@ -1706,13 +1729,25 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
+        MreAchr, MreDial, MreInfo,
+        MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto,
+        MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj,
+        MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual,
+        MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp,
+        MreFsts, MreFurn, MreGlob, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad,
+        MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
+        MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc,
+        MreMovt, MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb,
+        MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm,
+        MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap,
+        MreWoop, MreWthr,
+        MreCell, MreWrld, # MreNavm, MreNavi
+        ####### for debug
+        MreQust,
         MreHeader,
         ))
 
     #--Simple records
     brec.MreRecord.simpleTypes = (
-        set(brec.MreRecord.type_class) - {'TES4',})
+        set(brec.MreRecord.type_class) - {'TES4','ACHR','CELL','DIAL','INFO','WRLD',})
 

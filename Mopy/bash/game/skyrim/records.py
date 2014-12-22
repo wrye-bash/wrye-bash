@@ -34,7 +34,7 @@ from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelModel, \
     null1, MelFidList, MelStructA, MreRecord, MreGmstBase, MelLString, \
-    MelCountedFidList, ModReader, MelOptStructA, MelCountedFids, \
+    MelCountedFidList, ModReader, MelOptStructA, MelCountedFids, MelStrings, \
     MelSortedFidList
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
