@@ -474,39 +474,35 @@ class GraphicsPatcher(ImportPatcher):
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         recFidAttrs_class = self.recFidAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('BSGN','LSCR','CLAS','LTEX','REGN')):
-            recAttrs_class[recClass] = ('iconPath',)
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','DOOR','FLOR','FURN','GRAS','STAT')):
-            recAttrs_class[recClass] = ('model',)
-        for recClass in (MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE')):
-            recAttrs_class[recClass] = ('iconPath','model')
-        for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
-            recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
-        for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p')
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = ('iconPath','model')
-            recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
-        for recClass in (MreRecord.type_class[x] for x in ('EFSH',)):
-            recAttrs_class[recClass] = ('particleTexture','fillTexture','flags','unused1','memSBlend',
-                                        'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue','unused2',
-                                        'fillAIn','fillAFull','fillAOut','fillAPRatio','fillAAmp','fillAFreq',
-                                        'fillAnimSpdU','fillAnimSpdV','edgeOff','edgeRed','edgeGreen',
-                                        'edgeBlue','unused3','edgeAIn','edgeAFull','edgeAOut','edgeAPRatio',
-                                        'edgeAAmp','edgeAFreq','fillAFRatio','edgeAFRatio','memDBlend',
-                                        'partSBlend','partBlendOp','partZFunc','partDBlend','partBUp',
-                                        'partBFull','partBDown','partBFRatio','partBPRatio','partLTime',
-                                        'partLDelta','partNSpd','partNAcc','partVel1','partVel2','partVel3',
-                                        'partAcc1','partAcc2','partAcc3','partKey1','partKey2','partKey1Time',
-                                        'partKey2Time','key1Red','key1Green','key1Blue','unused4','key2Red',
-                                        'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
-                                        'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
+        # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
+        # Look into why these records are not included, are they part of other patchers?
+        # no 'model' attr: 'EYES', 'AVIF', 'MICN',
+        # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconOnlyRecs):
+        #     recAttrs_class[recClass] = ('iconPath',)
+        # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
+        # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
+        # 'PROJ', 'TACT', 'TREE',
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsModelOnlyRecs):
+        #     recAttrs_class[recClass] = ('model',)
+        # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
+        # Is 'RACE' included in race patcher?
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconModelRecs):
+        #     recAttrs_class[recClass] = ('iconPath','model',)
+
+        for recType, attrs in bush.game.graphicsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
+
+        # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
+        # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
+        #     recFidAttrs_class[recClass] = bush.game.graphicsMgefFidAttrs
+        for recType, attrs in bush.game.graphicsFidTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recFidAttrs_class[recClass] = attrs
+
         #--Needs Longs
-        self.longTypes = {'BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN', 'ACTI',
-                          'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT', 'ALCH',
-                          'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH',
-                          'MISC', 'SGST', 'SLGM', 'WEAP', 'TREE', 'ARMO',
-                          'CLOT', 'CREA', 'MGEF', 'EFSH'}
+        self.longTypes = bush.game.graphicsLongsTypes
 
     def initData(self,progress):
         """Get graphics from source files."""
