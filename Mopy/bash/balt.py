@@ -294,13 +294,15 @@ class textCtrl(wx.TextCtrl):
     control."""
 
     def __init__(self, parent, value=u'', size=defSize, style=0,
-                 multiline=False, autotooltip=True, onKillFocus=None,
-                 onText=None): # event handlers must call event.Skip()
+                 multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
+                 onKillFocus=None, onText=None):
         if multiline: style |= wx.TE_MULTILINE # TODO(ut): would it harm to have them all multiline ?
-        wx.TextCtrl.__init__(self,parent,defId,value,size=size,style=style)
+        wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
+                             name=name)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
+        # event handlers must call event.Skip()
         if onKillFocus: self.Bind(wx.EVT_KILL_FOCUS, onKillFocus)
         if onText: self.Bind(wx.EVT_TEXT, onText)
 
