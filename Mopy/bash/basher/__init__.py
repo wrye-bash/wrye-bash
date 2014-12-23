@@ -2035,10 +2035,9 @@ class INIPanel(SashPanel):
         """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
+        # TODO(ut): do I need to delete deleted outside of Bash ? if yes move to SashPanel.OnCloseWindow
         bosh.iniInfos.table.save()
-        splitter = self.right.GetParent()
-        if hasattr(self, 'sashPosKey'):
-            settings[self.sashPosKey] = splitter.GetSashPosition()
+        SashPanel.OnCloseWindow(self)
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
@@ -2076,10 +2075,13 @@ class ModPanel(SashPanel):
 
     def OnCloseWindow(self):
         """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        bosh.modInfos.table.save()
+        table = bosh.modInfos.table
+        for modName in table.keys():
+            if modName not in bosh.modInfos:
+                del table[modName]
+        table.save()
         settings['bash.mods.scrollPos'] = modList.vScrollPos
-        splitter = self.right.GetParent()
-        settings[self.sashPosKey] = splitter.GetSashPosition()
+        SashPanel.OnCloseWindow(self)
         # Mod details Sash Positions
         splitter = self.modDetails.right.GetParent()
         settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
@@ -2098,7 +2100,7 @@ class SaveList(List):
         self.colsKey = 'bash.saves.cols'
         self.colReverse = settings.getChanged('bash.saves.colReverse')
         #--Data/Items
-        self.data = data = bosh.saveInfos
+        self.data = bosh.saveInfos
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self, parent, editLabels=True)
@@ -2513,9 +2515,8 @@ class SavePanel(SashPanel):
         table.save()
         bosh.saveInfos.profiles.save()
         settings['bash.saves.scrollPos'] = saveList.vScrollPos
-        splitter = self.right.GetParent()
-        settings[self.sashPosKey] = splitter.GetSashPosition()
-        # Mod details Sash Positions
+        SashPanel.OnCloseWindow(self)
+        # Save details Sash Positions
         splitter = self.saveDetails.right.GetParent()
         settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
         splitter = self.saveDetails.subSplitter
