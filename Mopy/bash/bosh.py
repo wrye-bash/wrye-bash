@@ -3998,22 +3998,24 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
-    def __init__(self,dir,factory=FileInfo, dirdef=None):
-        """Init with specified directory and specified factory type."""
-        self.dir = dir #--Path
-        self.dirdef = dirdef
-        self.factory=factory
-        self.data = {}
-        self.bashDir = self.getBashDir()
-        self.table = bolt.Table(PickleDict(
-            self.bashDir.join(u'Table.dat'),
-            self.bashDir.join(u'Table.pkl')))
+    def _initDB(self, dir_):
+        self.dir = dir_ #--Path
+        self.data = {} # populated in refresh()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
-        #--Update table keys...
+        self.bashDir = self.getBashDir() # should be a property
+        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
+                                           self.bashDir.join(u'Table.pkl')))
+        #--Update table keys... # TODO(ut): CRUFT ?
         tableData = self.table.data
         for key in self.table.data.keys():
             if not isinstance(key,bolt.Path):
                 del tableData[key]
+
+    def __init__(self, dir_, factory=FileInfo, dirdef=None):
+        """Init with specified directory and specified factory type."""
+        self.dirdef = dirdef
+        self.factory=factory
+        self._initDB(dir_)
 
     def getBashDir(self):
         """Returns Bash data storage directory."""
@@ -4952,17 +4954,38 @@ class ModInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
-
     """SaveInfo collection. Represents save directory and related info."""
-    #--Init
+
+    def _setLocalSaveFromIni(self):
+        """Read the current save profile from the oblivion.ini file and set
+        local save attribute to that value."""
+        if oblivionIni.path.exists() and (
+            oblivionIni.path.mtime != self.iniMTime):
+            # saveInfos 'singleton' is constructed in InitData after
+            # bosh.oblivionIni is set (hopefully) - TODO(ut) test
+            self.localSave = oblivionIni.getSetting(
+                bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
+                u'Saves\\')
+            # Hopefully will solve issues with unicode usernames # TODO(ut) test
+            self.localSave = _unicode(self.localSave) # encoding = 'cp1252' ?
+            self.iniMTime = oblivionIni.path.mtime
+
     def __init__(self):
         self.iniMTime = 0
-        self.refreshLocalSave()
-        FileInfos.__init__(self,self.dir,SaveInfo)
+        self.localSave = u'Saves\\'
+        self._setLocalSaveFromIni()
+        FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
+        # Save Profiles database
         self.profiles = bolt.Table(PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat'),
             dirs['userApp'].join(u'Profiles.pkl')))
-        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat')))
+
+    def getBashDir(self):
+        """Return the Bash save settings directory, creating it if it does
+        not exist."""
+        dir_ = FileInfos.getBashDir(self)
+        dir_.makedirs()
+        return dir_
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
@@ -4970,12 +4993,7 @@ class SaveInfos(FileInfos):
         return reSaveExt.search(fileName.s)
 
     def refresh(self):
-        if self.refreshLocalSave():
-            self.data.clear()
-            self.table.save()
-            self.table = bolt.Table(PickleDict(
-                self.bashDir.join(u'Table.dat'),
-                self.bashDir.join(u'Table.pkl')))
+        self._refreshLocalSave()
         return FileInfos.refresh(self)
 
     def delete(self,fileName):
@@ -5018,22 +5036,14 @@ class SaveInfos(FileInfos):
         localSaveDirs.sort()
         return localSaveDirs
 
-    def refreshLocalSave(self):
+    def _refreshLocalSave(self):
         """Refreshes self.localSave and self.dir."""
         #--self.localSave is NOT a Path object.
-        self.localSave = getattr(self,u'localSave',u'Saves\\')
-        self.dir = dirs['saveBase'].join(self.localSave)
-        self.bashDir = self.getBashDir()
-        if oblivionIni.path.exists() and (oblivionIni.path.mtime != self.iniMTime):
-            self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
-                                                    bush.game.saveProfilesKey[1],
-                                                    u'Saves\\')
-            # Hopefully will solve issues with unicode usernames
-            self.localSave = _unicode(self.localSave)
-            self.iniMTime = oblivionIni.path.mtime
-            return True
-        else:
-            return False
+        localSave = self.localSave
+        self._setLocalSaveFromIni()
+        if localSave == self.localSave: return # no change
+        self.table.save()
+        self._initDB(dirs['saveBase'].join(self.localSave))
 
     def setLocalSave(self,localSave):
         """Sets SLocalSavePath in Oblivion.ini."""
@@ -5043,8 +5053,7 @@ class SaveInfos(FileInfos):
                                 bush.game.saveProfilesKey[1],
                                 localSave)
         self.iniMTime = oblivionIni.path.mtime
-        bashDir = dirs['saveBase'].join(localSave,u'Bash')
-        self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
+        self._initDB(dirs['saveBase'].join(self.localSave))
         self.refresh()
 
     #--Enabled ----------------------------------------------------------------
