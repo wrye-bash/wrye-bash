@@ -33,6 +33,7 @@ import re
 import struct
 # Internal
 from .. import bush # for game and actorValues
+from ..bush import game # for Stats patcher
 from ..balt import Progress
 from ..bolt import GPath, _unicode, deprint, CsvReader, csvFormat
 from ..bosh import LoadFactory, ModFile, dirs, inisettings
