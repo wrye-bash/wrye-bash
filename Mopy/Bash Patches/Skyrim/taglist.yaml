@@ -8232,6 +8232,10 @@ plugins:
     tag:
       - Delev
       - Relev
+    dirty:
+      - crc: 0x8b9ef695
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
   - name: SkyTEST-RealisticAnimals&Predators.esp
     dirty:
       - crc: 0x2e582d9b
@@ -10370,9 +10374,32 @@ plugins:
         itm: 14
   - name: Inigo.esp
     dirty:
+      - crc: 0x4321049d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 39
       - crc: 0xb9fc7507
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 10
+  - name: tos_laintardale_hf.esp
+    dirty:
+      - crc: 0xe536de07
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 13
+  - name: SerenityCrewPatch.esp
+    dirty:
+      - crc: 0x8de14c64
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 3
+  - name: Morskom.esp
+    dirty:
+      - crc: 0x700cd98d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
+  - name: SerenitySeapointPatch.esp
+    dirty:
+      - crc: 0x74f86411
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 4
   - name: Ja´dirr + Kharjo Makeover.esp
     dirty:
       - crc: 0xc21a23e1
