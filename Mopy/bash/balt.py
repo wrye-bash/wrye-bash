@@ -1771,6 +1771,12 @@ class UIList(wx.Panel):
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
 
+    @property
+    def colReverse(self): # not sure why it gets it changed but no harm either
+        """Dictionary column->isReversed."""
+        return bosh.settings.getChanged(
+            self.__class__.keyPrefix + '.colReverse')
+
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
         """Show column menu."""
@@ -1888,6 +1894,13 @@ class Tank(UIList):
         data.setParam('vScrollPos', gList.GetScrollPos(wx.VERTICAL))
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+
+    @property
+    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
+
+    @property
+    def colReverse(self):
+        return bosh.settings[self.__class__.keyPrefix + '.colReverse']
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2015,6 +2028,12 @@ class Tank(UIList):
         self.UpdateIds()
         self.SortItems()
 
+    def _setSort(self,sort):
+        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
+
+    def _setColumnReverse(self, column, reverse):
+        self.colReverse[column] = reverse # should mark as changed on get ?
+        bosh.settings.setChanged(self.__class__.keyPrefix + '.colReverse')
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
         sort is then "cloned" list through an intermediate cmp function.
@@ -2039,18 +2058,13 @@ class Tank(UIList):
             reverse = not curReverse
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
-        self.SetColumnReverse(column, reverse)
-        self.SetSort(column)
+        self._setColumnReverse(column, reverse)
+        self._setSort(column)
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
-
-    def SetColumnReverse(self,column,reverse):
-        pass
-    def SetSort(self,sort):
-        pass
 
     def RefreshData(self):
         """Refreshes underlying data."""
@@ -2121,7 +2135,7 @@ class Tank(UIList):
         else:
             event.Skip()
         self.colWidths[colName] = width
-        bosh.settings.setChanged(self.colWidthsKey) # TODO(ut): needed ? was being called by People and Installers overrides
+        bosh.settings.setChanged(self.colWidthsKey)
 
     def OnColumnClick(self, event):
         """Column header was left clicked on. Sort on that column."""
