@@ -235,13 +235,13 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,mode=wx.VERTICAL,minimumSize=50,style=splitterStyle):
+    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,isVertical=True,minimumSize=50,style=splitterStyle):
         """Initialize."""
         NotebookPanel.__init__(self, parent, wx.ID_ANY)
         splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
-        if mode == wx.VERTICAL:
+        if isVertical:
             splitter.SplitVertically(self.left, self.right)
         else:
             splitter.SplitHorizontally(self.left, self.right)
@@ -250,16 +250,13 @@ class SashPanel(NotebookPanel):
         splitter.SetSashPosition(sashPos)
         if sashPosKey is not None:
             self.sashPosKey = sashPosKey
-        splitter.Bind(wx.EVT_SPLITTER_DCLICK, self.OnDClick)
+        # Don't allow unsplitting
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
         splitter.SetMinimumPaneSize(minimumSize)
         sizer = vSizer(
             (splitter,1,wx.EXPAND),
             )
         self.SetSizer(sizer)
-
-    def OnDClick(self, event):
-        """Don't allow unsplitting"""
-        event.Veto()
 
     def OnCloseWindow(self):
         splitter = self.right.GetParent()
@@ -480,54 +477,6 @@ class List(wx.Panel):
                                 balt.showError(self, _(u'%s') % e)
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
-
-    def checkUncheckMod(self, *mods):
-        removed = []
-        notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
-        for item in mods:
-            if item in removed or item in notDeactivatable: continue
-            oldFiles = bosh.modInfos.ordered[:]
-            fileName = GPath(item)
-            #--Unselect?
-            if self.data.isSelected(fileName):
-                try:
-                    self.data.unselect(fileName)
-                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
-                    if len(changed) > (fileName in changed):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        removed += changed
-                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
-                except bosh.liblo.LibloError as e:
-                    if e.msg == 'LIBLO_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.':
-                        msg = _(u'Plugins may not be sorted before the game\'s master file.')
-                    else:
-                        msg = e.msg
-                    balt.showError(self,_(u'%s') % msg)
-            #--Select?
-            else:
-                ## For now, allow selecting unicode named files, for testing
-                ## I'll leave the warning in place, but maybe we can get the
-                ## game to load these files.s
-                #if fileName in self.data.bad_names: return
-                try:
-                    self.data.select(fileName)
-                    changed = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
-                    if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        balt.showList(self,u'${count} '+_(u'Masters activated:'),changed,10,fileName.s)
-                except bosh.PluginsFullError:
-                    balt.showError(self,_(u'Unable to add mod %s because load list is full.')
-                        % fileName.s)
-                    return
-        #--Refresh
-        bosh.modInfos.refresh()
-        self.RefreshUI()
-        #--Mark sort as dirty
-        if self.selectedFirst:
-            self.sortDirty = 1
-            self.colReverse[self.sort] = not self.colReverse.get(self.sort,0)
 
     def GetSortSettings(self,col,reverse):
         """Return parsed col, reverse arguments. Used by SortSettings.
@@ -1517,10 +1466,10 @@ class ModList(List):
             toActivate = [item for item in selected if not self.data.isSelected(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
-                self.checkUncheckMod(*selected)
+                self._checkUncheckMod(*selected)
             else:
                 #--Check all that aren't
-                self.checkUncheckMod(*toActivate)
+                self._checkUncheckMod(*toActivate)
         ##Ctrl+A
         elif event.CmdDown() and code == ord('A'):
             self.SelectAll()
@@ -1541,7 +1490,7 @@ class ModList(List):
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             self.list.SetDnD(False)
-            self.checkUncheckMod(self.items[hitItem])
+            self._checkUncheckMod(self.items[hitItem])
         else:
             self.list.SetDnD(True)
         #--Pass Event onward
@@ -1554,12 +1503,62 @@ class ModList(List):
         if docBrowser:
             docBrowser.SetMod(modName)
 
+    #--Helpers ---------------------------------------------
+    def _checkUncheckMod(self, *mods):
+        removed = []
+        notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
+        for item in mods:
+            if item in removed or item in notDeactivatable: continue
+            oldFiles = bosh.modInfos.ordered[:]
+            fileName = GPath(item)
+            #--Unselect?
+            if self.data.isSelected(fileName):
+                try:
+                    self.data.unselect(fileName)
+                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
+                    if len(changed) > (fileName in changed):
+                        changed.remove(fileName)
+                        changed = [x.s for x in changed]
+                        removed += changed
+                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                except bosh.liblo.LibloError as e:
+                    if e.msg == 'LIBLO_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.':
+                        msg = _(u'Plugins may not be sorted before the game\'s master file.')
+                    else:
+                        msg = e.msg
+                    balt.showError(self,_(u'%s') % msg)
+            #--Select?
+            else:
+                ## For now, allow selecting unicode named files, for testing
+                ## I'll leave the warning in place, but maybe we can get the
+                ## game to load these files.s
+                #if fileName in self.data.bad_names: return
+                try:
+                    self.data.select(fileName)
+                    changed = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
+                        changed.remove(fileName)
+                        changed = [x.s for x in changed]
+                        balt.showList(self,u'${count} '+_(u'Masters activated:'),changed,10,fileName.s)
+                except bosh.PluginsFullError:
+                    balt.showError(self,_(u'Unable to add mod %s because load list is full.')
+                        % fileName.s)
+                    return
+        #--Refresh
+        bosh.modInfos.refresh()
+        self.RefreshUI()
+        #--Mark sort as dirty
+        if self.selectedFirst:
+            self.sortDirty = 1
+            self.colReverse[self.sort] = not self.colReverse.get(self.sort,0)
+
 #------------------------------------------------------------------------------
 class ModDetails(SashPanel):
     """Details panel for mod tab."""
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,mode=wx.HORIZONTAL,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
+        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,
+                           isVertical=False,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         #--Singleton
         global modDetails
@@ -2418,7 +2417,8 @@ class SaveDetails(SashPanel):
     """Savefile details panel."""
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,mode=wx.HORIZONTAL,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
+        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,
+                           isVertical=False,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         readOnlyColour = self.GetBackgroundColour()
         #--Singleton
@@ -4087,7 +4087,7 @@ class BSADetails(wx.Window):
 class BSAPanel(NotebookPanel):
     """BSA info tab."""
     def __init__(self,parent):
-        wx.Panel.__init__(self, parent, wx.ID_ANY)
+        NotebookPanel.__init__(self, parent)
         global BSAList
         BSAList = BSAList(self)
         self.BSADetails = BSADetails(self)
@@ -4247,7 +4247,8 @@ class MessagePanel(SashPanel):
         """Initialize."""
         import wx.lib.iewin
         sashPos = settings.get('bash.messages.sashPos',120)
-        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=120,mode=wx.HORIZONTAL,minimumSize=100)
+        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=sashPos,
+                           isVertical=False,minimumSize=100)
         gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList

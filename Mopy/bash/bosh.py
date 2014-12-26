@@ -4177,11 +4177,6 @@ class FileInfos(DataDict):
             if doRefresh:
                 self.refresh()
 
-    #--Move Exists
-    def moveIsSafe(self,fileName,destDir):
-        """Bool: Safe to move file to destDir."""
-        return not destDir.join(fileName).exists()
-
     #--Move
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir. Will overwrite!"""
@@ -4210,6 +4205,12 @@ class FileInfos(DataDict):
             destPath.mtime = mtime
         self.refresh()
 
+    #--Move Exists
+    @staticmethod
+    def moveIsSafe(fileName,destDir):
+        """Bool: Safe to move file to destDir."""
+        return not destDir.join(fileName).exists()
+
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
@@ -4233,21 +4234,6 @@ class ModInfos(FileInfos):
     #--------------------------------------------------------------------------
     # Load Order stuff is almost all handled in the Plugins class again
     #--------------------------------------------------------------------------
-    def swapOrder(self, leftName, rightName):
-        """Swaps the Load Order of two mods"""
-        order = self.plugins.LoadOrder
-        # Dummy checks
-        if leftName not in order or rightName not in order: return
-        if self.masterName in {leftName,rightName}: return
-        #--Swap
-        leftIdex = order.index(leftName)
-        rightIdex = order.index(rightName)
-        order[leftIdex] = rightName
-        order[rightIdex] = leftName
-        #--Save
-        self.plugins.saveLoadOrder()
-        self.plugins.refresh(True)
-
     def __init__(self):
         FileInfos.__init__(self,dirs['mods'],ModInfo)
         #--MTime resetting
@@ -5108,6 +5094,21 @@ class ModInfos(FileInfos):
         """Moves member file to destDir."""
         self.unselect(fileName)
         FileInfos.move(self,fileName,destDir,doRefresh)
+
+    def swapOrder(self, leftName, rightName):
+        """Swaps the Load Order of two mods"""
+        order = self.plugins.LoadOrder
+        # Dummy checks
+        if leftName not in order or rightName not in order: return
+        if self.masterName in {leftName,rightName}: return
+        #--Swap
+        leftIdex = order.index(leftName)
+        rightIdex = order.index(rightName)
+        order[leftIdex] = rightName
+        order[rightIdex] = leftName
+        #--Save
+        self.plugins.saveLoadOrder()
+        self.plugins.refresh(True)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self,fileName,asFloat=False):

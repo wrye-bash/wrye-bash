@@ -80,8 +80,7 @@ class ListBoxes(Dialog):
             try: items = [x.s for x in group[2:]]
             except: items = [x for x in group[2:]]
             if len(items) == 0: continue
-            box = wx.StaticBox(self,wx.ID_ANY,title)
-            subsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+            subsizer = hsbSizer((self, wx.ID_ANY, title))
             if liststyle == 'check':
                 checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
                 checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)

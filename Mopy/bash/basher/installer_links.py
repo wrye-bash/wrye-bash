@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import StringIO
 import copy
 import re
@@ -266,9 +267,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             balt.showInfo(self.gTank,message)
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
-    """Opens the installer's readme if BAIN can find one"""
+    """Opens the installer's readme if BAIN can find one."""
     text = _(u'Open Readme')
-    help = _(u"Opens the installer's readme.")
+    help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
         isSingle = super(Installer_OpenReadme, self)._enable()
@@ -664,6 +665,7 @@ class Installer_OpenPES(_Installer_OpenAt):
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     text = _(u'Refresh')
+    help = _(u'Rescan selected Installer(s)')
 
     def _enable(self):
         return not len(self.selected) == 1 or self.isSingleInstallable()
@@ -705,6 +707,7 @@ class Installer_SkipVoices(CheckLink, _InstallerLink):
 class Installer_Uninstall(_InstallerLink):
     """Uninstall selected Installers."""
     text = _(u'Uninstall')
+    help = _(u'Uninstall selected Installer(s)')
 
     def _enable(self): return len(self.filterInstallables())
 
@@ -724,6 +727,8 @@ class Installer_Uninstall(_InstallerLink):
 class Installer_CopyConflicts(_InstallerLink):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
+    help = _(u'Copy all files that conflict with the selected package into a'
+             u' new project')
 
     def _enable(self): return self.isSingleInstallable()
 
@@ -984,8 +989,9 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
-    """Install selected packages."""
+    """Unpack installer package(s) to Project(s)."""
     text = _(u'Unpack to Project(s)...')
+    help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
         self.selected = window.GetSelected()
@@ -1049,8 +1055,9 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfig(_InstallerLink):
-    """Install selected packages.""" # TODO(ut): docs
+    """Projects only. Allows you to read/write omod configuration info."""
     text = _(u'Omod Info...')
+    help = _(u'Projects only. Allows you to read/write omod configuration info')
 
     def _enable(self): return self.isSingleProject()
 
@@ -1061,8 +1068,9 @@ class InstallerProject_OmodConfig(_InstallerLink):
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_InstallerLink):
-    """Install selected packages.""" # TODO(ut): docs
+    """Synchronize the project with files from the Data directory."""
     text = _(u'Sync from Data')
+    help = _(u'Synchronize the project with files from the Data directory')
 
     def _enable(self):
         if not self.isSingleProject(): return False

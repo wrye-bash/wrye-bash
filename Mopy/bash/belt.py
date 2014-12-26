@@ -258,7 +258,7 @@ class PageSelect(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
-        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
+        sizerTitle = balt.hsbSizer((self,))
         self.TitleDesc = balt.staticText(desc)
         self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
@@ -409,7 +409,7 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
 
         #--Heading
-        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
+        sizerTitle = balt.hsbSizer((self,))
         textTitle = balt.staticText(_(u"The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
@@ -530,7 +530,8 @@ class PageVersions(PageInstaller):
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
-        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _(u'Version Requirements')))
+        sizerVersionsTop = balt.hsbSizer(
+            (self, wx.ID_ANY, _(u'Version Requirements')))
         sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
@@ -545,7 +546,7 @@ class PageVersions(PageInstaller):
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
             linkGame = balt.staticText(bush.game.displayName)
-        linkGame.SetToolTip(wx.ToolTip(bush.game.patchTip))
+        linkGame.SetToolTip(balt.tooltip(bush.game.patchTip))
         sizerVersions.Add(linkGame)
         sizerVersions.Add(balt.staticText(gameNeed))
         sizerVersions.Add(balt.staticText(gameHave))
@@ -555,7 +556,7 @@ class PageVersions(PageInstaller):
         if bush.game.se.shortName != u'':
             linkSE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.se.longName, bush.game.se.url)
             linkSE.SetVisitedColour(linkSE.GetNormalColour())
-            linkSE.SetToolTip(wx.ToolTip(bush.game.se.urlTip))
+            linkSE.SetToolTip(balt.tooltip(bush.game.se.urlTip))
             sizerVersions.Add(linkSE)
             sizerVersions.Add(balt.staticText(seNeed))
             sizerVersions.Add(balt.staticText(seHave))
@@ -565,7 +566,7 @@ class PageVersions(PageInstaller):
         if bush.game.ge.shortName != u'':
             linkGE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.ge.longName, bush.game.ge.url)
             linkGE.SetVisitedColour(linkGE.GetNormalColour())
-            linkGE.SetToolTip(wx.ToolTip(bush.game.ge.urlTip))
+            linkGE.SetToolTip(balt.tooltip(bush.game.ge.urlTip))
             sizerVersions.Add(linkGE)
             sizerVersions.Add(balt.staticText(geNeed))
             sizerVersions.Add(balt.staticText(geHave))
@@ -573,7 +574,7 @@ class PageVersions(PageInstaller):
 
         linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(wx.ToolTip(u'http://oblivion.nexusmods.com/'))
+        linkWB.SetToolTip(balt.tooltip(u'http://oblivion.nexusmods.com/'))
         sizerVersions.Add(linkWB)
         sizerVersions.Add(balt.staticText(wbNeed))
         sizerVersions.Add(balt.staticText(wbHave))
