@@ -21,11 +21,14 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import StringIO
 import re
 import shutil
 import struct
-from . import ImportFaceDialog, JPEG, Resources
+from . import Resources
+from .constants import JPEG
+from .dialogs import ImportFaceDialog
 from .. import bosh, bolt, balt, bush
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
@@ -297,6 +300,7 @@ class Save_RenamePlayer(EnabledLink):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
+#------------------------------------------------------------------------------
 class Save_ExportScreenshot(OneItemLink):
     """Exports the saved screenshot from a save game."""
     text = _(u'Export Screenshot...')

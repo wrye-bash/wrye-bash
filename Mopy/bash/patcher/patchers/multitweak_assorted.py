@@ -2298,7 +2298,6 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
 #------------------------------------------------------------------------------
 class AAssortedTweak_LightFadeValueFix(AMultiTweakItem):
     """Remove light flickering for low end machines."""
-    # TODO : was """Sets light fade value when not set to 1.0."""
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):

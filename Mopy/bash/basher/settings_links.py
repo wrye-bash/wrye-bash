@@ -29,7 +29,8 @@ from ..balt import ItemLink, vSizer, hSizer, spacer, button, AppendableLink, \
     staticText, tooltip, Link, staticBitmap
 from .. import barb, bosh, bush, balt, bass, bolt
 from ..bolt import StateError, deprint, GPath
-from . import BashFrame, ColorDialog, BashStatusBar
+from . import BashFrame, BashStatusBar
+from .dialogs import ColorDialog
 from .app_buttons import App_Button # TODO(ut): ugly
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 #------------------------------------------------------------------------------

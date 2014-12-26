@@ -63,8 +63,8 @@ from _ctypes import POINTER
 from ctypes import cast, c_ulong
 from cint import ObCollection, ObModFile, MGEFCode, FormID, dump_record, CBash, \
     ObBaseRecord
-from brec import _coerce, MreRecord, ModReader, ModError, ModWriter, \
-    getModIndex, genFid, getObjectIndex, getFormIndices
+from brec import MreRecord, ModReader, ModError, ModWriter, getModIndex, \
+    genFid, getObjectIndex, getFormIndices
 from patcher.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
@@ -200,7 +200,6 @@ class PickleDict(bolt.PickleDict):
         """
         result = bolt.PickleDict.load(self)
         if not result and self.oldPath.exists():
-            ins = None
             try:
                 with self.oldPath.open('r') as ins:
                     self.data.update(cPickle.load(ins))
@@ -208,11 +207,11 @@ class PickleDict(bolt.PickleDict):
             except EOFError:
                 pass
         #--Update paths
-        def textDump(path):
-            deprint(u'Text dump:',path)
-            with path.open('w',encoding='utf-8-sig') as out:
-                for key,value in self.data.iteritems():
-                    out.write(u'= %s:\n  %s\n' % (key,value))
+        # def textDump(path):
+        #     deprint(u'Text dump:',path)
+        #     with path.open('w',encoding='utf-8-sig') as out:
+        #         for key,value in self.data.iteritems():
+        #             out.write(u'= %s:\n  %s\n' % (key,value))
         #textDump(self.path+'.old.txt')
         if not self.vdata.get('boltPaths',False):
             self.updatePaths()
@@ -3918,6 +3917,7 @@ class INIInfo(FileInfo):
                 log(line)
             return bolt.winNewLines(log.out.getvalue())
 
+#------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -4073,7 +4073,7 @@ class FileInfos(DataDict):
             # Normal folder items
             names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
         names = list(names)
-        names.sort(key=lambda x: x.cext == u'.ghost')
+        names.sort(key=lambda x: x.cext == u'.ghost') # TODO(ut) Modinfos specific !!!@!
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -4170,18 +4170,12 @@ class FileInfos(DataDict):
             balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             #--Table
-            for filePath in toDelete:
-                if filePath in tableUpdate:
-                    if not filePath.exists():
-                        self.table.delRow(tableUpdate[filePath])
+            for filePath in tableUpdate:
+                if not filePath.exists():
+                    self.table.delRow(tableUpdate[filePath])
             #--Refresh
             if doRefresh:
                 self.refresh()
-
-    #--Move Exists
-    def moveIsSafe(self,fileName,destDir):
-        """Bool: Safe to move file to destDir."""
-        return not destDir.join(fileName).exists()
 
     #--Move
     def move(self,fileName,destDir,doRefresh=True):
@@ -4211,6 +4205,12 @@ class FileInfos(DataDict):
             destPath.mtime = mtime
         self.refresh()
 
+    #--Move Exists
+    @staticmethod
+    def moveIsSafe(fileName,destDir):
+        """Bool: Safe to move file to destDir."""
+        return not destDir.join(fileName).exists()
+
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
@@ -4234,21 +4234,6 @@ class ModInfos(FileInfos):
     #--------------------------------------------------------------------------
     # Load Order stuff is almost all handled in the Plugins class again
     #--------------------------------------------------------------------------
-    def swapOrder(self, leftName, rightName):
-        """Swaps the Load Order of two mods"""
-        order = self.plugins.LoadOrder
-        # Dummy checks
-        if leftName not in order or rightName not in order: return
-        if self.masterName in {leftName,rightName}: return
-        #--Swap
-        leftIdex = order.index(leftName)
-        rightIdex = order.index(rightName)
-        order[leftIdex] = rightName
-        order[rightIdex] = leftName
-        #--Save
-        self.plugins.saveLoadOrder()
-        self.plugins.refresh(True)
-
     def __init__(self):
         FileInfos.__init__(self,dirs['mods'],ModInfo)
         #--MTime resetting
@@ -4410,10 +4395,10 @@ class ModInfos(FileInfos):
     def autoGhost(self,force=False):
         """Automatically inactive files to ghost."""
         changed = []
-        allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
             active = self.plugins.selected
+            allowGhosting = self.table.getColumn('allowGhosting')
             for mod in self.data:
                 modInfo = self.data[mod]
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
@@ -5110,6 +5095,21 @@ class ModInfos(FileInfos):
         self.unselect(fileName)
         FileInfos.move(self,fileName,destDir,doRefresh)
 
+    def swapOrder(self, leftName, rightName):
+        """Swaps the Load Order of two mods"""
+        order = self.plugins.LoadOrder
+        # Dummy checks
+        if leftName not in order or rightName not in order: return
+        if self.masterName in {leftName,rightName}: return
+        #--Swap
+        leftIdex = order.index(leftName)
+        rightIdex = order.index(rightName)
+        order[leftIdex] = rightName
+        order[rightIdex] = leftName
+        #--Save
+        self.plugins.saveLoadOrder()
+        self.plugins.refresh(True)
+
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self,fileName,asFloat=False):
         """Extracts and returns version number for fileName from header.hedr.description."""
@@ -5224,6 +5224,7 @@ class ModInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
+
     """SaveInfo collection. Represents save directory and related info."""
     #--Init
     def __init__(self):
@@ -5237,7 +5238,7 @@ class SaveInfos(FileInfos):
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
-        """Bool: File is a mod."""
+        """Bool: File is a save."""
         return reSaveExt.search(fileName.s)
 
     def refresh(self):
@@ -5270,7 +5271,8 @@ class SaveInfos(FileInfos):
         CoSaves(self.dir,fileName).move(destDir,fileName)
 
     #--Local Saves ------------------------------------------------------------
-    def getLocalSaveDirs(self):
+    @staticmethod
+    def getLocalSaveDirs():
         """Returns a list of possible local save directories, NOT including the base directory."""
         baseSaves = dirs['saveBase'].join(u'Saves')
         if baseSaves.exists():
@@ -5527,7 +5529,6 @@ class ModRuleSet:
         self.modGroups = []
 
 #------------------------------------------------------------------------------
-
 class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
@@ -6060,55 +6061,6 @@ class Messages(DataDict):
                             buff.write(reLineEndings.sub(u'',line))
         self.hasChanged = True
         self.save()
-
-#------------------------------------------------------------------------------
-class ModBaseData(PickleTankData, bolt.TankData, DataDict):
-    """Mod database. (IN DEVELOPMENT.)
-    The idea for this is to provide a mod database. However, I might not finish this."""
-
-    def __init__(self):
-        bolt.TankData.__init__(self,settings)
-        PickleTankData.__init__(self,dirs['saveBase'].join(u'ModBase.dat'))
-        #--Default settings. Subclasses should define these.
-        self.tankKey = 'bash.modBase'
-        self.tankColumns = ['Package','Author','Version','Tags']
-        self.title = _(u'ModBase')
-        self.defaultParam('columns',self.tankColumns[:])
-        self.defaultParam('colWidths',{'Package':60,'Author':30,'Version':20})
-        self.defaultParam('colAligns',{})
-
-    #--Collection
-    def getSorted(self,column,reverse):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Package':
-            items.sort(key=string.lower,reverse=reverse)
-        else:
-            iColumn = self.tankColumns.index(column) #--Column num for Version, tags
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][iColumn],reverse=reverse)
-        return items
-
-    #--Item Info
-    def getColumns(self,item=None):
-        """Returns text labels for item or for row header if item == None.
-        NOTE: Assumes fixed order of columns!"""
-        if item is None:
-            return self.tankColumns[:]
-        else:
-            author,version,karma,tags = self.data[item][1:5]
-            return item,author,version,tags
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        textKey = backKey = None
-        iconKey = u'karma%+d' % self.data[item][1]
-        return iconKey,textKey,backKey
 
 #------------------------------------------------------------------------------
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
@@ -10267,6 +10219,7 @@ class SaveEnchantments:
                 count += 1
         self.saveFile.safeSave()
 
+#------------------------------------------------------------------------------
 class Save_NPCEdits:
     """General editing of NPCs/player in savegame."""
 
@@ -11390,7 +11343,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Oblivion (Application) Directories
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
     dirs['mods'] = dirs['app'].join(u'Data')
-    dirs['builds'] = dirs['app'].join(u'Builds')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
@@ -11748,43 +11700,69 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
     Installer.initData()
     PatchFile.initGameData()
 
-def initSettings(readOnly=False):
+def initSettings(readOnly=False, _dat=u'BashSettings.dat',
+                 _bak=u'BashSettings.dat.bak'):
+    """Init user settings from files and load the defaults (also in basher)."""
+    # TODO(ut): drop .pkl support, timestamp corrupted instead of deleting (?)
+
+    def _load(dat_file=_dat, oldPath=u'bash config.pkl'):
+    # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
+        return bolt.Settings( # calls PickleDict.load() and copies loaded data
+            PickleDict(dirs['saveBase'].join(dat_file),
+                       dirs['userApp'].join(oldPath), readOnly))
+
+    _dat = dirs['saveBase'].join(_dat)
+    _bak = dirs['saveBase'].join(_bak)
+    def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
+        _dat.remove()
+        if delBackup: _bak.remove()
+        # bolt machinery will automatically load the backup - bypass it if
+        # user did, by temporarily renaming the .bak file
+        if ignoreBackup: _bak.moveTo(_bak.s + u'.ignore')
+        # load the .bak file, or an empty settings dict saved to disc at exit
+        loaded = _load()
+        if ignoreBackup: GPath(_bak.s + u'.ignore').moveTo(_bak.s)
+        return loaded
+
     global settings
     try:
-        settings = bolt.Settings(PickleDict(
-            dirs['saveBase'].join(u'BashSettings.dat'),
-            dirs['userApp'].join(u'bash config.pkl'),
-            readOnly))
+        settings = _load()
     except cPickle.UnpicklingError, err:
-        usebck = balt.askYes(None,_(u"Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash.") % err,_(u"Settings Load Error"))
+        msg = _(
+            u"Error reading the Bash Settings database (the error is: '%s'). "
+            u"This is probably not recoverable with the current file. Do you "
+            u"want to try the backup BashSettings.dat? (It will have all your "
+            u"UI choices of the time before last that you used Wrye Bash.")
+        usebck = balt.askYes(None, msg % repr(err), _(u"Settings Load Error"))
         if usebck:
             try:
-                settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join(u'BashSettings.dat.bak'),
-                    dirs['userApp'].join(u'bash config.pkl'),
-                    readOnly))
+                settings = _loadBakOrEmpty()
             except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_(u"Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)") % err,_(u"Settings Load Error"))
-                if delete:
-                    dirs['saveBase'].join(u'BashSettings.dat').remove()
-                    settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join(u'BashSettings.dat'),
-                    dirs['userApp'].join(u'bash config.pkl'),
-                    readOnly))
+                msg = _(
+                    u"Error reading the BackupBash Settings database (the "
+                    u"error is: '%s'). This is probably not recoverable with "
+                    u"the current file. Do you want to delete the corrupted "
+                    u"settings and load Wrye Bash without your saved UI "
+                    u"settings?. (Otherwise Wrye Bash won't start up)")
+                delete = balt.askYes(None, msg % repr(err),
+                                     _(u"Settings Load Error"))
+                if delete: settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
-            delete = balt.askYes(None,_(u"Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)"),_(u"Settings Load Error"))
-            if delete:
-                dirs['saveBase'].join(u'BashSettings.dat').remove()
-                settings = bolt.Settings(PickleDict(
-                dirs['saveBase'].join(u'BashSettings.dat'),
-                dirs['userApp'].join(u'bash config.pkl'),
-                readOnly))
+            msg = _(
+                u"Do you want to delete the corrupted settings and load Wrye "
+                u"Bash without your saved UI settings?. (Otherwise Wrye Bash "
+                u"won't start up)")
+            delete = balt.askYes(None, msg, _(u"Settings Load Error"))
+            if delete: # ignore bak but don't delete
+                settings = _loadBakOrEmpty(ignoreBackup=True)
             else: raise
-    # No longer pulling version out of the readme, but still need the old cached value for upgrade check!
+    # No longer pulling version out of the readme, but still need the old
+    # cached value for upgrade check! (!)
     if 'bash.readme' in settings:
         settings['bash.version'] = _(settings['bash.readme'][1])
         del settings['bash.readme']
+    # load rest of settings that do not have a value loaded - also in basher
     settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------
