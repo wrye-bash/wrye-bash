@@ -297,6 +297,7 @@ class Save_RenamePlayer(EnabledLink):
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
 
+#------------------------------------------------------------------------------
 class Save_ExportScreenshot(OneItemLink):
     """Exports the saved screenshot from a save game."""
     text = _(u'Export Screenshot...')

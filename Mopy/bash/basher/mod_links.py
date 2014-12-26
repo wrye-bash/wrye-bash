@@ -1974,8 +1974,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
             _(u'Choose directory to import scripts from'),defaultPath)
         if textDir is None:
             return
-        message = (_(u"Import scripts that don't exist in the esp as new scripts?")
-                   + u'\n' +
+        message = (_(u"Import scripts that don't exist in the esp as new"
+                     u" scripts?") + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
         makeNew = balt.askYes(self.window, message, _(u'Import Scripts'),
@@ -1983,28 +1983,32 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         scriptText = self._parser()
         scriptText.readFromText(textDir.s,fileInfo)
         changed, added = scriptText.writeToMod(fileInfo,makeNew)
-    #--Log
+        #--Log
         if not (len(changed) or len(added)):
             balt.showOk(self.window,_(u"No changed or new scripts to import."),
                         _(u"Import Scripts"))
+            return
+        if changed:
+            changedScripts = (_(u'Imported %d changed scripts from %s:') +
+                              u'\n%s') % (
+                len(changed), textDir.s, u'*' + u'\n*'.join(sorted(changed)))
         else:
-            if changed:
-                changedScripts = (_(u'Imported %d changed scripts from %s:')
-                                  + u'\n%s') % (len(changed),textDir.s,u'*'+u'\n*'.join(sorted(changed)))
-            else:
-                changedScripts = u''
-            if added:
-                addedScripts = (_(u'Imported %d new scripts from %s:')
-                                + u'\n%s') % (len(added),textDir.s,u'*'+u'\n*'.join(sorted(added)))
-            else:
-                addedScripts = u''
-            if changed and added:
-                report = changedScripts + u'\n\n' + addedScripts
-            elif changed:
-                report = changedScripts
-            elif added:
-                report = addedScripts
-            balt.showLog(self.window,report,_(u'Import Scripts'),icons=Resources.bashBlue)
+            changedScripts = u''
+        if added:
+            addedScripts = (_(u'Imported %d new scripts from %s:')
+                            + u'\n%s') % (
+                len(added), textDir.s, u'*' + u'\n*'.join(sorted(added)))
+        else:
+            addedScripts = u''
+        report = None
+        if changed and added:
+            report = changedScripts + u'\n\n' + addedScripts
+        elif changed:
+            report = changedScripts
+        elif added:
+            report = addedScripts
+        balt.showLog(self.window, report, _(u'Import Scripts'),
+                     icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..patcher.utilities import ItemStats, CBash_ItemStats

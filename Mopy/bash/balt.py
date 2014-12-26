@@ -1194,12 +1194,6 @@ class Dialog(wx.Dialog):
         self.Destroy()
         event.Skip()
 
-    #  __enter__ and __exit__ for use with the 'with' statement
-    def __enter__(self):
-        return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
-
     @classmethod
     def Display(cls, *args, **kwargs):
         """Instantiate a dialog, display it and return the ShowModal result."""
@@ -2466,6 +2460,14 @@ def copyListToClipboard(selected):
         clipData = wx.FileDataObject()
         for mod in selected: clipData.AddFile(mod)
         wx.TheClipboard.SetData(clipData)
+        wx.TheClipboard.Close()
+
+def clipboardDropFiles(millis, callable_):
+    if wx.TheClipboard.Open():
+        if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+            obj = wx.FileDataObject()
+            wx.TheClipboard.GetData(obj)
+            wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
         wx.TheClipboard.Close()
 
 def getKeyState(key): return wx.GetKeyState(key)

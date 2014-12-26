@@ -63,8 +63,8 @@ from _ctypes import POINTER
 from ctypes import cast, c_ulong
 from cint import ObCollection, ObModFile, MGEFCode, FormID, dump_record, CBash, \
     ObBaseRecord
-from brec import _coerce, MreRecord, ModReader, ModError, ModWriter, \
-    getModIndex, genFid, getObjectIndex, getFormIndices
+from brec import MreRecord, ModReader, ModError, ModWriter, getModIndex, \
+    genFid, getObjectIndex, getFormIndices
 from patcher.record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
@@ -200,7 +200,6 @@ class PickleDict(bolt.PickleDict):
         """
         result = bolt.PickleDict.load(self)
         if not result and self.oldPath.exists():
-            ins = None
             try:
                 with self.oldPath.open('r') as ins:
                     self.data.update(cPickle.load(ins))
@@ -208,11 +207,11 @@ class PickleDict(bolt.PickleDict):
             except EOFError:
                 pass
         #--Update paths
-        def textDump(path):
-            deprint(u'Text dump:',path)
-            with path.open('w',encoding='utf-8-sig') as out:
-                for key,value in self.data.iteritems():
-                    out.write(u'= %s:\n  %s\n' % (key,value))
+        # def textDump(path):
+        #     deprint(u'Text dump:',path)
+        #     with path.open('w',encoding='utf-8-sig') as out:
+        #         for key,value in self.data.iteritems():
+        #             out.write(u'= %s:\n  %s\n' % (key,value))
         #textDump(self.path+'.old.txt')
         if not self.vdata.get('boltPaths',False):
             self.updatePaths()
@@ -3918,6 +3917,7 @@ class INIInfo(FileInfo):
                 log(line)
             return bolt.winNewLines(log.out.getvalue())
 
+#------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -4073,7 +4073,7 @@ class FileInfos(DataDict):
             # Normal folder items
             names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
         names = list(names)
-        names.sort(key=lambda x: x.cext == u'.ghost')
+        names.sort(key=lambda x: x.cext == u'.ghost') # TODO(ut) Modinfos specific !!!@!
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -4170,10 +4170,9 @@ class FileInfos(DataDict):
             balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
             #--Table
-            for filePath in toDelete:
-                if filePath in tableUpdate:
-                    if not filePath.exists():
-                        self.table.delRow(tableUpdate[filePath])
+            for filePath in tableUpdate:
+                if not filePath.exists():
+                    self.table.delRow(tableUpdate[filePath])
             #--Refresh
             if doRefresh:
                 self.refresh()
@@ -4410,10 +4409,10 @@ class ModInfos(FileInfos):
     def autoGhost(self,force=False):
         """Automatically inactive files to ghost."""
         changed = []
-        allowGhosting = self.table.getColumn('allowGhosting')
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
             active = self.plugins.selected
+            allowGhosting = self.table.getColumn('allowGhosting')
             for mod in self.data:
                 modInfo = self.data[mod]
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
@@ -5224,6 +5223,7 @@ class ModInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
+
     """SaveInfo collection. Represents save directory and related info."""
     #--Init
     def __init__(self):
@@ -5237,7 +5237,7 @@ class SaveInfos(FileInfos):
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
-        """Bool: File is a mod."""
+        """Bool: File is a save."""
         return reSaveExt.search(fileName.s)
 
     def refresh(self):
@@ -5270,7 +5270,8 @@ class SaveInfos(FileInfos):
         CoSaves(self.dir,fileName).move(destDir,fileName)
 
     #--Local Saves ------------------------------------------------------------
-    def getLocalSaveDirs(self):
+    @staticmethod
+    def getLocalSaveDirs():
         """Returns a list of possible local save directories, NOT including the base directory."""
         baseSaves = dirs['saveBase'].join(u'Saves')
         if baseSaves.exists():
@@ -5527,7 +5528,6 @@ class ModRuleSet:
         self.modGroups = []
 
 #------------------------------------------------------------------------------
-
 class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
@@ -10267,6 +10267,7 @@ class SaveEnchantments:
                 count += 1
         self.saveFile.safeSave()
 
+#------------------------------------------------------------------------------
 class Save_NPCEdits:
     """General editing of NPCs/player in savegame."""
 

@@ -66,7 +66,8 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import tooltip, fill, bell, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, copyListToClipboard, roTextCtrl, staticBitmap
-from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, spinCtrl, textCtrl
+from ..balt import bitmapButton, button, toggleButton, checkBox, staticText, \
+    spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer, hsbSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ListCtrl, ItemLink
@@ -2996,12 +2997,7 @@ class InstallersList(balt.Tank):
                 if path.exists(): path.start()
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
-            if wx.TheClipboard.Open():
-                if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
-                    obj = wx.FileDataObject()
-                    wx.TheClipboard.GetData(obj)
-                    wx.CallLater(10,self.OnDropFiles,0,0,obj.GetFilenames())
-                wx.TheClipboard.Close()
+            balt.clipboardDropFiles(10, self.OnDrKopFiles)
         else:
             event.Skip()
 
@@ -5170,7 +5166,8 @@ class BashFrame(wx.Frame):
             self.notebook.GetPage(index).OnCloseWindow()
         settings.save()
 
-    def CleanSettings(self):
+    @staticmethod
+    def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
         modNames = set(bosh.modInfos.data.keys())

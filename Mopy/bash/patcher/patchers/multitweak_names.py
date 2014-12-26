@@ -299,8 +299,7 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once (TODO:
-#  should be faster ? name ?)
+reSpell = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ',re.U) # compile once
 
 class ANamesTweak_Scrolls(AMultiTweakItem):
     reOldLabel = reSpell
@@ -861,7 +860,7 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                     for entry in stage.entries:
                         changed = reMatch.search(entry.text or u'')
                         if changed: break
-##### TODO: is this code needed ?
+##### CRUFT: is this code needed ?
 ##                        compiled = entry.compiled_p
 ##                        if compiled:
 ##                            changed = reMatch.search(struct.pack('B' * len(compiled), *compiled) or '')
@@ -919,7 +918,7 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                             newString = entry.text
                             if newString:
                                 entry.text = reMatch.sub(self.reReplace, newString)
-##### TODO: is this code needed ?
+##### CRUFT: is this code needed ?
 ##                            newString = entry.compiled_p
 ##                            if newString:
 ##                                nSize = len(newString)
