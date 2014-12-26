@@ -1152,22 +1152,20 @@ class DataDict:
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
+        """Return value for key or modinfo (?) of the game master file."""
         if self.data.has_key(key):
             return self.data[key]
         else:
             if isinstance(key, Path):
-                try:
+                try: # TODO(ut): why? data may not contain ModInfos necessarily
                     import bush
                     return self.data[Path(bush.game.masterFiles[0])]
                 except:
-                    try:
-                        return self.data[Path(u'Oblivion.esm')]
-                    except:
-                        print
-                        print "An error occurred trying to access data for mod file:", key
-                        print "This can occur when the game's main ESM file is corrupted."
-                        print
-                        raise
+                    print
+                    print "An error occurred trying to access data for mod file:", key
+                    print "This can occur when the game's main ESM file is corrupted."
+                    print
+                    raise
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
@@ -1417,18 +1415,17 @@ class PickleDict:
         self.data.clear()
         for path in (self.path,self.backup):
             if path.exists():
-                ins = None
                 try:
                     with path.open('rb') as ins:
                         try:
-                            header = cPickle.load(ins)
+                            firstPickle = cPickle.load(ins)
                         except ValueError:
                             os.remove(path)
                             continue # file corrupt - try next file
-                        if header == 'VDATA2':
+                        if firstPickle == 'VDATA2':
                             self.vdata.update(cPickle.load(ins))
                             self.data.update(cPickle.load(ins))
-                        elif header == 'VDATA':
+                        elif firstPickle == 'VDATA':
                             # translate data types to new hierarchy
                             class _Translator:
                                 def __init__(self, fileToWrap):
@@ -1446,8 +1443,8 @@ class PickleDict:
                             except:
                                 deprint(u'unable to unpickle data', traceback=True)
                                 raise
-                        else:
-                            self.data.update(header)
+                        else: # no version string or vdata
+                            self.data.update(firstPickle)
                     return 1 + (path == self.backup)
                 except (EOFError, ValueError):
                     pass
@@ -1455,7 +1452,11 @@ class PickleDict:
         return 0
 
     def save(self):
-        """Save to pickle file."""
+        """Save to pickle file.
+
+        Three objects are writen - a version string and the vdata and data
+        dictionaries, in this order.
+        """
         if self.readOnly: return False
         #--Pickle it
         with self.path.temp.open('wb') as out:
@@ -1488,8 +1489,8 @@ class Settings(DataDict):
             self.vdata = {}
             self.data = {}
         self.defaults = {}
-        self.changed = []
-        self.deleted = []
+        self.changed = set()
+        self.deleted = set()
 
     def loadDefaults(self,defaults):
         """Add default settings to dictionary. Will not replace values that are already set."""
@@ -1520,8 +1521,7 @@ class Settings(DataDict):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
         if key not in self.data:
             raise ArgumentError(u'No settings data for '+key)
-        if key not in self.changed:
-            self.changed.append(key)
+        self.changed.add(key)
 
     def getChanged(self,key,default=None):
         """Gets and marks as changed."""
@@ -1534,13 +1534,13 @@ class Settings(DataDict):
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         if key in self.deleted: self.deleted.remove(key)
-        if key not in self.changed: self.changed.append(key)
+        self.changed.add(key)
         self.data[key] = value
 
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
         if key in self.changed: self.changed.remove(key)
-        if key not in self.deleted: self.deleted.append(key)
+        self.deleted.add(key)
         del self.data[key]
 
     def setdefault(self,key,value):
@@ -1554,7 +1554,7 @@ class Settings(DataDict):
     def pop(self,key,default=None):
         """Dictionary emulation: extract value and delete from dictionary."""
         if key in self.changed: self.changed.remove(key)
-        if key not in self.deleted: self.deleted.append(key)
+        self.deleted.add(key)
         return self.data.pop(key,default)
 
 #------------------------------------------------------------------------------
@@ -1657,8 +1657,7 @@ class TableColumn:
         """Dictionary emulation."""
         tableData = self.table.data
         column = self.column
-        return [(key,tableData[key][column]) for key in tableData.keys()
-            if (column in tableData[key])]
+        return [(key,tableData[key][column]) for key in self]
     def has_key(self,key):
         """Dictionary emulation."""
         return self.__contains__(key)
@@ -1696,7 +1695,7 @@ class Table(DataDict):
     ('propName')."""
 
     def __init__(self,dictFile):
-        """Intialize and read data from dictFile, if available."""
+        """Initialize and read data from dictFile, if available."""
         self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
