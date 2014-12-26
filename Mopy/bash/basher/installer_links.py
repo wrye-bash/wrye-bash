@@ -86,15 +86,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
-    def getProjectPath(self):
-        """Returns whether build directory exists."""
-        archive = self.selected[0]
-        return bosh.dirs['builds'].join(archive.sroot)
-
-    def projectExists(self):
-        if not len(self.selected) == 1: return False
-        return self.getProjectPath().exists()
-
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
@@ -1100,16 +1091,6 @@ class InstallerProject_Sync(_InstallerLink):
             installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
             self.idata.refresh(what='NS')
             self.gTank.RefreshUI()
-
-#------------------------------------------------------------------------------
-class InstallerProject_SyncPack(_InstallerLink):
-    """Install selected packages.""" # TODO(ut): docs
-    text = _(u'Sync and Pack')
-
-    def _enable(self): return self.projectExists()
-
-    def Execute(self,event):
-        raise UncodedError
 
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(AppendableLink, _InstallerLink):

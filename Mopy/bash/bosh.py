@@ -11391,7 +11391,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Oblivion (Application) Directories
     dirs['app'] = getOblivionPath(bashIni,oblivionPath)
     dirs['mods'] = dirs['app'].join(u'Data')
-    dirs['builds'] = dirs['app'].join(u'Builds')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
