@@ -1462,7 +1462,7 @@ class PickleDict:
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
                 cPickle.dump(data,out,-1)
-        self.path.untemp(True)
+        self.path.untemp(doBackup=True)
         return True
 
 #------------------------------------------------------------------------------
@@ -1478,11 +1478,13 @@ class Settings(DataDict):
     to be archived). However, an indirect change (e.g., to a value that is a
     list) must be manually marked as changed by using the setChanged method."""
 
-    def __init__(self,dictFile):
+    def __init__(self, dictFile):
         """Initialize. Read settings from dictFile."""
         self.dictFile = dictFile
+        self.cleanSave = False
         if self.dictFile:
-            dictFile.load()
+            res = dictFile.load()
+            self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
             self.data = dictFile.data.copy()
         else:
@@ -1506,7 +1508,8 @@ class Settings(DataDict):
         """Save to pickle file. Only key/values marked as changed are saved."""
         dictFile = self.dictFile
         if not dictFile or dictFile.readOnly: return
-        dictFile.load()
+        # on a clean save ignore BashSettings.dat.bak possibly corrupt
+        if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
         for key in self.deleted:
             dictFile.data.pop(key,None)

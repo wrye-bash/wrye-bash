@@ -11748,43 +11748,69 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
     Installer.initData()
     PatchFile.initGameData()
 
-def initSettings(readOnly=False):
+def initSettings(readOnly=False, _dat=u'BashSettings.dat',
+                 _bak=u'BashSettings.dat.bak'):
+    """Init user settings from files and load the defaults (also in basher)."""
+    # TODO(ut): drop .pkl support, timestamp corrupted instead of deleting (?)
+
+    def _load(dat_file=_dat, oldPath=u'bash config.pkl'):
+    # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
+        return bolt.Settings( # calls PickleDict.load() and copies loaded data
+            PickleDict(dirs['saveBase'].join(dat_file),
+                       dirs['userApp'].join(oldPath), readOnly))
+
+    _dat = dirs['saveBase'].join(_dat)
+    _bak = dirs['saveBase'].join(_bak)
+    def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):
+        _dat.remove()
+        if delBackup: _bak.remove()
+        # bolt machinery will automatically load the backup - bypass it if
+        # user did, by temporarily renaming the .bak file
+        if ignoreBackup: _bak.moveTo(_bak.s + u'.ignore')
+        # load the .bak file, or an empty settings dict saved to disc at exit
+        loaded = _load()
+        if ignoreBackup: GPath(_bak.s + u'.ignore').moveTo(_bak.s)
+        return loaded
+
     global settings
     try:
-        settings = bolt.Settings(PickleDict(
-            dirs['saveBase'].join(u'BashSettings.dat'),
-            dirs['userApp'].join(u'bash config.pkl'),
-            readOnly))
+        settings = _load()
     except cPickle.UnpicklingError, err:
-        usebck = balt.askYes(None,_(u"Error reading the Bash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to try the backup BashSettings.dat? (It will have all your UI choices of the time before last that you used Wrye Bash.") % err,_(u"Settings Load Error"))
+        msg = _(
+            u"Error reading the Bash Settings database (the error is: '%s'). "
+            u"This is probably not recoverable with the current file. Do you "
+            u"want to try the backup BashSettings.dat? (It will have all your "
+            u"UI choices of the time before last that you used Wrye Bash.")
+        usebck = balt.askYes(None, msg % repr(err), _(u"Settings Load Error"))
         if usebck:
             try:
-                settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join(u'BashSettings.dat.bak'),
-                    dirs['userApp'].join(u'bash config.pkl'),
-                    readOnly))
+                settings = _loadBakOrEmpty()
             except cPickle.UnpicklingError, err:
-                delete = balt.askYes(None,_(u"Error reading the BackupBash Settings database (the error is: '%s'). This is probably not recoverable with the current file. Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)") % err,_(u"Settings Load Error"))
-                if delete:
-                    dirs['saveBase'].join(u'BashSettings.dat').remove()
-                    settings = bolt.Settings(PickleDict(
-                    dirs['saveBase'].join(u'BashSettings.dat'),
-                    dirs['userApp'].join(u'bash config.pkl'),
-                    readOnly))
+                msg = _(
+                    u"Error reading the BackupBash Settings database (the "
+                    u"error is: '%s'). This is probably not recoverable with "
+                    u"the current file. Do you want to delete the corrupted "
+                    u"settings and load Wrye Bash without your saved UI "
+                    u"settings?. (Otherwise Wrye Bash won't start up)")
+                delete = balt.askYes(None, msg % repr(err),
+                                     _(u"Settings Load Error"))
+                if delete: settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
-            delete = balt.askYes(None,_(u"Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash won't start up)"),_(u"Settings Load Error"))
-            if delete:
-                dirs['saveBase'].join(u'BashSettings.dat').remove()
-                settings = bolt.Settings(PickleDict(
-                dirs['saveBase'].join(u'BashSettings.dat'),
-                dirs['userApp'].join(u'bash config.pkl'),
-                readOnly))
+            msg = _(
+                u"Do you want to delete the corrupted settings and load Wrye "
+                u"Bash without your saved UI settings?. (Otherwise Wrye Bash "
+                u"won't start up)")
+            delete = balt.askYes(None, msg, _(u"Settings Load Error"))
+            if delete: # ignore bak but don't delete
+                settings = _loadBakOrEmpty(ignoreBackup=True)
             else: raise
-    # No longer pulling version out of the readme, but still need the old cached value for upgrade check!
+    # No longer pulling version out of the readme, but still need the old
+    # cached value for upgrade check! (!)
     if 'bash.readme' in settings:
         settings['bash.version'] = _(settings['bash.readme'][1])
         del settings['bash.readme']
+    # load rest of settings that do not have a value loaded - also in basher
     settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------

@@ -6634,7 +6634,7 @@ def InitSettings(): # this must run first !
     balt.sizes = bosh.settings.getChanged('bash.window.sizes',{})
     settings = bosh.settings
     settings.loadDefaults(settingDefaults) # called in bosh.initSettings() also
-    # with bosh.settingDefaults passed in - TODO(ut) unify
+    # with bosh.settingDefaults passed in
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')
