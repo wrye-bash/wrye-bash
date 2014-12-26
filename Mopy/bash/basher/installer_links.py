@@ -222,7 +222,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         #       iniList-> left    -> splitter ->INIPanel
-        panel = iniList.GetParent().GetParent().GetParent()
+        if iniList is not None: panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
@@ -230,7 +230,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     out.write(line+u'\n')
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            iniList.RefreshUI()
+            if iniList is not None: iniList.RefreshUI()
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
@@ -247,16 +247,16 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                ) % iniFile.sbody
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                         continue
-                panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
+                if iniList is not None: panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
-                iniList.data.ini.applyTweakFile(outFile)
+                bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
             else:
                 # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
                 # this installer
                 manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None:
+        if lastApplied is not None and iniList is not None:
             iniList.RefreshUI('VALID')
             panel.iniContents.RefreshUI()
             panel.tweakContents.RefreshUI(lastApplied)

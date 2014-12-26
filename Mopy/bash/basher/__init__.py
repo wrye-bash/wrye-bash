@@ -2045,6 +2045,8 @@ class INIPanel(SashPanel):
             bosh.iniInfos.setBaseIni(ini)
             self.button.Enable(True)
         selected = None
+        # iniList can be None below cause we are called in init before iniList
+        # is assigned - possibly to avoid a refresh ?
         if iniList is not None:
             selected = iniList.GetSelected()
             if len(selected) > 0:
@@ -2130,7 +2132,6 @@ class INIPanel(SashPanel):
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
         iniList.RefreshUI()
-
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""

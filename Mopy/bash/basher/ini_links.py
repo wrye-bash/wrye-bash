@@ -27,7 +27,7 @@ from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
 
 #------------------------------------------------------------------------------
-iniList = None # FIXME(ut): globals
+iniList = None # FIXME(ut): globals should be non None
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
