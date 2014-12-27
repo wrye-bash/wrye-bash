@@ -167,9 +167,9 @@ def Init(path):
         loot_game_tes4:loot_game_tes4,
         'Skyrim':loot_game_tes5,
         loot_game_tes5:loot_game_tes5,
-        'Fallout 3':loot_game_fo3,
+        'Fallout3':loot_game_fo3,
         loot_game_fo3:loot_game_fo3,
-        'Fallout: New Vegas':loot_game_fonv,
+        'FalloutNV':loot_game_fonv,
         loot_game_fonv:loot_game_fonv,
         }
 

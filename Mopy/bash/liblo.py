@@ -135,15 +135,15 @@ def Init(path):
     LIBLO_GAME_TES4 = c_uint.in_dll(liblo,'LIBLO_GAME_TES4').value
     LIBLO_GAME_TES5 = c_uint.in_dll(liblo,'LIBLO_GAME_TES5').value
     LIBLO_GAME_FO3 = c_uint.in_dll(liblo,'LIBLO_GAME_FO3').value
-    LIBLO_GAME_FNV=c_uint.in_dll(liblo,'LIBLO_GAME_FNV').value
+    LIBLO_GAME_FNV = c_uint.in_dll(liblo,'LIBLO_GAME_FNV').value
     games = {
         'Oblivion':LIBLO_GAME_TES4,
         LIBLO_GAME_TES4:LIBLO_GAME_TES4,
         'Skyrim':LIBLO_GAME_TES5,
         LIBLO_GAME_TES5:LIBLO_GAME_TES5,
-        'Fallout 3':LIBLO_GAME_FO3,
+        'Fallout3':LIBLO_GAME_FO3,
         LIBLO_GAME_FO3:LIBLO_GAME_FO3,
-        'Fallout: New Vegas':LIBLO_GAME_FNV,
+        'FalloutNV':LIBLO_GAME_FNV,
         LIBLO_GAME_FNV:LIBLO_GAME_FNV,
         }
 

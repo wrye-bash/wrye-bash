@@ -2426,7 +2426,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
 
 #------------------------------------------------------------------------------
 class NamesPatcher(ImportPatcher):
-    """Merged leveled lists mod file."""
+    """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
     autoRe = game.namesPatcherMaster

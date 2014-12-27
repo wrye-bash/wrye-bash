@@ -41,6 +41,8 @@ if os.name == u'nt':
 
 class Nexus:
     #--Regex's for parsing Nexus site URLs
+    # http://www.nexusmods.com/skyrim/mods/25859/?tab=2&navtag=http%3A%2F%2Fwww.nexusmods.com%2Fskyrim%2Fajax%2Fmodfiles%2F%3Fid%3D25859&pUp=1
+    # http://www.nexusmods.com/oblivion/mods/22368/?tab=2&navtag=http%3A%2F%2Fwww.nexusmods.com%2Foblivion%2Fajax%2Fmodfiles%2F%3Fid%3D22368&pUp=1
     reFileGroupStart = re.compile(
         u'.*?<h3>\s*(.+?)\s*</h3>\s*<ol\s+class\s*=\s*"files-tab-files-list"\s*>(.*)',
         re.I|re.U)
@@ -53,6 +55,10 @@ class Nexus:
         re.I|re.U)
 
     # Class for interacting with TES/Skyrim Nexus
+    # http://www.nexusmods.com/skyrim/mods/25859/?
+    # http://www.nexusmods.com/oblivion/mods/22368/?
+    # http://www.nexusmods.com/oblivion/?
+    # http://www.nexusmods.com/skyrim/?
     def __init__(self,nexusSite='tesnexus',fileId=None):
         self.urlBase = 'http://'+nexusSite+'nexusmods.com'
         self.fileId = fileId
