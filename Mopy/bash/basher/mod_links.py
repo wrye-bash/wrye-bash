@@ -29,11 +29,10 @@ import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink, Image
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from . import DocBrowser, Resources
 from .constants import ID_GROUPS, JPEG
-from .dialogs import Mod_BaloGroups_Edit
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
 from .patcher_dialog import PatchDialog
@@ -294,7 +293,7 @@ class _Mod_Groups_Import(EnabledLink):
             _(u"Imported %d mod/groups (%d changed).") % (len(modGroups.mod_group),changed),
             _(u"Import Groups"))
 
-class Mod_Groups(AppendableLink, _Mod_Labels):
+class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
     def __init__(self):
         self.column     = 'group'
@@ -313,61 +312,6 @@ class Mod_Groups(AppendableLink, _Mod_Labels):
         class _CheckGroup(CheckLink):
             def _check(self): return self.text == modGroup
         self.__class__.cls = _CheckGroup
-
-    def _append(self, window): return not bosh.settings.get('bash.balo.full')
-
-class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
-    """Select Balo group to use."""
-    def __init__(self):
-        super(Mod_BaloGroups, self).__init__()
-        self.id_group = {}
-        self.idList = ID_GROUPS
-        self.extraItems = [ItemLink(self.idList.EDIT, _(u'Edit...')), ]
-        self.extraActions = {self.idList.EDIT: self.DoEdit, }
-
-    def _append(self, window): return bool(bosh.settings.get('bash.balo.full'))
-
-    def _range(self):
-        id_group = self.id_group
-        setableMods = [GPath(x) for x in self.selected if GPath(x) not in bosh.modInfos.autoHeaders]
-        if setableMods:
-            yield SeparatorLink()
-            ids = iter(self.idList)
-            modGroup = bosh.modInfos.table.getItem(setableMods[0],'group') \
-                if len(setableMods) == 1 else None
-            for group,lower,upper in bosh.modInfos.getBaloGroups():
-                if lower == upper:
-                    id_ = ids.next()
-                    id_group[id_] = group
-                    class _GroupLink(CheckLink):
-                        def _check(self): return self.text == modGroup
-                    yield _GroupLink(_id= id_, _text=group)
-                else:
-                    subMenu = MenuLink(name=group)
-                    for x in range(lower,upper+1):
-                        offGroup = bosh.joinModGroup(group,x)
-                        id_ = ids.next()
-                        id_group[id_] = offGroup
-                        class _OffGroupLink(CheckLink):
-                            def _check(self): return self.text == modGroup
-                        subMenu.links.append(
-                            _OffGroupLink(_id=id_, _text=offGroup))
-                    yield subMenu
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        label = self.id_group[event.GetId()]
-        mod_group = bosh.modInfos.table.getColumn('group')
-        for mod in self.selected:
-            if mod not in bosh.modInfos.autoHeaders:
-                mod_group[mod] = label
-        if bosh.modInfos.refresh(doInfos=False):
-            modList.SortItems()
-        self.window.RefreshUI()
-
-    def DoEdit(self,event):
-        """Show label editing dialog."""
-        Mod_BaloGroups_Edit.Display(self.window)
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):

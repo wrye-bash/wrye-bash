@@ -2180,9 +2180,9 @@ class ModPanel(SashPanel):
         left,right = self.left, self.right
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
-            patcher_dialog, dialogs
+            patcher_dialog
         saves_links.modList = mods_links.modList = mod_links.modList = \
-            app_buttons.modList = patcher_dialog.modList = dialogs.modList =\
+            app_buttons.modList = patcher_dialog.modList = \
             modList = ModList(left)
         self.list = modList
         self.modDetails = ModDetails(right)

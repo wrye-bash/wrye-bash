@@ -37,7 +37,7 @@ from .saves_links import *
 from .mods_links import *
 from .files_links import *
 from .misc_links import List_Columns
-from ..balt import Image
+from ..balt import Image, MenuLink
 
 #------------------------------------------------------------------------------
 from .app_buttons import Obse_Button, LAA_Button, AutoQuit_Button, \
@@ -842,9 +842,6 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
-    if bosh.inisettings['EnableBalo']:
-        ModList.mainMenu.append(Mods_AutoGroup())
-        ModList.mainMenu.append(Mods_FullBalo())
     if bush.game.fsName != u'Skyrim':
         ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
@@ -872,8 +869,6 @@ def InitModLinks():
     if True: #--Groups
         groupMenu = MenuLink(_(u"Group"))
         groupMenu.links.append(Mod_Groups())
-        if bosh.inisettings['EnableBalo']:
-            groupMenu.links.append(Mod_BaloGroups())
         ModList.itemMenu.append(groupMenu)
     if True: #--Ratings
         ratingMenu = MenuLink(_(u"Rating"))
