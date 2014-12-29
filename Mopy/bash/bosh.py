@@ -301,7 +301,6 @@ reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.(es|fo)[rs])$',r
 reCsvExt  = re.compile(ur'\.csv$',re.I|re.U)
 reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
 reQuoted  = re.compile(ur'^"(.*)"$',re.U)
-reGroupHeader = re.compile(ur'^(\+\+|==)',re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 reSplitOnNonAlphaNumeric = re.compile(ur'\W+',re.U)
@@ -8784,10 +8783,6 @@ class ModDetails:
 #------------------------------------------------------------------------------
 class ModGroups:
     """Groups for mods with functions for importing/exporting from/to text file."""
-    @staticmethod
-    def filter(mods):
-        """Returns non-group header mods."""
-        return [x for x in mods if not reGroupHeader.match(x.s)]
 
     def __init__(self):
         self.mod_group = {}
@@ -8795,13 +8790,13 @@ class ModGroups:
     def readFromModInfos(self,mods=None):
         """Imports mods/groups from modInfos."""
         column = modInfos.table.getColumn('group')
-        mods = ModGroups.filter(mods or column.keys())
+        mods = mods or column.keys()# if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
         self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
-        mods = ModGroups.filter(mods or modInfos.table.data.keys())
+        mods = mods or modInfos.table.data.keys()
         mod_group = self.mod_group
         column = modInfos.table.getColumn('group')
         changed = 0

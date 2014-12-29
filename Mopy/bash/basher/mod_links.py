@@ -236,10 +236,6 @@ class _Mod_Groups_Export(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(_Mod_Groups_Export, self)._initData(window, data)
-
     def Execute(self,event):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
@@ -263,10 +259,6 @@ class _Mod_Groups_Import(EnabledLink):
     text = _(u'Import Groups')
 
     def _enable(self): return bool(self.selected)
-
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(_Mod_Groups_Import, self)._initData(window, data)
 
     def Execute(self,event):
         message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
