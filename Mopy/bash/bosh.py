@@ -4248,9 +4248,6 @@ class ModInfos(FileInfos):
         self.activeBad = set() #--Set of all mods with bad names that are active
         self.merged = set() #--For bash merged files
         self.imported = set() #--For bash imported files
-        # TODO(ut) BALO rip - are below needed ?
-        self.autoSorted = set() #--Files that are auto-sorted
-        self.group_header = {}
         #--Oblivion version
         self.version_voSize = {
             u'1.1':        247388848, #--Standard
@@ -4286,20 +4283,18 @@ class ModInfos(FileInfos):
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
         hasChanged = doInfos and FileInfos.refresh(self)
-        self.refreshHeaders()
         if hasChanged:
             self.resetMTimes()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
         # If files have changed we might need to add/remove mods from load order
         if hasChanged: self.plugins.fixLoadOrder()
         hasGhosted = self.autoGhost()
-        hasSorted = self.autoSort()
         self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
         self.getOblivionVersions()
-        return bool(hasChanged) or hasSorted or hasGhosted or hasNewBad or hasMissingStrings
+        return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
@@ -4332,16 +4327,6 @@ class ModInfos(FileInfos):
         self.new_missing_strings = new
         return bool(new)
 
-    def refreshHeaders(self):
-        """Updates group_header."""
-        group_header = self.group_header
-        group_header.clear()
-        mod_group = self.table.getColumn('group')
-        for mod in self.data:
-            group = mod_group.get(mod,None)
-            if group and mod.s[:2] == u'++':
-                group_header[group] = mod
-
     def resetMTimes(self):
         """Remember/reset mtimes of member files."""
         if not self.canSetTimes(): return
@@ -4371,43 +4356,6 @@ class ModInfos(FileInfos):
                 newGhost = modInfo.setGhost(modGhost)
                 if newGhost != oldGhost:
                     changed.append(mod)
-        return changed
-
-    def autoSort(self):
-        """Automatically sorts mods by group."""
-        autoSorted = self.autoSorted
-        autoSorted.clear()
-        if not self.canSetTimes(): return False
-        #--Balo headers
-        headers = self.group_header.values()
-        #--Get group_mods
-        group_mods = {}
-        mod_group = self.table.getColumn('group')
-        for mod in self.data:
-            group = mod_group.get(mod,None)
-            if group and mod not in headers:
-                if group not in group_mods:
-                    group_mods[group] = []
-                group_mods[group].append(mod)
-                if group != u'NONE': autoSorted.add(mod)
-        #--Sort them
-        changed = 0
-        group_header = self.group_header
-        if not group_header: return changed
-        for group,header in self.group_header.iteritems():
-            mods = group_mods.get(group,[])
-            if group != u'NONE':
-                mods.sort(key=attrgetter('csroot'))
-                mods.sort(key=attrgetter('cext'))
-            else:
-                mods.sort(key=lambda a: self[a].mtime)
-            mtime = self.data[header].mtime + 60
-            for mod in mods:
-                modInfo = self.data[mod]
-                if modInfo.mtime != mtime:
-                    modInfo.setmtime(mtime)
-                    changed += 1
-                mtime += 60
         return changed
 
     def refreshInfoLists(self):
@@ -11390,7 +11338,6 @@ def initDefaultSettings():
     inisettings['ScriptFileExt']=u'.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
-    inisettings['EnableBalo'] = False
     inisettings['ResetBSATimestamps'] = True
     inisettings['EnsurePatchExists'] = True
     inisettings['OblivionTexturesBSAName'] = GPath(u'Oblivion - Textures - Compressed.bsa')

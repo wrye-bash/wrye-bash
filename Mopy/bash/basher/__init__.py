@@ -1180,11 +1180,6 @@ class ModList(List):
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
-        # Make sure we're not auto-sorting
-        for thisFile in self.GetSelected():
-            if GPath(thisFile) in bosh.modInfos.autoSorted:
-                balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
-                return
         order = bosh.modInfos.plugins.LoadOrder
         # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
         start = order.index(self.items[indexes[0]])
@@ -1435,26 +1430,20 @@ class ModList(List):
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
-                for thisFile in self.GetSelected():
-                    if GPath(thisFile) in bosh.modInfos.autoSorted:
-                        balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
-                        event.Skip()
-                        break
-                else:
-                    orderKey = lambda x: self.items.index(x)
-                    moveMod = 1 if event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN) else -1
-                    isReversed = (moveMod != -1)
-                    for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
-                        swapItem = self.items.index(thisFile) + moveMod
-                        if swapItem < 0 or len(self.items) - 1 < swapItem: break
-                        swapFile = self.items[swapItem]
-                        try:
-                            bosh.modInfos.swapOrder(thisFile,swapFile)
-                        except bolt.BoltError as e:
-                            balt.showError(self, _(u'%s') % e)
-                        bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI(refreshSaves=False)
-                    self.RefreshUI([],refreshSaves=True)
+                orderKey = lambda x: self.items.index(x)
+                moveMod = 1 if event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN) else -1
+                isReversed = (moveMod != -1)
+                for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
+                    swapItem = self.items.index(thisFile) + moveMod
+                    if swapItem < 0 or len(self.items) - 1 < swapItem: break
+                    swapFile = self.items[swapItem]
+                    try:
+                        bosh.modInfos.swapOrder(thisFile,swapFile)
+                    except bolt.BoltError as e:
+                        balt.showError(self, _(u'%s') % e)
+                    bosh.modInfos.refreshInfoLists()
+                    self.RefreshUI(refreshSaves=False)
+                self.RefreshUI([],refreshSaves=True)
         event.Skip()
 
     def OnKeyUp(self,event):
@@ -1666,13 +1655,8 @@ class ModDetails(SashPanel):
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
-        #--Editable mtime?
-        if fileName in bosh.modInfos.autoSorted:
-            self.modified.SetEditable(False)
-            self.modified.SetBackgroundColour(self.GetBackgroundColour())
-        else:
-            self.modified.SetEditable(True)
-            self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
+        self.modified.SetEditable(True)
+        self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
         #--Set fields
         self.file.SetValue(self.fileStr)
         self.author.SetValue(self.authorStr)
