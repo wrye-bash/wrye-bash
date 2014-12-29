@@ -1150,17 +1150,6 @@ class ListEditorData:
         """Sets string info on specified item."""
         raise AbstractError
 
-    #--Checklist
-    def getChecks(self):
-        """Returns checked state of items as array of True/False values matching Item list."""
-        raise AbstractError # return []
-    def check(self,item):
-        """Checks items. Return true on success."""
-        raise AbstractError # return False
-    def uncheck(self,item):
-        """Unchecks item. Return true on success."""
-        raise AbstractError # return False
-
     #--Save/Cancel
     def save(self):
         """Handles save button."""
@@ -1204,7 +1193,8 @@ class Dialog(wx.Dialog):
 
 class ListEditor(Dialog):
     """Dialog for editing lists."""
-    def __init__(self, parent, title, data, type='list', **kwargs):
+
+    def __init__(self, parent, title, data, **kwargs):
         """A gui list, with buttons that act on the list items.
 
         Added kwargs to provide extra buttons - this class is built around a
@@ -1226,14 +1216,8 @@ class ListEditor(Dialog):
             captionText = staticText(self,data.caption)
         else:
             captionText = None
-        #--List Box
-        if type == 'checklist':
-            self.list = wx.CheckListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
-            for index,checked in enumerate(self.data.getChecks()):
-                self.list.Check(index,checked)
-            self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, self.list)
-        else:
-            self.list = wx.ListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
+        #--List Box # TODO(ut): rename to self.listBox
+        self.list = wx.ListBox(self, choices=self.items, style=wx.LB_SINGLE)
         self.list.SetSizeHints(125,150)
         self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
         #--Infobox
@@ -1283,17 +1267,6 @@ class ListEditor(Dialog):
 
     def GetSelected(self):
         return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
-
-    #--Checklist commands
-    def DoCheck(self,event):
-        """Handles check/uncheck of listbox item."""
-        index = event.GetSelection()
-        item = self.items[index]
-        if self.list.IsChecked(index):
-            self.data.check(item)
-        else:
-            self.data.uncheck(item)
-        #self.list.SetSelection(index)
 
     #--List Commands
     def DoAction(self,event):
