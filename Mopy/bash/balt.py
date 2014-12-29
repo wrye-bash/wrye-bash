@@ -1100,12 +1100,10 @@ def shellMakeDirs(dirName,parent=None):
 #------------------------------------------------------------------------------
 class ListEditorData:
     """Data capsule for ListEditor. [Abstract]
-    DEPRECATED: cleanup and shrink to a simple bosh interface"""
+    DEPRECATED: nest into ListEditor"""
     def __init__(self,parent):
         self.parent = parent #--Parent window.
-        self.showAction = False
         self.showAdd = False
-        self.showEdit = False
         self.showRename = False
         self.showRemove = False
         self.showSave = False
@@ -1117,30 +1115,18 @@ class ListEditorData:
         self.infoReadOnly = True #--Controls whether info pane is editable
 
     #--List
-    def action(self,item):
-        """Called when action button is used.."""
-        pass
-    def select(self,item):
-        """Called when an item is selected."""
-        pass
     def getItemList(self):
         """Returns item list in correct order."""
         raise AbstractError # return []
     def add(self):
         """Performs add operation. Return new item on success."""
         raise AbstractError # return None
-    def edit(self,item=None):
-        """Edits specified item. Return true on success."""
-        raise AbstractError # return False
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
         raise AbstractError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
         raise AbstractError # return False
-    def close(self):
-        """Called when dialog window closes."""
-        pass
 
     #--Info box
     def getInfo(self,item):
@@ -1153,10 +1139,6 @@ class ListEditorData:
     #--Save/Cancel
     def save(self):
         """Handles save button."""
-        pass
-
-    def cancel(self):
-        """Handles cancel button."""
         pass
 
 #------------------------------------------------------------------------------
@@ -1219,7 +1201,6 @@ class ListEditor(Dialog):
         #--List Box # TODO(ut): rename to self.listBox
         self.list = wx.ListBox(self, choices=self.items, style=wx.LB_SINGLE)
         self.list.SetSizeHints(125,150)
-        self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
         #--Infobox
         if data.showInfo:
             self.gInfoBox = textCtrl(self,size=(130,-1),
@@ -1230,9 +1211,7 @@ class ListEditor(Dialog):
             self.gInfoBox = None
         #--Buttons
         buttonSet = [
-            (data.showAction, _(u'Action'), self.DoAction),
             (data.showAdd,    _(u'Add'),    self.DoAdd),
-            (data.showEdit,   _(u'Edit'),   self.DoEdit),
             (data.showRename, _(u'Rename'), self.DoRename),
             (data.showRemove, _(u'Remove'), self.DoRemove),
             (data.showSave,   _(u'Save'),   self.DoSave),
@@ -1269,14 +1248,6 @@ class ListEditor(Dialog):
         return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
     #--List Commands
-    def DoAction(self,event):
-        """Acts on the selected item."""
-        selections = self.list.GetSelections()
-        if not selections: return bell()
-        itemDex = selections[0]
-        item = self.items[itemDex]
-        self.data.action(item)
-
     def DoAdd(self,event):
         """Adds a new item."""
         newItem = self.data.add()
@@ -1289,10 +1260,6 @@ class ListEditor(Dialog):
         if self.data.setTo(items):
             self.items = self.data.getItemList()
             self.list.Set(self.items)
-
-    def DoEdit(self,event):
-        """Edits the selected item."""
-        raise UncodedError
 
     def DoRename(self,event):
         """Renames selected item."""
@@ -1327,15 +1294,6 @@ class ListEditor(Dialog):
             self.gInfoBox.SetValue(u'')
 
     #--Show Info
-    def OnSelect(self,event):
-        """Handle show info (item select) event."""
-        index = event.GetSelection()
-        item = self.items[index]
-        self.data.select(item)
-        if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(self.data.getInfo(item))
-
     def OnInfoEdit(self,event):
         """Info box text has been edited."""
         selections = self.list.GetSelections()
@@ -1352,15 +1310,9 @@ class ListEditor(Dialog):
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
-        """Handle save button."""
-        self.data.cancel()
+        """Handle cancel button."""
         sizes[self.data.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
-
-    #--Window Closing
-    def OnCloseWindow(self, event):
-        self.data.close()
-        super(ListEditor, self).OnCloseWindow(event)
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()

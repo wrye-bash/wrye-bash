@@ -1905,7 +1905,7 @@ class INIPanel(SashPanel):
         #--Remove from list button
         self.button = button(right,_(u'Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.edit = button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = button(right,_(u'Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -1939,7 +1939,7 @@ class INIPanel(SashPanel):
                     (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
                     ((4,0),0),
                     (self.button,0,wx.ALIGN_TOP,0),
-                    (self.edit,0,wx.ALIGN_TOP,0),
+                    (self.editButton,0,wx.ALIGN_TOP,0),
                     ),0,wx.EXPAND|wx.BOTTOM,4),
                 (self.iniContents,1,wx.EXPAND),
                 )
