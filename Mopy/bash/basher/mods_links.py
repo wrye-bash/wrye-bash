@@ -156,7 +156,7 @@ class Mods_LoadList(ChoiceLink):
 
     def DoEdit(self,event):
         data = _Mods_LoadListData(self.window)
-        balt.ListEditor.Display(self.window,_(u'Load Lists'), data)
+        balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink):

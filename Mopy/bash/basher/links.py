@@ -867,7 +867,7 @@ def InitModLinks():
         fileMenu.links.append(File_RevertToSnapshot())
         ModList.itemMenu.append(fileMenu)
     if True: #--Groups
-        groupMenu = MenuLink(_(u"Group"))
+        groupMenu = MenuLink(_(u"Groups"))
         groupMenu.links.append(Mod_Groups())
         ModList.itemMenu.append(groupMenu)
     if True: #--Ratings

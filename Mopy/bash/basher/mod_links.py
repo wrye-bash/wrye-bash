@@ -204,12 +204,19 @@ class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
 
-    def __init__(self):
+    class _Edit(ItemLink):
+        def __init__(self, *args, **kwargs):
+            super(_Mod_Labels._Edit, self).__init__(*args, **kwargs)
+            self.help = self.text
+
+    class _None(ItemLink): help = _(u'Clear labels from selected mod(s)')
+
+    def __init__(self, _Edit=_Edit, _None=_None):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
-        self.extraItems = [ItemLink(self.idList.EDIT, self.editMenuText),
+        self.extraItems = [_Edit(self.idList.EDIT, self.editMenuText),
                            SeparatorLink(),
-                           ItemLink(self.idList.NONE, _(u'None')), ]
+                           _None(self.idList.NONE, _(u'None')), ]
         self.extraActions = {self.idList.EDIT: self.DoEdit,
                              self.idList.NONE: self.DoNone, }
 
@@ -232,6 +239,9 @@ class _Mod_Labels(ChoiceLink):
         fileLabels = bosh.modInfos.table.getColumn(self.column)
         for fileName in self.selected:
             fileLabels[fileName] = label
+        # FIXME(ut): when reassigning groups reselecting previous mods fails
+        #  when mods list is sorted by group - DoNone above works (reselects
+        #  correct mods) - probably call PopulateItems() here too
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
             modList.SortItems()
         self.window.RefreshUI()
@@ -251,6 +261,7 @@ class _Mod_Groups_Export(EnabledLink):
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
     text = _(u'Export Groups')
+    help = _(u'Export groups of selected mods to a csv file')
 
     def _enable(self): return bool(self.selected)
 
@@ -273,16 +284,20 @@ class _Mod_Groups_Export(EnabledLink):
             _(u"Export Groups"))
 
 class _Mod_Groups_Import(EnabledLink):
-    """Import editor ids from text file or other mod."""
+    """Import mod groups from text file."""
     text = _(u'Import Groups')
+    help = _(u'Import groups for selected mods from a csv file (filename must'
+             u' end in _Groups.csv)')
 
     def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
-        message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
-        if not balt.askContinue(self.window,message,'bash.groups.import.continue',
-            _(u'Import Groups')):
-            return
+        message = _(
+            u"Import groups from a text file ? This will assign to selected "
+            u"mods the group they are assigned in the text file, if any.")
+        if not balt.askContinue(self.window, message,
+                                'bash.groups.import.continue',
+                                _(u'Import Groups')): return
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
@@ -321,10 +336,13 @@ class Mod_Groups(_Mod_Labels):
 
     def _initData(self, window, data):
         super(Mod_Groups, self)._initData(window, data)
+        # TODO(ut): modGroup = set() ... return self.text in modGroup
         modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
             data) == 1 else None
         class _CheckGroup(CheckLink):
-            def _check(self): return self.text == modGroup
+            def _check(self):
+                """Checks the Link if (single) selected mod belongs to it."""
+                return self.text == modGroup
         self.__class__.cls = _CheckGroup
 
     def _doRefresh(self, event):
@@ -600,7 +618,7 @@ class Mod_Ghost(EnabledLink):
     def Execute(self,event):
         files = []
         if len(self.selected) == 1:
-            # toggle
+            # toggle - ghosting only enabled if plugin is inactive
             if not self.isGhost: # ghosting - override allowGhosting with True
                 bosh.modInfos.table.setItem(self.path,'allowGhosting',True)
             self.fileInfo.setGhost(not self.isGhost)

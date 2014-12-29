@@ -572,7 +572,8 @@ class Save_EditPCSpellsData(balt.ListEditorData):
 class Save_EditPCSpells(OneItemLink):
     """Save spell list editing dialog."""
     text = _(u'Delete Spells...')
-    # TODO(ut): help + AppendtoMenu had : """Append ref replacer items to menu."""
+    help = _(u'Delete unused spells from your spell list in the selected save.'
+             u' Warning: This cannot be undone')
 
     def Execute(self,event):
         fileName = GPath(self.selected[0])
