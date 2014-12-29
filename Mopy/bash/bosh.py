@@ -8794,6 +8794,12 @@ class ModGroups:
         groups = tuple(column.get(x) for x in mods)
         self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
 
+    @staticmethod
+    def assignedGroups():
+        """Return all groups that are currently assigned to mods."""
+        column = modInfos.table.getColumn('group')
+        return set(x[1] for x in column.items() if x[1]) #x=(bolt.Path,'group')
+
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
         mods = mods or modInfos.table.data.keys()

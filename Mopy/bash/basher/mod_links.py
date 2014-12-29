@@ -32,7 +32,7 @@ from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from . import DocBrowser, Resources
-from .constants import ID_GROUPS, JPEG
+from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
 from .patcher_dialog import PatchDialog
@@ -120,11 +120,12 @@ class Mod_CreateDummyMasters(OneItemLink):
 #--Common ---------------------------------------------------------------------
 class _Mod_LabelsData(balt.ListEditorData):
     """Data capsule for label editing dialog."""
-    def __init__(self,parent,strings):
+
+    def __init__(self, parent, modLabels):
         #--Strings
-        self.column = strings.column
-        self.setKey = strings.setKey
-        self.addPrompt = strings.addPrompt
+        self.column = modLabels.column
+        self.setKey = modLabels.setKey
+        self.addPrompt = modLabels.addPrompt
         #--Key/type
         self.data = bosh.settings[self.setKey]
         #--GUI
@@ -188,8 +189,21 @@ class _Mod_LabelsData(balt.ListEditorData):
         #--Done
         return True
 
+    def setTo(self, items):
+        """Set the bosh.settings[self.setKey] list to the items given - do
+        not update modList for removals (i.e. if a group/rating is removed
+        there may be mods that are still assigned to it)!
+        """
+        items.sort(key=lambda a: a.lower())
+        if self.data == items: return False
+        bosh.settings.setChanged(self.setKey)
+        self.data[:] = items # do not reassign! points to settings[self.setKey]
+        return True
+
 class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
+    extraButtons = {} # extra actions for the edit dialog
+
     def __init__(self):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
@@ -224,8 +238,12 @@ class _Mod_Labels(ChoiceLink):
 
     def DoEdit(self,event):
         """Show label editing dialog."""
-        data = _Mod_LabelsData(self.window,self)
-        balt.ListEditor.Display(self.window, self.editWindow, data)
+        data = _Mod_LabelsData(self.window, self)  # ListEditorData
+        with balt.ListEditor(self.window, self.editWindowTitle, data,
+                             **self.extraButtons) as self.listEditor:
+            self.listEditor.ShowModal() # consider only refreshing the mod list
+            # if this returns true
+        del self.listEditor # used by the buttons code - should be encapsulated
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -290,9 +308,13 @@ class Mod_Groups(_Mod_Labels):
     def __init__(self):
         self.column     = 'group'
         self.setKey     = 'bash.mods.groups'
-        self.editMenuText   = _(u'Edit Groups...')
-        self.editWindow = _(u'Groups')
         self.addPrompt  = _(u'Add group:')
+        self.extraButtons = {_(u'Refresh'): self._doRefresh,
+                             _(u'Sync'): self._doSync,
+                             _(u'Defaults'): self._doDefault
+        }
+        self.editMenuText   = _(u'Edit Groups...')
+        self.editWindowTitle = _(u'Groups')
         self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(), _Mod_Groups_Import()] + self.extraItems
@@ -305,15 +327,34 @@ class Mod_Groups(_Mod_Labels):
             def _check(self): return self.text == modGroup
         self.__class__.cls = _CheckGroup
 
+    def _doRefresh(self, event):
+        """Add to the list of groups groups currently assigned to mods."""
+        self.listEditor.SetItemsTo(list(set(bosh.settings[
+            'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
+
+    # TODO(307): warn in items below (askContinue or whatever it's called)
+    def _doSync(self, event):
+        """Set the list of groups to groups currently assigned to mods."""
+        self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
+
+    def _doDefault(self, event):
+        """Set the list of groups to the default groups list.
+
+        Won't clear user set groups from the modlist - most probably not
+        what the user wants.
+        """
+        self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
+        # maybe remove user created groups (definitely after askContinue())
+
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
     """Add mod rating links."""
     def __init__(self):
         self.column     = 'rating'
         self.setKey     = 'bash.mods.ratings'
-        self.editMenuText   = _(u'Edit Ratings...')
-        self.editWindow = _(u'Ratings')
         self.addPrompt  = _(u'Add rating:')
+        self.editMenuText   = _(u'Edit Ratings...')
+        self.editWindowTitle = _(u'Ratings')
         self.idList     = balt.IdList(10400, 90,'EDIT','NONE')
         super(Mod_Ratings, self).__init__()
 

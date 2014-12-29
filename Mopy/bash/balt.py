@@ -1099,9 +1099,9 @@ def shellMakeDirs(dirName,parent=None):
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ListEditorData:
-    """Data capsule for ListEditor. [Abstract]"""
+    """Data capsule for ListEditor. [Abstract]
+    DEPRECATED: cleanup and shrink to a simple bosh interface"""
     def __init__(self,parent):
-        """Initialize."""
         self.parent = parent #--Parent window.
         self.showAction = False
         self.showAdd = False
@@ -1127,7 +1127,7 @@ class ListEditorData:
         """Returns item list in correct order."""
         raise AbstractError # return []
     def add(self):
-        """Peforms add operation. Return new item on success."""
+        """Performs add operation. Return new item on success."""
         raise AbstractError # return None
     def edit(self,item=None):
         """Edits specified item. Return true on success."""
@@ -1204,12 +1204,22 @@ class Dialog(wx.Dialog):
 
 class ListEditor(Dialog):
     """Dialog for editing lists."""
-    def __init__(self, parent, title, data, type='list'):
+    def __init__(self, parent, title, data, type='list', **kwargs):
+        """A gui list, with buttons that act on the list items.
+
+        Added kwargs to provide extra buttons - this class is built around a
+        ListEditorData instance which needlessly complicates things - mainly
+        a bunch of booleans to enable buttons but also the list of data that
+        corresponds to (read is duplicated by) ListEditor.items.
+        ListEditorData should be nested here.
+        :param kwargs: kwargs['ButtonLabel']=buttonAction
+        """
         #--Data
         self.data = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title)
+        # overrides Dialog.sizesKey
         self.sizesKey = self.data.__class__.__name__
         #--Caption
         if data.caption:
@@ -1235,7 +1245,7 @@ class ListEditor(Dialog):
         else:
             self.gInfoBox = None
         #--Buttons
-        buttonSet = (
+        buttonSet = [
             (data.showAction, _(u'Action'), self.DoAction),
             (data.showAdd,    _(u'Add'),    self.DoAdd),
             (data.showEdit,   _(u'Edit'),   self.DoEdit),
@@ -1243,7 +1253,9 @@ class ListEditor(Dialog):
             (data.showRemove, _(u'Remove'), self.DoRemove),
             (data.showSave,   _(u'Save'),   self.DoSave),
             (data.showCancel, _(u'Cancel'), self.DoCancel),
-            )
+            ]
+        for k,v in kwargs.items():
+            buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             buttons = vSizer()
             for (flag,defLabel,func) in buttonSet:
@@ -1299,6 +1311,11 @@ class ListEditor(Dialog):
             self.items = self.data.getItemList()
             index = self.items.index(newItem)
             self.list.InsertItems([newItem],index)
+
+    def SetItemsTo(self, items):
+        if self.data.setTo(items):
+            self.items = self.data.getItemList()
+            self.list.Set(self.items)
 
     def DoEdit(self,event):
         """Edits the selected item."""
