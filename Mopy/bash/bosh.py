@@ -306,29 +306,7 @@ reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 reSplitOnNonAlphaNumeric = re.compile(ur'\W+',re.U)
 
-
 # Util Functions --------------------------------------------------------------
-# Groups
-reSplitModGroup = re.compile(ur'^(.+?)([-+]\d+)?$',re.U)
-
-def splitModGroup(offGroup):
-    """Splits a full group name into a group name and an integer offset.
-    E.g. splits 'Overhaul+1' into ('Overhaul',1)."""
-    if not offGroup: return u'',0
-    maSplitModGroup = reSplitModGroup.match(offGroup)
-    group = maSplitModGroup.group(1)
-    offset = int(maSplitModGroup.group(2) or 0)
-    return group,offset
-
-def joinModGroup(group,offset):
-    """Combines a group and offset into a full group name."""
-    if offset < 0:
-        return group+unicode(offset)
-    elif offset > 0:
-        return group+u'+'+unicode(offset)
-    else:
-        return group
-
 def PrintFormID(fid):
     # PBash short Fid
     if isinstance(fid,(long,int)):
@@ -4240,7 +4218,6 @@ class ModInfos(FileInfos):
         self.lockLO = settings['bosh.modInfos.resetMTimes'] # Lock Load Order (previously Lock Times
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
-        self.autoGrouped = {} #--Files that have been autogrouped.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         #--Selection state (ordered, merged, imported)
         self.plugins = Plugins()
@@ -4271,9 +4248,8 @@ class ModInfos(FileInfos):
         self.activeBad = set() #--Set of all mods with bad names that are active
         self.merged = set() #--For bash merged files
         self.imported = set() #--For bash imported files
+        # TODO(ut) BALO rip - are below needed ?
         self.autoSorted = set() #--Files that are auto-sorted
-        self.autoHeaders = set() #--Full balo headers
-        self.autoGroups = {} #--Auto groups as read from group files.
         self.group_header = {}
         #--Oblivion version
         self.version_voSize = {
@@ -4295,7 +4271,6 @@ class ModInfos(FileInfos):
     def canSetTimes(self):
         """Returns a boolean indicating if mtime setting is allowed."""
         self.lockLO = settings['bosh.modInfos.resetMTimes']
-        self.fullBalo = settings.get('bash.balo.full',False)
         obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn',0)
         if self.lockLO and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
             settings['bosh.modInfos.obmmWarn'] = 1
@@ -4307,15 +4282,13 @@ class ModInfos(FileInfos):
         #--Else
         return True
 
-    def refresh(self,doAutoGroup=False,doInfos=True):
+    def refresh(self, doInfos=True):
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
         hasChanged = doInfos and FileInfos.refresh(self)
         self.refreshHeaders()
-        hasChanged += self.updateBaloHeaders()
         if hasChanged:
             self.resetMTimes()
-        if self.fullBalo: self.autoGroup()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
         # If files have changed we might need to add/remove mods from load order
         if hasChanged: self.plugins.fixLoadOrder()
@@ -4384,14 +4357,6 @@ class ModInfos(FileInfos):
         except:
             self.mtimesReset = [u'FAILED',fileName]
 
-    def updateAutoGroups(self):
-        """Update autogroup definitions."""
-        self.autoGroups.clear()
-        modGroups = ModGroups()
-        for base in (u'Bash_Groups.csv',u'My_Groups.csv'):
-            if getPatchesPath(base).exists(): modGroups.readFromText(getPatchesPath(base))
-        self.autoGroups.update(modGroups.mod_group)
-
     def autoGhost(self,force=False):
         """Automatically inactive files to ghost."""
         changed = []
@@ -4407,27 +4372,6 @@ class ModInfos(FileInfos):
                 if newGhost != oldGhost:
                     changed.append(mod)
         return changed
-
-    def autoGroup(self):
-        """Automatically assigns groups for currently ungrouped mods."""
-        autoGroup = settings.get('bash.balo.autoGroup',True)
-        if not self.autoGroups: self.updateAutoGroups()
-        mod_group = self.table.getColumn('group')
-        bashGroups = set(settings['bash.mods.groups'])
-        for fileName in self.data:
-            if not mod_group.get(fileName):
-                group = u'NONE' #--Default
-                if autoGroup:
-                    if fileName in self.data and self.data[fileName].header:
-                        maGroup = reGroup.search(self.data[fileName].header.description)
-                        if maGroup: group = maGroup.group(1)
-                    if group == u'NONE' and fileName in self.autoGroups:
-                        group = self.autoGroups[fileName]
-                    if group not in bashGroups:
-                        group = u'NONE'
-                    if group != u'NONE':
-                        self.autoGrouped[fileName] = group
-                mod_group[fileName] = group
 
     def autoSort(self):
         """Automatically sorts mods by group."""
@@ -4464,11 +4408,6 @@ class ModInfos(FileInfos):
                     modInfo.setmtime(mtime)
                     changed += 1
                 mtime += 60
-        #--Auto headers
-        self.autoHeaders.clear()
-        if self.fullBalo:
-            self.autoHeaders.update(headers)
-            autoSorted |= self.autoHeaders
         return changed
 
     def refreshInfoLists(self):
@@ -4574,164 +4513,6 @@ class ModInfos(FileInfos):
                 self.table.setItem(mod.name,'autoBashTags',False)
             if autoTag:
                 mod.reloadBashTags()
-
-
-    #--Full Balo --------------------------------------------------------------
-    def updateBaloHeaders(self):
-        """Adds/removes balo headers as necessary. This is called by refresh(),
-        after fileInfos have been updated."""
-        if not self.canSetTimes(): return False
-        if not self.fullBalo or not settings.get('bash.balo.groups'):
-            return False
-        group_header = self.group_header
-        offGroup_mtime = {}
-        diffTime = datetime.timedelta(10) #--10 days between groups
-        nextTime = datetime.datetime(2006,4,1,2) #--Date of next group
-        lastTime = datetime.datetime(2020,3,15,2) #--Date of Last group
-        def dateToTime(dt):
-            return int(time.mktime(dt.timetuple()))
-        bashGroups = settings.getChanged('bash.mods.groups')
-        del bashGroups[:]
-        for group,lower,upper in settings['bash.balo.groups']:
-            for offset in range(lower,upper+1):
-                offGroup = joinModGroup(group,offset)
-                if group == u'Last':
-                    offGroup_mtime[offGroup] = dateToTime(lastTime + diffTime*offset)
-                else:
-                    offGroup_mtime[offGroup] = dateToTime(nextTime)
-                    nextTime += diffTime
-                bashGroups.append(offGroup)
-        deleted = added = 0
-        #--Remove invalid group headers
-        for offGroup,mod in group_header.iteritems():
-            if offGroup not in offGroup_mtime:
-                del group_header[offGroup]
-                self.delete(mod,False)
-                del self.data[mod]
-                deleted += 1
-        #--Add required group headers
-        mod_group = self.table.getColumn('group')
-        for offGroup in offGroup_mtime:
-            if offGroup not in group_header:
-                newName = GPath(u'++%s%s.esp' % (offGroup.upper(),u'='*(25-len(offGroup))))
-                if newName not in self.data:
-                    newInfo = ModInfo(self.dir,newName)
-                    newInfo.mtime = time.time()
-                    newFile = ModFile(newInfo,LoadFactory(True))
-                    newFile.tes4.masters = [modInfos.masterName]
-                    newFile.tes4.author = u'======'
-                    newFile.tes4.description = _(u'Balo group header.')
-                    newFile.safeSave()
-                    newInfo.getHeader() # set newInfo.header from the file
-                    self[newName] = newInfo
-                mod_group[newName] = offGroup
-                group_header[offGroup] = newName
-                added += 1
-        #--Set header mtimes
-        for offGroup,mtime in offGroup_mtime.iteritems():
-            mod = group_header[offGroup]
-            modInfo = self[mod]
-            if modInfo.mtime != mtime:
-                modInfo.setmtime(mtime)
-        #--Done
-        #delist('mods',[x.s for x in sorted(self.data.keys()])
-        return bool(deleted + added)
-
-    def getBaloGroups(self,editable=False):
-        """Returns current balo groups. If not defined yet, returns default groups.
-        Groups is list of entries, where entries are (groupName,lower,upper)."""
-        none = (u'NONE',0,0)
-        last = (u'Last',-1,1)
-        #--Already defined?
-        if 'bash.balo.groups' in settings:
-            groupInfos = list(settings['bash.balo.groups'])
-        #--Anchor groups defined?
-        elif self.group_header:
-            deprint(u'by self.group_header')
-            group_bounds = {}
-            group_mtime = {}
-            for offGroup,header in self.group_header.iteritems():
-                group,offset = splitModGroup(offGroup)
-                bounds = group_bounds.setdefault(group,[0,0])
-                if offset < bounds[0]: bounds[0] = offset
-                if offset > bounds[1]: bounds[1] = offset
-                group_mtime[group] = self[header].mtime
-            group_bounds.pop(u'NONE',None)
-            lastBounds = group_bounds.pop(u'Last',None)
-            if lastBounds:
-                last = (u'Last',lastBounds[0],lastBounds[1])
-            groupInfos = [(g,x,y) for g,(x,y) in group_bounds.iteritems()]
-            groupInfos.sort(key=lambda a: group_mtime[a[0]])
-        #--Default
-        else:
-            groupInfos = []
-            for entry in bush.baloGroups:
-                if entry[0] == u'Last': continue
-                elif len(entry) == 1: entry += (0,0)
-                elif len(entry) == 2: entry += (0,)
-                groupInfos.append((entry[0],entry[2],entry[1]))
-            groupInfos.append((u'NONE',0,0))
-            groupInfos.append((u'Last',-1,1))
-        #--None, Last Groups
-        if groupInfos[-1][0] == u'Last':
-            last = groupInfos.pop()
-        if groupInfos[-1][0] == u'NONE':
-            groupInfos.pop()
-        groupInfos.append(none)
-        groupInfos.append(last)
-        #--Editable?
-        if editable:
-            headers = set(self.group_header.values())
-            groupInfos = [[x,y,z,0,0,x] for x,y,z in groupInfos]
-            group_info = dict((x[0],x) for x in groupInfos)
-            mod_group = self.table.getColumn('group')
-            #--Get range offsets actually in use by non-headers.
-            for mod in self.data:
-                if mod in headers: continue #--Ignore header mods
-                group,offset = splitModGroup(mod_group.get(mod))
-                if group not in group_info: continue
-                info = group_info[group]
-                info[3] = min(info[3],offset)
-                info[4] = max(info[4],offset+1)
-            #--Rationalize offset bounds (just in case)
-            for info in groupInfos:
-                info[1] = min(info[1],info[3])
-                info[2] = max(info[2],info[4]-1)
-        #--Done
-        #delist('groupInfos',groupInfos)
-        return groupInfos
-
-    def setBaloGroups(self,groupInfos,removed):
-        """Applies and remembers set of balo groups."""
-        renames = dict((x[0],x[5]) for x in groupInfos if (x[0] and x[0] != x[5]))
-        group_range = dict((x[5],(x[1],x[2])) for x in groupInfos)
-        mod_group = self.table.getColumn('group')
-        headers = set(self.group_header.values())
-        #delist('renames',renames)
-        #delist('group_range',group_range)
-        #--Renamed/Deleted groups
-        for mod in self.table.keys():
-            offGroup = mod_group.get(mod)
-            group,offset = splitModGroup(offGroup)
-            newGroup = renames.get(group,group)
-            if group in removed or newGroup not in group_range:
-                if mod in headers: continue #--Will be deleted by autoSort().
-                mod_group[mod] = u'' #--Will be set by self.autoGroup()
-            elif group != newGroup:
-                mod_group[mod] = joinModGroup(newGroup,offset)
-        #--Constrain to range
-        for mod in self.table.keys():
-            if mod in headers: continue
-            offGroup = mod_group.get(mod)
-            group,offset = splitModGroup(offGroup)
-            if not group: continue
-            lower,upper = group_range[group]
-            if offset < lower or offset > upper:
-                mod_group[mod] = u'' #--Will be set by self.autoGroup()
-        #--Save and autosort
-        settings['bosh.modInfos.resetMTimes'] = self.lockTimes = True
-        settings['bash.balo.full'] = self.fullBalo = True
-        settings['bash.balo.groups'] = [(x[5],x[1],x[2]) for x in groupInfos]
 
     #--Mod selection ----------------------------------------------------------
     def circularMasters(self,stack,masters=None):

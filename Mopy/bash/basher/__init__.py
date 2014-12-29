@@ -3366,9 +3366,8 @@ class InstallersPanel(SashTankPanel):
     def RefreshUIMods(self):
         """Refresh UI plus refresh mods state."""
         self.gList.RefreshUI()
-        if bosh.modInfos.refresh(doAutoGroup=True):
+        if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
         if iniList is not None:
             if bosh.iniInfos.refresh():
@@ -4886,7 +4885,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
-        modInfosChanged = bosh.modInfos.refresh(doAutoGroup=True)
+        modInfosChanged = bosh.modInfos.refresh()
         if modInfosChanged:
             popMods = 'ALL'
         #--Have any mtimes been reset?
@@ -4908,16 +4907,6 @@ class BashFrame(wx.Frame):
                                       [message], liststyle='list',Cancel=False)
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
-        #--Mods autogrouped?
-        if bosh.modInfos.autoGrouped:
-            message = [u'',_(u'Auto-grouped files')]
-            agDict = bosh.modInfos.autoGrouped
-            ordered = bosh.modInfos.getOrdered(agDict.keys())
-            message.extend(ordered)
-            agDict.clear()
-            ListBoxes.Display(self, _(u'Some mods have been auto-grouped:'),
-                              _(u'Some mods have been auto-grouped:'),
-                              [message], liststyle='list', Cancel=False)
         #--Check savegames directory...
         if bosh.saveInfos.refresh():
             popSaves = 'ALL'
@@ -5662,7 +5651,7 @@ class BashApp(wx.App):
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
         bosh.modInfos = bosh.ModInfos()
-        bosh.modInfos.refresh(doAutoGroup=True)
+        bosh.modInfos.refresh()
         progress.Update(30,_(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
