@@ -22,11 +22,11 @@
 #
 # =============================================================================
 from . import Resources
-from .dialogs import ListBoxes, Mod_BaloGroups_Edit
+from .dialogs import ListBoxes
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
-from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, SeparatorLink, \
-    Link
+from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
+    SeparatorLink, Link
 from ..bolt import GPath
 
 modList = None
@@ -156,7 +156,7 @@ class Mods_LoadList(ChoiceLink):
 
     def DoEdit(self,event):
         data = _Mods_LoadListData(self.window)
-        balt.ListEditor.Display(self.window,_(u'Load Lists'), data)
+        balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink):
@@ -313,36 +313,6 @@ class Mods_CleanDummyMasters(EnabledLink):
         dialog.Destroy()
         Link.Frame.RefreshData()
         self.window.RefreshUI()
-
-# "Balo" links ----------------------------------------------------------------
-class Mods_AutoGroup(BoolLink):
-    """Turn on autogrouping."""
-    text = _(u'Auto Group (Deprecated -- Please use BOSS instead)')
-    key = 'bash.balo.autoGroup'
-
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
-        bosh.modInfos.updateAutoGroups()
-
-#------------------------------------------------------------------------------
-class Mods_FullBalo(BoolLink):
-    """Turn Full Balo off/on."""
-    text = _(u'Full Balo (Deprecated -- Please use BOSS instead)')
-    key = 'bash.balo.full'
-
-    def Execute(self,event):
-        if not bosh.settings[self.key]:
-            message = (_(u'Activate Full Balo?')
-                       + u'\n\n' +
-                       _(u'Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order.  Full Balo is still in development and may have some rough edges.')
-                       )
-            if balt.askContinue(self.window,message,'bash.balo.full.continue',_(u'Balo Groups')):
-                Mod_BaloGroups_Edit.Display(self.window)
-            return
-        else:
-            bosh.settings[self.key] = False
-            bosh.modInfos.fullBalo = False
-            bosh.modInfos.refresh(doInfos=False)
 
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):

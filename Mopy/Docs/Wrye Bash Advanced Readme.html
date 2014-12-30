@@ -193,7 +193,7 @@
         <tr><td>Missing<td>Files which are missing from the Data directory.
         <tr><td>Mismatched<td>Files which are present in the data directory, but which aren't identical to the selected package's version of those files.
         <tr><td>Conflicts<td>Shows which other packages will conflict the current package and for what files. Note that if a given file is mismatched, but the mismatch isn't due to other packages, then it won't appear. This report can be modified to show inactive conflicts and lower order conflicts by enabling the <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options respectively.
-        <tr><td>Underriden<td>Shows packages which should be overridden, but are not, due to install order errors. This can be corrected by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+        <tr><td>Underidden<td>Shows packages which should be overridden, but are not, due to install order errors. This can be corrected by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td>Dirty<td>Shows files which the selected package previously installed, but which now should be removed or altered due to a reconfiguration of the package. Dirty files can be cleared by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td>Skipped<td>Shows which files in the selected package were <a href="#bain-skipped">skipped</a> by Bain.
 </table>
@@ -337,10 +337,10 @@
         <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.
         <tr><td colspan="2" id="bainOpenReadme">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
         <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
-        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overriden by later packages.
+        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overridden by later packages.
         <tr><td colspan="2" id="bainInstallLast">Install Last<td>Moves the package to the end of the order list and installs it.
         <tr><td colspan="2" id="bainInstallMissing">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
-        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overriden will be installed as required.
+        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.
         <tr><td rowspan="2" id="bainConversion">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
         <tr><td>Apply->[BCF]<td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.
         <tr><td colspan="2" id="bainUnpackToProject">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
@@ -378,7 +378,7 @@
 <h2 id="mods">Mods Tab</h2>
 <h3 id="mods-exclusion">Exclusion Groups</h3>
 <p>Exclusion groups can be used to help flag plugins that are incompatible. Incompatible plugins can be placed into exclusion groups, and when more than one plugin in a group is present, the plugins will be highlighted in orange.
-<p>An exlusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
+<p>An exclusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
 <p><b>Note:</b> The usage of exclusion groups is not recommended. Renaming plugins will cause them to become unrecognised by features such as BAIN or utilities such as BOSS that expect plugins to have the names they are distributed with. Renaming plugins will also break any plugins that are dependent on them.
 
 <h3 id="mods-details">The Plugin Details Panel</h3>
@@ -437,14 +437,14 @@
         <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
         <tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
         <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
-        <tr><td rowspan="4">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidently delete your current one or wish to have more than one.
+        <tr><td rowspan="4">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.
         <tr><td>New Mod...<td>Creates an empty plugin.
         <tr><td>Open...<td>Opens the Data folder in Windows Explorer.
         <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide.
         <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
         <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-        <tr><td colspan="2">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focussed (ie. on top of all other program windows) and reverses those changes.
+        <tr><td colspan="2">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focused (ie. on top of all other program windows) and reverses those changes.
         <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
         <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
         <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
@@ -466,7 +466,15 @@
         <tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
         <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
         <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
-        <tr><td colspan="2">Group<td>Set a group for the selected plugin(s). This group is not an <a href="#mods-exclusion">Exlusion Group</a>, but is instead a leftover from a feature known as <abbr title="Bash Auto Load Ordering">BALO</abbr> that has been disabled, as it was superceded by BOSS. Some references to these groups still remain, but they provide no functionality other than to place hidden plugins in group folders provided those folders already exist.
+        <tr><td rowspan="9">Groups<td>Export Group<td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.
+            <tr><td>Import Group<td>This will set the groups for selected mods as specified in a csv file (as created by the Export Groups command). If selected mods are not assigned a group in the file nothing happens.
+            <tr><td rowspan="6">Edit Groups...<td>Add: add a new group to existing groups. Group names can be in Unicode.
+            <tr><td>Rename: rename selected group. Mods that belong to it will have the group renamed.
+            <tr><td>Remove: delete selected group. Deleting a group removes it from mods that belong to it.
+            <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available groups.
+            <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.
+            <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature. Use Refresh to pick up your groups and add them to the defaults.
+            <tr><td>Groups Menu<td>Set a group for the selected plugin(s) (do not confuse with an <a href="#mods-exclusion">Exclusion Group</a>). They provide no functionality other than to place hidden plugins in group folders provided those folders already exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:  <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember them shed a tear goodbye.
         <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
         <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
         <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
@@ -474,20 +482,20 @@
         <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official BOSS thread.
         <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
-        <tr><td colspan="2" id="modsDontGhost">Don't Ghost<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled.
-        <tr><td colspan="2">Ghost<td>Displayed if a single plugin is selected. Ghost this plugin when it is inactive even if Auto-Ghost is disabled.
-        <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
-        <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
-        <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
+        <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
+        <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag if set. Note that, if Auto-Ghost is enabled, <i>manually unghosting a plugin <b>will be reverted</b> on refresh</i> - mark it as <a href="#modsDontGhost">disallow ghosting</a> for the plugin if you want your changes to persist.
+        <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
+        <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+        <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+        <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
         <tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
         <tr><td colspan="2">Mark Mergeable (CBash)...<td><i>Oblivion only.</i> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
         <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
         <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
         <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
         <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-        <tr><td rowspan="14">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
+        <tr><td rowspan="13">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
         <tr><td id="modsExportEditorIDs">Editor Ids...<td><b>For advanced mod authors only.</b> Exports the Editor IDs of the records in the selected plugin to a CSV file.
-        <tr><td>Groups...<td>Exports the selected plugin's groups to a CSV file.
         <tr><td id="modsExportFactions">Factions...<td><b>For advanced mod authors only.</b> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
         <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
         <tr><td id="modsExportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
@@ -522,9 +530,8 @@
                 <li>Soulgem
                 <li>Weapon
             </ul>
-        <tr><td rowspan="15">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
+        <tr><td rowspan="14">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
         <p>If you wish to update script references <i>after</i> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
-        <tr><td>Groups...<td>Imports groups for the selected plugin from a CSV file as created by the Export Groups command.
         <tr><td id="modsImportFactions">Factions...<td><b>For advanced mod authors only.</b> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
         <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
         <tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
@@ -1176,15 +1183,15 @@
         <tr><td>Companions: Max Number<td>Sets the maximum number of companions that will follow the player.
         <tr><td>Compass: Disable<td>Disables POI's (Points of Interest), Quest Markers, or both on the compass. This may not work with some UI mods, and make some quests very hard to complete.
         <tr><td>Compass: POI Recognition<td>Distance at which Points of Interest become visible on the compass. Default is 12,000 units. Lowest setting (x 0.25) is just a little farther than unvisited locations will be "found."
-        <tr><td>Cost Multplier: Enchantment<td>The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
-        <tr><td>Cost Multplier: Recharge<td>The cost multiplier factor for recharging.
-        <tr><td>Cost Multplier: Repair<td>The cost multiplier factor for repairing.
-        <tr><td>Cost Multplier: Spell Making<td>The cost multiplier factor for spellmaking.
+        <tr><td>Cost Multiplier: Enchantment<td>The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
+        <tr><td>Cost Multiplier: Recharge<td>The cost multiplier factor for recharging.
+        <tr><td>Cost Multiplier: Repair<td>The cost multiplier factor for repairing.
+        <tr><td>Cost Multiplier: Spell Making<td>The cost multiplier factor for spellmaking.
         <tr><td>Crime: Alarm Distance<td>The distance from the player that NPCs will be alerted to crimes.
         <tr><td>Crime: Pickpocketing Fine<td>The fine for pickpocketing.
         <tr><td>Crime: Trespass Fine<td>The fine for trespassing.
         <tr><td>Drag: Max Moveable Weight<td>The max weight that can be dragged.
-        <tr><td>Essential NPC Unconciousness<td>Time for which an essential NPC stays unconscious after being knocked out.
+        <tr><td>Essential NPC Unconsciousness<td>Time for which an essential NPC stays unconscious after being knocked out.
         <tr><td>Fatigue from Running/Encumbrance<td>Fatigue cost multiplier for running or encumbrance.
         <tr><td>Greeting Distance<td>Distance at which NPCs will greet the player.
         <tr><td>Horse Turning Speed<td>Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
@@ -1240,7 +1247,7 @@
                 <li>Crowded Cities 15/30 by Gratis_monsta
                 <li>PT_RoamingNPCs by Gratis_monsta
             </ul>
-        <tr><td>Rational_Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shiveriing Isles, Oscuro's Oblivion Overhaul and a few more mods.
+        <tr><td>Rational_Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
         <tr><td rowspan="2">Cobl Exhaustion<td>Assorted_Exhaust<td>Defines power exhaustion levels for greater powers from Oblivion, the Orrery DLC and Cobl.
         <tr><td>Kmacg94_Exhaust<td>Defines power exhaustion levels for greater powers from Race Balancing Project, Oblivion WarCry, Oscuro's Oblivion Overhaul and several other mods.
         <tr><td>Morph Factions<td>Bash_MFact<td>Used with Wrye Morph to provide faction morphing.
@@ -1642,10 +1649,10 @@
 <figcaption>Wrye Bash's Mod Checker</figcaption>
 </figure>
 <p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
-<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regardinng missing masters or delinquent masters.
+<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regarding missing masters or delinquent masters.
 <ul>
     <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
-    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This shoud be fixed to prevent issues in-game.
+    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
 </ul>
 <p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found at <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
 <p>The rest of the report details any plugin groups that have been set up. Each group's section contains the following information:
@@ -1703,7 +1710,7 @@
 
 <h3 id="tools-arguments">Command Line Arguments</h3>
 <p>The following table lists all command-line arguments Wrye Bash
-	supports.
+	understands.
 <p>
 <table>
 	<thead>
@@ -1785,7 +1792,7 @@
 		<tr>
 			<td><code>-r, --restore</code>
 			<td>Backup all Bash settings to an archive file before the app
-				launches. Either specify the filepath with the <code>-f/--filname</code>
+				launches. Either specify the filepath with the <code>-f/--filename</code>
 				options or Wrye Bash will prompt the user for the backup file path.
 
 		<tr>
@@ -1806,7 +1813,6 @@
 			<td>Include all images from mopy/bash/images in the
 				backup/restore (if present in backup file).</td>
 		</tr>
-	</tbody>
 </table>
 
 <h2 id="international">Internationalisation</h2>

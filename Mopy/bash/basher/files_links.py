@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 from operator import attrgetter
 import re
 import time
@@ -231,8 +232,6 @@ class File_Duplicate(ItemLink):
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
                     fileInfos.table.setItem(destName,'mtime',newTime)
-                if fileInfo.isMod():
-                    fileInfos.autoSort()
             self.window.RefreshUI()
 
 class File_Hide(ItemLink):
@@ -301,8 +300,6 @@ class File_Redate(AppendableLink, ItemLink):
     def Execute(self,event):
         #--Get current start time.
         modInfos = self.window.data
-        fileNames = [mod for mod in self.selected if mod not in modInfos.autoSorted]
-        if not fileNames: return
         #--Ask user for revised time.
         newTimeStr = balt.askText(self.window,_(u'Redate selected mods starting at...'),
             _(u'Redate Mods'),formatDate(int(time.time())))
@@ -317,7 +314,7 @@ class File_Redate(AppendableLink, ItemLink):
             balt.showError(self,_(u'Bash cannot handle dates greater than January 19, 2038.)'))
             return
         #--Do it
-        selInfos = [modInfos[fileName] for fileName in fileNames]
+        selInfos = [modInfos[fileName] for fileName in self.selected]
         selInfos.sort(key=attrgetter('mtime'))
         for fileInfo in selInfos:
             fileInfo.setmtime(newTime)
@@ -343,8 +340,8 @@ class File_Sort(EnabledLink):
             return
         #--Get first time from first selected file.
         modInfos = self.window.data
-        fileNames = [mod for mod in self.selected if mod not in modInfos.autoSorted]
-        if not fileNames: return
+        fileNames = self.selected
+        # TODO(ut): balo relic ?
         dotTimes = [modInfos[fileName].mtime for fileName in fileNames if fileName.s[0] in u'.=+']
         if dotTimes:
             newTime = min(dotTimes)

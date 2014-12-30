@@ -161,25 +161,25 @@ def setGame(gameName,workingDir=u''):
     del allGames
     return foundGames.keys()
 
-# Balo Canonical Groups -------------------------------------------------------
-baloGroups = (
-    (u'Root',),
-    (u'Library',1),
-    (u'Cosmetic',),
-    (u'Clothing',),
-    (u'Weapon',),
-    (u'Tweak',2,-1),
-    (u'Overhaul',4,-1),
-    (u'Misc.',1),
-    (u'Magic',2),
-    (u'NPC',),
-    (u'Home',1),
-    (u'Place',1),
-    (u'Quest',3,-1),
-    (u'Last',1,-1),
+# Default Groups --------------------------------------------------------------
+defaultGroups = (
+    u'Root',
+    u'Library',
+    u'Cosmetic',
+    u'Clothing',
+    u'Weapon',
+    u'Tweak',
+    u'Overhaul',
+    u'Misc.',
+    u'Magic',
+    u'NPC',
+    u'Home',
+    u'Place',
+    u'Quest',
+    u'Last',
     )
 
-# Tes3 Group/Top Types -------------------------------------------------------------
+# Tes3 Group/Top Types --------------------------------------------------------
 groupTypes = [
     _(u'Top (Type)'),
     _(u'World Children'),
@@ -977,6 +977,6 @@ messagesHeader = u"""<html>
 </head>
 <body><div id="ipbwrapper">\n"""
 
-#--Cleanup ---------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+#--Cleanup --------------------------------------------------------------------
+#------------------------------------------------------------------------------
 del _strU

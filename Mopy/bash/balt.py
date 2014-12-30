@@ -1099,13 +1099,11 @@ def shellMakeDirs(dirName,parent=None):
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ListEditorData:
-    """Data capsule for ListEditor. [Abstract]"""
+    """Data capsule for ListEditor. [Abstract]
+    DEPRECATED: nest into ListEditor"""
     def __init__(self,parent):
-        """Initialize."""
         self.parent = parent #--Parent window.
-        self.showAction = False
         self.showAdd = False
-        self.showEdit = False
         self.showRename = False
         self.showRemove = False
         self.showSave = False
@@ -1117,30 +1115,18 @@ class ListEditorData:
         self.infoReadOnly = True #--Controls whether info pane is editable
 
     #--List
-    def action(self,item):
-        """Called when action button is used.."""
-        pass
-    def select(self,item):
-        """Called when an item is selected."""
-        pass
     def getItemList(self):
         """Returns item list in correct order."""
         raise AbstractError # return []
     def add(self):
-        """Peforms add operation. Return new item on success."""
+        """Performs add operation. Return new item on success."""
         raise AbstractError # return None
-    def edit(self,item=None):
-        """Edits specified item. Return true on success."""
-        raise AbstractError # return False
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
         raise AbstractError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
         raise AbstractError # return False
-    def close(self):
-        """Called when dialog window closes."""
-        pass
 
     #--Info box
     def getInfo(self,item):
@@ -1150,24 +1136,9 @@ class ListEditorData:
         """Sets string info on specified item."""
         raise AbstractError
 
-    #--Checklist
-    def getChecks(self):
-        """Returns checked state of items as array of True/False values matching Item list."""
-        raise AbstractError # return []
-    def check(self,item):
-        """Checks items. Return true on success."""
-        raise AbstractError # return False
-    def uncheck(self,item):
-        """Unchecks item. Return true on success."""
-        raise AbstractError # return False
-
     #--Save/Cancel
     def save(self):
         """Handles save button."""
-        pass
-
-    def cancel(self):
-        """Handles cancel button."""
         pass
 
 #------------------------------------------------------------------------------
@@ -1204,28 +1175,32 @@ class Dialog(wx.Dialog):
 
 class ListEditor(Dialog):
     """Dialog for editing lists."""
-    def __init__(self, parent, title, data, type='list'):
+
+    def __init__(self, parent, title, data, **kwargs):
+        """A gui list, with buttons that act on the list items.
+
+        Added kwargs to provide extra buttons - this class is built around a
+        ListEditorData instance which needlessly complicates things - mainly
+        a bunch of booleans to enable buttons but also the list of data that
+        corresponds to (read is duplicated by) ListEditor.items.
+        ListEditorData should be nested here.
+        :param kwargs: kwargs['ButtonLabel']=buttonAction
+        """
         #--Data
         self.data = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title)
+        # overrides Dialog.sizesKey
         self.sizesKey = self.data.__class__.__name__
         #--Caption
         if data.caption:
             captionText = staticText(self,data.caption)
         else:
             captionText = None
-        #--List Box
-        if type == 'checklist':
-            self.list = wx.CheckListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
-            for index,checked in enumerate(self.data.getChecks()):
-                self.list.Check(index,checked)
-            self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, self.list)
-        else:
-            self.list = wx.ListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
+        #--List Box # TODO(ut): rename to self.listBox
+        self.list = wx.ListBox(self, choices=self.items, style=wx.LB_SINGLE)
         self.list.SetSizeHints(125,150)
-        self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
         #--Infobox
         if data.showInfo:
             self.gInfoBox = textCtrl(self,size=(130,-1),
@@ -1235,15 +1210,15 @@ class ListEditor(Dialog):
         else:
             self.gInfoBox = None
         #--Buttons
-        buttonSet = (
-            (data.showAction, _(u'Action'), self.DoAction),
+        buttonSet = [
             (data.showAdd,    _(u'Add'),    self.DoAdd),
-            (data.showEdit,   _(u'Edit'),   self.DoEdit),
             (data.showRename, _(u'Rename'), self.DoRename),
             (data.showRemove, _(u'Remove'), self.DoRemove),
             (data.showSave,   _(u'Save'),   self.DoSave),
             (data.showCancel, _(u'Cancel'), self.DoCancel),
-            )
+            ]
+        for k,v in kwargs.items():
+            buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             buttons = vSizer()
             for (flag,defLabel,func) in buttonSet:
@@ -1272,26 +1247,7 @@ class ListEditor(Dialog):
     def GetSelected(self):
         return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
-    #--Checklist commands
-    def DoCheck(self,event):
-        """Handles check/uncheck of listbox item."""
-        index = event.GetSelection()
-        item = self.items[index]
-        if self.list.IsChecked(index):
-            self.data.check(item)
-        else:
-            self.data.uncheck(item)
-        #self.list.SetSelection(index)
-
     #--List Commands
-    def DoAction(self,event):
-        """Acts on the selected item."""
-        selections = self.list.GetSelections()
-        if not selections: return bell()
-        itemDex = selections[0]
-        item = self.items[itemDex]
-        self.data.action(item)
-
     def DoAdd(self,event):
         """Adds a new item."""
         newItem = self.data.add()
@@ -1300,9 +1256,10 @@ class ListEditor(Dialog):
             index = self.items.index(newItem)
             self.list.InsertItems([newItem],index)
 
-    def DoEdit(self,event):
-        """Edits the selected item."""
-        raise UncodedError
+    def SetItemsTo(self, items):
+        if self.data.setTo(items):
+            self.items = self.data.getItemList()
+            self.list.Set(self.items)
 
     def DoRename(self,event):
         """Renames selected item."""
@@ -1337,15 +1294,6 @@ class ListEditor(Dialog):
             self.gInfoBox.SetValue(u'')
 
     #--Show Info
-    def OnSelect(self,event):
-        """Handle show info (item select) event."""
-        index = event.GetSelection()
-        item = self.items[index]
-        self.data.select(item)
-        if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(self.data.getInfo(item))
-
     def OnInfoEdit(self,event):
         """Info box text has been edited."""
         selections = self.list.GetSelections()
@@ -1362,15 +1310,9 @@ class ListEditor(Dialog):
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
-        """Handle save button."""
-        self.data.cancel()
+        """Handle cancel button."""
         sizes[self.data.__class__.__name__] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
-
-    #--Window Closing
-    def OnCloseWindow(self, event):
-        self.data.close()
-        super(ListEditor, self).OnCloseWindow(event)
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()

@@ -29,11 +29,10 @@ import wx # FIXME(ut): wx
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, MenuLink, SeparatorLink, ChoiceLink, OneItemLink, Image
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from . import DocBrowser, Resources
-from .constants import ID_GROUPS, JPEG
-from .dialogs import Mod_BaloGroups_Edit
+from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
 from .patcher_dialog import PatchDialog
@@ -121,11 +120,12 @@ class Mod_CreateDummyMasters(OneItemLink):
 #--Common ---------------------------------------------------------------------
 class _Mod_LabelsData(balt.ListEditorData):
     """Data capsule for label editing dialog."""
-    def __init__(self,parent,strings):
+
+    def __init__(self, parent, modLabels):
         #--Strings
-        self.column = strings.column
-        self.setKey = strings.setKey
-        self.addPrompt = strings.addPrompt
+        self.column = modLabels.column
+        self.setKey = modLabels.setKey
+        self.addPrompt = modLabels.addPrompt
         #--Key/type
         self.data = bosh.settings[self.setKey]
         #--GUI
@@ -189,14 +189,34 @@ class _Mod_LabelsData(balt.ListEditorData):
         #--Done
         return True
 
+    def setTo(self, items):
+        """Set the bosh.settings[self.setKey] list to the items given - do
+        not update modList for removals (i.e. if a group/rating is removed
+        there may be mods that are still assigned to it)!
+        """
+        items.sort(key=lambda a: a.lower())
+        if self.data == items: return False
+        bosh.settings.setChanged(self.setKey)
+        self.data[:] = items # do not reassign! points to settings[self.setKey]
+        return True
+
 class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
-    def __init__(self):
+    extraButtons = {} # extra actions for the edit dialog
+
+    class _Edit(ItemLink):
+        def __init__(self, *args, **kwargs):
+            super(_Mod_Labels._Edit, self).__init__(*args, **kwargs)
+            self.help = self.text
+
+    class _None(ItemLink): help = _(u'Clear labels from selected mod(s)')
+
+    def __init__(self, _Edit=_Edit, _None=_None):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
-        self.extraItems = [ItemLink(self.idList.EDIT, self.editMenuText),
+        self.extraItems = [_Edit(self.idList.EDIT, self.editMenuText),
                            SeparatorLink(),
-                           ItemLink(self.idList.NONE, _(u'None')), ]
+                           _None(self.idList.NONE, _(u'None')), ]
         self.extraActions = {self.idList.EDIT: self.DoEdit,
                              self.idList.NONE: self.DoNone, }
 
@@ -219,14 +239,21 @@ class _Mod_Labels(ChoiceLink):
         fileLabels = bosh.modInfos.table.getColumn(self.column)
         for fileName in self.selected:
             fileLabels[fileName] = label
+        # FIXME(ut): when reassigning groups reselecting previous mods fails
+        #  when mods list is sorted by group - DoNone above works (reselects
+        #  correct mods) - probably call PopulateItems() here too
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
             modList.SortItems()
         self.window.RefreshUI()
 
     def DoEdit(self,event):
         """Show label editing dialog."""
-        data = _Mod_LabelsData(self.window,self)
-        balt.ListEditor.Display(self.window, self.editWindow, data)
+        data = _Mod_LabelsData(self.window, self)  # ListEditorData
+        with balt.ListEditor(self.window, self.editWindowTitle, data,
+                             **self.extraButtons) as self.listEditor:
+            self.listEditor.ShowModal() # consider only refreshing the mod list
+            # if this returns true
+        del self.listEditor # used by the buttons code - should be encapsulated
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -234,12 +261,9 @@ class _Mod_Groups_Export(EnabledLink):
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
     text = _(u'Export Groups')
+    help = _(u'Export groups of selected mods to a csv file')
 
     def _enable(self): return bool(self.selected)
-
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(_Mod_Groups_Export, self)._initData(window, data)
 
     def Execute(self,event):
         fileName = GPath(self.selected[0])
@@ -260,20 +284,20 @@ class _Mod_Groups_Export(EnabledLink):
             _(u"Export Groups"))
 
 class _Mod_Groups_Import(EnabledLink):
-    """Import editor ids from text file or other mod."""
+    """Import mod groups from text file."""
     text = _(u'Import Groups')
+    help = _(u'Import groups for selected mods from a csv file (filename must'
+             u' end in _Groups.csv)')
 
     def _enable(self): return bool(self.selected)
 
-    def _initData(self, window, data):
-        data = bosh.ModGroups.filter(data)
-        super(_Mod_Groups_Import, self)._initData(window, data)
-
     def Execute(self,event):
-        message = _(u"Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered.")
-        if not balt.askContinue(self.window,message,'bash.groups.import.continue',
-            _(u'Import Groups')):
-            return
+        message = _(
+            u"Import groups from a text file ? This will assign to selected "
+            u"mods the group they are assigned in the text file, if any.")
+        if not balt.askContinue(self.window, message,
+                                'bash.groups.import.continue',
+                                _(u'Import Groups')): return
         textDir = bosh.dirs['patches']
         #--File dialog
         textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
@@ -294,80 +318,51 @@ class _Mod_Groups_Import(EnabledLink):
             _(u"Imported %d mod/groups (%d changed).") % (len(modGroups.mod_group),changed),
             _(u"Import Groups"))
 
-class Mod_Groups(AppendableLink, _Mod_Labels):
+class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
     def __init__(self):
         self.column     = 'group'
         self.setKey     = 'bash.mods.groups'
-        self.editMenuText   = _(u'Edit Groups...')
-        self.editWindow = _(u'Groups')
         self.addPrompt  = _(u'Add group:')
+        self.extraButtons = {_(u'Refresh'): self._doRefresh,
+                             _(u'Sync'): self._doSync,
+                             _(u'Defaults'): self._doDefault
+        }
+        self.editMenuText   = _(u'Edit Groups...')
+        self.editWindowTitle = _(u'Groups')
         self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(), _Mod_Groups_Import()] + self.extraItems
 
     def _initData(self, window, data):
         super(Mod_Groups, self)._initData(window, data)
+        # TODO(ut): modGroup = set() ... return self.text in modGroup
         modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
             data) == 1 else None
         class _CheckGroup(CheckLink):
-            def _check(self): return self.text == modGroup
+            def _check(self):
+                """Checks the Link if (single) selected mod belongs to it."""
+                return self.text == modGroup
         self.__class__.cls = _CheckGroup
 
-    def _append(self, window): return not bosh.settings.get('bash.balo.full')
+    def _doRefresh(self, event):
+        """Add to the list of groups groups currently assigned to mods."""
+        self.listEditor.SetItemsTo(list(set(bosh.settings[
+            'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
-class Mod_BaloGroups(AppendableLink, ChoiceLink):  # TODO(ut): untested
-    """Select Balo group to use."""
-    def __init__(self):
-        super(Mod_BaloGroups, self).__init__()
-        self.id_group = {}
-        self.idList = ID_GROUPS
-        self.extraItems = [ItemLink(self.idList.EDIT, _(u'Edit...')), ]
-        self.extraActions = {self.idList.EDIT: self.DoEdit, }
+    # TODO(307): warn in items below (askContinue or whatever it's called)
+    def _doSync(self, event):
+        """Set the list of groups to groups currently assigned to mods."""
+        self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
 
-    def _append(self, window): return bool(bosh.settings.get('bash.balo.full'))
+    def _doDefault(self, event):
+        """Set the list of groups to the default groups list.
 
-    def _range(self):
-        id_group = self.id_group
-        setableMods = [GPath(x) for x in self.selected if GPath(x) not in bosh.modInfos.autoHeaders]
-        if setableMods:
-            yield SeparatorLink()
-            ids = iter(self.idList)
-            modGroup = bosh.modInfos.table.getItem(setableMods[0],'group') \
-                if len(setableMods) == 1 else None
-            for group,lower,upper in bosh.modInfos.getBaloGroups():
-                if lower == upper:
-                    id_ = ids.next()
-                    id_group[id_] = group
-                    class _GroupLink(CheckLink):
-                        def _check(self): return self.text == modGroup
-                    yield _GroupLink(_id= id_, _text=group)
-                else:
-                    subMenu = MenuLink(name=group)
-                    for x in range(lower,upper+1):
-                        offGroup = bosh.joinModGroup(group,x)
-                        id_ = ids.next()
-                        id_group[id_] = offGroup
-                        class _OffGroupLink(CheckLink):
-                            def _check(self): return self.text == modGroup
-                        subMenu.links.append(
-                            _OffGroupLink(_id=id_, _text=offGroup))
-                    yield subMenu
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        label = self.id_group[event.GetId()]
-        mod_group = bosh.modInfos.table.getColumn('group')
-        for mod in self.selected:
-            if mod not in bosh.modInfos.autoHeaders:
-                mod_group[mod] = label
-        if bosh.modInfos.refresh(doInfos=False):
-            modList.SortItems()
-        self.window.RefreshUI()
-
-    def DoEdit(self,event):
-        """Show label editing dialog."""
-        Mod_BaloGroups_Edit.Display(self.window)
+        Won't clear user set groups from the modlist - most probably not
+        what the user wants.
+        """
+        self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
+        # maybe remove user created groups (definitely after askContinue())
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):
@@ -375,9 +370,9 @@ class Mod_Ratings(_Mod_Labels):
     def __init__(self):
         self.column     = 'rating'
         self.setKey     = 'bash.mods.ratings'
-        self.editMenuText   = _(u'Edit Ratings...')
-        self.editWindow = _(u'Ratings')
         self.addPrompt  = _(u'Add rating:')
+        self.editMenuText   = _(u'Edit Ratings...')
+        self.editWindowTitle = _(u'Ratings')
         self.idList     = balt.IdList(10400, 90,'EDIT','NONE')
         super(Mod_Ratings, self).__init__()
 
@@ -623,7 +618,7 @@ class Mod_Ghost(EnabledLink):
     def Execute(self,event):
         files = []
         if len(self.selected) == 1:
-            # toggle
+            # toggle - ghosting only enabled if plugin is inactive
             if not self.isGhost: # ghosting - override allowGhosting with True
                 bosh.modInfos.table.setItem(self.path,'allowGhosting',True)
             self.fileInfo.setGhost(not self.isGhost)

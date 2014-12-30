@@ -1180,11 +1180,6 @@ class ModList(List):
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
-        # Make sure we're not auto-sorting
-        for thisFile in self.GetSelected():
-            if GPath(thisFile) in bosh.modInfos.autoSorted:
-                balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
-                return
         order = bosh.modInfos.plugins.LoadOrder
         # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
         start = order.index(self.items[indexes[0]])
@@ -1435,26 +1430,20 @@ class ModList(List):
         elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
-                for thisFile in self.GetSelected():
-                    if GPath(thisFile) in bosh.modInfos.autoSorted:
-                        balt.showError(self,_(u"Auto-ordered files cannot be manually moved."))
-                        event.Skip()
-                        break
-                else:
-                    orderKey = lambda x: self.items.index(x)
-                    moveMod = 1 if event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN) else -1
-                    isReversed = (moveMod != -1)
-                    for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
-                        swapItem = self.items.index(thisFile) + moveMod
-                        if swapItem < 0 or len(self.items) - 1 < swapItem: break
-                        swapFile = self.items[swapItem]
-                        try:
-                            bosh.modInfos.swapOrder(thisFile,swapFile)
-                        except bolt.BoltError as e:
-                            balt.showError(self, _(u'%s') % e)
-                        bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI(refreshSaves=False)
-                    self.RefreshUI([],refreshSaves=True)
+                orderKey = lambda x: self.items.index(x)
+                moveMod = 1 if event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN) else -1
+                isReversed = (moveMod != -1)
+                for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
+                    swapItem = self.items.index(thisFile) + moveMod
+                    if swapItem < 0 or len(self.items) - 1 < swapItem: break
+                    swapFile = self.items[swapItem]
+                    try:
+                        bosh.modInfos.swapOrder(thisFile,swapFile)
+                    except bolt.BoltError as e:
+                        balt.showError(self, _(u'%s') % e)
+                    bosh.modInfos.refreshInfoLists()
+                    self.RefreshUI(refreshSaves=False)
+                self.RefreshUI([],refreshSaves=True)
         event.Skip()
 
     def OnKeyUp(self,event):
@@ -1666,13 +1655,8 @@ class ModDetails(SashPanel):
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
-        #--Editable mtime?
-        if fileName in bosh.modInfos.autoSorted:
-            self.modified.SetEditable(False)
-            self.modified.SetBackgroundColour(self.GetBackgroundColour())
-        else:
-            self.modified.SetEditable(True)
-            self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
+        self.modified.SetEditable(True)
+        self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
         #--Set fields
         self.file.SetValue(self.fileStr)
         self.author.SetValue(self.authorStr)
@@ -1921,7 +1905,7 @@ class INIPanel(SashPanel):
         #--Remove from list button
         self.button = button(right,_(u'Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.edit = button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = button(right,_(u'Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -1955,7 +1939,7 @@ class INIPanel(SashPanel):
                     (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
                     ((4,0),0),
                     (self.button,0,wx.ALIGN_TOP,0),
-                    (self.edit,0,wx.ALIGN_TOP,0),
+                    (self.editButton,0,wx.ALIGN_TOP,0),
                     ),0,wx.EXPAND|wx.BOTTOM,4),
                 (self.iniContents,1,wx.EXPAND),
                 )
@@ -2180,9 +2164,9 @@ class ModPanel(SashPanel):
         left,right = self.left, self.right
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
-            patcher_dialog, dialogs
+            patcher_dialog
         saves_links.modList = mods_links.modList = mod_links.modList = \
-            app_buttons.modList = patcher_dialog.modList = dialogs.modList =\
+            app_buttons.modList = patcher_dialog.modList = \
             modList = ModList(left)
         self.list = modList
         self.modDetails = ModDetails(right)
@@ -3366,9 +3350,8 @@ class InstallersPanel(SashTankPanel):
     def RefreshUIMods(self):
         """Refresh UI plus refresh mods state."""
         self.gList.RefreshUI()
-        if bosh.modInfos.refresh(doAutoGroup=True):
+        if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            bosh.modInfos.autoGrouped.clear()
             modList.RefreshUI('ALL')
         if iniList is not None:
             if bosh.iniInfos.refresh():
@@ -4886,7 +4869,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
-        modInfosChanged = bosh.modInfos.refresh(doAutoGroup=True)
+        modInfosChanged = bosh.modInfos.refresh()
         if modInfosChanged:
             popMods = 'ALL'
         #--Have any mtimes been reset?
@@ -4908,16 +4891,6 @@ class BashFrame(wx.Frame):
                                       [message], liststyle='list',Cancel=False)
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
-        #--Mods autogrouped?
-        if bosh.modInfos.autoGrouped:
-            message = [u'',_(u'Auto-grouped files')]
-            agDict = bosh.modInfos.autoGrouped
-            ordered = bosh.modInfos.getOrdered(agDict.keys())
-            message.extend(ordered)
-            agDict.clear()
-            ListBoxes.Display(self, _(u'Some mods have been auto-grouped:'),
-                              _(u'Some mods have been auto-grouped:'),
-                              [message], liststyle='list', Cancel=False)
         #--Check savegames directory...
         if bosh.saveInfos.refresh():
             popSaves = 'ALL'
@@ -5662,7 +5635,7 @@ class BashApp(wx.App):
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
         bosh.modInfos = bosh.ModInfos()
-        bosh.modInfos.refresh(doAutoGroup=True)
+        bosh.modInfos.refresh()
         progress.Update(30,_(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()

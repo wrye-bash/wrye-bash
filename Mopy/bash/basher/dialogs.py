@@ -22,18 +22,16 @@
 #
 # =============================================================================
 
-import re
 import string
 from types import IntType, LongType
 import wx
 from .. import balt, bosh, bolt, bush
 from ..balt import Dialog, Links, button, hSizer, ItemLink, Link, colors, \
-    roTextCtrl, vSizer, spacer, checkBox, staticText, Image, spinCtrl, \
-    hsbSizer, bell, textCtrl, tooltip
+    roTextCtrl, vSizer, spacer, checkBox, staticText, Image, hsbSizer, bell, \
+    textCtrl, tooltip
 from . import Resources, bEnableWizard
 from .constants import colorInfo, tabInfo, settingDefaults, JPEG, PNG
 
-modList = None # TODO(ut): Balo - bin, also from basher
 gInstallers = None
 
 class _CheckList_SelectAll(ItemLink):
@@ -461,208 +459,6 @@ class ImportFaceDialog(balt.Dialog):
         bosh.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
         balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
         self.EndModalOK()
-
-#------------------------------------------------------------------------------
-class Mod_BaloGroups_Edit(balt.Dialog):
-    """Dialog for editing Balo groups."""
-    title = _(u"Balo Groups")
-
-    def __init__(self,parent):
-        #--Data
-        self.parent = parent
-        self.groups = [list(x) for x in bosh.modInfos.getBaloGroups(True)]
-        self.removed = set()
-        #--GUI
-        super(Mod_BaloGroups_Edit, self).__init__(parent, caption=True)
-        #--List
-        self.gList = wx.ListBox(self,wx.ID_ANY,choices=self.GetItems(),style=wx.LB_SINGLE)
-        self.gList.SetSizeHints(125,150)
-        self.gList.Bind(wx.EVT_LISTBOX,self.DoSelect)
-        #--Bounds
-        self.gLowerBounds = spinCtrl(self,u'-10',size=(15,15),min=-10,max=0,onSpin=self.OnSpin)
-        self.gUpperBounds = spinCtrl(self,u'10',size=(15,15),min=0,max=10, onSpin=self.OnSpin)
-        self.gLowerBounds.SetSizeHints(35,-1)
-        self.gUpperBounds.SetSizeHints(35,-1)
-        #--Buttons
-        self.gAdd = button(self,_(u'Add'),onClick=self.DoAdd)
-        self.gRename = button(self,_(u'Rename'),onClick=self.DoRename)
-        self.gRemove = button(self,_(u'Remove'),onClick=self.DoRemove)
-        self.gMoveEarlier = button(self,_(u'Move Up'),onClick=self.DoMoveEarlier)
-        self.gMoveLater = button(self,_(u'Move Down'),onClick=self.DoMoveLater)
-        #--Layout
-        topLeftCenter= wx.ALIGN_CENTER|wx.LEFT|wx.TOP
-        sizer = hSizer(
-            (self.gList,1,wx.EXPAND|wx.TOP,4),
-            (vSizer(
-                (self.gAdd,0,topLeftCenter,4),
-                (self.gRename,0,topLeftCenter,4),
-                (self.gRemove,0,topLeftCenter,4),
-                (self.gMoveEarlier,0,topLeftCenter,4),
-                (self.gMoveLater,0,topLeftCenter,4),
-                (hsbSizer((self,wx.ID_ANY,_(u'Offsets')),
-                    (self.gLowerBounds,1,wx.EXPAND|wx.LEFT|wx.TOP,4),
-                    (self.gUpperBounds,1,wx.EXPAND|wx.TOP,4),
-                    ),0,wx.LEFT|wx.TOP,4),
-                    spacer,
-                    (button(self,id=wx.ID_SAVE,onClick=self.DoSave),0,topLeftCenter,4),
-                    (button(self,id=wx.ID_CANCEL,onClick=self.DoCancel),0,topLeftCenter|wx.BOTTOM,4),
-                ),0,wx.EXPAND|wx.RIGHT,4),
-            )
-        #--Done
-        self.SetSizeHints(200,300)
-        className = self.__class__.__name__
-        if className in balt.sizes:
-            self.SetSizer(sizer)
-            self.SetSize(balt.sizes[className])
-        else:
-            self.SetSizerAndFit(sizer)
-        self.Refresh(0)
-
-    #--Support
-    def AskNewName(self,message,title):
-        """Ask user for new/copy name."""
-        newName = (balt.askText(self,message,title) or u'').strip()
-        if not newName: return None
-        maValid = re.match(u'([a-zA-Z][ _a-zA-Z]+)',newName,flags=re.U)
-        if not maValid or maValid.group(1) != newName:
-            balt.showWarning(self,
-                _(u"Group name must be letters, spaces, underscores only!"),title)
-            return None
-        elif newName in self.GetItems():
-            balt.showWarning(self,_(u"group %s already exists.") % newName,title)
-            return None
-        elif len(newName) >= 40:
-            balt.showWarning(self,_(u"Group names must be less than forty characters."),title)
-            return None
-        else:
-            return newName
-
-    def GetItems(self):
-        """Return a list of item strings."""
-        return [x[5] for x in self.groups]
-
-    def GetItemLabel(self,index):
-        info = self.groups[index]
-        lower,upper,group = info[1],info[2],info[5]
-        if lower == upper:
-            return group
-        else:
-            return u'%s  %d : %d' % (group,lower,upper)
-
-    def Refresh(self,index):
-        """Refresh items in list."""
-        labels = [self.GetItemLabel(x) for x in range(len(self.groups))]
-        self.gList.Set(labels)
-        self.gList.SetSelection(index)
-        self.RefreshButtons()
-
-    def RefreshBounds(self,index):
-        """Refresh bounds info."""
-        if index < 0 or index >= len(self.groups):
-            lower,upper = 0,0
-        else:
-            lower,upper,usedStart,usedStop = self.groups[index][1:5]
-        self.gLowerBounds.SetRange(-10,usedStart)
-        self.gUpperBounds.SetRange(usedStop-1,10)
-        self.gLowerBounds.SetValue(lower)
-        self.gUpperBounds.SetValue(upper)
-
-    def RefreshButtons(self,index=None):
-        """Updates buttons."""
-        if index is None:
-            index = (self.gList.GetSelections() or (0,))[0]
-        self.RefreshBounds(index)
-        usedStart,usedStop = self.groups[index][3:5]
-        mutable = index <= len(self.groups) - 3
-        self.gAdd.Enable(mutable)
-        self.gRename.Enable(mutable)
-        self.gRemove.Enable(mutable and usedStart == usedStop)
-        self.gMoveEarlier.Enable(mutable and index > 0)
-        self.gMoveLater.Enable(mutable and index <= len(self.groups) - 4)
-        self.gLowerBounds.Enable(index != len(self.groups) - 2)
-        self.gUpperBounds.Enable(index != len(self.groups) - 2)
-
-    #--Event Handling
-    def DoAdd(self,event):
-        """Adds a new item."""
-        title = _(u"Add Balo Group")
-        index = (self.gList.GetSelections() or (0,))[0]
-        if index < 0 or index >= len(self.groups) - 2: return bell()
-        #--Ask for and then check new name
-        oldName = self.groups[index][0]
-        message = _(u"Name of new group (spaces and letters only):")
-        newName = self.AskNewName(message,title)
-        if newName:
-            self.groups.insert(index+1,[u'',0,0,0,0,newName])
-            self.Refresh(index+1)
-
-    def DoMoveEarlier(self,event):
-        """Moves selected group up (earlier) in order.)"""
-        index = (self.gList.GetSelections() or (0,))[0]
-        if index < 1 or index >= (len(self.groups)-2): return bell()
-        swapped = [self.groups[index],self.groups[index-1]]
-        self.groups[index-1:index+1] = swapped
-        self.Refresh(index-1)
-
-    def DoMoveLater(self,event):
-        """Moves selected group down (later) in order.)"""
-        index = (self.gList.GetSelections() or (0,))[0]
-        if index < 0 or index >= (len(self.groups) - 3): return bell()
-        swapped = [self.groups[index+1],self.groups[index]]
-        self.groups[index:index+2] = swapped
-        self.Refresh(index+1)
-
-    def DoRename(self,event):
-        """Renames selected item."""
-        title = _(u"Rename Balo Group")
-        index = (self.gList.GetSelections() or (0,))[0]
-        if index < 0 or index >= len(self.groups): return bell()
-        #--Ask for and then check new name
-        oldName = self.groups[index][5]
-        message = _(u"Rename %s to (spaces, letters and underscores only):") % oldName
-        newName = self.AskNewName(message,title)
-        if newName:
-            self.groups[index][5] = newName
-            self.gList.SetString(index,self.GetItemLabel(index))
-
-    def DoRemove(self,event):
-        """Removes selected item."""
-        index = (self.gList.GetSelections() or (0,))[0]
-        if index < 0 or index >= len(self.groups): return bell()
-        name = self.groups[index][0]
-        if name: self.removed.add(name)
-        del self.groups[index]
-        self.gList.Delete(index)
-        self.Refresh(index)
-
-    def DoSelect(self,event):
-        """Handle select event."""
-        self.Refresh(event.GetSelection())
-        self.gList.SetFocus()
-
-    def OnSpin(self,event):
-        """Show label editing dialog."""
-        index = (self.gList.GetSelections() or (0,))[0]
-        self.groups[index][1] = self.gLowerBounds.GetValue()
-        self.groups[index][2] = self.gUpperBounds.GetValue()
-        self.gList.SetString(index,self.GetItemLabel(index))
-        event.Skip()
-
-    #--Save/Cancel
-    def DoSave(self,event):
-        """Handle save button."""
-        balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
-        bosh.settings['bash.balo.full'] = True
-        bosh.modInfos.setBaloGroups(self.groups,self.removed)
-        bosh.modInfos.updateAutoGroups()
-        bosh.modInfos.refresh()
-        modList.RefreshUI()
-        self.EndModalOK()
-
-    def DoCancel(self,event):
-        """Handle save button."""
-        balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
-        self.EndModal(wx.ID_CANCEL)
 
 #------------------------------------------------------------------------------
 class CreateNewProject(balt.Dialog):
