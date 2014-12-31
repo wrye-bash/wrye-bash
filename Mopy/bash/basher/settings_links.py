@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import locale
 import sys
 import wx # FIXME(ut): wx
@@ -33,6 +34,9 @@ from . import BashFrame, BashStatusBar
 from .dialogs import ColorDialog
 from .app_buttons import App_Button # TODO(ut): ugly
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
+
+def _bassLang(): return bass.language if bass.language else \
+    locale.getlocale()[0].split('_', 1)[0]
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -279,8 +283,7 @@ class Settings_Language(RadioLink):
                                                     self.language)
 
     def _initData(self, window, data):
-        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
-        if self.language == bassLang:
+        if self.language == _bassLang():
             self.help = _(
                 "Currently using %(languagename)s as the active language.") % (
                             {'languagename': self.text})
@@ -294,8 +297,7 @@ class Settings_Language(RadioLink):
     def _check(self): return self.check
 
     def Execute(self,event):
-        bassLang = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
-        if self.language == bassLang: return
+        if self.language == _bassLang(): return
         if balt.askYes(Link.Frame,
                 _(u'Wrye Bash needs to restart to change languages.  Do you '
                   u'want to restart?'), _(u'Restart Wrye Bash')):
@@ -452,36 +454,17 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
         """Can't dump the strings if the files don't exist."""
         return not hasattr(sys,'frozen')
 
-    def Execute(self,event):
-        message = (_(u'Generate Bash program translator file?')
-                   + u'\n\n' +
-                   _(u'This function is for translating Bash itself (NOT mods) into non-English languages.  For more info, see Internationalization section of Bash readme.')
-                   )
-        if not balt.askContinue(self.window,message,'bash.dumpTranslator.continue',_(u'Dump Translator')):
-            return
-        language = bass.language if bass.language else locale.getlocale()[0].split('_',1)[0]
+    def Execute(self, event):
+        message = _(u'Generate Bash program translator file?') + u'\n\n' + _(
+            u'This function is for translating Bash itself (NOT mods) into '
+            u'non-English languages.  For more info, '
+            u'see Internationalization section of Bash readme.')
+        if not balt.askContinue(self.window, message,
+                                'bash.dumpTranslator.continue',
+                                _(u'Dump Translator')): return
         outPath = bosh.dirs['l10n']
-        bashPath = GPath(u'bash')
-        # FIXME basher, patcher, game etc... packages - robust detection of all py under bash/
-        files = [bashPath.join(x+u'.py').s for x in (u'bolt',
-                                                     u'balt',
-                                                     u'bush',
-                                                     u'bosh',
-                                                     u'bash',
-                                                     u'basher',
-                                                     u'bashmon',
-                                                     u'belt',
-                                                     u'bish',
-                                                     u'barg',
-                                                     u'barb',
-                                                     u'bass',
-                                                     u'cint',
-                                                     u'ScriptParser')]
-        # Include Game files
-        bashPath = bashPath.join(u'game')
-        files.extend([bashPath.join(x).s for x in bosh.dirs['mopy'].join(u'bash','game').list() if x.cext == u'.py' and x != u'__init__.py'])
         with balt.BusyCursor():
-            outFile = bolt.dumpTranslator(outPath.s,language,*files)
-        balt.showOk(self.window,
-            _(u'Translation keys written to ')+u'Mopy\\bash\\l10n\\'+outFile,
-            _(u'Dump Translator')+u': '+outPath.stail)
+            outFile = bolt.dumpTranslator(outPath.s, _bassLang())
+        balt.showOk(self.window, _(
+            u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
+                    _(u'Dump Translator') + u': ' + outPath.stail)

@@ -41,6 +41,7 @@ import gettext
 import traceback
 import csv
 import tempfile
+import pkgutil
 close_fds = True
 import types
 from binascii import crc32
@@ -152,6 +153,35 @@ def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 # Localization ----------------------------------------------------------------
+# noinspection PyDefaultArgument
+def _findAllBashModules(files=[], bashPath=None, cwd=None,
+                        exts=('.py', '.pyw'), exclude=(u'chardet',),
+                        _firstRun=False):
+    """Return a list of all Bash files as relative paths to the Mopy
+    directory.
+
+    :param files: files list cache - populated in first run. In the form: [
+    u'Wrye Bash Launcher.pyw', u'bash\\balt.py', ..., u'bash\\__init__.py',
+    u'bash\\basher\\app_buttons.py', ...]
+    :param bashPath: the relative path from Mopy
+    :param cwd: initially C:\...\Mopy - but not at the time def is executed !
+    :param exts: extensions to keep in listdir()
+    :param exclude: tuple of excluded packages
+    :param _firstRun: internal use
+    """
+    if not _firstRun and files:
+        return files # cache, not likely to change during execution
+    cwd = cwd or os.getcwdu()
+    files.extend([(bashPath or Path(u'')).join(m).s for m in
+                  os.listdir(cwd) if m.lower().endswith(exts)])
+    # find subpackages -- p=(module_loader, name, ispkg)
+    for p in pkgutil.iter_modules([cwd]):
+        if not p[2] or p[1] in exclude: continue
+        _findAllBashModules(
+            files, bashPath.join(p[1]) if bashPath else GPath(u'bash'),
+            cwd=os.path.join(cwd, p[1]), _firstRun=True)
+    return files
+
 def dumpTranslator(outPath,language,*files):
     """Dumps all translatable strings in python source files to a new text file.
        as this requires the source files, it will not work in WBSA mode, unless
@@ -160,9 +190,7 @@ def dumpTranslator(outPath,language,*files):
     fullTxt = os.path.join(outPath,outTxt)
     tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
     oldTxt = os.path.join(outPath,u'%s.txt' % language)
-    if not files:
-        file = os.path.split(__file__)[1]
-        files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
+    if not files: files = _findAllBashModules()
     args = [u'p',u'-a',u'-o',fullTxt]
     args.extend(files)
     if hasattr(sys,'frozen'):
