@@ -24,17 +24,15 @@
 import os
 import subprocess
 import webbrowser
-from . import DocBrowser, ModChecker, BashStatusBar
+from . import BashStatusBar
+from .frames import ModChecker, DocBrowser
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
-
 # TODO(ut): GetBitmapButton factor out duplicate code
 
-docBrowser = None
 modList = None
-modChecker = None
 
 #------------------------------------------------------------------------------
 #  StatusBar Links--------------------------------------------------------------
@@ -691,11 +689,11 @@ class App_DocBrowser(StatusBar_Button):
 
     def Execute(self,event):
         """Handle menu selection."""
-        if not docBrowser:
+        if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bosh.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
-        docBrowser.Raise()
+        Link.Frame.docBrowser.Raise()
 
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
@@ -797,7 +795,7 @@ class App_ModChecker(StatusBar_Button):
 
     def Execute(self,event):
         """Handle menu selection."""
-        if not modChecker:
+        if not Link.Frame.modChecker:
             ModChecker().Show()
         #balt.ensureDisplayed(modChecker)
-        modChecker.Raise()
+        Link.Frame.modChecker.Raise()

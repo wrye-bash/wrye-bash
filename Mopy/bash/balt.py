@@ -373,11 +373,13 @@ def button(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def toggleButton(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='button',id=defId,onClick=None,tip=None):
-    """Creates a toggle button, binds toggle function, then returns bound button."""
-    gButton = wx.ToggleButton(parent,id,label,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON,onClick)
+def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
+                 val=defVal, name='button', onClick=None, tip=None):
+    """Creates a toggle button, binds toggle function, then returns bound
+    button."""
+    gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
+                              name)
+    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON, onClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
@@ -479,7 +481,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
+        dialog = Dialog(parent, title, size=(350, 200))
         icon = staticBitmap(dialog)
         gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
         #--Layout
@@ -527,7 +529,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200)) # TODO(ut): destroy ?
+        dialog = Dialog(parent, title, size=(350, 200))
         icon = staticBitmap(dialog)
         gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
         #--Layout
@@ -1162,7 +1164,8 @@ class Dialog(wx.Dialog):
         """Handle window close event.
         Remember window size, position, etc."""
         if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
-        self.Destroy()
+        self.Destroy() # TODO(ut): verify this is not called before I get the
+        # values I need from the dialog
         event.Skip()
 
     @classmethod

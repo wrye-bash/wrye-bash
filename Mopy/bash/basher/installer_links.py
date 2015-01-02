@@ -27,8 +27,8 @@ import copy
 import re
 import webbrowser
 import wx
-from . import settingDefaults, InstallerProject_OmodConfigDialog, Resources, \
-    Installers_Link
+from . import settingDefaults, Resources, Installers_Link
+from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines

@@ -544,9 +544,9 @@ class CreateNewProject(balt.Dialog):
         projectDir = bosh.dirs['installers'].join(projectName)
 
         if projectDir.exists():
-            balt.showError(self,_(u'There is already a project with that name!')
-                                + u'\n' +
-                                _(u'Pick a different name for the project and try again.'))
+            balt.showError(self, _(
+                u'There is already a project with that name!') + u'\n' + _(
+                u'Pick a different name for the project and try again.'))
             return
         event.Skip()
 

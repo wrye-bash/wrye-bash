@@ -31,7 +31,8 @@ from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
-from . import DocBrowser, Resources
+from . import Resources
+from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
@@ -40,7 +41,6 @@ from ..patcher.patchers import base
 from ..patcher.patchers import special
 
 modList = None
-docBrowser = None
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -414,12 +414,12 @@ class Mod_ShowReadme(OneItemLink):
     def Execute(self,event):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        if not docBrowser:
+        if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bosh.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
-        docBrowser.SetMod(fileInfo.name)
-        docBrowser.Raise()
+        Link.Frame.docBrowser.SetMod(fileInfo.name)
+        Link.Frame.docBrowser.Raise()
 
 class Mod_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
