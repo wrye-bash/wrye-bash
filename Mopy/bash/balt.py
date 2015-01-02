@@ -1733,7 +1733,15 @@ class UIList(wx.Panel):
                               fnDropIndexes=self.OnDropIndexes)
         # gList callbacks
         self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         self.gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self.gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        #--Mouse movement
+        self.mouseItem = None
+        self.mouseTexts = {}
+        self.mouseTextPrev = u''
+        self.gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self.gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
 
@@ -1744,11 +1752,51 @@ class UIList(wx.Panel):
         if column is None: column = event.GetColumn()
         self.mainMenu.PopupMenu(self, Link.Frame, column)
 
+    #--Item Menu
+    def DoItemMenu(self,event):
+        """Show item menu."""
+        selected = self.GetSelected()
+        if not selected:
+            self.DoColumnMenu(event,0)
+            return
+        if not self.itemMenu: return
+        self.itemMenu.PopupMenu(self,Link.Frame,selected)
+
     #-- Callbacks -------------------------------------------------------------
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
         size = self.GetClientSizeTuple()
         self.gList.SetSize(size)
+
+    #--Event: Left Down
+    def OnLeftDown(self,event):
+        """Left mouse button was pressed."""
+        event.Skip()
+
+    def OnMouse(self,event):
+        """Check mouse motion to detect right click event."""
+        if event.Moving():
+            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
+            if mouseItem != self.mouseItem:
+                self.mouseItem = mouseItem
+                self.MouseOverItem(mouseItem)
+        elif event.Leaving() and self.mouseItem is not None:
+            self.mouseItem = None
+            self.MouseOverItem(None)
+        event.Skip()
+
+    def MouseOverItem(self, item):
+        """Handle mouse entered item by showing tip or similar."""
+        if item is None:
+            Link.Frame.GetStatusBar().SetStatusText(u'', 1)
+            return
+        if item < 0: return
+        # TODO(ut): Tank vs List - search for GetItem - IIUC Tank has a cache
+        if isinstance(self, Tank): item = self.GetItem(item)
+        text = self.mouseTexts.get(item, u'')
+        if text != self.mouseTextPrev:
+            Link.Frame.GetStatusBar().SetStatusText(text, 1)
+            self.mouseTextPrev = text
 
     def OnItemSelected(self, event): raise AbstractError
 
@@ -1805,25 +1853,17 @@ class Tank(UIList):
         gList = self.gList # created above
         if self.icons:
             gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
-        #--State info
-        self.mouseItem = None
-        self.mouseTexts = {}
-        self.mouseTextPrev = u''
         #--Columns
         self.UpdateColumns()
         #--Items
         self.sortDirty = False
         self.UpdateItems()
         #--Events: Items
-        gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         #--Events: Columns
         gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
         gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Mouse movement
-        gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         gList.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
         #--ScrollPos
         gList.ScrollLines(data.getParam('vScrollPos',0))
@@ -2040,22 +2080,6 @@ class Tank(UIList):
             if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     #--Event Handlers -------------------------------------
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseOverItem(mouseItem)
-        elif event.Leaving() and self.mouseItem is not None:
-            self.mouseItem = None
-            self.MouseOverItem(None)
-        event.Skip()
-
-    def MouseOverItem(self,item):
-        """Handle mouse over item by showing tip or similar."""
-        pass
-
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
         self.RefreshDetails(self.GetItem(event.m_itemIndex))
@@ -2080,11 +2104,6 @@ class Tank(UIList):
             event.Skip()
         self.colWidths[colName] = width
 
-    def OnLeftDown(self,event):
-        """Left mouse button was pressed."""
-        #self.hitTest = self.gList.HitTest((event.GetX(),event.GetY()))
-        event.Skip()
-
     def OnDClick(self,event):
         """Left mouse double click."""
         event.Skip()
@@ -2092,15 +2111,6 @@ class Tank(UIList):
     def OnColumnClick(self, event):
         """Column header was left clicked on. Sort on that column."""
         self.SortItems(self.cols[event.GetColumn()],'INVERT')
-
-    def DoItemMenu(self,event):
-        """Show item menu."""
-        selected = self.GetSelected()
-        if not selected:
-            self.DoColumnMenu(event,0)
-            return
-        if not self.itemMenu: return
-        self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
