@@ -295,9 +295,12 @@ class List(balt.UIList):
     _sizeHints = (-1, 50) # overrides UIList
     icons = colorChecks
 
-    def __init__(self, parent, dndFiles=False, dndList=False, dndColumns=(),
-                 **kwargs):
+    def __init__(self, parent, listData=None, dndFiles=False, dndList=False,
+                 dndColumns=(), **kwargs):
         #--ListCtrl
+        #--MasterList: masterInfo = self.data[item], where item is id number
+        # rest of List subclasses provide a non None listData
+        self.data = {} if listData is None else listData # TODO(ut): to UIList
         balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
                              dndColumns=dndColumns, **kwargs)
         self.list = self.gList # self.list must go
@@ -511,7 +514,7 @@ class MasterList(List):
     itemMenu = Links()
     keyPrefix = 'bash.masters'
 
-    def __init__(self,parent,fileInfo,setEditedFn):
+    def __init__(self, parent, fileInfo, setEditedFn, listData=None):
         #--Columns
         self.cols = settings['bash.masters.cols']
         self.colReverse = settings['bash.masters.colReverse'].copy()
@@ -519,15 +522,14 @@ class MasterList(List):
         self.edited = False
         self.fileInfo = fileInfo
         self.prevId = -1
-        self.data = {}  #--masterInfo = self.data[item], where item is id number
         self.items = [] #--Item numbers in display order.
         self.fileOrderItems = []
         self.loadOrderNames = []
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
         #--Parent init
-        List.__init__(self, parent, singleCell=True, editLabels=True,
-                      sunkenBorder=False)
+        List.__init__(self, parent, listData, singleCell=True,
+                      editLabels=True, sunkenBorder=False)
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
         self._setEditedFn = setEditedFn
 
@@ -759,15 +761,13 @@ class INIList(List):
     itemMenu = Links()  #--Single item menu
     keyPrefix = 'bash.ini'
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.ini.cols'
         self.colReverse = settings.getChanged('bash.ini.colReverse')
         self.sortValid = settings['bash.ini.sortValid']
-        #--Data/Items
-        self.data = bosh.iniInfos
         #--Parent init
-        List.__init__(self, parent, sunkenBorder=False)
+        List.__init__(self, parent, listData, sunkenBorder=False)
         #--Events
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
@@ -1041,12 +1041,11 @@ class ModList(List):
     itemMenu = Links() #--Single item menu
     keyPrefix = 'bash.mods'
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.mods.cols'
         self.colReverse = settings.getChanged('bash.mods.colReverse')
         #--Data/Items
-        self.data = data = bosh.modInfos
         self.details = None #--Set by panel
         self.esmsFirst = settings['bash.mods.esmsFirst']
         self.selectedFirst = settings['bash.mods.selectedFirst']
@@ -1056,8 +1055,8 @@ class ModList(List):
         checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        List.__init__(self, parent, dndList=True, dndColumns=['Load Order'],
-                      sunkenBorder=False)  # |wx.SUNKEN_BORDER))
+        List.__init__(self, parent, listData, dndList=True,
+                      dndColumns=['Load Order'], sunkenBorder=False)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -1809,7 +1808,9 @@ class INIPanel(SashPanel):
         self.SetBaseIni(self.GetChoice())
         global iniList
         from . import installer_links, ini_links
-        installer_links.iniList = ini_links.iniList = iniList = INIList(left)
+        self.listData = bosh.iniInfos
+        installer_links.iniList = ini_links.iniList = iniList = \
+            INIList(left, self.listData)
         self.list = iniList
         self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
@@ -2047,9 +2048,10 @@ class ModPanel(SashPanel):
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
             patcher_dialog
+        self.listData = bosh.modInfos
         saves_links.modList = mods_links.modList = mod_links.modList = \
-            app_buttons.modList = patcher_dialog.modList = \
-            modList = ModList(left)
+        app_buttons.modList = patcher_dialog.modList = modList = \
+            ModList(left, self.listData)
         self.list = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
@@ -2095,15 +2097,14 @@ class SaveList(List):
     itemMenu = Links() #--Single item menu
     keyPrefix = 'bash.saves'
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.saves.cols'
         self.colReverse = settings.getChanged('bash.saves.colReverse')
         #--Data/Items
-        self.data = bosh.saveInfos
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, editLabels=True)
+        List.__init__(self, parent, listData, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2482,7 +2483,8 @@ class SavePanel(SashPanel):
         left,right = self.left, self.right
         global saveList
         from . import saves_links
-        saves_links.saveList = saveList = SaveList(left)
+        self.listData = bosh.saveInfos
+        saves_links.saveList = saveList = SaveList(left, self.listData)
         self.list = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
@@ -3436,14 +3438,12 @@ class ScreensList(List):
     keyPrefix = 'bash.screens'
     icons = None # no icons
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.screens.cols'
         self.colReverse = settings.getChanged('bash.screens.colReverse')
-        #--Data/Items
-        self.data = bosh.screensData = bosh.ScreensData()
         #--Parent init
-        List.__init__(self, parent, editLabels=True)
+        List.__init__(self, parent, listData, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -3614,7 +3614,8 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         global screensList
-        screensList = ScreensList(left)
+        self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
+        screensList = ScreensList(left, self.listData)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.list = screensList
         #--Layout
@@ -3645,15 +3646,14 @@ class BSAList(List):
     keyPrefix = 'bash.BSAs'
     icons = None # no icons
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.cols = settings['bash.BSAs.cols']
         self.colReverse = settings.getChanged('bash.BSAs.colReverse')
         #--Data/Items
-        self.data = data = bosh.BSAInfos
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent)
+        List.__init__(self, parent, listData)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         #--ScrollPos
@@ -3890,8 +3890,9 @@ class BSAPanel(NotebookPanel):
     """BSA info tab."""
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
-        global BSAList
-        BSAList = BSAList(self)
+        # global BSAList # was not defined at module level
+        self.listData = bosh.BSAInfos
+        bsaList = BSAList(self, self.listData)
         self.BSADetails = BSADetails(self)
         BSAList.details = self.BSADetails
         #--Events
@@ -3933,18 +3934,15 @@ class MessageList(List):
     keyPrefix = 'bash.messages'
     icons = None # no icons
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.messages.cols'
         self.colReverse = settings.getChanged('bash.messages.colReverse')
-        #--Data/Items
-        self.data = bosh.messages = bosh.Messages()
-        self.data.refresh()
         #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
-        List.__init__(self, parent)
+        List.__init__(self, parent, listData)
         #--Events
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
@@ -4044,7 +4042,9 @@ class MessagePanel(SashPanel):
         gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
-        gMessageList = MessageList(gTop)
+        self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
+        self.listData.refresh() # FIXME(ut): move to InitData()
+        gMessageList = MessageList(gTop, self.listData)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.list = gMessageList
         #--Search # TODO(ut): move to textCtrl subclass
@@ -4588,7 +4588,7 @@ class BashFrame(wx.Frame):
         self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
-        bosh.bsaInfos = bosh.BSAInfos()
+        bosh.bsaInfos = bosh.BSAInfos() # TODO(ut): move to InitData()
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)

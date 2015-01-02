@@ -5567,7 +5567,7 @@ class PickleTankData:
         """Initialize. Definite data from pickledict."""
         self.dictFile = PickleDict(path)
         self.data = self.dictFile.data
-        self.hasChanged = False
+        self.hasChanged = False # TODO(ut): move to bolt.PickleDict
         self.loaded = False
 
     def setChanged(self,hasChanged=True):
