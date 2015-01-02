@@ -80,13 +80,14 @@ class ListBoxes(Dialog):
             if len(items) == 0: continue
             subsizer = hsbSizer((self, wx.ID_ANY, title))
             if liststyle == 'check':
-                checks = wx.CheckListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+                checks = balt.listBox(self, choices=items, isSingle=True,
+                                      isHScroll=True, kind='checklist')
                 checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
                 checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
                 for i in xrange(len(items)):
                     checks.Check(i,True)
             elif liststyle == 'list':
-                checks = wx.ListBox(self,wx.ID_ANY,choices=items,style=wx.LB_SINGLE|wx.LB_HSCROLL)
+                checks = balt.listBox(self, choices=items, isHScroll=True)
             else:
                 checks = wx.TreeCtrl(self,wx.ID_ANY,size=(150,200),style=wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HIDE_ROOT)
                 root = checks.AddRoot(title)
@@ -366,12 +367,12 @@ class ImportFaceDialog(balt.Dialog):
             self.data = faces
         self.items = sorted(self.data.keys(),key=string.lower)
         #--GUI
-        super(ImportFaceDialog, self).__init__(parent, tile=title)
+        super(ImportFaceDialog, self).__init__(parent, title=title)
         self.SetSizeHints(550,300)
         #--List Box
-        self.list = wx.ListBox(self,wx.ID_OK,choices=self.items,style=wx.LB_SINGLE)
-        self.list.SetSizeHints(175,150)
-        wx.EVT_LISTBOX(self,wx.ID_OK,self.EvtListBox)
+        self.listBox = balt.listBox(self, choices=self.items,
+                                 onSelect=self.EvtListBox)
+        self.listBox.SetSizeHints(175,150)
         #--Name,Race,Gender Checkboxes
         flags = bosh.PCFaces.flags(bosh.settings.get('bash.faceImport.flags', 0x4))
         self.nameCheck = checkBox(self, _(u'Name'), checked=flags.name)
@@ -405,7 +406,7 @@ class ImportFaceDialog(balt.Dialog):
             self.classText,
             ])
         sizer = hSizer(
-            (self.list,1,wx.EXPAND|wx.TOP,4),
+            (self.listBox,1,wx.EXPAND|wx.TOP,4),
             (vSizer(
                 self.picture,
                 (hSizer(
@@ -434,13 +435,14 @@ class ImportFaceDialog(balt.Dialog):
         self.genderText.SetLabel(face.getGenderName())
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
+        # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         bitmap = (itemImagePath.exists() and
                   Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
         self.picture.SetBitmap(bitmap)
 
     def DoImport(self,event):
         """Imports selected face into save file."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections:
             bell()
             return

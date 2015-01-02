@@ -85,7 +85,8 @@ class PatchDialog(balt.Dialog):
         self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Deselect All'),onClick=self.DeselectAll)
         cancelButton = button(self,id=wx.ID_CANCEL,label=_(u'Cancel'))
-        self.gPatchers = wx.CheckListBox(self,wx.ID_ANY,choices=patcherNames,style=wx.LB_SINGLE)
+        self.gPatchers = balt.listBox(self, choices=patcherNames,
+                                      isSingle=True, kind='checklist')
         self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_(u'Export'),onClick=self.ExportConfig)
         self.gImportConfig = button(self,id=wx.ID_OPEN,label=_(u'Import'),onClick=self.ImportConfig)
         self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_(u'Revert To Saved'),onClick=self.RevertConfig)

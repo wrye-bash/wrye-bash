@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import string
 import wx
 from .. import bosh, bush, balt
@@ -128,9 +129,9 @@ class ListPatcher(Patcher):
         text = fill(self.text,70)
         gText = staticText(self.gConfigPanel,text)
         if self.forceItemCheck:
-            self.gList = wx.ListBox(gConfigPanel,wx.ID_ANY)
+            self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
-            self.gList =wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+            self.gList = balt.listBox(gConfigPanel, kind='checklist')
             self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
         #--Events
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
@@ -338,7 +339,7 @@ class TweakPatcher(Patcher):
         gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
-        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
         self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
@@ -559,12 +560,12 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         text = fill(self.text,70)
         gText = staticText(self.gConfigPanel,text)
         #--Import List
-        self.gList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gList = balt.listBox(gConfigPanel, kind='checklist')
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
         #--Tweak List
-        self.gTweakList = wx.CheckListBox(gConfigPanel,wx.ID_ANY)
+        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
         self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
         self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)

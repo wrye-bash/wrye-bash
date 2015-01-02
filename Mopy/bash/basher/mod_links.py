@@ -1613,12 +1613,12 @@ class Mod_Face_Import(OneItemLink):
         #--Get face
         srcDir,srcName = srcPath.headTail
         srcInfo = bosh.SaveInfo(srcDir,srcName)
-        srcFace = bosh.PCFaces.save_getFace(srcInfo)
+        srcFace = bosh.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         npc = bosh.PCFaces.mod_addFace(fileInfo,srcFace)
-        #--Save Face picture?
+        #--Save Face picture? # TODO(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
             srcInfo.getHeader()

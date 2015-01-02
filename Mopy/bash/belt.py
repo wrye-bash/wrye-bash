@@ -272,11 +272,13 @@ class PageSelect(PageInstaller):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
         if bMany:
-            self.listOptions = wx.CheckListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
+            self.listOptions = balt.listBox(self, choices=listItems,
+                                            isHScroll=True, kind='checklist')
             for index, default in enumerate(defaultMap):
                 self.listOptions.Check(index, default)
         else:
-            self.listOptions = wx.ListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
+            self.listOptions = balt.listBox(self, choices=listItems,
+                                            isHScroll=True)
             self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
             for index, default in enumerate(defaultMap):
                 if default:
@@ -419,7 +421,7 @@ class PageFinish(PageInstaller):
         sizerSubsEspms = wx.BoxSizer(wx.HORIZONTAL)
         subPackageSizer = wx.BoxSizer(wx.VERTICAL)
         subPackageSizer.Add(balt.staticText(_(u'Sub-Packages')),0,wx.BOTTOM,2)
-        self.listSubs = wx.CheckListBox(self, wx.ID_ANY, choices=subs)
+        self.listSubs = balt.listBox(self, choices=subs, kind='checklist')
         self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
@@ -429,7 +431,7 @@ class PageFinish(PageInstaller):
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = wx.BoxSizer(wx.VERTICAL)
         espmSizer.Add(balt.staticText(_(u'Esp/ms')),0,wx.BOTTOM,2)
-        self.listEspms = wx.CheckListBox(self, wx.ID_ANY, choices=espmShow)
+        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist')
         self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
@@ -445,12 +447,12 @@ class PageFinish(PageInstaller):
         sizerIniTweaks = wx.BoxSizer(wx.HORIZONTAL)
         sizerTweaks = wx.BoxSizer(wx.VERTICAL)
         sizerTweaks.Add(balt.staticText(_(u'Ini Tweaks:')),0,wx.BOTTOM,2)
-        self.listInis = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
+        self.listInis = balt.listBox(self, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
         sizerContents = wx.BoxSizer(wx.VERTICAL)
         sizerContents.Add(balt.staticText(u''),0,wx.BOTTOM,2)
-        self.listTweaks = wx.ListBox(self,wx.ID_ANY,style=wx.LB_SINGLE)
+        self.listTweaks = balt.listBox(self)
         sizerContents.Add(self.listTweaks,1,wx.EXPAND)
         sizerIniTweaks.Add(sizerTweaks,1,wx.EXPAND|wx.RIGHT,5)
         sizerIniTweaks.Add(sizerContents,1,wx.EXPAND)

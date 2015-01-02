@@ -8888,11 +8888,6 @@ class PCFaces:
 
     # Save Get ----------------------------------------------------------------
     @staticmethod
-    def save_getFace(saveFile):
-        """DEPRECATED. Same as save_getPlayerFace(saveFile)."""
-        return PCFaces.save_getPlayerFace(saveFile)
-
-    @staticmethod
     def save_getFaces(saveFile):
         """Returns player and created faces from a save file or saveInfo."""
         if isinstance(saveFile,SaveInfo):

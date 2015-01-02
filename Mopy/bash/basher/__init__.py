@@ -22,12 +22,28 @@
 #
 # =============================================================================
 
-"""This module provides the GUI interface for Wrye Bash. (However, the Wrye
+"""This package provides the GUI interface for Wrye Bash. (However, the Wrye
 Bash application is actually launched by the bash module.)
 
-The module is generally organized starting with lower level elements, working
-up to higher level elements (up the BashApp). This is followed by definition
-of menus and buttons classes, and finally by several initialization functions.
+This module is used to help split basher.py to a package without breaking
+the program. basher.py was organized starting with lower level elements,
+working up to higher level elements (up the BashApp). This was followed by
+definition of menus and buttons classes, dialogs, and finally by several
+initialization functions. Currently the package structure is:
+
+__init.py__       : this file, basher.py core, must be further split
+constants.py      : constants, will grow
+*_links.py        : menus and buttons (app_buttons.py)
+links.py          : the initialization functions for menus, defines menu order
+dialogs.py        : subclasses of balt.Dialog (except patcher dialog)
+frames.py         : subclasses of wx.Frame (except BashFrame)
+gui_patchers.py   : the gui patcher classes used by the patcher dialog
+patcher_dialog.py : the patcher dialog
+
+The layout is still fluid - there may be a links package, or a package per tab.
+Relics of basher are some global variables - these must eventually disappear.
+Currently there is an effort to unify balt.Tank and List.
+A central global variable is balt.Link.Frame, the BashFrame singleton.
 
 Non-GUI objects and functions are provided by the bosh module. Of those, the
 primary objects used are the plugins, modInfos and saveInfos singletons -- each
@@ -3095,14 +3111,16 @@ class InstallersPanel(SashTankPanel):
         #--Sub-Installers
         subPackagesPanel = wx.Panel(checkListSplitter)
         subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
-        self.gSubList = wx.CheckListBox(subPackagesPanel, style=wx.LB_EXTENDED)
+        self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
+                                     kind='checklist')
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(checkListSplitter)
         espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
-        self.gEspmList = wx.CheckListBox(espmsPanel, style=wx.LB_EXTENDED)
+        self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
+                                      kind='checklist')
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments

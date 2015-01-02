@@ -406,6 +406,21 @@ def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
 
+def listBox(parent, choices=None, **kwargs):
+    kind = kwargs.pop('kind', 'list')
+    # cater for existing CheckListBox and ListBox style variations
+    style = 0
+    if kwargs.pop('isSingle', kind == 'list'): style |= wx.LB_SINGLE
+    if kwargs.pop('isSort', False): style |= wx.LB_SORT
+    if kwargs.pop('isHScroll', False): style |= wx.LB_HSCROLL
+    if kwargs.pop('isExtended', False): style |= wx.LB_EXTENDED
+    cls = wx.ListBox if kind=='list' else wx.CheckListBox
+    gListBox = cls(parent, choices=choices, style=style) if choices else cls(
+        parent, style=style)
+    callback = kwargs.pop('onSelect', None)
+    if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
+    return gListBox
+
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     """Tailored to current usages - IAW: do not use."""
     if bitmap is None:
@@ -1201,9 +1216,9 @@ class ListEditor(Dialog):
             captionText = staticText(self,data.caption)
         else:
             captionText = None
-        #--List Box # TODO(ut): rename to self.listBox
-        self.list = wx.ListBox(self, choices=self.items, style=wx.LB_SINGLE)
-        self.list.SetSizeHints(125,150)
+        #--List Box
+        self.listBox = listBox(self, choices=self.items)
+        self.listBox.SetSizeHints(125,150)
         #--Infobox
         if data.showInfo:
             self.gInfoBox = textCtrl(self,size=(130,-1),
@@ -1234,7 +1249,7 @@ class ListEditor(Dialog):
         sizer = vSizer(
             (captionText,0,wx.LEFT|wx.TOP,4),
             (hSizer(
-                (self.list,1,wx.EXPAND|wx.TOP,4),
+                (self.listBox,1,wx.EXPAND|wx.TOP,4),
                 (self.gInfoBox,self.data.infoWeight,wx.EXPAND|wx.TOP,4),
                 (buttons,0,wx.EXPAND),
                 ),1,wx.EXPAND)
@@ -1248,7 +1263,7 @@ class ListEditor(Dialog):
             self.SetSizerAndFit(sizer)
 
     def GetSelected(self):
-        return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
+        return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
     #--List Commands
     def DoAdd(self,event):
@@ -1257,20 +1272,20 @@ class ListEditor(Dialog):
         if newItem and newItem not in self.items:
             self.items = self.data.getItemList()
             index = self.items.index(newItem)
-            self.list.InsertItems([newItem],index)
+            self.listBox.InsertItems([newItem],index)
 
     def SetItemsTo(self, items):
         if self.data.setTo(items):
             self.items = self.data.getItemList()
-            self.list.Set(self.items)
+            self.listBox.Set(self.items)
 
     def DoRename(self,event):
         """Renames selected item."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
         #--Rename it
         itemDex = selections[0]
-        curName = self.list.GetString(itemDex)
+        curName = self.listBox.GetString(itemDex)
         #--Dialog
         newName = askText(self,_(u'Rename to:'),_(u'Rename'),curName)
         if not newName or newName == curName:
@@ -1279,11 +1294,11 @@ class ListEditor(Dialog):
             showError(self,_(u'Name must be unique.'))
         elif self.data.rename(curName,newName):
             self.items[itemDex] = newName
-            self.list.SetString(itemDex,newName)
+            self.listBox.SetString(itemDex,newName)
 
     def DoRemove(self,event):
         """Removes selected item."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
         #--Data
         itemDex = selections[0]
@@ -1291,7 +1306,7 @@ class ListEditor(Dialog):
         if not self.data.remove(item): return
         #--GUI
         del self.items[itemDex]
-        self.list.Delete(itemDex)
+        self.listBox.Delete(itemDex)
         if self.gInfoBox:
             self.gInfoBox.DiscardEdits()
             self.gInfoBox.SetValue(u'')
@@ -1299,7 +1314,7 @@ class ListEditor(Dialog):
     #--Show Info
     def OnInfoEdit(self,event):
         """Info box text has been edited."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
         item = self.items[selections[0]]
         if self.gInfoBox.IsModified():
