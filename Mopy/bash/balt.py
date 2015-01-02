@@ -1585,10 +1585,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window.OnDragging(x,y,dragResult)
             return wx.DropTarget.OnDragOver(self,x,y,dragResult)
 
-    def __init__(self, parent, id, pos=defPos, size=defSize, style=0,
+    def __init__(self, parent, pos=defPos, size=defSize, style=0,
                  dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
                  fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
-        wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
+        wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
@@ -1713,8 +1713,71 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.fnDndAllow: return self.fnDndAllow()
             return True
         return False
+
 #------------------------------------------------------------------------------
-class Tank(wx.Panel):
+class UIList(wx.Panel):
+    """Tmp class to factor out common code in basher.List and balt.Tank."""
+    _sizeHints = (100, 100) # min ListCtrl size TODO(ut): random overrides
+
+    def __init__(self, parent, style, dndFiles, dndList, dndColumns=()):
+        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.dndColumns = dndColumns
+        #--Layout
+        sizer = vSizer()
+        self.SetSizer(sizer)
+        self.SetSizeHints(*self.__class__._sizeHints)
+        #--gList
+        self.gList = ListCtrl(self, style=style, dndFiles=dndFiles,
+                              dndList=dndList, fnDndAllow=self.dndAllow,
+                              fnDropFiles=self.OnDropFiles,
+                              fnDropIndexes=self.OnDropIndexes)
+        # gList callbacks
+        self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self.gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        # Panel callbacks
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+
+    #--Column Menu
+    def DoColumnMenu(self, event, column=None):
+        """Show column menu."""
+        if not self.mainMenu: return
+        if column is None: column = event.GetColumn()
+        self.mainMenu.PopupMenu(self, Link.Frame, column)
+
+    #-- Callbacks -------------------------------------------------------------
+    def OnSize(self, event):
+        """Panel size was changed. Change gList size to match."""
+        size = self.GetClientSizeTuple()
+        self.gList.SetSize(size)
+
+    def OnItemSelected(self, event): raise AbstractError
+
+    #-- Item selection --------------------------------------------------------
+    def SelectItemAtIndex(self, index, select=True,
+                          _select=wx.LIST_STATE_SELECTED):
+        self.gList.SetItemState(index, select * _select, _select)
+
+    def ClearSelected(self):
+        """Unselect all items."""
+        gList = self.gList
+        for i in xrange(gList.GetItemCount()): self.SelectItemAtIndex(i, False)
+        # (ut) below is the Tank variation - profile
+        # if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
+        #     gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+
+    def SelectAll(self):
+        for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
+
+    #--Drag and Drop-----------------------------------------------------------
+    def dndAllow(self):
+        # Only allow drag an drop when sorting by the columns specified in dndColumns
+        return self.sort in self.dndColumns
+
+    def OnDropFiles(self, x, y, filenames): raise AbstractError
+    def OnDropIndexes(self, indexes, newPos): raise AbstractError
+
+#------------------------------------------------------------------------------
+class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
     #--Class-------------------------------------------------------------------
@@ -1722,10 +1785,9 @@ class Tank(wx.Panel):
     itemMenu = None
 
     #--Instance ---------------------------------------------------------------
-    def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,id=wx.ID_ANY,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
-            dndList=False,dndFiles=False,dndColumns=[]):
-        wx.Panel.__init__(self,parent,id,style=wx.WANTS_CHARS)
+    def __init__(self, parent, data, icons=None, mainMenu=None, itemMenu=None,
+                 details=None, style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
+                 dndList=False, dndFiles=False, dndColumns=()):
         #--Data
         if icons is None: icons = {}
         self.data = data
@@ -1733,19 +1795,14 @@ class Tank(wx.Panel):
         self.mainMenu = mainMenu or self.__class__.mainMenu
         self.itemMenu = itemMenu or self.__class__.itemMenu
         self.details = details
-        self.dndColumns = dndColumns
         #--Item/Id mapping
         self.nextItemId = 1
         self.item_itemId = {}
         self.itemId_item = {}
-        #--Layout
-        sizer = vSizer()
-        self.SetSizer(sizer)
-        self.SetSizeHints(50,50)
         #--ListCtrl
-        self.gList = gList = ListCtrl(self, wx.ID_ANY, style=style,
-                                      dndFiles=dndFiles, dndList=dndList,
-                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes, fnDropFiles=self.OnDropFiles)
+        UIList.__init__(self, parent, style=style, dndFiles=dndFiles,
+                        dndList=dndList, dndColumns=dndColumns)
+        gList = self.gList # created above
         if self.icons:
             gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
         #--State info
@@ -1757,16 +1814,12 @@ class Tank(wx.Panel):
         #--Items
         self.sortDirty = False
         self.UpdateItems()
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Events: Items
         gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        gList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.OnItemSelected)
         gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         #--Events: Columns
         gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
         gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Mouse movement
         gList.Bind(wx.EVT_MOTION, self.OnMouse)
@@ -1779,27 +1832,17 @@ class Tank(wx.Panel):
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
     #--Drag and Drop-----------------------------------------------------------
-    def dndAllow(self):
-        # Only allow drag an drop when sorting by the columns specified in dndColumns
-        if self.sort not in self.dndColumns: return False
-        return True
-
     def OnDropIndexes(self, indexes, newPos):
         # See if the column is reverse sorted first
-        data = self.data
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
             newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
-
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
         self.data.refresh(what='N')
         self.RefreshUI()
-
-    def OnDropFiles(self, x, y, filenames):
-        raise AbstractError
 
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
@@ -1996,13 +2039,6 @@ class Tank(wx.Panel):
         return [self.GetItem(x) for x in xrange(gList.GetItemCount())
             if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
-    def ClearSelected(self):
-        """Unselect all items."""
-        gList = self.gList
-        for index in range(gList.GetItemCount()):
-            if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
-                gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-
     #--Event Handlers -------------------------------------
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
@@ -2023,11 +2059,6 @@ class Tank(wx.Panel):
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
         self.RefreshDetails(self.GetItem(event.m_itemIndex))
-
-    def OnSize(self, event):
-        """Panel size was changed. Change gList size to match."""
-        size = self.GetClientSizeTuple()
-        self.gList.SetSize(size)
 
     def OnScroll(self,event):
         """Event: List was scrolled. Save so can be accessed later."""
@@ -2062,12 +2093,6 @@ class Tank(wx.Panel):
         """Column header was left clicked on. Sort on that column."""
         self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
-    def DoColumnMenu(self,event,iColumn=None):
-        """Show column menu."""
-        if not self.mainMenu: return
-        if iColumn is None: iColumn = event.GetColumn()
-        self.mainMenu.PopupMenu(self,Link.Frame,iColumn)
-
     def DoItemMenu(self,event):
         """Show item menu."""
         selected = self.GetSelected()
@@ -2097,9 +2122,6 @@ class Tank(wx.Panel):
         # BAIN - let's see with People tab (then delete _refresh parameter)
         self.RefreshUI()
         self.data.setChanged()
-
-    def SelectItemAtIndex(self, index, _select=wx.LIST_STATE_SELECTED):
-        self.gList.SetItemState(index, _select, _select)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
