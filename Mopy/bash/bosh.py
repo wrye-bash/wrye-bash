@@ -4082,6 +4082,9 @@ class FileInfos(DataDict):
         if deleted:
             # If an .esm file was deleted we need to clean the loadorder.txt file else liblo crashes
             modInfos.plugins.cleanLoadOrderFiles()
+            # items deleted outside Bash
+            for d in set(self.table.keys()) &  set(deleted):
+                del self.table[d]
         return bool(added) or bool(updated) or bool(deleted)
 
     #--Right File Type? [ABSTRACT]
@@ -4205,7 +4208,9 @@ class INIInfos(FileInfos):
 
     def getBashDir(self):
         """Return directory to save info."""
-        return dirs['modsBash'].join(u'INI Data')
+        dir_ = dirs['modsBash'].join(u'INI Data')
+        dir_.makedirs()
+        return dir_
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
@@ -8324,11 +8329,16 @@ class InstallersData(bolt.TankData, DataDict):
 
     @staticmethod
     def updateTable(destFiles, value):
+        """Set the 'installer' column in mod and ini tables for the
+        destFiles."""
         for i in destFiles:
             if reModExt.match(i.cext):
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
-                iniInfos.table.setItem(i.tail, 'installer', value)
+                if value:
+                    iniInfos.table.setItem(i.tail, 'installer', value)
+                else: # installer is the only column used in iniInfos table
+                    iniInfos.table.delRow(i.tail)
 
     def install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
@@ -8457,7 +8467,7 @@ class InstallersData(bolt.TankData, DataDict):
             parent = progress.getParent() if progress else None
             balt.shellDelete(removedFiles, parent, False, False)
         #--Update InstallersData
-        InstallersData.updateTable(removes, u'')
+        InstallersData.updateTable(removes, u'') #will delete ini tweak entries
         for file in removes:
             data_sizeCrcDatePop(file, None)
         #--Remove mods from load order

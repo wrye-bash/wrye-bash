@@ -232,9 +232,20 @@ class NotebookPanel(wx.Panel):
                 self.list.list.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         self.SetStatusCount()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        pass
+    def ClosePanel(self):
+        """To be manually called when containing frame is closing. Use for
+        saving data, scrollpos, etc."""
+        if isinstance(self, ScreensPanel): return # ScreensPanel is not
+        # backed up by a pickle file
+        if hasattr(self, 'listData'):
+            # the only SashPanels that do not override us and do not have this
+            # attribute are the ModDetails and SaveDetails panels that use
+            # a MasterList whose data is initially {}
+            table = self.listData.table
+            # items deleted outside Bash
+            for deleted in set(table.keys()) - set(self.listData.keys()):
+                del table[deleted]
+            table.save()
 
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
@@ -262,10 +273,11 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def OnCloseWindow(self):
+    def ClosePanel(self):
         splitter = self.right.GetParent()
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
+        super(SashPanel, self).ClosePanel()
 
 class SashTankPanel(SashPanel):
     def __init__(self,data,parent):
@@ -275,7 +287,7 @@ class SashTankPanel(SashPanel):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
 
-    def OnCloseWindow(self):
+    def ClosePanel(self): # (ut) does not call super
         self.SaveDetails()
         splitter = self.right.GetParent()
         sashPos = splitter.GetSashPosition()
@@ -2032,13 +2044,10 @@ class INIPanel(SashPanel):
         wx.Window.Layout(self)
         iniList.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
+    def ClosePanel(self):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
-        # TODO(ut): do I need to delete deleted outside of Bash ? if yes move to SashPanel.OnCloseWindow
-        bosh.iniInfos.table.save()
-        SashPanel.OnCloseWindow(self)
+        super(INIPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
@@ -2075,15 +2084,9 @@ class ModPanel(SashPanel):
         modList.Layout()
         self.modDetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        table = bosh.modInfos.table
-        for modName in table.keys():
-            if modName not in bosh.modInfos:
-                del table[modName]
-        table.save()
+    def ClosePanel(self):
+        super(ModPanel, self).ClosePanel()
         settings['bash.mods.scrollPos'] = modList.vScrollPos
-        SashPanel.OnCloseWindow(self)
         # Mod details Sash Positions
         splitter = self.modDetails.right.GetParent()
         settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
@@ -2508,16 +2511,10 @@ class SavePanel(SashPanel):
         saveList.Layout()
         self.saveDetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        table = bosh.saveInfos.table
-        for saveName in table.keys():
-            if saveName not in bosh.saveInfos:
-                del table[saveName]
-        table.save()
+    def ClosePanel(self):
         bosh.saveInfos.profiles.save()
+        super(SavePanel, self).ClosePanel()
         settings['bash.saves.scrollPos'] = saveList.vScrollPos
-        SashPanel.OnCloseWindow(self)
         # Save details Sash Positions
         splitter = self.saveDetails.right.GetParent()
         settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
@@ -3915,13 +3912,8 @@ class BSAPanel(NotebookPanel):
         BSAList.Layout()
         self.BSADetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        table = bosh.BSAInfos.table
-        for BSAName in table.keys():
-            if BSAName not in bosh.BSAInfos:
-                del table[BSAName]
-        table.save()
+    def ClosePanel(self):
+        super(BSAPanel, self).ClosePanel()
         bosh.BSAInfos.profiles.save()
         settings['bash.BSAs.scrollPos'] = BSAList.vScrollPos
 
@@ -4109,7 +4101,7 @@ class MessagePanel(SashPanel):
         gMessageList.searchResults = None
         gMessageList.RefreshUI()
 
-    def OnCloseWindow(self):
+    def ClosePanel(self): # (ut) does not call super
         """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
         if bosh.messages: bosh.messages.save()
         settings['bash.messages.scrollPos'] = gMessageList.vScrollPos
@@ -4840,10 +4832,11 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         try:
             self.SaveSettings()
-        except:
-            deprint(u'An error occurred while trying to save settings:', traceback=True)
-            pass
-        self.Destroy()
+        except: # raise # TODO(ut): this has swallowed exceptions since forever
+                deprint(_(u'An error occurred while trying to save settings:'),
+                        traceback=True)
+        finally:
+            self.Destroy()
 
     def SaveSettings(self):
         """Save application data."""
@@ -4858,7 +4851,11 @@ class BashFrame(wx.Frame):
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
-            self.notebook.GetPage(index).OnCloseWindow()
+            try:
+                self.notebook.GetPage(index).ClosePanel()
+            except:
+                deprint(_(u'An error occurred while trying to save settings:'),
+                        traceback=True)
         settings.save()
 
     @staticmethod
