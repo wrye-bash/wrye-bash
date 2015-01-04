@@ -1727,7 +1727,10 @@ class UIList(wx.Panel):
         sizer = vSizer()
         self.SetSizer(sizer)
         self.SetSizeHints(*self.__class__._sizeHints)
-        #--settings keys
+        #--Columns
+        self.colNames = bosh.settings['bash.colNames']
+        self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
+        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort']
         self.colWidthsKey = self.__class__.keyPrefix + '.colWidths'
         self.colWidths = bosh.settings[self.colWidthsKey]
         #--attributes
