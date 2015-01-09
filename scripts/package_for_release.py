@@ -238,14 +238,9 @@ def CreateStandaloneExe(args, file_version):
     manifest = '"""\n' + file.read() + '\n"""'
     file.close()
 
-    # Determine the extra includes needed (because py2exe wont automatically
-    # detect these)
-    includes = []
-    for file in os.listdir(os.path.join(mopy, u'bash', u'game')):
-        if file.lower()[-3:] == u'.py':
-            if file.lower() != u'__init__.py':
-                includes.append("'bash.game.%s'" % file[:-3])
-    includes = u','.join(includes)
+    # Include the game package and subpackages (because py2exe wont
+    # automatically detect these)
+    packages = "'bash.game'" # notice the double quotes
 
     try:
         # Ensure comtypes is generated, so the required files for wx.lib.iewin
@@ -263,7 +258,7 @@ def CreateStandaloneExe(args, file_version):
             script = ins.read()
         script = script % dict(version=args.version, file_version=file_version,
                                manifest=manifest, upx=None,
-                               upx_compression='-9', includes=includes,
+                               upx_compression='-9', packages=packages,
                                )
         with open(setup, 'w') as out:
             out.write(script)
