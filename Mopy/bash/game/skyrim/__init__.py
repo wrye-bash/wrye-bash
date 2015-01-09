@@ -148,7 +148,7 @@ class ini:
     allowNewLines = True
 
     #--INI Entry to enable BSA Redirection
-    bsaRedirection = (u'sResourceArchiveList',u'sResourceArchiveList2')
+    bsaRedirection = (u'',u'')
 
 #--Save Game format stuff
 class ess:
@@ -260,6 +260,7 @@ masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
     ]
+
 #--Plugin files that can't be deactivated
 nonDeactivatableFiles = [
     u'Skyrim.esm',
@@ -1446,12 +1447,12 @@ mergeClasses = (
         MreLvsp, MreMisc,
     )
 
-#--Extra read classes: need info from magic effects
+#--Extra read classes: these record types will always be loaded, even if
+# patchers don't need them directly (for example, MGEF for magic effects info)
 # MreScpt is Oblivion/FO3/FNV Only
 # MreMgef, has not been verified to be used here for Skyrim
 readClasses = ()
 writeClasses = ()
-
 
 def init():
     # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
