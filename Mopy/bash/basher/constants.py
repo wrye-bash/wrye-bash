@@ -242,7 +242,7 @@ settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package
         },
     #--Wrye Bash: Group and Rating
     'bash.mods.autoGhost':False,
-    'bash.mods.groups': bush.defaultGroups,
+    'bash.mods.groups': list(bush.defaultGroups),
     'bash.mods.ratings': ['+','1','2','3','4','5','=','~'],
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {
