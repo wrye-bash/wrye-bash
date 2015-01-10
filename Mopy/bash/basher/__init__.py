@@ -1059,8 +1059,6 @@ class ModList(List):
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
         List.__init__(self, parent, listData, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
-        #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
@@ -1310,7 +1308,7 @@ class ModList(List):
         Link.Frame.docBrowser.Raise()
 
     def OnChar(self,event):
-        """Char event: Delete, Reorder, Check/Uncheck."""
+        """Char event: Reorder, Check/Uncheck."""
         ##Ctrl+Up and Ctrl+Down
         if ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
@@ -2091,7 +2089,6 @@ class SaveList(List):
         #--Parent init
         List.__init__(self, parent, listData, editLabels=True)
         #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         #--ScrollPos
@@ -2212,7 +2209,7 @@ class SaveList(List):
 
     #--Events ---------------------------------------------
     def OnChar(self,event):
-        """Char event: Reordering."""
+        """Char event: Rename."""
         ## F2 - Rename
         if event.GetKeyCode() == wx.WXK_F2:
             selected = self.GetSelected()
@@ -2223,7 +2220,6 @@ class SaveList(List):
         event.Skip()
 
     def OnKeyUp(self,event):
-        """Char event: select all items"""
         code = event.GetKeyCode()
         # Ctrl+C: Copy file(s) to clipboard
         if event.CmdDown() and code == ord('C'):
@@ -2509,7 +2505,6 @@ class InstallersList(balt.Tank):
         balt.Tank.__init__(self, parent, data, details=details, dndList=True,
                            dndFiles=True, dndColumns=['Order'],
                            editLabels=True)
-        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
@@ -3400,7 +3395,6 @@ class ScreensList(List):
         #--Parent init
         List.__init__(self, parent, listData, editLabels=True)
         #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
 
@@ -3599,8 +3593,6 @@ class BSAList(List):
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self, parent, listData)
-        #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.BSAs.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
@@ -3669,9 +3661,6 @@ class BSAList(List):
             raise BashError(u'Unrecognized sort key: '+col)
         #--Ascending
         if reverse: self.items.reverse()
-
-    #--Events ---------------------------------------------
-    def OnChar(self,event): event.Skip()
 
     #--Event: Left Down
     def OnLeftDown(self,event):

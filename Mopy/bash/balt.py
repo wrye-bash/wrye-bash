@@ -1758,6 +1758,7 @@ class UIList(wx.Panel):
         self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         self.gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         #--Events: Columns
         self.gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Events: Items
@@ -1847,6 +1848,8 @@ class UIList(wx.Panel):
                 self.DeleteSelected(shellUI=self.__class__._shellUI,
                                     noRecycle=event.ShiftDown())
         event.Skip()
+
+    def OnChar(self,event): event.Skip()
 
     #--ABSTRACT - TODO(ut): different Tank and List overrides
     def OnItemSelected(self, event): raise AbstractError
