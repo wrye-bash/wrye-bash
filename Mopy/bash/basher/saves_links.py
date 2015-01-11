@@ -361,9 +361,9 @@ class Save_Rename(EnabledLink):
 
     def Execute(self,event):
         if len(self.selected) > 0:
-            index = self.window.list.FindItem(0,self.selected[0].s)
+            index = self.window.gList.FindItem(0,self.selected[0].s)
             if index != -1:
-                self.window.list.EditLabel(index)
+                self.window.gList.EditLabel(index)
 
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):
