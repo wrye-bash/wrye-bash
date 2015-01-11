@@ -197,7 +197,7 @@ class People_AddNew(People_Link):
             return balt.showInfo(self.gTank, name + _(u" already exists."),
                                  self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
-        self.gTank.RefreshUI(details=name)
+        self.gTank.RefreshUI(details=name) # TODO(ut): select it !
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
         self.pdata.setChanged()
 

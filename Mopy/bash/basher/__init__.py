@@ -226,11 +226,10 @@ class NotebookPanel(wx.Panel):
         statusBar.SetStatusText(u'',2)
 
     def OnShow(self):
-        """To be called when particular panel is changed to and/or shown for first time.
-        Default version does nothing, but derived versions might update data."""
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.list.list.GetColumnCount()):
-                self.list.list.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
+        """To be called when particular panel is changed to and/or shown for
+        first time. Default version resizes the columns if auto is on and
+        sets Status bar text."""
+        self.uiList.autosizeColumns()
         self.SetStatusCount()
 
     def ClosePanel(self):
@@ -300,8 +299,7 @@ class SashTankPanel(SashPanel):
         return self.detailsItem
 
     def OnShow(self):
-        if self.gList.data.refresh():
-            self.gList.RefreshUI()
+        if self.uiList.data.refresh(): self.uiList.RefreshUI()
         super(SashTankPanel,self).OnShow()
 
 #------------------------------------------------------------------------------
@@ -543,7 +541,7 @@ class MasterList(List):
         #--Parent init
         List.__init__(self, parent, listData, singleCell=True,
                       editLabels=True, sunkenBorder=False)
-        self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
+        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
         self._setEditedFn = setEditedFn
 
     colReverse = property(lambda self: {},
@@ -1825,7 +1823,7 @@ class INIPanel(SashPanel):
         self.listData = bosh.iniInfos
         installer_links.iniList = ini_links.iniList = iniList = \
             INIList(left, self.listData)
-        self.list = iniList
+        self.uiList = iniList
         self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
@@ -2063,7 +2061,7 @@ class ModPanel(SashPanel):
         saves_links.modList = mods_links.modList = mod_links.modList = \
         app_buttons.modList = patcher_dialog.modList = modList = \
             ModList(left, self.listData)
-        self.list = modList
+        self.uiList = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
         #--Events
@@ -2073,7 +2071,7 @@ class ModPanel(SashPanel):
         left.SetSizer(hSizer((modList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.list.RefreshUI()
+        self.uiList.RefreshUI()
         self.modDetails.SetFile()
 
     def SetStatusCount(self):
@@ -2489,7 +2487,7 @@ class SavePanel(SashPanel):
         from . import saves_links
         self.listData = bosh.saveInfos
         saves_links.saveList = saveList = SaveList(left, self.listData)
-        self.list = saveList
+        self.uiList = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
         #--Events
@@ -2909,8 +2907,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.gList = InstallersList(left, data, details=self)
-        bosh.installersWindow = self.gList
+        self.uiList = InstallersList(left, data, details=self)
+        bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -2981,7 +2979,7 @@ class InstallersPanel(SashTankPanel):
         right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
         leftSizer = vSizer(
-            (self.gList,1,wx.EXPAND),
+            (self.uiList,1,wx.EXPAND),
             )
         left.SetSizer(leftSizer)
         wx.LayoutAlgorithm().LayoutWindow(self,left)
@@ -2998,12 +2996,15 @@ class InstallersPanel(SashTankPanel):
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
-        self.gList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnShow(self,canCancel=True):
         """Panel is shown. Update self.data."""
+        # TODO(ut): refactor, self.refreshing set to True once, extract methods
         if settings.get('bash.installers.isFirstRun',True):
-            # I have no idea why this is neccesary but if the mouseCaptureLost event is not fired before showing the askYes dialog it thorws an exception
+            # I have no idea why this is necessary but if the
+            # mouseCaptureLost event is not fired before showing the askYes
+            # dialog it throws an exception
             event = wx.CommandEvent()
             event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
             wx.PostEvent(self.GetEventHandler(), event)
@@ -3018,7 +3019,7 @@ class InstallersPanel(SashTankPanel):
             settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
-        data = self.gList.data
+        data = self.uiList.data
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
@@ -3092,7 +3093,7 @@ class InstallersPanel(SashTankPanel):
                 try:
                     what = ('DISC','IC')[self.refreshed]
                     if data.refresh(progress,what,self.fullRefresh):
-                        self.gList.RefreshUI()
+                        self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
                     self.refreshing = False
@@ -3106,16 +3107,13 @@ class InstallersPanel(SashTankPanel):
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
                     if data.refresh(progress,'C',self.fullRefresh):
-                        self.gList.RefreshUI()
+                        self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
                     self.refreshing = False
                 except CancelError:
                     # User canceled the refresh
                     self.refreshing = False
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()):
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         changed = bosh.trackedInfos.refresh()
         if changed:
             # Some tracked files changed, update the ui
@@ -3136,7 +3134,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
-        self.SetStatusCount()
+        NotebookPanel.OnShow(self)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3182,7 +3180,7 @@ class InstallersPanel(SashTankPanel):
 
     def RefreshUIMods(self):
         """Refresh UI plus refresh mods state."""
-        self.gList.RefreshUI()
+        self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
             modList.RefreshUI('ALL')
@@ -3360,7 +3358,7 @@ class InstallersPanel(SashTankPanel):
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
 
-        self.gList.RefreshUI(self.detailsItem)
+        self.uiList.RefreshUI(self.detailsItem)
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
 
@@ -3603,7 +3601,7 @@ class ScreensPanel(SashPanel):
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
         screensList = ScreensList(left, self.listData)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
-        self.list = screensList
+        self.uiList = screensList
         #--Layout
         right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
         left.SetSizer(hSizer((screensList,1,wx.GROW)))
@@ -4025,7 +4023,7 @@ class MessagePanel(SashPanel):
         self.listData.refresh() # FIXME(ut): move to InitData()
         gMessageList = MessageList(gTop, self.listData)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.list = gMessageList
+        self.uiList = gMessageList
         #--Search # TODO(ut): move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
@@ -4119,7 +4117,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = PeopleList(left, data, details=self)
+        self.uiList = PeopleList(left, data, details=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -4132,13 +4130,8 @@ class PeoplePanel(SashTankPanel):
                 ),0,wx.GROW),
             (self.gText,1,wx.GROW|wx.TOP,4),
             ))
-        left.SetSizer(vSizer((self.gList,1,wx.GROW)))
+        left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-
-    def OnShow(self):
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()): # TODO(ut): self.gList.gList ????
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -4151,7 +4144,7 @@ class PeoplePanel(SashTankPanel):
         karma = int(self.gKarma.GetValue())
         text = self.data[self.detailsItem][2]
         self.data[self.detailsItem] = (time.time(),karma,text)
-        self.gList.UpdateItem(self.gList.GetIndex(self.detailsItem))
+        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
         self.data.setChanged()
 
     #--Details view (if it exists)
@@ -4161,7 +4154,7 @@ class PeoplePanel(SashTankPanel):
         if not self.detailsItem or self.detailsItem not in self.data: return
         mtime,karma,text = self.data[self.detailsItem]
         self.data[self.detailsItem] = (time.time(),karma,self.gText.GetValue().strip())
-        self.gList.UpdateItem(self.gList.GetIndex(self.detailsItem))
+        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
         self.data.setChanged()
 
     def RefreshDetails(self,item=None):

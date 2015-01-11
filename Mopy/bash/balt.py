@@ -1864,6 +1864,13 @@ class UIList(wx.Panel):
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError
 
+    # gList columns autosize---------------------------------------------------
+    def autosizeColumns(self):
+        if bosh.inisettings['AutoSizeListColumns']:
+            colCount = xrange(self.gList.GetColumnCount())
+            for i in colCount: self.gList.SetColumnWidth(i, -bosh.inisettings[
+                    'AutoSizeListColumns'])
+
 #------------------------------------------------------------------------------
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
@@ -2065,10 +2072,6 @@ class Tank(UIList):
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
 
-    def RefreshData(self):
-        """Refreshes underlying data."""
-        self.data.refresh()
-
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""
         report = self.data.getRefreshReport()
@@ -2080,7 +2083,9 @@ class Tank(UIList):
         if details == 'SAME':
             details = self.GetDetailsItem()
         elif details:
-            selected = tuple(details)
+            if isinstance(details, basestring):
+                selected = tuple([details]) # see People_AddNew
+            else: selected = tuple(details)
         if items == 'ALL':
             self.UpdateItems(selected=selected)
         elif items in self.data:
