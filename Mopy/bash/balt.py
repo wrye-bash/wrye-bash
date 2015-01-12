@@ -1726,7 +1726,7 @@ class UIList(wx.Panel):
     #--gList image collection
     icons = {}
 
-    def __init__(self, parent, style, dndFiles, dndList, dndColumns=()):
+    def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         #--Layout
         sizer = vSizer()
@@ -1741,7 +1741,11 @@ class UIList(wx.Panel):
         #--attributes
         self.dndColumns = dndColumns
         #--gList
-        self.gList = ListCtrl(self, style=style, dndFiles=dndFiles,
+        ctrlStyle = wx.LC_REPORT
+        if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
+        if kwargs.pop('editLabels', False): ctrlStyle |= wx.LC_EDIT_LABELS
+        if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
+        self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
                               fnDropFiles=self.OnDropFiles,
                               fnDropIndexes=self.OnDropIndexes)
@@ -1859,9 +1863,8 @@ class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
 
-    def __init__(self, parent, data,
-                 details=None, style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
-                 dndList=False, dndFiles=False, dndColumns=()):
+    def __init__(self, parent, data, details=None, dndList=False,
+                 dndFiles=False, dndColumns=(), **kwargs):
         #--Data
         self.data = data
         self.details = details
@@ -1870,8 +1873,10 @@ class Tank(UIList):
         self.item_itemId = {}
         self.itemId_item = {}
         #--ListCtrl
-        UIList.__init__(self, parent, style=style, dndFiles=dndFiles,
-                        dndList=dndList, dndColumns=dndColumns)
+        # no sunken borders by default
+        kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
+        UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
+                        dndColumns=dndColumns, **kwargs)
         gList = self.gList # created above
         #--Columns
         self.UpdateColumns()

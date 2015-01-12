@@ -295,11 +295,11 @@ class List(balt.UIList):
     _sizeHints = (-1, 50) # overrides UIList
     icons = colorChecks
 
-    def __init__(self, parent, ctrlStyle=wx.LC_REPORT | wx.LC_SINGLE_SEL,
-                 dndFiles=False, dndList=False, dndColumns=()):
+    def __init__(self, parent, dndFiles=False, dndList=False, dndColumns=(),
+                 **kwargs):
         #--ListCtrl
-        balt.UIList.__init__(self, parent, style=ctrlStyle, dndFiles=dndFiles,
-                             dndList=dndList, dndColumns=dndColumns)
+        balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
+                             dndColumns=dndColumns, **kwargs)
         self.list = self.gList # self.list must go
         self.vScrollPos = 0
         #--Columns
@@ -526,7 +526,8 @@ class MasterList(List):
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_EDIT_LABELS))
+        List.__init__(self, parent, singleCell=True, editLabels=True,
+                      sunkenBorder=False)
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
         self._setEditedFn = setEditedFn
 
@@ -766,7 +767,7 @@ class INIList(List):
         #--Data/Items
         self.data = bosh.iniInfos
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=wx.LC_REPORT)
+        List.__init__(self, parent, sunkenBorder=False)
         #--Events
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
@@ -1055,7 +1056,8 @@ class ModList(List):
         checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        List.__init__(self,parent,ctrlStyle=wx.LC_REPORT, dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
+        List.__init__(self, parent, dndList=True, dndColumns=['Load Order'],
+                      sunkenBorder=False)  # |wx.SUNKEN_BORDER))
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2099,7 +2101,7 @@ class SaveList(List):
         self.data = data = bosh.saveInfos
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
+        List.__init__(self, parent, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2526,11 +2528,11 @@ class InstallersList(balt.Tank):
     itemMenu = Links()
     icons = installercons
 
-    def __init__(self, parent, data, details=None,
-                 style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
+    def __init__(self, parent, data, details=None):
         self.colReverse = settings['bash.installers.colReverse']
-        balt.Tank.__init__(self,parent,data,
-            details,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
+        balt.Tank.__init__(self, parent, data, details=details, dndList=True,
+                           dndFiles=True, dndColumns=['Order'],
+                           editLabels=True)
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
@@ -2917,8 +2919,7 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.gList = InstallersList(left, data, details=self,
-                                    style=wx.LC_REPORT)
+        self.gList = InstallersList(left, data, details=self)
         bosh.installersWindow = self.gList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
@@ -3441,7 +3442,7 @@ class ScreensList(List):
         #--Data/Items
         self.data = bosh.screensData = bosh.ScreensData()
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
+        List.__init__(self, parent, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -3651,7 +3652,7 @@ class BSAList(List):
         self.data = data = bosh.BSAInfos
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
+        List.__init__(self, parent)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         #--ScrollPos
@@ -3942,7 +3943,7 @@ class MessageList(List):
         self.gText = None
         self.searchResults = None
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
+        List.__init__(self, parent)
         #--Events
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
@@ -4152,7 +4153,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = PeopleList(left, data, details=self, style=wx.LC_REPORT)
+        self.gList = PeopleList(left, data, details=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
