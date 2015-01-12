@@ -3423,6 +3423,11 @@ class FileInfo:
         return self.isGhost
 
 #------------------------------------------------------------------------------
+reReturns = re.compile(u'\r{2,}',re.U)
+# TODO(ut): 2 variations for reBashTags
+#reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U) #flagged as error
+#reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
+
 class ModInfo(FileInfo):
     """An esp/m file."""
     def getFileInfos(self):
@@ -3596,7 +3601,6 @@ class ModInfo(FileInfo):
     def shiftBashTags(self):
         """Shifts bash keys from bottom to top."""
         description = self.header.description
-        reReturns = re.compile(u'\r{2,}',re.U)
         reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U)
         if reBashTags.match(description) or reReturns.search(description):
             description = reReturns.sub(u'\r',description)

@@ -266,8 +266,6 @@ class _Mod_Groups_Export(EnabledLink):
     def _enable(self): return bool(self.selected)
 
     def Execute(self,event):
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
         textName = u'My' + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         textDir.makedirs()
@@ -336,13 +334,13 @@ class Mod_Groups(_Mod_Labels):
 
     def _initData(self, window, data):
         super(Mod_Groups, self)._initData(window, data)
-        # TODO(ut): modGroup = set() ... return self.text in modGroup
-        modGroup = bosh.modInfos.table.getItem(data[0], 'group') if len(
-            data) == 1 else None
+        data = set(data)
+        mod_group = bosh.modInfos.table.getColumn('group').items()
+        modGroup = set([x[1] for x in mod_group if x[0] in data])
         class _CheckGroup(CheckLink):
             def _check(self):
-                """Checks the Link if (single) selected mod belongs to it."""
-                return self.text == modGroup
+                """Check the Link if any of the selected mods belongs to it."""
+                return self.text in modGroup
         self.__class__.cls = _CheckGroup
 
     def _doRefresh(self, event):
@@ -1057,7 +1055,6 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
 
     def Execute(self,event):
         for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
         self.window.RefreshUI(self.selected)
 
@@ -1068,7 +1065,6 @@ class _Mod_SkipDirtyCheckInvert(ItemLink):
 
     def Execute(self,event):
         for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName] # TODO(ut): unused
             ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
         self.window.RefreshUI(self.selected)
@@ -1089,7 +1085,6 @@ class Mod_SkipDirtyCheck(TransLink):
                 def _check(self): return self.ignoreDirty
                 def Execute(self, event):
                     fileName = self.selected[0]
-                    fileInfo = bosh.modInfos[fileName]
                     self.ignoreDirty ^= True
                     bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
                     self.window.RefreshUI(fileName)
@@ -1636,7 +1631,6 @@ class _Mod_Export_Link(EnabledLink):
 
     def Execute(self, event):
         fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName] # TODO(ut): UNUSED
         textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         textDir.makedirs()
@@ -1683,7 +1677,6 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
                 _(u'Export NPC Levels')):
             return
         fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_NPC_Levels.csv'
         textDir = bosh.dirs['patches']
         textDir.makedirs()
@@ -2011,7 +2004,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 from ..patcher.utilities import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(_Mod_Export_Link):
-    """Export armor and weapon stats from mod to text file.""" # TODO(ut): armor and weapon ??
+    """Exports stats from the selected plugin to a CSV file (for the record
+    types specified in bush.game.statsTypes)."""
     askTitle = _(u'Export stats to:')
     csvFile = u'_Stats.csv'
     progressTitle = _(u"Export Stats")

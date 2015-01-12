@@ -23,10 +23,9 @@
 # =============================================================================
 """This module contains some constants ripped out of basher.py"""
 
-from .. import bush, bosh # I hope this bosh import is valid...
-from ..balt import Image, ImageList, IdList
+from .. import bush, bosh
+from ..balt import Image, ImageList, IdList, defPos
 from ..bolt import GPath
-import wx # TODO(ut): this must go - also wrap long lines
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -290,7 +289,7 @@ settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package
     #--Wrye Bash: Mod Docs
     'bash.modDocs.show': False,
     'bash.modDocs.size': (300,400),
-    'bash.modDocs.pos': wx.DefaultPosition,
+    'bash.modDocs.pos': defPos,
     'bash.modDocs.dir': None,
     #--Installers
     'bash.installers.allCols': ['Package','Order','Modified','Size','Files'],
@@ -342,7 +341,7 @@ settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package
 
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
-    'bash.wizard.pos': wx.DefaultPosition,
+    'bash.wizard.pos': defPos,
 
     #--Wrye Bash: INI Tweaks
     'bash.ini.allCols': ['File','Installer'],

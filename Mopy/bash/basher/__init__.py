@@ -87,7 +87,7 @@ from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
 from ..balt import wxListAligns, splitterStyle
 
-# Constants --------------------------------------------------------------------
+# Constants -------------------------------------------------------------------
 from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
     installercons, PNG, JPEG, ICO, BMP, TIF, ID_TAGS
 
@@ -123,7 +123,7 @@ gPeople = None # New global - yak
 # Settings --------------------------------------------------------------------
 settings = None
 
-# Links -----------------------------------------------------------------
+# Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 def SetUAC(item):
     """Helper function for creating menu items or buttons that need UAC
@@ -151,6 +151,7 @@ class People_Link(ItemLink):
 
     @property
     def pdata(self): return gPeople.data # PeopleData singleton
+
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
 
@@ -220,7 +221,7 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def SetStatusCount(self):
+    def SetStatusCount(self): # TODO(ut): eliminate overrides
         """Sets status bar count field."""
         statusBar.SetStatusText(u'',2)
 
@@ -252,8 +253,8 @@ class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,isVertical=True,minimumSize=50,style=splitterStyle):
         """Initialize."""
-        NotebookPanel.__init__(self, parent, wx.ID_ANY)
-        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
+        NotebookPanel.__init__(self, parent)
+        splitter = wx.gizmos.ThinSplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -279,6 +280,7 @@ class SashPanel(NotebookPanel):
             settings[self.sashPosKey] = splitter.GetSashPosition()
         super(SashPanel, self).ClosePanel()
 
+#------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
     def __init__(self,data,parent):
         sashPos = data.getParam('sashPos',200)
@@ -4523,15 +4525,13 @@ class BashFrame(wx.Frame):
     docBrowser = None
     modChecker = None
 
-    def __init__(self, parent=None,pos=wx.DefaultPosition,size=(400,500),
-             style = wx.DEFAULT_FRAME_STYLE):
-        """Initialization."""
+    def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
         global bashFrame
         bashFrame = self
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size, style)
+        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size)
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
