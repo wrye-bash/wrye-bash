@@ -71,7 +71,6 @@ class Patcher:
 
 #------------------------------------------------------------------------------
 class _AliasesPatcher(Patcher):
-    """Basic patcher panel with no options.""" # TODO(ut): what ?
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel

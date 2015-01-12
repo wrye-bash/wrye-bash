@@ -143,9 +143,9 @@ class Screen_Rename(EnabledLink):
 
     def Execute(self,event):
         if len(self.selected) > 0:
-            index = self.window.list.FindItem(0,self.selected[0].s)
+            index = self.window.gList.FindItem(0,self.selected[0].s)
             if index != -1:
-                self.window.list.EditLabel(index)
+                self.window.gList.EditLabel(index)
 
 # Messages Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ class People_AddNew(People_Link):
             return balt.showInfo(self.gTank, name + _(u" already exists."),
                                  self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
-        self.gTank.RefreshUI(details=name)
+        self.gTank.RefreshUI(details=name) # TODO(ut): select it !
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
         self.pdata.setChanged()
 

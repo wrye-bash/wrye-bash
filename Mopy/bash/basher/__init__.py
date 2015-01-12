@@ -84,10 +84,10 @@ from ..balt import button, checkBox, staticText, \
     spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
-from ..balt import Links, ListCtrl, ItemLink
+from ..balt import Links, ItemLink
 from ..balt import wxListAligns, splitterStyle
 
-# Constants --------------------------------------------------------------------
+# Constants -------------------------------------------------------------------
 from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
     installercons, PNG, JPEG, ICO, BMP, TIF, ID_TAGS
 
@@ -123,7 +123,7 @@ gPeople = None # New global - yak
 # Settings --------------------------------------------------------------------
 settings = None
 
-# Links -----------------------------------------------------------------
+# Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 def SetUAC(item):
     """Helper function for creating menu items or buttons that need UAC
@@ -151,6 +151,7 @@ class People_Link(ItemLink):
 
     @property
     def pdata(self): return gPeople.data # PeopleData singleton
+
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
 
@@ -216,39 +217,60 @@ from .dialogs import ListBoxes # TODO(ut): cyclic import
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
 
+    def __init__(self, *args, **kwargs):
+        super(NotebookPanel, self).__init__(*args, **kwargs)
+        self._firstShow = True # TODO(ut): hack to set the scrollbar position
+
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def SetStatusCount(self):
+    def SetStatusCount(self): # TODO(ut): eliminate overrides
         """Sets status bar count field."""
         statusBar.SetStatusText(u'',2)
 
     def OnShow(self):
-        """To be called when particular panel is changed to and/or shown for first time.
-        Default version does nothing, but derived versions might update data."""
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.list.list.GetColumnCount()):
-                self.list.list.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
+        """To be called when particular panel is changed to and/or shown for
+        first time.
+
+        Default version resizes the columns if auto is on and sets Status bar
+        text. It also sets the scroll bar position on first show.
+        """
+        if hasattr(self, '_firstShow'):
+            self.uiList.SetScrollPosition()
+            del self._firstShow
+        self.uiList.autosizeColumns()
         self.SetStatusCount()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        pass
+    def ClosePanel(self):
+        """To be manually called when containing frame is closing. Use for
+        saving data, scrollpos, etc."""
+        if isinstance(self, ScreensPanel): return # ScreensPanel is not
+        # backed up by a pickle file
+        if hasattr(self, 'listData'):
+            # the only SashPanels that do not override us and do not have this
+            # attribute are the ModDetails and SaveDetails panels that use
+            # a MasterList whose data is initially {}
+            table = self.listData.table
+            # items deleted outside Bash
+            for deleted in set(table.keys()) - set(self.listData.keys()):
+                del table[deleted]
+            table.save()
 
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,isVertical=True,minimumSize=50,style=splitterStyle):
         """Initialize."""
-        NotebookPanel.__init__(self, parent, wx.ID_ANY)
-        splitter = wx.gizmos.ThinSplitterWindow(self, wx.ID_ANY, style=style)
+        NotebookPanel.__init__(self, parent)
+        splitter = wx.gizmos.ThinSplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
             splitter.SplitVertically(self.left, self.right)
         else:
             splitter.SplitHorizontally(self.left, self.right)
+        self.isVertical = isVertical
         splitter.SetSashGravity(sashGravity)
         sashPos = settings.get(sashPosKey, 0) or sashPos or -1
         splitter.SetSashPosition(sashPos)
@@ -262,11 +284,14 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def OnCloseWindow(self):
+    def ClosePanel(self):
         splitter = self.right.GetParent()
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
+        super(SashPanel, self).ClosePanel()
 
+#------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
     def __init__(self,data,parent):
         sashPos = data.getParam('sashPos',200)
@@ -275,63 +300,44 @@ class SashTankPanel(SashPanel):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
 
-    def OnCloseWindow(self):
+    def ClosePanel(self): # TODO(ut): does not call super
         self.SaveDetails()
         splitter = self.right.GetParent()
         sashPos = splitter.GetSashPosition()
         self.data.setParam('sashPos',sashPos)
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         self.data.save()
 
     def GetDetailsItem(self):
         return self.detailsItem
 
     def OnShow(self):
-        if self.gList.data.refresh():
-            self.gList.RefreshUI()
+        if self.uiList.data.refresh(): self.uiList.RefreshUI()
         super(SashTankPanel,self).OnShow()
 
 #------------------------------------------------------------------------------
-class List(wx.Panel):
-    def __init__(self,parent,id=wx.ID_ANY,ctrlStyle=wx.LC_REPORT|wx.LC_SINGLE_SEL,
-                 dndFiles=False,dndList=False,dndColumns=[]):
-        wx.Panel.__init__(self,parent,id, style=wx.WANTS_CHARS)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        self.SetSizer(sizer)
-        self.SetSizeHints(-1,50)
-        self.dndColumns = dndColumns
+class List(balt.UIList):
+    _sizeHints = (-1, 50) # overrides UIList
+    icons = colorChecks
+
+    def __init__(self, parent, listData=None, dndFiles=False, dndList=False,
+                 dndColumns=(), **kwargs):
         #--ListCtrl
-        listId = self.listId = wx.NewId()
-        self.list = ListCtrl(self, listId, style=ctrlStyle,
-                             dndFiles=dndFiles, dndList=dndList,
-                             fnDndAllow=self.dndAllow,
-                             fnDropFiles=self.OnDropFiles,
-                             fnDropIndexes=self.OnDropIndexes)
-        self.checkboxes = colorChecks
-        self.mouseItem = None
-        self.mouseTexts = {}
-        self.mouseTextPrev = u''
-        self.vScrollPos = 0
+        #--MasterList: masterInfo = self.data[item], where item is id number
+        # rest of List subclasses provide a non None listData
+        self.data = {} if listData is None else listData # TODO(ut): to UIList
+        balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
+                             dndColumns=dndColumns, **kwargs)
         #--Columns
         self.PopulateColumns()
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
-        #--Events
-        wx.EVT_SIZE(self, self.OnSize)
         #--Events: Items
         self.hitIcon = 0
-        wx.EVT_LEFT_DOWN(self.list,self.OnLeftDown)
-        self.list.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         #--Events: Columns
-        wx.EVT_LIST_COL_CLICK(self, listId, self.DoItemSort)
-        wx.EVT_LIST_COL_RIGHT_CLICK(self, listId, self.DoColumnMenu)
         self.checkcol = []
-        wx.EVT_LIST_COL_END_DRAG(self,listId, self.OnColumnResize)
-        wx.EVT_UPDATE_UI(self, listId, self.onUpdateUI)
-        #--Mouse movement
-        self.list.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.list.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.list.Bind(wx.EVT_SCROLLWIN,self.OnScroll)
+        self.gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
 
     #--New way for self.cols, so PopulateColumns will work with
     #  the optional columns menu
@@ -346,13 +352,6 @@ class List(wx.Panel):
         self._cols = value
     cols = property(_getCols,_setCols)
 
-    #--Drag and Drop---------------------------------------
-    def dndAllow(self):
-        col = self.sort
-        return col in self.dndColumns
-    def OnDropFiles(self, x, y, filenames): raise AbstractError
-    def OnDropIndexes(self, indexes, newPos): raise AbstractError
-
     #--Items ----------------------------------------------
     #--Populate Columns
     def PopulateColumns(self):
@@ -360,32 +359,33 @@ class List(wx.Panel):
         cols = self.cols
         self.numCols = len(cols)
         colDict = self.colDict = {}
+        listCtrl = self.gList
         for colDex in xrange(self.numCols):
             colKey = cols[colDex]
             colDict[colKey] = colDex
             colName = self.colNames.get(colKey,colKey)
             wxListAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= self.list.GetColumnCount():
+            if colDex >= listCtrl.GetColumnCount():
                 # Make a new column
-                self.list.InsertColumn(colDex,colName,wxListAlign)
-                self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+                listCtrl.InsertColumn(colDex,colName,wxListAlign)
+                listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
             else:
                 # Update an existing column
-                column = self.list.GetColumn(colDex)
+                column = listCtrl.GetColumn(colDex)
                 if column.GetText() == colName:
                     # Don't change it, just make sure the width is correct
-                    self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+                    listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
                 elif column.GetText() not in self.cols:
                     # Column that doesn't exist anymore
-                    self.list.DeleteColumn(colDex)
+                    listCtrl.DeleteColumn(colDex)
                     colDex -= 1
                 else:
                     # New column
-                    self.list.InsertColumn(colDex,colName,wxListAlign)
-                    self.list.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
-        while self.list.GetColumnCount() > self.numCols:
-            self.list.DeleteColumn(self.numCols)
-        self.list.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
+                    listCtrl.InsertColumn(colDex,colName,wxListAlign)
+                    listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
+        while listCtrl.GetColumnCount() > self.numCols:
+            listCtrl.DeleteColumn(self.numCols)
+        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         """Populate ListCtrl for specified item. [ABSTRACT]"""
@@ -409,26 +409,15 @@ class List(wx.Panel):
         self.GetItems()
         self.SortItems(col,reverse)
         #--Delete Current items
-        listItemCount = self.list.GetItemCount()
+        listCtrl = self.gList
+        listItemCount = listCtrl.GetItemCount()
         #--Populate items
         for itemDex in xrange(len(self.items)):
             mode = int(itemDex >= listItemCount)
             self.PopulateItem(itemDex,mode,selected)
         #--Delete items?
-        while self.list.GetItemCount() > len(self.items):
-            self.list.DeleteItem(self.list.GetItemCount()-1)
-
-    def SelectItemAtIndex(self, index, select=True,
-                          _select=wx.LIST_STATE_SELECTED):
-        self.list.SetItemState(index, select * _select, _select)
-
-    def ClearSelected(self):
-        for itemDex in xrange(self.list.GetItemCount()):
-            self.SelectItemAtIndex(itemDex, False)
-
-    def SelectAll(self):
-        for itemDex in range(self.list.GetItemCount()):
-            self.SelectItemAtIndex(itemDex)
+        while listCtrl.GetItemCount() > len(self.items):
+            listCtrl.DeleteItem(listCtrl.GetItemCount()-1)
 
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
@@ -437,7 +426,7 @@ class List(wx.Panel):
         selected = []
         itemDex = -1
         while True:
-            itemDex = self.list.GetNextItem(itemDex,
+            itemDex = self.gList.GetNextItem(itemDex,
                 wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
             if itemDex == -1 or itemDex >= len(self.items):
                 break
@@ -445,13 +434,13 @@ class List(wx.Panel):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self,shellUI=False,dontRecycle=False):
+    def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if not items: return
         if shellUI:
             try:
-                self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
+                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
             except balt.AccessDeniedError:
                 pass
             dirJoin = self.data.dir.join
@@ -515,41 +504,14 @@ class List(wx.Panel):
         if self.checkcol:
             colDex = self.checkcol[0]
             colName = self.cols[colDex]
-            width = self.list.GetColumnWidth(colDex)
+            width = self.gList.GetColumnWidth(colDex)
             if width < 25:
                 width = 25
-                self.list.SetColumnWidth(colDex, 25)
-                self.list.resizeLastColumn(0)
+                self.gList.SetColumnWidth(colDex, 25)
+                self.gList.resizeLastColumn(0)
             self.colWidths[colName] = width
             self.checkcol = []
         event.Skip()
-
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            (mouseItem,mouseHitFlag) = self.list.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseEnteredItem(mouseItem)
-        elif event.Leaving() and self.mouseItem is not None:
-            self.mouseItem = None
-            self.MouseEnteredItem(None)
-        event.Skip()
-
-    def MouseEnteredItem(self,item):
-        """Handle mouse entered item by showing tip or similar."""
-        text = self.mouseTexts.get(item) or ''
-        if text != self.mouseTextPrev:
-            statusBar.SetStatusText(text,1)
-            self.mouseTextPrev = text
-
-    #--Column Menu
-    def DoColumnMenu(self,event,column = None):
-        if not self.mainMenu: return
-        #--Build Menu
-        if column is None: column = event.GetColumn()
-        #--Show/Destroy Menu
-        self.mainMenu.PopupMenu(self,bashFrame,column)
 
     #--Column Resize
     def OnColumnResize(self,event):
@@ -557,73 +519,42 @@ class List(wx.Panel):
         the old size before this event completes just save what
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
+        settings.setChanged(self.colWidthsKey)
         event.Skip()
 
     #--Item Sort
-    def DoItemSort(self, event):
+    def OnColumnClick(self, event):
+        """List OnColumnClick override - cf Tank."""
         self.PopulateItems(self.cols[event.GetColumn()],-1)
-
-    #--Item Menu
-    def DoItemMenu(self,event):
-        selected = self.GetSelected()
-        if not selected:
-            self.DoColumnMenu(event,0)
-            return
-        #--Show/Destroy Menu
-        self.itemMenu.PopupMenu(self,bashFrame,selected)
-
-    #--Size Change
-    def OnSize(self, event):
-        size = self.GetClientSizeTuple()
-        #print self,size
-        self.list.SetSize(size)
-
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        #self.hitTest = self.list.HitTest((event.GetX(),event.GetY()))
-        #self.pos[0] = event.GetX()
-        #deprint(event.GetX())
-        event.Skip()
-
-    def OnScroll(self,event):
-        """Event: List was scrolled. Save so can be accessed later."""
-        if event.GetOrientation() == wx.VERTICAL:
-            self.vScrollPos = event.GetPosition()
-        event.Skip()
 
 #------------------------------------------------------------------------------
 class MasterList(List):
     mainMenu = Links()
     itemMenu = Links()
+    keyPrefix = 'bash.masters'
 
-    def __init__(self,parent,fileInfo,setEditedFn):
+    def __init__(self, parent, fileInfo, setEditedFn, listData=None):
         #--Columns
         self.cols = settings['bash.masters.cols']
-        self.colNames = settings['bash.colNames']
-        self.colWidths = settings['bash.masters.colWidths']
-        self.colAligns = settings['bash.masters.colAligns']
-        self.colReverse = settings['bash.masters.colReverse'].copy()
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
         self.prevId = -1
-        self.data = {}  #--masterInfo = self.data[item], where item is id number
         self.items = [] #--Item numbers in display order.
         self.fileOrderItems = []
         self.loadOrderNames = []
-        self.sort = settings['bash.masters.sort']
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Links
-        self.mainMenu = MasterList.mainMenu
-        self.itemMenu = MasterList.itemMenu
         #--Parent init
-        List.__init__(self,parent,wx.ID_ANY,ctrlStyle=(wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_EDIT_LABELS))
-        wx.EVT_LIST_END_LABEL_EDIT(self,self.listId,self.OnLabelEdited)
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
+        List.__init__(self, parent, listData, singleCell=True,
+                      editLabels=True, sunkenBorder=False)
         self._setEditedFn = setEditedFn
+
+    colReverse = property(lambda self: {},
+                          doc='Do not reverse columns in Master Lists')
+
+    def OnItemSelected(self, event): event.Skip()
+    def OnKeyUp(self, event): event.Skip()
 
     #--NewItemNum
     def newId(self):
@@ -683,6 +614,7 @@ class MasterList(List):
         masterInfo = self.data[itemId]
         masterName = masterInfo.name
         cols = self.cols
+        listCtrl = self.gList
         for colDex in range(self.numCols):
             #--Value
             col = cols[colDex]
@@ -701,11 +633,11 @@ class MasterList(List):
                     value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                listCtrl.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                listCtrl.SetStringItem(itemDex, colDex, value)
         #--Font color
-        item = self.list.GetItem(itemDex)
+        item = listCtrl.GetItem(itemDex)
         if masterInfo.isEsm():
             item.SetTextColour(colors['mods.text.esm'])
         else:
@@ -726,11 +658,11 @@ class MasterList(List):
             item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
-        self.list.SetItem(item)
+        listCtrl.SetItem(item)
         #--Image
         status = self.GetMasterStatus(itemId)
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,oninc))
+        listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
         #--Selection State
         self.SelectItemAtIndex(itemDex, masterName in selected)
 
@@ -795,25 +727,20 @@ class MasterList(List):
         self._setEditedFn()
 
     #--Item Sort
-    def DoItemSort(self, event):
-        pass #--Don't do column head sort.
+    def OnColumnClick(self, event):
+        """MasterList: Don't do column head sort."""
+        event.Skip()
 
     #--Column Menu
-    def DoColumnMenu(self,event,column=None):
-        if not self.fileInfo: return
-        List.DoColumnMenu(self,event,column)
+    def DoColumnMenu(self, event, column=None):
+        if self.fileInfo: balt.UIList.DoColumnMenu(self, event, column)
 
     #--Item Menu
     def DoItemMenu(self,event):
         if not self.edited:
             self.OnLeftDown(event)
         else:
-            List.DoItemMenu(self,event)
-
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(MasterList,self).OnColumnResize(event)
-        settings.setChanged('bash.masters.colWidths')
+            balt.UIList.DoItemMenu(self, event)
 
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -854,29 +781,15 @@ class MasterList(List):
 class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
+    keyPrefix = 'bash.ini'
+    _shellUI = True
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.ini.cols'
-        self.colAligns = settings['bash.ini.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.ini.colReverse')
-        self.colWidths = settings['bash.ini.colWidths']
         self.sortValid = settings['bash.ini.sortValid']
-        #--Data/Items
-        self.data = bosh.iniInfos
-        self.sort = settings['bash.ini.sort']
-        #--Links
-        self.mainMenu = INIList.mainMenu
-        self.itemMenu = INIList.itemMenu
         #--Parent init
-        List.__init__(self,parent,wx.ID_ANY,ctrlStyle=wx.LC_REPORT)
-        #--Events
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        #--Image List
-        checkboxesIL = colorChecks.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--ScrollPos
+        List.__init__(self, parent, listData, sunkenBorder=False)
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -932,6 +845,7 @@ class INIList(List):
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
         cols = self.cols
+        listCtrl = self.gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             if col == 'File':
@@ -939,9 +853,9 @@ class INIList(List):
             elif col == 'Installer':
                 value = self.data.table.getItem(fileName, 'installer', u'')
             if mode and colDex == 0:
-                self.list.InsertStringItem(itemDex, value)
+                listCtrl.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                listCtrl.SetStringItem(itemDex, colDex, value)
         status = fileInfo.getStatus()
         #--Image
         checkMark = 0
@@ -967,15 +881,15 @@ class INIList(List):
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[itemDex] = mousetext
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
+        listCtrl.SetItemImage(itemDex,self.icons.Get(icon,checkMark))
         #--Font/BG Color
-        item = self.list.GetItem(itemDex)
+        item = listCtrl.GetItem(itemDex)
         item.SetTextColour(colors['default.text'])
         if status < 0:
             item.SetBackgroundColour(colors['ini.bkgd.invalid'])
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
-        self.list.SetItem(item)
+        listCtrl.SetItem(item)
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
     def SortItems(self,col=None,reverse=-2):
@@ -1001,7 +915,7 @@ class INIList(List):
     def OnLeftDown(self,event):
         """Handle click on icon events"""
         event.Skip()
-        (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
+        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
         tweak = bosh.iniInfos[self.items[hitItem]]
         if tweak.status == 20: return # already applied
@@ -1023,20 +937,7 @@ class INIList(List):
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnKeyUp(self,event):
-        """Char event: select all items"""
-        ##Ctrl+A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            self.SelectAll()
-        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(True,event.ShiftDown())
-        event.Skip()
-
-    def OnColumnResize(self,event):
-        """Column resize: Stored modified column widths."""
-        super(INIList,self).OnColumnResize(event)
-        settings.setChanged('bash.ini.colWidths')
+    def OnItemSelected(self, event): event.Skip()
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -1149,38 +1050,23 @@ class ModList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    keyPrefix = 'bash.mods'
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.mods.cols'
-        self.colAligns = settings['bash.mods.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.mods.colReverse')
-        self.colWidths = settings['bash.mods.colWidths']
         #--Data/Items
-        self.data = data = bosh.modInfos
         self.details = None #--Set by panel
-        self.sort = settings['bash.mods.sort']
         self.esmsFirst = settings['bash.mods.esmsFirst']
         self.selectedFirst = settings['bash.mods.selectedFirst']
-        #--Links
-        self.mainMenu = ModList.mainMenu
-        self.itemMenu = ModList.itemMenu
         #--Parent init
-        List.__init__(self,parent,wx.ID_ANY,ctrlStyle=wx.LC_REPORT, dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
-        #--Image List
-        checkboxesIL = colorChecks.GetImageList()
+        # Image List: Column sorting order indicators # TODO(ut): to UIList
+        # explorer style ^ == ascending
+        checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--Events
-        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+        List.__init__(self, parent, listData, dndList=True,
+                      dndColumns=['Load Order'], sunkenBorder=False)
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1237,6 +1123,7 @@ class ModList(List):
         fileInfo = self.data[fileName]
         fileBashTags = bosh.modInfos[fileName].getBashTags()
         cols = self.cols
+        listCtrl = self.gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             #--Get Value
@@ -1270,9 +1157,9 @@ class ModList(List):
                 value = u'-'
             #--Insert/SetString
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                listCtrl.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                listCtrl.SetStringItem(itemDex, colDex, value)
         #--Default message
         mouseText = u''
         #--Image
@@ -1282,9 +1169,9 @@ class ModList(List):
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,checkMark))
+        listCtrl.SetItemImage(itemDex,self.icons.Get(status,checkMark))
         #--Font color
-        item = self.list.GetItem(itemDex)
+        item = listCtrl.GetItem(itemDex)
         mouseText = u''
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
@@ -1357,7 +1244,7 @@ class ModList(List):
                 font = item.GetFont()
                 font.SetUnderlined(True)
                 item.SetFont(font)
-        self.list.SetItem(item)
+        listCtrl.SetItem(item)
         self.mouseTexts[itemDex] = mouseText
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
@@ -1406,16 +1293,17 @@ class ModList(List):
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
         try:
-            try: self.list.ClearColumnImage(self.colDict[oldcol])
+            listCtrl = self.gList
+            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
-            else: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
+            if reverse: listCtrl.SetColumnImage(self.colDict[col], self.sm_dn)
+            else: listCtrl.SetColumnImage(self.colDict[col], self.sm_up)
         except: pass
 
     #--Events ---------------------------------------------
-    def OnDoubleClick(self,event):
-        """Handle doubclick event."""
-        (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
+    def OnDClick(self,event):
+        """Handle doubleclicking a mod in the Mods List."""
+        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         fileInfo = self.data[self.items[hitItem]]
         if not Link.Frame.docBrowser:
@@ -1427,12 +1315,9 @@ class ModList(List):
         Link.Frame.docBrowser.Raise()
 
     def OnChar(self,event):
-        """Char event: Delete, Reorder, Check/Uncheck."""
-        ##Delete
-        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected(False,event.ShiftDown())
+        """Char event: Reorder, Check/Uncheck."""
         ##Ctrl+Up and Ctrl+Down
-        elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
+        if ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
                 orderKey = lambda x: self.items.index(x)
@@ -1464,29 +1349,22 @@ class ModList(List):
             else:
                 #--Check all that aren't
                 self._checkUncheckMod(*toActivate)
-        ##Ctrl+A
-        elif event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda mod: self.data[mod].getPath().s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
-
-    def OnColumnResize(self,event):
-        """Column resize: Stored modified column widths."""
-        super(ModList,self).OnColumnResize(event)
-        settings.setChanged('bash.mods.colWidths')
+        super(ModList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
+        listCtrl = self.gList
+        (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            self.list.SetDnD(False)
+            listCtrl.SetDnD(False)
             self._checkUncheckMod(self.items[hitItem])
         else:
-            self.list.SetDnD(True)
+            listCtrl.SetDnD(True)
         #--Pass Event onward
         event.Skip()
 
@@ -1931,8 +1809,10 @@ class INIPanel(SashPanel):
         self.SetBaseIni(self.GetChoice())
         global iniList
         from . import installer_links, ini_links
-        installer_links.iniList = ini_links.iniList = iniList = INIList(left)
-        self.list = iniList
+        self.listData = bosh.iniInfos
+        installer_links.iniList = ini_links.iniList = iniList = \
+            INIList(left, self.listData)
+        self.uiList = iniList
         self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
@@ -1992,7 +1872,7 @@ class INIPanel(SashPanel):
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
-        self.SetStatusCount()
+        super(INIPanel, self).OnShow()
 
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
@@ -2153,14 +2033,10 @@ class INIPanel(SashPanel):
         wx.Window.Layout(self)
         iniList.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing.  Use for saving data, scrollpos, etc."""
+    def ClosePanel(self):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
-        bosh.iniInfos.table.save()
-        splitter = self.right.GetParent()
-        if hasattr(self, 'sashPosKey'):
-            settings[self.sashPosKey] = splitter.GetSashPosition()
+        super(INIPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
@@ -2170,10 +2046,11 @@ class ModPanel(SashPanel):
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
             patcher_dialog
+        self.listData = bosh.modInfos
         saves_links.modList = mods_links.modList = mod_links.modList = \
-            app_buttons.modList = patcher_dialog.modList = \
-            modList = ModList(left)
-        self.list = modList
+        app_buttons.modList = patcher_dialog.modList = modList = \
+            ModList(left, self.listData)
+        self.uiList = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
         #--Events
@@ -2183,7 +2060,7 @@ class ModPanel(SashPanel):
         left.SetSizer(hSizer((modList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.list.RefreshUI()
+        self.uiList.RefreshUI()
         self.modDetails.SetFile()
 
     def SetStatusCount(self):
@@ -2196,12 +2073,8 @@ class ModPanel(SashPanel):
         modList.Layout()
         self.modDetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        bosh.modInfos.table.save()
-        settings['bash.mods.scrollPos'] = modList.vScrollPos
-        splitter = self.right.GetParent()
-        settings[self.sashPosKey] = splitter.GetSashPosition()
+    def ClosePanel(self):
+        super(ModPanel, self).ClosePanel()
         # Mod details Sash Positions
         splitter = self.modDetails.right.GetParent()
         settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
@@ -2213,45 +2086,25 @@ class SaveList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    keyPrefix = 'bash.saves'
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.saves.cols'
-        self.colAligns = settings['bash.saves.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.saves.colReverse')
-        self.colWidths = settings['bash.saves.colWidths']
         #--Data/Items
-        self.data = data = bosh.saveInfos
         self.details = None #--Set by panel
-        self.sort = settings['bash.saves.sort']
-        #--Links
-        self.mainMenu = SaveList.mainMenu
-        self.itemMenu = SaveList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.saves.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+        List.__init__(self, parent, listData, editLabels=True)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
         item = self.items[event.GetIndex()]
         # Change the selection to not include the extension
-        editbox = self.list.GetEditControl()
+        editbox = self.gList.GetEditControl()
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Savegame renamed."""
         if event.IsEditCancelled(): return
         #--File Info
@@ -2301,6 +2154,7 @@ class SaveList(List):
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
         cols = self.cols
+        listCtrl = self.gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             if col == 'File':
@@ -2319,13 +2173,13 @@ class SaveList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                listCtrl.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                listCtrl.SetStringItem(itemDex, colDex, value)
         #--Image
         status = fileInfo.getStatus()
         on = fileName.cext == u'.ess'
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
+        listCtrl.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
@@ -2357,39 +2211,28 @@ class SaveList(List):
 
     #--Events ---------------------------------------------
     def OnChar(self,event):
-        """Char event: Reordering."""
-        ## Delete
-        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
+        """Char event: Rename."""
         ## F2 - Rename
         if event.GetKeyCode() == wx.WXK_F2:
             selected = self.GetSelected()
             if len(selected) > 0:
-                index = self.list.FindItem(0,selected[0].s)
+                index = self.gList.FindItem(0,selected[0].s)
                 if index != -1:
-                    self.list.EditLabel(index)
+                    self.gList.EditLabel(index)
         event.Skip()
 
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(SaveList,self).OnColumnResize(event)
-        settings.setChanged('bash.saves.colWidths')
-
     def OnKeyUp(self,event):
-        """Char event: select all items"""
         code = event.GetKeyCode()
-        ##Ctrl+A
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        if event.CmdDown() and code == ord('C'):
             sel = map(lambda save: self.data[save].getPath().s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(SaveList, self).OnKeyUp(event)
+
     #--Event: Left Down
     def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
+        (hitItem,hitFlag) = self.gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
@@ -2617,8 +2460,9 @@ class SavePanel(SashPanel):
         left,right = self.left, self.right
         global saveList
         from . import saves_links
-        saves_links.saveList = saveList = SaveList(left)
-        self.list = saveList
+        self.listData = bosh.saveInfos
+        saves_links.saveList = saveList = SaveList(left, self.listData)
+        self.uiList = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
         #--Events
@@ -2641,18 +2485,10 @@ class SavePanel(SashPanel):
         saveList.Layout()
         self.saveDetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        table = bosh.saveInfos.table
-        for saveName in table.keys():
-            if saveName not in bosh.saveInfos:
-                del table[saveName]
-        table.save()
+    def ClosePanel(self):
         bosh.saveInfos.profiles.save()
-        settings['bash.saves.scrollPos'] = saveList.vScrollPos
-        splitter = self.right.GetParent()
-        settings[self.sashPosKey] = splitter.GetSashPosition()
-        # Mod details Sash Positions
+        super(SavePanel, self).ClosePanel()
+        # Save details Sash Positions
         splitter = self.saveDetails.right.GetParent()
         settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
         splitter = self.saveDetails.subSplitter
@@ -2660,48 +2496,21 @@ class SavePanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
-    def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,id=-1,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
-        self.colNames = settings['bash.colNames']
-        self.colAligns = settings['bash.installers.colAligns']
-        self.colReverse = settings['bash.installers.colReverse']
-        self.colWidths = settings['bash.installers.colWidths']
-        self.sort = settings['bash.installers.sort']
-        balt.Tank.__init__(self,parent,data,icons,mainMenu,itemMenu,
-            details,id,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
-        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
-        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
+    keyPrefix = 'bash.installers'
+    mainMenu = Links()
+    itemMenu = Links()
+    icons = installercons
+    # _shellUI = True TODO(ut): shellUI path does not grok markers
+
+    def __init__(self, parent, data, details=None):
+        balt.Tank.__init__(self, parent, data, details=details, dndList=True,
+                           dndFiles=True, dndColumns=['Order'],
+                           editLabels=True)
         self.hitItem = None
         self.hitTime = 0
 
-    @property
-    def cols(self): return settings['bash.installers.cols']
-
-    def SetSort(self,sort):
-        self.sort = settings['bash.installers.sort'] = sort
-
-    def SetColumnReverse(self,column,reverse):
-        settings['bash.installers.colReverse'][column] = reverse
-        settings.setChanged('bash.installers.colReverse')
-
     def GetColumnDex(self,column):
         return settingDefaults['bash.installers.cols'].index(column)
-
-    def OnColumnResize(self,event):
-        """Column has been resized."""
-        super(InstallersList, self).OnColumnResize(event)
-        settings.setChanged('bash.installers.colWidths')
-
-    def MouseOverItem(self,item):
-        """Handle mouse entered item by showing tip or similar."""
-        if item < 0: return
-        item = self.GetItem(item)
-        text = self.mouseTexts.get(item) or u''
-        if text != self.mouseTextPrev:
-            statusBar.SetStatusText(text,1)
-            self.mouseTextPrev = text
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -2763,7 +2572,7 @@ class InstallersList(balt.Tank):
         else:
             event.Skip()
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Renamed some installers"""
         if event.IsEditCancelled(): return
 
@@ -2945,10 +2754,6 @@ class InstallersList(balt.Tank):
         gInstallers.frameActivated = True
         gInstallers.OnShow()
 
-    def SelectAll(self):
-        for itemDex in range(self.gList.GetItemCount()):
-            self.SelectItemAtIndex(itemDex)
-
     def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
         super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
         with balt.BusyCursor():
@@ -3012,23 +2817,11 @@ class InstallersList(balt.Tank):
             if path.exists(): path.start()
         event.Skip()
 
-    def OnLeftDown(self,event):
-        """Left click, do stuff; currently nothing."""
-        event.Skip()
-        return
-
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
-        ##Ctrl+A - select all
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
-        ##Delete - delete
-        elif code in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(shellUI=True, noRecycle=event.ShiftDown())
         ##F2 - Rename selected.
-        elif code == wx.WXK_F2:
+        if code == wx.WXK_F2:
             selected = self.GetSelected()
             if selected > 0:
                 index = self.GetIndex(selected[0])
@@ -3051,13 +2844,11 @@ class InstallersList(balt.Tank):
             sel = map(lambda x: bosh.dirs['installers'].join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(InstallersList, self).OnKeyUp(event)
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
-    mainMenu = Links()
-    itemMenu = Links()
     espmMenu = Links()
     subsMenu = Links()
 
@@ -3080,11 +2871,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.gList = InstallersList(left,data,
-            installercons, InstallersPanel.mainMenu, InstallersPanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
-        bosh.installersWindow = self.gList
-        self.gList.SetSizeHints(100,100)
+        self.uiList = InstallersList(left, data, details=self)
+        bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -3155,7 +2943,7 @@ class InstallersPanel(SashTankPanel):
         right.SetSizer(rightSizer)
         wx.LayoutAlgorithm().LayoutWindow(self, right)
         leftSizer = vSizer(
-            (self.gList,1,wx.EXPAND),
+            (self.uiList,1,wx.EXPAND),
             )
         left.SetSizer(leftSizer)
         wx.LayoutAlgorithm().LayoutWindow(self,left)
@@ -3172,12 +2960,15 @@ class InstallersPanel(SashTankPanel):
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
-        self.gList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnShow(self,canCancel=True):
         """Panel is shown. Update self.data."""
+        # TODO(ut): refactor, self.refreshing set to True once, extract methods
         if settings.get('bash.installers.isFirstRun',True):
-            # I have no idea why this is neccesary but if the mouseCaptureLost event is not fired before showing the askYes dialog it thorws an exception
+            # I have no idea why this is necessary but if the
+            # mouseCaptureLost event is not fired before showing the askYes
+            # dialog it throws an exception
             event = wx.CommandEvent()
             event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
             wx.PostEvent(self.GetEventHandler(), event)
@@ -3192,7 +2983,7 @@ class InstallersPanel(SashTankPanel):
             settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
-        data = self.gList.data
+        data = self.uiList.data
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
@@ -3266,7 +3057,7 @@ class InstallersPanel(SashTankPanel):
                 try:
                     what = ('DISC','IC')[self.refreshed]
                     if data.refresh(progress,what,self.fullRefresh):
-                        self.gList.RefreshUI()
+                        self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
                     self.refreshing = False
@@ -3280,16 +3071,13 @@ class InstallersPanel(SashTankPanel):
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
                     if data.refresh(progress,'C',self.fullRefresh):
-                        self.gList.RefreshUI()
+                        self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
                     self.refreshing = False
                 except CancelError:
                     # User canceled the refresh
                     self.refreshing = False
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()):
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
         changed = bosh.trackedInfos.refresh()
         if changed:
             # Some tracked files changed, update the ui
@@ -3310,7 +3098,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
-        self.SetStatusCount()
+        NotebookPanel.OnShow(self)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3356,7 +3144,7 @@ class InstallersPanel(SashTankPanel):
 
     def RefreshUIMods(self):
         """Refresh UI plus refresh mods state."""
-        self.gList.RefreshUI()
+        self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
             modList.RefreshUI('ALL')
@@ -3534,7 +3322,7 @@ class InstallersPanel(SashTankPanel):
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
 
-        self.gList.RefreshUI(self.detailsItem)
+        self.uiList.RefreshUI(self.detailsItem)
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
 
@@ -3595,33 +3383,20 @@ class ScreensList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    _sizeHints = (100, 100)
+    keyPrefix = 'bash.screens'
+    icons = None # no icons
+    _shellUI = True
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.screens.cols'
-        self.colAligns = settings['bash.screens.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.screens.colReverse')
-        self.colWidths = settings['bash.screens.colWidths']
-        #--Data/Items
-        self.data = bosh.screensData = bosh.ScreensData()
-        self.sort = settings['bash.screens.sort']
-        #--Links
-        self.mainMenu = ScreensList.mainMenu
-        self.itemMenu = ScreensList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
-        #--Events
-        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
-        self.list.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
+        List.__init__(self, parent, listData, editLabels=True)
 
-    def OnDoubleClick(self,event):
-        """Double click a screeshot"""
-        (hitItem,hitFlag) = self.list.HitTest(event.GetPosition())
+    def OnDClick(self,event):
+        """Double click a screenshot"""
+        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         item = self.items[hitItem]
         bosh.screensData.dir.join(item).start()
@@ -3630,11 +3405,11 @@ class ScreensList(List):
         """Start renaming screenshots"""
         item = self.items[event.GetIndex()]
         # Change the selection to not include the extension
-        editbox = self.list.GetEditControl()
+        editbox = self.gList.GetEditControl()
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Renamed a screenshot"""
         if event.IsEditCancelled(): return
 
@@ -3668,7 +3443,7 @@ class ScreensList(List):
             self.RefreshUI()
             #--Reselected the renamed items
             for file in newselected:
-                index = self.list.FindItem(0,file.s)
+                index = self.gList.FindItem(0,file.s)
                 if index != -1:
                     self.SelectItemAtIndex(index)
             event.Veto()
@@ -3707,9 +3482,9 @@ class ScreensList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                self.gList.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                self.gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
@@ -3737,14 +3512,9 @@ class ScreensList(List):
         if event.GetKeyCode() == wx.WXK_F2:
             selected = self.GetSelected()
             if len(selected) > 0:
-                index = self.list.FindItem(0,selected[0].s)
+                index = self.gList.FindItem(0,selected[0].s)
                 if index != -1:
-                    self.list.EditLabel(index)
-        ##Delete
-        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(True,event.ShiftDown())
-            self.RefreshUI()
+                    self.gList.EditLabel(index)
         ##Enter
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             screensDir = bosh.screensData.dir
@@ -3757,20 +3527,12 @@ class ScreensList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         code = event.GetKeyCode()
-        ##Ctrl-A
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        if event.CmdDown() and code == ord('C'):
             sel = map(lambda x: bosh.screensData.dir.join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
-
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(ScreensList,self).OnColumnResize(event)
-        settings.setChanged('bash.screens.colWidths')
+        super(ScreensList, self).OnKeyUp(event)
 
     def OnItemSelected(self,event=None):
         fileName = self.items[event.m_itemIndex]
@@ -3788,10 +3550,10 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         global screensList
-        screensList = ScreensList(left)
-        screensList.SetSizeHints(100,100)
+        self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
+        screensList = ScreensList(left, self.listData)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
-        self.list = screensList
+        self.uiList = screensList
         #--Layout
         right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
         left.SetSizer(hSizer((screensList,1,wx.GROW)))
@@ -3810,39 +3572,23 @@ class ScreensPanel(SashPanel):
         if bosh.screensData.refresh():
             screensList.RefreshUI()
             #self.Refresh()
-        self.SetStatusCount()
+        super(ScreensPanel, self).OnShow()
 
 #------------------------------------------------------------------------------
 class BSAList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    keyPrefix = 'bash.BSAs'
+    icons = None # no icons
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.cols = settings['bash.BSAs.cols']
-        self.colAligns = settings['bash.BSAs.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.BSAs.colReverse')
-        self.colWidths = settings['bash.BSAs.colWidths']
         #--Data/Items
-        self.data = data = bosh.BSAInfos
         self.details = None #--Set by panel
-        self.sort = settings['bash.BSAs.sort']
-        #--Links
-        self.mainMenu = BSAList.mainMenu
-        self.itemMenu = BSAList.itemMenu
         #--Parent init
-        List.__init__(self,parent,-1,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
-        #--Events
-        self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.BSAs.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
+        List.__init__(self, parent, listData)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3881,13 +3627,13 @@ class BSAList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                self.gList.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                self.gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #status = fileInfo.getStatus()
         # on = fileName.cext == u'.bsa'
-        #self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
+        #self.gList.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
@@ -3909,21 +3655,9 @@ class BSAList(List):
         #--Ascending
         if reverse: self.items.reverse()
 
-    #--Events ---------------------------------------------
-    def OnChar(self,event):
-        """Char event: Reordering."""
-        if event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
-        event.Skip()
-
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(BSAList,self).OnColumnResize(event)
-        settings.setChanged('bash.BSAs.colWidths')
-
     #--Event: Left Down
     def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
+        (hitItem,hitFlag) = self.gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
@@ -4079,8 +3813,9 @@ class BSAPanel(NotebookPanel):
     """BSA info tab."""
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
-        global BSAList
-        BSAList = BSAList(self)
+        # global BSAList # was not defined at module level
+        self.listData = bosh.BSAInfos
+        bsaList = BSAList(self, self.listData)
         self.BSADetails = BSADetails(self)
         BSAList.details = self.BSADetails
         #--Events
@@ -4103,44 +3838,27 @@ class BSAPanel(NotebookPanel):
         BSAList.Layout()
         self.BSADetails.Layout()
 
-    def OnCloseWindow(self):
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        table = bosh.BSAInfos.table
-        for BSAName in table.keys():
-            if BSAName not in bosh.BSAInfos:
-                del table[BSAName]
-        table.save()
+    def ClosePanel(self):
+        super(BSAPanel, self).ClosePanel()
         bosh.BSAInfos.profiles.save()
-        settings['bash.BSAs.scrollPos'] = BSAList.vScrollPos
 
 #------------------------------------------------------------------------------
 class MessageList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    _sizeHints = (100, 100)
+    keyPrefix = 'bash.messages'
+    icons = None # no icons
 
-    def __init__(self,parent):
+    def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.messages.cols'
-        self.colAligns = settings['bash.messages.colAligns']
-        self.colNames = settings['bash.colNames']
-        self.colReverse = settings.getChanged('bash.messages.colReverse')
-        self.colWidths = settings['bash.messages.colWidths']
-        #--Data/Items
-        self.data = bosh.messages = bosh.Messages()
-        self.data.refresh()
-        self.sort = settings['bash.messages.sort']
-        #--Links
-        self.mainMenu = MessageList.mainMenu
-        self.itemMenu = MessageList.itemMenu
         #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
-        List.__init__(self,parent,wx.ID_ANY,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
-        #--Events
-        wx.EVT_LIST_ITEM_SELECTED(self,self.listId,self.OnItemSelected)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        List.__init__(self, parent, listData)
 
     def GetItems(self):
         """Set and return self.items."""
@@ -4186,9 +3904,9 @@ class MessageList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.list.InsertStringItem(itemDex, value)
+                self.gList.InsertStringItem(itemDex, value)
             else:
-                self.list.SetStringItem(itemDex, colDex, value)
+                self.gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
@@ -4212,19 +3930,6 @@ class MessageList(List):
         #--Ascending
         if reverse: self.items.reverse()
 
-    #--Events ---------------------------------------------
-    def OnKeyUp(self,event):
-        """Char event: Activate selected items, select all items"""
-        ##Ctrl-A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            self.SelectAll()
-        event.Skip()
-
-    #--Column Resize
-    def OnColumnResize(self,event):
-        super(MessageList,self).OnColumnResize(event)
-        settings.setChanged('bash.messages.colWidths')
-
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
         path = bosh.dirs['saveBase'].join(u'Messages.html')
@@ -4243,10 +3948,11 @@ class MessagePanel(SashPanel):
         gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
-        gMessageList = MessageList(gTop)
-        gMessageList.SetSizeHints(100,100)
+        self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
+        self.listData.refresh() # FIXME(ut): move to InitData()
+        gMessageList = MessageList(gTop, self.listData)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.list = gMessageList
+        self.uiList = gMessageList
         #--Search # TODO(ut): move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
@@ -4289,7 +3995,7 @@ class MessagePanel(SashPanel):
         if bosh.messages.refresh():
             gMessageList.RefreshUI()
             #self.Refresh()
-        self.SetStatusCount()
+        super(MessagePanel, self).OnShow()
 
     def OnSearchChar(self,event):
         if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
@@ -4309,44 +4015,29 @@ class MessagePanel(SashPanel):
         gMessageList.searchResults = None
         gMessageList.RefreshUI()
 
-    def OnCloseWindow(self):
+    def ClosePanel(self): # (ut) does not call super
         """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        if bosh.messages: bosh.messages.save()
-        settings['bash.messages.scrollPos'] = gMessageList.vScrollPos
+        if bosh.messages:
+            bosh.messages.save()
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
-    def __init__(self,*args,**kwdargs):
-        self.colNames = settings['bash.colNames']
-        self.colAligns = settings['bash.people.colAligns']
-        self.colWidths = settings['bash.people.colWidths']
-        self.colReverse = settings['bash.people.colReverse']
-        self.sort = settings['bash.people.sort']
-        balt.Tank.__init__(self, *args, **kwdargs)
-
-    @property
-    def cols(self): return settings['bash.people.cols']
-
-    def SetSort(self,sort):
-        self.sort = settings['bash.people.sort'] = sort
-
-    def SetColumnReverse(self,column,reverse):
-        settings['bash.people.colReverse'][column] = reverse
-        settings.setChanged('bash.people.colReverse')
-
-    def OnColumnResize(self,event):
-        """Column resized."""
-        super(PeopleList,self).OnColumnResize(event)
-        settings.setChanged('bash.people.colWidths')
+    keyPrefix = 'bash.people'
+    mainMenu = Links()
+    itemMenu = Links()
+    icons = karmacons
 
     def GetColumnDex(self,column):
         return settingDefaults['bash.people.cols'].index(column)
 
+    def MouseOverItem(self, item):
+        """People's Tab: mouse over item is a noop."""
+        pass
+
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
-    mainMenu = Links()
-    itemMenu = Links()
 
     def __init__(self,parent):
         """Initialize."""
@@ -4356,10 +4047,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = PeopleList(left,data,
-            karmacons, PeoplePanel.mainMenu, PeoplePanel.itemMenu,
-            details=self, style=wx.LC_REPORT)
-        self.gList.SetSizeHints(100,100)
+        self.uiList = PeopleList(left, data, details=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -4372,13 +4060,8 @@ class PeoplePanel(SashTankPanel):
                 ),0,wx.GROW),
             (self.gText,1,wx.GROW|wx.TOP,4),
             ))
-        left.SetSizer(vSizer((self.gList,1,wx.GROW)))
+        left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-
-    def OnShow(self):
-        if bosh.inisettings['AutoSizeListColumns']:
-            for i in xrange(self.gList.gList.GetColumnCount()): # TODO(ut): self.gList.gList ????
-                self.gList.gList.SetColumnWidth(i, -bosh.inisettings['AutoSizeListColumns'])
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -4391,7 +4074,7 @@ class PeoplePanel(SashTankPanel):
         karma = int(self.gKarma.GetValue())
         text = self.data[self.detailsItem][2]
         self.data[self.detailsItem] = (time.time(),karma,text)
-        self.gList.UpdateItem(self.gList.GetIndex(self.detailsItem))
+        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
         self.data.setChanged()
 
     #--Details view (if it exists)
@@ -4401,7 +4084,7 @@ class PeoplePanel(SashTankPanel):
         if not self.detailsItem or self.detailsItem not in self.data: return
         mtime,karma,text = self.data[self.detailsItem]
         self.data[self.detailsItem] = (time.time(),karma,self.gText.GetValue().strip())
-        self.gList.UpdateItem(self.gList.GetIndex(self.detailsItem))
+        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
         self.data.setChanged()
 
     def RefreshDetails(self,item=None):
@@ -4765,15 +4448,13 @@ class BashFrame(wx.Frame):
     docBrowser = None
     modChecker = None
 
-    def __init__(self, parent=None,pos=wx.DefaultPosition,size=(400,500),
-             style = wx.DEFAULT_FRAME_STYLE):
-        """Initialization."""
+    def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
         global bashFrame
         bashFrame = self
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size, style)
+        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size)
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -4793,7 +4474,7 @@ class BashFrame(wx.Frame):
         self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
-        bosh.bsaInfos = bosh.BSAInfos()
+        bosh.bsaInfos = bosh.BSAInfos() # TODO(ut): move to InitData()
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
@@ -5045,10 +4726,11 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         try:
             self.SaveSettings()
-        except:
-            deprint(u'An error occurred while trying to save settings:', traceback=True)
-            pass
-        self.Destroy()
+        except: # raise # TODO(ut): this has swallowed exceptions since forever
+                deprint(_(u'An error occurred while trying to save settings:'),
+                        traceback=True)
+        finally:
+            self.Destroy()
 
     def SaveSettings(self):
         """Save application data."""
@@ -5063,7 +4745,11 @@ class BashFrame(wx.Frame):
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
-            self.notebook.GetPage(index).OnCloseWindow()
+            try:
+                self.notebook.GetPage(index).ClosePanel()
+            except:
+                deprint(_(u'An error occurred while trying to save settings:'),
+                        traceback=True)
         settings.save()
 
     @staticmethod

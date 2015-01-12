@@ -289,7 +289,7 @@ class Installers_AutoWizard(Installers_Link, BoolLink):
 class _Installers_BoolLink_Refresh(Installers_Link, BoolLink):
     def Execute(self,event):
         super(_Installers_BoolLink_Refresh, self).Execute(event)
-        gInstallers.gList.RefreshUI()
+        self.gTank.RefreshUI()
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
@@ -350,7 +350,7 @@ class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
                     installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
                     gInstallers.data.hasChanged = True
             gInstallers.data.refresh(what='NSC')
-            gInstallers.gList.RefreshUI()
+            self.gTank.RefreshUI()
 
 class Installers_Enabled(Installers_Link, BoolLink):
     """Flips installer state."""
@@ -371,9 +371,9 @@ class Installers_Enabled(Installers_Link, BoolLink):
         if enabled:
             gInstallers.refreshed = False
             gInstallers.OnShow()
-            gInstallers.gList.RefreshUI()
+            self.gTank.RefreshUI()
         else:
-            gInstallers.gList.gList.DeleteAllItems()
+            self.gTank.gList.DeleteAllItems() # TODO(ut): encapsulate
             gInstallers.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, Installers_Link, BoolLink):

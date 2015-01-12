@@ -3423,6 +3423,11 @@ class FileInfo:
         return self.isGhost
 
 #------------------------------------------------------------------------------
+reReturns = re.compile(u'\r{2,}',re.U)
+# TODO(ut): 2 variations for reBashTags
+#reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U) #flagged as error
+#reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
+
 class ModInfo(FileInfo):
     """An esp/m file."""
     def getFileInfos(self):
@@ -3596,7 +3601,6 @@ class ModInfo(FileInfo):
     def shiftBashTags(self):
         """Shifts bash keys from bottom to top."""
         description = self.header.description
-        reReturns = re.compile(u'\r{2,}',re.U)
         reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U)
         if reBashTags.match(description) or reReturns.search(description):
             description = reReturns.sub(u'\r',description)
@@ -3998,22 +4002,24 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
-    def __init__(self,dir,factory=FileInfo, dirdef=None):
-        """Init with specified directory and specified factory type."""
-        self.dir = dir #--Path
-        self.dirdef = dirdef
-        self.factory=factory
-        self.data = {}
-        self.bashDir = self.getBashDir()
-        self.table = bolt.Table(PickleDict(
-            self.bashDir.join(u'Table.dat'),
-            self.bashDir.join(u'Table.pkl')))
+    def _initDB(self, dir_):
+        self.dir = dir_ #--Path
+        self.data = {} # populated in refresh()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
-        #--Update table keys...
+        self.bashDir = self.getBashDir() # should be a property
+        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
+                                           self.bashDir.join(u'Table.pkl')))
+        #--Update table keys... # TODO(ut): CRUFT ?
         tableData = self.table.data
         for key in self.table.data.keys():
             if not isinstance(key,bolt.Path):
                 del tableData[key]
+
+    def __init__(self, dir_, factory=FileInfo, dirdef=None):
+        """Init with specified directory and specified factory type."""
+        self.dirdef = dirdef
+        self.factory=factory
+        self._initDB(dir_)
 
     def getBashDir(self):
         """Returns Bash data storage directory."""
@@ -4080,6 +4086,9 @@ class FileInfos(DataDict):
         if deleted:
             # If an .esm file was deleted we need to clean the loadorder.txt file else liblo crashes
             modInfos.plugins.cleanLoadOrderFiles()
+            # items deleted outside Bash
+            for d in set(self.table.keys()) &  set(deleted):
+                del self.table[d]
         return bool(added) or bool(updated) or bool(deleted)
 
     #--Right File Type? [ABSTRACT]
@@ -4203,7 +4212,9 @@ class INIInfos(FileInfos):
 
     def getBashDir(self):
         """Return directory to save info."""
-        return dirs['modsBash'].join(u'INI Data')
+        dir_ = dirs['modsBash'].join(u'INI Data')
+        dir_.makedirs()
+        return dir_
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
@@ -4952,17 +4963,38 @@ class ModInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
-
     """SaveInfo collection. Represents save directory and related info."""
-    #--Init
+
+    def _setLocalSaveFromIni(self):
+        """Read the current save profile from the oblivion.ini file and set
+        local save attribute to that value."""
+        if oblivionIni.path.exists() and (
+            oblivionIni.path.mtime != self.iniMTime):
+            # saveInfos 'singleton' is constructed in InitData after
+            # bosh.oblivionIni is set (hopefully) - TODO(ut) test
+            self.localSave = oblivionIni.getSetting(
+                bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
+                u'Saves\\')
+            # Hopefully will solve issues with unicode usernames # TODO(ut) test
+            self.localSave = _unicode(self.localSave) # encoding = 'cp1252' ?
+            self.iniMTime = oblivionIni.path.mtime
+
     def __init__(self):
         self.iniMTime = 0
-        self.refreshLocalSave()
-        FileInfos.__init__(self,self.dir,SaveInfo)
+        self.localSave = u'Saves\\'
+        self._setLocalSaveFromIni()
+        FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
+        # Save Profiles database
         self.profiles = bolt.Table(PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat'),
             dirs['userApp'].join(u'Profiles.pkl')))
-        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat')))
+
+    def getBashDir(self):
+        """Return the Bash save settings directory, creating it if it does
+        not exist."""
+        dir_ = FileInfos.getBashDir(self)
+        dir_.makedirs()
+        return dir_
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
@@ -4970,12 +5002,7 @@ class SaveInfos(FileInfos):
         return reSaveExt.search(fileName.s)
 
     def refresh(self):
-        if self.refreshLocalSave():
-            self.data.clear()
-            self.table.save()
-            self.table = bolt.Table(PickleDict(
-                self.bashDir.join(u'Table.dat'),
-                self.bashDir.join(u'Table.pkl')))
+        self._refreshLocalSave()
         return FileInfos.refresh(self)
 
     def delete(self,fileName):
@@ -5018,22 +5045,14 @@ class SaveInfos(FileInfos):
         localSaveDirs.sort()
         return localSaveDirs
 
-    def refreshLocalSave(self):
+    def _refreshLocalSave(self):
         """Refreshes self.localSave and self.dir."""
         #--self.localSave is NOT a Path object.
-        self.localSave = getattr(self,u'localSave',u'Saves\\')
-        self.dir = dirs['saveBase'].join(self.localSave)
-        self.bashDir = self.getBashDir()
-        if oblivionIni.path.exists() and (oblivionIni.path.mtime != self.iniMTime):
-            self.localSave = oblivionIni.getSetting(bush.game.saveProfilesKey[0],
-                                                    bush.game.saveProfilesKey[1],
-                                                    u'Saves\\')
-            # Hopefully will solve issues with unicode usernames
-            self.localSave = _unicode(self.localSave)
-            self.iniMTime = oblivionIni.path.mtime
-            return True
-        else:
-            return False
+        localSave = self.localSave
+        self._setLocalSaveFromIni()
+        if localSave == self.localSave: return # no change
+        self.table.save()
+        self._initDB(dirs['saveBase'].join(self.localSave))
 
     def setLocalSave(self,localSave):
         """Sets SLocalSavePath in Oblivion.ini."""
@@ -5043,8 +5062,7 @@ class SaveInfos(FileInfos):
                                 bush.game.saveProfilesKey[1],
                                 localSave)
         self.iniMTime = oblivionIni.path.mtime
-        bashDir = dirs['saveBase'].join(localSave,u'Bash')
-        self.table = bolt.Table(PickleDict(bashDir.join(u'Table.dat')))
+        self._initDB(dirs['saveBase'].join(self.localSave))
         self.refresh()
 
     #--Enabled ----------------------------------------------------------------
@@ -5558,7 +5576,7 @@ class PickleTankData:
         """Initialize. Definite data from pickledict."""
         self.dictFile = PickleDict(path)
         self.data = self.dictFile.data
-        self.hasChanged = False
+        self.hasChanged = False # TODO(ut): move to bolt.PickleDict
         self.loaded = False
 
     def setChanged(self,hasChanged=True):
@@ -8315,11 +8333,16 @@ class InstallersData(bolt.TankData, DataDict):
 
     @staticmethod
     def updateTable(destFiles, value):
+        """Set the 'installer' column in mod and ini tables for the
+        destFiles."""
         for i in destFiles:
             if reModExt.match(i.cext):
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
-                iniInfos.table.setItem(i.tail, 'installer', value)
+                if value:
+                    iniInfos.table.setItem(i.tail, 'installer', value)
+                else: # installer is the only column used in iniInfos table
+                    iniInfos.table.delRow(i.tail)
 
     def install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
@@ -8448,7 +8471,7 @@ class InstallersData(bolt.TankData, DataDict):
             parent = progress.getParent() if progress else None
             balt.shellDelete(removedFiles, parent, False, False)
         #--Update InstallersData
-        InstallersData.updateTable(removes, u'')
+        InstallersData.updateTable(removes, u'') #will delete ini tweak entries
         for file in removes:
             data_sizeCrcDatePop(file, None)
         #--Remove mods from load order

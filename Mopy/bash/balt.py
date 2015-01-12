@@ -1585,10 +1585,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window.OnDragging(x,y,dragResult)
             return wx.DropTarget.OnDragOver(self,x,y,dragResult)
 
-    def __init__(self, parent, id, pos=defPos, size=defSize, style=0,
+    def __init__(self, parent, pos=defPos, size=defSize, style=0,
                  dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
                  fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
-        wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
+        wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
@@ -1713,93 +1713,240 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             if self.fnDndAllow: return self.fnDndAllow()
             return True
         return False
+
 #------------------------------------------------------------------------------
-class Tank(wx.Panel):
-    """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
-    multiple columns and (optionally) column and item menus."""
-    #--Class-------------------------------------------------------------------
+class UIList(wx.Panel):
+    """Tmp class to factor out common code in basher.List and balt.Tank."""
+    _sizeHints = (100, 100) # min ListCtrl size TODO(ut): random overrides
+    # optional menus
     mainMenu = None
     itemMenu = None
+    # UI settings keys - cf tankKey in TankData ...
+    keyPrefix = 'OVERRIDE'
+    #--gList image collection
+    icons = {}
+    _shellUI = False # only True in Screens/INIList - disabled in Installers
+    # due to markers not being deleted
 
-    #--Instance ---------------------------------------------------------------
-    def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,id=wx.ID_ANY,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
-            dndList=False,dndFiles=False,dndColumns=[]):
-        wx.Panel.__init__(self,parent,id,style=wx.WANTS_CHARS)
-        #--Data
-        if icons is None: icons = {}
-        self.data = data
-        self.icons = icons #--Default to balt image collection.
-        self.mainMenu = mainMenu or self.__class__.mainMenu
-        self.itemMenu = itemMenu or self.__class__.itemMenu
-        self.details = details
+    def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
+        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        #--Layout
+        sizer = vSizer()
+        self.SetSizer(sizer)
+        self.SetSizeHints(*self.__class__._sizeHints)
+        #--Columns
+        self.colNames = bosh.settings['bash.colNames']
+        self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
+        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort']
+        self.colWidthsKey = self.__class__.keyPrefix + '.colWidths'
+        self.colWidths = bosh.settings[self.colWidthsKey]
+        #--attributes
         self.dndColumns = dndColumns
+        #--gList
+        ctrlStyle = wx.LC_REPORT
+        if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
+        editLabels = kwargs.pop('editLabels', False)
+        if editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
+        self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
+                              dndList=dndList, fnDndAllow=self.dndAllow,
+                              fnDropFiles=self.OnDropFiles,
+                              fnDropIndexes=self.OnDropIndexes)
+        if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
+                                               wx.IMAGE_LIST_SMALL)
+        if editLabels:
+            self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+        # gList callbacks
+        self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
+        self.gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
+        #--Events: Columns
+        self.gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        #--Events: Items
+        self.gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self.gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self.gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        #--Mouse movement
+        self.mouseItem = None
+        self.mouseTexts = {}
+        self.mouseTextPrev = u''
+        self.gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self.gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        # Panel callbacks
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+
+    @property
+    def colReverse(self): # not sure why it gets it changed but no harm either
+        """Dictionary column->isReversed."""
+        return bosh.settings.getChanged(
+            self.__class__.keyPrefix + '.colReverse')
+
+    #--Column Menu
+    def DoColumnMenu(self, event, column=None):
+        """Show column menu."""
+        if not self.mainMenu: return
+        if column is None: column = event.GetColumn()
+        self.mainMenu.PopupMenu(self, Link.Frame, column)
+
+    #--Item Menu
+    def DoItemMenu(self,event):
+        """Show item menu."""
+        selected = self.GetSelected()
+        if not selected:
+            self.DoColumnMenu(event,0)
+            return
+        if not self.itemMenu: return
+        self.itemMenu.PopupMenu(self,Link.Frame,selected)
+
+    #-- Callbacks -------------------------------------------------------------
+    def OnSize(self, event):
+        """Panel size was changed. Change gList size to match."""
+        size = self.GetClientSizeTuple()
+        self.gList.SetSize(size)
+
+    #--Event: Left Down
+    def OnLeftDown(self,event):
+        """Left mouse button was pressed."""
+        event.Skip()
+
+    def OnMouse(self,event):
+        """Check mouse motion to detect right click event."""
+        if event.Moving():
+            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
+            if mouseItem != self.mouseItem:
+                self.mouseItem = mouseItem
+                self.MouseOverItem(mouseItem)
+        elif event.Leaving() and self.mouseItem is not None:
+            self.mouseItem = None
+            self.MouseOverItem(None)
+        event.Skip()
+
+    def MouseOverItem(self, item):
+        """Handle mouse entered item by showing tip or similar."""
+        if item is None:
+            Link.Frame.GetStatusBar().SetStatusText(u'', 1)
+            return
+        if item < 0: return
+        # TODO(ut): Tank vs List - search for GetItem - IIUC Tank has a cache
+        if isinstance(self, Tank): item = self.GetItem(item)
+        text = self.mouseTexts.get(item, u'')
+        if text != self.mouseTextPrev:
+            Link.Frame.GetStatusBar().SetStatusText(text, 1)
+            self.mouseTextPrev = text
+
+    def OnDClick(self,event):
+        """Left mouse double click."""
+        event.Skip()
+
+    def OnKeyUp(self, event):
+        """Char event: select all items, delete selected items."""
+        code = event.GetKeyCode()
+        if event.CmdDown() and code == ord('A'): # Ctrl+A
+            self.SelectAll()
+        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+            with BusyCursor():
+                self.DeleteSelected(shellUI=self.__class__._shellUI,
+                                    noRecycle=event.ShiftDown())
+        event.Skip()
+
+    def OnChar(self,event): event.Skip()
+    def OnBeginEditLabel(self,event): event.Skip()
+    def OnLabelEdited(self,event): event.Skip()
+
+    #--ABSTRACT - TODO(ut): different Tank and List overrides
+    def OnItemSelected(self, event): raise AbstractError
+    def OnColumnClick(self, event): raise AbstractError
+    def OnColumnResize(self, event): raise AbstractError
+
+    #-- Item selection --------------------------------------------------------
+    def SelectItemAtIndex(self, index, select=True,
+                          _select=wx.LIST_STATE_SELECTED):
+        self.gList.SetItemState(index, select * _select, _select)
+
+    def ClearSelected(self):
+        """Unselect all items."""
+        gList = self.gList
+        for i in xrange(gList.GetItemCount()): self.SelectItemAtIndex(i, False)
+        # (ut) below is the Tank variation - profile
+        # if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
+        #     gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+
+    def SelectAll(self):
+        for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
+
+    #--Drag and Drop-----------------------------------------------------------
+    def dndAllow(self):
+        # Only allow drag an drop when sorting by the columns specified in dndColumns
+        return self.sort in self.dndColumns
+
+    def OnDropFiles(self, x, y, filenames): raise AbstractError
+    def OnDropIndexes(self, indexes, newPos): raise AbstractError
+
+    # gList columns autosize---------------------------------------------------
+    def autosizeColumns(self):
+        if bosh.inisettings['AutoSizeListColumns']:
+            colCount = xrange(self.gList.GetColumnCount())
+            for i in colCount: self.gList.SetColumnWidth(i, -bosh.inisettings[
+                    'AutoSizeListColumns'])
+
+    # gList scroll position----------------------------------------------------
+    def SaveScrollPosition(self, isVertical=True):
+        bosh.settings[
+            self.__class__.keyPrefix + '.scrollPos'] = self.gList.GetScrollPos(
+            wx.VERTICAL if isVertical else wx.HORIZONTAL)
+
+    def SetScrollPosition(self):
+        self.gList.ScrollLines(
+            bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
+#------------------------------------------------------------------------------
+class Tank(UIList):
+    """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
+    multiple columns and (optionally) column and item menus."""
+
+    def __init__(self, parent, data, details=None, dndList=False,
+                 dndFiles=False, dndColumns=(), **kwargs):
+        #--Data
+        self.data = data
+        self.details = details
         #--Item/Id mapping
         self.nextItemId = 1
         self.item_itemId = {}
         self.itemId_item = {}
-        #--Layout
-        sizer = vSizer()
-        self.SetSizer(sizer)
-        self.SetSizeHints(50,50)
         #--ListCtrl
-        self.gList = gList = ListCtrl(self, wx.ID_ANY, style=style,
-                                      dndFiles=dndFiles, dndList=dndList,
-                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes, fnDropFiles=self.OnDropFiles)
-        if self.icons:
-            gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
-        #--State info
-        self.mouseItem = None
-        self.mouseTexts = {}
-        self.mouseTextPrev = u''
+        # no sunken borders by default
+        kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
+        UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
+                        dndColumns=dndColumns, **kwargs)
         #--Columns
         self.UpdateColumns()
         #--Items
         self.sortDirty = False
         self.UpdateItems()
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-        #--Events: Items
-        gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        gList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.OnItemSelected)
-        gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        #--Events: Columns
-        gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
-        #--Mouse movement
-        gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        gList.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
-        #--ScrollPos
-        gList.ScrollLines(data.getParam('vScrollPos',0))
-        data.setParam('vScrollPos', gList.GetScrollPos(wx.VERTICAL))
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
-    #--Drag and Drop-----------------------------------------------------------
-    def dndAllow(self):
-        # Only allow drag an drop when sorting by the columns specified in dndColumns
-        if self.sort not in self.dndColumns: return False
-        return True
+    @property
+    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
 
+    @property
+    def colReverse(self):
+        return bosh.settings[self.__class__.keyPrefix + '.colReverse']
+
+    #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
         # See if the column is reverse sorted first
-        data = self.data
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
             newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
-
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
         self.data.refresh(what='N')
         self.RefreshUI()
-
-    def OnDropFiles(self, x, y, filenames):
-        raise AbstractError
 
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
@@ -1885,7 +2032,7 @@ class Tank(wx.Panel):
         gItem.SetData(self.GetId(item))
         gList.SetItem(gItem)
 
-    def GetColumnDex(self,column):
+    def GetColumnDex(self,column): # TODO(ut): remove
         raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
@@ -1914,20 +2061,25 @@ class Tank(wx.Panel):
         self.UpdateIds()
         self.SortItems()
 
+    def _setSort(self,sort):
+        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
+
+    def _setColumnReverse(self, column, reverse):
+        self.colReverse[column] = reverse # should mark as changed on get ?
+        bosh.settings.setChanged(self.__class__.keyPrefix + '.colReverse')
+
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
         sort is then "cloned" list through an intermediate cmp function.
 
-        column: column to sort. Defaults to current sort column.
-
-        reverse:
+        :param column: column to sort. Defaults to current sort column.
+        :param reverse:
         * True: Reverse order
         * False: Normal order
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
         #--Parse column and reverse arguments.
-        data = self.data
         if self.sortDirty:
             self.sortDirty = False
             (column, reverse) = (None,'CURRENT')
@@ -1938,22 +2090,13 @@ class Tank(wx.Panel):
             reverse = not curReverse
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
-        self.SetColumnReverse(column, reverse)
-        self.SetSort(column)
+        self._setColumnReverse(column, reverse)
+        self._setSort(column)
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
-
-    def SetColumnReverse(self,column,reverse):
-        pass
-    def SetSort(self,sort):
-        pass
-
-    def RefreshData(self):
-        """Refreshes underlying data."""
-        self.data.refresh()
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""
@@ -1966,7 +2109,9 @@ class Tank(wx.Panel):
         if details == 'SAME':
             details = self.GetDetailsItem()
         elif details:
-            selected = tuple(details)
+            if isinstance(details, basestring):
+                selected = tuple([details]) # see People_AddNew
+            else: selected = tuple(details)
         if items == 'ALL':
             self.UpdateItems(selected=selected)
         elif items in self.data:
@@ -1996,44 +2141,10 @@ class Tank(wx.Panel):
         return [self.GetItem(x) for x in xrange(gList.GetItemCount())
             if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
-    def ClearSelected(self):
-        """Unselect all items."""
-        gList = self.gList
-        for index in range(gList.GetItemCount()):
-            if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
-                gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-
     #--Event Handlers -------------------------------------
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseOverItem(mouseItem)
-        elif event.Leaving() and self.mouseItem is not None:
-            self.mouseItem = None
-            self.MouseOverItem(None)
-        event.Skip()
-
-    def MouseOverItem(self,item):
-        """Handle mouse over item by showing tip or similar."""
-        pass
-
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
         self.RefreshDetails(self.GetItem(event.m_itemIndex))
-
-    def OnSize(self, event):
-        """Panel size was changed. Change gList size to match."""
-        size = self.GetClientSizeTuple()
-        self.gList.SetSize(size)
-
-    def OnScroll(self,event):
-        """Event: List was scrolled. Save so can be accessed later."""
-        if event.GetOrientation() == wx.VERTICAL:
-            self.data.setParam('vScrollPos',event.GetPosition())
-        event.Skip()
 
     def OnColumnResize(self,event):
         """Column resized. Save column size info."""
@@ -2048,34 +2159,11 @@ class Tank(wx.Panel):
         else:
             event.Skip()
         self.colWidths[colName] = width
-
-    def OnLeftDown(self,event):
-        """Left mouse button was pressed."""
-        #self.hitTest = self.gList.HitTest((event.GetX(),event.GetY()))
-        event.Skip()
-
-    def OnDClick(self,event):
-        """Left mouse double click."""
-        event.Skip()
+        bosh.settings.setChanged(self.colWidthsKey)
 
     def OnColumnClick(self, event):
         """Column header was left clicked on. Sort on that column."""
         self.SortItems(self.cols[event.GetColumn()],'INVERT')
-
-    def DoColumnMenu(self,event,iColumn=None):
-        """Show column menu."""
-        if not self.mainMenu: return
-        if iColumn is None: iColumn = event.GetColumn()
-        self.mainMenu.PopupMenu(self,Link.Frame,iColumn)
-
-    def DoItemMenu(self,event):
-        """Show item menu."""
-        selected = self.GetSelected()
-        if not selected:
-            self.DoColumnMenu(event,0)
-            return
-        if not self.itemMenu: return
-        self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
@@ -2097,9 +2185,6 @@ class Tank(wx.Panel):
         # BAIN - let's see with People tab (then delete _refresh parameter)
         self.RefreshUI()
         self.data.setChanged()
-
-    def SelectItemAtIndex(self, index, _select=wx.LIST_STATE_SELECTED):
-        self.gList.SetItemState(index, _select, _select)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

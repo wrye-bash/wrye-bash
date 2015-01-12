@@ -1731,7 +1731,7 @@ class Table(DataDict):
         dictFile.load()
         self.vdata = dictFile.vdata
         self.data = dictFile.data
-        self.hasChanged = False
+        self.hasChanged = False # TODO(ut): move to PickleDict
 
     def save(self):
         """Saves to pickle file."""
