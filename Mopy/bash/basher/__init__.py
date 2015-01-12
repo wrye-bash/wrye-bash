@@ -547,7 +547,6 @@ class MasterList(List):
         #--Parent init
         List.__init__(self, parent, listData, singleCell=True,
                       editLabels=True, sunkenBorder=False)
-        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
         self._setEditedFn = setEditedFn
 
     colReverse = property(lambda self: {},
@@ -2090,9 +2089,6 @@ class SaveList(List):
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self, parent, listData, editLabels=True)
-        #--Events
-        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
@@ -2102,7 +2098,7 @@ class SaveList(List):
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Savegame renamed."""
         if event.IsEditCancelled(): return
         #--File Info
@@ -2503,8 +2499,6 @@ class InstallersList(balt.Tank):
         balt.Tank.__init__(self, parent, data, details=details, dndList=True,
                            dndFiles=True, dndColumns=['Order'],
                            editLabels=True)
-        self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
         self.hitTime = 0
 
@@ -2571,7 +2565,7 @@ class InstallersList(balt.Tank):
         else:
             event.Skip()
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Renamed some installers"""
         if event.IsEditCancelled(): return
 
@@ -3392,9 +3386,6 @@ class ScreensList(List):
         self.colsKey = 'bash.screens.cols'
         #--Parent init
         List.__init__(self, parent, listData, editLabels=True)
-        #--Events
-        self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
-        self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
 
     def OnDClick(self,event):
         """Double click a screenshot"""
@@ -3411,7 +3402,7 @@ class ScreensList(List):
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
-    def OnEditLabel(self, event):
+    def OnLabelEdited(self, event):
         """Renamed a screenshot"""
         if event.IsEditCancelled(): return
 

@@ -1745,7 +1745,8 @@ class UIList(wx.Panel):
         #--gList
         ctrlStyle = wx.LC_REPORT
         if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
-        if kwargs.pop('editLabels', False): ctrlStyle |= wx.LC_EDIT_LABELS
+        editLabels = kwargs.pop('editLabels', False)
+        if editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
         self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
@@ -1753,6 +1754,9 @@ class UIList(wx.Panel):
                               fnDropIndexes=self.OnDropIndexes)
         if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
                                                wx.IMAGE_LIST_SMALL)
+        if editLabels:
+            self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
         self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
         self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
@@ -1849,6 +1853,8 @@ class UIList(wx.Panel):
         event.Skip()
 
     def OnChar(self,event): event.Skip()
+    def OnBeginEditLabel(self,event): event.Skip()
+    def OnLabelEdited(self,event): event.Skip()
 
     #--ABSTRACT - TODO(ut): different Tank and List overrides
     def OnItemSelected(self, event): raise AbstractError
