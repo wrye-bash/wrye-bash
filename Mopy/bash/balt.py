@@ -1725,6 +1725,8 @@ class UIList(wx.Panel):
     keyPrefix = 'OVERRIDE'
     #--gList image collection
     icons = {}
+    _shellUI = False # only True in Screens/INIList - disabled in Installers
+    # due to markers not being deleted
 
     def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
@@ -1755,6 +1757,7 @@ class UIList(wx.Panel):
         self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
         self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
         self.gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         #--Events: Columns
         self.gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Events: Items
@@ -1832,6 +1835,17 @@ class UIList(wx.Panel):
 
     def OnDClick(self,event):
         """Left mouse double click."""
+        event.Skip()
+
+    def OnKeyUp(self, event):
+        """Char event: select all items, delete selected items."""
+        code = event.GetKeyCode()
+        if event.CmdDown() and code == ord('A'): # Ctrl+A
+            self.SelectAll()
+        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+            with BusyCursor():
+                self.DeleteSelected(shellUI=self.__class__._shellUI,
+                                    noRecycle=event.ShiftDown())
         event.Skip()
 
     #--ABSTRACT - TODO(ut): different Tank and List overrides

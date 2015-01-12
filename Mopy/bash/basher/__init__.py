@@ -421,13 +421,13 @@ class List(balt.UIList):
                 selected.append(self.items[itemDex])
         return selected
 
-    def DeleteSelected(self,shellUI=False,dontRecycle=False):
+    def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
         if not items: return
         if shellUI:
             try:
-                self.data.delete(items,askOk=True,dontRecycle=dontRecycle)
+                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
             except balt.AccessDeniedError:
                 pass
             dirJoin = self.data.dir.join
@@ -548,6 +548,7 @@ class MasterList(List):
                           doc='Do not reverse columns in Master Lists')
 
     def OnItemSelected(self, event): event.Skip()
+    def OnKeyUp(self, event): event.Skip()
 
     #--NewItemNum
     def newId(self):
@@ -774,6 +775,7 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     keyPrefix = 'bash.ini'
+    _shellUI = True
 
     def __init__(self, parent, listData):
         #--Columns
@@ -781,8 +783,6 @@ class INIList(List):
         self.sortValid = settings['bash.ini.sortValid']
         #--Parent init
         List.__init__(self, parent, listData, sunkenBorder=False)
-        #--Events
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -929,16 +929,6 @@ class INIList(List):
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnKeyUp(self,event):
-        """Char event: select all items"""
-        ##Ctrl+A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            self.SelectAll()
-        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(True,event.ShiftDown())
-        event.Skip()
-
     def OnItemSelected(self, event): event.Skip()
 
 #------------------------------------------------------------------------------
@@ -1071,7 +1061,6 @@ class ModList(List):
                       dndColumns=['Load Order'], sunkenBorder=False)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         #--ScrollPos
         self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
         self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
@@ -1322,11 +1311,8 @@ class ModList(List):
 
     def OnChar(self,event):
         """Char event: Delete, Reorder, Check/Uncheck."""
-        ##Delete
-        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected(False,event.ShiftDown())
         ##Ctrl+Up and Ctrl+Down
-        elif ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
+        if ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
                 orderKey = lambda x: self.items.index(x)
@@ -1358,15 +1344,12 @@ class ModList(List):
             else:
                 #--Check all that aren't
                 self._checkUncheckMod(*toActivate)
-        ##Ctrl+A
-        elif event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda mod: self.data[mod].getPath().s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(ModList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
@@ -2109,7 +2092,6 @@ class SaveList(List):
         List.__init__(self, parent, listData, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         #--ScrollPos
@@ -2231,9 +2213,6 @@ class SaveList(List):
     #--Events ---------------------------------------------
     def OnChar(self,event):
         """Char event: Reordering."""
-        ## Delete
-        if event.GetKeyCode() in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
         ## F2 - Rename
         if event.GetKeyCode() == wx.WXK_F2:
             selected = self.GetSelected()
@@ -2246,15 +2225,13 @@ class SaveList(List):
     def OnKeyUp(self,event):
         """Char event: select all items"""
         code = event.GetKeyCode()
-        ##Ctrl+A
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        if event.CmdDown() and code == ord('C'):
             sel = map(lambda save: self.data[save].getPath().s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(SaveList, self).OnKeyUp(event)
+
     #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self.list.HitTest((event.GetX(),event.GetY()))
@@ -2526,13 +2503,13 @@ class InstallersList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
+    # _shellUI = True TODO(ut): shellUI path does not grok markers
 
     def __init__(self, parent, data, details=None):
         balt.Tank.__init__(self, parent, data, details=details, dndList=True,
                            dndFiles=True, dndColumns=['Order'],
                            editLabels=True)
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
-        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
         self.hitItem = None
@@ -2849,15 +2826,8 @@ class InstallersList(balt.Tank):
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
-        ##Ctrl+A - select all
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
-        ##Delete - delete
-        elif code in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(shellUI=True, noRecycle=event.ShiftDown())
         ##F2 - Rename selected.
-        elif code == wx.WXK_F2:
+        if code == wx.WXK_F2:
             selected = self.GetSelected()
             if selected > 0:
                 index = self.GetIndex(selected[0])
@@ -2880,7 +2850,7 @@ class InstallersList(balt.Tank):
             sel = map(lambda x: bosh.dirs['installers'].join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(InstallersList, self).OnKeyUp(event)
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -3422,6 +3392,7 @@ class ScreensList(List):
     _sizeHints = (100, 100)
     keyPrefix = 'bash.screens'
     icons = None # no icons
+    _shellUI = True
 
     def __init__(self, parent, listData):
         #--Columns
@@ -3430,7 +3401,6 @@ class ScreensList(List):
         List.__init__(self, parent, listData, editLabels=True)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
 
@@ -3555,11 +3525,6 @@ class ScreensList(List):
                 index = self.list.FindItem(0,selected[0].s)
                 if index != -1:
                     self.list.EditLabel(index)
-        ##Delete
-        elif event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            with balt.BusyCursor():
-                self.DeleteSelected(True,event.ShiftDown())
-            self.RefreshUI()
         ##Enter
         elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             screensDir = bosh.screensData.dir
@@ -3572,15 +3537,12 @@ class ScreensList(List):
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         code = event.GetKeyCode()
-        ##Ctrl-A
-        if event.CmdDown() and code == ord('A'):
-            self.SelectAll()
         # Ctrl+C: Copy file(s) to clipboard
-        elif event.CmdDown() and code == ord('C'):
+        if event.CmdDown() and code == ord('C'):
             sel = map(lambda x: bosh.screensData.dir.join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
-        event.Skip()
+        super(ScreensList, self).OnKeyUp(event)
 
     def OnItemSelected(self,event=None):
         fileName = self.items[event.m_itemIndex]
@@ -3709,11 +3671,7 @@ class BSAList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
-    def OnChar(self,event):
-        """Char event: Reordering."""
-        if event.GetKeyCode() in (wx.WXK_DELETE,wx.WXK_NUMPAD_DELETE):
-            self.DeleteSelected()
-        event.Skip()
+    def OnChar(self,event): event.Skip()
 
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3920,8 +3878,6 @@ class MessageList(List):
         self.searchResults = None
         #--Parent init
         List.__init__(self, parent, listData)
-        #--Events
-        self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
 
     def GetItems(self):
         """Set and return self.items."""
@@ -3992,14 +3948,6 @@ class MessageList(List):
             raise BashError(u'Unrecognized sort key: '+col)
         #--Ascending
         if reverse: self.items.reverse()
-
-    #--Events ---------------------------------------------
-    def OnKeyUp(self,event):
-        """Char event: Activate selected items, select all items"""
-        ##Ctrl-A
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            self.SelectAll()
-        event.Skip()
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
