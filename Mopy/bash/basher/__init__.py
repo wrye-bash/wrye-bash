@@ -293,6 +293,7 @@ class SashTankPanel(SashPanel):
 #------------------------------------------------------------------------------
 class List(balt.UIList):
     _sizeHints = (-1, 50) # overrides UIList
+    icons = colorChecks
 
     def __init__(self, parent, ctrlStyle=wx.LC_REPORT | wx.LC_SINGLE_SEL,
                  dndFiles=False, dndList=False, dndColumns=()):
@@ -300,7 +301,6 @@ class List(balt.UIList):
         balt.UIList.__init__(self, parent, style=ctrlStyle, dndFiles=dndFiles,
                              dndList=dndList, dndColumns=dndColumns)
         self.list = self.gList # self.list must go
-        self.checkboxes = colorChecks
         self.vScrollPos = 0
         #--Columns
         self.PopulateColumns()
@@ -528,9 +528,6 @@ class MasterList(List):
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_EDIT_LABELS))
         self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT,self.OnLabelEdited)
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         self._setEditedFn = setEditedFn
 
     def OnItemSelected(self, event): event.Skip()
@@ -640,7 +637,7 @@ class MasterList(List):
         #--Image
         status = self.GetMasterStatus(itemId)
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,oninc))
+        self.list.SetItemImage(itemDex,self.icons.Get(status,oninc))
         #--Selection State
         self.SelectItemAtIndex(itemDex, masterName in selected)
 
@@ -772,9 +769,6 @@ class INIList(List):
         List.__init__(self,parent,ctrlStyle=wx.LC_REPORT)
         #--Events
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        #--Image List
-        checkboxesIL = colorChecks.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -865,7 +859,7 @@ class INIList(List):
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[itemDex] = mousetext
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(icon,checkMark))
+        self.list.SetItemImage(itemDex,self.icons.Get(icon,checkMark))
         #--Font/BG Color
         item = self.list.GetItem(itemDex)
         item.SetTextColour(colors['default.text'])
@@ -1056,12 +1050,12 @@ class ModList(List):
         self.esmsFirst = settings['bash.mods.esmsFirst']
         self.selectedFirst = settings['bash.mods.selectedFirst']
         #--Parent init
-        List.__init__(self,parent,ctrlStyle=wx.LC_REPORT, dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
-        #--Image List
-        checkboxesIL = colorChecks.GetImageList()
+        # Image List: Column sorting order indicators # TODO(ut): to UIList
+        # explorer style ^ == ascending
+        checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
+        List.__init__(self,parent,ctrlStyle=wx.LC_REPORT, dndList=True, dndColumns=['Load Order'])#|wx.SUNKEN_BORDER))
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -1169,7 +1163,7 @@ class ModList(List):
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,checkMark))
+        self.list.SetItemImage(itemDex,self.icons.Get(status,checkMark))
         #--Font color
         item = self.list.GetItem(itemDex)
         mouseText = u''
@@ -1295,8 +1289,8 @@ class ModList(List):
         try:
             try: self.list.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_up)
-            else: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
+            if reverse: self.list.SetColumnImage(self.colDict[col], self.sm_dn)
+            else: self.list.SetColumnImage(self.colDict[col], self.sm_up)
         except: pass
 
     #--Events ---------------------------------------------
@@ -2106,9 +2100,6 @@ class SaveList(List):
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_EDIT_LABELS))
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         self.list.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2200,7 +2191,7 @@ class SaveList(List):
         #--Image
         status = fileInfo.getStatus()
         on = fileName.cext == u'.ess'
-        self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
+        self.list.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
@@ -2533,11 +2524,12 @@ class InstallersList(balt.Tank):
     keyPrefix = 'bash.installers'
     mainMenu = Links()
     itemMenu = Links()
+    icons = installercons
 
-    def __init__(self, parent, data, icons=None, details=None,
+    def __init__(self, parent, data, details=None,
                  style=(wx.LC_REPORT | wx.LC_SINGLE_SEL)):
         self.colReverse = settings['bash.installers.colReverse']
-        balt.Tank.__init__(self,parent,data,icons,
+        balt.Tank.__init__(self,parent,data,
             details,style|wx.LC_EDIT_LABELS,dndList=True,dndFiles=True,dndColumns=['Order'])
         self.gList.Bind(wx.EVT_CHAR, self.OnChar)
         self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
@@ -2925,7 +2917,7 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.gList = InstallersList(left, data, installercons, details=self,
+        self.gList = InstallersList(left, data, details=self,
                                     style=wx.LC_REPORT)
         bosh.installersWindow = self.gList
         #--Package
@@ -3440,6 +3432,7 @@ class ScreensList(List):
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
     keyPrefix = 'bash.screens'
+    icons = None # no icons
 
     def __init__(self,parent):
         #--Columns
@@ -3648,6 +3641,7 @@ class BSAList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     keyPrefix = 'bash.BSAs'
+    icons = None # no icons
 
     def __init__(self,parent):
         #--Columns
@@ -3658,9 +3652,6 @@ class BSAList(List):
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self,parent,ctrlStyle=(wx.LC_REPORT|wx.SUNKEN_BORDER))
-        #--Image List
-        checkboxesIL = self.checkboxes.GetImageList()
-        self.list.SetImageList(checkboxesIL,wx.IMAGE_LIST_SMALL)
         #--Events
         self.list.Bind(wx.EVT_CHAR, self.OnChar)
         #--ScrollPos
@@ -3710,7 +3701,7 @@ class BSAList(List):
         #--Image
         #status = fileInfo.getStatus()
         # on = fileName.cext == u'.bsa'
-        #self.list.SetItemImage(itemDex,self.checkboxes.Get(status,on))
+        #self.list.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
@@ -3938,6 +3929,7 @@ class MessageList(List):
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
     keyPrefix = 'bash.messages'
+    icons = None # no icons
 
     def __init__(self,parent):
         #--Columns
@@ -4125,6 +4117,7 @@ class PeopleList(balt.Tank):
     keyPrefix = 'bash.people'
     mainMenu = Links()
     itemMenu = Links()
+    icons = karmacons
 
     def __init__(self,*args,**kwdargs):
         self.colReverse = settings['bash.people.colReverse']
@@ -4159,8 +4152,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.gList = PeopleList(left, data, karmacons, details=self,
-                                style=wx.LC_REPORT)
+        self.gList = PeopleList(left, data, details=self, style=wx.LC_REPORT)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
