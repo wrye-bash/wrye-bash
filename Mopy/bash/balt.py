@@ -1771,7 +1771,6 @@ class UIList(wx.Panel):
         self.mouseTextPrev = u''
         self.gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self.gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        self.gList.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
 
@@ -1854,7 +1853,6 @@ class UIList(wx.Panel):
     #--ABSTRACT - TODO(ut): different Tank and List overrides
     def OnItemSelected(self, event): raise AbstractError
     def OnColumnClick(self, event): raise AbstractError
-    def OnScroll(self, event): raise AbstractError
     def OnColumnResize(self, event): raise AbstractError
 
     #-- Item selection --------------------------------------------------------
@@ -1888,6 +1886,15 @@ class UIList(wx.Panel):
             for i in colCount: self.gList.SetColumnWidth(i, -bosh.inisettings[
                     'AutoSizeListColumns'])
 
+    # gList scroll position----------------------------------------------------
+    def SaveScrollPosition(self, isVertical=True):
+        bosh.settings[
+            self.__class__.keyPrefix + '.scrollPos'] = self.gList.GetScrollPos(
+            wx.VERTICAL if isVertical else wx.HORIZONTAL)
+
+    def SetScrollPosition(self):
+        self.gList.ScrollLines(
+            bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
 #------------------------------------------------------------------------------
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
@@ -1907,15 +1914,11 @@ class Tank(UIList):
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
         UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
                         dndColumns=dndColumns, **kwargs)
-        gList = self.gList # created above
         #--Columns
         self.UpdateColumns()
         #--Items
         self.sortDirty = False
         self.UpdateItems()
-        #--ScrollPos
-        gList.ScrollLines(data.getParam('vScrollPos',0))
-        data.setParam('vScrollPos', gList.GetScrollPos(wx.VERTICAL))
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
@@ -2136,12 +2139,6 @@ class Tank(UIList):
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
         self.RefreshDetails(self.GetItem(event.m_itemIndex))
-
-    def OnScroll(self,event):
-        """Event: List was scrolled. Save so can be accessed later."""
-        if event.GetOrientation() == wx.VERTICAL:
-            self.data.setParam('vScrollPos',event.GetPosition())
-        event.Skip()
 
     def OnColumnResize(self,event):
         """Column resized. Save column size info."""

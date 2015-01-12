@@ -217,6 +217,10 @@ from .dialogs import ListBoxes # TODO(ut): cyclic import
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
 
+    def __init__(self, *args, **kwargs):
+        super(NotebookPanel, self).__init__(*args, **kwargs)
+        self._firstShow = True # TODO(ut): hack to set the scrollbar position
+
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
         pass
@@ -227,8 +231,14 @@ class NotebookPanel(wx.Panel):
 
     def OnShow(self):
         """To be called when particular panel is changed to and/or shown for
-        first time. Default version resizes the columns if auto is on and
-        sets Status bar text."""
+        first time.
+
+        Default version resizes the columns if auto is on and sets Status bar
+        text. It also sets the scroll bar position on first show.
+        """
+        if hasattr(self, '_firstShow'):
+            self.uiList.SetScrollPosition()
+            del self._firstShow
         self.uiList.autosizeColumns()
         self.SetStatusCount()
 
@@ -260,6 +270,7 @@ class SashPanel(NotebookPanel):
             splitter.SplitVertically(self.left, self.right)
         else:
             splitter.SplitHorizontally(self.left, self.right)
+        self.isVertical = isVertical
         splitter.SetSashGravity(sashGravity)
         sashPos = settings.get(sashPosKey, 0) or sashPos or -1
         splitter.SetSashPosition(sashPos)
@@ -277,6 +288,7 @@ class SashPanel(NotebookPanel):
         splitter = self.right.GetParent()
         if hasattr(self, 'sashPosKey'):
             settings[self.sashPosKey] = splitter.GetSashPosition()
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
@@ -288,11 +300,12 @@ class SashTankPanel(SashPanel):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
 
-    def ClosePanel(self): # (ut) does not call super
+    def ClosePanel(self): # TODO(ut): does not call super
         self.SaveDetails()
         splitter = self.right.GetParent()
         sashPos = splitter.GetSashPosition()
         self.data.setParam('sashPos',sashPos)
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         self.data.save()
 
     def GetDetailsItem(self):
@@ -316,7 +329,6 @@ class List(balt.UIList):
         balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
                              dndColumns=dndColumns, **kwargs)
         self.list = self.gList # self.list must go
-        self.vScrollPos = 0
         #--Columns
         self.PopulateColumns()
         #--Items
@@ -513,12 +525,6 @@ class List(balt.UIList):
     def OnColumnClick(self, event):
         """List OnColumnClick override - cf Tank."""
         self.PopulateItems(self.cols[event.GetColumn()],-1)
-
-    def OnScroll(self,event):
-        """Event: List was scrolled. Save so can be accessed later."""
-        if event.GetOrientation() == wx.VERTICAL:
-            self.vScrollPos = event.GetPosition()
-        event.Skip()
 
 #------------------------------------------------------------------------------
 class MasterList(List):
@@ -1059,9 +1065,6 @@ class ModList(List):
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
         List.__init__(self, parent, listData, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.mods.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1864,7 +1867,7 @@ class INIPanel(SashPanel):
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
-        self.SetStatusCount()
+        super(INIPanel, self).OnShow()
 
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
@@ -2067,7 +2070,6 @@ class ModPanel(SashPanel):
 
     def ClosePanel(self):
         super(ModPanel, self).ClosePanel()
-        settings['bash.mods.scrollPos'] = modList.vScrollPos
         # Mod details Sash Positions
         splitter = self.modDetails.right.GetParent()
         settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
@@ -2091,9 +2093,6 @@ class SaveList(List):
         #--Events
         self.list.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         self.list.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnEditLabel)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.saves.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
@@ -2486,7 +2485,6 @@ class SavePanel(SashPanel):
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
         super(SavePanel, self).ClosePanel()
-        settings['bash.saves.scrollPos'] = saveList.vScrollPos
         # Save details Sash Positions
         splitter = self.saveDetails.right.GetParent()
         settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
@@ -3576,7 +3574,7 @@ class ScreensPanel(SashPanel):
         if bosh.screensData.refresh():
             screensList.RefreshUI()
             #self.Refresh()
-        self.SetStatusCount()
+        super(ScreensPanel, self).OnShow()
 
 #------------------------------------------------------------------------------
 class BSAList(List):
@@ -3593,9 +3591,6 @@ class BSAList(List):
         self.details = None #--Set by panel
         #--Parent init
         List.__init__(self, parent, listData)
-        #--ScrollPos
-        self.list.ScrollLines(settings.get('bash.BSAs.scrollPos',0))
-        self.vScrollPos = self.list.GetScrollPos(wx.VERTICAL)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3848,7 +3843,6 @@ class BSAPanel(NotebookPanel):
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
         bosh.BSAInfos.profiles.save()
-        settings['bash.BSAs.scrollPos'] = BSAList.vScrollPos
 
 #------------------------------------------------------------------------------
 class MessageList(List):
@@ -4003,7 +3997,7 @@ class MessagePanel(SashPanel):
         if bosh.messages.refresh():
             gMessageList.RefreshUI()
             #self.Refresh()
-        self.SetStatusCount()
+        super(MessagePanel, self).OnShow()
 
     def OnSearchChar(self,event):
         if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
@@ -4025,8 +4019,9 @@ class MessagePanel(SashPanel):
 
     def ClosePanel(self): # (ut) does not call super
         """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        if bosh.messages: bosh.messages.save()
-        settings['bash.messages.scrollPos'] = gMessageList.vScrollPos
+        if bosh.messages:
+            bosh.messages.save()
+        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
