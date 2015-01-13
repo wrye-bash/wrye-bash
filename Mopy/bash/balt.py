@@ -1727,6 +1727,8 @@ class UIList(wx.Panel):
     icons = {}
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
+    #--Style params
+    editLabels = False # allow editing the labels - also enables F2 shortcut
 
     def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
@@ -1745,8 +1747,7 @@ class UIList(wx.Panel):
         #--gList
         ctrlStyle = wx.LC_REPORT
         if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
-        editLabels = kwargs.pop('editLabels', False)
-        if editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
         self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
@@ -1754,7 +1755,7 @@ class UIList(wx.Panel):
                               fnDropIndexes=self.OnDropIndexes)
         if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
                                                wx.IMAGE_LIST_SMALL)
-        if editLabels:
+        if self.__class__.editLabels:
             self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
             self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
@@ -1842,7 +1843,7 @@ class UIList(wx.Panel):
         event.Skip()
 
     def OnKeyUp(self, event):
-        """Char event: select all items, delete selected items."""
+        """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): # Ctrl+A
             self.SelectAll()
@@ -1850,6 +1851,7 @@ class UIList(wx.Panel):
             with BusyCursor():
                 self.DeleteSelected(shellUI=self.__class__._shellUI,
                                     noRecycle=event.ShiftDown())
+        elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
         event.Skip()
 
     def OnChar(self,event): event.Skip()
@@ -1901,6 +1903,14 @@ class UIList(wx.Panel):
     def SetScrollPosition(self):
         self.gList.ScrollLines(
             bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
+
+    # Data commands (WIP)------------------------------------------------------
+    def Rename(self, selected=None):
+        if not selected: selected = self.GetSelected()
+        if len(selected) > 0:
+            index = self.gList.FindItem(0, selected[0].s)
+            if index != -1: self.gList.EditLabel(index)
+
 #------------------------------------------------------------------------------
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with

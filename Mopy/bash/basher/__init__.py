@@ -532,6 +532,7 @@ class MasterList(List):
     mainMenu = Links()
     itemMenu = Links()
     keyPrefix = 'bash.masters'
+    editLabels = True
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None):
         #--Columns
@@ -547,7 +548,7 @@ class MasterList(List):
         self.selectedFirst = settings['bash.masters.selectedFirst']
         #--Parent init
         List.__init__(self, parent, listData, singleCell=True,
-                      editLabels=True, sunkenBorder=False)
+                      sunkenBorder=False)
         self._setEditedFn = setEditedFn
 
     colReverse = property(lambda self: {},
@@ -2087,6 +2088,7 @@ class SaveList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     keyPrefix = 'bash.saves'
+    editLabels = True
 
     def __init__(self, parent, listData):
         #--Columns
@@ -2094,7 +2096,7 @@ class SaveList(List):
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, listData, editLabels=True)
+        List.__init__(self, parent, listData)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
@@ -2210,17 +2212,6 @@ class SaveList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
-    def OnChar(self,event):
-        """Char event: Rename."""
-        ## F2 - Rename
-        if event.GetKeyCode() == wx.WXK_F2:
-            selected = self.GetSelected()
-            if len(selected) > 0:
-                index = self.gList.FindItem(0,selected[0].s)
-                if index != -1:
-                    self.gList.EditLabel(index)
-        event.Skip()
-
     def OnKeyUp(self,event):
         code = event.GetKeyCode()
         # Ctrl+C: Copy file(s) to clipboard
@@ -2501,11 +2492,11 @@ class InstallersList(balt.Tank):
     itemMenu = Links()
     icons = installercons
     # _shellUI = True TODO(ut): shellUI path does not grok markers
+    editLabels = True
 
     def __init__(self, parent, data, details=None):
         balt.Tank.__init__(self, parent, data, details=details, dndList=True,
-                           dndFiles=True, dndColumns=['Order'],
-                           editLabels=True)
+                           dndFiles=True, dndColumns=['Order'])
         self.hitItem = None
         self.hitTime = 0
 
@@ -2817,18 +2808,18 @@ class InstallersList(balt.Tank):
             if path.exists(): path.start()
         event.Skip()
 
+    def Rename(self, selected=None):
+        selected = self.GetSelected()
+        if selected > 0:
+            index = self.GetIndex(selected[0])
+            if index != -1:
+                self.gList.EditLabel(index)
+
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
-        ##F2 - Rename selected.
-        if code == wx.WXK_F2:
-            selected = self.GetSelected()
-            if selected > 0:
-                index = self.GetIndex(selected[0])
-                if index != -1:
-                    self.gList.EditLabel(index)
         ##Ctrl+Shift+N - Add a marker
-        elif event.CmdDown() and event.ShiftDown() and code == ord('N'):
+        if event.CmdDown() and event.ShiftDown() and code == ord('N'):
             index = self.GetIndex(GPath(u'===='))
             if index == -1:
                 self.data.addMarker(u'====')
@@ -3387,12 +3378,13 @@ class ScreensList(List):
     keyPrefix = 'bash.screens'
     icons = None # no icons
     _shellUI = True
+    editLabels = True
 
     def __init__(self, parent, listData):
         #--Columns
         self.colsKey = 'bash.screens.cols'
         #--Parent init
-        List.__init__(self, parent, listData, editLabels=True)
+        List.__init__(self, parent, listData)
 
     def OnDClick(self,event):
         """Double click a screenshot"""
@@ -3507,16 +3499,9 @@ class ScreensList(List):
 
     #--Events ---------------------------------------------
     def OnChar(self,event):
-        """Char event: Activate selected items, select all items"""
-        ##F2
-        if event.GetKeyCode() == wx.WXK_F2:
-            selected = self.GetSelected()
-            if len(selected) > 0:
-                index = self.gList.FindItem(0,selected[0].s)
-                if index != -1:
-                    self.gList.EditLabel(index)
+        """Char event: Activate selected items."""
         ##Enter
-        elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+        if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             screensDir = bosh.screensData.dir
             for file in self.GetSelected():
                 file = screensDir.join(file)

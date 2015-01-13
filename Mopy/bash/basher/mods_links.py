@@ -230,7 +230,6 @@ class Mods_CreateBlank(ItemLink):
     text, help = _(u'New Mod...'), _(u'Create a new blank mod')
 
     def Execute(self,event):
-        data = self.window.GetSelected()
         fileInfos = self.window.data
         count = 0
         newName = GPath(u'New Mod.esp')
@@ -238,8 +237,8 @@ class Mods_CreateBlank(ItemLink):
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
         newInfo = fileInfos.factory(fileInfos.dir,newName)
-        if data:
-            newTime = max(fileInfos[x].mtime for x in data)
+        if self.selected:
+            newTime = max(fileInfos[x].mtime for x in self.selected)
         else:
             newTime = max(fileInfos[x].mtime for x in fileInfos.data)
         newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)

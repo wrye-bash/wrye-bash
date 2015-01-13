@@ -401,26 +401,20 @@ class Installer_Rename(_InstallerLink):
 
     def _enable(self):
         ##Only enable if all selected items are of the same type
-        window = self.window
-        firstItem = window.data[window.GetSelected()[0]]
+        firstItem = self.idata[self.selected[0]]
         if isinstance(firstItem,bosh.InstallerMarker):
             self.InstallerType = bosh.InstallerMarker
         elif isinstance(firstItem,bosh.InstallerArchive):
             self.InstallerType = bosh.InstallerArchive
         elif isinstance(firstItem,bosh.InstallerProject):
             self.InstallerType = bosh.InstallerProject
-        else: self.InstallerType = None
-        if self.InstallerType:
-            for item in window.GetSelected():
-                if not isinstance(window.data[item],self.InstallerType):
-                    return False
+        else: return False
+        for item in self.selected:
+            if not isinstance(self.idata[item], self.InstallerType):
+                return False
         return True
 
-    def Execute(self,event):
-        if len(self.selected) > 0:
-            index = self.gTank.GetIndex(self.selected[0])
-            if index != -1:
-                self.gTank.gList.EditLabel(index)
+    def Execute(self,event): self.window.Rename(selected=self.selected)
 
 class Installer_HasExtraData(CheckLink, _InstallerLink):
     """Toggle hasExtraData flag on installer."""
@@ -994,7 +988,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
-        self.selected = window.GetSelected()
+        self.selected = window.GetSelected() # append runs before _initData
         return self.isSelectedArchives()
 
     def Execute(self,event):
@@ -1106,7 +1100,7 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
     text = _(u'Pack to Archive...')
 
     def _append(self, window):
-        self.selected = window.GetSelected()
+        self.selected = window.GetSelected() # append runs before _initData
         return self.isSingleProject()
 
     def Execute(self,event):
@@ -1426,7 +1420,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
-        selected = self.selected # window.GetSelected()
+        selected = self.selected
         instData = self.data # window.data, InstallersData singleton
         selectedCRCs = set(instData[archive].crc for archive in selected)
         crcInstallers = set(instData.crc_installer)
