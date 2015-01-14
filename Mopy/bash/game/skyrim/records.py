@@ -5439,10 +5439,224 @@ class MreQust(MelRecord):
 class MreRace(MelRecord):
     """Race"""
     classType = 'RACE'
-
+    _flags = Flags(0L,Flags.getNames(
+        ( 0, 'playable'), # {0x00000001}
+        ( 1, 'faceGenHead'), # {0x00000002}
+        ( 2, 'child'), # {0x00000004}
+        ( 3, 'tiltFrontBack'), # {0x00000008}
+        ( 4, 'tiltLeftRight'), # {0x00000010}
+        ( 5, 'noShadow'), # {0x00000020}
+        ( 6, 'swims'), # {0x00000040}
+        ( 7, 'flies'), # {0x00000080}
+        ( 8, 'walks'), # {0x00000100}
+        ( 9, 'immobile'), # {0x00000200}
+        (10, 'notPushable'), # {0x00000400}
+        (11, 'noCombatInWater'), # {0x00000800}
+        (12, 'noRotatingToHeadTrack'), # {0x00001000}
+        (13, 'dontShowBloodSpray'), # {0x00002000}
+        (14, 'dontShowBloodDecal'), # {0x00004000}
+        (15, 'usesHeadTrackAnims'), # {0x00008000}
+        (16, 'spellsAlignWithMagicNode'), # {0x00010000}
+        (17, 'useWorldRaycastsForFootIK'), # {0x00020000}
+        (18, 'allowRagdollCollision'), # {0x00040000}
+        (19, 'regenHPInCombat'), # {0x00080000}
+        (20, 'cantOpenDoors'), # {0x00100000}
+        (21, 'allowPCDialogue'), # {0x00200000}
+        (22, 'noKnockdowns'), # {0x00400000}
+        (23, 'allowPickpocket'), # {0x00800000}
+        (24, 'alwaysUseProxyController'), # {0x01000000}
+        (25, 'dontShowWeaponBlood'), # {0x02000000}
+        (26, 'overlayHeadPartList'), # {0x04000000}  {>>>Only one can be active<<<}
+        (27, 'overrideHeadPartList'), # {0x08000000} {>>>Only one can be active<<<}
+        (28, 'canPickupItems'), # {0x10000000}
+        (29, 'allowMultipleMembraneShaders'), # {0x20000000}
+        (30, 'canDualWield'), # {0x40000000}
+        (31, 'avoidsRoads'), # {0x80000000}
+    ))
+    _flags2 = Flags(0L,Flags.getNames(
+        ( 0, 'useAdvancedAvoidance'), # {0x00000001}
+        ( 1, 'nonHostile'), # {0x00000002}
+        ( 4, 'allowMountedCombat'), # {0x00000010}
+    ))
+    _flags3 = Flags(0L,Flags.getNames(
+        ( 0, 'ignoreWeapon'), # {0x00000001}
+        ( 1, 'bashAttack'), # {0x00000002}
+        ( 2, 'powerAttack'), # {0x00000004}
+        ( 3, 'leftAttack'), # {0x00000008}
+        ( 4, 'rotatingAttack'), # {0x00000010}
+    ))
+    _flags4 = Flags(0L,Flags.getNames(
+        ( 0, 'handToHandMelee'), # {0x00000001}
+        ( 0, 'oneHandSword'), # {0x00000002}
+        ( 0, 'oneHandDagger'), # {0x00000004}
+        ( 0, 'oneHandAxe'), # {0x00000008}
+        ( 0, 'oneHandMace'), # {0x00000010}
+        ( 0, 'twoHandSword'), # {0x00000020}
+        ( 0, 'twoHandAxe'), # {0x00000040}
+        ( 0, 'bow'), # {0x00000080}
+        ( 0, 'staff'), # {0x00000100}
+        ( 0, 'spell'), # {0x00000200}
+        ( 0, 'shield'), # {0x00000400}
+        ( 0, 'torch'), # {0x00000800}
+        ( 0, 'crossbow'), # {0x00001000}
+    ))
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
+        MelString('DESC','text'),
+        MelCountedFids('SPLO', 'actorEffects', 'SPCT', '<I'),
+        MelBipedObjectData(),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelStruct('DATA','14b2s4fI7fI2ifi5fi4fI9f',
+                  'skill1','skill1Boost','skill2','skill2Boost',
+                  'skill3','skill3Boost','skill4','skill4Boost',
+                  'skill5','skill5Boost','skill6','skill6Boost',
+                  'skill7','skill7Boost',('unused1',null2),
+                  'maleHeight','femaleHeight','maleWeight','femaleWeight',
+                  (_flags,'flags',0L),
+                  'startingHealth','startingMagicka','startingStamina',
+                  'baseCarryWeight','baseMass','accelerationRate',
+                  'decelerationRate','size','headBipedObject',
+                  'hairBipedObject','injuredHealthPct',
+                  'shieldBipedObject','healthRegen','magickaRegen',
+                  'staminaRegen','unarmedDamage','unarmedReach',
+                  'bodyBipedObject','aimAngleTolerance','flightRadius',
+                  'angularAccelerationRate','angularTolerance',
+                  (_flags2,'raceFlags',0L),'mountDataOffsetX',
+                  'mountDataOffsetY','unknownFloat1','unknownFloat2',
+                  'unknownFloat3','unknownFloat4','unknownFloat5',
+                  'unknownFloat6','unknownFloat7',
+                  ),
+        MelNull('MNAM','maleMarker'),
+        MelString('ANAM','maleSkeletalModel'),
+        MelBase('MODT','modt_p',)
+        MelNull('FNAM','femaleMarker'),
+        MelString('ANAM', 'femaleSkeletalModel'),
+        MelBase('MODT','modt_p',)
+        MelNull('NAM2', 'markerNAM2One'),
+        MelStrings('MTNM','movementTypeNames',),
+        MelRaceVoices('VTCK','2I',(FID,'maleVoice'),(FID,'femaleVoice')),
+        MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)),
+        MelOptStruct('HCLF','2I',(FID,'defaultHairColorMale',0L),(FID,'defaultHairColorFemale',0L)),
+        # Needs TINL Count Updated
+        MelStruct('TINL','H','tintListCount'),
+        MelOptStruct('PNAM','f','mainClamp'),
+        MelOptStruct('UNAM','f','faceClamp'),
+        MelFid('ATKR','attackRace'),
+        MelGroups('attacks',
+            MelStruct('ATKD','ffIIfffIfff','damageMult','attackChance',
+                      (FID,'attackSpell',None),(_flags3,'attackFlags',0L),
+                      'attackAngle','strikeAngle','stagger',
+                      (FID,'attackType',None),'knockdown','recoveryTime',
+                      'stamina Mult',
+                ),
+            MelString('ATKE', 'Attack Event')
+            ),
+        MelFidList('HNAM','hairs'),
+        MelFidList('ENAM','eyes'),
+        MelFid('GNAM','bodyPartData'),
+        MelNull('NAM2', 'markerNAM2Two'),
+        MelNull('NAM3', 'markerNAM2Three'),
+        MelNull('MNAM', 'maleDataMarker'),
+        MelModel('maleModel','MODL'),
+        MelNull('FNAM', 'femaleDataMarker'),
+        MelModel('femaleModel','MODL'),
+        MelFid('NAM4', 'materialType'),
+        MelFid('NAM5', 'impactDataSet'),
+        MelFid('NAM7', 'decapitationFX'),
+        MelFid('ONAM', 'openLootSound'),
+        MelFid('LNAM', 'closeLootSound'),
+        # NAME can be user defined
+        MelStrings('NAME','bipedObjectNames',),
+        MelGroups('movementTypes',
+            MelFid('MTYP', 'movementType',),
+            MelStruct('SPED','fffffffffff','leftWalk','leftRun','rightWalk',
+            'rightRun','forwardWalk','forwardRun','backWalk','backRun',
+            'rotateWalk','rotateWalk','unknownFloat',),
+            ),
+        MelStruct('VNAM','I',(_flags4,'equipmentFlags',0L),),
+        MelFids('QNAM','equipSlots'),
+        MelFid('UNES','unarmedEquipSlot'),
+        MelStrings('PHTN','phonemeTargetNames',),
+        MelStructs('PHWT','ffffffffffffffff',
+                   'aahLipBigAah','bigAahLipDST','bmpLipEee','chJshLipFV',
+                   'dstLipK','eeeLipL','ehLipR','fvLipTh','mouthI','mouthK',
+                   'mouthN','mouthOh','mouthOohQ','mouthR','mouthTH','mouthW',),
+        MelFid('WKMV', 'baseMovWalk'),
+        MelFid('RNMV', 'baseMovRun'),
+        MelFid('SWMV', 'baseMovSwim'),
+        MelFid('FLMV', 'baseMovFly'),
+        MelFid('SNMV', 'baseMovSneak'),
+        MelFid('SPMV', 'baseMovSprint'),
+        # Start Head Data
+        MelGroup('headData',
+            MelNull('NAM0', 'headDataMarker',),
+            MelGroup('maleheadData',
+                MelNull('MNAM','maleHeadDataMarker',),
+                MelGroups('headParts',
+                    MelStruct('INDX','I','headPartNumber',),
+                    MelFid('HEAD','head',),
+                ),
+                MelGroups('availableMorphs',
+                    MelBase('MPAI', 'mpai_p',),
+                    MelBase('MPAV', 'mpav_p',),
+                ),
+                MelFids('RPRM', 'racePresetsMale'),
+                MelFids('AHCM','availableHairColorsMale',),
+                MelFids('FTSM','faceDetailsTextureSetListMale',),
+                MelFid('DFTM','defaultFaceTextureMale',),
+                MelGroups('tintMasks',
+                    MelGroup('textures',
+                      MelStruct('TINI','H', 'tini_unk',),
+                      MelString('TINT','textureFileName',),
+                      # {>>> When set to None TINP does not exist Needs routine to add when
+                      # changing the Mask Type <<<}
+                      MelStruct('TINP','H','maskType',),
+                      MelFid('TIND','presetDefault',)
+                    ),
+                    MelGroup('presets',
+                      MelFid('TINC','color',),
+                      MelStruct('TINV','f','defaultValue'),
+                      MelStruct('TIRS','H','tirs_unk',),
+                    ),
+                ),
+                MelModel('maleModel','MODL'),
+            ),
+            MelGroup('femaleheadData',
+                MelNull('NAM0', 'headDataMarker',),
+                MelNull('FNAM','femaleHeadDataMarker',),
+                MelGroups('headParts',
+                    MelStruct('INDX','I','headPartNumber',),
+                    MelFid('HEAD','head',),
+                ),
+                MelGroups('availableMorphs',
+                    MelBase('MPAI', 'mpai_p',),
+                    MelBase('MPAV', 'mpav_p',),
+                ),
+                MelFids('RPRF', 'racePresetsFemale'),
+                MelFids('AHCF','availableHairColorsFemale',),
+                MelFids('FTSF','faceDetailsTextureSetListFemale',),
+                MelFid('DFTF','defaultFaceTextureFemale',),
+                MelGroups('tintMasks',
+                    MelGroup('textures',
+                      MelStruct('TINI','H', 'tini_unk',),
+                      MelString('TINT','textureFileName',),
+                      # {>>> When set to None TINP does not exist Needs routine to add when
+                      # changing the Mask Type <<<}
+                      MelStruct('TINP','H','maskType',),
+                      MelFid('TIND','presetDefault',)
+                    ),
+                    MelGroup('presets',
+                      MelFid('TINC','color',),
+                      MelStruct('TINV','f','defaultValue'),
+                      MelStruct('TIRS','H','tirs_unk',),
+                    ),
+                ),
+                MelModel('femaleModel','MODL'),
+            ),
+        ),
+        MelFid('NAM8', 'morphRace'),
+        MelFid('RNAM', 'armorRace'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
