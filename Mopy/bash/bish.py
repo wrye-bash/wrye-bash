@@ -156,7 +156,7 @@ def readRecord(record, melSet=0, skipLabel=0):
     elif hasattr(record, 'melSet'):
         melSet = record.melSet.getSlotsUsed()
         if record.recType == 'DIAL':
-            melSet += ['infoStamp','infos']
+            melSet += ['infoStamp','infoStamp2','infos']
     elif hasattr(record, '__slots__'):
         melSet = getattr(record, '__slots__')
     elif hasattr(record, '__dict__'):
@@ -731,6 +731,10 @@ def getIds(fileName=None):
         if type == 'GRUP':
             records = group_records.setdefault(str0,[])
             if str0 in ('CELL','WRLD'):
+                # header[1]-24,1 20 for Oblivion, 24 for others.
+                # There needs to be a global for this.
+                # ins.seek(size-header.__class__.size,1)
+                # ModReader.recHeader.size
                 ins.seek(size-20,1)
         elif type != 'GRUP':
             eid = ''
@@ -741,6 +745,10 @@ def getIds(fileName=None):
                 if type == 'EDID':
                     eid = recs.readString(size)
                     break
+                # header[1]-24,1 20 for Oblivion, 24 for others.
+                # There needs to be a global for this.
+                # ins.seek(size-header.__class__.size,1)
+                # ModReader.recHeader.size
                 ins.seek(size,1)
             records.append((fid,eid))
             ins.seek(nextRecord)

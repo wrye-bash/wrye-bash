@@ -643,7 +643,10 @@ class ModFile:
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
+                    if bush.game.fsName == u'Oblivion':
+                        mgef_school[record.eid] = record.school
+                    else:
+                        mgef_school[record.eid] = record.magicSkill
         return mgef_school
 
     def getMgefHostiles(self,refresh=False):
@@ -3515,6 +3518,10 @@ class ModInfo(FileInfo):
         """Returns True if plugin has an associated BSA."""
         return self.getBsaPath().exists()
 
+    def getIniPath(self):
+        """Returns path to plugin's INI, if it were to exists."""
+        return self.getPath().root.root+u'.ini'
+
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to those, otherwise
            extract needed files from BSA if needed."""
@@ -3540,12 +3547,21 @@ class ModInfo(FileInfo):
         #--If there were some missing Loose Files
         if extract:
             bsaPaths = [self.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                extraBsa.reverse()
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            if bush.game.fsName == u'Skyrim':
+                iniPaths = [ModInfo(self.dir,name).getIniPath() for name in modInfos.ordered]
+                iniFiles = [IniFile(iniPath) for iniPath in iniPaths if iniPath.exists()]
+                iniFiles.reverse()
+                iniFiles.append(oblivionIni)
+            else:
+                iniFiles = [oblivionIni]
+            for iniFile in iniFiles:
+                for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                    extraBsa = iniFile.getSetting(u'Archive',key,u'').split(u',')
+                    extraBsa = [x.strip() for x in extraBsa]
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    extraBsa.reverse()
+                    bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists() and x.isfile()]
             bsaFiles = {}
             targetJoin = dirs['bsaCache'].join
             for file in extract:
@@ -4726,11 +4742,21 @@ class ModInfos(FileInfos):
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
             bsaPaths = [modInfo.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            if bush.game.fsName == u'Skyrim':
+                iniPaths = [ModInfo(self.dir,name).getIniPath() for name in modInfos.ordered]
+                iniFiles = [IniFile(iniPath) for iniPath in iniPaths if iniPath.exists()]
+                # iniFiles.reverse()
+                iniFiles.append(oblivionIni)
+            else:
+                iniFiles = [oblivionIni]
+            for iniFile in iniFiles:
+                for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                    extraBsa = iniFile.getSetting(u'Archive',key,u'').split(u',')
+                    extraBsa = [x.strip() for x in extraBsa]
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    # extraBsa.reverse()
+                    bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists() and x.isfile()]
             bsaFiles = {}
             for stringsFile in bush.game.esp.stringsFiles:
                 dir,join,format = stringsFile
@@ -10216,14 +10242,18 @@ class PatchFile(ModFile):
         mergeIdsAdd = mergeIds.add
         loadSet = self.loadSet
         modFile.convertToLongFids()
-        badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        # Probably Oblivion Only
+        if bush.game.fsName == u'Oblivion':
+            badForm = (GPath(u"Oblivion.esm"),0xA31D) #--DarkPCB record
+        else:
+            badForm = ()
         selfLoadFactoryRecTypes = self.loadFactory.recTypes
         selfMergeFactoryType_class = self.mergeFactory.type_class
         selfReadFactoryAddClass = self.readFactory.addClass
         selfLoadFactoryAddClass = self.loadFactory.addClass
         nullFid = (GPath(modInfos.masterName),0)
         for blockType,block in modFile.tops.iteritems():
-            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
+            iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             #--Make sure block type is also in read and write factories
             if blockType not in selfLoadFactoryRecTypes:
                 recClass = selfMergeFactoryType_class[blockType]
@@ -10557,7 +10587,7 @@ class CBash_PatchFile(ObModFile):
                       'ACRES','REFRS']
 
         iiModeSet = {u'InventOnly', u'IIM'}
-        levelLists = {'LVLC', 'LVLI', 'LVSP'}
+        levelLists = bush.game.listTypes
         nullProgress = bolt.Progress()
 
         IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(modInfos[modName].getBashTags() & iiModeSet)])

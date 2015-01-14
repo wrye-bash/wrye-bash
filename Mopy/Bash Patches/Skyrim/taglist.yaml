@@ -1,7 +1,9 @@
 plugins:
   - name: Update.esm
     tag:
+      - C.Location
       - Delev
+      - Invent
       - Relev
     dirty:
       - crc: 0x412d96fb
@@ -17,12 +19,31 @@ plugins:
         udr: 3
   - name: Unofficial Skyrim Patch.esp
     tag:
+      - C.Acoustic
+      - C.Climate
+      - C.Encounter
+      - C.ImageSpace
+      - C.Light
+      - C.Location
+      - C.Music
+      - C.Name
+      - C.Owner
+      - C.Water
       - Delev
+      - Graphics
+      - Invent
+      - Names
       - Relev
+      - Sound
+      - Stats
   - name: Dawnguard.esm
     tag:
+      - C.Location
       - Delev
-      - Relev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
     dirty:
       - crc: 0x31fea081
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -37,16 +58,42 @@ plugins:
         nav: 57
   - name: Unofficial Dawnguard Patch.esp
     tag:
+      - C.Climate
+      - C.Encounter
+      - C.Location
+      - C.Name
       - Delev
-      - Relev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
   - name: Hearthfires.esm
+    tag:
+      - C.Location
+      - Graphics
+      - Invent
     dirty:
       - crc: 0xaf82ce6a
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 184
         udr: 11
         nav: 5
+  - name: Unofficial Hearthfire Patch.esp
+    tag:
+      - C.Climate
+      - C.Location
+      - C.Owner
+      - Graphics
+      - Invent
+      - Names
+      - Sound
   - name: Dragonborn.esm
+    tag:
+      - C.Location
+      - Graphics
+      - Invent
+      - Names
     dirty:
       - crc: 0xa9f83bff
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -55,7 +102,17 @@ plugins:
         nav: 1
   - name: Unofficial Dragonborn Patch.esp
     tag:
+      - C.Climate
+      - C.Encounter
+      - C.Location
+      - C.Music
+      - C.Name
       - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
   - name: Wyrmstooth.esp
     dirty:
       - crc: 0x54f43cef
@@ -745,6 +802,14 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
   - name: Cutting Room Floor.esp
+    tag:
+      - C.Climate
+      - C.Location
+      - C.Owner
+      - Delev
+      - Invent
+      - Names
+      - Stats
     dirty:
       - crc: 0x6a765402
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -786,10 +851,6 @@ plugins:
       - crc: 0xc3c5505
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 16
-  - name: (83Willows_)?101BUGs.+\.esp
-    tag:
-      - Delev
-      - Relev
   - name: ADV HB-Style.esp
     dirty:
       - crc: 0x4ae9efe5
@@ -7068,6 +7129,7 @@ plugins:
       - crc: 0x8e258333
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 8
+        nav: 2
   - name: throneroom.esp
     dirty:
       - crc: 0x2f04b129
@@ -8170,6 +8232,10 @@ plugins:
     tag:
       - Delev
       - Relev
+    dirty:
+      - crc: 0x8b9ef695
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
   - name: SkyTEST-RealisticAnimals&Predators.esp
     dirty:
       - crc: 0x2e582d9b
@@ -8828,6 +8894,9 @@ plugins:
       - crc: 0x6c30e0ba
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 4
+  - name: Open Cities Skyrim.esp
+    tag:
+      - C.Location
   - name: SoS - The Wilds.esp
     dirty:
       - crc: 0xc1743294
@@ -10305,9 +10374,32 @@ plugins:
         itm: 14
   - name: Inigo.esp
     dirty:
+      - crc: 0x4321049d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 39
       - crc: 0xb9fc7507
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 10
+  - name: tos_laintardale_hf.esp
+    dirty:
+      - crc: 0xe536de07
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 13
+  - name: SerenityCrewPatch.esp
+    dirty:
+      - crc: 0x8de14c64
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 3
+  - name: Morskom.esp
+    dirty:
+      - crc: 0x700cd98d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
+  - name: SerenitySeapointPatch.esp
+    dirty:
+      - crc: 0x74f86411
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 4
   - name: Ja´dirr + Kharjo Makeover.esp
     dirty:
       - crc: 0xc21a23e1
@@ -10913,6 +11005,9 @@ plugins:
       - crc: 0x62c0e76d
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 141
+  - name: Alternate Start - Live Another Life.esp
+    tag:
+      - C.Location
   - name: Bandit Start.esp
     dirty:
       - crc: 0x57d4e755
@@ -11306,3 +11401,31 @@ plugins:
   - name: PocketMoney.esp
     tag:
       - Relev
+  - name: PerkusMaximus_Master.esp
+    tag:
+      - Names
+  - name: PerkusMaximus_Mage.esp
+    tag:
+      - Names
+  - name: PerkusMaximus_Thief.esp
+    tag:
+      - Names
+      - Stats
+  - name: PerkusMaximus_Warrior.esp
+    tag:
+      - Names
+  - name: Wind Destruction.esp
+    tag:
+      - name: -Relev
+        condition: file("PerkusMaximus_Master.esp")
+  - name: Pre PaMa WAFR Patch.esp
+    tag:
+      - Names
+  - name: Pre PaMa CCF Patch.esp
+    tag:
+      - Names
+      - Stats
+  - name: Pre PaMa CCOR Patch.esp
+    tag:
+      - Names
+      - Stats

@@ -212,6 +212,10 @@ iniFiles = [
 #--INI setting to setup Save Profiles
 saveProfilesKey = (u'General',u'SLocalSavePath')
 
+# Main master file, does not include Update.esm or DLC
+mainGameMaster = u'Oblivion.esm'
+mainGameMasterLower = u'oblivion.esm'
+
 #--The main plugin Wrye Bash should look for
 masterFiles = [
     u'Oblivion.esm',
@@ -1326,14 +1330,24 @@ CBash_patchers = (
     'CBash_ContentsChecker',
     )
 
-# For ListsMerger
+#-------------------------------------------------------------------------------
+# ListsMerger
+#-------------------------------------------------------------------------------
 listTypes = ('LVLC','LVLI','LVSP',)
-
+#-------------------------------------------------------------------------------
+# NamesPatcher
+#-------------------------------------------------------------------------------
 namesTypes = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT',
               'CONT', 'CREA', 'DOOR', 'EYES', 'FACT', 'FLOR', 'HAIR', 'INGR',
               'KEYM', 'LIGH', 'MISC', 'NPC_', 'RACE', 'SGST', 'SLGM', 'SPEL',
               'WEAP'}
+#-------------------------------------------------------------------------------
+# ItemPrices Patcher
+#-------------------------------------------------------------------------------
 pricesTypes = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+#-------------------------------------------------------------------------------
+# StatsImporter
+#-------------------------------------------------------------------------------
 statsTypes = {
             'ALCH':('eid', 'weight', 'value'),
             'AMMO':('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
@@ -1405,9 +1419,115 @@ statsHeaders = (
                     _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
                 )
 
+#-------------------------------------------------------------------------------
+# SoundPatcher
+#-------------------------------------------------------------------------------
+# Needs longs in SoundPatcher
+soundsLongsTypes = set(('ACTI','CONT','DOOR','LIGH','MGEF','SOUN','WTHR','WEAP',))
+soundsTypes = {
+    "ACTI": ('sound',),
+    "CONT": ('soundOpen','soundClose',),
+    "CREA": ('footWeight','inheritsSoundsFrom','sounds',),
+    "DOOR": ('soundOpen','soundClose','soundLoop',),
+    "LIGH": ('sound',),
+    "MGEF": ('castingSound','boltSound','hitSound','areaSound',),
+#    "REGN": ('entries.sounds',),
+    "SOUN": ('soundFile','minDist1','maxDist1','freqAdj1','minDist2',
+             'maxDist2','freqAdj2','staticAtten','stopTime','startTime',),
+    "WATR": ('sound',),
+    "WTHR": ('sounds',),
+}
+
+#-------------------------------------------------------------------------------
+# CellImporter
+#-------------------------------------------------------------------------------
+cellAutoKeys = (
+    u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
+cellRecAttrs = {
+            u'C.Climate': ('climate',),
+            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
+                        'directionalRed','directionalGreen','directionalBlue','unused2',
+                        'fogRed','fogGreen','fogBlue','unused3',
+                        'fogNear','fogFar','directionalXY','directionalZ',
+                        'directionalFade','fogClip'),
+            u'C.Music': ('music',),
+            u'C.Name': ('full',),
+            u'C.Owner': ('ownership',),
+            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+            u'C.Water': ('water','waterHeight',),
+            }
+cellRecFlags = {
+            u'C.Climate': 'behaveLikeExterior',
+            u'C.Music': '',
+            u'C.Name': '',
+            u'C.Owner': 'publicPlace',
+            u'C.Water': 'hasWater',
+            u'C.Light': '',
+            u'C.RecordFlags': '',
+            }
+#-------------------------------------------------------------------------------
+# GraphicsPatcher
+#-------------------------------------------------------------------------------
+graphicsLongsTypes = set((
+    'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN', 'CLAS', 'CLOT', 'CREA',
+    'DOOR', 'EFSH', 'FLOR', 'FURN', 'GRAS', 'INGR', 'KEYM', 'LIGH', 'LSCR', 'LTEX',
+    'MGEF', 'MISC', 'REGN', 'SGST', 'SLGM', 'STAT', 'TREE', 'WEAP',
+    ))
+graphicsTypes = {
+    "ACTI": ('model',),
+    "ALCH": ('iconPath','model',),
+    "AMMO": ('iconPath','model',),
+    "APPA": ('iconPath','model',),
+    "ARMA": ('male_model','female_model','male_model_1st','female_model_1st',),
+    "ARMO": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags',),
+    "BOOK": ('iconPath','model',),
+    "BSGN": ('iconPath',),
+    "CLAS": ('iconPath',),
+    "CLOT": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags',),
+    "CREA": ('bodyParts','nift_p',),
+    "DOOR": ('model',),
+    "EFSH": ('particleTexture','fillTexture','flags','unused1','memSBlend',
+    'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue',
+    'unused2','fillAIn','fillAFull','fillAOut','fillAPRatio',
+    'fillAAmp','fillAFreq','fillAnimSpdU','fillAnimSpdV','edgeOff',
+    'edgeRed','edgeGreen','edgeBlue','unused3','edgeAIn',
+    'edgeAFull','edgeAOut','edgeAPRatio','edgeAAmp','edgeAFreq',
+    'fillAFRatio','edgeAFRatio','memDBlend','partSBlend',
+    'partBlendOp','partZFunc','partDBlend','partBUp','partBFull',
+    'partBDown','partBFRatio','partBPRatio','partLTime',
+    'partLDelta','partNSpd','partNAcc','partVel1','partVel2',
+    'partVel3','partAcc1','partAcc2','partAcc3','partKey1',
+    'partKey2','partKey1Time','partKey2Time','key1Red','key1Green',
+    'key1Blue','unused4','key2Red','key2Green','key2Blue','unused5',
+    'key3Red','key3Green','key3Blue','unused6','key1A','key2A',
+    'key3A','key1Time','key2Time','key3Time',),
+    "FLOR": ('model',),
+    "FURN": ('model',),
+    "GRAS": ('model',),
+    "INGR": ('iconPath','model',),
+    "KEYM": ('iconPath','model',),
+    "LIGH": ('iconPath','model',),
+    "LSCR": ('iconPath',),
+    "LTEX": ('iconPath',),
+    "MGEF": ('iconPath','model',),
+    "MISC": ('iconPath','model',),
+    "REGN": ('iconPath',),
+    "SGST": ('iconPath','model',),
+    "SLGM": ('iconPath','model',),
+    "STAT": ('model',),
+    "TREE": ('iconPath','model',),
+    "WEAP": ('iconPath','model',),
+}
+graphicsFidTypes = {
+    "MGEF": ('effectShader','enchantEffect','light',)
+}
+#-------------------------------------------------------------------------------
+# Inventory Patcher
+#-------------------------------------------------------------------------------
+inventoryTypes = ('CREA','NPC_','CONT',)
+#-------------------------------------------------------------------------------
 # Mod Record Elements ----------------------------------------------------------
 #-------------------------------------------------------------------------------
-# Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Magic Info ------------------------------------------------------------------

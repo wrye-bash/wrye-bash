@@ -33,6 +33,7 @@ import re
 import struct
 # Internal
 from .. import bush # for game and actorValues
+from ..bush import game # for Stats patcher
 from ..balt import Progress
 from ..bolt import GPath, _unicode, deprint, CsvReader, csvFormat
 from ..bosh import LoadFactory, ModFile, dirs, inisettings
@@ -347,7 +348,7 @@ class ActorLevels:
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
-                    fid = (GPath(u'Oblivion.esm'), fidObject)
+                    fid = (GPath(game.mainGameMaster), fidObject)
                     eid = _coerce(eid, unicode)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
@@ -357,7 +358,7 @@ class ActorLevels:
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
                     source = _coerce(source, unicode)
-                    if source.lower() in (u'none', u'oblivion.esm'): continue
+                    if source.lower() in (u'none', game.mainGameMasterLower): continue
                     source = GPath(source)
                     eid = _coerce(eid, unicode)
                     fidMod = GPath(_coerce(fidMod, unicode))
@@ -386,9 +387,9 @@ class ActorLevels:
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obId_levels = mod_id_levels[GPath(u'Oblivion.esm')]
+            obId_levels = mod_id_levels[GPath(game.mainGameMaster)]
             for mod in sorted(mod_id_levels):
-                if mod.s.lower() == u'oblivion.esm': continue
+                if mod.s.lower() == game.mainGameMasterLower: continue
                 id_levels = mod_id_levels[mod]
                 for id_ in sorted(id_levels,key=lambda k:(
                         k[0].s.lower(),id_levels[k][0].lower())):
@@ -1383,19 +1384,33 @@ class ItemStats:
     def __init__(self,types=None,aliases=None):
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        self.attr_type = {'eid':self.sstr,
-                          'weight':self.sfloat,
-                          'value':self.sint,
-                          'damage':self.sint,
-                          'speed':self.sfloat,
-                          'enchantPoints':self.sint,
-                          'health':self.sint,
-                          'strength':self.sint,
-                          'duration':self.sint,
-                          'quality':self.sfloat,
-                          'uses':self.sint,
-                          'reach':self.sfloat,
-                          'armorRating':self.sint,}
+        if game.fsName == u'Skyrim':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'armorRating':self.sint,
+                              'duration':self.sint,
+                              'speed':self.sfloat,
+                              'reach':self.sfloat,
+                              'stagger':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'critDamage':self.sint,
+                              'criticalMultiplier':self.sfloat,
+                              'criticalEffect':self.sint,}
+        elif game.fsName == u'Oblivion':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'speed':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'health':self.sint,
+                              'strength':self.sint,
+                              'duration':self.sint,
+                              'quality':self.sfloat,
+                              'uses':self.sint,
+                              'reach':self.sfloat,}
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
 
