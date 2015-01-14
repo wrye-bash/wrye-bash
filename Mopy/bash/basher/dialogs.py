@@ -71,7 +71,7 @@ class ListBoxes(Dialog):
         self.ids = {}
         labels = {wx.ID_CANCEL:_(u'Cancel'),wx.ID_OK:_(u'OK')}
         labels.update(changedlabels)
-        self.SetSize(wx.Size(self.GetTextExtent(title)[0]*1.2+64,-1))
+        self.SetSize(balt.wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
         for i,group in enumerate(lists):
             title = group[0]
             tip = group[1]
@@ -89,7 +89,10 @@ class ListBoxes(Dialog):
             elif liststyle == 'list':
                 checks = balt.listBox(self, choices=items, isHScroll=True)
             else:
-                checks = wx.TreeCtrl(self,wx.ID_ANY,size=(150,200),style=wx.TR_DEFAULT_STYLE|wx.TR_FULL_ROW_HIGHLIGHT|wx.TR_HIDE_ROOT)
+                checks = wx.TreeCtrl(self, size=(150, 200),
+                                     style=wx.TR_DEFAULT_STYLE |
+                                           wx.TR_FULL_ROW_HIGHLIGHT |
+                                           wx.TR_HIDE_ROOT)
                 root = checks.AddRoot(title)
                 for item in group[2]:
                     child = checks.AppendItem(root,item.s)
@@ -119,7 +122,7 @@ class ListBoxes(Dialog):
         self.SetSizer(sizer)
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
-            self.SetSize(wx.Size(minWidth,-1))
+            self.SetSize(balt.wxSize(minWidth,-1))
 
     def OnKeyUp(self,event):
         """Char events"""
@@ -165,7 +168,7 @@ class ColorDialog(balt.Dialog):
         choiceKey = self.text_key[choice]
         self.comboBox = balt.comboBox(self,wx.ID_ANY,choice,choices=choices,style=wx.CB_READONLY)
         #--Color Picker
-        self.picker = wx.ColourPickerCtrl(self,wx.ID_ANY)
+        self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])
         #--Description
         help = colorInfo[choiceKey][1]

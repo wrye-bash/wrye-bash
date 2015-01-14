@@ -26,14 +26,13 @@ import StringIO
 import copy
 import re
 import webbrowser
-import wx
 from . import settingDefaults, Resources, Installers_Link
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, UncodedError, LogFile
+    SubProgress, LogFile
 from ..bosh import formatInteger
 # FIXME(ut): globals
 iniList = None
@@ -151,7 +150,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             # Sanity checks on saved size/position
             if not isinstance(pos,tuple) or len(pos) != 2:
                 deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), reverting to default position.') % (pos,type(pos)))
-                pos = wx.DefaultPosition
+                pos = balt.defPos
             if not isinstance(saved,tuple) or len(saved) != 2:
                 deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), reverting to default size.') % (saved, type(saved)))
                 pageSize = tuple(default)
@@ -164,10 +163,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         # Sanity checks on returned size/position
-        if not isinstance(ret.Pos,wx.Point):
+        if not isinstance(ret.Pos, balt.wxPoint):
             deprint(_(u'Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.') % (ret.Pos, type(ret.Pos)))
-            ret.Pos = wx.DefaultPosition
-        if not isinstance(ret.PageSize,wx.Size):
+            ret.Pos = balt.defPos
+        if not isinstance(ret.PageSize, balt.wxSize):
             deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.') % (ret.PageSize, type(ret.PageSize)))
             ret.PageSize = tuple(default)
         bosh.settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])

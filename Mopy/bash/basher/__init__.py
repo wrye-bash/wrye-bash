@@ -551,8 +551,10 @@ class MasterList(List):
                       sunkenBorder=False)
         self._setEditedFn = setEditedFn
 
-    colReverse = property(lambda self: {},
-                          doc='Do not reverse columns in Master Lists')
+    @property
+    def colReverse(self):
+        """Do not reverse columns in Master Lists."""
+        return {}
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
@@ -943,7 +945,7 @@ class INIList(List):
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
     def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0,u'')
         self.tweakLines = []
@@ -1001,7 +1003,7 @@ class INITweakLineCtrl(wx.ListCtrl):
 #------------------------------------------------------------------------------
 class INILineCtrl(wx.ListCtrl):
     def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, u'')
 
@@ -1814,7 +1816,9 @@ class INIPanel(SashPanel):
         installer_links.iniList = ini_links.iniList = iniList = \
             INIList(left, self.listData)
         self.uiList = iniList
-        self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
+        self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
+                                      choices=self.sortKeys,
+                                      style=wx.CB_READONLY)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -2244,7 +2248,6 @@ class SaveDetails(SashPanel):
         SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,
                            isVertical=False,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
-        readOnlyColour = self.GetBackgroundColour()
         #--Singleton
         global saveDetails
         saveDetails = self
@@ -3936,7 +3939,8 @@ class MessagePanel(SashPanel):
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
         gMessageList = MessageList(gTop, self.listData)
-        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
+            gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.uiList = gMessageList
         #--Search # TODO(ut): move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
@@ -4092,8 +4096,8 @@ class PeoplePanel(SashTankPanel):
 from .misc_links import Tab_Link # TODO(ut) don't want to import here
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
-    def __init__(self, parent, id):
-        wx.Notebook.__init__(self, parent, id)
+    def __init__(self, parent):
+        wx.Notebook.__init__(self, parent)
         balt.TabDragMixin.__init__(self)
         #--Pages
         # Ensure the 'Mods' tab is always shown
@@ -4200,7 +4204,7 @@ class BashStatusBar(wx.StatusBar):
     laaButton = None
 
     def __init__(self, parent):
-        wx.StatusBar.__init__(self, parent, wx.ID_ANY)
+        wx.StatusBar.__init__(self, parent)
         global statusBar
         statusBar = self
         self.SetFieldsCount(3)
@@ -4439,7 +4443,7 @@ class BashFrame(wx.Frame):
         bashFrame = self
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size)
+        wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -4449,7 +4453,7 @@ class BashFrame(wx.Frame):
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
-        self.notebook = notebook = BashNotebook(self,wx.ID_ANY)
+        self.notebook = notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Bind(wx.EVT_ACTIVATE, self.RefreshData)

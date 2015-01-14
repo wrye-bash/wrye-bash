@@ -62,8 +62,8 @@ class DocBrowser(wx.Frame):
         #--Window
         pos = bosh.settings['bash.modDocs.pos']
         size = bosh.settings['bash.modDocs.size']
-        wx.Frame.__init__(self, Link.Frame, wx.ID_ANY, _(u'Doc Browser'), pos,
-                          size, style=wx.DEFAULT_FRAME_STYLE)
+        wx.Frame.__init__(self, Link.Frame, title=_(u'Doc Browser'), pos=pos,
+                          size=size)
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
         #--Mod Name
@@ -93,7 +93,7 @@ class DocBrowser(wx.Frame):
         self.plainText = roTextCtrl(self, special=True)
         if bHaveComTypes:
             self.htmlText = wx.lib.iewin.IEHtmlWindow(
-                self, wx.ID_ANY, style=wx.NO_FULL_REPAINT_ON_RESIZE)
+                self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
             #--Html Back
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
@@ -377,8 +377,8 @@ class ModChecker(wx.Frame):
         #--Window
         pos = bosh.settings.get('bash.modChecker.pos',balt.defPos)
         size = bosh.settings.get('bash.modChecker.size',(475,500))
-        wx.Frame.__init__(self, Link.Frame, wx.ID_ANY, _(u'Mod Checker'), pos,
-                          size, style=wx.DEFAULT_FRAME_STYLE)
+        wx.Frame.__init__(self, Link.Frame, title=_(u'Mod Checker'), pos=pos,
+                          size=size)
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
         self.SetIcons(Resources.bashBlue)
@@ -389,7 +389,7 @@ class ModChecker(wx.Frame):
         #--Text
         if bHaveComTypes:
             self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(
-                self, wx.ID_ANY, style=wx.NO_FULL_REPAINT_ON_RESIZE)
+                self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
             #--Buttons
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
@@ -544,10 +544,9 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.project = project
         self.config = config = data[project].getOmodConfig(project)
         #--GUI
-        wx.Frame.__init__(self, parent, wx.ID_ANY, _(u'Omod Config: ') +
-                          project.s, style=(
-                wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
-                wx.TAB_TRAVERSAL))
+        wx.Frame.__init__(self, parent, title=_(u'Omod Config: ') + project.s,
+                          style=(wx.RESIZE_BORDER | wx.CAPTION |
+                                 wx.CLIP_CHILDREN | wx.TAB_TRAVERSAL))
         self.SetIcons(Resources.bashBlue)
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)

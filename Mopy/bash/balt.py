@@ -78,6 +78,10 @@ splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - do
 #--Indexed
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
+# wx Types
+wxPoint = wx.Point
+wxSize = wx.Size
+
 def fonts():
     font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -341,9 +345,7 @@ class roTextCtrl(textCtrl):
 class comboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
-        autotooltip = kwdargs.get('autotooltip',True)
-        if 'autotooltip' in kwdargs:
-            del kwdargs['autotooltip']
+        autotooltip = kwdargs.pop('autotooltip', True)
         wx.ComboBox.__init__(self, *args, **kwdargs)
         if autotooltip:
             self.Bind(wx.EVT_SIZE, self.OnChange)
