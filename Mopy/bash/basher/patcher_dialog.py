@@ -21,12 +21,14 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 """Patch dialog"""
 import StringIO
 import copy
 import re
 import time
 import wx
+from datetime import timedelta
 from ..balt import button, staticText, vSizer, hSizer, spacer, Link
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
@@ -157,30 +159,27 @@ class PatchDialog(balt.Dialog):
         patcher.Layout()
         self.currentPatcher = patcher
 
-    def Execute(self,event=None):
+    def Execute(self,event=None): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
         self.EndModalOK()
         patchName = self.patchInfo.name
         progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
-        ###Remove from Bash after CBash integrated
         patchFile = None
-        if self.doCBash: # TODO(ut): factor out duplicated code in this if/else!!
-            try:
-                from datetime import timedelta
-                timer1 = time.clock()
-                fullName = self.patchInfo.getPath().tail
-                #--Save configs
-                patchConfigs = {'ImportedMods':set()}
-                for patcher in self.patchers:
-                    patcher.saveConfig(patchConfigs)
-                bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
-                #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
-                patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-
-                patchFile = bosh.CBash_PatchFile(patchName,patchers)
-                #try to speed this up!
-                patchFile.initData(SubProgress(progress,0,0.1))
+        try:
+            timer1 = time.clock()
+            #--Save configs
+            patchConfigs = {'ImportedMods':set()}
+            for patcher in self.patchers:
+                patcher.saveConfig(patchConfigs)
+            bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+            #--Do it
+            log = bolt.LogFile(StringIO.StringIO())
+            patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
+            patchFile = bosh.CBash_PatchFile(patchName,
+                                             patchers) if self.doCBash else \
+                bosh.PatchFile(self.patchInfo, patchers)
+            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
                 #no speeding needed/really possible (less than 1/4 second even with large LO)
@@ -189,6 +188,7 @@ class PatchDialog(balt.Dialog):
                 progress.setCancel(False)
                 progress(1.0,patchName.s+u'\n'+_(u'Saving...'))
                 patchFile.save()
+                fullName = self.patchInfo.getPath().tail
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
@@ -210,78 +210,7 @@ class PatchDialog(balt.Dialog):
                     else:
                         raise
                 patchName.mtime = patchTime
-                #--Cleanup
-                self.patchInfo.refresh()
-                modList.RefreshUI(patchName)
-                #--Done
-                progress.Destroy()
-                timer2 = time.clock()
-                #--Readme and log
-                log.setHeader(None)
-                log(u'{{CSS:wtxt_sand_small.css}}')
-                logValue = log.out.getvalue()
-                log.out.close()
-                timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
-                logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-                readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
-                with readme.open('w',encoding='utf-8') as file:
-                    file.write(logValue)
-                bosh.modInfos.table.setItem(patchName,'doc',readme)
-                #--Convert log/readme to wtxt and show log
-                docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u'')) #bosh.modInfos.dir.join(u'Docs')
-                bolt.WryeText.genHtml(readme,None,docsDir)
-                balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
-                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
-                #--Select?
-                message = _(u'Activate %s?') % patchName.s
-                if bosh.inisettings['PromptActivateBashedPatch'] \
-                         and (bosh.modInfos.isSelected(patchName) or
-                         balt.askYes(self.parent,message,patchName.s)):
-                    try:
-                        oldFiles = bosh.modInfos.ordered[:]
-                        bosh.modInfos.select(patchName)
-                        changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
-                        if len(changedFiles) > 1:
-                            Link.Frame.GetStatusBar().SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
-                        bosh.modInfos[patchName].setGhost(False)
-                        bosh.modInfos.refreshInfoLists()
-                    except bosh.PluginsFullError:
-                        balt.showError(self,
-                            _(u'Unable to add mod %s because load list is full.')
-                            % patchName.s)
-                    modList.RefreshUI()
-            except bolt.FileEditError, error:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                balt.showError(self,u'%s'%error,_(u'File Edit Error'))
-            except CancelError:
-                pass
-            except BoltError, error:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                balt.showError(self,u'%s'%error,_(u'Processing Error'))
-            except:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                raise
-            finally:
-                try:
-                    patchFile.Current.Close()
-                except:
-                    pass
-                progress.Destroy()
-        else:
-            try:
-                from datetime import timedelta
-                timer1 = time.clock()
-                #--Save configs
-                patchConfigs = {'ImportedMods':set()}
-                for patcher in self.patchers:
-                    patcher.saveConfig(patchConfigs)
-                bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
-                #--Do it
-                log = bolt.LogFile(StringIO.StringIO())
-                nullProgress = bolt.Progress()
-                patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-                patchFile = bosh.PatchFile(self.patchInfo,patchers)
-                patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
@@ -305,49 +234,54 @@ class PatchDialog(balt.Dialog):
                             continue
                         raise CancelError
                     break
-
-                #--Cleanup
-                self.patchInfo.refresh()
-                modList.RefreshUI(patchName)
-                #--Done
-                progress.Destroy()
-                timer2 = time.clock()
-                #--Readme and log
-                log.setHeader(None)
-                log(u'{{CSS:wtxt_sand_small.css}}')
-                logValue = log.out.getvalue()
-                log.out.close()
-                timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
-                logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-                readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
+            #--Cleanup
+            self.patchInfo.refresh()
+            modList.RefreshUI(patchName)
+            #--Done
+            progress.Destroy()
+            timer2 = time.clock()
+            #--Readme and log
+            log.setHeader(None)
+            log(u'{{CSS:wtxt_sand_small.css}}')
+            logValue = log.out.getvalue()
+            log.out.close()
+            timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
+            logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
+            readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
+            docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
+            if self.doCBash: ##: eliminate this if/else
+                with readme.open('w',encoding='utf-8') as file:
+                    file.write(logValue)
+                #--Convert log/readme to wtxt and show log
+                bolt.WryeText.genHtml(readme,None,docsDir)
+            else:
                 tempReadmeDir = Path.tempDir(u'WryeBash_').join(u'Docs')
                 tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
                 #--Write log/readme to temp dir first
                 with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
                 #--Convert log/readmeto wtxt
-                docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
                     balt.shellMove(tempReadmeDir,bosh.dirs['mods'],self,False,False,False)
                 except (CancelError,SkipError):
-                    # User didn't allow UAC, move to My Games directoy instead
+                    # User didn't allow UAC, move to My Games directory instead
                     balt.shellMove([tempReadme,tempReadme.root+u'.html'],bosh.dirs['saveBase'],self,False,False,False)
                     readme = bosh.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
-                bosh.modInfos.table.setItem(patchName,'doc',readme)
-                #--Convert log/readme to wtxt and show log
-                balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
-                balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
-                #--Select?
-                message = _(u'Activate %s?') % patchName.s
-                if bosh.inisettings['PromptActivateBashedPatch'] \
-                         and (bosh.modInfos.isSelected(patchName) or
-                          balt.askYes(self.parent,message,patchName.s)):
-                    try:
-                        # Note to the regular WB devs:
+            bosh.modInfos.table.setItem(patchName,'doc',readme)
+            balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
+            balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
+            #--Select?
+            message = _(u'Activate %s?') % patchName.s
+            if bosh.inisettings['PromptActivateBashedPatch'] \
+                    and (bosh.modInfos.isSelected(patchName) or
+                             balt.askYes(self.parent,message,patchName.s)):
+                try:
+                    if not self.doCBash: ##: is this PBash specific ? needed ?
+                        # Note to the regular WB devs: ##: 226b30b27e5b98f24ba14fc583a2048a43bb7ad8
                         #  The bashed patch wasn't activating when it had been manually deleting. So, on
                         #   startup, WB would create a new one, but something, somewhere (libloadorder?) wasn't
                         #   registering this so when this: bosh.modInfos.select(patchName) executed, bash
@@ -355,31 +289,34 @@ class PatchDialog(balt.Dialog):
                         #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
                         #   here until one of you come back or I find a better place.
                         bosh.modInfos.plugins.refresh(True)
-                        oldFiles = bosh.modInfos.ordered[:]
-                        bosh.modInfos.select(patchName)
-                        changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
-                        if len(changedFiles) > 1:
-                            Link.Frame.GetStatusBar().SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
-                        bosh.modInfos[patchName].setGhost(False)
-                        bosh.modInfos.refreshInfoLists()
-                    except bosh.PluginsFullError:
-                        balt.showError(self,
-                            _(u'Unable to add mod %s because load list is full.')
-                            % patchName.s)
-                    modList.RefreshUI()
-            except bolt.FileEditError, error:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                balt.showError(self,u'%s'%error,_(u'File Edit Error'))
-            except CancelError:
-                pass
-            except BoltError, error:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                balt.showError(self,u'%s'%error,_(u'Processing Error'))
-            except:
-                balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
-                raise
-            finally:
-                progress.Destroy()
+                    oldFiles = bosh.modInfos.ordered[:]
+                    bosh.modInfos.select(patchName)
+                    changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    if len(changedFiles) > 1:
+                        Link.Frame.GetStatusBar().SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
+                    bosh.modInfos[patchName].setGhost(False)
+                    bosh.modInfos.refreshInfoLists()
+                except bosh.PluginsFullError:
+                    balt.showError(self, _(
+                        u'Unable to add mod %s because load list is full.')
+                                   % patchName.s)
+                modList.RefreshUI()
+        except bolt.FileEditError, error:
+            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.showError(self,u'%s'%error,_(u'File Edit Error'))
+        except CancelError:
+            pass
+        except BoltError, error:
+            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.showError(self,u'%s'%error,_(u'Processing Error'))
+        except:
+            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            raise
+        finally:
+            if self.doCBash:
+                try: patchFile.Current.Close()
+                except: pass
+            progress.Destroy()
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
