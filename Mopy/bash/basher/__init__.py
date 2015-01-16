@@ -216,6 +216,8 @@ from .dialogs import ListBoxes # TODO(ut): cyclic import
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
+    # UI settings keys prefix - used for sashPos and uiList gui settings
+    keyPrefix = 'OVERRIDE'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
@@ -320,14 +322,14 @@ class List(balt.UIList):
     _sizeHints = (-1, 50) # overrides UIList
     icons = colorChecks
 
-    def __init__(self, parent, listData=None, dndFiles=False, dndList=False,
-                 dndColumns=(), **kwargs):
+    def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
+                 dndList=False, dndColumns=(), **kwargs):
         #--ListCtrl
         #--MasterList: masterInfo = self.data[item], where item is id number
         # rest of List subclasses provide a non None listData
         self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
-                             dndColumns=dndColumns, **kwargs)
+        balt.UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
+                             dndList=dndList, dndColumns=dndColumns, **kwargs)
         #--Columns
         self.PopulateColumns()
         #--Items
@@ -531,7 +533,7 @@ class List(balt.UIList):
 class MasterList(List):
     mainMenu = Links()
     itemMenu = Links()
-    keyPrefix = 'bash.masters'
+    keyPrefix = 'bash.masters' ##: MasterList is a special beast
     editLabels = True
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None):
@@ -546,9 +548,9 @@ class MasterList(List):
         self.loadOrderNames = []
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Parent init
-        List.__init__(self, parent, listData, singleCell=True,
-                      sunkenBorder=False)
+        #--Parent init ##: notice it does not use Panel's keyPrefix...
+        List.__init__(self, parent, listData, self.__class__.keyPrefix,
+                      singleCell=True, sunkenBorder=False)
         self._setEditedFn = setEditedFn
 
     @property
@@ -784,15 +786,14 @@ class MasterList(List):
 class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
-    keyPrefix = 'bash.ini'
     _shellUI = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.ini.cols'
         self.sortValid = settings['bash.ini.sortValid']
         #--Parent init
-        List.__init__(self, parent, listData, sunkenBorder=False)
+        List.__init__(self, parent, listData, keyPrefix, sunkenBorder=False)
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -1053,9 +1054,8 @@ class ModList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.mods'
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.mods.cols'
         #--Data/Items
@@ -1068,7 +1068,7 @@ class ModList(List):
         checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        List.__init__(self, parent, listData, dndList=True,
+        List.__init__(self, parent, listData, keyPrefix, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
 
     #-- Drag and Drop-----------------------------------------------------
@@ -1430,6 +1430,7 @@ class ModList(List):
 #------------------------------------------------------------------------------
 class ModDetails(SashPanel):
     """Details panel for mod tab."""
+    keyPrefix = 'bash.mods.details' ##: unused for now
 
     def __init__(self,parent):
         SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,
@@ -1785,6 +1786,8 @@ class ModDetails(SashPanel):
 
 #------------------------------------------------------------------------------
 class INIPanel(SashPanel):
+    keyPrefix = 'bash.ini'
+
     def __init__(self, parent):
         SashPanel.__init__(self, parent,'bash.ini.sashPos')
         left,right = self.left, self.right
@@ -1814,7 +1817,7 @@ class INIPanel(SashPanel):
         from . import installer_links, ini_links
         self.listData = bosh.iniInfos
         installer_links.iniList = ini_links.iniList = iniList = \
-            INIList(left, self.listData)
+            INIList(left, self.listData, self.keyPrefix)
         self.uiList = iniList
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys,
@@ -2045,6 +2048,8 @@ class INIPanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
+    keyPrefix = 'bash.mods'
+
     def __init__(self,parent):
         SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=150)
         left,right = self.left, self.right
@@ -2054,7 +2059,7 @@ class ModPanel(SashPanel):
         self.listData = bosh.modInfos
         saves_links.modList = mods_links.modList = mod_links.modList = \
         app_buttons.modList = patcher_dialog.modList = modList = \
-            ModList(left, self.listData)
+            ModList(left, self.listData, self.keyPrefix)
         self.uiList = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
@@ -2091,16 +2096,15 @@ class SaveList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.saves'
     editLabels = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.saves.cols'
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
@@ -2243,6 +2247,8 @@ class SaveList(List):
 #------------------------------------------------------------------------------
 class SaveDetails(SashPanel):
     """Savefile details panel."""
+    keyPrefix = 'bash.saves.details' ##: unused for now
+
     def __init__(self,parent):
         """Initialize."""
         SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,
@@ -2447,6 +2453,8 @@ class SaveDetails(SashPanel):
 #------------------------------------------------------------------------------
 class SavePanel(SashPanel):
     """Savegames tab."""
+    keyPrefix = 'bash.saves'
+
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
@@ -2455,7 +2463,8 @@ class SavePanel(SashPanel):
         global saveList
         from . import saves_links
         self.listData = bosh.saveInfos
-        saves_links.saveList = saveList = SaveList(left, self.listData)
+        saves_links.saveList = saveList = SaveList(left, self.listData,
+                                                   self.keyPrefix)
         self.uiList = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
@@ -2490,16 +2499,15 @@ class SavePanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
-    keyPrefix = 'bash.installers'
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
     # _shellUI = True TODO(ut): shellUI path does not grok markers
     editLabels = True
 
-    def __init__(self, parent, data, details=None):
-        balt.Tank.__init__(self, parent, data, details=details, dndList=True,
-                           dndFiles=True, dndColumns=['Order'])
+    def __init__(self, parent, data, keyPrefix, details=None):
+        balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
+                           dndList=True, dndFiles=True, dndColumns=['Order'])
         self.hitItem = None
         self.hitTime = 0
 
@@ -2845,6 +2853,7 @@ class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
     espmMenu = Links()
     subsMenu = Links()
+    keyPrefix = 'bash.installers'
 
     def __init__(self,parent):
         """Initialize."""
@@ -2865,7 +2874,7 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.uiList = InstallersList(left, data, details=self)
+        self.uiList = InstallersList(left, data, self.keyPrefix, details=self)
         bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
@@ -3378,16 +3387,15 @@ class ScreensList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
-    keyPrefix = 'bash.screens'
     icons = None # no icons
     _shellUI = True
     editLabels = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.screens.cols'
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def OnDClick(self,event):
         """Double click a screenshot"""
@@ -3531,6 +3539,8 @@ class ScreensList(List):
 #------------------------------------------------------------------------------
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
+    keyPrefix = 'bash.screens'
+
     def __init__(self,parent):
         """Initialize."""
         sashPos = settings.get('bash.screens.sashPos',120)
@@ -3539,7 +3549,7 @@ class ScreensPanel(SashPanel):
         #--Contents
         global screensList
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        screensList = ScreensList(left, self.listData)
+        screensList = ScreensList(left, self.listData, self.keyPrefix)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.uiList = screensList
         #--Layout
@@ -3567,16 +3577,15 @@ class BSAList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.BSAs'
     icons = None # no icons
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.cols = settings['bash.BSAs.cols']
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3799,11 +3808,13 @@ class BSADetails(wx.Window):
 #------------------------------------------------------------------------------
 class BSAPanel(NotebookPanel):
     """BSA info tab."""
+    keyPrefix = 'bash.BSAs'
+
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
-        bsaList = BSAList(self, self.listData)
+        bsaList = BSAList(self, self.listData, self.keyPrefix)
         self.BSADetails = BSADetails(self)
         BSAList.details = self.BSADetails
         #--Events
@@ -3836,17 +3847,16 @@ class MessageList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
-    keyPrefix = 'bash.messages'
     icons = None # no icons
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.messages.cols'
         #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def GetItems(self):
         """Set and return self.items."""
@@ -3927,6 +3937,8 @@ class MessageList(List):
 #------------------------------------------------------------------------------
 class MessagePanel(SashPanel):
     """Messages tab."""
+    keyPrefix = 'bash.messages'
+
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
@@ -3938,7 +3950,7 @@ class MessagePanel(SashPanel):
         global gMessageList
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        gMessageList = MessageList(gTop, self.listData)
+        gMessageList = MessageList(gTop, self.listData, self.keyPrefix)
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.uiList = gMessageList
@@ -4012,7 +4024,6 @@ class MessagePanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
-    keyPrefix = 'bash.people'
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
@@ -4027,6 +4038,7 @@ class PeopleList(balt.Tank):
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
+    keyPrefix = 'bash.people'
 
     def __init__(self,parent):
         """Initialize."""
@@ -4036,7 +4048,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.uiList = PeopleList(left, data, details=self)
+        self.uiList = PeopleList(left, data, self.keyPrefix, details=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)

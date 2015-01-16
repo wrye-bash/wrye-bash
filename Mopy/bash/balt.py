@@ -1723,8 +1723,6 @@ class UIList(wx.Panel):
     # optional menus
     mainMenu = None
     itemMenu = None
-    # UI settings keys - cf tankKey in TankData ...
-    keyPrefix = 'OVERRIDE'
     #--gList image collection
     icons = {}
     _shellUI = False # only True in Screens/INIList - disabled in Installers
@@ -1732,12 +1730,15 @@ class UIList(wx.Panel):
     #--Style params
     editLabels = False # allow editing the labels - also enables F2 shortcut
 
-    def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
+    def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
+                 **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
         self.SetSizeHints(*self.__class__._sizeHints)
+        # Settings key
+        self.__class__.keyPrefix = keyPrefix
         #--Columns
         self.colNames = bosh.settings['bash.colNames']
         self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
@@ -1918,7 +1919,7 @@ class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
 
-    def __init__(self, parent, data, details=None, dndList=False,
+    def __init__(self, parent, data, keyPrefix, details=None, dndList=False,
                  dndFiles=False, dndColumns=(), **kwargs):
         #--Data
         self.data = data
@@ -1930,8 +1931,8 @@ class Tank(UIList):
         #--ListCtrl
         # no sunken borders by default
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
-        UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
-                        dndColumns=dndColumns, **kwargs)
+        UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
+                        dndList=dndList, dndColumns=dndColumns, **kwargs)
         #--Columns
         self.UpdateColumns()
         #--Items
