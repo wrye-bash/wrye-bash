@@ -723,9 +723,9 @@ class Mod_MarkMergeable(EnabledLink):
                 if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
                     reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
                 else:
-                    reason = bosh.CBash_PatchFile.modIsMergeable(fileInfo,True)
+                    reason = bosh.isCBashMergeable(fileInfo,True)
             else:
-                reason = bosh.PatchFile.modIsMergeable(fileInfo,True)
+                reason = bosh.isPBashMergeable(fileInfo,True)
 
             if reason == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
