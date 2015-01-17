@@ -22,7 +22,7 @@
 #
 # =============================================================================
 
-"""This module contains oblivion base patcher classes.""" # TODO:DOCS
+"""This module contains base patcher classes."""
 import struct
 from operator import itemgetter
 # Internal
@@ -94,7 +94,7 @@ class MultiTweakItem(AMultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile): # extra param: patchFile
         """Edits patch file as desired. Should write to log."""
-        pass  # TODO raise AbstractError ?
+        pass ##: raise AbstractError ?
 
     def _patchLog(self, log, count):
         #--Log - must define self.logMsg in subclasses

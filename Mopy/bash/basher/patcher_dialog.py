@@ -26,7 +26,7 @@ import StringIO
 import copy
 import re
 import time
-import wx # TODO(ut): de wx
+import wx
 from ..balt import button, staticText, vSizer, hSizer, spacer, Link
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
@@ -541,7 +541,7 @@ class PatchDialog(balt.Dialog):
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
-    def OnSize(self,event):
+    def OnSize(self,event): ##: needed ? event.Skip() ??
         balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
         self.Layout()
         self.currentPatcher.Layout()

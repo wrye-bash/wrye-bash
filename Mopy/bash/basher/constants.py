@@ -141,7 +141,7 @@ colorInfo = {
     }
 
 #--Load config/defaults
-settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package)
+settingDefaults = { # TODO(178): belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,u'0'),

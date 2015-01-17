@@ -228,7 +228,7 @@ class Saves_Profiles(ChoiceLink):
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):
-    """Sets the load list to the save game's masters.""" # TODO(ut): test
+    """Sets the load list to the save game's masters.""" # FIXME(ut): test
     text = _(u'Load Masters')
     help = _(u"Set the load list to the save game's masters")
 

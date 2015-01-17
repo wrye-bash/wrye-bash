@@ -4009,7 +4009,7 @@ class FileInfos(DataDict):
         self.bashDir = self.getBashDir() # should be a property
         self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
                                            self.bashDir.join(u'Table.pkl')))
-        #--Update table keys... # TODO(ut): CRUFT ?
+        #--Update table keys... # CRUFT (178)
         tableData = self.table.data
         for key in self.table.data.keys():
             if not isinstance(key,bolt.Path):
@@ -4056,7 +4056,7 @@ class FileInfos(DataDict):
             # Normal folder items
             names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
         names = list(names)
-        names.sort(key=lambda x: x.cext == u'.ghost') # TODO(ut) Modinfos specific !!!@!
+        names.sort(key=lambda x: x.cext == u'.ghost') ##: Modinfos specific !!!@!
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -5576,7 +5576,7 @@ class PickleTankData:
         """Initialize. Definite data from pickledict."""
         self.dictFile = PickleDict(path)
         self.data = self.dictFile.data
-        self.hasChanged = False # TODO(ut): move to bolt.PickleDict
+        self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
 
     def setChanged(self,hasChanged=True):
@@ -11449,7 +11449,7 @@ def initBosh(personal='',localAppData='',oblivionPath=''):
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
-    # TODO(ut): drop .pkl support, timestamp corrupted instead of deleting (?)
+    ##(178): drop .pkl support
 
     def _load(dat_file=_dat, oldPath=u'bash config.pkl'):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak

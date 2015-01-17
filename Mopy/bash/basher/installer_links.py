@@ -54,7 +54,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'Installer_Delete',
            'Installer_Subs_SelectAll', 'Installer_Subs_DeselectAll',
            'Installer_Subs_ToggleSelection', 'Installer_Subs_ListSubPackages',
            'Installer_OpenNexus']
-# FIXME(ut): globals
+ # TODO(ut): globals - iniList should be non None (ini panel not shown)
 iniList = None
 gInstallers = None
 
@@ -894,7 +894,7 @@ class Installer_Espm_Reset(EnabledLink):
     text = _(u'Reset Name')
 
     def _enable(self):
-        if self.selected == -1: return False  # FIXME ?
+        if self.selected == -1: return False
         self.installer = installer = gInstallers.data[gInstallers.detailsItem]
         curName =gInstallers.gEspmList.GetString(self.selected).replace(u'&&',u'&')
         if curName[0] == u'*': curName = curName[1:]

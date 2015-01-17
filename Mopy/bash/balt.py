@@ -300,7 +300,7 @@ class textCtrl(wx.TextCtrl):
     def __init__(self, parent, value=u'', size=defSize, style=0,
                  multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
                  onKillFocus=None, onText=None):
-        if multiline: style |= wx.TE_MULTILINE # TODO(ut): would it harm to have them all multiline ?
+        if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
         wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
                              name=name)
         if autotooltip:
@@ -1168,7 +1168,7 @@ class Dialog(wx.Dialog):
 
     def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
                  style=0, resize=True, caption=False, *args, **kwargs):
-        # TODO(ut): drop parent, resize parameters- parent = Link.Frame (test), resize=True
+        ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
         self.sizesKey = self.__class__.__name__
         self.title = title or self.__class__.title
         style |= wx.DEFAULT_DIALOG_STYLE
@@ -1858,7 +1858,7 @@ class UIList(wx.Panel):
     def OnBeginEditLabel(self,event): event.Skip()
     def OnLabelEdited(self,event): event.Skip()
 
-    #--ABSTRACT - TODO(ut): different Tank and List overrides
+    #--ABSTRACT ##: different Tank and List overrides - must unify
     def OnItemSelected(self, event): raise AbstractError
     def OnColumnClick(self, event): raise AbstractError
     def OnColumnResize(self, event): raise AbstractError
@@ -2038,7 +2038,7 @@ class Tank(UIList):
         gItem.SetData(self.GetId(item))
         gList.SetItem(gItem)
 
-    def GetColumnDex(self,column): # TODO(ut): remove
+    def GetColumnDex(self,column): ##: remove
         raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
@@ -2183,7 +2183,7 @@ class Tank(UIList):
                 self.data.delete(items,askOk=True,dontRecycle=noRecycle)
             except (CancelError,SkipError):
                 pass
-        if not _refresh: return  # TODO(ut): refresh below did not work for
+        if not _refresh: return  # FIXME(ut): refresh below did not work for
         # BAIN - let's see with People tab (then delete _refresh parameter)
         self.RefreshUI()
         self.data.setChanged()
@@ -2436,7 +2436,7 @@ class OneItemLink(EnabledLink):
 
     To be used in Link subclasses where self.selected is a list instance.
     """
-    # TODO(ut): edit help to add _(u'. Select one item only')
+    ##: maybe edit help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
 class CheckLink(ItemLink):

@@ -25,7 +25,7 @@
 import StringIO
 import copy
 import os
-import wx # FIXME(ut): wx
+import wx
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
@@ -35,7 +35,7 @@ from . import Resources
 from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
-from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
+from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog
 from ..patcher.patchers import base
 from ..patcher.patchers import special
@@ -370,7 +370,7 @@ class Mod_Groups(_Mod_Labels):
         self.listEditor.SetItemsTo(list(set(bosh.settings[
             'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
-    # TODO(307): warn in items below (askContinue or whatever it's called)
+    ##: warn in items below (askContinue or whatever it's called)
     def _doSync(self, event):
         """Set the list of groups to groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
@@ -615,8 +615,7 @@ class _Mod_DisallowGhosting_All(ItemLink):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(EnabledLink):
-# TODO(ut) unghost all ?
+class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
     def _initData(self, window, data):
         ItemLink._initData(self, window, data)
         if len(data) == 1:
@@ -1509,7 +1508,7 @@ class Mod_FlipMasters(OneItemLink):
     def _initData(self, window, data):
         super(Mod_FlipMasters, self)._initData(window, data)
         #--FileInfo
-        self.fileName = fileName = GPath(self.selected[0]) # TODO(ut): was data[0]
+        self.fileName = fileName = GPath(self.selected[0])
         self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
         self.text = _(u'Esmify Masters')
         if len(data) == 1 and len(fileInfo.header.masters) > 1:
@@ -1635,7 +1634,7 @@ class Mod_Face_Import(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         npc = bosh.PCFaces.mod_addFace(fileInfo,srcFace)
-        #--Save Face picture? # TODO(ut) does not save face picture but save screen ?!
+        #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
             srcInfo.getHeader()

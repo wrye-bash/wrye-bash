@@ -396,7 +396,7 @@ class Installers_Enabled(Installers_Link, BoolLink):
             gInstallers.OnShow()
             self.gTank.RefreshUI()
         else:
-            self.gTank.gList.DeleteAllItems() # TODO(ut): encapsulate
+            self.gTank.gList.DeleteAllItems() ##: encapsulate
             gInstallers.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, Installers_Link, BoolLink):

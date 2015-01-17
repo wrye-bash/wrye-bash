@@ -414,7 +414,7 @@ def InitINILinks():
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Installer'))
-    INIList.mainMenu.append(sortMenu)
+        INIList.mainMenu.append(sortMenu)
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols','bash.ini.allCols',['File']))
     INIList.mainMenu.append(SeparatorLink())

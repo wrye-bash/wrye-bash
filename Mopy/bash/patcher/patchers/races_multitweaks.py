@@ -27,7 +27,8 @@ races records. As opposed to the rest of the multitweak items these are not
 grouped by a MultiTweaker but by the RacePatcher (also in this module) which
 is a SpecialPatcher. Notice the PBash ones do not log in buildPatch - the
 RacesTweaker patcher was calling their "log" method - now super's _patchLog()
-""" # TODO:DOCS
+"""
+
 import random
 import re
 # Internal
@@ -46,7 +47,6 @@ class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
-        # TODO : translate ?
         super(ARaceTweaker_BiggerOrcsAndNords, self).__init__(
             _(u"Bigger Nords and Orcs"),
             _(u'Adjusts the Orc and Nord race records to be taller/heavier '

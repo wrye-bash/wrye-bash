@@ -47,7 +47,7 @@ class _CheckList_SelectAll(ItemLink):
 
 class ListBoxes(Dialog):
     """A window with 1 or more lists."""
-    # TODO(ut): attributes below must go - askContinue method ?
+    ##: attributes below must go - askContinue method ?
     ID_OK = wx.ID_OK
     ID_CANCEL = wx.ID_CANCEL
 
@@ -60,8 +60,9 @@ class ListBoxes(Dialog):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
+        ##: resize = True - drop resize parameter
         super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=False)  # TODO(ut): resize = True and drop resize parameter
+                                        resize=False)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))

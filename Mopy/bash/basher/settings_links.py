@@ -24,7 +24,7 @@
 
 import locale
 import sys
-import wx # FIXME(ut): wx
+import wx
 from ..balt import ItemLink, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     staticText, tooltip, Link, staticBitmap
@@ -250,7 +250,6 @@ class Settings_StatusBar_ShowVersions(CheckLink):
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
     """Menu for available Languages."""
-    # TODO(ut): test
     def _decide(self, window, data):
         languages = []
         for file in bosh.dirs['l10n'].list():
@@ -372,7 +371,7 @@ class Settings_Game(RadioLink):
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(TransLink):
     """Menu to unhide a StatusBar button."""
-    # TODO(ut): test
+
     def _decide(self, window, data):
         hide = bosh.settings['bash.statusbar.hide']
         hidden = []

@@ -31,7 +31,7 @@ __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
            'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',
            'INI_Delete']
 
-iniList = None # FIXME(ut): globals should be non None
+iniList = None
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
