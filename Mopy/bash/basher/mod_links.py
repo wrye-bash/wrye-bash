@@ -39,6 +39,7 @@ from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog
 from ..patcher.patchers import base
 from ..patcher.patchers import special
+from ..patcher.patch_files import PatchFile
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
            'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme', 'Mod_ListBashTags',
@@ -816,8 +817,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
             else:
-                bosh.PatchFile.patchTime = fileInfo.mtime
-                bosh.PatchFile.patchName = fileInfo.name
+                PatchFile.patchTime = fileInfo.mtime
+                PatchFile.patchName = fileInfo.name
                 if bosh.settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:

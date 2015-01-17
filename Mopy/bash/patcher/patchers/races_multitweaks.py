@@ -35,10 +35,11 @@ import re
 from ... import bush # for fullLoadOrder, defaultEyes (?)
 from ... import bosh # for modInfos
 from ...bolt import SubProgress, BoltError, GPath, deprint
-from ...bosh import PatchFile, LoadFactory, ModFile
+from ...bosh import LoadFactory, ModFile
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
 from ...patcher.base import AMultiTweakItem, Patcher
+from ...patcher.patch_files import PatchFile
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     DoublePatcher, CBash_DoublePatcher, CBash_ListPatcher
 

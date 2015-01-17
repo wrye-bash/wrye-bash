@@ -28,6 +28,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath
+from ..patcher.patch_files import PatchFile
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
@@ -227,7 +228,7 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
     def Execute(self,event):
-        newPatchName = bosh.PatchFile.generateNextBashedPatch(self.window)
+        newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
             self.window.RefreshUI(detail=newPatchName)
 

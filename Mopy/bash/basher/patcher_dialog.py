@@ -34,6 +34,7 @@ from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from . import SetUAC, Resources
 from .. import bosh, bolt, balt
+from ..patcher.patch_files import PatchFile
 
 modList = None
 
@@ -177,7 +178,7 @@ class PatchDialog(balt.Dialog):
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
             patchFile = bosh.CBash_PatchFile(patchName,
                                              patchers) if self.doCBash else \
-                bosh.PatchFile(self.patchInfo, patchers)
+                PatchFile(self.patchInfo, patchers)
             patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
@@ -393,11 +394,11 @@ class PatchDialog(balt.Dialog):
                    [u'Python',u'CBash'][self.doCBash])):
             return
         if self.doCBash:
-            bosh.PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
-            bosh.PatchFile.patchName = bosh.CBash_PatchFile.patchName
+            PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
+            PatchFile.patchName = bosh.CBash_PatchFile.patchName
         else:
-            bosh.CBash_PatchFile.patchTime = bosh.PatchFile.patchTime
-            bosh.CBash_PatchFile.patchName = bosh.PatchFile.patchName
+            bosh.CBash_PatchFile.patchTime = PatchFile.patchTime
+            bosh.CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     def ConvertConfig(self,patchConfigs):
