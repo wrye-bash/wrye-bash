@@ -110,12 +110,9 @@ uacRestart = False # restart Bash with Admin Rights if true
 isUAC = False      # True if the game is under UAC protection
 
 # Singletons ------------------------------------------------------------------
-statusBar = None
 modDetails = None
 saveDetails = None
-screensList = None
 gInstallers = None
-gMessageList = None
 bashFrame = None
 gPeople = None # New global - yak
 
@@ -241,7 +238,7 @@ class NotebookPanel(wx.Panel):
 
     def SetStatusCount(self):
         """Sets status bar count field."""
-        statusBar.SetStatusText(self._sbText(), 2)
+        BashFrame.statusBar.SetStatusText(self._sbText(), 2)
 
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
@@ -3521,26 +3518,24 @@ class ScreensPanel(SashPanel):
         SashPanel.__init__(self, parent, minimumSize=100)
         left,right = self.left,self.right
         #--Contents
-        global screensList
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        screensList = ScreensList(left, self.listData, self.keyPrefix)
-        screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
-        self.uiList = screensList
+        self.uiList = ScreensList(left, self.listData, self.keyPrefix)
+        self.uiList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
-        left.SetSizer(hSizer((screensList,1,wx.GROW)))
+        right.SetSizer(hSizer((self.uiList.picture,1,wx.GROW)))
+        left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
-        screensList.picture.SetBackground(colors['screens.bkgd.image'])
+        self.uiList.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbText(self):
-        return _(u'Screens:') + u' %d' % (len(screensList.data.data),)
+        return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
-            screensList.RefreshUI()
+            self.uiList.RefreshUI()
             #self.Refresh()
         super(ScreensPanel, self).ShowPanel()
 
@@ -3907,13 +3902,11 @@ class MessagePanel(SashPanel):
         SashPanel.__init__(self, parent, isVertical=False, minimumSize=100)
         gTop,gBottom = self.left,self.right
         #--Contents
-        global gMessageList
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        gMessageList = MessageList(gTop, self.listData, self.keyPrefix)
-        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
+        self.uiList = MessageList(gTop, self.listData, self.keyPrefix)
+        self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.uiList = gMessageList
         #--Search ##: move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
@@ -3923,9 +3916,9 @@ class MessagePanel(SashPanel):
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)
         #--Layout
         gTop.SetSizer(hSizer(
-            (gMessageList,1,wx.GROW)))
+            (self.uiList,1,wx.GROW)))
         gBottom.SetSizer(vSizer(
-            (gMessageList.gText,1,wx.GROW),
+            (self.uiList.gText,1,wx.GROW),
             (hSizer(
                 (gSearchBox,1,wx.GROW),
                 (gSearchButton,0,wx.LEFT,4),
@@ -3936,14 +3929,14 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
     def _sbText(self):
-        used = len(gMessageList.items) if gMessageList.searchResults is None \
-            else len(gMessageList.searchResults)
-        return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
+        used = len(self.uiList.items) if self.uiList.searchResults is None \
+            else len(self.uiList.searchResults)
+        return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.messages.refresh():
-            gMessageList.RefreshUI()
+            self.uiList.RefreshUI()
             #self.Refresh()
         super(MessagePanel, self).ShowPanel()
 
@@ -3956,14 +3949,14 @@ class MessagePanel(SashPanel):
     def DoSearch(self,event):
         """Handle search button."""
         term = self.gSearchBox.GetValue()
-        gMessageList.searchResults = gMessageList.data.search(term)
-        gMessageList.RefreshUI()
+        self.uiList.searchResults = self.uiList.data.search(term)
+        self.uiList.RefreshUI()
 
     def DoClear(self,event):
         """Handle clear button."""
         self.gSearchBox.SetValue(u'')
-        gMessageList.searchResults = None
-        gMessageList.RefreshUI()
+        self.uiList.searchResults = None
+        self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
@@ -4220,8 +4213,7 @@ class BashStatusBar(wx.StatusBar):
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
-        global statusBar
-        statusBar = self
+        BashFrame.statusBar = self
         self.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
@@ -4457,6 +4449,8 @@ class BashFrame(wx.Frame):
     saveList = None
     iniList = None
     modList = None
+    # the status bar - used by the Panels to SetStatusCount()
+    statusBar = None
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
