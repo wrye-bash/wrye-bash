@@ -1476,7 +1476,7 @@ class ModDetails(SashPanel):
             self.modified.SetMaxLength(32)
             #--Description
             self.description = textCtrl(top, size=(textWidth, 150),
-                                        multiline=True,
+                                        multiline=True, autotooltip=False,
                                         onKillFocus=self.OnEditDescription,
                                         onText=self.OnTextEdit)
             self.description.SetMaxLength(512)
@@ -1492,7 +1492,8 @@ class ModDetails(SashPanel):
             self.cancel.Disable()
             #--Bash tags
             self.allTags = bosh.allTags
-            self.gTags = roTextCtrl(tagPanel, size=(textWidth, 100))
+            self.gTags = roTextCtrl(tagPanel, autotooltip=False,
+                                    size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
@@ -2874,7 +2875,8 @@ class InstallersPanel(SashTankPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = roTextCtrl(self.gNotebook, name=name, hscroll=True)
+            gPage = roTextCtrl(self.gNotebook, name=name, hscroll=True,
+                               autotooltip=False)
             self.gNotebook.AddPage(gPage,title)
             self.infoPages.append([gPage,False])
         self.gNotebook.SetSelection(settings['bash.installers.page'])
