@@ -156,7 +156,6 @@ messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
 lo = None #--LibloHandle singleton
-links = None
 
 def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
@@ -10493,27 +10492,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     # Setup LOOT API
     global configHelpers
     configHelpers = ConfigHelpers()
-
-def initLinks(appDir):
-    #-- Other tools
-    global links
-    links = {}
-    try:
-        import win32com.client
-        sh = win32com.client.Dispatch('WScript.Shell')
-        shCreateShortCut = sh.CreateShortCut
-        appDirJoin = appDir.join
-        for file in appDir.list():
-            file = appDirJoin(file)
-            if file.isfile() and file.cext == u'.lnk':
-                fileS = file.s
-                shortcut = shCreateShortCut(fileS)
-                description = shortcut.Description
-                if not description:
-                    description = u' '.join((_(u'Launch'),file.sbody))
-                links[fileS] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
-    except:
-        deprint(_(u"Error initializing links:"),traceback=True)
 
 def initDefaultTools():
     #-- Other tool directories

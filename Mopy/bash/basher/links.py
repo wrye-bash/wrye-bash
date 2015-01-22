@@ -22,7 +22,7 @@
 #
 # =============================================================================
 
-"""Links initialization functions. Each panel (tab) has some Links list
+"""Links initialization functions. Each panel's UIlIst has main and items Links
 attributes which are populated here. Therefore the order of menu items is
 also defined in these functions."""
 
@@ -49,6 +49,29 @@ from .ini_links import *
 from .mod_links import *
 
 #------------------------------------------------------------------------------
+def _initAppLinks(appDir):
+    #-- Other tools
+    links = {}
+    try:
+        import win32com.client
+        sh = win32com.client.Dispatch('WScript.Shell')
+        shCreateShortCut = sh.CreateShortCut
+        appDirJoin = appDir.join
+        for file_ in appDir.list():
+            file_ = appDirJoin(file_)
+            if file_.isfile() and file_.cext == u'.lnk':
+                fileS = file_.s
+                shortcut = shCreateShortCut(fileS)
+                description = shortcut.Description
+                if not description:
+                    description = u' '.join((_(u'Launch'), file_.sbody))
+                links[fileS] = (shortcut.TargetPath, shortcut.WorkingDirectory,
+                                shortcut.Arguments, shortcut.IconLocation,
+                                description)
+        return links
+    except:
+        deprint(_(u"Error initializing links:"),traceback=True)
+
 def InitStatusBar():
     """Initialize status bar links."""
     dirImages = bosh.dirs['images']
@@ -155,11 +178,11 @@ def InitStatusBar():
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bosh.dirs['mopy'].join(u'Apps')
-    bosh.initLinks(dirApps)
+    appLinks = _initAppLinks(dirApps)
     folderIcon = None
     badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
-    for link in bosh.links:
-        (target,workingdir,args,icon,description) = bosh.links[link]
+    for link in appLinks:
+        (target,workingdir,args,icon,description) = appLinks[link]
         path = dirApps.join(link)
         if target.lower().find(ur'installer\{') != -1:
             target = path
