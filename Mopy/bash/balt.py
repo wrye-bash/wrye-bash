@@ -2241,7 +2241,6 @@ class Link(object):
     - Link.Frame is set once and for all to the (ex) basher.bashFrame
       singleton. Use (sparingly) as the 'link' between menus and data layer.
     """
-    id = None      # Specify id as a class attribute in local Link subclasses
     Frame = None   # BashFrame singleton, set once and for all in BashFrame()
     Popup = None   # Current popup menu, set in Links.PopupMenu()
     text = u''     # Menu label (may depend on UI state when the menu is shown)
@@ -2254,7 +2253,7 @@ class Link(object):
         with id should be confined in balt. Still used with IdList.
         """
         super(Link, self).__init__()
-        self.id = _id or self.__class__.id
+        self.id = _id or wx.NewId() # register wx callbacks in AppendToMenu overrides
         self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, data):
@@ -2280,11 +2279,9 @@ class Link(object):
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
 
-        Link implementation calls _initData generates a wx Id and returns None.
+        Link implementation calls _initData and returns None.
         """
         self._initData(window, data)
-        #--Generate self.id if necessary (i.e. usually)
-        if not self.id: self.id = wx.NewId() # notice id remains the same - __init___ runs ONCE
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):
