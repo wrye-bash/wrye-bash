@@ -29,6 +29,12 @@ from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath
 
+__all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
+           'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
+           'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
+           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockTimes',
+           'Mods_ScanDirty']
+
 modList = None
 
 # "Load" submenu --------------------------------------------------------------

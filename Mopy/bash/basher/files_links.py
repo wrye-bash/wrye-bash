@@ -33,6 +33,11 @@ from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, ChoiceLink,
 from ..bolt import CancelError, SkipError, GPath, BoltError
 from ..bosh import formatDate
 
+__all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
+           'File_Duplicate', 'File_Snapshot', 'File_Delete', 'File_Hide',
+           'File_Redate', 'File_Sort', 'File_RevertToBackup',
+           'File_RevertToSnapshot', 'File_ListMasters', 'File_Open']
+
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------

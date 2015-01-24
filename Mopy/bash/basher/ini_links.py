@@ -21,12 +21,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 from . import Resources
 from .dialogs import ListBoxes
 from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
 
-#------------------------------------------------------------------------------
+__all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
+           'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',
+           'INI_Delete']
+
 iniList = None # FIXME(ut): globals should be non None
 
 class INI_SortValid(BoolLink):

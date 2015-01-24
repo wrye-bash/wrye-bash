@@ -21,12 +21,34 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import copy
 from .. import bosh, balt, bush
 from ..balt import fill, BoolLink, AppendableLink, Link
 from . import Resources, Installers_Link
 from .dialogs import ListBoxes, CreateNewProject
 from ..bolt import GPath, SubProgress
+
+__all__ = ['Installers_SortActive', 'Installers_SortProjects',
+           'Installers_Refresh', 'Installers_AddMarker',
+           'Installers_CreateNewProject', 'Installers_MonitorInstall',
+           'Installers_ListPackages', 'Installers_AnnealAll',
+           'Installers_UninstallAllPackages',
+           'Installers_UninstallAllUnknownFiles', 'Installers_AvoidOnStart',
+           'Installers_Enabled', 'Installers_AutoAnneal',
+           'Installers_AutoWizard', 'Installers_AutoRefreshProjects',
+           'Installers_AutoRefreshBethsoft',
+           'Installers_AutoApplyEmbeddedBCFs', 'Installers_BsaRedirection',
+           'Installers_RemoveEmptyDirs',
+           'Installers_ConflictsReportShowsInactive',
+           'Installers_ConflictsReportShowsLower',
+           'Installers_ConflictsReportShowBSAConflicts',
+           'Installers_WizardOverlay', 'Installers_SkipOBSEPlugins',
+           'Installers_SkipScreenshots', 'Installers_SkipImages',
+           'Installers_SkipDocs', 'Installers_SkipDistantLOD',
+           'Installers_SkipLandscapeLODMeshes',
+           'Installers_SkipLandscapeLODTextures',
+           'Installers_SkipLandscapeLODNormals', 'Installers_RenameStrings']
 
 gInstallers = None
 

@@ -21,30 +21,34 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 """Links initialization functions. Each panel (tab) has some Links list
 attributes which are populated here. Therefore the order of menu items is
 also defined in these functions."""
-# TODO(ut): maybe consider a links package - or a package per panel ?
-# TODO(ut): remove star imports
+
+import os
 import win32gui
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MessageList, MasterList, bEnableWizard,  PeopleList,\
-    BashStatusBar
-from .constants import PNG, BMP, TIF, ICO
-from .installer_links import *
-from .mod_links import *
-from .saves_links import *
+    BashStatusBar, Tab_Link
+from .constants import PNG, BMP, TIF, ICO, JPEG
+from .. import balt, bosh, bush
+from ..cint import CBash
+from ..balt import Image, MenuLink, SeparatorLink
+from ..bolt import deprint, GPath
+# modules below define the __all__ directive
+from .app_buttons import *
 from .mods_links import *
 from .files_links import *
-from .misc_links import List_Columns
-from ..balt import Image, MenuLink
+from .installers_links import *
+from .installer_links import *
+from .saves_links import *
+from .settings_links import *
+from .misc_links import *
+from .ini_links import *
+from .mod_links import *
 
 #------------------------------------------------------------------------------
-from .app_buttons import Obse_Button, LAA_Button, AutoQuit_Button, \
-    Oblivion_Button, TESCS_Button, App_Button, Tooldir_Button, App_Tes4View, \
-    App_BOSS, App_DocBrowser, App_ModChecker, App_Settings, App_Help, \
-    App_Restart, App_GenPickle
-
 def InitStatusBar():
     """Initialize status bar links."""
     dirImages = bosh.dirs['images']
@@ -57,7 +61,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(laaButton)
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
-        Oblivion_Button(
+        Game_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList(u'%s%%s.png' % bush.game.fsName.lower()),
             u' '.join((_(u"Launch"),bush.game.displayName)),
@@ -169,7 +173,7 @@ def InitStatusBar():
                     try:
                         win32gui.ExtractIcon(0, target.s, 0)
                         icon = target
-                    except Exception as e:
+                    except:
                         icon = u'' # Icon will be set to a red x further down.
                 else:
                     # Use the default icon for that file type
@@ -247,8 +251,6 @@ def InitStatusBar():
         BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
 #------------------------------------------------------------------------------
-from .misc_links import Master_ChangeTo, Master_Disable
-
 def InitMasterLinks():
     """Initialize master list menus."""
     #--MasterList: Column Links
@@ -271,22 +273,6 @@ def InitMasterLinks():
     MasterList.itemMenu.append(Master_Disable())
 
 #------------------------------------------------------------------------------
-from .installers_links import Installers_SortActive,Installers_SortProjects, \
-    Installers_Refresh, Installers_AddMarker, Installers_CreateNewProject, \
-    Installers_MonitorInstall, Installers_ListPackages, Installers_AnnealAll, \
-    Installers_UninstallAllPackages, Installers_UninstallAllUnknownFiles, \
-    Installers_AvoidOnStart, Installers_Enabled, Installers_AutoAnneal, \
-    Installers_AutoWizard, Installers_AutoRefreshProjects, \
-    Installers_AutoRefreshBethsoft, Installers_AutoApplyEmbeddedBCFs, \
-    Installers_BsaRedirection, Installers_RemoveEmptyDirs, \
-    Installers_ConflictsReportShowsInactive, \
-    Installers_ConflictsReportShowsLower, \
-    Installers_ConflictsReportShowBSAConflicts, Installers_WizardOverlay, \
-    Installers_SkipOBSEPlugins, Installers_SkipScreenshots, \
-    Installers_SkipImages, Installers_SkipDocs, Installers_SkipDistantLOD, \
-    Installers_SkipLandscapeLODMeshes, Installers_SkipLandscapeLODTextures, \
-    Installers_SkipLandscapeLODNormals, Installers_RenameStrings
-
 def InitInstallerLinks():
     """Initialize Installers tab menus."""
     #--Column links
@@ -419,9 +405,6 @@ def InitInstallerLinks():
     InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
 
 #------------------------------------------------------------------------------
-from .ini_links import INI_SortValid, INI_AllowNewLines, INI_ListINIs, \
-    INI_Apply, INI_CreateNew, INI_ListErrors, INI_FileOpenOrCopy, INI_Delete
-
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
@@ -760,9 +743,6 @@ def InitBSALinks():
     BSAList.itemMenu.append(Save_RepairHair())
 
 #------------------------------------------------------------------------------
-from .misc_links import Screens_NextScreenShot, Screen_JpgQuality, \
-    Screen_JpgQualityCustom, Screen_Rename, Screen_ConvertTo
-
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--SaveList: Column Links
@@ -794,8 +774,6 @@ def InitScreenLinks():
         ScreensList.itemMenu.append(convertMenu)
 
 #------------------------------------------------------------------------------
-from .misc_links import Messages_Archive_Import, Message_Delete
-
 def InitMessageLinks():
     """Initialize messages tab menus."""
     #--SaveList: Column Links
@@ -807,9 +785,6 @@ def InitMessageLinks():
     MessageList.itemMenu.append(Message_Delete())
 
 #------------------------------------------------------------------------------
-from .misc_links import People_AddNew, People_Import, People_Karma, \
-    People_Export
-
 def InitPeopleLinks():
     """Initialize people tab menus."""
     #--Header links
@@ -825,14 +800,6 @@ def InitPeopleLinks():
     PeopleList.itemMenu.append(People_Export())
 
 #------------------------------------------------------------------------------
-from .settings_links import Settings_BackupSettings, Settings_RestoreSettings, \
-    Settings_SaveSettings, Settings_ExportDllInfo, Settings_ImportDllInfo, \
-    Settings_Colors, Settings_IconSize, Settings_UnHideButtons, \
-    Settings_StatusBar_ShowVersions, Settings_Languages, \
-    Settings_PluginEncodings, Settings_Games, Settings_UseAltName, \
-    Settings_Deprint, Settings_DumpTranslator, Settings_UAC
-from . import Tab_Link
-
 def InitSettingsLinks():
     """Initialize settings menu."""
     SettingsMenu = BashStatusBar.SettingsMenu

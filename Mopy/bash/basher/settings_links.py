@@ -35,6 +35,14 @@ from .dialogs import ColorDialog
 from .app_buttons import App_Button # TODO(ut): ugly
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
+__all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
+           'Settings_SaveSettings', 'Settings_ExportDllInfo',
+           'Settings_ImportDllInfo', 'Settings_Colors', 'Settings_IconSize',
+           'Settings_UnHideButtons', 'Settings_StatusBar_ShowVersions',
+           'Settings_Languages', 'Settings_PluginEncodings', 'Settings_Games',
+           'Settings_UseAltName', 'Settings_Deprint',
+           'Settings_DumpTranslator', 'Settings_UAC']
+
 def _bassLang(): return bass.language if bass.language else \
     locale.getlocale()[0].split('_', 1)[0]
 #------------------------------------------------------------------------------

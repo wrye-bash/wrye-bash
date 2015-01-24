@@ -34,6 +34,26 @@ from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile
 from ..bosh import formatInteger
+
+__all__ = ['Installer_Open', 'Installer_Duplicate', 'Installer_Delete',
+           'InstallerOpenAt_MainMenu', 'Installer_OpenSearch',
+           'Installer_OpenTESA', 'Installer_OpenPES', 'Installer_Hide',
+           'Installer_Rename', 'Installer_Refresh', 'Installer_Move',
+           'Installer_HasExtraData', 'Installer_OverrideSkips',
+           'Installer_SkipVoices', 'Installer_SkipRefresh', 'Installer_Wizard',
+           'Installer_EditWizard', 'Installer_OpenReadme', 'Installer_Anneal',
+           'Installer_Install', 'Installer_Uninstall',
+           'InstallerConverter_MainMenu', 'InstallerConverter_Create',
+           'InstallerConverter_ConvertMenu', 'InstallerProject_Pack',
+           'InstallerArchive_Unpack', 'InstallerProject_ReleasePack',
+           'InstallerProject_Sync', 'Installer_CopyConflicts',
+           'InstallerProject_OmodConfig', 'Installer_ListStructure',
+           'Installer_Espm_SelectAll', 'Installer_Espm_DeselectAll',
+           'Installer_Espm_List', 'Installer_Espm_Rename',
+           'Installer_Espm_Reset', 'Installer_Espm_ResetAll',
+           'Installer_Subs_SelectAll', 'Installer_Subs_DeselectAll',
+           'Installer_Subs_ToggleSelection', 'Installer_Subs_ListSubPackages',
+           'Installer_OpenNexus']
 # FIXME(ut): globals
 iniList = None
 gInstallers = None
