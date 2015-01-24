@@ -221,7 +221,7 @@ class NotebookPanel(wx.Panel):
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
-        self._firstShow = True # TODO(ut): hack to set the scrollbar position
+        self._firstShow = True
 
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
@@ -262,10 +262,16 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,isVertical=True,minimumSize=50,style=splitterStyle):
-        """Initialize."""
+    defaultSashPos = 100  ##: 200 in SashTankPanel, 230 in saves, 120 in
+    # screens, messages, 230 in saves details, InstallersData.defaultParam(
+    # 'sashPos',550)
+
+    def __init__(self, parent, sashGravity=0.5, sashPosKey=None,
+                 isVertical=True, minimumSize=50, style=splitterStyle):
+        ##: sashPosKey parameter is still needed for MasterList subclasses
         NotebookPanel.__init__(self, parent)
-        splitter = wx.gizmos.ThinSplitterWindow(self, style=style)
+        self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
+                                                                style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -274,10 +280,8 @@ class SashPanel(NotebookPanel):
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
         splitter.SetSashGravity(sashGravity)
-        sashPos = settings.get(sashPosKey, 0) or sashPos or -1
-        splitter.SetSashPosition(sashPos)
-        if sashPosKey is not None:
-            self.sashPosKey = sashPosKey
+        self.sashPosKey = sashPosKey if sashPosKey else \
+            self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
         splitter.SetMinimumPaneSize(minimumSize)
@@ -286,29 +290,33 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
+    def OnShow(self):
+        if hasattr(self, '_firstShow'):
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+        super(SashPanel, self).OnShow()
+
     def ClosePanel(self):
-        splitter = self.right.GetParent()
-        if hasattr(self, 'sashPosKey'):
-            settings[self.sashPosKey] = splitter.GetSashPosition()
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
+        if not hasattr(self, '_firstShow'):
+            # if the panel is never shown leave below alone
+            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
+
     def __init__(self,data,parent):
-        sashPos = data.getParam('sashPos',200)
         minimumSize = 80
         self.data = data
         self.detailsItem = None
-        super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
+        super(SashTankPanel,self).__init__(parent, minimumSize=minimumSize)
 
-    def ClosePanel(self): # TODO(ut): does not call super
+    def ClosePanel(self):
         self.SaveDetails()
-        splitter = self.right.GetParent()
-        sashPos = splitter.GetSashPosition()
-        self.data.setParam('sashPos',sashPos)
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         self.data.save()
+        super(SashTankPanel, self).ClosePanel()
 
     def GetDetailsItem(self):
         return self.detailsItem
@@ -1433,7 +1441,7 @@ class ModDetails(SashPanel):
     keyPrefix = 'bash.mods.details' ##: unused for now
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,
+        SashPanel.__init__(self, parent,1.0,'bash.mods.details.SashPos',
                            isVertical=False,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         #--Singleton
@@ -1789,7 +1797,7 @@ class INIPanel(SashPanel):
     keyPrefix = 'bash.ini'
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent,'bash.ini.sashPos')
+        SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = button(right,_(u'Remove'),onClick=self.OnRemove)
@@ -2051,7 +2059,7 @@ class ModPanel(SashPanel):
     keyPrefix = 'bash.mods'
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=150)
+        SashPanel.__init__(self, parent, 1.0, minimumSize=150)
         left,right = self.left, self.right
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
@@ -2251,7 +2259,7 @@ class SaveDetails(SashPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,
+        SashPanel.__init__(self, parent,0.0,'bash.saves.details.SashPos',
                            isVertical=False,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         #--Singleton
@@ -2458,7 +2466,7 @@ class SavePanel(SashPanel):
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
-        SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
+        SashPanel.__init__(self, parent, 1.0, minimumSize=200)
         left,right = self.left, self.right
         global saveList
         from . import saves_links
@@ -2865,7 +2873,8 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
-        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+        self.commentsSplitter = commentsSplitter = \
+            wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
@@ -2959,7 +2968,6 @@ class InstallersPanel(SashTankPanel):
         #--Events
         #self.Bind(wx.EVT_SIZE,self.OnSize)
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
-        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -3101,7 +3109,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
-        NotebookPanel.OnShow(self)
+        SashPanel.OnShow(self)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3118,13 +3126,13 @@ class InstallersPanel(SashTankPanel):
         text = _(u'Packages:')+u' %d/%d' % (active,len(self.data.data))
         statusBar.SetStatusText(text,2)
 
-    def _OnCommentsSplitterSashPosChanged(self, event):
-        # ignore spurious events caused by invisible layout adjustments during initialization
-        if not self.refreshed: return
-        # save new comments text box size
-        splitter = event.GetEventObject()
-        sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
-        settings['bash.installers.commentsSplitterSashPos'] = sashPos
+    def ClosePanel(self):
+        if not hasattr(self, '_firstShow'):
+            # save comments text box size ##: dunno what's this alchemy below
+            splitter = self.commentsSplitter
+            sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
+            settings['bash.installers.commentsSplitterSashPos'] = sashPos
+        super(InstallersPanel, self).ClosePanel()
 
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
@@ -3543,8 +3551,7 @@ class ScreensPanel(SashPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        sashPos = settings.get('bash.screens.sashPos',120)
-        SashPanel.__init__(self,parent,'bash.screens.sashPos',sashPos=sashPos,minimumSize=100)
+        SashPanel.__init__(self, parent, minimumSize=100)
         left,right = self.left,self.right
         #--Contents
         global screensList
@@ -3942,9 +3949,7 @@ class MessagePanel(SashPanel):
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
-        sashPos = settings.get('bash.messages.sashPos',120)
-        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=sashPos,
-                           isVertical=False,minimumSize=100)
+        SashPanel.__init__(self, parent, isVertical=False, minimumSize=100)
         gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
