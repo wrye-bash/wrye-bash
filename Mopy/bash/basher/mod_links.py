@@ -1573,7 +1573,7 @@ class Mod_SetVersion(EnabledLink):
 # Import/Export submenus ------------------------------------------------------
 #------------------------------------------------------------------------------
 #--Import only
-from ..patcher.utilities import FidReplacer, CBash_FidReplacer
+from ..parsers import FidReplacer, CBash_FidReplacer
 
 class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
@@ -1680,7 +1680,7 @@ class _Mod_Import_Link(OneItemLink):
     def _parser(self): raise AbstractError
 
 #--Links ----------------------------------------------------------------------
-from ..patcher.utilities import ActorLevels, CBash_ActorLevels
+from ..parsers import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
@@ -1768,7 +1768,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import FactionRelations, CBash_FactionRelations
+from ..parsers import FactionRelations, CBash_FactionRelations
 
 class Mod_FactionRelations_Export(_Mod_Export_Link):
     """Export faction relations from mod to text file."""
@@ -1832,7 +1832,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ActorFactions, CBash_ActorFactions
+from ..parsers import ActorFactions, CBash_ActorFactions
 
 class Mod_Factions_Export(_Mod_Export_Link):
     """Export factions from mod to text file."""
@@ -1897,7 +1897,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
             balt.showLog(self.window,text,_(u'Import Factions'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ScriptText, CBash_ScriptText
+from ..parsers import ScriptText, CBash_ScriptText
 
 class Mod_Scripts_Export(_Mod_Export_Link):
     """Export scripts from mod to text file."""
@@ -2022,7 +2022,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ItemStats, CBash_ItemStats
+from ..parsers import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(_Mod_Export_Link):
     """Exports stats from the selected plugin to a CSV file (for the record
@@ -2084,7 +2084,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ItemPrices, CBash_ItemPrices
+from ..parsers import ItemPrices, CBash_ItemPrices
 
 class Mod_Prices_Export(_Mod_Export_Link):
     """Export item prices from mod to text file."""
@@ -2149,7 +2149,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+from ..parsers import SigilStoneDetails, CBash_SigilStoneDetails
 
 class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     """Export Sigil Stone details from mod to text file."""
@@ -2216,7 +2216,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import SpellRecords, CBash_SpellRecords
+from ..parsers import SpellRecords, CBash_SpellRecords
 
 class Mod_SpellRecords_Export(_Mod_Export_Link):
     """Export Spell details from mod to text file."""
@@ -2296,7 +2296,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import IngredientDetails, CBash_IngredientDetails
+from ..parsers import IngredientDetails, CBash_IngredientDetails
 
 class Mod_IngredientDetails_Export(_Mod_Export_Link):
     """Export Ingredient details from mod to text file."""
@@ -2362,7 +2362,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import EditorIds, CBash_EditorIds
+from ..parsers import EditorIds, CBash_EditorIds
 
 class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
@@ -2436,7 +2436,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             balt.showWarning(self.window, '%r' % e)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import FullNames, CBash_FullNames
+from ..parsers import FullNames, CBash_FullNames
 
 class Mod_FullNames_Export(_Mod_Export_Link):
     """Export full names from mod to text file."""
@@ -2511,7 +2511,7 @@ class _Mod_Import_Link_CBash(_Mod_Import_Link):
         return super(_Mod_Import_Link_CBash, self)._enable() and bool(CBash)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import CBash_MapMarkers
+from ..parsers import CBash_MapMarkers
 
 class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
     """Export map marker stats from mod to text file."""
@@ -2571,7 +2571,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import CBash_CellBlockInfo
+from ..parsers import CBash_CellBlockInfo
 
 class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
     """Export Cell Block Info to text file
@@ -2586,7 +2586,7 @@ class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
     def _parser(self): return CBash_CellBlockInfo()
 
 # Unused ? --------------------------------------------------------------------
-from ..patcher.utilities import CompleteItemData, CBash_CompleteItemData
+from ..parsers import CompleteItemData, CBash_CompleteItemData
 
 class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
     """Export pretty much complete item data from mod to text file."""

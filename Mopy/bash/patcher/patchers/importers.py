@@ -36,7 +36,7 @@ from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
 from ..base import AImportPatcher, Patcher
-from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
+from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
 from .base import ImportPatcher, CBash_ImportPatcher

@@ -27,11 +27,11 @@
 from operator import itemgetter
 import struct
 # Wrye Bash imports
-from ..bolt import AbstractError, ArgumentError
-from ..brec import ModError, ModReader
-from ..bolt import GPath, sio
-from .. import bush # for groupTypes
-import bash # TODO: this file is imported to bosh still...
+from bolt import AbstractError, ArgumentError
+from brec import ModError, ModReader
+from bolt import GPath, sio
+import bush # for groupTypes
+import bosh # for modInfos
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
@@ -250,7 +250,7 @@ class MobObjects(MobBase):
             self.indexRecords()
         record_id = record.fid
         if record.isKeyedByEid:
-            if record_id == (GPath(bash.bosh.modInfos.masterName),0):
+            if record_id == (GPath(bosh.modInfos.masterName),0):
                 record_id = record.eid
         if record_id in self.id_records:
             oldRecord = self.id_records[record_id]
@@ -263,7 +263,7 @@ class MobObjects(MobBase):
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
         self.records = [record for record in self.records if (record.fid == (
-            record.isKeyedByEid and GPath(bash.bosh.modInfos.masterName),
+            record.isKeyedByEid and GPath(bosh.modInfos.masterName),
             0) and record.eid in keepIds) or record.fid in keepIds]
         self.id_records.clear()
         self.setChanged()

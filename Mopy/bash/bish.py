@@ -53,7 +53,7 @@ import sys
 import types
 from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
-from patcher.record_groups import MobCell, MobWorld
+from record_groups import MobCell, MobWorld
 from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, \
     MreWeap, MreSkil, MreInfo, MreDial, MreRegn
 

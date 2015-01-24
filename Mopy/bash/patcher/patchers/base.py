@@ -393,7 +393,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-from ..utilities import CBash_FidReplacer
+from ...parsers import CBash_FidReplacer
 
 class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
     autoKey = {u'Formids'}

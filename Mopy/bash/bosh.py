@@ -65,7 +65,7 @@ from cint import ObCollection, ObModFile, MGEFCode, FormID, dump_record, CBash, 
     ObBaseRecord
 from brec import MreRecord, ModReader, ModError, ModWriter, getModIndex, \
     genFid, getObjectIndex, getFormIndices
-from patcher.record_groups import MobWorlds, MobDials, MobICells, \
+from record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
 import libbsa
