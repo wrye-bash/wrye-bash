@@ -114,7 +114,6 @@ statusBar = None
 modList = None
 iniList = None
 modDetails = None
-saveList = None
 saveDetails = None
 screensList = None
 gInstallers = None
@@ -1132,8 +1131,8 @@ class ModList(List):
         modDetails.SetFile(detail)
         bashFrame.SetStatusCount()
         #--Saves
-        if refreshSaves and saveList:
-            saveList.RefreshUI()
+        if refreshSaves and BashFrame.saveList:
+            BashFrame.saveList.RefreshUI()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -2429,7 +2428,7 @@ class SaveDetails(SashPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
-            saveList.items[saveList.items.index(oldName)] = newName
+            BashFrame.saveList.items[BashFrame.saveList.items.index(oldName)] = newName
             bosh.saveInfos.rename(oldName,newName)
         #--Change masters?
         if changeMasters:
@@ -2443,9 +2442,8 @@ class SaveDetails(SashPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-            saveList.RefreshUI()
-        else:
-            saveList.RefreshUI(saveInfo.name)
+            BashFrame.saveList.RefreshUI()
+        else: BashFrame.saveList.RefreshUI(saveInfo.name)
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -2458,20 +2456,18 @@ class SavePanel(SashPanel):
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
-            raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
+            raise BoltError(u'Wrye Bash cannot read save games for %s.' %
+                bush.game.displayName)
         SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=200)
         left,right = self.left, self.right
-        global saveList
-        from . import saves_links
         self.listData = bosh.saveInfos
-        saves_links.saveList = saveList = SaveList(left, self.listData,
-                                                   self.keyPrefix)
-        self.uiList = saveList
+        BashFrame.saveList = SaveList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.saveList
         self.saveDetails = SaveDetails(right)
-        saveList.details = self.saveDetails
+        BashFrame.saveList.details = self.saveDetails
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
+        left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.saveDetails.SetFile()
@@ -4462,9 +4458,13 @@ class BashStatusBar(wx.StatusBar):
 #------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
-    # (ut) till I find a better place
+    ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
     modChecker = None
+    # UILists - accessed by other lists or the Links subclasses
+    # modList is always set but for example iniList may be None (tab not
+    # enabled). BashFrame should perform the None check (not the clients)
+    saveList = None
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
@@ -4616,7 +4616,7 @@ class BashFrame(wx.Frame):
         if popMods:
             modList.RefreshUI(popMods) #--Will repop saves too.
         elif popSaves:
-            saveList.RefreshUI(popSaves)
+            BashFrame.saveList.RefreshUI(popSaves)
         if popInis:
             iniList.RefreshUI(popInis)
         #--Current notebook panel

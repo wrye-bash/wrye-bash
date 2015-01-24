@@ -22,6 +22,9 @@
 #
 # =============================================================================
 
+"""Menu items for the main and item menus of the saves tab - their window
+attribute points to BashFrame.saveList singleton."""
+
 import StringIO
 import re
 import shutil
@@ -44,7 +47,6 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_RepairFactions', 'Save_RepairHair']
 
 modList = None
-saveList = None
 
 ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
 ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
@@ -237,7 +239,7 @@ class Save_LoadMasters(OneItemLink):
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
         modList.PopulateItems()
-        saveList.PopulateItems()
+        self.window.PopulateItems()
         self.window.details.SetFile(fileName)
         if errorMessage:
             balt.showError(self.window,errorMessage,fileName.s)
