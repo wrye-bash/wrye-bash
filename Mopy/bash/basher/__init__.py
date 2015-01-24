@@ -112,7 +112,6 @@ isUAC = False      # True if the game is under UAC protection
 # Singletons ------------------------------------------------------------------
 statusBar = None
 modList = None
-iniList = None
 modDetails = None
 saveDetails = None
 screensList = None
@@ -953,8 +952,8 @@ class INIList(List):
         dir = tweak.dir
         #--No point applying a tweak that's already applied
         file = dir.join(self.items[hitItem])
-        iniList.data.ini.applyTweakFile(file)
-        iniList.RefreshUI('VALID')
+        self.data.ini.applyTweakFile(file)
+        self.RefreshUI('VALID')
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
@@ -1830,17 +1829,14 @@ class INIPanel(SashPanel):
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
-        global iniList
-        from . import installer_links, ini_links
         self.listData = bosh.iniInfos
-        installer_links.iniList = ini_links.iniList = iniList = \
-            INIList(left, self.listData, self.keyPrefix)
-        self.uiList = iniList
+        BashFrame.iniList = INIList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.iniList
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
-        iniList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak)
+        self.uiList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak) ##:
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -1852,7 +1848,7 @@ class INIPanel(SashPanel):
                 (self.iniContents,1,wx.EXPAND),
                 )
         lSizer = hSizer(
-            (iniList,2,wx.EXPAND),
+            (self.uiList,2,wx.EXPAND),
             )
         rSizer = hSizer(
             (vSizer(
@@ -1869,7 +1865,7 @@ class INIPanel(SashPanel):
         self.RefreshUI()
 
     def OnSelectTweak(self, event):
-        tweakFile = iniList.items[event.GetIndex()]
+        tweakFile = self.uiList.items[event.GetIndex()]
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshUI(tweakFile)
         event.Skip()
@@ -1915,7 +1911,7 @@ class INIPanel(SashPanel):
             self.comboBox.SetItems(self.SortChoices())
             self.comboBox.SetSelection(self.choice)
         if what == 'ALL' or what == 'TWEAKS':
-            iniList.RefreshUI()
+            self.uiList.RefreshUI()
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
@@ -1937,10 +1933,10 @@ class INIPanel(SashPanel):
             bosh.iniInfos.setBaseIni(ini)
             self.button.Enable(True)
         selected = None
-        # iniList can be None below cause we are called in init before iniList
-        # is assigned - possibly to avoid a refresh ?
-        if iniList is not None:
-            selected = iniList.GetSelected()
+        ##: iniList can be None below cause we are called in IniList.__init__()
+        ##: before iniList is assigned - possibly to avoid a refresh ?
+        if BashFrame.iniList is not None:
+            selected = BashFrame.iniList.GetSelected()
             if len(selected) > 0:
                 selected = selected[0]
             else:
@@ -1950,7 +1946,7 @@ class INIPanel(SashPanel):
             self.trackedInfo.track(self.GetChoice())
         self.iniContents.RefreshUI(refresh)
         self.tweakContents.RefreshUI(selected)
-        if iniList is not None: iniList.RefreshUI()
+        if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
 
     def OnRemove(self,event):
         """Called when the 'Remove' button is pressed."""
@@ -1960,7 +1956,7 @@ class INIPanel(SashPanel):
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni()
-        iniList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnEdit(self,event):
         """Called when the 'Edit' button is pressed."""
@@ -2007,7 +2003,7 @@ class INIPanel(SashPanel):
         return keys
 
     def _sbText(self):
-        stati = iniList.CountTweakStatus()
+        stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def AddOrSelectIniDropDown(self, path):
@@ -2021,7 +2017,7 @@ class INIPanel(SashPanel):
         self.choice = self.sortKeys.index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
-        iniList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -2045,7 +2041,7 @@ class INIPanel(SashPanel):
                 self.comboBox.SetSelection(self.choice)
                 if refresh:
                     self.SetBaseIni(path)
-                    iniList.RefreshUI()
+                    self.uiList.RefreshUI()
                 return
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
@@ -2627,10 +2623,10 @@ class InstallersList(balt.Tank):
             if refreshNeeded:
                 self.data.refresh(what='I')
                 modList.RefreshUI()
-                if iniList is not None:
+                if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
                     # and never initialized
-                    iniList.RefreshUI()
+                    BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
 
@@ -2738,8 +2734,8 @@ class InstallersList(balt.Tank):
             except (CancelError,SkipError):
                 pass
             modList.RefreshUI()
-            if iniList:
-                iniList.RefreshUI()
+            if BashFrame.iniList:
+                BashFrame.iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.ShowPanel()
 
@@ -3136,12 +3132,12 @@ class InstallersPanel(SashTankPanel):
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
             modList.RefreshUI('ALL')
-        if iniList is not None:
+        if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
                 #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
-                iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
+                BashFrame.iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
             else:
-                iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
+                BashFrame.iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
@@ -4465,6 +4461,7 @@ class BashFrame(wx.Frame):
     # modList is always set but for example iniList may be None (tab not
     # enabled). BashFrame should perform the None check (not the clients)
     saveList = None
+    iniList = None
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
@@ -4618,7 +4615,7 @@ class BashFrame(wx.Frame):
         elif popSaves:
             BashFrame.saveList.RefreshUI(popSaves)
         if popInis:
-            iniList.RefreshUI(popInis)
+            BashFrame.iniList.RefreshUI(popInis)
         #--Current notebook panel
         if gInstallers: gInstallers.frameActivated = True
         self.notebook.GetPage(self.notebook.GetSelection()).ShowPanel()

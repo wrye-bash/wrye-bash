@@ -22,11 +22,14 @@
 #
 # =============================================================================
 
+"""Menu items for the __item__ menu of the installer tab. Check before using
+BashFrame.iniList - can be None (ini panel not shown)."""
+
 import StringIO
 import copy
 import re
 import webbrowser
-from . import settingDefaults, Resources, Installers_Link
+from . import settingDefaults, Resources, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
@@ -54,8 +57,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'Installer_Delete',
            'Installer_Subs_SelectAll', 'Installer_Subs_DeselectAll',
            'Installer_Subs_ToggleSelection', 'Installer_Subs_ListSubPackages',
            'Installer_OpenNexus']
- # TODO(ut): globals - iniList should be non None (ini panel not shown)
-iniList = None
+
 gInstallers = None
 
 #------------------------------------------------------------------------------
@@ -241,7 +243,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         #       iniList-> left    -> splitter ->INIPanel
-        if iniList is not None: panel = iniList.GetParent().GetParent().GetParent()
+        if BashFrame.iniList is not None: panel = BashFrame.iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
@@ -249,7 +251,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     out.write(line+u'\n')
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if iniList is not None: iniList.RefreshUI()
+            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
@@ -266,7 +268,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                ) % iniFile.sbody
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                         continue
-                if iniList is not None: panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
+                if BashFrame.iniList is not None: panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
@@ -275,8 +277,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 # this installer
                 manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None and iniList is not None:
-            iniList.RefreshUI('VALID')
+        if lastApplied is not None and BashFrame.iniList is not None:
+            BashFrame.iniList.RefreshUI('VALID')
             panel.iniContents.RefreshUI()
             panel.tweakContents.RefreshUI(lastApplied)
         if len(manuallyApply) > 0:

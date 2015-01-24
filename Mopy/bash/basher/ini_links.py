@@ -22,6 +22,10 @@
 #
 # =============================================================================
 
+"""Menu items for the main and item menus of the ini tweaks tab - their window
+attribute points to BashFrame.iniList singleton.
+"""
+
 from . import Resources
 from .dialogs import ListBoxes
 from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
@@ -31,8 +35,6 @@ __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
            'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',
            'INI_Delete']
 
-iniList = None
-
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
     text, key, help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
@@ -40,7 +42,7 @@ class INI_SortValid(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        iniList.RefreshUI()
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
@@ -51,7 +53,7 @@ class INI_AllowNewLines(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        iniList.RefreshUI()
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class INI_ListINIs(ItemLink):
@@ -61,7 +63,7 @@ class INI_ListINIs(ItemLink):
 
     def Execute(self,event):
         """Handle printing out the errors."""
-        text = iniList.ListTweaks()
+        text = self.window.ListTweaks()
         balt.copyToClipboard(text)
         balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
 
@@ -112,8 +114,8 @@ class INI_FileOpenOrCopy(OneItemLink):
                 destFile = bosh.dirs['tweaks'].join(file)
                 balt.shellMakeDirs(bosh.dirs['tweaks'],self.window)
                 balt.shellCopy(srcFile,destFile,self.window,False,False,False)
-                iniList.data.refresh()
-                iniList.RefreshUI()
+                self.window.data.refresh()
+                self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class INI_Delete(EnabledLink):
@@ -187,12 +189,12 @@ class INI_Apply(EnabledLink):
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
             if bosh.dirs['tweaks'].join(item).isfile():
-                iniList.data.ini.applyTweakFile(bosh.dirs['tweaks'].join(item))
+                self.window.data.ini.applyTweakFile(bosh.dirs['tweaks'].join(item))
             else:
-                iniList.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
+                self.window.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
-            iniList.RefreshUI('VALID')
+            self.window.RefreshUI('VALID')
             iniPanel.iniContents.RefreshUI()
             iniPanel.tweakContents.RefreshUI(self.selected[0])
 
@@ -227,8 +229,8 @@ class INI_CreateNew(OneItemLink):
         if not path: return
         bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
-        iniList.data.refresh()
-        oldTarget = iniList.data.ini
+        self.window.data.refresh()
+        oldTarget = self.window.data.ini
         target = bosh.BestIniFile(path)
         settings,deleted = target.getSettings()
         new_settings,deleted = oldTarget.getSettings()
@@ -240,6 +242,5 @@ class INI_CreateNew(OneItemLink):
                         settings[section][setting] = new_settings[section][
                             setting]
         target.saveSettings(settings)
-        iniList.RefreshUI(detail=path)
+        self.window.RefreshUI(detail=path)
         self.parent.tweakContents.RefreshUI(path.tail)
-
