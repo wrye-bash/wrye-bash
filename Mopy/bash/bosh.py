@@ -7750,7 +7750,6 @@ class InstallersData(bolt.TankData, DataDict):
         self.defaultParam('colWidths',{
             'Package':250,'Order':10,'Group':60,'Modified':60,'Size':40,'Files':20})
         self.defaultParam('colAligns',{'Order':'RIGHT','Size':'RIGHT','Files':'RIGHT','Modified':'RIGHT'})
-        self.defaultParam('sashPos',550)
         #--Persistent data
         self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}

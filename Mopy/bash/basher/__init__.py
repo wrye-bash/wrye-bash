@@ -216,18 +216,22 @@ from .dialogs import ListBoxes # TODO(ut): cyclic import
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
+    # UI settings keys prefix - used for sashPos and uiList gui settings
+    keyPrefix = 'OVERRIDE'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
-        self._firstShow = True # TODO(ut): hack to set the scrollbar position
+        self._firstShow = True
 
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def SetStatusCount(self): # TODO(ut): eliminate overrides
+    def _sbText(self): return u''
+
+    def SetStatusCount(self):
         """Sets status bar count field."""
-        statusBar.SetStatusText(u'',2)
+        statusBar.SetStatusText(self._sbText(), 2)
 
     def OnShow(self):
         """To be called when particular panel is changed to and/or shown for
@@ -247,6 +251,9 @@ class NotebookPanel(wx.Panel):
         saving data, scrollpos, etc."""
         if isinstance(self, ScreensPanel): return # ScreensPanel is not
         # backed up by a pickle file
+        if isinstance(self, MessagePanel): ##: another special case...
+            if bosh.messages: bosh.messages.save()
+            return
         if hasattr(self, 'listData'):
             # the only SashPanels that do not override us and do not have this
             # attribute are the ModDetails and SaveDetails panels that use
@@ -260,10 +267,16 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    def __init__(self,parent,sashPosKey=None,sashGravity=0.5,sashPos=0,isVertical=True,minimumSize=50,style=splitterStyle):
-        """Initialize."""
+    defaultSashPos = 100  ##: 200 in SashTankPanel, 230 in saves, 120 in
+    # screens, messages, 230 in saves details, InstallersData.defaultParam(
+    # 'sashPos',550)
+
+    def __init__(self, parent, sashGravity=0.5, sashPosKey=None,
+                 isVertical=True, minimumSize=50, style=splitterStyle):
+        ##: sashPosKey parameter is still needed for MasterList subclasses
         NotebookPanel.__init__(self, parent)
-        splitter = wx.gizmos.ThinSplitterWindow(self, style=style)
+        self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
+                                                                style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -272,10 +285,8 @@ class SashPanel(NotebookPanel):
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
         splitter.SetSashGravity(sashGravity)
-        sashPos = settings.get(sashPosKey, 0) or sashPos or -1
-        splitter.SetSashPosition(sashPos)
-        if sashPosKey is not None:
-            self.sashPosKey = sashPosKey
+        self.sashPosKey = sashPosKey if sashPosKey else \
+            self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
         splitter.SetMinimumPaneSize(minimumSize)
@@ -284,29 +295,33 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
+    def OnShow(self):
+        if hasattr(self, '_firstShow'):
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+        super(SashPanel, self).OnShow()
+
     def ClosePanel(self):
-        splitter = self.right.GetParent()
-        if hasattr(self, 'sashPosKey'):
-            settings[self.sashPosKey] = splitter.GetSashPosition()
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
+        if not hasattr(self, '_firstShow'):
+            # if the panel is never shown leave below alone
+            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
+
     def __init__(self,data,parent):
-        sashPos = data.getParam('sashPos',200)
         minimumSize = 80
         self.data = data
         self.detailsItem = None
-        super(SashTankPanel,self).__init__(parent,sashPos=sashPos,minimumSize=minimumSize)
+        super(SashTankPanel,self).__init__(parent, minimumSize=minimumSize)
 
-    def ClosePanel(self): # TODO(ut): does not call super
+    def ClosePanel(self):
         self.SaveDetails()
-        splitter = self.right.GetParent()
-        sashPos = splitter.GetSashPosition()
-        self.data.setParam('sashPos',sashPos)
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         self.data.save()
+        super(SashTankPanel, self).ClosePanel()
 
     def GetDetailsItem(self):
         return self.detailsItem
@@ -320,14 +335,14 @@ class List(balt.UIList):
     _sizeHints = (-1, 50) # overrides UIList
     icons = colorChecks
 
-    def __init__(self, parent, listData=None, dndFiles=False, dndList=False,
-                 dndColumns=(), **kwargs):
+    def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
+                 dndList=False, dndColumns=(), **kwargs):
         #--ListCtrl
         #--MasterList: masterInfo = self.data[item], where item is id number
         # rest of List subclasses provide a non None listData
         self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
-                             dndColumns=dndColumns, **kwargs)
+        balt.UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
+                             dndList=dndList, dndColumns=dndColumns, **kwargs)
         #--Columns
         self.PopulateColumns()
         #--Items
@@ -531,7 +546,8 @@ class List(balt.UIList):
 class MasterList(List):
     mainMenu = Links()
     itemMenu = Links()
-    keyPrefix = 'bash.masters'
+    keyPrefix = 'bash.masters' ##: MasterList is a special beast
+    editLabels = True
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None):
         #--Columns
@@ -545,13 +561,15 @@ class MasterList(List):
         self.loadOrderNames = []
         self.esmsFirst = settings['bash.masters.esmsFirst']
         self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Parent init
-        List.__init__(self, parent, listData, singleCell=True,
-                      editLabels=True, sunkenBorder=False)
+        #--Parent init ##: notice it does not use Panel's keyPrefix...
+        List.__init__(self, parent, listData, self.__class__.keyPrefix,
+                      singleCell=True, sunkenBorder=False)
         self._setEditedFn = setEditedFn
 
-    colReverse = property(lambda self: {},
-                          doc='Do not reverse columns in Master Lists')
+    @property
+    def colReverse(self):
+        """Do not reverse columns in Master Lists."""
+        return {}
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
@@ -781,15 +799,14 @@ class MasterList(List):
 class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
-    keyPrefix = 'bash.ini'
     _shellUI = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.ini.cols'
         self.sortValid = settings['bash.ini.sortValid']
         #--Parent init
-        List.__init__(self, parent, listData, sunkenBorder=False)
+        List.__init__(self, parent, listData, keyPrefix, sunkenBorder=False)
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -942,7 +959,7 @@ class INIList(List):
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
     def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0,u'')
         self.tweakLines = []
@@ -1000,7 +1017,7 @@ class INITweakLineCtrl(wx.ListCtrl):
 #------------------------------------------------------------------------------
 class INILineCtrl(wx.ListCtrl):
     def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, wx.ID_ANY, style=style)
+        wx.ListCtrl.__init__(self, parent, style=style)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, u'')
 
@@ -1050,9 +1067,8 @@ class ModList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.mods'
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.mods.cols'
         #--Data/Items
@@ -1065,7 +1081,7 @@ class ModList(List):
         checkboxesIL = self.icons.GetImageList()
         self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
         self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        List.__init__(self, parent, listData, dndList=True,
+        List.__init__(self, parent, listData, keyPrefix, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
 
     #-- Drag and Drop-----------------------------------------------------
@@ -1427,9 +1443,10 @@ class ModList(List):
 #------------------------------------------------------------------------------
 class ModDetails(SashPanel):
     """Details panel for mod tab."""
+    keyPrefix = 'bash.mods.details' ##: unused for now
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.details.SashPos',1.0,
+        SashPanel.__init__(self, parent,1.0,'bash.mods.details.SashPos',
                            isVertical=False,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
         #--Singleton
@@ -1782,8 +1799,10 @@ class ModDetails(SashPanel):
 
 #------------------------------------------------------------------------------
 class INIPanel(SashPanel):
+    keyPrefix = 'bash.ini'
+
     def __init__(self, parent):
-        SashPanel.__init__(self, parent,'bash.ini.sashPos')
+        SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = button(right,_(u'Remove'),onClick=self.OnRemove)
@@ -1811,9 +1830,10 @@ class INIPanel(SashPanel):
         from . import installer_links, ini_links
         self.listData = bosh.iniInfos
         installer_links.iniList = ini_links.iniList = iniList = \
-            INIList(left, self.listData)
+            INIList(left, self.listData, self.keyPrefix)
         self.uiList = iniList
-        self.comboBox = balt.comboBox(right,wx.ID_ANY,value=self.GetChoiceString(),choices=self.sortKeys,style=wx.CB_READONLY)
+        self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
+                                      choices=self.sortKeys)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -1983,11 +2003,9 @@ class INIPanel(SashPanel):
         self.sortKeys = keys
         return keys
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
+    def _sbText(self):
         stati = iniList.CountTweakStatus()
-        text = _(u'Tweaks:') + u' %d/%d' % (stati[0],sum(stati[:-1]))
-        statusBar.SetStatusText(text,2)
+        return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def AddOrSelectIniDropDown(self, path):
         if path.stail not in self.choices:
@@ -2040,8 +2058,10 @@ class INIPanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
+    keyPrefix = 'bash.mods'
+
     def __init__(self,parent):
-        SashPanel.__init__(self, parent,'bash.mods.sashPos',1.0,minimumSize=150)
+        SashPanel.__init__(self, parent, 1.0, minimumSize=150)
         left,right = self.left, self.right
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
@@ -2049,7 +2069,7 @@ class ModPanel(SashPanel):
         self.listData = bosh.modInfos
         saves_links.modList = mods_links.modList = mod_links.modList = \
         app_buttons.modList = patcher_dialog.modList = modList = \
-            ModList(left, self.listData)
+            ModList(left, self.listData, self.keyPrefix)
         self.uiList = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
@@ -2063,10 +2083,8 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI()
         self.modDetails.SetFile()
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u'Mods:')+u' %d/%d' % (len(bosh.modInfos.ordered),len(bosh.modInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'Mods:') + u' %d/%d' % (
+        len(bosh.modInfos.ordered), len(bosh.modInfos.data))
 
     def OnSize(self,event):
         wx.Window.Layout(self)
@@ -2086,15 +2104,15 @@ class SaveList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.saves'
+    editLabels = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.saves.cols'
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, listData, editLabels=True)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves"""
@@ -2210,17 +2228,6 @@ class SaveList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
-    def OnChar(self,event):
-        """Char event: Rename."""
-        ## F2 - Rename
-        if event.GetKeyCode() == wx.WXK_F2:
-            selected = self.GetSelected()
-            if len(selected) > 0:
-                index = self.gList.FindItem(0,selected[0].s)
-                if index != -1:
-                    self.gList.EditLabel(index)
-        event.Skip()
-
     def OnKeyUp(self,event):
         code = event.GetKeyCode()
         # Ctrl+C: Copy file(s) to clipboard
@@ -2248,12 +2255,13 @@ class SaveList(List):
 #------------------------------------------------------------------------------
 class SaveDetails(SashPanel):
     """Savefile details panel."""
+    keyPrefix = 'bash.saves.details' ##: unused for now
+
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent,'bash.saves.details.SashPos',0.0,sashPos=230,
+        SashPanel.__init__(self, parent,0.0,'bash.saves.details.SashPos',
                            isVertical=False,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
         top,bottom = self.left, self.right
-        readOnlyColour = self.GetBackgroundColour()
         #--Singleton
         global saveDetails
         saveDetails = self
@@ -2453,15 +2461,18 @@ class SaveDetails(SashPanel):
 #------------------------------------------------------------------------------
 class SavePanel(SashPanel):
     """Savegames tab."""
+    keyPrefix = 'bash.saves'
+
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
-        SashPanel.__init__(self, parent,'bash.saves.sashPos',1.0,minimumSize=200)
+        SashPanel.__init__(self, parent, 1.0, minimumSize=200)
         left,right = self.left, self.right
         global saveList
         from . import saves_links
         self.listData = bosh.saveInfos
-        saves_links.saveList = saveList = SaveList(left, self.listData)
+        saves_links.saveList = saveList = SaveList(left, self.listData,
+                                                   self.keyPrefix)
         self.uiList = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
@@ -2475,10 +2486,7 @@ class SavePanel(SashPanel):
         self.saveDetails.SetFile()
         self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u"Saves: %d") % (len(bosh.saveInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
     def OnSize(self,event=None):
         wx.Window.Layout(self)
@@ -2496,16 +2504,15 @@ class SavePanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
-    keyPrefix = 'bash.installers'
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
     # _shellUI = True TODO(ut): shellUI path does not grok markers
+    editLabels = True
 
-    def __init__(self, parent, data, details=None):
-        balt.Tank.__init__(self, parent, data, details=details, dndList=True,
-                           dndFiles=True, dndColumns=['Order'],
-                           editLabels=True)
+    def __init__(self, parent, data, keyPrefix, details=None):
+        balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
+                           dndList=True, dndFiles=True, dndColumns=['Order'])
         self.hitItem = None
         self.hitTime = 0
 
@@ -2817,18 +2824,18 @@ class InstallersList(balt.Tank):
             if path.exists(): path.start()
         event.Skip()
 
+    def Rename(self, selected=None):
+        selected = self.GetSelected()
+        if selected > 0:
+            index = self.GetIndex(selected[0])
+            if index != -1:
+                self.gList.EditLabel(index)
+
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
-        ##F2 - Rename selected.
-        if code == wx.WXK_F2:
-            selected = self.GetSelected()
-            if selected > 0:
-                index = self.GetIndex(selected[0])
-                if index != -1:
-                    self.gList.EditLabel(index)
         ##Ctrl+Shift+N - Add a marker
-        elif event.CmdDown() and event.ShiftDown() and code == ord('N'):
+        if event.CmdDown() and event.ShiftDown() and code == ord('N'):
             index = self.GetIndex(GPath(u'===='))
             if index == -1:
                 self.data.addMarker(u'====')
@@ -2851,6 +2858,7 @@ class InstallersPanel(SashTankPanel):
     """Panel for InstallersTank."""
     espmMenu = Links()
     subsMenu = Links()
+    keyPrefix = 'bash.installers'
 
     def __init__(self,parent):
         """Initialize."""
@@ -2862,7 +2870,8 @@ class InstallersPanel(SashTankPanel):
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
-        commentsSplitter = wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
+        self.commentsSplitter = commentsSplitter = \
+            wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
@@ -2871,7 +2880,7 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.uiList = InstallersList(left, data, details=self)
+        self.uiList = InstallersList(left, data, self.keyPrefix, details=self)
         bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
@@ -2956,7 +2965,6 @@ class InstallersPanel(SashTankPanel):
         #--Events
         #self.Bind(wx.EVT_SIZE,self.OnSize)
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
-        commentsSplitter.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self._OnCommentsSplitterSashPosChanged)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -3098,7 +3106,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
-        NotebookPanel.OnShow(self)
+        SashPanel.OnShow(self)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3109,19 +3117,18 @@ class InstallersPanel(SashTankPanel):
                 self.RefreshInfoPage(index,self.data[self.detailsItem])
             event.Skip()
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        active = len([x for x in self.data.itervalues() if x.isActive])
-        text = _(u'Packages:')+u' %d/%d' % (active,len(self.data.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        active = len(filter(lambda x: x.isActive, self.data.itervalues()))
+        text = _(u'Packages:') + u' %d/%d' % (active, len(self.data.data))
+        return text
 
-    def _OnCommentsSplitterSashPosChanged(self, event):
-        # ignore spurious events caused by invisible layout adjustments during initialization
-        if not self.refreshed: return
-        # save new comments text box size
-        splitter = event.GetEventObject()
-        sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
-        settings['bash.installers.commentsSplitterSashPos'] = sashPos
+    def ClosePanel(self):
+        if not hasattr(self, '_firstShow'):
+            # save comments text box size ##: dunno what's this alchemy below
+            splitter = self.commentsSplitter
+            sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
+            settings['bash.installers.commentsSplitterSashPos'] = sashPos
+        super(InstallersPanel, self).ClosePanel()
 
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
@@ -3384,15 +3391,15 @@ class ScreensList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
-    keyPrefix = 'bash.screens'
     icons = None # no icons
     _shellUI = True
+    editLabels = True
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.screens.cols'
         #--Parent init
-        List.__init__(self, parent, listData, editLabels=True)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def OnDClick(self,event):
         """Double click a screenshot"""
@@ -3507,16 +3514,9 @@ class ScreensList(List):
 
     #--Events ---------------------------------------------
     def OnChar(self,event):
-        """Char event: Activate selected items, select all items"""
-        ##F2
-        if event.GetKeyCode() == wx.WXK_F2:
-            selected = self.GetSelected()
-            if len(selected) > 0:
-                index = self.gList.FindItem(0,selected[0].s)
-                if index != -1:
-                    self.gList.EditLabel(index)
+        """Char event: Activate selected items."""
         ##Enter
-        elif event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+        if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
             screensDir = bosh.screensData.dir
             for file in self.GetSelected():
                 file = screensDir.join(file)
@@ -3543,15 +3543,16 @@ class ScreensList(List):
 #------------------------------------------------------------------------------
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
+    keyPrefix = 'bash.screens'
+
     def __init__(self,parent):
         """Initialize."""
-        sashPos = settings.get('bash.screens.sashPos',120)
-        SashPanel.__init__(self,parent,'bash.screens.sashPos',sashPos=sashPos,minimumSize=100)
+        SashPanel.__init__(self, parent, minimumSize=100)
         left,right = self.left,self.right
         #--Contents
         global screensList
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        screensList = ScreensList(left, self.listData)
+        screensList = ScreensList(left, self.listData, self.keyPrefix)
         screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         self.uiList = screensList
         #--Layout
@@ -3562,10 +3563,8 @@ class ScreensPanel(SashPanel):
     def RefreshUIColors(self):
         screensList.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        text = _(u'Screens:')+u' %d' % (len(screensList.data.data),)
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        return _(u'Screens:') + u' %d' % (len(screensList.data.data),)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -3579,16 +3578,15 @@ class BSAList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    keyPrefix = 'bash.BSAs'
     icons = None # no icons
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.cols = settings['bash.BSAs.cols']
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3811,11 +3809,13 @@ class BSADetails(wx.Window):
 #------------------------------------------------------------------------------
 class BSAPanel(NotebookPanel):
     """BSA info tab."""
+    keyPrefix = 'bash.BSAs'
+
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
-        bsaList = BSAList(self, self.listData)
+        bsaList = BSAList(self, self.listData, self.keyPrefix)
         self.BSADetails = BSADetails(self)
         BSAList.details = self.BSADetails
         #--Events
@@ -3828,10 +3828,7 @@ class BSAPanel(NotebookPanel):
         self.SetSizer(sizer)
         self.BSADetails.Fit()
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u'BSAs:')+u' %d' % (len(bosh.BSAInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
 
     def OnSize(self,event=None):
         wx.Window.Layout(self)
@@ -3848,17 +3845,16 @@ class MessageList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _sizeHints = (100, 100)
-    keyPrefix = 'bash.messages'
     icons = None # no icons
 
-    def __init__(self, parent, listData):
+    def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.messages.cols'
         #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
-        List.__init__(self, parent, listData)
+        List.__init__(self, parent, listData, keyPrefix)
 
     def GetItems(self):
         """Set and return self.items."""
@@ -3939,19 +3935,20 @@ class MessageList(List):
 #------------------------------------------------------------------------------
 class MessagePanel(SashPanel):
     """Messages tab."""
+    keyPrefix = 'bash.messages'
+
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
-        sashPos = settings.get('bash.messages.sashPos',120)
-        SashPanel.__init__(self,parent,'bash.messages.sashPos',sashPos=sashPos,
-                           isVertical=False,minimumSize=100)
+        SashPanel.__init__(self, parent, isVertical=False, minimumSize=100)
         gTop,gBottom = self.left,self.right
         #--Contents
         global gMessageList
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        gMessageList = MessageList(gTop, self.listData)
-        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(gBottom,wx.ID_ANY,style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        gMessageList = MessageList(gTop, self.listData, self.keyPrefix)
+        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
+            gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.uiList = gMessageList
         #--Search # TODO(ut): move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
@@ -3975,14 +3972,10 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gTop)
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        if gMessageList.searchResults is not None:
-            numUsed = len(gMessageList.searchResults)
-        else:
-            numUsed = len(gMessageList.items)
-        text = _(u'PMs:')+u' %d/%d' % (numUsed,len(gMessageList.data.keys()))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        used = len(gMessageList.items) if gMessageList.searchResults is None \
+            else len(gMessageList.searchResults)
+        return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
 
     def OnSize(self,event=None):
         wx.LayoutAlgorithm().LayoutWindow(self, self.left)
@@ -4015,15 +4008,8 @@ class MessagePanel(SashPanel):
         gMessageList.searchResults = None
         gMessageList.RefreshUI()
 
-    def ClosePanel(self): # (ut) does not call super
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        if bosh.messages:
-            bosh.messages.save()
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
-    keyPrefix = 'bash.people'
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
@@ -4038,6 +4024,7 @@ class PeopleList(balt.Tank):
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
+    keyPrefix = 'bash.people'
 
     def __init__(self,parent):
         """Initialize."""
@@ -4047,7 +4034,7 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.uiList = PeopleList(left, data, details=self)
+        self.uiList = PeopleList(left, data, self.keyPrefix, details=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -4063,10 +4050,7 @@ class PeoplePanel(SashTankPanel):
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        text = _(u'People:')+u' %d' % len(self.data.data)
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'People:') + u' %d' % len(self.data.data)
 
     def OnSpin(self,event):
         """Karma spin."""
@@ -4107,8 +4091,8 @@ class PeoplePanel(SashTankPanel):
 from .misc_links import Tab_Link # TODO(ut) don't want to import here
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
-    def __init__(self, parent, id):
-        wx.Notebook.__init__(self, parent, id)
+    def __init__(self, parent):
+        wx.Notebook.__init__(self, parent)
         balt.TabDragMixin.__init__(self)
         #--Pages
         # Ensure the 'Mods' tab is always shown
@@ -4215,7 +4199,7 @@ class BashStatusBar(wx.StatusBar):
     laaButton = None
 
     def __init__(self, parent):
-        wx.StatusBar.__init__(self, parent, wx.ID_ANY)
+        wx.StatusBar.__init__(self, parent)
         global statusBar
         statusBar = self
         self.SetFieldsCount(3)
@@ -4454,7 +4438,7 @@ class BashFrame(wx.Frame):
         bashFrame = self
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, wx.ID_ANY, u'Wrye Bash', pos, size)
+        wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -4464,7 +4448,7 @@ class BashFrame(wx.Frame):
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
-        self.notebook = notebook = BashNotebook(self,wx.ID_ANY)
+        self.notebook = notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
         self.Bind(wx.EVT_ACTIVATE, self.RefreshData)

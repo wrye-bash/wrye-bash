@@ -438,8 +438,7 @@ settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package
     'bash.messages.allCols': ['Subject','Author','Date'],
     'bash.messages.cols': ['Subject','Author','Date'],
     'bash.messages.sort': 'Date',
-    'bash.messages.colReverse': {
-        },
+    'bash.messages.colReverse': {},
     'bash.messages.colWidths': {
         'Subject':250,
         'Author':100,

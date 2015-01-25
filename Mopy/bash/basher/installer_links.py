@@ -26,14 +26,13 @@ import StringIO
 import copy
 import re
 import webbrowser
-import wx
 from . import settingDefaults, Resources, Installers_Link
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, UncodedError, LogFile
+    SubProgress, LogFile
 from ..bosh import formatInteger
 # FIXME(ut): globals
 iniList = None
@@ -151,7 +150,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             # Sanity checks on saved size/position
             if not isinstance(pos,tuple) or len(pos) != 2:
                 deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), reverting to default position.') % (pos,type(pos)))
-                pos = wx.DefaultPosition
+                pos = balt.defPos
             if not isinstance(saved,tuple) or len(saved) != 2:
                 deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), reverting to default size.') % (saved, type(saved)))
                 pageSize = tuple(default)
@@ -164,10 +163,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         # Sanity checks on returned size/position
-        if not isinstance(ret.Pos,wx.Point):
+        if not isinstance(ret.Pos, balt.wxPoint):
             deprint(_(u'Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.') % (ret.Pos, type(ret.Pos)))
-            ret.Pos = wx.DefaultPosition
-        if not isinstance(ret.PageSize,wx.Size):
+            ret.Pos = balt.defPos
+        if not isinstance(ret.PageSize, balt.wxSize):
             deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.') % (ret.PageSize, type(ret.PageSize)))
             ret.PageSize = tuple(default)
         bosh.settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
@@ -401,26 +400,20 @@ class Installer_Rename(_InstallerLink):
 
     def _enable(self):
         ##Only enable if all selected items are of the same type
-        window = self.window
-        firstItem = window.data[window.GetSelected()[0]]
+        firstItem = self.idata[self.selected[0]]
         if isinstance(firstItem,bosh.InstallerMarker):
             self.InstallerType = bosh.InstallerMarker
         elif isinstance(firstItem,bosh.InstallerArchive):
             self.InstallerType = bosh.InstallerArchive
         elif isinstance(firstItem,bosh.InstallerProject):
             self.InstallerType = bosh.InstallerProject
-        else: self.InstallerType = None
-        if self.InstallerType:
-            for item in window.GetSelected():
-                if not isinstance(window.data[item],self.InstallerType):
-                    return False
+        else: return False
+        for item in self.selected:
+            if not isinstance(self.idata[item], self.InstallerType):
+                return False
         return True
 
-    def Execute(self,event):
-        if len(self.selected) > 0:
-            index = self.gTank.GetIndex(self.selected[0])
-            if index != -1:
-                self.gTank.gList.EditLabel(index)
+    def Execute(self,event): self.window.Rename(selected=self.selected)
 
 class Installer_HasExtraData(CheckLink, _InstallerLink):
     """Toggle hasExtraData flag on installer."""
@@ -994,7 +987,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
-        self.selected = window.GetSelected()
+        self.selected = window.GetSelected() # append runs before _initData
         return self.isSelectedArchives()
 
     def Execute(self,event):
@@ -1106,7 +1099,7 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
     text = _(u'Pack to Archive...')
 
     def _append(self, window):
-        self.selected = window.GetSelected()
+        self.selected = window.GetSelected() # append runs before _initData
         return self.isSingleProject()
 
     def Execute(self,event):
@@ -1426,7 +1419,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
-        selected = self.selected # window.GetSelected()
+        selected = self.selected
         instData = self.data # window.data, InstallersData singleton
         selectedCRCs = set(instData[archive].crc for archive in selected)
         crcInstallers = set(instData.crc_installer)

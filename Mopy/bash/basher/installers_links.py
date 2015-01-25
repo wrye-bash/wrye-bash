@@ -40,7 +40,7 @@ class Installers_AddMarker(Installers_Link):
              u' and labelling your packages.')
 
     def Execute(self,event):
-        """Handle selection."""
+        """Add a Marker."""
         index = self.gTank.GetIndex(GPath(u'===='))
         if index == -1:
             self.idata.addMarker(u'====')
@@ -173,6 +173,7 @@ class Installers_MonitorInstall(Installers_Link):
         gInstallers.RefreshUIMods()
         # Select new installer
         self.gTank.SelectItemAtIndex(self.gTank.gList.GetItemCount()-1)
+
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
     text = _(u'List Packages...')

@@ -78,6 +78,10 @@ splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - do
 #--Indexed
 wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
+# wx Types
+wxPoint = wx.Point
+wxSize = wx.Size
+
 def fonts():
     font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
@@ -341,9 +345,9 @@ class roTextCtrl(textCtrl):
 class comboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
-        autotooltip = kwdargs.get('autotooltip',True)
-        if 'autotooltip' in kwdargs:
-            del kwdargs['autotooltip']
+        autotooltip = kwdargs.pop('autotooltip', True)
+        if kwdargs.pop('readonly', True):
+            kwdargs['style'] = kwdargs.get('style', 0) | wx.CB_READONLY
         wx.ComboBox.__init__(self, *args, **kwdargs)
         if autotooltip:
             self.Bind(wx.EVT_SIZE, self.OnChange)
@@ -1721,19 +1725,22 @@ class UIList(wx.Panel):
     # optional menus
     mainMenu = None
     itemMenu = None
-    # UI settings keys - cf tankKey in TankData ...
-    keyPrefix = 'OVERRIDE'
     #--gList image collection
     icons = {}
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
+    #--Style params
+    editLabels = False # allow editing the labels - also enables F2 shortcut
 
-    def __init__(self, parent, dndFiles, dndList, dndColumns=(), **kwargs):
+    def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
+                 **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
         self.SetSizeHints(*self.__class__._sizeHints)
+        # Settings key
+        self.__class__.keyPrefix = keyPrefix
         #--Columns
         self.colNames = bosh.settings['bash.colNames']
         self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
@@ -1745,8 +1752,7 @@ class UIList(wx.Panel):
         #--gList
         ctrlStyle = wx.LC_REPORT
         if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
-        editLabels = kwargs.pop('editLabels', False)
-        if editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
         self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
@@ -1754,7 +1760,7 @@ class UIList(wx.Panel):
                               fnDropIndexes=self.OnDropIndexes)
         if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
                                                wx.IMAGE_LIST_SMALL)
-        if editLabels:
+        if self.__class__.editLabels:
             self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
             self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
@@ -1807,11 +1813,6 @@ class UIList(wx.Panel):
         size = self.GetClientSizeTuple()
         self.gList.SetSize(size)
 
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        """Left mouse button was pressed."""
-        event.Skip()
-
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1837,12 +1838,8 @@ class UIList(wx.Panel):
             Link.Frame.GetStatusBar().SetStatusText(text, 1)
             self.mouseTextPrev = text
 
-    def OnDClick(self,event):
-        """Left mouse double click."""
-        event.Skip()
-
     def OnKeyUp(self, event):
-        """Char event: select all items, delete selected items."""
+        """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): # Ctrl+A
             self.SelectAll()
@@ -1850,9 +1847,14 @@ class UIList(wx.Panel):
             with BusyCursor():
                 self.DeleteSelected(shellUI=self.__class__._shellUI,
                                     noRecycle=event.ShiftDown())
+        elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
         event.Skip()
 
+    #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
+    def OnLeftDown(self,event): event.Skip()
+    def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
+    #--Edit labels - only registered if editLabels != False
     def OnBeginEditLabel(self,event): event.Skip()
     def OnLabelEdited(self,event): event.Skip()
 
@@ -1901,12 +1903,20 @@ class UIList(wx.Panel):
     def SetScrollPosition(self):
         self.gList.ScrollLines(
             bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
+
+    # Data commands (WIP)------------------------------------------------------
+    def Rename(self, selected=None):
+        if not selected: selected = self.GetSelected()
+        if len(selected) > 0:
+            index = self.gList.FindItem(0, selected[0].s)
+            if index != -1: self.gList.EditLabel(index)
+
 #------------------------------------------------------------------------------
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
 
-    def __init__(self, parent, data, details=None, dndList=False,
+    def __init__(self, parent, data, keyPrefix, details=None, dndList=False,
                  dndFiles=False, dndColumns=(), **kwargs):
         #--Data
         self.data = data
@@ -1918,8 +1928,8 @@ class Tank(UIList):
         #--ListCtrl
         # no sunken borders by default
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
-        UIList.__init__(self, parent, dndFiles=dndFiles, dndList=dndList,
-                        dndColumns=dndColumns, **kwargs)
+        UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
+                        dndList=dndList, dndColumns=dndColumns, **kwargs)
         #--Columns
         self.UpdateColumns()
         #--Items
@@ -1930,10 +1940,6 @@ class Tank(UIList):
 
     @property
     def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
-
-    @property
-    def colReverse(self):
-        return bosh.settings[self.__class__.keyPrefix + '.colReverse']
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2064,10 +2070,6 @@ class Tank(UIList):
     def _setSort(self,sort):
         self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
 
-    def _setColumnReverse(self, column, reverse):
-        self.colReverse[column] = reverse # should mark as changed on get ?
-        bosh.settings.setChanged(self.__class__.keyPrefix + '.colReverse')
-
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
         sort is then "cloned" list through an intermediate cmp function.
@@ -2090,7 +2092,7 @@ class Tank(UIList):
             reverse = not curReverse
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
-        self._setColumnReverse(column, reverse)
+        self.colReverse[column] = reverse
         self._setSort(column)
         #--Sort
         items = self.data.getSorted(column,reverse)

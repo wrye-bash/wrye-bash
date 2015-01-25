@@ -359,11 +359,7 @@ class Save_Rename(EnabledLink):
     help = _(u'Rename Save File')
     def _enable(self): return len(self.selected) != 0
 
-    def Execute(self,event):
-        if len(self.selected) > 0:
-            index = self.window.gList.FindItem(0,self.selected[0].s)
-            if index != -1:
-                self.window.gList.EditLabel(index)
+    def Execute(self,event): self.window.Rename(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):

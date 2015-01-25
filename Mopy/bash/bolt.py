@@ -1821,6 +1821,7 @@ class Table(DataDict):
 #------------------------------------------------------------------------------
 class TankData:
     """Data source for a Tank table."""
+    ##: DEPRECATED: at least bin the param interface - belongs to Panels/UIList
 
     def __init__(self,params):
         """Initialize."""
@@ -1852,10 +1853,6 @@ class TankData:
         """Get a param, but also mark it as changed.
         Used for deep params like lists and dictionaries."""
         return self.tankParams.getChanged(self.tankKey+'.'+key,default)
-
-    def setParam(self,key,value):
-        """Set a GUI parameter."""
-        self.tankParams[self.tankKey+'.'+key] = value
 
     #--Collection
     def setChanged(self,hasChanged=True):

@@ -56,7 +56,7 @@ class Patcher:
         """Show config."""
         if not self.gConfigPanel:
             self.gTipText = gTipText
-            gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+            gConfigPanel = self.gConfigPanel = wx.Window(parent)
             text = fill(self.text,70)
             gText = staticText(self.gConfigPanel,text)
             gSizer = vSizer(gText)
@@ -77,7 +77,7 @@ class _AliasesPatcher(Patcher):
         #--Else...
         #--Tip
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        gConfigPanel = self.gConfigPanel = wx.Window(parent)
         # CRUFT (ut) PBASH -> CBASH difference - kept PBash:
         # -        text = fill(self.__class__.text,70)
         # +        text = fill(self.text,70)
@@ -124,7 +124,7 @@ class ListPatcher(Patcher):
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
         gText = staticText(self.gConfigPanel,text)
         if self.forceItemCheck:
@@ -335,7 +335,7 @@ class TweakPatcher(Patcher):
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY,style=wx.TAB_TRAVERSAL)
+        gConfigPanel = self.gConfigPanel = wx.Window(parent,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
         gText = staticText(self.gConfigPanel,text)
         self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
@@ -555,7 +555,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,wx.ID_ANY)
+        gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
         gText = staticText(self.gConfigPanel,text)
         #--Import List
