@@ -166,7 +166,7 @@ class ColorDialog(balt.Dialog):
             text = colorInfo[key][0]
             self.text_key[text] = key
         choiceKey = self.text_key[choice]
-        self.comboBox = balt.comboBox(self,wx.ID_ANY,choice,choices=choices,style=wx.CB_READONLY)
+        self.comboBox = balt.comboBox(self, value=choice, choices=choices)
         #--Color Picker
         self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])

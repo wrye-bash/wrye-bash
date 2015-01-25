@@ -227,9 +227,11 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def SetStatusCount(self): # TODO(ut): eliminate overrides
+    def _sbText(self): return u''
+
+    def SetStatusCount(self):
         """Sets status bar count field."""
-        statusBar.SetStatusText(u'',2)
+        statusBar.SetStatusText(self._sbText(), 2)
 
     def OnShow(self):
         """To be called when particular panel is changed to and/or shown for
@@ -249,6 +251,9 @@ class NotebookPanel(wx.Panel):
         saving data, scrollpos, etc."""
         if isinstance(self, ScreensPanel): return # ScreensPanel is not
         # backed up by a pickle file
+        if isinstance(self, MessagePanel): ##: another special case...
+            if bosh.messages: bosh.messages.save()
+            return
         if hasattr(self, 'listData'):
             # the only SashPanels that do not override us and do not have this
             # attribute are the ModDetails and SaveDetails panels that use
@@ -1828,8 +1833,7 @@ class INIPanel(SashPanel):
             INIList(left, self.listData, self.keyPrefix)
         self.uiList = iniList
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
-                                      choices=self.sortKeys,
-                                      style=wx.CB_READONLY)
+                                      choices=self.sortKeys)
         #--Events
         wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -1999,11 +2003,9 @@ class INIPanel(SashPanel):
         self.sortKeys = keys
         return keys
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
+    def _sbText(self):
         stati = iniList.CountTweakStatus()
-        text = _(u'Tweaks:') + u' %d/%d' % (stati[0],sum(stati[:-1]))
-        statusBar.SetStatusText(text,2)
+        return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def AddOrSelectIniDropDown(self, path):
         if path.stail not in self.choices:
@@ -2081,10 +2083,8 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI()
         self.modDetails.SetFile()
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u'Mods:')+u' %d/%d' % (len(bosh.modInfos.ordered),len(bosh.modInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'Mods:') + u' %d/%d' % (
+        len(bosh.modInfos.ordered), len(bosh.modInfos.data))
 
     def OnSize(self,event):
         wx.Window.Layout(self)
@@ -2486,10 +2486,7 @@ class SavePanel(SashPanel):
         self.saveDetails.SetFile()
         self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u"Saves: %d") % (len(bosh.saveInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
     def OnSize(self,event=None):
         wx.Window.Layout(self)
@@ -3120,11 +3117,10 @@ class InstallersPanel(SashTankPanel):
                 self.RefreshInfoPage(index,self.data[self.detailsItem])
             event.Skip()
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        active = len([x for x in self.data.itervalues() if x.isActive])
-        text = _(u'Packages:')+u' %d/%d' % (active,len(self.data.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        active = len(filter(lambda x: x.isActive, self.data.itervalues()))
+        text = _(u'Packages:') + u' %d/%d' % (active, len(self.data.data))
+        return text
 
     def ClosePanel(self):
         if not hasattr(self, '_firstShow'):
@@ -3567,10 +3563,8 @@ class ScreensPanel(SashPanel):
     def RefreshUIColors(self):
         screensList.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        text = _(u'Screens:')+u' %d' % (len(screensList.data.data),)
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        return _(u'Screens:') + u' %d' % (len(screensList.data.data),)
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
@@ -3834,10 +3828,7 @@ class BSAPanel(NotebookPanel):
         self.SetSizer(sizer)
         self.BSADetails.Fit()
 
-    def SetStatusCount(self):
-        """Sets mod count in last field."""
-        text = _(u'BSAs:')+u' %d' % (len(bosh.BSAInfos.data))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
 
     def OnSize(self,event=None):
         wx.Window.Layout(self)
@@ -3981,14 +3972,10 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gTop)
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        if gMessageList.searchResults is not None:
-            numUsed = len(gMessageList.searchResults)
-        else:
-            numUsed = len(gMessageList.items)
-        text = _(u'PMs:')+u' %d/%d' % (numUsed,len(gMessageList.data.keys()))
-        statusBar.SetStatusText(text,2)
+    def _sbText(self):
+        used = len(gMessageList.items) if gMessageList.searchResults is None \
+            else len(gMessageList.searchResults)
+        return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
 
     def OnSize(self,event=None):
         wx.LayoutAlgorithm().LayoutWindow(self, self.left)
@@ -4020,12 +4007,6 @@ class MessagePanel(SashPanel):
         self.gSearchBox.SetValue(u'')
         gMessageList.searchResults = None
         gMessageList.RefreshUI()
-
-    def ClosePanel(self): # (ut) does not call super
-        """To be called when containing frame is closing. Use for saving data, scrollpos, etc."""
-        if bosh.messages:
-            bosh.messages.save()
-        self.uiList.SaveScrollPosition(isVertical=self.isVertical)
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
@@ -4069,10 +4050,7 @@ class PeoplePanel(SashTankPanel):
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        text = _(u'People:')+u' %d' % len(self.data.data)
-        statusBar.SetStatusText(text,2)
+    def _sbText(self): return _(u'People:') + u' %d' % len(self.data.data)
 
     def OnSpin(self,event):
         """Karma spin."""

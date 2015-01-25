@@ -346,6 +346,8 @@ class comboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
         autotooltip = kwdargs.pop('autotooltip', True)
+        if kwdargs.pop('readonly', True):
+            kwdargs['style'] = kwdargs.get('style', 0) | wx.CB_READONLY
         wx.ComboBox.__init__(self, *args, **kwdargs)
         if autotooltip:
             self.Bind(wx.EVT_SIZE, self.OnChange)
@@ -1811,11 +1813,6 @@ class UIList(wx.Panel):
         size = self.GetClientSizeTuple()
         self.gList.SetSize(size)
 
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        """Left mouse button was pressed."""
-        event.Skip()
-
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
@@ -1841,10 +1838,6 @@ class UIList(wx.Panel):
             Link.Frame.GetStatusBar().SetStatusText(text, 1)
             self.mouseTextPrev = text
 
-    def OnDClick(self,event):
-        """Left mouse double click."""
-        event.Skip()
-
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
@@ -1857,7 +1850,11 @@ class UIList(wx.Panel):
         elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
         event.Skip()
 
+    #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
+    def OnLeftDown(self,event): event.Skip()
+    def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
+    #--Edit labels - only registered if editLabels != False
     def OnBeginEditLabel(self,event): event.Skip()
     def OnLabelEdited(self,event): event.Skip()
 
@@ -1943,10 +1940,6 @@ class Tank(UIList):
 
     @property
     def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
-
-    @property
-    def colReverse(self):
-        return bosh.settings[self.__class__.keyPrefix + '.colReverse']
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2077,10 +2070,6 @@ class Tank(UIList):
     def _setSort(self,sort):
         self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
 
-    def _setColumnReverse(self, column, reverse):
-        self.colReverse[column] = reverse # should mark as changed on get ?
-        bosh.settings.setChanged(self.__class__.keyPrefix + '.colReverse')
-
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
         sort is then "cloned" list through an intermediate cmp function.
@@ -2103,7 +2092,7 @@ class Tank(UIList):
             reverse = not curReverse
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
-        self._setColumnReverse(column, reverse)
+        self.colReverse[column] = reverse
         self._setSort(column)
         #--Sort
         items = self.data.getSorted(column,reverse)
