@@ -111,7 +111,6 @@ isUAC = False      # True if the game is under UAC protection
 
 # Singletons ------------------------------------------------------------------
 statusBar = None
-modList = None
 modDetails = None
 saveDetails = None
 screensList = None
@@ -1682,7 +1681,7 @@ class ModDetails(SashPanel):
             self.SetFile(self.modInfo.name)
             bosh.modInfos.refresh(doInfos=False)
             bosh.modInfos.refreshInfoLists()
-            modList.RefreshUI()
+            BashFrame.modList.RefreshUI()
             return
         #--Backup
         modInfo.makeBackup()
@@ -1697,7 +1696,7 @@ class ModDetails(SashPanel):
                                      'bash.rename.isBadFileName')
                 ):
                 return
-            modList.items[modList.items.index(oldName)] = newName
+            BashFrame.modList.items[BashFrame.modList.items.index(oldName)] = newName
             settings.getChanged('bash.mods.renames')[oldName] = newName
             bosh.modInfos.rename(oldName,newName)
             fileName = newName
@@ -1724,7 +1723,7 @@ class ModDetails(SashPanel):
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
         bosh.modInfos.plugins.refresh()
-        modList.RefreshUI()
+        BashFrame.modList.RefreshUI()
 
     def DoCancel(self,event):
         if self.modInfo:
@@ -1782,13 +1781,13 @@ class ModDetails(SashPanel):
             # Enable autoBashTags
             bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',True)
             modInfo.reloadBashTags()
-        modList.RefreshUI(self.modInfo.name)
+        BashFrame.modList.RefreshUI(self.modInfo.name)
 
     def DoCopyBashTags(self,event):
         """Copies manually assigned bash tags into the mod description"""
         modInfo = self.modInfo
         modInfo.setBashTagsDesc(modInfo.getBashTags())
-        modList.RefreshUI(self.modInfo.name)
+        BashFrame.modList.RefreshUI(self.modInfo.name)
 
     def ToggleBashTag(self,event):
         """Toggle bash tag from menu."""
@@ -1798,7 +1797,7 @@ class ModDetails(SashPanel):
         tag = self.allTags[event.GetId()-ID_TAGS.BASE]
         modTags = self.modTags ^ {tag}
         self.modInfo.setBashTags(modTags)
-        modList.RefreshUI(self.modInfo.name)
+        BashFrame.modList.RefreshUI(self.modInfo.name)
 
 #------------------------------------------------------------------------------
 class INIPanel(SashPanel):
@@ -2058,19 +2057,14 @@ class ModPanel(SashPanel):
     def __init__(self,parent):
         SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=150)
         left,right = self.left, self.right
-        global modList
-        from . import mods_links, mod_links, saves_links, app_buttons, \
-            patcher_dialog
         self.listData = bosh.modInfos
-        saves_links.modList = mods_links.modList = mod_links.modList = \
-        app_buttons.modList = patcher_dialog.modList = modList = \
-            ModList(left, self.listData, self.keyPrefix)
-        self.uiList = modList
+        BashFrame.modList = ModList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.modList
         self.modDetails = ModDetails(right)
-        modList.details = self.modDetails
+        self.uiList.details = self.modDetails
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((modList,2,wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -2622,7 +2616,7 @@ class InstallersList(balt.Tank):
             #--Refresh UI
             if refreshNeeded:
                 self.data.refresh(what='I')
-                modList.RefreshUI()
+                BashFrame.modList.RefreshUI()
                 if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
                     # and never initialized
@@ -2733,7 +2727,7 @@ class InstallersList(balt.Tank):
                     return
             except (CancelError,SkipError):
                 pass
-            modList.RefreshUI()
+            BashFrame.modList.RefreshUI()
             if BashFrame.iniList:
                 BashFrame.iniList.RefreshUI()
         gInstallers.frameActivated = True
@@ -3131,7 +3125,7 @@ class InstallersPanel(SashTankPanel):
         self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            modList.RefreshUI('ALL')
+            BashFrame.modList.RefreshUI('ALL')
         if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
                 #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
@@ -4457,11 +4451,12 @@ class BashFrame(wx.Frame):
     ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
     modChecker = None
-    # UILists - accessed by other lists or the Links subclasses
+    # UILists - use sparingly for inter Panel communication
     # modList is always set but for example iniList may be None (tab not
     # enabled). BashFrame should perform the None check (not the clients)
     saveList = None
     iniList = None
+    modList = None
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
@@ -4611,7 +4606,7 @@ class BashFrame(wx.Frame):
                     bosh.bsaInfos.resetMTimes()
         #--Repopulate
         if popMods:
-            modList.RefreshUI(popMods) #--Will repop saves too.
+            BashFrame.modList.RefreshUI(popMods) #--Will repop saves too.
         elif popSaves:
             BashFrame.saveList.RefreshUI(popSaves)
         if popInis:
@@ -4733,7 +4728,7 @@ class BashFrame(wx.Frame):
                 progress.setFull(len(scanList))
                 bosh.modInfos.rescanMergeable(scanList,progress)
         if scanList or difMergeable:
-            modList.RefreshUI(scanList + list(difMergeable))
+            BashFrame.modList.RefreshUI(scanList + list(difMergeable))
         #--Done (end recursion blocker)
         self.inRefreshData = False
 

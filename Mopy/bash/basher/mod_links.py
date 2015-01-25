@@ -22,6 +22,9 @@
 #
 # =============================================================================
 
+"""Menu items for the _item_ menu of the mods tab - their window attribute
+points to BashFrame.modList singleton."""
+
 import StringIO
 import copy
 import os
@@ -63,8 +66,6 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
            'Mod_SetVersion']
-
-modList = None
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -215,8 +216,8 @@ class _Mod_LabelsData(balt.ListEditorData):
 
     def setTo(self, items):
         """Set the bosh.settings[self.setKey] list to the items given - do
-        not update modList for removals (i.e. if a group/rating is removed
-        there may be mods that are still assigned to it)!
+        not update mod List for removals (i.e. if a group/rating is removed
+        there may be mods still assigned to it or rated) - it's a feature.
         """
         items.sort(key=lambda a: a.lower())
         if self.data == items: return False
@@ -267,7 +268,7 @@ class _Mod_Labels(ChoiceLink):
         #  when mods list is sorted by group - DoNone above works (reselects
         #  correct mods) - probably call PopulateItems() here too
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            modList.SortItems()
+            self.window.SortItems()
         self.window.RefreshUI()
 
     def DoEdit(self,event):

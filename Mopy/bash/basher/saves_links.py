@@ -29,7 +29,7 @@ import StringIO
 import re
 import shutil
 import struct
-from . import Resources
+from . import Resources, BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bosh, bolt, balt, bush
@@ -45,8 +45,6 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_EditCreated', 'Save_ReweighPotions', 'Save_UpdateNPCLevels',
            'Save_ExportScreenshot', 'Save_Unbloat', 'Save_RepairAbomb',
            'Save_RepairFactions', 'Save_RepairHair']
-
-modList = None
 
 ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
 ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
@@ -194,7 +192,7 @@ class Saves_Profiles(ChoiceLink):
         self.swapOblivionVersion(newSaves)
         Link.Frame.SetTitle()
         self.window.details.SetFile(None)
-        modList.RefreshUI()
+        BashFrame.modList.RefreshUI()
         Link.Frame.RefreshData()
 
     def DoList(self,event):
@@ -209,7 +207,7 @@ class Saves_Profiles(ChoiceLink):
         self.window.details.SetFile(None)
         Link.Frame.RefreshData()
         bosh.modInfos.autoGhost()
-        modList.RefreshUI()
+        BashFrame.modList.RefreshUI()
 
     @staticmethod
     def swapPlugins(arcSaves,newSaves):
@@ -238,7 +236,7 @@ class Save_LoadMasters(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        modList.PopulateItems()
+        BashFrame.modList.PopulateItems()
         self.window.PopulateItems()
         self.window.details.SetFile(fileName)
         if errorMessage:

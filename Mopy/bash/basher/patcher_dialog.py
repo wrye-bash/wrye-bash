@@ -32,12 +32,10 @@ from datetime import timedelta
 from ..balt import button, staticText, vSizer, hSizer, spacer, Link
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
-from . import SetUAC, Resources
+from . import SetUAC, Resources, BashFrame
 from .. import bosh, bolt, balt
 from ..patcher import configIsCBash
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
-
-modList = None
 
 class PatchDialog(balt.Dialog):
     """Bash Patch update dialog."""
@@ -236,7 +234,7 @@ class PatchDialog(balt.Dialog):
                     break
             #--Cleanup
             self.patchInfo.refresh()
-            modList.RefreshUI(patchName)
+            BashFrame.modList.RefreshUI(patchName)
             #--Done
             progress.Destroy()
             timer2 = time.clock()
@@ -300,7 +298,7 @@ class PatchDialog(balt.Dialog):
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patchName.s)
-                modList.RefreshUI()
+                BashFrame.modList.RefreshUI()
         except bolt.FileEditError, error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
