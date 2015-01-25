@@ -1143,7 +1143,7 @@ class MGEFCode(object):
            Raw MGEFCode       = (int(MGEFCode)   , None)
            Raw MGEFCode       = (string(MGEFCode), None)
            Empty MGEFCode     = (None            , None))"""
-        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(GPath(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(master, objectID) if objectID < 0x80000000 else None
+        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(GPath(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(objectID) if objectID < 0x80000000 else None
         if self.mgefCode is None:
             masterstr = _CGetLongIDName(master, objectID, 1)
             self.mgefCode = MGEFCode.ValidMGEFCode(GPath(masterstr), objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else MGEFCode.InvalidMGEFCode(objectID)
