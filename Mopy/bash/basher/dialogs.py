@@ -29,8 +29,8 @@ from .. import balt, bosh, bolt, bush
 from ..balt import Dialog, Links, button, hSizer, ItemLink, Link, colors, \
     roTextCtrl, vSizer, spacer, checkBox, staticText, Image, hsbSizer, bell, \
     textCtrl, tooltip
-from . import Resources, bEnableWizard
-from .constants import colorInfo, tabInfo, settingDefaults, JPEG, PNG
+from . import Resources, bEnableWizard, tabInfo
+from .constants import colorInfo, settingDefaults, JPEG, PNG
 
 gInstallers = None
 

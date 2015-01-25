@@ -140,18 +140,6 @@ colorInfo = {
                            ),
     }
 
-#--Information about the various Tabs
-tabInfo = {
-    # InternalName: [className, title, instance]
-    'Installers': ['InstallersPanel', _(u"Installers"), None],
-    'Mods': ['ModPanel', _(u"Mods"), None],
-    'Saves': ['SavePanel', _(u"Saves"), None],
-    'INI Edits': ['INIPanel', _(u"INI Edits"), None],
-    'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
-    'PM Archive':['MessagePanel', _(u"PM Archive"), None],
-    'People':['PeoplePanel', _(u"People"), None],
-    }
-
 #--Load config/defaults
 settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package)
     #--Basics

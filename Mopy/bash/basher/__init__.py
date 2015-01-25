@@ -79,7 +79,8 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, copyListToClipboard, roTextCtrl, staticBitmap
+    Link, ChoiceLink, copyListToClipboard, roTextCtrl, staticBitmap, \
+    AppendableLink
 from ..balt import button, checkBox, staticText, \
     spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
@@ -88,8 +89,8 @@ from ..balt import Links, ItemLink
 from ..balt import wxListAligns, splitterStyle
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, tabInfo, settingDefaults, karmacons, \
-    installercons, PNG, JPEG, ICO, BMP, TIF, ID_TAGS
+from .constants import colorInfo, settingDefaults, karmacons, installercons, \
+    PNG, JPEG, ICO, BMP, TIF, ID_TAGS
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -156,7 +157,6 @@ class People_Link(ItemLink):
 class BashError(BoltError): pass
 
 # Images ----------------------------------------------------------------------
-#------------------------------------------------------------------------------
 class ColorChecks(balt.ImageList):
     """ColorChecks ImageList. Used by several List classes."""
     def __init__(self):
@@ -210,6 +210,18 @@ class Resources:
     bashBlue = None
     bashDocBrowser = None
     bashMonkey = None
+
+#--Information about the various Tabs
+tabInfo = {
+    # InternalName: [className, title, instance]
+    'Installers': ['InstallersPanel', _(u"Installers"), None],
+    'Mods': ['ModPanel', _(u"Mods"), None],
+    'Saves': ['SavePanel', _(u"Saves"), None],
+    'INI Edits': ['INIPanel', _(u"INI Edits"), None],
+    'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
+    'PM Archive':['MessagePanel', _(u"PM Archive"), None],
+    'People':['PeoplePanel', _(u"People"), None],
+    }
 
 from .dialogs import ListBoxes # TODO(ut): cyclic import
 # Windows ---------------------------------------------------------------------
@@ -4054,7 +4066,65 @@ class PeoplePanel(SashTankPanel):
         self.detailsItem = item
 
 #------------------------------------------------------------------------------
-from .misc_links import Tab_Link # TODO(ut) don't want to import here
+#--Tabs menu
+class Tab_Link(AppendableLink, CheckLink, EnabledLink):
+    """Handle hiding/unhiding tabs."""
+    def __init__(self,tabKey,canDisable=True):
+        super(Tab_Link, self).__init__()
+        self.tabKey = tabKey
+        self.enabled = canDisable
+        className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
+        self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
+            {'tabtitle': self.text})
+
+    def _append(self, window): return self.text is not None
+
+    def _enable(self): return self.enabled
+
+    def _check(self): return bosh.settings['bash.tabs'][self.tabKey]
+
+    def Execute(self,event):
+        if bosh.settings['bash.tabs'][self.tabKey]:
+            # It was enabled, disable it.
+            iMods = None
+            iInstallers = None
+            iDelete = None
+            for i in range(Link.Frame.notebook.GetPageCount()):
+                pageTitle = Link.Frame.notebook.GetPageText(i)
+                if pageTitle == tabInfo['Mods'][1]:
+                    iMods = i
+                elif pageTitle == tabInfo['Installers'][1]:
+                    iInstallers = i
+                if pageTitle == tabInfo[self.tabKey][1]:
+                    iDelete = i
+            if iDelete == Link.Frame.notebook.GetSelection():
+                # We're deleting the current page...
+                if ((iDelete == 0 and iInstallers == 1) or
+                        (iDelete - 1 == iInstallers)):
+                    # The auto-page change will change to
+                    # the 'Installers' tab.  Change to the
+                    # 'Mods' tab instead.
+                    Link.Frame.notebook.SetSelection(iMods)
+            page = Link.Frame.notebook.GetPage(iDelete)
+            Link.Frame.notebook.RemovePage(iDelete)
+            page.Show(False)
+        else:
+            # It was disabled, enable it
+            insertAt = 0
+            for i,key in enumerate(bosh.settings['bash.tabs.order']):
+                if key == self.tabKey: break
+                if bosh.settings['bash.tabs'][key]:
+                    insertAt = i+1
+            className,title,panel = tabInfo[self.tabKey]
+            if not panel:
+                panel = globals()[className](Link.Frame.notebook)
+                tabInfo[self.tabKey][2] = panel
+            if insertAt > Link.Frame.notebook.GetPageCount():
+                Link.Frame.notebook.AddPage(panel,title)
+            else:
+                Link.Frame.notebook.InsertPage(insertAt,panel,title)
+        bosh.settings['bash.tabs'][self.tabKey] ^= True
+        bosh.settings.setChanged('bash.tabs')
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
     def __init__(self, parent):

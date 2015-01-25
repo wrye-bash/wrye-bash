@@ -1173,7 +1173,7 @@ from .settings_links import Settings_BackupSettings, Settings_RestoreSettings, \
     Settings_StatusBar_ShowVersions, Settings_Languages, \
     Settings_PluginEncodings, Settings_Games, Settings_UseAltName, \
     Settings_Deprint, Settings_DumpTranslator, Settings_UAC
-from .misc_links import Tab_Link
+from . import Tab_Link
 
 def InitSettingsLinks():
     """Initialize settings menu."""
