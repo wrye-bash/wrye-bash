@@ -381,7 +381,7 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
 rePlayableSkips = re.compile(
     ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
     ur'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
-    ur'?:ghostly immobility)|(?:corspe)', re.I) # FIXME: should this be corpse?
+    ur'?:ghostly immobility)|(?:corpse)', re.I)
 
 class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
     """Sets all clothes to playable"""
