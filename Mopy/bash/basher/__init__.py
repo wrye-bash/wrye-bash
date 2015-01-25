@@ -1835,7 +1835,6 @@ class INIPanel(SashPanel):
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
-        wx.EVT_SIZE(self,self.OnSize)
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         iniList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak)
         #--Layout
@@ -2047,10 +2046,6 @@ class INIPanel(SashPanel):
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
 
-    def OnSize(self,event):
-        wx.Window.Layout(self)
-        iniList.Layout()
-
     def ClosePanel(self):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
@@ -2073,8 +2068,6 @@ class ModPanel(SashPanel):
         self.uiList = modList
         self.modDetails = ModDetails(right)
         modList.details = self.modDetails
-        #--Events
-        wx.EVT_SIZE(self,self.OnSize)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((modList,2,wx.EXPAND)))
@@ -2085,11 +2078,6 @@ class ModPanel(SashPanel):
 
     def _sbText(self): return _(u'Mods:') + u' %d/%d' % (
         len(bosh.modInfos.ordered), len(bosh.modInfos.data))
-
-    def OnSize(self,event):
-        wx.Window.Layout(self)
-        modList.Layout()
-        self.modDetails.Layout()
 
     def ClosePanel(self):
         super(ModPanel, self).ClosePanel()
@@ -2476,8 +2464,6 @@ class SavePanel(SashPanel):
         self.uiList = saveList
         self.saveDetails = SaveDetails(right)
         saveList.details = self.saveDetails
-        #--Events
-        wx.EVT_SIZE(self,self.OnSize)
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
@@ -2487,11 +2473,6 @@ class SavePanel(SashPanel):
         self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbText(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
-
-    def OnSize(self,event=None):
-        wx.Window.Layout(self)
-        saveList.Layout()
-        self.saveDetails.Layout()
 
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
@@ -2963,7 +2944,6 @@ class InstallersPanel(SashTankPanel):
         else:
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
         #--Events
-        #self.Bind(wx.EVT_SIZE,self.OnSize)
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
 
     def RefreshUIColors(self):
@@ -3818,8 +3798,6 @@ class BSAPanel(NotebookPanel):
         bsaList = BSAList(self, self.listData, self.keyPrefix)
         self.BSADetails = BSADetails(self)
         BSAList.details = self.BSADetails
-        #--Events
-        wx.EVT_SIZE(self,self.OnSize)
         #--Layout
         sizer = hSizer(
             (BSAList,1,wx.GROW),
@@ -3829,11 +3807,6 @@ class BSAPanel(NotebookPanel):
         self.BSADetails.Fit()
 
     def _sbText(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
-
-    def OnSize(self,event=None):
-        wx.Window.Layout(self)
-        BSAList.Layout()
-        self.BSADetails.Layout()
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
@@ -3957,7 +3930,6 @@ class MessagePanel(SashPanel):
         #--Events
         #--Following line should use EVT_COMMAND_TEXT_ENTER, but that seems broken.
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)
-        self.Bind(wx.EVT_SIZE,self.OnSize)
         #--Layout
         gTop.SetSizer(hSizer(
             (gMessageList,1,wx.GROW)))
@@ -3976,12 +3948,6 @@ class MessagePanel(SashPanel):
         used = len(gMessageList.items) if gMessageList.searchResults is None \
             else len(gMessageList.searchResults)
         return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
-
-    def OnSize(self,event=None):
-        wx.LayoutAlgorithm().LayoutWindow(self, self.left)
-        wx.LayoutAlgorithm().LayoutWindow(self, self.right)
-        if event:
-            event.Skip()
 
     def OnShow(self):
         """Panel is shown. Update self.data."""
