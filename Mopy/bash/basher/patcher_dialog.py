@@ -34,7 +34,7 @@ from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from . import SetUAC, Resources
 from .. import bosh, bolt, balt
-from ..patcher.patch_files import PatchFile
+from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 modList = None
 
@@ -60,7 +60,7 @@ class PatchDialog(balt.Dialog):
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
         # If the patch config isn't from the same mode (CBash/Python), try converting
         # it over to the current mode
-        configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
+        configIsCBash = CBash_PatchFile.configIsCBash(patchConfigs)
         if configIsCBash != self.doCBash:
             if importConfig:
                 patchConfigs = self.ConvertConfig(patchConfigs)
@@ -176,9 +176,8 @@ class PatchDialog(balt.Dialog):
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-            patchFile = bosh.CBash_PatchFile(patchName,
-                                             patchers) if self.doCBash else \
-                PatchFile(self.patchInfo, patchers)
+            patchFile = CBash_PatchFile(patchName, patchers) if self.doCBash \
+                   else PatchFile(self.patchInfo, patchers)
             patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
@@ -360,7 +359,7 @@ class PatchDialog(balt.Dialog):
         if not patchConfigs: #try the old format:
             patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if patchConfigs:
-                configIsCBash = bosh.CBash_PatchFile.configIsCBash(patchConfigs)
+                configIsCBash = CBash_PatchFile.configIsCBash(patchConfigs)
                 if configIsCBash != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
@@ -394,14 +393,15 @@ class PatchDialog(balt.Dialog):
                    [u'Python',u'CBash'][self.doCBash])):
             return
         if self.doCBash:
-            PatchFile.patchTime = bosh.CBash_PatchFile.patchTime
-            PatchFile.patchName = bosh.CBash_PatchFile.patchName
+            PatchFile.patchTime = CBash_PatchFile.patchTime
+            PatchFile.patchName = CBash_PatchFile.patchName
         else:
-            bosh.CBash_PatchFile.patchTime = PatchFile.patchTime
-            bosh.CBash_PatchFile.patchName = PatchFile.patchName
+            CBash_PatchFile.patchTime = PatchFile.patchTime
+            CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
-    def ConvertConfig(self,patchConfigs):
+    @staticmethod
+    def ConvertConfig(patchConfigs):
         newConfig = {}
         for key in patchConfigs:
             if key in otherPatcherDict:
@@ -413,7 +413,7 @@ class PatchDialog(balt.Dialog):
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
-        if bosh.CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
+        if CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
             patcher.SetIsFirstLoad(False)

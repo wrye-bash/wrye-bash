@@ -27,14 +27,13 @@ import struct
 from operator import itemgetter
 # Internal
 from ... import bosh # for bosh.modInfos, dirs
-from ...bosh import getPatchesList, CBash_PatchFile, reModExt, \
-    getPatchesPath, CountDict
+from ...bosh import getPatchesList, reModExt, getPatchesPath, CountDict
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
     AImportPatcher, APatchMerger, AUpdateReferences
-from ..patch_files import PatchFile
+from ..patch_files import PatchFile, CBash_PatchFile
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher):

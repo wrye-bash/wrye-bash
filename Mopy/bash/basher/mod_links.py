@@ -39,7 +39,7 @@ from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog
 from ..patcher.patchers import base
 from ..patcher.patchers import special
-from ..patcher.patch_files import PatchFile
+from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
            'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme', 'Mod_ListBashTags',
@@ -772,7 +772,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         super(_Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
-        thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
+        thisIsCBash = CBash_PatchFile.configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
     def Execute(self,event):
@@ -811,8 +811,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if self.doCBash:
-                bosh.CBash_PatchFile.patchTime = fileInfo.mtime
-                bosh.CBash_PatchFile.patchName = fileInfo.name
+                CBash_PatchFile.patchTime = fileInfo.mtime
+                CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
@@ -944,7 +944,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
-        doCBash = bosh.CBash_PatchFile.configIsCBash(config)
+        doCBash = CBash_PatchFile.configIsCBash(config)
         if doCBash:
             patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
         else:
@@ -1053,7 +1053,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
         table.save()
 
 # Cleaning submenu ------------------------------------------------------------
