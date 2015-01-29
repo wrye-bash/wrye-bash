@@ -1788,6 +1788,9 @@ class UIList(wx.Panel):
         return bosh.settings.getChanged(
             self.__class__.keyPrefix + '.colReverse')
 
+    @property
+    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
+
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
         """Show column menu."""
@@ -1936,9 +1939,6 @@ class Tank(UIList):
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
-    @property
-    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
-
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
         # See if the column is reverse sorted first
@@ -1988,33 +1988,34 @@ class Tank(UIList):
     def UpdateColumns(self):
         """Create/name columns in ListCtrl."""
         cols = self.cols
-        numCols = len(cols)
-        for colDex in range(numCols):
+        self.numCols = len(cols)
+        listCtrl = self.gList
+        for colDex in range(self.numCols):
             colKey = cols[colDex]
             colName = self.colNames.get(colKey,colKey)
             colWidth = self.colWidths.get(colKey,30)
             colAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= self.gList.GetColumnCount():
+            if colDex >= listCtrl.GetColumnCount():
                 # Make a new column
-                self.gList.InsertColumn(colDex,colName,colAlign)
-                self.gList.SetColumnWidth(colDex,colWidth)
+                listCtrl.InsertColumn(colDex,colName,colAlign)
+                listCtrl.SetColumnWidth(colDex,colWidth)
             else:
                 # Update an existing column
-                column = self.gList.GetColumn(colDex)
+                column = listCtrl.GetColumn(colDex)
                 if column.GetText() == colName:
                     # Don't change it, just make sure the width is correct
-                    self.gList.SetColumnWidth(colDex,colWidth)
+                    listCtrl.SetColumnWidth(colDex,colWidth)
                 elif column.GetText() not in self.cols:
                     # Column that doesn't exist anymore
-                    self.gList.DeleteColumn(colDex)
+                    listCtrl.DeleteColumn(colDex)
                     colDex -= 1
                 else:
                     # New column
-                    self.gList.InsertColumn(colDex,colName,colAlign)
-                    self.gList.SetColumnWidth(colDex,colWidth)
-        while self.gList.GetColumnCount() > numCols:
-            self.gList.DeleteColumn(numCols)
-        self.gList.SetColumnWidth(numCols, wx.LIST_AUTOSIZE_USEHEADER)
+                    listCtrl.InsertColumn(colDex,colName,colAlign)
+                    listCtrl.SetColumnWidth(colDex,colWidth)
+        while listCtrl.GetColumnCount() > self.numCols:
+            listCtrl.DeleteColumn(self.numCols)
+        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
 
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""

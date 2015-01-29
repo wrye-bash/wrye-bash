@@ -380,10 +380,10 @@ class List(balt.UIList):
             colKey = cols[colDex]
             colDict[colKey] = colDex
             colName = self.colNames.get(colKey,colKey)
-            wxListAlign = wxListAligns[self.colAligns.get(colKey,0)]
+            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
             if colDex >= listCtrl.GetColumnCount():
                 # Make a new column
-                listCtrl.InsertColumn(colDex,colName,wxListAlign)
+                listCtrl.InsertColumn(colDex,colName,colAlign)
                 listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
             else:
                 # Update an existing column
@@ -397,7 +397,7 @@ class List(balt.UIList):
                     colDex -= 1
                 else:
                     # New column
-                    listCtrl.InsertColumn(colDex,colName,wxListAlign)
+                    listCtrl.InsertColumn(colDex,colName,colAlign)
                     listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
         while listCtrl.GetColumnCount() > self.numCols:
             listCtrl.DeleteColumn(self.numCols)
