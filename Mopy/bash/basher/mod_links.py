@@ -25,20 +25,44 @@
 import StringIO
 import copy
 import os
-import wx # FIXME(ut): wx
+import wx
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
+from ..patcher import configIsCBash
 from . import Resources
 from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
-from ..cint import CBash, FormID # TODO(ut): CBash should be in bosh
+from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog
 from ..patcher.patchers import base
 from ..patcher.patchers import special
+from ..patcher.patch_files import PatchFile, CBash_PatchFile
+
+__all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
+           'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme', 'Mod_ListBashTags',
+           'Mod_CreateBOSSReport', 'Mod_CopyModInfo', 'Mod_AllowGhosting',
+           'Mod_Ghost', 'Mod_MarkMergeable', 'Mod_Patch_Update',
+           'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
+           'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
+           'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
+           'Mod_Factions_Export', 'Mod_ActorLevels_Export',
+           'CBash_Mod_MapMarkers_Export', 'Mod_FactionRelations_Export',
+           'Mod_IngredientDetails_Export', 'Mod_Scripts_Export',
+           'Mod_SigilStoneDetails_Export', 'Mod_SpellRecords_Export',
+           'Mod_EditorIds_Import', 'Mod_FullNames_Import', 'Mod_Prices_Import',
+           'Mod_Stats_Import', 'Mod_Factions_Import', 'Mod_ActorLevels_Import',
+           'CBash_Mod_MapMarkers_Import', 'Mod_FactionRelations_Import',
+           'Mod_IngredientDetails_Import', 'Mod_Scripts_Import',
+           'Mod_SigilStoneDetails_Import', 'Mod_SpellRecords_Import',
+           'Mod_Face_Import', 'Mod_Fids_Replace', 'Mod_SkipDirtyCheck',
+           'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_CleanMod',
+           'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
+           'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
+           'Mod_SetVersion']
 
 modList = None
 
@@ -348,7 +372,7 @@ class Mod_Groups(_Mod_Labels):
         self.listEditor.SetItemsTo(list(set(bosh.settings[
             'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
-    # TODO(307): warn in items below (askContinue or whatever it's called)
+    ##: warn in items below (askContinue or whatever it's called)
     def _doSync(self, event):
         """Set the list of groups to groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
@@ -593,8 +617,7 @@ class _Mod_DisallowGhosting_All(ItemLink):
         self.window.RefreshUI(files)
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(EnabledLink):
-# TODO(ut) unghost all ?
+class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
     def _initData(self, window, data):
         ItemLink._initData(self, window, data)
         if len(data) == 1:
@@ -702,9 +725,9 @@ class Mod_MarkMergeable(EnabledLink):
                 if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
                     reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
                 else:
-                    reason = bosh.CBash_PatchFile.modIsMergeable(fileInfo,True)
+                    reason = bosh.isCBashMergeable(fileInfo,True)
             else:
-                reason = bosh.PatchFile.modIsMergeable(fileInfo,True)
+                reason = bosh.isPBashMergeable(fileInfo,True)
 
             if reason == True:
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
@@ -750,7 +773,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         super(_Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
-        thisIsCBash = bosh.CBash_PatchFile.configIsCBash(config)
+        thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
     def Execute(self,event):
@@ -789,14 +812,14 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if self.doCBash:
-                bosh.CBash_PatchFile.patchTime = fileInfo.mtime
-                bosh.CBash_PatchFile.patchName = fileInfo.name
+                CBash_PatchFile.patchTime = fileInfo.mtime
+                CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
                 self.window.RefreshUI()
             else:
-                bosh.PatchFile.patchTime = fileInfo.mtime
-                bosh.PatchFile.patchName = fileInfo.name
+                PatchFile.patchTime = fileInfo.mtime
+                PatchFile.patchName = fileInfo.name
                 if bosh.settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
@@ -922,7 +945,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
-        doCBash = bosh.CBash_PatchFile.configIsCBash(config)
+        doCBash = configIsCBash(config)
         if doCBash:
             patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
         else:
@@ -1031,7 +1054,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][bosh.CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][configIsCBash(config)])),'bash.patch.configs',config)
         table.save()
 
 # Cleaning submenu ------------------------------------------------------------
@@ -1487,7 +1510,7 @@ class Mod_FlipMasters(OneItemLink):
     def _initData(self, window, data):
         super(Mod_FlipMasters, self)._initData(window, data)
         #--FileInfo
-        self.fileName = fileName = GPath(self.selected[0]) # TODO(ut): was data[0]
+        self.fileName = fileName = GPath(self.selected[0])
         self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
         self.text = _(u'Esmify Masters')
         if len(data) == 1 and len(fileInfo.header.masters) > 1:
@@ -1552,7 +1575,7 @@ class Mod_SetVersion(EnabledLink):
 # Import/Export submenus ------------------------------------------------------
 #------------------------------------------------------------------------------
 #--Import only
-from ..patcher.utilities import FidReplacer, CBash_FidReplacer
+from ..parsers import FidReplacer, CBash_FidReplacer
 
 class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
@@ -1613,7 +1636,7 @@ class Mod_Face_Import(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         npc = bosh.PCFaces.mod_addFace(fileInfo,srcFace)
-        #--Save Face picture? # TODO(ut) does not save face picture but save screen ?!
+        #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
             srcInfo.getHeader()
@@ -1659,7 +1682,7 @@ class _Mod_Import_Link(OneItemLink):
     def _parser(self): raise AbstractError
 
 #--Links ----------------------------------------------------------------------
-from ..patcher.utilities import ActorLevels, CBash_ActorLevels
+from ..parsers import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
@@ -1747,7 +1770,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import FactionRelations, CBash_FactionRelations
+from ..parsers import FactionRelations, CBash_FactionRelations
 
 class Mod_FactionRelations_Export(_Mod_Export_Link):
     """Export faction relations from mod to text file."""
@@ -1811,7 +1834,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             balt.showLog(self.window,text,_(u'Import Relations'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ActorFactions, CBash_ActorFactions
+from ..parsers import ActorFactions, CBash_ActorFactions
 
 class Mod_Factions_Export(_Mod_Export_Link):
     """Export factions from mod to text file."""
@@ -1876,7 +1899,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
             balt.showLog(self.window,text,_(u'Import Factions'),icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ScriptText, CBash_ScriptText
+from ..parsers import ScriptText, CBash_ScriptText
 
 class Mod_Scripts_Export(_Mod_Export_Link):
     """Export scripts from mod to text file."""
@@ -2001,7 +2024,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ItemStats, CBash_ItemStats
+from ..parsers import ItemStats, CBash_ItemStats
 
 class Mod_Stats_Export(_Mod_Export_Link):
     """Exports stats from the selected plugin to a CSV file (for the record
@@ -2063,7 +2086,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                 buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import ItemPrices, CBash_ItemPrices
+from ..parsers import ItemPrices, CBash_ItemPrices
 
 class Mod_Prices_Export(_Mod_Export_Link):
     """Export item prices from mod to text file."""
@@ -2128,7 +2151,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import SigilStoneDetails, CBash_SigilStoneDetails
+from ..parsers import SigilStoneDetails, CBash_SigilStoneDetails
 
 class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     """Export Sigil Stone details from mod to text file."""
@@ -2195,7 +2218,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import SpellRecords, CBash_SpellRecords
+from ..parsers import SpellRecords, CBash_SpellRecords
 
 class Mod_SpellRecords_Export(_Mod_Export_Link):
     """Export Spell details from mod to text file."""
@@ -2275,7 +2298,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import IngredientDetails, CBash_IngredientDetails
+from ..parsers import IngredientDetails, CBash_IngredientDetails
 
 class Mod_IngredientDetails_Export(_Mod_Export_Link):
     """Export Ingredient details from mod to text file."""
@@ -2341,7 +2364,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import EditorIds, CBash_EditorIds
+from ..parsers import EditorIds, CBash_EditorIds
 
 class Mod_EditorIds_Export(_Mod_Export_Link):
     """Export editor ids from mod to text file."""
@@ -2415,7 +2438,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             balt.showWarning(self.window, '%r' % e)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import FullNames, CBash_FullNames
+from ..parsers import FullNames, CBash_FullNames
 
 class Mod_FullNames_Export(_Mod_Export_Link):
     """Export full names from mod to text file."""
@@ -2490,7 +2513,7 @@ class _Mod_Import_Link_CBash(_Mod_Import_Link):
         return super(_Mod_Import_Link_CBash, self)._enable() and bool(CBash)
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import CBash_MapMarkers
+from ..parsers import CBash_MapMarkers
 
 class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
     """Export map marker stats from mod to text file."""
@@ -2550,7 +2573,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             buff.close()
 
 #------------------------------------------------------------------------------
-from ..patcher.utilities import CBash_CellBlockInfo
+from ..parsers import CBash_CellBlockInfo
 
 class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
     """Export Cell Block Info to text file
@@ -2565,7 +2588,7 @@ class CBash_Mod_CellBlockInfo_Export(_Mod_Export_Link_CBash):
     def _parser(self): return CBash_CellBlockInfo()
 
 # Unused ? --------------------------------------------------------------------
-from ..patcher.utilities import CompleteItemData, CBash_CompleteItemData
+from ..parsers import CompleteItemData, CBash_CompleteItemData
 
 class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
     """Export pretty much complete item data from mod to text file."""

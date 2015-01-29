@@ -24,7 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
-# TODO:DOCS
+
 from ... import bosh # for modInfos
 from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -80,7 +80,7 @@ class ClothesTweak_MaxWeight(ClothesTweak):
     def buildPatch(self,patchFile,keep,log):
         """Build patch."""
         tweakCount = 0
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
+        maxWeight = self.choiceValues[self.chosen][0]
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
         for record in patchFile.CLOT.records:
             weight = record.weight
@@ -109,7 +109,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         """Edits patch file as desired. """
         if record.IsNonPlayable:
             return
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
+        maxWeight = self.choiceValues[self.chosen][0]
         superWeight = max(10,5*maxWeight) #--Guess is intentionally overweight
         if (record.weight > maxWeight) and self.isMyType(record) and (
                     record.weight < superWeight):
@@ -130,7 +130,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         """Will write to log."""
         #--Log
         mod_count = self.mod_count
-        maxWeight = self.choiceValues[self.chosen][0] # TODO:weight
+        maxWeight = self.choiceValues[self.chosen][0]
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
         for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):

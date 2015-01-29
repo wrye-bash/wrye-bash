@@ -32,10 +32,15 @@ from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
 from ..bolt import GPath
 # TODO(ut): GetBitmapButton factor out duplicate code
 
+__all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
+           'TESCS_Button', 'App_Button', 'Tooldir_Button', 'App_Tes4View',
+           'App_BOSS', 'App_DocBrowser', 'App_ModChecker', 'App_Settings',
+           'App_Help', 'App_Restart', 'App_GenPickle']
+
 modList = None
 
 #------------------------------------------------------------------------------
-#  StatusBar Links--------------------------------------------------------------
+# StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
 class StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
@@ -350,27 +355,6 @@ class Tooldir_Button(App_Button):
         App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
 
 #------------------------------------------------------------------------------
-class App_Tes4Gecko(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
-
-#------------------------------------------------------------------------------
-class App_Tes5Gecko(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
-
-#------------------------------------------------------------------------------
-class App_OblivionBookCreator(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
-
-#------------------------------------------------------------------------------
 class _Mods_Tes4ViewExpert(BoolLink):
     """Toggle Tes4Edit expert mode (when launched via Bash)."""
     text, key = _(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing'
@@ -493,7 +477,7 @@ class App_BOSS(App_Button):
             modList.RefreshUI('ALL')
 
 #------------------------------------------------------------------------------
-class Oblivion_Button(App_Button):
+class Game_Button(App_Button):
     """Will close app on execute if autoquit is on."""
     @property
     def tip(self):
@@ -799,3 +783,24 @@ class App_ModChecker(StatusBar_Button):
             ModChecker().Show()
         #balt.ensureDisplayed(modChecker)
         Link.Frame.modChecker.Raise()
+
+#------------------------------------------------------------------------------
+class App_Tes4Gecko(App_Button): # CRUFT
+    """Left in for unpickling compatibility reasons."""
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__class__ = App_Button
+
+#------------------------------------------------------------------------------
+class App_Tes5Gecko(App_Button): # CRUFT
+    """Left in for unpickling compatibility reasons."""
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__class__ = App_Button
+
+#------------------------------------------------------------------------------
+class App_OblivionBookCreator(App_Button): # CRUFT
+    """Left in for unpickling compatibility reasons."""
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__class__ = App_Button

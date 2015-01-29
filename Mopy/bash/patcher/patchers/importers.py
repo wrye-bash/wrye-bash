@@ -36,7 +36,7 @@ from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
 from ..base import AImportPatcher, Patcher
-from ..utilities import ActorFactions, CBash_ActorFactions, FactionRelations, \
+from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
 from .base import ImportPatcher, CBash_ImportPatcher
@@ -100,7 +100,6 @@ def _scanModFile(self, modFile):
     """
     if not self.isActive: return
     id_data = self.id_data
-    modName = modFile.fileInfo.name # UNUSED ! TODO: bin ?
     mapper = modFile.getLongMapper()
     if self.longTypes:
         modFile.convertToLongFids(self.longTypes)
@@ -345,7 +344,6 @@ class CellImporter(_ACellImporter, ImportPatcher):
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
-        modName = modFile.fileInfo.name
         if not self.isActive or (
                 'CELL' not in modFile.tops and 'WRLD' not in modFile.tops):
             return
@@ -901,7 +899,6 @@ class ActorImporter(ImportPatcher):
         """Scan mod file against source data."""
         if not self.isActive: return
         id_data = self.id_data
-        modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         if self.longTypes:
             modFile.convertToLongFids(self.longTypes)
@@ -1245,7 +1242,6 @@ class NPCAIPackagePatcher(ImportPatcher):
         if not self.isActive: return
         data = self.data
         mapper = modFile.getLongMapper()
-        modName = modFile.fileInfo.name
         for type in ('NPC_','CREA'):
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
@@ -1512,7 +1508,6 @@ class ImportFactions(ImportPatcher):
         """Scan modFile."""
         if not self.isActive: return
         id_factions = self.id_data
-        modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in self.activeTypes: # here differs from _scanModFile
             if type not in modFile.tops: continue
@@ -1723,7 +1718,6 @@ class ImportRelations(ImportPatcher):
         """Scan modFile."""
         if not self.isActive: return
         id_relations= self.id_data
-        modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in ('FACT',):
             if type not in modFile.tops: continue
@@ -2321,7 +2315,6 @@ class ImportActorsSpells(ImportPatcher):
         if not self.isActive: return
         data = self.data
         mapper = modFile.getLongMapper()
-        modName = modFile.fileInfo.name
         for type in ('NPC_','CREA'):
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
@@ -2488,7 +2481,6 @@ class NamesPatcher(ImportPatcher):
         """Scan modFile."""
         if not self.isActive: return
         id_full = self.id_full
-        modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         for type in self.activeTypes:
             if type not in modFile.tops: continue

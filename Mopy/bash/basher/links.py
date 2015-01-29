@@ -21,30 +21,34 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 """Links initialization functions. Each panel (tab) has some Links list
 attributes which are populated here. Therefore the order of menu items is
 also defined in these functions."""
-# TODO(ut): maybe consider a links package - or a package per panel ?
-# TODO(ut): remove star imports
+
+import os
 import win32gui
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MessageList, MasterList, bEnableWizard,  PeopleList,\
-    BashStatusBar
-from .constants import PNG, BMP, TIF, ICO
-from .installer_links import *
-from .mod_links import *
-from .saves_links import *
+    BashStatusBar, Tab_Link
+from .constants import PNG, BMP, TIF, ICO, JPEG
+from .. import balt, bosh, bush
+from ..cint import CBash
+from ..balt import Image, MenuLink, SeparatorLink
+from ..bolt import deprint, GPath
+# modules below define the __all__ directive
+from .app_buttons import *
 from .mods_links import *
 from .files_links import *
-from .misc_links import List_Columns
-from ..balt import Image, MenuLink
+from .installers_links import *
+from .installer_links import *
+from .saves_links import *
+from .settings_links import *
+from .misc_links import *
+from .ini_links import *
+from .mod_links import *
 
 #------------------------------------------------------------------------------
-from .app_buttons import Obse_Button, LAA_Button, AutoQuit_Button, \
-    Oblivion_Button, TESCS_Button, App_Button, Tooldir_Button, App_Tes4View, \
-    App_BOSS, App_DocBrowser, App_ModChecker, App_Settings, App_Help, \
-    App_Restart, App_GenPickle
-
 def InitStatusBar():
     """Initialize status bar links."""
     dirImages = bosh.dirs['images']
@@ -57,7 +61,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(laaButton)
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
-        Oblivion_Button(
+        Game_Button(
             bosh.dirs['app'].join(bush.game.exe),
             imageList(u'%s%%s.png' % bush.game.fsName.lower()),
             u' '.join((_(u"Launch"),bush.game.displayName)),
@@ -78,63 +82,11 @@ def InitStatusBar():
             imageList(u'obmm%s.png'),
             _(u"Launch OBMM"),
             uid=u'OBMM'))
-    BashStatusBar.buttons.append( #ISOBL
-        Tooldir_Button(
-            u'ISOBL',
-            imageList(u'tools/isobl%s.png'),
-            _(u"Launch InsanitySorrow's Oblivion Launcher")))
-    BashStatusBar.buttons.append( #ISRMG
-        Tooldir_Button(
-            u'ISRMG',
-            imageList(u"tools/insanity'sreadmegenerator%s.png"),
-            _(u"Launch InsanitySorrow's Readme Generator")))
-    BashStatusBar.buttons.append( #ISRNG
-        Tooldir_Button(
-            u'ISRNG',
-            imageList(u"tools/insanity'srng%s.png"),
-            _(u"Launch InsanitySorrow's Random Name Generator")))
-    BashStatusBar.buttons.append( #ISRNPCG
-        Tooldir_Button(
-            u'ISRNPCG',
-            imageList(u'tools/randomnpc%s.png'),
-            _(u"Launch InsanitySorrow's Random NPC Generator")))
-    BashStatusBar.buttons.append( #OBFEL
-        Tooldir_Button(
-            u'OBFEL',
-            imageList(u'tools/oblivionfaceexchangerlite%s.png'),
-            _(u"Oblivion Face Exchange Lite")))
-    BashStatusBar.buttons.append( #OBMLG
-        Tooldir_Button(
-            u'OBMLG',
-            imageList(u'tools/modlistgenerator%s.png'),
-            _(u"Oblivion Mod List Generator")))
-    BashStatusBar.buttons.append( #OblivionBookCreator
-        App_Button(
-            (bosh.tooldirs['OblivionBookCreatorPath'],bosh.inisettings['OblivionBookCreatorJavaArg']),
-            imageList(u'tools/oblivionbookcreator%s.png'),
-            _(u"Launch Oblivion Book Creator"),
-            uid=u'OblivionBookCreator'))
-    BashStatusBar.buttons.append( #BSACommander
-        Tooldir_Button(
-            u'BSACMD',
-            imageList(u'tools/bsacommander%s.png'),
-            _(u"Launch BSA Commander")))
-    BashStatusBar.buttons.append( #Tabula
-        Tooldir_Button(
-            u'Tabula',
-            imageList(u'tools/tabula%s.png'),
-            _(u"Launch Tabula")))
-    BashStatusBar.buttons.append( #Tes4Files
-        Tooldir_Button(
-            u'Tes4FilesPath',
-            imageList(u'tools/tes4files%s.png'),
-            _(u"Launch TES4Files")))
-    BashStatusBar.buttons.append( #Tes4Gecko
-        App_Button(
-            (bosh.tooldirs['Tes4GeckoPath'],bosh.inisettings['Tes4GeckoJavaArg']),
-            imageList(u'tools/tes4gecko%s.png'),
-            _(u"Launch Tes4Gecko"),
-            uid=u'Tes4Gecko'))
+    from .constants import toolbar_buttons, app_buttons
+    for tb in toolbar_buttons:
+        BashStatusBar.buttons.append(Tooldir_Button(*tb))
+    for ab in app_buttons:
+        BashStatusBar.buttons.append(App_Button(*ab[:-1], **ab[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bosh.tooldirs['Tes4ViewPath'],u'-TES4'), #no cmd argument to force view mode
@@ -177,320 +129,30 @@ def InitStatusBar():
             _(u"Launch BOSS"),
             uid=u'BOSS'))
     if bosh.inisettings['ShowModelingToolLaunchers']:
-        BashStatusBar.buttons.append( #AutoCad
-            Tooldir_Button(
-                'AutoCad',
-                imageList(u'tools/autocad%s.png'),
-                _(u"Launch AutoCad")))
-        BashStatusBar.buttons.append( #Blender
-            Tooldir_Button(
-                'BlenderPath',
-                imageList(u'tools/blender%s.png'),
-                _(u"Launch Blender")))
-        BashStatusBar.buttons.append( #Dogwaffle
-            Tooldir_Button(
-                'Dogwaffle',
-                imageList(u'tools/dogwaffle%s.png'),
-                _(u"Launch Dogwaffle")))
-        BashStatusBar.buttons.append( #GMax
-            Tooldir_Button(
-                'GmaxPath',
-                imageList(u'tools/gmax%s.png'),
-                _(u"Launch Gmax")))
-        BashStatusBar.buttons.append( #Maya
-            Tooldir_Button(
-                'MayaPath',
-                imageList(u'tools/maya%s.png'),
-                _(u"Launch Maya")))
-        BashStatusBar.buttons.append( #Max
-            Tooldir_Button(
-                'MaxPath',
-                imageList(u'tools/3dsmax%s.png'),
-                _(u"Launch 3dsMax")))
-        BashStatusBar.buttons.append( #Milkshape3D
-            Tooldir_Button(
-                'Milkshape3D',
-                imageList(u'tools/milkshape3d%s.png'),
-                _(u"Launch Milkshape 3D")))
-        BashStatusBar.buttons.append( #Mudbox
-            Tooldir_Button(
-                'Mudbox',
-                imageList(u'tools/mudbox%s.png'),
-                _(u"Launch Mudbox")))
-        BashStatusBar.buttons.append( #Sculptris
-            Tooldir_Button(
-                'Sculptris',
-                imageList(u'tools/sculptris%s.png'),
-                _(u"Launch Sculptris")))
+        from .constants import modeling_tools_buttons
+        for mb in modeling_tools_buttons:
+            BashStatusBar.buttons.append(Tooldir_Button(*mb))
         BashStatusBar.buttons.append( #Softimage Mod Tool
             App_Button(
                 (bosh.tooldirs['SoftimageModTool'],u'-mod'),
                 imageList(u'tools/softimagemodtool%s.png'),
                 _(u"Launch Softimage Mod Tool"),
                 uid=u'SoftimageModTool'))
-        BashStatusBar.buttons.append( #SpeedTree
-            Tooldir_Button(
-                'SpeedTree',
-                imageList(u'tools/speedtree%s.png'),
-                _(u"Launch SpeedTree")))
-        BashStatusBar.buttons.append( #Tree[d]
-            Tooldir_Button(
-                'Treed',
-                imageList(u'tools/treed%s.png'),
-                _(u"Launch Tree\[d\]")))
-        BashStatusBar.buttons.append( #Wings3D
-            Tooldir_Button(
-                'Wings3D',
-                imageList(u'tools/wings3d%s.png'),
-                _(u"Launch Wings 3D")))
-    if bosh.inisettings['ShowModelingToolLaunchers'] or bosh.inisettings['ShowTextureToolLaunchers']:
+    if bosh.inisettings['ShowModelingToolLaunchers'] \
+            or bosh.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
-            Tooldir_Button(
-                'NifskopePath',
-                imageList(u'tools/nifskope%s.png'),
+            Tooldir_Button('NifskopePath', imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
     if bosh.inisettings['ShowTextureToolLaunchers']:
-        BashStatusBar.buttons.append( #AniFX
-            Tooldir_Button(
-                'AniFX',
-                imageList(u'tools/anifx%s.png'),
-                _(u"Launch AniFX")))
-        BashStatusBar.buttons.append( #Art Of Illusion
-            Tooldir_Button(
-                'ArtOfIllusion',
-                imageList(u'tools/artofillusion%s.png'),
-                _(u"Launch Art Of Illusion")))
-        BashStatusBar.buttons.append( #Artweaver
-            Tooldir_Button(
-                'Artweaver',
-                imageList(u'tools/artweaver%s.png'),
-                _(u"Launch Artweaver")))
-        BashStatusBar.buttons.append( #CrazyBump
-            Tooldir_Button(
-                'CrazyBump',
-                imageList(u'tools/crazybump%s.png'),
-                _(u"Launch CrazyBump")))
-        BashStatusBar.buttons.append( #DDSConverter
-            Tooldir_Button(
-                'DDSConverter',
-                imageList(u'tools/ddsconverter%s.png'),
-                _(u"Launch DDSConverter")))
-        BashStatusBar.buttons.append( #DeepPaint
-            Tooldir_Button(
-                'DeepPaint',
-                imageList(u'tools/deeppaint%s.png'),
-                _(u"Launch DeepPaint")))
-        BashStatusBar.buttons.append( #FastStone Image Viewer
-            Tooldir_Button(
-                'FastStone',
-                imageList(u'tools/faststoneimageviewer%s.png'),
-                _(u"Launch FastStone Image Viewer")))
-        BashStatusBar.buttons.append( #Genetica
-            Tooldir_Button(
-                'Genetica',
-                imageList(u'tools/genetica%s.png'),
-                _(u"Launch Genetica")))
-        BashStatusBar.buttons.append( #Genetica Viewer
-            Tooldir_Button(
-                'GeneticaViewer',
-                imageList(u'tools/geneticaviewer%s.png'),
-                _(u"Launch Genetica Viewer")))
-        BashStatusBar.buttons.append( #GIMP
-            Tooldir_Button(
-                'GIMP',
-                imageList(u'tools/gimp%s.png'),
-                _(u"Launch GIMP")))
-        BashStatusBar.buttons.append( #GIMP Shop
-            Tooldir_Button(
-                'GimpShop',
-                imageList(u'tools/gimpshop%s.png'),
-                _(u"Launch GIMP Shop")))
-        BashStatusBar.buttons.append( #IcoFX
-            Tooldir_Button(
-                'IcoFX',
-                imageList(u'tools/icofx%s.png'),
-                _(u"Launch IcoFX")))
-        BashStatusBar.buttons.append( #Inkscape
-            Tooldir_Button(
-                'Inkscape',
-                imageList(u'tools/inkscape%s.png'),
-                _(u"Launch Inkscape")))
-        BashStatusBar.buttons.append( #IrfanView
-            Tooldir_Button(
-                'IrfanView',
-                imageList(u'tools/irfanview%s.png'),
-                _(u"Launch IrfanView")))
-        BashStatusBar.buttons.append( #MaPZone
-            Tooldir_Button(
-                'MaPZone',
-                imageList(u'tools/mapzone%s.png'),
-                _(u"Launch MaPZone")))
-        BashStatusBar.buttons.append( #MyPaint
-            Tooldir_Button(
-                'MyPaint',
-                imageList(u'tools/mypaint%s.png'),
-                _(u"Launch MyPaint")))
-        BashStatusBar.buttons.append( #NVIDIAMelody
-            Tooldir_Button(
-                'NVIDIAMelody',
-                imageList(u'tools/nvidiamelody%s.png'),
-                _(u"Launch Nvidia Melody")))
-        BashStatusBar.buttons.append( #Paint.net
-            Tooldir_Button(
-                'PaintNET',
-                imageList(u'tools/paint.net%s.png'),
-                _(u"Launch Paint.NET")))
-        BashStatusBar.buttons.append( #PaintShop Photo Pro
-            Tooldir_Button(
-                'PaintShopPhotoPro',
-                imageList(u'tools/paintshopprox3%s.png'),
-                _(u"Launch PaintShop Photo Pro")))
-        BashStatusBar.buttons.append( #Photoshop
-            Tooldir_Button(
-                'PhotoshopPath',
-                imageList(u'tools/photoshop%s.png'),
-                _(u"Launch Photoshop")))
-        BashStatusBar.buttons.append( #PhotoScape
-            Tooldir_Button(
-                'PhotoScape',
-                imageList(u'tools/photoscape%s.png'),
-                _(u"Launch PhotoScape")))
-        BashStatusBar.buttons.append( #PhotoSEAM
-            Tooldir_Button(
-                'PhotoSEAM',
-                imageList(u'tools/photoseam%s.png'),
-                _(u"Launch PhotoSEAM")))
-        BashStatusBar.buttons.append( #Photobie Design Studio
-            Tooldir_Button(
-                'Photobie',
-                imageList(u'tools/photobie%s.png'),
-                _(u"Launch Photobie")))
-        BashStatusBar.buttons.append( #PhotoFiltre
-            Tooldir_Button(
-                'PhotoFiltre',
-                imageList(u'tools/photofiltre%s.png'),
-                _(u"Launch PhotoFiltre")))
-        BashStatusBar.buttons.append( #Pixel Studio Pro
-            Tooldir_Button(
-                'PixelStudio',
-                imageList(u'tools/pixelstudiopro%s.png'),
-                _(u"Launch Pixel Studio Pro")))
-        BashStatusBar.buttons.append( #Pixia
-            Tooldir_Button(
-                'Pixia',
-                imageList(u'tools/pixia%s.png'),
-                _(u"Launch Pixia")))
-        BashStatusBar.buttons.append( #TextureMaker
-            Tooldir_Button(
-                'TextureMaker',
-                imageList(u'tools/texturemaker%s.png'),
-                _(u"Launch TextureMaker")))
-        BashStatusBar.buttons.append( #Twisted Brush
-            Tooldir_Button(
-                'TwistedBrush',
-                imageList(u'tools/twistedbrush%s.png'),
-                _(u"Launch TwistedBrush")))
-        BashStatusBar.buttons.append( #Windows Texture Viewer
-            Tooldir_Button(
-                'WTV',
-                imageList(u'tools/wtv%s.png'),
-                _(u"Launch Windows Texture Viewer")))
-        BashStatusBar.buttons.append( #xNormal
-            Tooldir_Button(
-                'xNormal',
-                imageList(u'tools/xnormal%s.png'),
-                _(u"Launch xNormal")))
-        BashStatusBar.buttons.append( #XnView
-            Tooldir_Button(
-                'XnView',
-                imageList(u'tools/xnview%s.png'),
-                _(u"Launch XnView")))
+        from .constants import texture_tool_buttons
+        for tt in texture_tool_buttons:
+            BashStatusBar.buttons.append(Tooldir_Button(*tt))
     if bosh.inisettings['ShowAudioToolLaunchers']:
-        BashStatusBar.buttons.append( #Audacity
-            Tooldir_Button(
-                'Audacity',
-                imageList(u'tools/audacity%s.png'),
-                _(u"Launch Audacity")))
-        BashStatusBar.buttons.append( #ABCAmberAudioConverter
-            Tooldir_Button(
-                'ABCAmberAudioConverter',
-                imageList(u'tools/abcamberaudioconverter%s.png'),
-                _(u"Launch ABC Amber Audio Converter")))
-        BashStatusBar.buttons.append( #Switch
-            Tooldir_Button(
-                'Switch',
-                imageList(u'tools/switch%s.png'),
-                _(u"Launch Switch")))
-    BashStatusBar.buttons.append( #Fraps
-        Tooldir_Button(
-            'Fraps',
-            imageList(u'tools/fraps%s.png'),
-            _(u"Launch Fraps")))
-    BashStatusBar.buttons.append( #MAP
-        Tooldir_Button(
-            'MAP',
-            imageList(u'tools/interactivemapofcyrodiil%s.png'),
-            _(u"Interactive Map of Cyrodiil and Shivering Isles")))
-    BashStatusBar.buttons.append( #LogitechKeyboard
-        Tooldir_Button(
-            'LogitechKeyboard',
-            imageList(u'tools/logitechkeyboard%s.png'),
-            _(u"Launch LogitechKeyboard")))
-    BashStatusBar.buttons.append( #MediaMonkey
-        Tooldir_Button(
-            'MediaMonkey',
-            imageList(u'tools/mediamonkey%s.png'),
-            _(u"Launch MediaMonkey")))
-    BashStatusBar.buttons.append( #NPP
-        Tooldir_Button(
-            'NPP',
-            imageList(u'tools/notepad++%s.png'),
-            _(u"Launch Notepad++")))
-    BashStatusBar.buttons.append( #Steam
-        Tooldir_Button(
-            'Steam',
-            imageList(u'steam%s.png'),
-            _(u"Launch Steam")))
-    BashStatusBar.buttons.append( #EVGA Precision
-        Tooldir_Button(
-            'EVGAPrecision',
-            imageList(u'tools/evgaprecision%s.png'),
-            _(u"Launch EVGA Precision")))
-    BashStatusBar.buttons.append( #WinMerge
-        Tooldir_Button(
-            'WinMerge',
-            imageList(u'tools/winmerge%s.png'),
-            _(u"Launch WinMerge")))
-    BashStatusBar.buttons.append( #Freemind
-        Tooldir_Button(
-            'FreeMind',
-            imageList(u'tools/freemind%s.png'),
-            _(u"Launch FreeMind")))
-    BashStatusBar.buttons.append( #Freeplane
-        Tooldir_Button(
-            'Freeplane',
-            imageList(u'tools/freeplane%s.png'),
-            _(u"Launch Freeplane")))
-    BashStatusBar.buttons.append( #FileZilla
-        Tooldir_Button(
-            'FileZilla',
-            imageList(u'tools/filezilla%s.png'),
-            _(u"Launch FileZilla")))
-    BashStatusBar.buttons.append( #EggTranslator
-        Tooldir_Button(
-            'EggTranslator',
-            imageList(u'tools/eggtranslator%s.png'),
-            _(u"Launch Egg Translator")))
-    BashStatusBar.buttons.append( #RADVideoTools
-        Tooldir_Button(
-            'RADVideo',
-            imageList(u'tools/radvideotools%s.png'),
-            _(u"Launch RAD Video Tools")))
-    BashStatusBar.buttons.append( #WinSnap
-        Tooldir_Button(
-            'WinSnap',
-            imageList(u'tools/winsnap%s.png'),
-            _(u"Launch WinSnap")))
+        from .constants import audio_tools
+        for at in audio_tools:
+            BashStatusBar.buttons.append(Tooldir_Button(*at))
+    from .constants import misc_tools
+    for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bosh.dirs['mopy'].join(u'Apps')
     bosh.initLinks(dirApps)
@@ -511,7 +173,7 @@ def InitStatusBar():
                     try:
                         win32gui.ExtractIcon(0, target.s, 0)
                         icon = target
-                    except Exception as e:
+                    except:
                         icon = u'' # Icon will be set to a red x further down.
                 else:
                     # Use the default icon for that file type
@@ -589,8 +251,6 @@ def InitStatusBar():
         BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
 #------------------------------------------------------------------------------
-from .misc_links import Master_ChangeTo, Master_Disable
-
 def InitMasterLinks():
     """Initialize master list menus."""
     #--MasterList: Column Links
@@ -613,22 +273,6 @@ def InitMasterLinks():
     MasterList.itemMenu.append(Master_Disable())
 
 #------------------------------------------------------------------------------
-from .installers_links import Installers_SortActive,Installers_SortProjects, \
-    Installers_Refresh, Installers_AddMarker, Installers_CreateNewProject, \
-    Installers_MonitorInstall, Installers_ListPackages, Installers_AnnealAll, \
-    Installers_UninstallAllPackages, Installers_UninstallAllUnknownFiles, \
-    Installers_AvoidOnStart, Installers_Enabled, Installers_AutoAnneal, \
-    Installers_AutoWizard, Installers_AutoRefreshProjects, \
-    Installers_AutoRefreshBethsoft, Installers_AutoApplyEmbeddedBCFs, \
-    Installers_BsaRedirection, Installers_RemoveEmptyDirs, \
-    Installers_ConflictsReportShowsInactive, \
-    Installers_ConflictsReportShowsLower, \
-    Installers_ConflictsReportShowBSAConflicts, Installers_WizardOverlay, \
-    Installers_SkipOBSEPlugins, Installers_SkipScreenshots, \
-    Installers_SkipImages, Installers_SkipDocs, Installers_SkipDistantLOD, \
-    Installers_SkipLandscapeLODMeshes, Installers_SkipLandscapeLODTextures, \
-    Installers_SkipLandscapeLODNormals, Installers_RenameStrings
-
 def InitInstallerLinks():
     """Initialize Installers tab menus."""
     #--Column links
@@ -761,9 +405,6 @@ def InitInstallerLinks():
     InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
 
 #------------------------------------------------------------------------------
-from .ini_links import INI_SortValid, INI_AllowNewLines, INI_ListINIs, \
-    INI_Apply, INI_CreateNew, INI_ListErrors, INI_FileOpenOrCopy, INI_Delete
-
 def InitINILinks():
     """Initialize INI Edits tab menus."""
     #--Column Links
@@ -773,7 +414,7 @@ def InitINILinks():
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Installer'))
-    INIList.mainMenu.append(sortMenu)
+        INIList.mainMenu.append(sortMenu)
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(List_Columns('bash.ini.cols','bash.ini.allCols',['File']))
     INIList.mainMenu.append(SeparatorLink())
@@ -1102,9 +743,6 @@ def InitBSALinks():
     BSAList.itemMenu.append(Save_RepairHair())
 
 #------------------------------------------------------------------------------
-from .misc_links import Screens_NextScreenShot, Screen_JpgQuality, \
-    Screen_JpgQualityCustom, Screen_Rename, Screen_ConvertTo
-
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--SaveList: Column Links
@@ -1136,8 +774,6 @@ def InitScreenLinks():
         ScreensList.itemMenu.append(convertMenu)
 
 #------------------------------------------------------------------------------
-from .misc_links import Messages_Archive_Import, Message_Delete
-
 def InitMessageLinks():
     """Initialize messages tab menus."""
     #--SaveList: Column Links
@@ -1149,9 +785,6 @@ def InitMessageLinks():
     MessageList.itemMenu.append(Message_Delete())
 
 #------------------------------------------------------------------------------
-from .misc_links import People_AddNew, People_Import, People_Karma, \
-    People_Export
-
 def InitPeopleLinks():
     """Initialize people tab menus."""
     #--Header links
@@ -1167,14 +800,6 @@ def InitPeopleLinks():
     PeopleList.itemMenu.append(People_Export())
 
 #------------------------------------------------------------------------------
-from .settings_links import Settings_BackupSettings, Settings_RestoreSettings, \
-    Settings_SaveSettings, Settings_ExportDllInfo, Settings_ImportDllInfo, \
-    Settings_Colors, Settings_IconSize, Settings_UnHideButtons, \
-    Settings_StatusBar_ShowVersions, Settings_Languages, \
-    Settings_PluginEncodings, Settings_Games, Settings_UseAltName, \
-    Settings_Deprint, Settings_DumpTranslator, Settings_UAC
-from . import Tab_Link
-
 def InitSettingsLinks():
     """Initialize settings menu."""
     SettingsMenu = BashStatusBar.SettingsMenu

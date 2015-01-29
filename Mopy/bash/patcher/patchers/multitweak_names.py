@@ -24,7 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the NamesTweaker itself."""
-# TODO:DOCS
+
 import re
 # Internal
 from ... import bosh # for modInfos
@@ -816,8 +816,7 @@ class TextReplacer(ATextReplacer,_AMultiTweakItem_Names):
 class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
     #--Config Phase -----------------------------------------------------------
     def getTypes(self):
-        # TODO : notice it differs only in 'CELLS' from
-        # TextReplacer.activeTypes
+        ##: note it differs only in 'CELLS' from TextReplacer.activeTypes
         return ['ALCH','AMMO','APPA','ARMO','BOOK','BSGN',
                 'CELLS','CLAS','CLOT','CONT','CREA','DOOR',
                 'ENCH','EYES','FACT','FLOR','FURN','GMST',

@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, Link, RadioLink, \
@@ -29,6 +30,12 @@ from .. import balt, bosh, bush
 from .import People_Link
 from .constants import ID_GROUPS, settingDefaults
 from ..bolt import GPath, LString
+
+__all__ = ['List_Columns', 'Master_ChangeTo', 'Master_Disable',
+           'Screens_NextScreenShot', 'Screen_JpgQuality',
+           'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
+           'Messages_Archive_Import', 'Message_Delete', 'People_AddNew',
+           'People_Import', 'People_Karma', 'People_Export']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -193,7 +200,7 @@ class People_AddNew(People_Link):
             return balt.showInfo(self.gTank, name + _(u" already exists."),
                                  self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
-        self.gTank.RefreshUI(details=name) # TODO(ut): select it !
+        self.gTank.RefreshUI(details=name) ##: select it !
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
         self.pdata.setChanged()
 

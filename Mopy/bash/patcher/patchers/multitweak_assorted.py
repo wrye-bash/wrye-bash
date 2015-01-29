@@ -24,7 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
-# TODO:DOCS
+
 import random
 import re
 # Internal
@@ -565,7 +565,7 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_DarnBooks(AMultiTweakItem):
-    """DarNifies books.""" #TODO C and P implementations have very similar code
+    """DarNifies books.""" ##: C and P implementations have very similar code
     reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
     reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
     reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
@@ -1257,7 +1257,6 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_ArrowWeight(AMultiTweakItem_Weight):
-    """Reweighs standard arrows down to 0.""" # TODO : Wha ?
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):

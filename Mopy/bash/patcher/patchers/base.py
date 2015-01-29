@@ -22,18 +22,18 @@
 #
 # =============================================================================
 
-"""This module contains oblivion base patcher classes.""" # TODO:DOCS
+"""This module contains base patcher classes."""
 import struct
 from operator import itemgetter
 # Internal
 from ... import bosh # for bosh.modInfos, dirs
-from ...bosh import PatchFile, getPatchesList, CBash_PatchFile, reModExt, \
-    getPatchesPath, CountDict
+from ...bosh import getPatchesList, reModExt, getPatchesPath, CountDict
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
     AImportPatcher, APatchMerger, AUpdateReferences
+from ..patch_files import PatchFile, CBash_PatchFile
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher):
@@ -94,7 +94,7 @@ class MultiTweakItem(AMultiTweakItem):
 
     def buildPatch(self,log,progress,patchFile): # extra param: patchFile
         """Edits patch file as desired. Should write to log."""
-        pass  # TODO raise AbstractError ?
+        pass ##: raise AbstractError ?
 
     def _patchLog(self, log, count):
         #--Log - must define self.logMsg in subclasses
@@ -393,7 +393,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
-from ..utilities import CBash_FidReplacer
+from ...parsers import CBash_FidReplacer
 
 class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
     autoKey = {u'Formids'}

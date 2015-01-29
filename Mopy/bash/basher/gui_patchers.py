@@ -607,7 +607,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
 #------------------------------------------------------------------------------
 # GUI Patcher classes - mixins of patchers and the GUI patchers defined above -
 #------------------------------------------------------------------------------
-# TODO(ut): dynamically create those (game independent ?) UI patchers based on
+##: consider dynamically create those (game independent ?) UI patchers based on
 # dictionaries in bash.patcher.__init__.py (see the game specific creation
 # below)
 from ..patcher.patchers import base
@@ -723,7 +723,7 @@ from .patcher_dialog import PatchDialog, otherPatcherDict
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope
 from importlib import import_module
-gamePatcher = import_module('.patcher', # TODO(ut): move in bush.py !
+gamePatcher = import_module('.patcher', ##: move in bush.py !
                        package=bush.game.__name__)
 for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
     globals()[name] = type(name, (typeInfo[0], Patcher), {})

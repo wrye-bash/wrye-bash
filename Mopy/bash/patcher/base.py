@@ -28,7 +28,7 @@ from this module outside of the patcher package."""
 # FIXME: DETAILED docs - for the patcher attributes, the patcher methods and
 # classes and the patching process. Once this is done we should delete the (
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
-#  also document which methods MUST be overridden by raising AbstractError. For
+# also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
 import copy
@@ -91,7 +91,7 @@ class _Abstract_Patcher(object):
 
 class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO: "performing" ? how ?
+    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
     # would make any sense to make getRead/WriteClasses() into classmethods
     # would it make any sense to make getRead/WriteClasses() into classmethods
     # and just define an attribute in the classes - so getReadClasses(cls):
@@ -119,7 +119,7 @@ class Patcher(_Abstract_Patcher):
 
 class CBash_Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a CBash patch - must
-    be just before Abstract_Patcher in MRO.""" # TODO: "performing" ? how ?
+    be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
     # would it make any sense to make getTypes into classmethod ?
     unloadedText = u""
     allowUnloaded = True
@@ -153,7 +153,7 @@ class CBash_Patcher(_Abstract_Patcher):
         pass
 
 class AListPatcher(_Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects.""" # TODO: docs
+    """Subclass for patchers that have GUI lists of objects."""
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item
     #  0 is default.
@@ -215,7 +215,7 @@ class AListPatcher(_Abstract_Patcher):
         if self.autoIsChecked:
             self.getAutoItems()
 
-    def _patchesList(self): raise AbstractError # TODO needed? check subclasses
+    def _patchesList(self): raise AbstractError # TODO(ut) why different overrides ?
 
     def _patchFile(self): raise AbstractError
 
@@ -374,7 +374,6 @@ class AMultiTweakItem(object):
 # AListPatcher subclasses------------------------------------------------------
 #------------------------------------------------------------------------------
 class ADoublePatcher(AListPatcher):
-    """docs - what's this about ?""" # TODO
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""

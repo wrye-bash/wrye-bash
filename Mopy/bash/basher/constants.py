@@ -141,7 +141,7 @@ colorInfo = {
     }
 
 #--Load config/defaults
-settingDefaults = { # TODO(ut): belongs to bosh (or better to a settings package)
+settingDefaults = { # TODO(178): belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,u'0'),
@@ -465,82 +465,218 @@ TIF = Image.typesDict['tif']
 
 #--Image lists
 karmacons = ImageList(16,16)
+imDirJn = bosh.dirs['images'].join
 karmacons.data.extend({
-    'karma+5': Image(GPath((bosh.dirs['images']).join(u'checkbox_purple_inc.png')),PNG),
-    'karma+4': Image(GPath((bosh.dirs['images']).join(u'checkbox_blue_inc.png')),PNG),
-    'karma+3': Image(GPath((bosh.dirs['images']).join(u'checkbox_blue_inc.png')),PNG),
-    'karma+2': Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
-    'karma+1': Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
-    'karma+0': Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off.png')),PNG),
-    'karma-1': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
-    'karma-2': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
-    'karma-3': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
-    'karma-4': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
-    'karma-5': Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off.png')),PNG),
+    'karma+5': Image(GPath(imDirJn(u'checkbox_purple_inc.png')),PNG),
+    'karma+4': Image(GPath(imDirJn(u'checkbox_blue_inc.png')),PNG),
+    'karma+3': Image(GPath(imDirJn(u'checkbox_blue_inc.png')),PNG),
+    'karma+2': Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
+    'karma+1': Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
+    'karma+0': Image(GPath(imDirJn(u'checkbox_white_off.png')),PNG),
+    'karma-1': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
+    'karma-2': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
+    'karma-3': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
+    'karma-4': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
+    'karma-5': Image(GPath(imDirJn(u'checkbox_red_off.png')),PNG),
     }.items())
 installercons = ImageList(16,16)
 installercons.data.extend({
     #--Off/Archive
-    'off.green':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_off.png')),PNG),
-    'off.grey':   Image(GPath((bosh.dirs['images']).join(u'checkbox_grey_off.png')),PNG),
-    'off.red':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off.png')),PNG),
-    'off.white':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off.png')),PNG),
-    'off.orange': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off.png')),PNG),
-    'off.yellow': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off.png')),PNG),
+    'off.green':  Image(GPath(imDirJn(u'checkbox_green_off.png')),PNG),
+    'off.grey':   Image(GPath(imDirJn(u'checkbox_grey_off.png')),PNG),
+    'off.red':    Image(GPath(imDirJn(u'checkbox_red_off.png')),PNG),
+    'off.white':  Image(GPath(imDirJn(u'checkbox_white_off.png')),PNG),
+    'off.orange': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
+    'off.yellow': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
     #--Off/Archive - Wizard
-    'off.green.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_green_off_wiz.png')),PNG),
+    'off.green.wiz':    Image(GPath(imDirJn(u'checkbox_green_off_wiz.png')),PNG),
     #grey
-    'off.red.wiz':      Image(GPath((bosh.dirs['images']).join(u'checkbox_red_off_wiz.png')),PNG),
-    'off.white.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_white_off_wiz.png')),PNG),
-    'off.orange.wiz':   Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_off_wiz.png')),PNG),
-    'off.yellow.wiz':   Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_off_wiz.png')),PNG),
+    'off.red.wiz':      Image(GPath(imDirJn(u'checkbox_red_off_wiz.png')),PNG),
+    'off.white.wiz':    Image(GPath(imDirJn(u'checkbox_white_off_wiz.png')),PNG),
+    'off.orange.wiz':   Image(GPath(imDirJn(u'checkbox_orange_off_wiz.png')),PNG),
+    'off.yellow.wiz':   Image(GPath(imDirJn(u'checkbox_yellow_off_wiz.png')),PNG),
     #--On/Archive
-    'on.green':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc.png')),PNG),
-    'on.grey':   Image(GPath((bosh.dirs['images']).join(u'checkbox_grey_inc.png')),PNG),
-    'on.red':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_inc.png')),PNG),
-    'on.white':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_inc.png')),PNG),
-    'on.orange': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_inc.png')),PNG),
-    'on.yellow': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_inc.png')),PNG),
+    'on.green':  Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
+    'on.grey':   Image(GPath(imDirJn(u'checkbox_grey_inc.png')),PNG),
+    'on.red':    Image(GPath(imDirJn(u'checkbox_red_inc.png')),PNG),
+    'on.white':  Image(GPath(imDirJn(u'checkbox_white_inc.png')),PNG),
+    'on.orange': Image(GPath(imDirJn(u'checkbox_orange_inc.png')),PNG),
+    'on.yellow': Image(GPath(imDirJn(u'checkbox_yellow_inc.png')),PNG),
     #--On/Archive - Wizard
-    'on.green.wiz':  Image(GPath((bosh.dirs['images']).join(u'checkbox_green_inc_wiz.png')),PNG),
+    'on.green.wiz':  Image(GPath(imDirJn(u'checkbox_green_inc_wiz.png')),PNG),
     #grey
-    'on.red.wiz':    Image(GPath((bosh.dirs['images']).join(u'checkbox_red_inc_wiz.png')),PNG),
-    'on.white.wiz':  Image(GPath((bosh.dirs['images']).join(u'checkbox_white_inc_wiz.png')),PNG),
-    'on.orange.wiz': Image(GPath((bosh.dirs['images']).join(u'checkbox_orange_inc_wiz.png')),PNG),
-    'on.yellow.wiz': Image(GPath((bosh.dirs['images']).join(u'checkbox_yellow_inc_wiz.png')),PNG),
+    'on.red.wiz':    Image(GPath(imDirJn(u'checkbox_red_inc_wiz.png')),PNG),
+    'on.white.wiz':  Image(GPath(imDirJn(u'checkbox_white_inc_wiz.png')),PNG),
+    'on.orange.wiz': Image(GPath(imDirJn(u'checkbox_orange_inc_wiz.png')),PNG),
+    'on.yellow.wiz': Image(GPath(imDirJn(u'checkbox_yellow_inc_wiz.png')),PNG),
     #--Off/Directory
-    'off.green.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_off.png')),PNG),
-    'off.grey.dir':   Image(GPath((bosh.dirs['images']).join(u'diamond_grey_off.png')),PNG),
-    'off.red.dir':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_off.png')),PNG),
-    'off.white.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off.png')),PNG),
-    'off.orange.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_off.png')),PNG),
-    'off.yellow.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_off.png')),PNG),
+    'off.green.dir':  Image(GPath(imDirJn(u'diamond_green_off.png')),PNG),
+    'off.grey.dir':   Image(GPath(imDirJn(u'diamond_grey_off.png')),PNG),
+    'off.red.dir':    Image(GPath(imDirJn(u'diamond_red_off.png')),PNG),
+    'off.white.dir':  Image(GPath(imDirJn(u'diamond_white_off.png')),PNG),
+    'off.orange.dir': Image(GPath(imDirJn(u'diamond_orange_off.png')),PNG),
+    'off.yellow.dir': Image(GPath(imDirJn(u'diamond_yellow_off.png')),PNG),
     #--Off/Directory - Wizard
-    'off.green.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_off_wiz.png')),PNG),
+    'off.green.dir.wiz':  Image(GPath(imDirJn(u'diamond_green_off_wiz.png')),PNG),
     #grey
-    'off.red.dir.wiz':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_off_wiz.png')),PNG),
-    'off.white.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off_wiz.png')),PNG),
-    'off.orange.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_off_wiz.png')),PNG),
-    'off.yellow.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_off_wiz.png')),PNG),
+    'off.red.dir.wiz':    Image(GPath(imDirJn(u'diamond_red_off_wiz.png')),PNG),
+    'off.white.dir.wiz':  Image(GPath(imDirJn(u'diamond_white_off_wiz.png')),PNG),
+    'off.orange.dir.wiz': Image(GPath(imDirJn(u'diamond_orange_off_wiz.png')),PNG),
+    'off.yellow.dir.wiz': Image(GPath(imDirJn(u'diamond_yellow_off_wiz.png')),PNG),
     #--On/Directory
-    'on.green.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_inc.png')),PNG),
-    'on.grey.dir':   Image(GPath((bosh.dirs['images']).join(u'diamond_grey_inc.png')),PNG),
-    'on.red.dir':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_inc.png')),PNG),
-    'on.white.dir':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_inc.png')),PNG),
-    'on.orange.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_inc.png')),PNG),
-    'on.yellow.dir': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_inc.png')),PNG),
+    'on.green.dir':  Image(GPath(imDirJn(u'diamond_green_inc.png')),PNG),
+    'on.grey.dir':   Image(GPath(imDirJn(u'diamond_grey_inc.png')),PNG),
+    'on.red.dir':    Image(GPath(imDirJn(u'diamond_red_inc.png')),PNG),
+    'on.white.dir':  Image(GPath(imDirJn(u'diamond_white_inc.png')),PNG),
+    'on.orange.dir': Image(GPath(imDirJn(u'diamond_orange_inc.png')),PNG),
+    'on.yellow.dir': Image(GPath(imDirJn(u'diamond_yellow_inc.png')),PNG),
     #--On/Directory - Wizard
-    'on.green.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_green_inc_wiz.png')),PNG),
+    'on.green.dir.wiz':  Image(GPath(imDirJn(u'diamond_green_inc_wiz.png')),PNG),
     #grey
-    'on.red.dir.wiz':    Image(GPath((bosh.dirs['images']).join(u'diamond_red_inc_wiz.png')),PNG),
-    'on.white.dir.wiz':  Image(GPath((bosh.dirs['images']).join(u'diamond_white_off_wiz.png')),PNG),
-    'on.orange.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_orange_inc_wiz.png')),PNG),
-    'on.yellow.dir.wiz': Image(GPath((bosh.dirs['images']).join(u'diamond_yellow_inc_wiz.png')),PNG),
+    'on.red.dir.wiz':    Image(GPath(imDirJn(u'diamond_red_inc_wiz.png')),PNG),
+    'on.white.dir.wiz':  Image(GPath(imDirJn(u'diamond_white_off_wiz.png')),PNG),
+    'on.orange.dir.wiz': Image(GPath(imDirJn(u'diamond_orange_inc_wiz.png')),PNG),
+    'on.yellow.dir.wiz': Image(GPath(imDirJn(u'diamond_yellow_inc_wiz.png')),PNG),
     #--Broken
-    'corrupt':   Image(GPath((bosh.dirs['images']).join(u'red_x.png')),PNG),
+    'corrupt':   Image(GPath(imDirJn(u'red_x.png')),PNG),
     }.items())
 
 # Gui Ids ---------------------------------------------------------------------
 #--Label Menus
 ID_GROUPS    = IdList(10100,290,'EDIT','NONE')
 ID_TAGS      = IdList(10600, 90,'AUTO','COPY')
+
+#--Buttons
+def imageList(template):
+    return [Image(imDirJn(template % x)) for x in (16,24,32)]
+
+# TODO(65): game handling refactoring - some of the buttons are game specific
+toolbar_buttons = (
+        (u'ISOBL', imageList(u'tools/isobl%s.png'),
+        _(u"Launch InsanitySorrow's Oblivion Launcher")),
+        (u'ISRMG', imageList(u"tools/insanity'sreadmegenerator%s.png"),
+        _(u"Launch InsanitySorrow's Readme Generator")),
+        (u'ISRNG', imageList(u"tools/insanity'srng%s.png"),
+        _(u"Launch InsanitySorrow's Random Name Generator")),
+        (u'ISRNPCG', imageList(u'tools/randomnpc%s.png'),
+        _(u"Launch InsanitySorrow's Random NPC Generator")),
+        (u'OBFEL', imageList(u'tools/oblivionfaceexchangerlite%s.png'),
+        _(u"Oblivion Face Exchange Lite")),
+        (u'OBMLG', imageList(u'tools/modlistgenerator%s.png'),
+        _(u"Oblivion Mod List Generator")),
+        (u'BSACMD', imageList(u'tools/bsacommander%s.png'),
+        _(u"Launch BSA Commander")),
+        (u'Tabula', imageList(u'tools/tabula%s.png'), _(u"Launch Tabula")),
+        (u'Tes4FilesPath', imageList(u'tools/tes4files%s.png'),
+        _(u"Launch TES4Files")),
+)
+
+try: ##: FIXME: due to constants being imported in showErrorInGui
+    app_buttons = (
+        ((bosh.tooldirs['OblivionBookCreatorPath'],
+          bosh.inisettings['OblivionBookCreatorJavaArg']),
+         imageList(u'tools/oblivionbookcreator%s.png'),
+         _(u"Launch Oblivion Book Creator"), {'uid': u'OblivionBookCreator'}),
+        ((bosh.tooldirs['Tes4GeckoPath'],
+          bosh.inisettings['Tes4GeckoJavaArg']),
+         imageList(u'tools/tes4gecko%s.png'),
+         _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
+        ((bosh.tooldirs['Tes5GeckoPath']), imageList(u'tools/tesvgecko%s.png'),
+         _(u"Launch TesVGecko"), {'uid': u'TesVGecko'}),
+    )
+except KeyError:
+    app_buttons = ()
+
+modeling_tools_buttons = (
+    ('AutoCad', imageList(u'tools/autocad%s.png'), _(u"Launch AutoCad")),
+    ('BlenderPath', imageList(u'tools/blender%s.png'), _(u"Launch Blender")),
+    ('Dogwaffle', imageList(u'tools/dogwaffle%s.png'), _(u"Launch Dogwaffle")),
+    ('GmaxPath', imageList(u'tools/gmax%s.png'), _(u"Launch Gmax")),
+    ('MayaPath', imageList(u'tools/maya%s.png'), _(u"Launch Maya")),
+    ('MaxPath', imageList(u'tools/3dsmax%s.png'), _(u"Launch 3dsMax")),
+    ('Milkshape3D', imageList(u'tools/milkshape3d%s.png'),
+     _(u"Launch Milkshape 3D")),
+    ('Mudbox', imageList(u'tools/mudbox%s.png'), _(u"Launch Mudbox")),
+    ('Sculptris', imageList(u'tools/sculptris%s.png'), _(u"Launch Sculptris")),
+    ('SpeedTree', imageList(u'tools/speedtree%s.png'), _(u"Launch SpeedTree")),
+    ('Treed', imageList(u'tools/treed%s.png'), _(u"Launch Tree\[d\]")),
+    ('Wings3D', imageList(u'tools/wings3d%s.png'), _(u"Launch Wings 3D")),
+)
+
+texture_tool_buttons = (
+    ('AniFX', imageList(u'tools/anifx%s.png'), _(u"Launch AniFX")),
+    ('ArtOfIllusion', imageList(u'tools/artofillusion%s.png'),
+     _(u"Launch Art Of Illusion")),
+    ('Artweaver', imageList(u'tools/artweaver%s.png'), _(u"Launch Artweaver")),
+    ('CrazyBump', imageList(u'tools/crazybump%s.png'), _(u"Launch CrazyBump")),
+    ('DDSConverter', imageList(u'tools/ddsconverter%s.png'),
+     _(u"Launch DDSConverter")),
+    ('DeepPaint', imageList(u'tools/deeppaint%s.png'), _(u"Launch DeepPaint")),
+    ('FastStone', imageList(u'tools/faststoneimageviewer%s.png'),
+     _(u"Launch FastStone Image Viewer")),
+    ('Genetica', imageList(u'tools/genetica%s.png'), _(u"Launch Genetica")),
+    ('GeneticaViewer', imageList(u'tools/geneticaviewer%s.png'),
+     _(u"Launch Genetica Viewer")),
+    ('GIMP', imageList(u'tools/gimp%s.png'), _(u"Launch GIMP")),
+    ('GimpShop', imageList(u'tools/gimpshop%s.png'), _(u"Launch GIMP Shop")),
+    ('IcoFX', imageList(u'tools/icofx%s.png'), _(u"Launch IcoFX")),
+    ('Inkscape', imageList(u'tools/inkscape%s.png'), _(u"Launch Inkscape")),
+    ('IrfanView', imageList(u'tools/irfanview%s.png'), _(u"Launch IrfanView")),
+    ('MaPZone', imageList(u'tools/mapzone%s.png'), _(u"Launch MaPZone")),
+    ('MyPaint', imageList(u'tools/mypaint%s.png'), _(u"Launch MyPaint")),
+    ('NVIDIAMelody', imageList(u'tools/nvidiamelody%s.png'),
+     _(u"Launch Nvidia Melody")),
+    ('PaintNET', imageList(u'tools/paint.net%s.png'), _(u"Launch Paint.NET")),
+    ('PaintShopPhotoPro', imageList(u'tools/paintshopprox3%s.png'),
+     _(u"Launch PaintShop Photo Pro")),
+    ('PhotoshopPath', imageList(u'tools/photoshop%s.png'),
+     _(u"Launch Photoshop")),
+    ('PhotoScape', imageList(u'tools/photoscape%s.png'),
+     _(u"Launch PhotoScape")),
+    ('PhotoSEAM', imageList(u'tools/photoseam%s.png'), _(u"Launch PhotoSEAM")),
+    ('Photobie', imageList(u'tools/photobie%s.png'), _(u"Launch Photobie")),
+    ('PhotoFiltre', imageList(u'tools/photofiltre%s.png'),
+     _(u"Launch PhotoFiltre")),
+    ('PixelStudio', imageList(u'tools/pixelstudiopro%s.png'),
+     _(u"Launch Pixel Studio Pro")),
+    ('Pixia', imageList(u'tools/pixia%s.png'), _(u"Launch Pixia")),
+    ('TextureMaker', imageList(u'tools/texturemaker%s.png'),
+     _(u"Launch TextureMaker")),
+    ('TwistedBrush', imageList(u'tools/twistedbrush%s.png'),
+     _(u"Launch TwistedBrush")),
+    ('WTV', imageList(u'tools/wtv%s.png'),
+     _(u"Launch Windows Texture Viewer")),
+    ('xNormal', imageList(u'tools/xnormal%s.png'), _(u"Launch xNormal")),
+    ('XnView', imageList(u'tools/xnview%s.png'), _(u"Launch XnView")),
+)
+
+audio_tools = (
+    ('Audacity', imageList(u'tools/audacity%s.png'), _(u"Launch Audacity")),
+    ('ABCAmberAudioConverter',
+     imageList(u'tools/abcamberaudioconverter%s.png'),
+    _(u"Launch ABC Amber Audio Converter")),
+    ('Switch', imageList(u'tools/switch%s.png'), _(u"Launch Switch")),
+)
+
+misc_tools = (
+    ('Fraps', imageList(u'tools/fraps%s.png'), _(u"Launch Fraps")),
+    ('MAP', imageList(u'tools/interactivemapofcyrodiil%s.png'),
+        _(u"Interactive Map of Cyrodiil and Shivering Isles")),
+    ('LogitechKeyboard', imageList(u'tools/logitechkeyboard%s.png'),
+        _(u"Launch LogitechKeyboard")),
+    ('MediaMonkey', imageList(u'tools/mediamonkey%s.png'),
+        _(u"Launch MediaMonkey")),
+    ('NPP', imageList(u'tools/notepad++%s.png'), _(u"Launch Notepad++")),
+    ('Steam', imageList(u'steam%s.png'), _(u"Launch Steam")),
+    ('EVGAPrecision', imageList(u'tools/evgaprecision%s.png'),
+        _(u"Launch EVGA Precision")),
+    ('WinMerge', imageList(u'tools/winmerge%s.png'), _(u"Launch WinMerge")),
+    ('FreeMind', imageList(u'tools/freemind%s.png'), _(u"Launch FreeMind")),
+    ('Freeplane', imageList(u'tools/freeplane%s.png'), _(u"Launch Freeplane")),
+    ('FileZilla', imageList(u'tools/filezilla%s.png'), _(u"Launch FileZilla")),
+    ('EggTranslator', imageList(u'tools/eggtranslator%s.png'),
+        _(u"Launch Egg Translator")),
+    ('RADVideo', imageList(u'tools/radvideotools%s.png'),
+        _(u"Launch RAD Video Tools")),
+    ('WinSnap', imageList(u'tools/winsnap%s.png'), _(u"Launch WinSnap")),
+)

@@ -73,6 +73,7 @@ from ..bosh import formatInteger,formatDate
 from ..bolt import BoltError, AbstractError, CancelError, SkipError, GPath, \
     SubProgress, deprint, Path
 from ..cint import CBash
+from ..patcher.patch_files import PatchFile
 
 startupinfo = bolt.startupinfo
 
@@ -2500,7 +2501,7 @@ class InstallersList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
-    # _shellUI = True TODO(ut): shellUI path does not grok markers
+    # _shellUI = True # FIXME(ut): shellUI path does not grok markers
     editLabels = True
 
     def __init__(self, parent, data, keyPrefix, details=None):
@@ -3935,7 +3936,7 @@ class MessagePanel(SashPanel):
         gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         self.uiList = gMessageList
-        #--Search # TODO(ut): move to textCtrl subclass
+        #--Search ##: move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
         gClearButton = button(gBottom,_(u'Clear'),onClick=self.DoClear)
@@ -4746,7 +4747,7 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         try:
             self.SaveSettings()
-        except: # raise # TODO(ut): this has swallowed exceptions since forever
+        except: ##: this has swallowed exceptions since forever
                 deprint(_(u'An error occurred while trying to save settings:'),
                         traceback=True)
         finally:
@@ -4904,7 +4905,7 @@ class BashApp(wx.App):
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
-                bosh.PatchFile.generateNextBashedPatch()
+                PatchFile.generateNextBashedPatch()
 
     def InitVersion(self):
         """Perform any version to version conversion. Called by Init()."""

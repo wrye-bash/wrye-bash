@@ -24,7 +24,8 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
-for game settings, said the oracle at Delphi.""" # TODO:DOCS
+for game settings."""
+
 from ... import bush # for game
 from ...bolt import SubProgress, StateError, deprint
 from ...brec import MreRecord, ModReader
