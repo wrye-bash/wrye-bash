@@ -592,6 +592,6 @@ class CreateNewProject(balt.Dialog):
         self.fullRefresh = False
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
-        gInstallers.OnShow()
+        gInstallers.ShowPanel()
 
 #------------------------------------------------------------------------------

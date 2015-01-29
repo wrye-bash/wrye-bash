@@ -246,15 +246,18 @@ class NotebookPanel(wx.Panel):
         """Sets status bar count field."""
         statusBar.SetStatusText(self._sbText(), 2)
 
-    def OnShow(self):
+    def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
         first time.
 
         Default version resizes the columns if auto is on and sets Status bar
-        text. It also sets the scroll bar position on first show.
+        text. It also sets the scroll bar and sash positions on first show.
         """
         if hasattr(self, '_firstShow'):
             self.uiList.SetScrollPosition()
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
             del self._firstShow
         self.uiList.autosizeColumns()
         self.SetStatusCount()
@@ -308,13 +311,6 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def OnShow(self):
-        if hasattr(self, '_firstShow'):
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
-        super(SashPanel, self).OnShow()
-
     def ClosePanel(self):
         if not hasattr(self, '_firstShow'):
             # if the panel is never shown leave below alone
@@ -338,10 +334,6 @@ class SashTankPanel(SashPanel):
 
     def GetDetailsItem(self):
         return self.detailsItem
-
-    def OnShow(self):
-        if self.uiList.data.refresh(): self.uiList.RefreshUI()
-        super(SashTankPanel,self).OnShow()
 
 #------------------------------------------------------------------------------
 class List(balt.UIList):
@@ -1899,12 +1891,12 @@ class INIPanel(SashPanel):
         else:
             return self.sortKeys[index]
 
-    def OnShow(self):
+    def ShowPanel(self):
         changed = self.trackedInfo.refresh()
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshUI()
-        super(INIPanel, self).OnShow()
+        super(INIPanel, self).ShowPanel()
 
     def RefreshUI(self,what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
@@ -2069,7 +2061,7 @@ class ModPanel(SashPanel):
     keyPrefix = 'bash.mods'
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent, 1.0, minimumSize=150)
+        SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=150)
         left,right = self.left, self.right
         global modList
         from . import mods_links, mod_links, saves_links, app_buttons, \
@@ -2467,7 +2459,7 @@ class SavePanel(SashPanel):
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
-        SashPanel.__init__(self, parent, 1.0, minimumSize=200)
+        SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=200)
         left,right = self.left, self.right
         global saveList
         from . import saves_links
@@ -2753,7 +2745,7 @@ class InstallersList(balt.Tank):
             if iniList:
                 iniList.RefreshUI()
         gInstallers.frameActivated = True
-        gInstallers.OnShow()
+        gInstallers.ShowPanel()
 
     def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
         super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
@@ -2963,7 +2955,7 @@ class InstallersPanel(SashTankPanel):
         """Update any controls using custom colors."""
         self.uiList.RefreshUI()
 
-    def OnShow(self,canCancel=True):
+    def ShowPanel(self, canCancel=True):
         """Panel is shown. Update self.data."""
         # TODO(ut): refactor, self.refreshing set to True once, extract methods
         if settings.get('bash.installers.isFirstRun',True):
@@ -3099,7 +3091,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
-        SashPanel.OnShow(self)
+        super(InstallersPanel, self).ShowPanel()
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3559,12 +3551,12 @@ class ScreensPanel(SashPanel):
     def _sbText(self):
         return _(u'Screens:') + u' %d' % (len(screensList.data.data),)
 
-    def OnShow(self):
+    def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
             screensList.RefreshUI()
             #self.Refresh()
-        super(ScreensPanel, self).OnShow()
+        super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
 class BSAList(List):
@@ -3962,12 +3954,12 @@ class MessagePanel(SashPanel):
             else len(gMessageList.searchResults)
         return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
 
-    def OnShow(self):
+    def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.messages.refresh():
             gMessageList.RefreshUI()
             #self.Refresh()
-        super(MessagePanel, self).OnShow()
+        super(MessagePanel, self).ShowPanel()
 
     def OnSearchChar(self,event):
         if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
@@ -4030,6 +4022,10 @@ class PeoplePanel(SashTankPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
     def _sbText(self): return _(u'People:') + u' %d' % len(self.data.data)
+
+    def ShowPanel(self):
+        if self.uiList.data.refresh(): self.uiList.RefreshUI()
+        super(PeoplePanel, self).ShowPanel()
 
     def OnSpin(self,event):
         """Karma spin."""
@@ -4215,11 +4211,12 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         event.Skip()
 
     def OnShowPage(self,event):
-        """Call page's OnShow command."""
-        if event.GetId() == self.GetId():
+        """Call panel's ShowPanel() and set the current panel."""
+        if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self.GetPage(event.GetSelection()).OnShow()
-            event.Skip()
+            self._currentTab = self.GetPage(event.GetSelection())
+            self._currentTab.ShowPanel()
+            event.Skip() ##: shouldn't this always be called ?
 
     def _onMouseCaptureLost(self, event):
         """Handle the onMouseCaptureLost event
@@ -4624,7 +4621,7 @@ class BashFrame(wx.Frame):
             iniList.RefreshUI(popInis)
         #--Current notebook panel
         if gInstallers: gInstallers.frameActivated = True
-        self.notebook.GetPage(self.notebook.GetSelection()).OnShow()
+        self.notebook.GetPage(self.notebook.GetSelection()).ShowPanel()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
         ## Not applicable now with libloadorder - perhaps find a way to simulate this warning

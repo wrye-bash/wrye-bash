@@ -88,7 +88,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh Data
         gInstallers.refreshed = False
         gInstallers.fullRefresh = False
-        gInstallers.OnShow(canCancel=False)
+        gInstallers.ShowPanel(canCancel=False)
         # Backup CRC data
         data = copy.copy(gInstallers.data.data_sizeCrcDate)
         # Install and wait
@@ -96,7 +96,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh Data
         gInstallers.refreshed = False
         gInstallers.fullRefresh = False
-        gInstallers.OnShow(canCancel=False)
+        gInstallers.ShowPanel(canCancel=False)
         # Determine changes
         curData = gInstallers.data.data_sizeCrcDate
         oldFiles = set(data)
@@ -187,7 +187,7 @@ class Installers_MonitorInstall(Installers_Link):
         with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
             bosh.InstallerProject.createFromData(path,include,progress)
         # Refresh Installers - so we can manipulate the InstallerProject item
-        gInstallers.OnShow()
+        gInstallers.ShowPanel()
         # Update the status of the installer (as installer last)
         path = path.relpath(bosh.dirs['installers'])
         self.idata.install([path],None,True,False)
@@ -266,7 +266,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             if not balt.askWarning(self.gTank,fill(message,80),self.text): return
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
-        gInstallers.OnShow()
+        gInstallers.ShowPanel()
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
@@ -335,7 +335,7 @@ class Installers_AutoApplyEmbeddedBCFs(Installers_Link, BoolLink):
 
     def Execute(self,event):
         super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
-        gInstallers.OnShow()
+        gInstallers.ShowPanel()
 
 class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
     """Toggle refreshVanilla setting and update."""
@@ -357,7 +357,7 @@ class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
             # Refresh Data - only if we are now including Bethsoft files
             gInstallers.refreshed = False
             gInstallers.fullRefresh = False
-            gInstallers.OnShow()
+            gInstallers.ShowPanel()
         # Refresh Installers
         toRefresh = set()
         for name in gInstallers.data.data:
@@ -393,7 +393,7 @@ class Installers_Enabled(Installers_Link, BoolLink):
         enabled = bosh.settings[self.key] = not enabled
         if enabled:
             gInstallers.refreshed = False
-            gInstallers.OnShow()
+            gInstallers.ShowPanel()
             self.gTank.RefreshUI()
         else:
             self.gTank.gList.DeleteAllItems() ##: encapsulate
