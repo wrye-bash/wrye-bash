@@ -70,6 +70,8 @@ import loot
 import libbsa
 import liblo
 
+import patcher # for configIsCBash()
+
 startupinfo = bolt.startupinfo
 
 #--Settings
@@ -4497,13 +4499,6 @@ class ModInfos(FileInfos):
         if asTuple: return tuple(modNames)
         else: return modNames
 
-    @staticmethod
-    def _configIsCBash(patchConfigs): ##: Copied from CBash_PatchFile.configIsCBash
-        for key in patchConfigs:
-            if 'CBash' in key:
-                return True
-        return False
-
     def getSemiActive(self,masters):
         """Returns (merged,imported) mods made semi-active by Bashed Patch."""
         merged,imported = set(),set()
@@ -4511,7 +4506,7 @@ class ModInfos(FileInfos):
             if modInfo.header.author != u'BASHED PATCH': continue
             patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
             if not patchConfigs: continue
-            patcherstr = 'CBash_PatchMerger' if self._configIsCBash(patchConfigs) else 'PatchMerger'
+            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(patchConfigs) else 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
                 configChecks = patchConfigs[patcherstr]['configChecks']
                 for modName in configChecks:
@@ -9994,6 +9989,7 @@ class Save_NPCEdits:
         saveFile.safeSave()
 
 # Mergeability ----------------------------------------------------------------
+##: belong to patcher/patch_files (?) but used in modInfos - cyclic imports
 def isPBashMergeable(modInfo,verbose=True):
     """Returns True or error message indicating whether specified mod is mergeable."""
     reasons = u''
@@ -10152,15 +10148,6 @@ def isCBashMergeable(modInfo,verbose=True):
         if canmerge == True:
             return _modIsMergeableLoad(modInfo, verbose)
         return False
-
-# Patchers: 10 ----------------------------------------------------------------
-################################### MOVED #####################################
-# Patchers: 20 ----------------------------------------------------------------
-################################### MOVED #####################################
-# Patchers: 30 ----------------------------------------------------------------
-################################### MOVED #####################################
-# Patchers: 40 ----------------------------------------------------------------
-################################### MOVED #####################################
 
 # Initialization --------------------------------------------------------------
 

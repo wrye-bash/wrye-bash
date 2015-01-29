@@ -31,6 +31,7 @@ from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
+from ..patcher import configIsCBash
 from . import Resources
 from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
@@ -772,7 +773,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         super(_Mod_Patch_Update, self)._initData(window, data)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
-        thisIsCBash = CBash_PatchFile.configIsCBash(config)
+        thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
     def Execute(self,event):
@@ -944,7 +945,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
-        doCBash = CBash_PatchFile.configIsCBash(config)
+        doCBash = configIsCBash(config)
         if doCBash:
             patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
         else:
@@ -1053,7 +1054,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][CBash_PatchFile.configIsCBash(config)])),'bash.patch.configs',config)
+        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][configIsCBash(config)])),'bash.patch.configs',config)
         table.save()
 
 # Cleaning submenu ------------------------------------------------------------

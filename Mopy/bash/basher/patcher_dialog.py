@@ -34,6 +34,7 @@ from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from . import SetUAC, Resources
 from .. import bosh, bolt, balt
+from ..patcher import configIsCBash
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 modList = None
@@ -60,8 +61,7 @@ class PatchDialog(balt.Dialog):
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
         # If the patch config isn't from the same mode (CBash/Python), try converting
         # it over to the current mode
-        configIsCBash = CBash_PatchFile.configIsCBash(patchConfigs)
-        if configIsCBash != self.doCBash:
+        if configIsCBash(patchConfigs) != self.doCBash:
             if importConfig:
                 patchConfigs = self.ConvertConfig(patchConfigs)
             else:
@@ -359,8 +359,7 @@ class PatchDialog(balt.Dialog):
         if not patchConfigs: #try the old format:
             patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
             if patchConfigs:
-                configIsCBash = CBash_PatchFile.configIsCBash(patchConfigs)
-                if configIsCBash != self.doCBash:
+                if configIsCBash(patchConfigs) != self.doCBash:
                     patchConfigs = self.UpdateConfig(patchConfigs)
             else:   #try the non-current Bashed Patch mode:
                 patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
@@ -413,7 +412,7 @@ class PatchDialog(balt.Dialog):
     def RevertConfig(self,event=None):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
-        if CBash_PatchFile.configIsCBash(patchConfigs) and not self.doCBash:
+        if configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
             patcher.SetIsFirstLoad(False)

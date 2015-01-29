@@ -318,14 +318,6 @@ class PatchFile(ModFile):
 class CBash_PatchFile(ObModFile):
     """Defines and executes patcher configuration."""
 
-    #--Class
-    @staticmethod
-    def configIsCBash(patchConfigs): ##: Copied to ModInfos._configIsCBash
-        for key in patchConfigs:
-            if 'CBash' in key:
-                return True
-        return False
-
     #--Instance
     def __init__(self, patchName, patchers):
         """Initialization."""

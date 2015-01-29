@@ -21,3 +21,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
+def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
+    for key in patchConfigs:
+        if 'CBash' in key:
+            return True
+    return False
