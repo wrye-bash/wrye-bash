@@ -258,24 +258,26 @@ def ensureDisplayed(frame,x=100,y=100):
         topLeft = wx.Display(0).GetGeometry().GetTopLeft()
         frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
-def setCheckListItems(gList,names,values):
-    """Convenience method for setting a bunch of wxCheckListBox items. The main advantage
-    of this is that it doesn't clear the list unless it needs to. Which is good if you want
-    to preserve the scroll position of the list."""
+def setCheckListItems(checkListBox, names, values):
+    """Convenience method for setting a bunch of wxCheckListBox items. The
+    main advantage of this is that it doesn't clear the list unless it needs
+    to. Which is good if you want to preserve the scroll position of the list.
+    """
     if not names:
-        gList.Clear()
+        checkListBox.Clear()
     else:
-        for index,(name,value) in enumerate(zip(names,values)):
-            if index >= gList.GetCount():
-                gList.Append(name)
+        for index, (name, value) in enumerate(zip(names, values)):
+            if index >= checkListBox.GetCount():
+                checkListBox.Append(name)
             else:
                 if index == -1:
-                    deprint(u"index = -1, name = %s, value = %s" % (name, value))
+                    deprint(
+                        u"index = -1, name = %s, value = %s" % (name, value))
                     continue
-                gList.SetString(index,name)
-            gList.Check(index,value)
-        for index in range(gList.GetCount(),len(names),-1):
-            gList.Delete(index-1)
+                checkListBox.SetString(index, name)
+            checkListBox.Check(index, value)
+        for index in range(checkListBox.GetCount(), len(names), -1):
+            checkListBox.Delete(index - 1)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -1871,11 +1873,11 @@ class UIList(wx.Panel):
 
     def ClearSelected(self):
         """Unselect all items."""
-        gList = self.gList
-        for i in xrange(gList.GetItemCount()): self.SelectItemAtIndex(i, False)
-        # (ut) below is the Tank variation - profile
-        # if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
-        #     gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        listCtrl = self.gList
+        for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
+        ##: (ut) below is the Tank variation - profile
+        # if listCtrl.GetItemState(index,wx.LIST_STATE_SELECTED):
+        #     listCtrl.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def SelectAll(self):
         for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
@@ -2020,46 +2022,46 @@ class Tank(UIList):
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
         if index < 0: return
-        data,gList = self.data,self.gList
+        data,listCtrl = self.data,self.gList
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
-            gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
-        gItem = gList.GetItem(index)
+            listCtrl.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
+        gItem = listCtrl.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(gList.GetTextColour())
+        else: gItem.SetTextColour(listCtrl.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
         gItem.SetData(self.GetId(item))
-        gList.SetItem(gItem)
+        listCtrl.SetItem(gItem)
 
     def GetColumnDex(self,column): ##: remove
         raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
-        gList = self.gList
+        listCtrl = self.gList
         items = set(self.data.keys())
         index = 0
         #--Items to select afterwards. (Defaults to current selection.)
         if selected == 'SAME': selected = set(self.GetSelected())
         #--Update existing items.
         self.mouseTexts.clear()
-        while index < gList.GetItemCount():
+        while index < listCtrl.GetItemCount():
             item = self.GetItem(index)
             if item not in items:
-                gList.DeleteItem(index)
+                listCtrl.DeleteItem(index)
             else:
                 self.UpdateItem(index,item,selected)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
         for item in items:
-            gList.InsertStringItem(index,u'')
+            listCtrl.InsertStringItem(index,u'')
             self.UpdateItem(index,item,selected)
             index += 1
         #--Cleanup
@@ -2139,9 +2141,9 @@ class Tank(UIList):
     #--Selected items
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
-        gList = self.gList
-        return [self.GetItem(x) for x in xrange(gList.GetItemCount())
-            if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
+        listCtrl = self.gList
+        return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
