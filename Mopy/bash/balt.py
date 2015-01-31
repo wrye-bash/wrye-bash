@@ -1754,33 +1754,33 @@ class UIList(wx.Panel):
         if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
         if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
-        self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
+        self._gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
                               fnDropFiles=self.OnDropFiles,
                               fnDropIndexes=self.OnDropIndexes)
-        if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
+        if self.icons: self._gList.SetImageList(self.icons.GetImageList(),
                                                wx.IMAGE_LIST_SMALL)
         if self.__class__.editLabels:
-            self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
-        self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        self.gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
+        self._gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self._gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
+        self._gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self._gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self._gList.Bind(wx.EVT_CHAR, self.OnChar)
         #--Events: Columns
-        self.gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self._gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Events: Items
-        self.gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        self.gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self.gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self._gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
         self.mouseItem = None
         self.mouseTexts = {}
         self.mouseTextPrev = u''
-        self.gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        self.gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
 
@@ -1814,12 +1814,12 @@ class UIList(wx.Panel):
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
         size = self.GetClientSizeTuple()
-        self.gList.SetSize(size)
+        self._gList.SetSize(size)
 
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
-            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
+            (mouseItem,mouseHitFlag) = self._gList.HitTest(event.GetPosition())
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
                 self.MouseOverItem(mouseItem)
@@ -1869,24 +1869,24 @@ class UIList(wx.Panel):
     #-- Item selection --------------------------------------------------------
     def SelectItemAtIndex(self, index, select=True,
                           _select=wx.LIST_STATE_SELECTED):
-        self.gList.SetItemState(index, select * _select, _select)
+        self._gList.SetItemState(index, select * _select, _select)
 
     def ClearSelected(self):
         """Unselect all items."""
-        listCtrl = self.gList
+        listCtrl = self._gList
         for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
         ##: (ut) below is the Tank variation - profile
         # if listCtrl.GetItemState(index,wx.LIST_STATE_SELECTED):
         #     listCtrl.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def SelectAll(self):
-        for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
+        for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
 
     def SelectLast(self):
-        self.SelectItemAtIndex(self.gList.GetItemCount() - 1)
+        self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
 
     def DeleteAllItems(self):
-        self.gList.DeleteAllItems()
+        self._gList.DeleteAllItems()
 
     def EnsureVisible(self, name): ##: TANK ONLY
         raise AbstractError
@@ -1902,26 +1902,26 @@ class UIList(wx.Panel):
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if bosh.inisettings['AutoSizeListColumns']:
-            colCount = xrange(self.gList.GetColumnCount())
-            for i in colCount: self.gList.SetColumnWidth(i, -bosh.inisettings[
+            colCount = xrange(self._gList.GetColumnCount())
+            for i in colCount: self._gList.SetColumnWidth(i, -bosh.inisettings[
                     'AutoSizeListColumns'])
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
         bosh.settings[
-            self.__class__.keyPrefix + '.scrollPos'] = self.gList.GetScrollPos(
+            self.__class__.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self.gList.ScrollLines(
+        self._gList.ScrollLines(
             bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
         if not selected: selected = self.GetSelected()
         if len(selected) > 0:
-            index = self.gList.FindItem(0, selected[0].s)
-            if index != -1: self.gList.EditLabel(index)
+            index = self._gList.FindItem(0, selected[0].s)
+            if index != -1: self._gList.EditLabel(index)
 
 #------------------------------------------------------------------------------
 class Tank(UIList):
@@ -1956,7 +1956,7 @@ class Tank(UIList):
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
-            newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
@@ -1966,7 +1966,7 @@ class Tank(UIList):
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
         """Returns item for specified list index."""
-        return self.itemId_item[self.gList.GetItemData(index)]
+        return self.itemId_item[self._gList.GetItemData(index)]
 
     def GetId(self,item):
         """Returns id for specified item, creating id if necessary."""
@@ -1981,7 +1981,7 @@ class Tank(UIList):
 
     def GetIndex(self,item):
         """Returns index for specified item."""
-        return self.gList.FindItemData(-1,self.GetId(item))
+        return self._gList.FindItemData(-1,self.GetId(item))
 
     def UpdateIds(self):
         """Updates item/id mappings to account for removed items."""
@@ -2000,7 +2000,7 @@ class Tank(UIList):
         """Create/name columns in ListCtrl."""
         cols = self.cols
         self.numCols = len(cols)
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in range(self.numCols):
             colKey = cols[colDex]
             colName = self.colNames.get(colKey,colKey)
@@ -2031,7 +2031,7 @@ class Tank(UIList):
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
         if index < 0: return
-        data,listCtrl = self.data,self.gList
+        data,listCtrl = self.data,self._gList
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
@@ -2053,7 +2053,7 @@ class Tank(UIList):
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
-        listCtrl = self.gList
+        listCtrl = self._gList
         items = set(self.data.keys())
         index = 0
         #--Items to select afterwards. (Defaults to current selection.)
@@ -2107,7 +2107,7 @@ class Tank(UIList):
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
-        self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
+        self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
 
     def RefreshReport(self):
@@ -2129,7 +2129,7 @@ class Tank(UIList):
         elif items in self.data:
             self.UpdateItem(self.GetIndex(items),items,selected=selected)
         else: #--Iterable
-            for index in xrange(self.gList.GetItemCount()):
+            for index in xrange(self._gList.GetItemCount()):
                 if self.GetItem(index) in set(items):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
@@ -2149,13 +2149,13 @@ class Tank(UIList):
 
     #--Selected items
     def GetSelected(self):
-        """Return list of items selected (hilighted) in the interface."""
-        listCtrl = self.gList
+        """Return list of items selected (highlighted) in the interface."""
+        listCtrl = self._gList
         return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
             if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     def EnsureVisible(self, name): ##: TANK ONLY
-        self.gList.EnsureVisible(self.GetIndex(name))
+        self._gList.EnsureVisible(self.GetIndex(name))
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
@@ -2166,12 +2166,12 @@ class Tank(UIList):
         """Column resized. Save column size info."""
         colDex = event.GetColumn()
         colName = self.cols[colDex]
-        width = self.gList.GetColumnWidth(colDex)
+        width = self._gList.GetColumnWidth(colDex)
         if width < 5:
             width = 5
-            self.gList.SetColumnWidth(colDex, 5)
+            self._gList.SetColumnWidth(colDex, 5)
             event.Veto()
-            self.gList.resizeLastColumn(0)
+            self._gList.resizeLastColumn(0)
         else:
             event.Skip()
         self.colWidths[colName] = width

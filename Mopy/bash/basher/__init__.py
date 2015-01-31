@@ -353,7 +353,7 @@ class List(balt.UIList):
         self.hitIcon = 0
         #--Events: Columns
         self.checkcol = []
-        self.gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
+        self._gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
 
     #--New way for self.cols, so PopulateColumns will work with
     #  the optional columns menu ##: 3774b28f548742144ac1753643d87361b40f9523
@@ -375,7 +375,7 @@ class List(balt.UIList):
         cols = self.cols
         self.numCols = len(cols)
         colDict = self.colDict = {}
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in xrange(self.numCols):
             colKey = cols[colDex]
             colDict[colKey] = colDex
@@ -425,7 +425,7 @@ class List(balt.UIList):
         self.GetItems()
         self.SortItems(col,reverse)
         #--Delete Current items
-        listCtrl = self.gList
+        listCtrl = self._gList
         listItemCount = listCtrl.GetItemCount()
         #--Populate items
         for itemDex in xrange(len(self.items)):
@@ -442,7 +442,7 @@ class List(balt.UIList):
         selected = []
         itemDex = -1
         while True:
-            itemDex = self.gList.GetNextItem(itemDex,
+            itemDex = self._gList.GetNextItem(itemDex,
                 wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
             if itemDex == -1 or itemDex >= len(self.items):
                 break
@@ -520,11 +520,11 @@ class List(balt.UIList):
         if self.checkcol:
             colDex = self.checkcol[0]
             colName = self.cols[colDex]
-            width = self.gList.GetColumnWidth(colDex)
+            width = self._gList.GetColumnWidth(colDex)
             if width < 25:
                 width = 25
-                self.gList.SetColumnWidth(colDex, 25)
-                self.gList.resizeLastColumn(0)
+                self._gList.SetColumnWidth(colDex, 25)
+                self._gList.resizeLastColumn(0)
             self.colWidths[colName] = width
             self.checkcol = []
         event.Skip()
@@ -633,7 +633,7 @@ class MasterList(List):
         masterInfo = self.data[itemId]
         masterName = masterInfo.name
         cols = self.cols
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in range(self.numCols):
             #--Value
             col = cols[colDex]
@@ -863,7 +863,7 @@ class INIList(List):
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
         cols = self.cols
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             if col == 'File':
@@ -933,7 +933,7 @@ class INIList(List):
     def OnLeftDown(self,event):
         """Handle click on icon events"""
         event.Skip()
-        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
         tweak = bosh.iniInfos[self.items[hitItem]]
         if tweak.status == 20: return # already applied
@@ -1141,7 +1141,7 @@ class ModList(List):
         fileInfo = self.data[fileName]
         fileBashTags = bosh.modInfos[fileName].getBashTags()
         cols = self.cols
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             #--Get Value
@@ -1311,7 +1311,7 @@ class ModList(List):
             self.items.sort(key=lambda x: x not in active)
         #set column sort image
         try:
-            listCtrl = self.gList
+            listCtrl = self._gList
             try: listCtrl.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
             listCtrl.SetColumnImage(self.colDict[col],
@@ -1321,7 +1321,7 @@ class ModList(List):
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Handle doubleclicking a mod in the Mods List."""
-        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         fileInfo = self.data[self.items[hitItem]]
         if not Link.Frame.docBrowser:
@@ -1376,7 +1376,7 @@ class ModList(List):
 
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
-        listCtrl = self.gList
+        listCtrl = self._gList
         (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             listCtrl.SetDnD(False)
@@ -2103,7 +2103,7 @@ class SaveList(List):
         """Start renaming saves"""
         item = self.items[event.GetIndex()]
         # Change the selection to not include the extension
-        editbox = self.gList.GetEditControl()
+        editbox = self._gList.GetEditControl()
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
@@ -2157,7 +2157,7 @@ class SaveList(List):
         fileName = GPath(self.items[itemDex])
         fileInfo = self.data[fileName]
         cols = self.cols
-        listCtrl = self.gList
+        listCtrl = self._gList
         for colDex in range(self.numCols):
             col = cols[colDex]
             if col == 'File':
@@ -2224,7 +2224,7 @@ class SaveList(List):
 
     #--Event: Left Down
     def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self.gList.HitTest((event.GetX(),event.GetY()))
+        (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
@@ -2516,7 +2516,7 @@ class InstallersList(balt.Tank):
             elif item == u'==Last==':
                 event.Veto()
                 return
-        editbox = self.gList.GetEditControl()
+        editbox = self._gList.GetEditControl()
         editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if InstallerType is bosh.InstallerMarker:
@@ -2530,7 +2530,7 @@ class InstallersList(balt.Tank):
     def OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
-            editbox = self.gList.GetEditControl()
+            editbox = self._gList.GetEditControl()
             selection = editbox.GetSelection()
             text = editbox.GetValue()
             lenWithExt = len(text)
@@ -2765,7 +2765,7 @@ class InstallersList(balt.Tank):
             self.RefreshUI()
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
-            self.gList.EnsureVisible(visibleIndex)
+            self._gList.EnsureVisible(visibleIndex)
         elif code in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
         ##Enter - Open selected Installer/
             selected = self.GetSelected()
@@ -2780,7 +2780,7 @@ class InstallersList(balt.Tank):
 
     def OnDClick(self,event):
         """Double click, open the installer."""
-        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         item = self.GetItem(hitItem)
         if isinstance(self.data[item],bosh.InstallerMarker):
@@ -2804,7 +2804,7 @@ class InstallersList(balt.Tank):
         if selected > 0:
             index = self.GetIndex(selected[0])
             if index != -1:
-                self.gList.EditLabel(index)
+                self._gList.EditLabel(index)
 
     def addMarker(self):
         index = self.GetIndex(GPath(u'===='))
@@ -2816,7 +2816,7 @@ class InstallersList(balt.Tank):
         if index != -1:
             self.ClearSelected()
             self.SelectItemAtIndex(index)
-            self.gList.EditLabel(index)
+            self._gList.EditLabel(index)
 
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
@@ -3382,7 +3382,7 @@ class ScreensList(List):
 
     def OnDClick(self,event):
         """Double click a screenshot"""
-        (hitItem,hitFlag) = self.gList.HitTest(event.GetPosition())
+        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         item = self.items[hitItem]
         bosh.screensData.dir.join(item).start()
@@ -3391,7 +3391,7 @@ class ScreensList(List):
         """Start renaming screenshots"""
         item = self.items[event.GetIndex()]
         # Change the selection to not include the extension
-        editbox = self.gList.GetEditControl()
+        editbox = self._gList.GetEditControl()
         to = len(GPath(event.GetLabel()).sbody)
         editbox.SetSelection(0,to)
 
@@ -3429,7 +3429,7 @@ class ScreensList(List):
             self.RefreshUI()
             #--Reselected the renamed items
             for file in newselected:
-                index = self.gList.FindItem(0,file.s)
+                index = self._gList.FindItem(0,file.s)
                 if index != -1:
                     self.SelectItemAtIndex(index)
             event.Veto()
@@ -3468,9 +3468,9 @@ class ScreensList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.gList.InsertStringItem(itemDex, value)
+                self._gList.InsertStringItem(itemDex, value)
             else:
-                self.gList.SetStringItem(itemDex, colDex, value)
+                self._gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
@@ -3602,9 +3602,9 @@ class BSAList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.gList.InsertStringItem(itemDex, value)
+                self._gList.InsertStringItem(itemDex, value)
             else:
-                self.gList.SetStringItem(itemDex, colDex, value)
+                self._gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #status = fileInfo.getStatus()
         # on = fileName.cext == u'.bsa'
@@ -3632,7 +3632,7 @@ class BSAList(List):
 
     #--Event: Left Down
     def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self.gList.HitTest((event.GetX(),event.GetY()))
+        (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
@@ -3870,9 +3870,9 @@ class MessageList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self.gList.InsertStringItem(itemDex, value)
+                self._gList.InsertStringItem(itemDex, value)
             else:
-                self.gList.SetStringItem(itemDex, colDex, value)
+                self._gList.SetStringItem(itemDex, colDex, value)
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
