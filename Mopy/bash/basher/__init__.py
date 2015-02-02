@@ -2806,21 +2806,24 @@ class InstallersList(balt.Tank):
             if index != -1:
                 self.gList.EditLabel(index)
 
+    def addMarker(self):
+        index = self.GetIndex(GPath(u'===='))
+        if index == -1:
+            self.data.addMarker(u'====')
+            self.data.refresh(what='OS')
+            gInstallers.RefreshUIMods()
+            index = self.GetIndex(GPath(u'===='))
+        if index != -1:
+            self.ClearSelected()
+            self.SelectItemAtIndex(index)
+            self.gList.EditLabel(index)
+
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
         ##Ctrl+Shift+N - Add a marker
         if event.CmdDown() and event.ShiftDown() and code == ord('N'):
-            index = self.GetIndex(GPath(u'===='))
-            if index == -1:
-                self.data.addMarker(u'====')
-                self.data.refresh(what='OS')
-                gInstallers.RefreshUIMods()
-                index = self.GetIndex(GPath(u'===='))
-            if index != -1:
-                self.ClearSelected()
-                self.SelectItemAtIndex(index)
-                self.gList.EditLabel(index)
+            self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda x: bosh.dirs['installers'].join(x).s,

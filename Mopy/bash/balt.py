@@ -1882,6 +1882,15 @@ class UIList(wx.Panel):
     def SelectAll(self):
         for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
 
+    def SelectLast(self):
+        self.SelectItemAtIndex(self.gList.GetItemCount() - 1)
+
+    def DeleteAllItems(self):
+        self.gList.DeleteAllItems()
+
+    def EnsureVisible(self, name): ##: TANK ONLY
+        raise AbstractError
+
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
@@ -2144,6 +2153,9 @@ class Tank(UIList):
         listCtrl = self.gList
         return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
             if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
+
+    def EnsureVisible(self, name): ##: TANK ONLY
+        self.gList.EnsureVisible(self.GetIndex(name))
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):

@@ -199,7 +199,7 @@ class People_AddNew(People_Link):
             name + _(u" already exists."), title=self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
         self.gTank.RefreshUI(details=name) ##: select it !
-        self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
+        self.gTank.EnsureVisible(name)
         self.pdata.setChanged()
 
 #------------------------------------------------------------------------------

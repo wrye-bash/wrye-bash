@@ -63,16 +63,7 @@ class Installers_AddMarker(Installers_Link):
 
     def Execute(self,event):
         """Add a Marker."""
-        index = self.gTank.GetIndex(GPath(u'===='))
-        if index == -1:
-            self.idata.addMarker(u'====')
-            self.idata.refresh(what='OS')
-            gInstallers.RefreshUIMods()
-            index = self.gTank.GetIndex(GPath(u'===='))
-        if index != -1:
-            self.gTank.ClearSelected()
-            self.gTank.SelectItemAtIndex(index)
-            self.gTank.gList.EditLabel(index)
+        self.gTank.addMarker()
 
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
@@ -200,7 +191,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh UI
         gInstallers.RefreshUIMods()
         # Select new installer
-        self.gTank.SelectItemAtIndex(self.gTank.gList.GetItemCount()-1)
+        self.gTank.SelectLast()
 
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
@@ -387,7 +378,7 @@ class Installers_Enabled(Installers_Link, BoolLink):
     """Flips installer state."""
     text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
-    dialogTitle = _('Enable Installers')
+    dialogTitle = _(u'Enable Installers')
 
     def Execute(self,event):
         """Handle selection."""
@@ -404,7 +395,7 @@ class Installers_Enabled(Installers_Link, BoolLink):
             gInstallers.ShowPanel()
             self.gTank.RefreshUI()
         else:
-            self.gTank.gList.DeleteAllItems() ##: encapsulate
+            self.gTank.DeleteAllItems() ##: TODO(ut): crude
             gInstallers.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, Installers_Link, BoolLink):
