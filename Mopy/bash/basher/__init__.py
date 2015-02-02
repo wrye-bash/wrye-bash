@@ -87,7 +87,7 @@ from ..balt import button, checkBox, staticText, \
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
-from ..balt import wxListAligns, splitterStyle
+from ..balt import splitterStyle
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons, \
@@ -338,8 +338,6 @@ class List(balt.UIList):
         self.data = {} if listData is None else listData # TODO(ut): to UIList
         balt.UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
                              dndList=dndList, dndColumns=dndColumns, **kwargs)
-        #--Columns
-        self.PopulateColumns()
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
@@ -363,40 +361,6 @@ class List(balt.UIList):
     cols = property(_getCols,_setCols)
 
     #--Items ----------------------------------------------
-    #--Populate Columns
-    def PopulateColumns(self):
-        """Create/name columns in ListCtrl."""
-        cols = self.cols
-        self.numCols = len(cols)
-        colDict = self.colDict = {}
-        listCtrl = self._gList
-        for colDex in xrange(self.numCols):
-            colKey = cols[colDex]
-            colDict[colKey] = colDex
-            colName = self.colNames.get(colKey,colKey)
-            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= listCtrl.GetColumnCount():
-                # Make a new column
-                listCtrl.InsertColumn(colDex,colName,colAlign)
-                listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
-            else:
-                # Update an existing column
-                column = listCtrl.GetColumn(colDex)
-                if column.GetText() == colName:
-                    # Don't change it, just make sure the width is correct
-                    listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
-                elif column.GetText() not in self.cols:
-                    # Column that doesn't exist anymore
-                    listCtrl.DeleteColumn(colDex)
-                    colDex -= 1
-                else:
-                    # New column
-                    listCtrl.InsertColumn(colDex,colName,colAlign)
-                    listCtrl.SetColumnWidth(colDex,self.colWidths.get(colKey,30))
-        while listCtrl.GetColumnCount() > self.numCols:
-            listCtrl.DeleteColumn(self.numCols)
-        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
-
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         """Populate ListCtrl for specified item. [ABSTRACT]"""
         raise AbstractError

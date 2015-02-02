@@ -1783,6 +1783,8 @@ class UIList(wx.Panel):
         self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
+        # Columns
+        self.PopulateColumns()
 
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
@@ -1902,6 +1904,37 @@ class UIList(wx.Panel):
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()
 
+    #--Populate Columns -------------------------------------------------------
+    def PopulateColumns(self):
+        """Create/name columns in ListCtrl."""
+        cols = self.cols # this may be updated in List_Column.Execute()
+        self.numCols = len(cols) # used in List.PopulateItem()
+        colDict = self.colDict = {} # used in setting column sort indicator
+        listCtrl = self._gList
+        for colDex in xrange(self.numCols):
+            colKey = cols[colDex]
+            colDict[colKey] = colDex
+            colName = self.colNames.get(colKey, colKey)
+            colWidth = self.colWidths.get(colKey, 30)
+            colAlign = wxListAligns[self.colAligns.get(colKey, 0)]
+            if colDex >= listCtrl.GetColumnCount(): # Make a new column
+                listCtrl.InsertColumn(colDex, colName, colAlign)
+                listCtrl.SetColumnWidth(colDex, colWidth)
+            else: # Update an existing column
+                column = listCtrl.GetColumn(colDex)
+                if column.GetText() == colName:
+                    # Don't change it, just make sure the width is correct
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+                elif column.GetText() not in self.cols:
+                    # Column that doesn't exist anymore
+                    listCtrl.DeleteColumn(colDex)
+                else: # New column
+                    listCtrl.InsertColumn(colDex, colName, colAlign)
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+        while listCtrl.GetColumnCount() > self.numCols:
+            listCtrl.DeleteColumn(self.numCols)
+        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
+
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
@@ -1953,8 +1986,6 @@ class Tank(UIList):
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
         UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
                         dndList=dndList, dndColumns=dndColumns, **kwargs)
-        #--Columns
-        self.UpdateColumns()
         #--Items
         self.sortDirty = False
         self.UpdateItems()
@@ -2003,42 +2034,6 @@ class Tank(UIList):
             del self.itemId_item[itemId]
 
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def PopulateColumns(self):
-        """Alias for UpdateColumns, for List_Columns"""
-        self.UpdateColumns()
-
-    def UpdateColumns(self):
-        """Create/name columns in ListCtrl."""
-        cols = self.cols
-        self.numCols = len(cols)
-        listCtrl = self._gList
-        for colDex in range(self.numCols):
-            colKey = cols[colDex]
-            colName = self.colNames.get(colKey,colKey)
-            colWidth = self.colWidths.get(colKey,30)
-            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= listCtrl.GetColumnCount():
-                # Make a new column
-                listCtrl.InsertColumn(colDex,colName,colAlign)
-                listCtrl.SetColumnWidth(colDex,colWidth)
-            else:
-                # Update an existing column
-                column = listCtrl.GetColumn(colDex)
-                if column.GetText() == colName:
-                    # Don't change it, just make sure the width is correct
-                    listCtrl.SetColumnWidth(colDex,colWidth)
-                elif column.GetText() not in self.cols:
-                    # Column that doesn't exist anymore
-                    listCtrl.DeleteColumn(colDex)
-                    colDex -= 1
-                else:
-                    # New column
-                    listCtrl.InsertColumn(colDex,colName,colAlign)
-                    listCtrl.SetColumnWidth(colDex,colWidth)
-        while listCtrl.GetColumnCount() > self.numCols:
-            listCtrl.DeleteColumn(self.numCols)
-        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
-
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
         if index < 0: return
