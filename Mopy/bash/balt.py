@@ -2587,3 +2587,8 @@ def clipboardDropFiles(millis, callable_):
 def getKeyState(key): return wx.GetKeyState(key)
 def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
 def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)
+
+wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
+wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
+wxArrows = wxArrowUp | wxArrowDown
+wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}

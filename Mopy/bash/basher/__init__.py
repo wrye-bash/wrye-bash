@@ -1333,11 +1333,11 @@ class ModList(List):
     def OnChar(self,event):
         """Char event: Reorder, Check/Uncheck."""
         ##Ctrl+Up and Ctrl+Down
-        if ((event.CmdDown() and event.GetKeyCode() in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN)) and
+        if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
             (settings['bash.mods.sort'] == 'Load Order')
             ):
                 orderKey = lambda x: self.items.index(x)
-                moveMod = 1 if event.GetKeyCode() in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN) else -1
+                moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
                 isReversed = (moveMod != -1)
                 for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
                     swapItem = self.items.index(thisFile) + moveMod
@@ -2757,11 +2757,11 @@ class InstallersList(balt.Tank):
         """Char event: Reorder."""
         code = event.GetKeyCode()
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
-        if event.CmdDown() and code in (wx.WXK_UP,wx.WXK_DOWN,wx.WXK_NUMPAD_UP,wx.WXK_NUMPAD_DOWN):
+        if event.CmdDown() and code in balt.wxArrows:
             if len(self.GetSelected()) < 1: return
             orderKey = lambda x: self.data.data[x].order
             maxPos = max(self.data.data[x].order for x in self.data.data)
-            if code in (wx.WXK_DOWN,wx.WXK_NUMPAD_DOWN):
+            if code in balt.wxArrowDown:
                 moveMod = 1
                 visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[-1]) + 2
             else:
@@ -2776,7 +2776,7 @@ class InstallersList(balt.Tank):
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
             self._gList.EnsureVisible(visibleIndex)
-        elif code in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+        elif code in balt.wxReturn:
         ##Enter - Open selected Installer/
             selected = self.GetSelected()
             if selected:
@@ -3505,7 +3505,7 @@ class ScreensList(List):
     def OnChar(self,event):
         """Char event: Activate selected items."""
         ##Enter
-        if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
+        if event.GetKeyCode() in balt.wxReturn:
             screensDir = bosh.screensData.dir
             for file in self.GetSelected():
                 file = screensDir.join(file)
@@ -3960,10 +3960,8 @@ class MessagePanel(SashPanel):
         super(MessagePanel, self).ShowPanel()
 
     def OnSearchChar(self,event):
-        if event.GetKeyCode() in (wx.WXK_RETURN,wx.WXK_NUMPAD_ENTER):
-            self.DoSearch(None)
-        else:
-            event.Skip()
+        if event.GetKeyCode() in balt.wxReturn: self.DoSearch(None)
+        else: event.Skip()
 
     def DoSearch(self,event):
         """Handle search button."""
