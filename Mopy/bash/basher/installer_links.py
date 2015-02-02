@@ -108,6 +108,47 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+    def _promptSolidBlockSize(self, title, value=0):
+        return self._askNumber(
+            _(u'Use what maximum size for each solid block?') + u'\n' + _(
+                u"Enter '0' to use 7z's default size."), prompt=u'MB',
+            title=title, value=value, min=0, max=102400)
+
+    def _pack(self, archive, installer, project, release=False):
+        #--Archive configuration options ##: this should be in an "archives.py"
+        blockSize = None
+        if archive.cext in bosh.noSolidExts:
+            isSolid = False
+        else:
+            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = self._askYes(_(u'Use solid compression for %s?')
+                                       % archive.s, default=False)
+                if isSolid:
+                    blockSize = self._promptSolidBlockSize(title=self.text)
+            else:
+                isSolid = True
+        with balt.Progress(_(u'Packing to Archive...'),
+                           u'\n' + u' ' * 60) as progress:
+            #--Pack
+            installer.packToArchive(project, archive, isSolid, blockSize,
+                                    SubProgress(progress, 0, 0.8),
+                                    release=release)
+            #--Add the new archive to Bash
+            if archive not in self.idata:
+                self.idata[archive] = bosh.InstallerArchive(archive)
+            #--Refresh UI
+            iArchive = self.idata[archive]
+            pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99),
+                                  True)
+            if iArchive.order == -1:
+                self.idata.moveArchives([archive], installer.order + 1)
+            #--Refresh UI
+            self.idata.refresh(what='I')
+            self.gTank.RefreshUI()
+
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
@@ -1149,39 +1190,7 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
         if archive in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?')
                                         % archive.s, default=False): return
-        #--Archive configuration options
-        blockSize = None
-        if archive.cext in bosh.noSolidExts:
-            isSolid = False
-        else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = self._askYes(
-                    _(u'Use solid compression for %s?') % archive.s,
-                    default=False)
-                if isSolid:
-                    blockSize = self._askNumber(
-                        _(u'Use what maximum size for each solid block?') +
-                        u'\n' + _(u"Enter '0' to use 7z's default size."),
-                        prompt=u'MB', title=self.text, value=0, min=0,
-                        max=102400)
-            else: isSolid = True
-        with balt.Progress(_(u'Packing to Archive...'),u'\n'+u' '*60) as progress:
-            #--Pack
-            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8))
-            #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
-            iArchive.blockSize = blockSize
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive],installer.order+1)
-            #--Refresh UI
-            self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+        self._pack(archive, installer, project, release=False)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(_InstallerLink):
@@ -1214,39 +1223,7 @@ class InstallerProject_ReleasePack(_InstallerLink):
         if archive in self.idata:
             if not self._askYes(_(u"%s already exists. Overwrite it?")
                                         % archive.s, default=False): return
-        #--Archive configuration options
-        blockSize = None
-        if archive.cext in bosh.noSolidExts:
-            isSolid = False
-        else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = self._askYes(
-                    _(u"Use solid compression for %s?") % archive.s,
-                    default=False)
-                if isSolid:
-                    blockSize = self._askNumber(
-                        _(u'Use what maximum size for each solid block?') +
-                        u'\n' + _(u"Enter '0' to use 7z's default size."),
-                        prompt=u'MB', title=self.text, value=0, min=0,
-                        max=102400)
-            else: isSolid = True
-        with balt.Progress(_(u"Packing to Archive..."),u'\n'+u' '*60) as progress:
-            #--Pack
-            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8),release=True)
-            #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
-            iArchive.blockSize = blockSize
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive],installer.order+1)
-            #--Refresh UI
-            self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+        self._pack(archive, installer, project, release=True)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(_InstallerLink):
@@ -1399,11 +1376,8 @@ class InstallerConverter_Create(_InstallerLink):
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:
-            blockSize = self._askNumber(u'mb', prompt=_(
-                u'Use what maximum size for each solid block?') + u'\n' + _(
-                u"Enter '0' to use 7z's default size."),
-                title=self.dialogTitle, value=destInstaller.blockSize or 0,
-                min=0, max=102400)
+            blockSize = self._promptSolidBlockSize(
+                title=self.dialogTitle, value=destInstaller.blockSize or 0)
         progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
         log = None
         try:
