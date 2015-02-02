@@ -220,7 +220,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
             try:
-                wizard = InstallerWizard(self, subs, pageSize, pos)
+                wizard = InstallerWizard(self.window, self.idata,
+                                         self.selected[0], self.bAuto,
+                                         self.isSingleArchive(), subs,
+                                         pageSize, pos)
             except CancelError:
                 return
             balt.ensureDisplayed(wizard)
