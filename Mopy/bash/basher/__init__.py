@@ -1036,11 +1036,6 @@ class ModList(List):
         self.esmsFirst = settings['bash.mods.esmsFirst']
         self.selectedFirst = settings['bash.mods.selectedFirst']
         #--Parent init
-        # Image List: Column sorting order indicators # TODO(ut): to UIList
-        # explorer style ^ == ascending
-        checkboxesIL = self.icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
-        self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
         List.__init__(self, parent, listData, keyPrefix, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
 
@@ -1267,14 +1262,7 @@ class ModList(List):
         if self.selectedFirst:
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
-        #set column sort image
-        try:
-            listCtrl = self._gList
-            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
-            except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            listCtrl.SetColumnImage(self.colDict[col],
-                                    self.sm_dn if reverse else self.sm_up)
-        except: pass
+        self._setColumnSortIndicator(col, oldcol, reverse)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2157,6 +2145,7 @@ class SaveList(List):
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
         (col, reverse) = self.GetSortSettings(col,reverse)
+        oldcol = settings['bash.saves.sort']
         settings['bash.saves.sort'] = col
         data = self.data
         #--Start with sort by name
@@ -2179,6 +2168,7 @@ class SaveList(List):
             raise BashError(u'Unrecognized sort key: '+col)
         #--Ascending
         if reverse: self.items.reverse()
+        self._setColumnSortIndicator(col, oldcol, reverse)
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):

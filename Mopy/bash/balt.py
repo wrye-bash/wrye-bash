@@ -1758,8 +1758,13 @@ class UIList(wx.Panel):
                               dndList=dndList, fnDndAllow=self.dndAllow,
                               fnDropFiles=self.OnDropFiles,
                               fnDropIndexes=self.OnDropIndexes)
-        if self.icons: self._gList.SetImageList(self.icons.GetImageList(),
-                                               wx.IMAGE_LIST_SMALL)
+        if self.icons:
+            # Image List: Column sorting order indicators
+            # explorer style ^ == ascending
+            checkboxesIL = self.icons.GetImageList()
+            self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
+            self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
+            self._gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__.editLabels:
             self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
             self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
@@ -1903,6 +1908,17 @@ class UIList(wx.Panel):
         for file_ in selected:
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()
+
+    def _setColumnSortIndicator(self, col, oldcol, reverse):
+        # set column sort image
+        try:
+            listCtrl = self._gList
+            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
+            except: pass # if old column no longer is active this will fail but
+                #  not a problem since it doesn't exist anyways.
+            listCtrl.SetColumnImage(self.colDict[col],
+                                    self.sm_dn if reverse else self.sm_up)
+        except: pass
 
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
