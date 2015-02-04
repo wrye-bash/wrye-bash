@@ -1724,7 +1724,7 @@ class UIList(wx.Panel):
     mainMenu = None
     itemMenu = None
     #--gList image collection
-    icons = {}
+    icons = ImageList(16,16)
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
@@ -2130,7 +2130,8 @@ class Tank(UIList):
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
-        #--Done
+        #--Done - set column sort indicator
+        self._setColumnSortIndicator(column, curColumn, reverse)
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""

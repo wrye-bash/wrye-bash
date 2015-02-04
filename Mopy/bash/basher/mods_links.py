@@ -113,9 +113,6 @@ class Mods_LoadList(ChoiceLink):
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items
 
-    def SortWindow(self):
-        self.window.PopulateItems()
-
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])

@@ -3306,7 +3306,6 @@ class ScreensList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
     _shellUI = True
     editLabels = True
     sort_keys = {'File'    : None,
