@@ -36,7 +36,6 @@ import time
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
-import ConfigParser
 import copy
 import datetime
 import os
@@ -53,6 +52,7 @@ from subprocess import Popen, PIPE
 import balt
 import bolt
 import bush
+import bass
 from bolt import BoltError, AbstractError, ArgumentError, StateError, \
     UncodedError, PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
@@ -10713,13 +10713,9 @@ def initLogFile():
                 _(u'%s Wrye Bash ini file read, Keep Log level: %d, initialized.') % (datetime.datetime.now(),inisettings['KeepLog'])
                 + u'\r\n')
 
-def initBosh(personal='',localAppData='',oblivionPath=''):
+def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
-    bashIni = None
-    if GPath(u'bash.ini').exists():
-        bashIni = ConfigParser.ConfigParser()
-        bashIni.read(u'bash.ini')
-
+    if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
     initOptions(bashIni)
     initLogFile()

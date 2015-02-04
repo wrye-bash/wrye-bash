@@ -42,7 +42,6 @@ import bolt
 from bolt import GPath
 basherImported = False
 bashFrame = None # introduced to avoid importing basher to barb.py
-bashIni = None
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -50,22 +49,12 @@ def SetHomePath(homePath):
     os.environ['HOMEPATH'] = path
 
 #------------------------------------------------------------------------------
-def GetBashIni(iniPath=u'bash.ini'):
-    global bashIni
-    if bashIni is None:
-        import ConfigParser
-        if os.path.exists(iniPath):
-            bashIni = ConfigParser.ConfigParser()
-            bashIni.read(iniPath)
-    return bashIni
-
-#------------------------------------------------------------------------------
-def SetUserPath(iniPath, uArg=None):
+def SetUserPath(iniPath=None, uArg=None):
 #if uArg is None, then get the UserPath from the ini file
     if uArg:
         SetHomePath(uArg)
-    elif os.path.exists(iniPath):
-        bashIni = GetBashIni(iniPath)
+    else:
+        bashIni = bass.GetBashIni(iniPath=iniPath, reload_=iniPath is not None)
         if bashIni and bashIni.has_option(u'General', u'sUserPath')\
                    and not bashIni.get(u'General', u'sUserPath') == u'.':
             SetHomePath(bashIni.get(u'General', u'sUserPath'))
@@ -320,9 +309,9 @@ def main():
 
     # Detect the game we're running for ---------------------------------------
     import bush
-    if opts.debug:
-        print u'Searching for game to manage:'
-    bashIni = GetBashIni()
+    if opts.debug: print u'Searching for game to manage:'
+    # set the Bash ini global in bass
+    bashIni = bass.GetBashIni()
     ret = bush.setGame(opts.gameName, opts.oblivionPath, bashIni)
     if ret is not None: # None == success
         if len(ret) != 1:
@@ -370,7 +359,7 @@ def main():
 
     #--Initialize Directories and some settings
     #  required before the rest has imported
-    SetUserPath(u'bash.ini',opts.userPath)
+    SetUserPath(uArg=opts.userPath)
 
     isUAC = False
     try:
@@ -378,8 +367,8 @@ def main():
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
         isUAC = bosh.testUAC(bush.gamePath.join(u'Data'))
-        bosh.initBosh(opts.personalPath,opts.localAppDataPath,
-                      opts.oblivionPath)
+        bosh.initBosh(opts.personalPath, opts.localAppDataPath,
+                      opts.oblivionPath, bashIni)
         bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
         # if HTML file generation was requested, just do it and quit

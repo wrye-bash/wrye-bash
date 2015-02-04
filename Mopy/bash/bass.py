@@ -24,6 +24,18 @@
 
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports."""
+import os
+import ConfigParser
 
 language = None
 AppVersion = u"306"
+bashIni = None
+
+def GetBashIni(iniPath=None, reload_=False): ##: needs work
+    iniPath = iniPath or u'bash.ini'
+    global bashIni
+    if reload_ or bashIni is None:
+        if os.path.exists(iniPath):
+            bashIni = ConfigParser.ConfigParser()
+            bashIni.read(iniPath)
+    return bashIni
