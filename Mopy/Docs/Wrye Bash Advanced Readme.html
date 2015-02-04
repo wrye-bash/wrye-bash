@@ -1720,8 +1720,17 @@
 	<tbody>
 		<tr>
 			<td><code>-g&nbsp;GAMENAME, --game=GAMENAME</code>
-			<td>Specifies the game Wrye Bash should try to manage. Use this
-				argument if more than one game Wrye Bash supports is installed.
+			<td>Bash reads the windows registry to find supported games and
+			checks the <code>-o</code> argument, the sOblivionPath ini option
+			and the position of the Mopy folder (namely checks if Mopy's parent
+			folder contains a supported game exe). If via any of the last three
+			methods a path to a supported game is found then this game will be
+			used, even if <code>-g</code> is not set. But in case those options
+			are not set or a supported game exe (NB: only exe name is checked)
+			is not found using them, Bash will prompt you to choose amongst the
+			games found in the registry (if any) except if <code>-g</code> is
+			set. <code>-g</code> takes precedence on the heuristics above which
+			may lead to surprises.
 		<tr>
 			<td><code>-d, --debug</code>
 			<td>Useful if bash is crashing on startup or if you want to
@@ -1752,8 +1761,13 @@
 			<td><code>-o&nbsp;OBLIVIONPATH,
 					--oblivionPath=OBLIVIONPATH</code>
 			<td>Specifies the game directory (the one containing the game's
-				exe). Use this argument if Bash is located outside of the game
-				directory, and the <code>--game</code> argument failed to find it.
+			exe). Use this argument if Bash is located outside of the game
+			directory and you have no ini option (or want to override it).
+			Bash reads the windows registry to find supported games
+			so this is not needed if the game entry is present in the registry.
+			If however more than one game entries are present in the registry
+			consider providing the <code>--game</code> argument to specify
+			which one to use - otherwise Bash will prompt you.
     <thead>
 		<tr>
 			<th>User Directory Arguments

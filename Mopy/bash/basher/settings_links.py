@@ -350,8 +350,7 @@ class Settings_Games(MenuLink):
 
     def __init__(self):
         super(Settings_Games, self).__init__(_(u'Game'))
-        foundGames,allGames,name = bush.detectGames() # TODO(ut): is this cached ?
-        for game in foundGames:
+        for game in bush.foundGames:
             game = game[0].upper()+game[1:]
             self.links.append(Settings_Game(game))
 

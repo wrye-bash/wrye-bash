@@ -27,29 +27,33 @@ Its use should generally be restricted to large chunks of data and/or chunks of 
 that are used by multiple objects."""
 
 # Imports ---------------------------------------------------------------------
+import collections
 import struct
 import _winreg
 
-from bolt import GPath,Path,deprint
+from bolt import GPath, Path, deprint, BoltError
 
-# Setup -----------------------------------------------------------------------
-game = None
-gamePath = None
-fullLoadOrder = {}
+# Game detection --------------------------------------------------------------
+game = None         # the python module for the current game
+gamePath = None     # absolute bolt Path to the game directory
+foundGames = {}     # 'name':Path dict used by the Settings switch game menu
+fullLoadOrder = {}  ##: some patchers cache
 
-def detectGames(workingDir=u''):
-    """Detect which supported games are installed.
-       - First, read the windows registry, checking for the install keys for the
-         games.
-       - Next, check for a valid game at "workingDir"
-       - Finally, also look one directory up from the cwd."""
-    #--First: Find all supported games via the registry
+# Module Cache
+_allGames={} # 'name'->module
+_registryGames={} # 'name'->path
+
+def _supportedGames(useCache=True):
+    """Set games supported by Bash and return their paths from the registry."""
+    if useCache and _allGames: return _registryGames.copy()
+    # rebuilt cache
+    _allGames.clear()
+    _registryGames.clear()
     import pkgutil
     import game as _game
-    foundGames = {}
-    allGames = {}
     # Detect the known games
     for importer,modname,ispkg in pkgutil.iter_modules(_game.__path__):
+        if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
@@ -58,7 +62,7 @@ def detectGames(workingDir=u''):
             continue
         submod = getattr(module,modname)
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
-        allGames[submod.fsName.lower()] = submod
+        _allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
         for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):
@@ -73,70 +77,107 @@ def detectGames(workingDir=u''):
                     if not installPath.exists(): continue
                     exePath = installPath.join(submod.exe)
                     if not exePath.exists(): continue
-                    foundGames[submod.fsName.lower()] = installPath
+                    _registryGames[submod.fsName.lower()] = installPath
         del module
     # unload some modules
     del pkgutil
     del _game
     deprint(u'Detected the following supported games via Windows Registry:')
-    for foundName in foundGames:
-        deprint(u' %s:' % foundName, foundGames[foundName])
-    #--Second: Detect what game is installed on directory up from Mopy
+    for foundName in _registryGames:
+        deprint(u' %s:' % foundName, _registryGames[foundName])
+    return _registryGames.copy()
+
+def _detectGames(cli_path=u'',bashIni=None):
+    """Detect which supported games are installed.
+
+    - If Bash supports no games raise.
+    - For each game supported by Bash check for a supported game executable
+    in the following dirs, in decreasing precedence:
+       - the path provided by the -o cli argument if any
+       - the sOblivionPath Bash Ini entry if present
+       - one directory up from Mopy
+    If a game exe is found update the path to this game and return immediately.
+    Return (foundGames, name)
+      - foundGames: a dict from supported games to their paths (the path will
+      default to the windows registry path to the game, if present)
+      - name: the game found in the first installDir or None if no game was
+      found - a 'suggestion' for a game to use (if no game is specified/found
+      via -g argument).
+    """
+    #--Find all supported games and all games in the windows registry
+    foundGames_ = _supportedGames() # sets _allGames if not set
+    if not _allGames: # if allGames is empty something goes badly wrong
+        raise BoltError(_(u'No game support modules found in Mopy/bash/game.'))
+    # check in order of precedence the -o argument, the ini and our parent dir
+    installPaths = collections.OrderedDict() #key->(path, found msg, error msg)
+    #--First: path specified via the -o command line argument
+    if cli_path != u'':
+        path = GPath(cli_path)
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths['cmd'] = (path,
+            _(u'Set game mode to %(gamename)s specified via -o argument') +
+              u': ',
+            _(u'No known game in the path specified via -o argument: ' +
+              u'%(path)s'))
+    #--Second: check if sOblivionPath is specified in the ini
+    if bashIni and bashIni.has_option(u'General', u'sOblivionPath') \
+               and not bashIni.get(u'General', u'sOblivionPath') == u'.':
+        path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths['ini'] = (path,
+            _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
+              u'in bash.ini') + u': ',
+            _(u'No known game in the path specified in sOblivionPath ini '
+              u'setting: %(path)s'))
+    #--Third: Detect what game is installed one directory up from Mopy
     path = Path.getcwd()
     if path.cs[-4:] == u'mopy':
         path = GPath(path.s[:-5])
-    installPaths = [path]
-    #--Third: Detect what game is installed at the specified "workingDir"
-    if workingDir != u'':
-        path = GPath(workingDir)
         if not path.isabs():
             path = Path.getcwd().join(path)
-        installPaths.insert(0,path)
-    deprint(u'Detecting games via relative path and the -o argument:')
-    name = None
-    for path in installPaths:
-        _name = path.tail.cs
-        if _name in allGames:
-            # We have a config for that game
-            deprint(u' %s:' % _name, path)
-            foundGames[_name] = path
-            name = _name
-            break
-        else:
-            # Folder name wasn't found, try looking by exe name
-            for file in path.list():
-                for _name in allGames:
-                    if allGames[_name].exe == file:
-                        # Must be this game
-                        deprint(u' %s:' % _name, path)
-                        name = _name
-                        foundGames[name] = path
-                        break
-                else:
-                    continue
-                break
-            else:
-                continue
-            break
-    return foundGames,allGames,name
+        installPaths['upMopy'] = (path,
+            _(u'Set game mode to %(gamename)s found in parent directory of'
+              u' Mopy') + u': ',
+            _(u'No known game in parent directory of Mopy: %(path)s'))
+    #--Detect
+    deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
+    # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
+    for path, foundMsg, errorMsg in installPaths.itervalues():
+        for name, module in _allGames.items():
+            if path.join(module.exe).exists():
+                # Must be this game
+                deprint(foundMsg % {'gamename':name}, path)
+                foundGames_[name] = path
+                return foundGames_, name
+        # no game exe in this install path - print error message
+        deprint(errorMsg % {'path': path.s})
+    # no game found in installPaths - foundGames are the ones from the registry
+    return foundGames_, None
 
-def setGame(gameName,workingDir=u''):
-    global gamePath
-    global game
-    foundGames,allGames,name = detectGames(workingDir)
+def __setGame(foundGames_, name, msg):
+    """Set bush game globals - raise if they are already set."""
+    global gamePath, game, foundGames
+    if game is not None: raise BoltError(u'Trying to reset the game')
+    foundGames = foundGames_
+    gamePath = foundGames_[name]
+    game = _allGames[name]
+    deprint(msg % {'gamename': name}, gamePath)
+    # Unload the other modules from the cache
+    for i in _allGames.keys():
+        if i != name: del _allGames[i]
+    game.init()
+
+def setGame(gameName, workingDir=u'', bashIni=None):
+    foundGames_, name = _detectGames(workingDir, bashIni)
     gameName = gameName.lower()
     #--See if the specified game is one that was found
-    if gameName in foundGames:
+    if gameName in foundGames_:
         # The game specified was found
-        gamePath = foundGames[gameName]
-        game = allGames[gameName]
-        deprint(u'Specified game "%s" was found:' % gameName, gamePath)
-        # Unload the other modules
-        for i in allGames.keys():
-            if i != gameName:
-                del allGames[i]
-        game.init()
-        return False
+        __setGame(foundGames_, gameName,
+                 u'Specified game "%(gamename)s" was found:')
+        return None
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
     else:
@@ -144,22 +185,13 @@ def setGame(gameName,workingDir=u''):
             deprint(u'No preferred game specified.')
         else:
             deprint(u'Specified game "%s" was not found.' % gameName)
-        if name in foundGames:
+        if name in foundGames_:
             # Game specified was not found, or no game was specified
-            # try the game based on Wrye Bash install location
-            gamePath = foundGames[name]
-            deprint(u' Using %s game:' % name, gamePath)
-            game = allGames[name]
-            # Unload the other modules
-            for i in allGames.keys():
-                if i != name:
-                    del allGames[i]
-            game.init()
-            return False
+            # try the game returned by detectGames()
+            __setGame(foundGames_, name, u' Using %(gamename)s game:')
+            return None
     # No match found return the list of possible games
-    # Unload all the modules
-    del allGames
-    return foundGames.keys()
+    return foundGames_.keys() # may be empty if nothing is found in registry
 
 # Default Groups --------------------------------------------------------------
 defaultGroups = (

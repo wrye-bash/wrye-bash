@@ -10250,30 +10250,6 @@ def testPermissions(path,permissions='rwcd'):
         else: raise
     return True
 
-def getOblivionPath(bashIni, path):
-    if path:
-        # Already handled by bush.setGame, but we don't want to use
-        # The sOblivionPath ini entry if a path was specified on the
-        # command line
-        pass
-    elif bashIni and bashIni.has_option(u'General', u'sOblivionPath') and not bashIni.get(u'General', u'sOblivionPath') == u'.':
-        path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
-        # Validate it:
-        oldMode = bush.game.displayName
-        ret = bush.setGame('',path.s)
-        if ret != False:
-            deprint(u'Warning: The path specified for sOblivionPath in bash.ini does not point to a valid game directory.  Continuing startup in %s mode.' % bush.game.displayName)
-        elif oldMode != bush.game.displayName:
-            deprint(u'Set game mode to %s based on sOblivionPath setting in bash.ini' % bush.game.displayName)
-    path = bush.gamePath
-    #--If path is relative, make absolute
-    if not path.isabs(): path = dirs['mopy'].join(path)
-    #--Error check
-    if not path.join(bush.game.exe).exists():
-        raise BoltError(
-            u"Install Error\nFailed to find %s in %s.\nNote that the Mopy folder should be in the same folder as %s." % (bush.game.exe, path, bush.game.exe))
-    return path
-
 def getPersonalPath(bashIni, path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
@@ -10361,21 +10337,11 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
     else:
         return oldPath, oldSrc
 
-def testUAC(oblivionPath):
+def testUAC(gameDataPath):
     print 'testing UAC'
-    #--Bash Ini
-    bashIni = None
-    if GPath(u'bash.ini').exists():
-        try:
-            bashIni = ConfigParser.ConfigParser()
-            bashIni.read(u'bash.ini')
-        except:
-            bashIni = None
-
-    dir = getOblivionPath(bashIni,oblivionPath).join(u'Data')
     tempDir = bolt.Path.tempDir(u'WryeBash_')
     tempFile = tempDir.join(u'_tempfile.tmp')
-    dest = dir.join(u'_tempfile.tmp')
+    dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open('wb') as out:
         pass
     try:
@@ -10402,7 +10368,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['images'] = dirs['bash'].join(u'images')
 
     #--Oblivion (Application) Directories
-    dirs['app'] = getOblivionPath(bashIni,oblivionPath)
+    dirs['app'] = bush.gamePath
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
