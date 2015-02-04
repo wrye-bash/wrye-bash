@@ -2228,36 +2228,47 @@ class Link(object):
     """Link is a command to be encapsulated in a graphic element (menu item,
     button, etc.).
 
+    Subclasses MUST define a text attribute (the menu label) preferably as a
+    class attribute, or if it depends on current state by overriding
+    _initData().
     Link objects are _not_ menu items. They are instantiated _once_ in
-    InitLinks() and then when the menu is popped up their AppendToMenu
-    method creates a wx MenuItem or wx submenu and appends this to the
-    currently popped up wx menu.
+    InitLinks(). Their AppendToMenu() is responsible for creating a wx MenuItem
+    or wx submenu and append this to the currently popped up wx menu.
+    Contract:
+    - Link.__init__() is called _once_, _before the Bash app is initialized_,
+    except for "local" Link subclasses used in IdList related code.
+    - Link.AppendToMenu() overrides stay confined in balt.
+    - Link.Frame is set once and for all to the (ex) basher.bashFrame
+      singleton. Use (sparingly) as the 'link' between menus and data layer.
     """
-    Frame = None    # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None    # Current popup menu
-    id = None       # Specify id as a class attribute in local Link subclasses
+    id = None      # Specify id as a class attribute in local Link subclasses
+    Frame = None   # BashFrame singleton, set once and for all in BashFrame()
+    Popup = None   # Current popup menu, set in Links.PopupMenu()
+    text = u''     # Menu label (may depend on UI state when the menu is shown)
 
-    def __init__(self, _id=None, _text=None): # parameters underscored cause
-    # their use should be avoided - prefer to specify text as a class attribute
-    # (or set in_initData()) while messing with id should be confined in balt
+    def __init__(self, _id=None, _text=None):
+        """Assign a wx Id.
+
+        Parameters underscored cause their use should be avoided - prefer to
+        specify text as a class attribute (or set in_initData()), while messing
+        with id should be confined in balt. Still used with IdList.
+        """
         super(Link, self).__init__()
         self.id = _id or self.__class__.id
-        if _text is not None: self.text = _text # the menu item label - MUST be
-        #  set in _initData() if not set here - used when appending the item
+        self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, data):
-        """Initializes the Link instance data based on UI state when the
+        """Initialize the Link instance data based on UI state when the
         menu is Popped up.
 
-        Called from :AppendToMenu - DO NOT call directly. Override and
-        _always_ call super if you need to use the initialized data in setting
-        instance attributes to be used in appending the menu. Initializes
-        additional attributes for Tank windows (to be eliminated).
+        Called from AppendToMenu - DO NOT call directly. If you need to use the
+        initialized data in setting instance attributes (such as text) override
+        and always _call super_ when overriding. ##: Needs work (Tank, docs)
         :param window: the element the menu is being popped from (usually a
-        List or Tank subclass)
-        :param data: None or the selected items when the menu is appended.
+        UIList subclass)
+        :param data: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
-        index of the right clicked item - set in Links.PopupMenu calls.
+        index of the right-clicked item - see Links.PopupMenu().
         """
         # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
@@ -2315,7 +2326,7 @@ class MenuLink(Link):
     def __init__(self,name,oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name # class attribute really (see _Link)
+        self.text = name # class attribute really (see Link)
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2404,7 +2415,7 @@ class AppendableLink(Link):
         if not self._append(window): return
         return super(AppendableLink, self).AppendToMenu(menu, window, data)
 
-# _Link subclasses ------------------------------------------------------------
+# ItemLink subclasses ---------------------------------------------------------
 class EnabledLink(ItemLink):
     """A menu item that may be disabled.
 
