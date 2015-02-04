@@ -229,34 +229,38 @@ class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
 
-    class _Edit(ItemLink):
-        def __init__(self, *args, **kwargs):
-            super(_Mod_Labels._Edit, self).__init__(*args, **kwargs)
-            self.help = self.text
-
-    class _None(ItemLink): help = _(u'Clear labels from selected mod(s)')
-
-    def __init__(self, _Edit=_Edit, _None=_None):
+    def __init__(self):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
-        self.extraItems = [_Edit(self.idList.EDIT, self.editMenuText),
-                           SeparatorLink(),
-                           _None(self.idList.NONE, _(u'None')), ]
-        self.extraActions = {self.idList.EDIT: self.DoEdit,
-                             self.idList.NONE: self.DoNone, }
+        #-- Links
+        _self = self
+        class _Edit(ItemLink):
+            text = help = _self.editMenuText
+            def Execute(self, event):
+                """Show label editing dialog."""
+                data = _Mod_LabelsData(self.window, _self)  # ListEditorData
+                with balt.ListEditor(self.window, _self.editWindowTitle, data,
+                                     **_self.extraButtons) as _self.listEditor:
+                    _self.listEditor.ShowModal()  ##: consider only refreshing
+                    # the mod list if this returns true
+                del _self.listEditor  ##: used by the buttons code - should be
+                # encapsulated
+        class _None(ItemLink):
+            text = _(u'None')
+            help = _(u'Clear labels from selected mod(s)')
+            def Execute(self, event):
+                """Handle selection of None."""
+                fileLabels = bosh.modInfos.table.getColumn(_self.column)
+                for fileName in self.selected:
+                    fileLabels[fileName] = u''
+                self.window.PopulateItems()
+        self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     @property
     def items(self):
         items = self.labels[:]
         items.sort(key=lambda a: a.lower())
         return items
-
-    def DoNone(self,event):
-        """Handle selection of None."""
-        fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.selected:
-            fileLabels[fileName] = u''
-        self.window.PopulateItems()
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -271,14 +275,6 @@ class _Mod_Labels(ChoiceLink):
             self.window.SortItems()
         self.window.RefreshUI()
 
-    def DoEdit(self,event):
-        """Show label editing dialog."""
-        data = _Mod_LabelsData(self.window, self)  # ListEditorData
-        with balt.ListEditor(self.window, self.editWindowTitle, data,
-                             **self.extraButtons) as self.listEditor:
-            self.listEditor.ShowModal() # consider only refreshing the mod list
-            # if this returns true
-        del self.listEditor # used by the buttons code - should be encapsulated
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
