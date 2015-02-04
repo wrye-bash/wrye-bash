@@ -466,9 +466,7 @@ class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
     def __init__(self):
         super(File_RevertToBackup, self).__init__()
-        self.idList = balt.IdList(6100, 0,'REVERT_BACKUP','REVERT_FIRST')
-        self.extraActions = {self.idList.REVERT_BACKUP: self.Execute,
-                            self.idList.REVERT_FIRST: self.Execute,}
+        self.idList = balt.IdList(6100, 0)
 
     def _initData(self, window, data):
         super(File_RevertToBackup, self)._initData(window, data)
@@ -478,25 +476,26 @@ class File_RevertToBackup(ChoiceLink):
         self.backup = backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
         self.firstBackup = firstBackup = self.backup +u'f'
         #--Backup Item
+        _self = self
+        self._revertToFirst = False
         class _RevertBackup(EnabledLink):
             text = _(u'Revert to Backup')
-            id = self.idList.REVERT_BACKUP
             def _enable(self): return singleSelect and backup.exists()
+            def Execute(self, event): return _self.Execute(event)
         #--First Backup item
         class _RevertFirstBackup(EnabledLink):
             text = _(u'Revert to First Backup')
-            id = self.idList.REVERT_FIRST
             def _enable(self): return singleSelect and firstBackup.exists()
+            def Execute(self, event):
+                _self._revertToFirst = True
+                return _self.Execute(event)
         self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
 
     def Execute(self,event):
         fileInfo = self.fileInfo
         fileName = fileInfo.name
         #--Backup/FirstBackup?
-        if event.GetId() == self.idList.REVERT_BACKUP:
-            backup = self.backup
-        else:
-            backup = self.firstBackup
+        backup = self.firstBackup if self._revertToFirst else self.backup
         #--Warning box
         message = _(u"Revert %s to backup dated %s?") % (fileName.s,
             formatDate(backup.mtime))

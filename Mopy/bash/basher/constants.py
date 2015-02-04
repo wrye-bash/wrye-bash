@@ -543,8 +543,8 @@ installercons.data.extend({
 
 # Gui Ids ---------------------------------------------------------------------
 #--Label Menus
-ID_GROUPS    = IdList(10100,290,'EDIT','NONE')
-ID_TAGS      = IdList(10600, 90,'AUTO','COPY')
+ID_GROUPS    = IdList(10100,290)
+ID_TAGS      = IdList(10600, 90)
 
 #--Buttons
 def imageList(template):

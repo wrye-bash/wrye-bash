@@ -80,7 +80,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
 class Mods_LoadList(ChoiceLink):
     """Add load list links."""
-    idList = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL') # was ID_LOADERS
+    idList = balt.IdList(10000, 90) # was ID_LOADERS
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
@@ -89,17 +89,23 @@ class Mods_LoadList(ChoiceLink):
             GPath(x) for x in bush.game.bethDataFiles
             if x.endswith(u'.esm')
             ]
+        #--Links
+        _self = self
+        class _All(ItemLink):
+            text = _(u'All')
+            def Execute(self, event): _self.DoAll(event)
+        class _None(ItemLink):
+            text = _(u'None')
+            def Execute(self, event): _self.DoNone(event)
+        class _Edit(ItemLink):
+            text = _(u'Edit Lists...')
+            def Execute(self, event): _self.DoEdit(event)
         class _SaveLink(EnabledLink):
-            id, text = self.idList.SAVE, _(u'Save List...') # notice self
+            text = _(u'Save List...')
             def _enable(self): return bool(bosh.modInfos.ordered)
-        self.extraItems = [ItemLink(self.idList.ALL, _(u'All')),
-                           ItemLink(self.idList.NONE, _(u'None')), _SaveLink(),
-                           ItemLink(self.idList.EDIT, _(u'Edit Lists...')),
+            def Execute(self, event): _self.DoSave(event)
+        self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
-        self.extraActions = {self.idList.ALL: self.DoAll,
-                             self.idList.NONE: self.DoNone,
-                             self.idList.SAVE: self.DoSave,
-                             self.idList.EDIT: self.DoEdit, }
 
     @property
     def items(self):

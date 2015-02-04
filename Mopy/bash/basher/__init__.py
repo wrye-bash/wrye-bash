@@ -1738,53 +1738,55 @@ class ModDetails(SashPanel):
         # (ut) Not the prettiest code in the world but consider this the limit
         # I need to de-wx the code - blame IdList - TODO(ut) ChoiceLink(Links)
         isAuto = bosh.modInfos.table.getItem(modInfo.name,'autoBashTags',True)
+        #--Links
+        _self = self
         class _TagsAuto(CheckLink):
-            id, text = ID_TAGS.AUTO, _(u'Automatic')
+            text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
+
             def _check(self): return isAuto
+
+            def Execute(self, event):
+                """Handle selection of automatic bash tags."""
+                mod_info = _self.modInfo
+                if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
+                    # Disable autoBashTags
+                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',False)
+                else:
+                    # Enable autoBashTags
+                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',True)
+                    mod_info.reloadBashTags()
+                BashFrame.modList.RefreshUI(mod_info.name)
+
         bashTagsDesc = modInfo.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
-            id, text = ID_TAGS.COPY, _(u'Copy to Description')
+            text = _(u'Copy to Description')
             def _enable(self): return not isAuto and modTags != bashTagsDesc
+            def Execute(self, event):
+                """Copy manually assigned bash tags into the mod description"""
+                modInfo = _self.modInfo
+                modInfo.setBashTagsDesc(modInfo.getBashTags())
+                BashFrame.modList.RefreshUI(modInfo.name)
+
         class _TagLink(CheckLink):
             def _initData(self, window, data):
                 super(_TagLink, self)._initData(window, data)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': modInfo.name})
             def _check(self): return self.text in modTags
-        _self = self
+
         class _TagLinks(ChoiceLink):
             idList, cls = ID_TAGS, _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
-                self.extraActions = {self.idList.AUTO: _self.DoAutoBashTags,
-                                     self.idList.COPY: _self.DoCopyBashTags, }
             @property
             def items(self): return _self.allTags
             def DoList(self, event): _self.ToggleBashTag(event)
         tagLinks = Links()
         tagLinks.append(_TagLinks())
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
-
-    def DoAutoBashTags(self,event):
-        """Handle selection of automatic bash tags."""
-        modInfo = self.modInfo
-        if bosh.modInfos.table.getItem(modInfo.name,'autoBashTags'):
-            # Disable autoBashTags
-            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',False)
-        else:
-            # Enable autoBashTags
-            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',True)
-            modInfo.reloadBashTags()
-        BashFrame.modList.RefreshUI(self.modInfo.name)
-
-    def DoCopyBashTags(self,event):
-        """Copies manually assigned bash tags into the mod description"""
-        modInfo = self.modInfo
-        modInfo.setBashTagsDesc(modInfo.getBashTags())
-        BashFrame.modList.RefreshUI(self.modInfo.name)
 
     def ToggleBashTag(self,event):
         """Toggle bash tag from menu."""

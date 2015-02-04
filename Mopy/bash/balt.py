@@ -58,11 +58,6 @@ class IdList:
     def __init__(self,baseId,size,*names):
         self.BASE = baseId
         self.MAX = baseId + size - 1
-        #--Extra
-        nextNameId = baseId + size
-        for name in names:
-            setattr(self,name,nextNameId)
-            nextNameId += 1
 
     def __iter__(self):
         """Return iterator."""
@@ -2349,9 +2344,8 @@ class ChoiceLink(Link):
     Here really to de wx classes which are using the IdList ~~hack~~ class.
     """
     # TODO(ut): turn to a Links subclass ! Rename to IdListLinks
-    idList = IdList(0, 0, 'OVERRIDE')
+    idList = IdList(0, 0)
     extraItems = [] # list<Link> that correspond to named idList attributes
-    extraActions = {} # callback actions for extraItems indexed by item.id
     cls = ItemLink
 
     def _range(self):
@@ -2372,8 +2366,6 @@ class ChoiceLink(Link):
         #--Events
         wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
                           self.DoList)
-        for id_, action in self.extraActions.items():
-            wx.EVT_MENU(Link.Frame, id_, action)
         # notice it returns None
 
     def DoList(self, event): event.Skip()

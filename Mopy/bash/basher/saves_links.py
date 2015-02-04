@@ -46,8 +46,8 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_ExportScreenshot', 'Save_Unbloat', 'Save_RepairAbomb',
            'Save_RepairFactions', 'Save_RepairHair']
 
-ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
-ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
+ID_PROFILES  = balt.IdList(10500, 90)
+ID_PROFILES2 = balt.IdList(10700, 90) #Needed for Save_Move()
 
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------

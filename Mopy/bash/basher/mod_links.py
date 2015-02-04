@@ -392,7 +392,7 @@ class Mod_Ratings(_Mod_Labels):
         self.addPrompt  = _(u'Add rating:')
         self.editMenuText   = _(u'Edit Ratings...')
         self.editWindowTitle = _(u'Ratings')
-        self.idList     = balt.IdList(10400, 90,'EDIT','NONE')
+        self.idList     = balt.IdList(10400, 90)
         super(Mod_Ratings, self).__init__()
 
 # Mod info menus --------------------------------------------------------------
