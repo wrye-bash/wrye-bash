@@ -30,6 +30,7 @@ import datetime
 import cPickle
 import StringIO
 from subprocess import Popen, PIPE
+import sys
 import bash
 import bass
 import bosh
@@ -427,7 +428,8 @@ def pack7z(dstFile, srcDir, progress=None):
     progress.setFull(1+length)
 
     #--Pack the files
-    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
+    ins = Popen(
+        command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
     #--Error checking and progress feedback
     reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
     regMatch = reCompressing.match
@@ -436,20 +438,19 @@ def pack7z(dstFile, srcDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
-        line = unicode(line,'utf8')
+        # filenames with non latin characters would raise UnicodeDecodeError
+        # idea from: http://stackoverflow.com/a/9951851/281545
+        line = unicode(line, sys.getfilesystemencoding())
         maCompressing = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
         if maCompressing:
             progress(index,dstFile.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
             index += 1
-        #end if
-    #end for
-    result = ins.close()
+    result = ins.close() # FIXME: FileIO.close() returns None
     if result:
         dstFile.temp.remove()
         raise StateError(dstFile.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-    #end if
     #--Finalize the file, and cleanup
     dstFile.untemp()
 
@@ -470,7 +471,6 @@ def unpack7z(srcFile, dstDir, progress=None):
     if progress:
         progress(0,srcFile.s+u'\n'+_(u'Extracting files...'))
         progress.setFull(1+length)
-    #end if
 
     app7z = dirs['compiled'].join(u'7z.exe').s
     command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
@@ -486,7 +486,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
-        line = unicode(line,'utf8')
+        line = unicode(line, sys.getfilesystemencoding())
         maExtracting = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
@@ -494,14 +494,10 @@ def unpack7z(srcFile, dstDir, progress=None):
             extracted = GPath(maExtracting.group(1).strip())
             if progress:
                 progress(index,srcFile.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
-            #end if
             index += 1
-        #end if
-    #end for
     result = ins.close()
     if result:
         raise StateError(srcFile.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
-    #end if
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
