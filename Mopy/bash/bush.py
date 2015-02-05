@@ -639,20 +639,6 @@ saveRecTypes = {
     61: _(u'AI Package'),
     }
 
-# Alchemical Catalogs ---------------------------------------------------------
-ingred_alchem = (
-    (1,0xCED,_(u'Alchemical Ingredients I'),250),
-    (2,0xCEC,_(u'Alchemical Ingredients II'),500),
-    (3,0xCEB,_(u'Alchemical Ingredients III'),1000),
-    (4,0xCE7,_(u'Alchemical Ingredients IV'),2000),
-    )
-effect_alchem = (
-    (1,0xCEA,_(u'Alchemical Effects I'),500),
-    (2,0xCE9,_(u'Alchemical Effects II'),1000),
-    (3,0xCE8,_(u'Alchemical Effects III'),2000),
-    (4,0xCE6,_(u'Alchemical Effects IV'),4000),
-    )
-
 # Power Exhaustion ------------------------------------------------------------
 orrery = getIdFunc(u'DLCOrrery.esp')
 id_exhaustion = {
