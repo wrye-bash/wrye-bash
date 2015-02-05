@@ -5895,6 +5895,9 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
 
 #------------------------------------------------------------------------------
 class ScreensData(DataDict):
+    ##: shadows global
+    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+
     def __init__(self):
         self.dir = dirs['app']
         self.data = {} #--data[Path] = (ext,mtime)
@@ -5902,15 +5905,14 @@ class ScreensData(DataDict):
     def refresh(self):
         """Refresh list of screenshots."""
         self.dir = dirs['app']
-        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot'))
+        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot')) ##: cache ?
         if ssBase.head:
             self.dir = self.dir.join(ssBase.head)
         newData = {}
-        reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$',re.I|re.U)
         #--Loop over files in directory
         for fileName in self.dir.list():
             filePath = self.dir.join(fileName)
-            maImageExt = reImageExt.search(fileName.s)
+            maImageExt = self.reImageExt.search(fileName.s)
             if maImageExt and filePath.isfile():
                 newData[fileName] = (maImageExt.group(1).lower(),filePath.mtime)
         changed = (self.data != newData)

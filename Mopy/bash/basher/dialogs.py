@@ -143,9 +143,9 @@ class ListBoxes(Dialog):
         event.Skip()
 
     def OnClick(self,event):
-        id = event.GetId()
-        if id not in (wx.ID_OK,wx.ID_CANCEL):
-            self.EndModal(id)
+        id_ = event.GetId()
+        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
+            self.EndModal(id_)
         else:
             event.Skip()
 

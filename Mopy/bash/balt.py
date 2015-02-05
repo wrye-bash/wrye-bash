@@ -1956,14 +1956,14 @@ class Tank(UIList):
 
     def GetId(self,item):
         """Returns id for specified item, creating id if necessary."""
-        id = self.item_itemId.get(item)
-        if id: return id
+        id_ = self.item_itemId.get(item)
+        if id_: return id_
         #--Else get a new item id.
-        id = self.nextItemId
+        id_ = self.nextItemId
         self.nextItemId += 1
-        self.item_itemId[item] = id
-        self.itemId_item[id] = item
-        return id
+        self.item_itemId[item] = id_
+        self.itemId_item[id_] = item
+        return id_
 
     def GetIndex(self,item):
         """Returns index for specified item."""

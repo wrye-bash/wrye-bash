@@ -608,15 +608,15 @@ class Installer_Open(_InstallerLink):
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
-    group = 2  # the regexp group we are interested in - 2 is id, 1 is modname
+    group = 2  # the regexp group we are interested in (2 is id, 1 is modname)
 
     def _enable(self):
         x = self.__class__.regexp.search(self.selected[0].s)
         if not bool(self.isSingleArchive() and x): return False
-        self._id = x.group(self.__class__.group)
-        return bool(self._id)
+        self.mod_url_id = x.group(self.__class__.group)
+        return bool(self.mod_url_id)
 
-    def _url(self): return self.__class__.baseUrl + self._id
+    def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self, event):
         if balt.askContinue(self.gTank, self.message, self.key, self.askTitle):
@@ -647,7 +647,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
     def _url(self):
         return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(ur'\W+|_+', self._id))
+            re.split(ur'\W+|_+', self.mod_url_id))
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA

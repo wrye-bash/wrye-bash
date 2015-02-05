@@ -306,8 +306,7 @@ class SashPanel(NotebookPanel):
         self.SetSizer(sizer)
 
     def ClosePanel(self):
-        if not hasattr(self, '_firstShow'):
-            # if the panel is never shown leave below alone
+        if not hasattr(self, '_firstShow'): # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
@@ -469,8 +468,8 @@ class List(balt.UIList):
                     u'Delete these items?  This operation cannot be '
                     u'undone.'), [message]) as dialog:
                 if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
-                id = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id)
+                id_ = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id_)
                 if checks:
                     dirJoin = self.data.dir.join
                     for i,mod in enumerate(items):
@@ -953,7 +952,9 @@ class INIList(List):
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnItemSelected(self, event): event.Skip()
+    def OnItemSelected(self, event):
+        """This is set by the IniPanel to its OnSelectTweak()."""
+        event.Skip()
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -1311,8 +1312,8 @@ class ModList(List):
             listCtrl = self.gList
             try: listCtrl.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            if reverse: listCtrl.SetColumnImage(self.colDict[col], self.sm_dn)
-            else: listCtrl.SetColumnImage(self.colDict[col], self.sm_up)
+            listCtrl.SetColumnImage(self.colDict[col],
+                                    self.sm_dn if reverse else self.sm_up)
         except: pass
 
     #--Events ---------------------------------------------
@@ -1834,7 +1835,7 @@ class INIPanel(SashPanel):
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
-        self.uiList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak) ##:
+        self.uiList.OnItemSelected = lambda s, e: self.OnSelectTweak(e)
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -4342,9 +4343,9 @@ class BashStatusBar(wx.StatusBar):
         return None
 
     def HitTest(self,mouseEvent):
-        id = mouseEvent.GetId()
+        id_ = mouseEvent.GetId()
         for i,button in enumerate(self.buttons):
-            if button.GetId() == id:
+            if button.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
                 delta = x/self.size
                 if abs(x) % self.size > self.size:
@@ -4947,53 +4948,53 @@ def InitSettings(): # this must run first !
 def InitImages():
     """Initialize color and image collections."""
     #--Colors
-    for key,value in settings['bash.colors'].iteritems():
-        colors[key] = value
-
+    for key,value in settings['bash.colors'].iteritems(): colors[key] = value
+    #--Images
+    imgDirJn = bosh.dirs['images'].join
+    def _png(name): return Image(GPath(imgDirJn(name)),PNG)
     #--Standard
-    images['save.on'] = Image(GPath(bosh.dirs['images'].join(u'save_on.png')),PNG)
-    images['save.off'] = Image(GPath(bosh.dirs['images'].join(u'save_off.png')),PNG)
+    images['save.on'] = _png(u'save_on.png')
+    images['save.off'] = _png(u'save_off.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bosh.dirs['images'].join(u'oblivion.png')),png)
-    images['help.16'] = Image(GPath(bosh.dirs['images'].join(u'help16.png')))
-    images['help.24'] = Image(GPath(bosh.dirs['images'].join(u'help24.png')))
-    images['help.32'] = Image(GPath(bosh.dirs['images'].join(u'help32.png')))
+    images['help.16'] = Image(GPath(imgDirJn(u'help16.png')))
+    images['help.24'] = Image(GPath(imgDirJn(u'help24.png')))
+    images['help.32'] = Image(GPath(imgDirJn(u'help32.png')))
     #--ColorChecks
-    images['checkbox.red.x'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
-    images['checkbox.red.x.16'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
-    images['checkbox.red.x.24'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_24.png')),PNG)
-    images['checkbox.red.x.32'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_32.png')),PNG)
-    images['checkbox.red.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),PNG))
-    images['checkbox.red.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_24.png')),PNG))
-    images['checkbox.red.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_32.png')),PNG))
+    images['checkbox.red.x'] = _png(u'checkbox_red_x.png')
+    images['checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
+    images['checkbox.red.x.24'] = _png(u'checkbox_red_x_24.png')
+    images['checkbox.red.x.32'] = _png(u'checkbox_red_x_32.png')
+    images['checkbox.red.off.16'] = _png(u'checkbox_red_off.png')
+    images['checkbox.red.off.24'] = _png(u'checkbox_red_off_24.png')
+    images['checkbox.red.off.32'] = _png(u'checkbox_red_off_32.png')
 
-    images['checkbox.green.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on.png')),PNG))
-    images['checkbox.green.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off.png')),PNG))
-    images['checkbox.green.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_24.png')),PNG))
-    images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_24.png')),PNG))
-    images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_32.png')),PNG))
-    images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_32.png')),PNG))
+    images['checkbox.green.on.16'] = _png(u'checkbox_green_on.png')
+    images['checkbox.green.off.16'] = _png(u'checkbox_green_off.png')
+    images['checkbox.green.on.24'] = _png(u'checkbox_green_on_24.png')
+    images['checkbox.green.off.24'] = _png(u'checkbox_green_off_24.png')
+    images['checkbox.green.on.32'] = _png(u'checkbox_green_on_32.png')
+    images['checkbox.green.off.32'] = _png(u'checkbox_green_off_32.png')
 
-    images['checkbox.blue.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on.png')),PNG))
-    images['checkbox.blue.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_24.png')),PNG))
-    images['checkbox.blue.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_32.png')),PNG))
-    images['checkbox.blue.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off.png')),PNG))
-    images['checkbox.blue.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_24.png')),PNG))
-    images['checkbox.blue.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_32.png')),PNG))
+    images['checkbox.blue.on.16'] = _png(u'checkbox_blue_on.png')
+    images['checkbox.blue.on.24'] = _png(u'checkbox_blue_on_24.png')
+    images['checkbox.blue.on.32'] = _png(u'checkbox_blue_on_32.png')
+    images['checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
+    images['checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
+    images['checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
     #--Bash
-    images['bash.16'] = Image(GPath(bosh.dirs['images'].join(u'bash_16.png')),PNG)
-    images['bash.24'] = Image(GPath(bosh.dirs['images'].join(u'bash_24.png')),PNG)
-    images['bash.32'] = Image(GPath(bosh.dirs['images'].join(u'bash_32.png')),PNG)
-    images['bash.16.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_16_blue.png')),PNG)
-    images['bash.24.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_24_blue.png')),PNG)
-    images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),PNG)
+    images['bash.16'] = _png(u'bash_16.png')
+    images['bash.24'] = _png(u'bash_24.png')
+    images['bash.32'] = _png(u'bash_32.png')
+    images['bash.16.blue'] = _png(u'bash_16_blue.png')
+    images['bash.24.blue'] = _png(u'bash_24_blue.png')
+    images['bash.32.blue'] = _png(u'bash_32_blue.png')
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),JPEG)
-    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),JPEG)
+    images['monkey.16'] = Image(GPath(imgDirJn(u'wryemonkey16.jpg')),JPEG)
     #--DocBrowser
-    images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),PNG)
-    images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),PNG)
-    images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),PNG)
+    images['doc.16'] = _png(u'DocBrowser16.png')
+    images['doc.24'] = _png(u'DocBrowser24.png')
+    images['doc.32'] = _png(u'DocBrowser32.png')
     #--UAC icons
     #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
     #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)

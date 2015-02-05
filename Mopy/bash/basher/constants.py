@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
 """This module contains some constants ripped out of basher.py"""
 
 from .. import bush, bosh
@@ -463,82 +464,84 @@ ICO = Image.typesDict['ico']
 BMP = Image.typesDict['bmp']
 TIF = Image.typesDict['tif']
 
+imDirJn = bosh.dirs['images'].join
+def _png(name): return Image(GPath(imDirJn(name)), PNG)
+
 #--Image lists
 karmacons = ImageList(16,16)
-imDirJn = bosh.dirs['images'].join
 karmacons.data.extend({
-    'karma+5': Image(GPath(imDirJn(u'checkbox_purple_inc.png')),PNG),
-    'karma+4': Image(GPath(imDirJn(u'checkbox_blue_inc.png')),PNG),
-    'karma+3': Image(GPath(imDirJn(u'checkbox_blue_inc.png')),PNG),
-    'karma+2': Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
-    'karma+1': Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
-    'karma+0': Image(GPath(imDirJn(u'checkbox_white_off.png')),PNG),
-    'karma-1': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
-    'karma-2': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
-    'karma-3': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
-    'karma-4': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
-    'karma-5': Image(GPath(imDirJn(u'checkbox_red_off.png')),PNG),
+    'karma+5': _png(u'checkbox_purple_inc.png'),
+    'karma+4': _png(u'checkbox_blue_inc.png'),
+    'karma+3': _png(u'checkbox_blue_inc.png'),
+    'karma+2': _png(u'checkbox_green_inc.png'),
+    'karma+1': _png(u'checkbox_green_inc.png'),
+    'karma+0': _png(u'checkbox_white_off.png'),
+    'karma-1': _png(u'checkbox_yellow_off.png'),
+    'karma-2': _png(u'checkbox_yellow_off.png'),
+    'karma-3': _png(u'checkbox_orange_off.png'),
+    'karma-4': _png(u'checkbox_orange_off.png'),
+    'karma-5': _png(u'checkbox_red_off.png'),
     }.items())
 installercons = ImageList(16,16)
 installercons.data.extend({
     #--Off/Archive
-    'off.green':  Image(GPath(imDirJn(u'checkbox_green_off.png')),PNG),
-    'off.grey':   Image(GPath(imDirJn(u'checkbox_grey_off.png')),PNG),
-    'off.red':    Image(GPath(imDirJn(u'checkbox_red_off.png')),PNG),
-    'off.white':  Image(GPath(imDirJn(u'checkbox_white_off.png')),PNG),
-    'off.orange': Image(GPath(imDirJn(u'checkbox_orange_off.png')),PNG),
-    'off.yellow': Image(GPath(imDirJn(u'checkbox_yellow_off.png')),PNG),
+    'off.green':  _png(u'checkbox_green_off.png'),
+    'off.grey':   _png(u'checkbox_grey_off.png'),
+    'off.red':    _png(u'checkbox_red_off.png'),
+    'off.white':  _png(u'checkbox_white_off.png'),
+    'off.orange': _png(u'checkbox_orange_off.png'),
+    'off.yellow': _png(u'checkbox_yellow_off.png'),
     #--Off/Archive - Wizard
-    'off.green.wiz':    Image(GPath(imDirJn(u'checkbox_green_off_wiz.png')),PNG),
+    'off.green.wiz':    _png(u'checkbox_green_off_wiz.png'),
     #grey
-    'off.red.wiz':      Image(GPath(imDirJn(u'checkbox_red_off_wiz.png')),PNG),
-    'off.white.wiz':    Image(GPath(imDirJn(u'checkbox_white_off_wiz.png')),PNG),
-    'off.orange.wiz':   Image(GPath(imDirJn(u'checkbox_orange_off_wiz.png')),PNG),
-    'off.yellow.wiz':   Image(GPath(imDirJn(u'checkbox_yellow_off_wiz.png')),PNG),
+    'off.red.wiz':      _png(u'checkbox_red_off_wiz.png'),
+    'off.white.wiz':    _png(u'checkbox_white_off_wiz.png'),
+    'off.orange.wiz':   _png(u'checkbox_orange_off_wiz.png'),
+    'off.yellow.wiz':   _png(u'checkbox_yellow_off_wiz.png'),
     #--On/Archive
-    'on.green':  Image(GPath(imDirJn(u'checkbox_green_inc.png')),PNG),
-    'on.grey':   Image(GPath(imDirJn(u'checkbox_grey_inc.png')),PNG),
-    'on.red':    Image(GPath(imDirJn(u'checkbox_red_inc.png')),PNG),
-    'on.white':  Image(GPath(imDirJn(u'checkbox_white_inc.png')),PNG),
-    'on.orange': Image(GPath(imDirJn(u'checkbox_orange_inc.png')),PNG),
-    'on.yellow': Image(GPath(imDirJn(u'checkbox_yellow_inc.png')),PNG),
+    'on.green':  _png(u'checkbox_green_inc.png'),
+    'on.grey':   _png(u'checkbox_grey_inc.png'),
+    'on.red':    _png(u'checkbox_red_inc.png'),
+    'on.white':  _png(u'checkbox_white_inc.png'),
+    'on.orange': _png(u'checkbox_orange_inc.png'),
+    'on.yellow': _png(u'checkbox_yellow_inc.png'),
     #--On/Archive - Wizard
-    'on.green.wiz':  Image(GPath(imDirJn(u'checkbox_green_inc_wiz.png')),PNG),
+    'on.green.wiz':  _png(u'checkbox_green_inc_wiz.png'),
     #grey
-    'on.red.wiz':    Image(GPath(imDirJn(u'checkbox_red_inc_wiz.png')),PNG),
-    'on.white.wiz':  Image(GPath(imDirJn(u'checkbox_white_inc_wiz.png')),PNG),
-    'on.orange.wiz': Image(GPath(imDirJn(u'checkbox_orange_inc_wiz.png')),PNG),
-    'on.yellow.wiz': Image(GPath(imDirJn(u'checkbox_yellow_inc_wiz.png')),PNG),
+    'on.red.wiz':    _png(u'checkbox_red_inc_wiz.png'),
+    'on.white.wiz':  _png(u'checkbox_white_inc_wiz.png'),
+    'on.orange.wiz': _png(u'checkbox_orange_inc_wiz.png'),
+    'on.yellow.wiz': _png(u'checkbox_yellow_inc_wiz.png'),
     #--Off/Directory
-    'off.green.dir':  Image(GPath(imDirJn(u'diamond_green_off.png')),PNG),
-    'off.grey.dir':   Image(GPath(imDirJn(u'diamond_grey_off.png')),PNG),
-    'off.red.dir':    Image(GPath(imDirJn(u'diamond_red_off.png')),PNG),
-    'off.white.dir':  Image(GPath(imDirJn(u'diamond_white_off.png')),PNG),
-    'off.orange.dir': Image(GPath(imDirJn(u'diamond_orange_off.png')),PNG),
-    'off.yellow.dir': Image(GPath(imDirJn(u'diamond_yellow_off.png')),PNG),
+    'off.green.dir':  _png(u'diamond_green_off.png'),
+    'off.grey.dir':   _png(u'diamond_grey_off.png'),
+    'off.red.dir':    _png(u'diamond_red_off.png'),
+    'off.white.dir':  _png(u'diamond_white_off.png'),
+    'off.orange.dir': _png(u'diamond_orange_off.png'),
+    'off.yellow.dir': _png(u'diamond_yellow_off.png'),
     #--Off/Directory - Wizard
-    'off.green.dir.wiz':  Image(GPath(imDirJn(u'diamond_green_off_wiz.png')),PNG),
+    'off.green.dir.wiz':  _png(u'diamond_green_off_wiz.png'),
     #grey
-    'off.red.dir.wiz':    Image(GPath(imDirJn(u'diamond_red_off_wiz.png')),PNG),
-    'off.white.dir.wiz':  Image(GPath(imDirJn(u'diamond_white_off_wiz.png')),PNG),
-    'off.orange.dir.wiz': Image(GPath(imDirJn(u'diamond_orange_off_wiz.png')),PNG),
-    'off.yellow.dir.wiz': Image(GPath(imDirJn(u'diamond_yellow_off_wiz.png')),PNG),
+    'off.red.dir.wiz':    _png(u'diamond_red_off_wiz.png'),
+    'off.white.dir.wiz':  _png(u'diamond_white_off_wiz.png'),
+    'off.orange.dir.wiz': _png(u'diamond_orange_off_wiz.png'),
+    'off.yellow.dir.wiz': _png(u'diamond_yellow_off_wiz.png'),
     #--On/Directory
-    'on.green.dir':  Image(GPath(imDirJn(u'diamond_green_inc.png')),PNG),
-    'on.grey.dir':   Image(GPath(imDirJn(u'diamond_grey_inc.png')),PNG),
-    'on.red.dir':    Image(GPath(imDirJn(u'diamond_red_inc.png')),PNG),
-    'on.white.dir':  Image(GPath(imDirJn(u'diamond_white_inc.png')),PNG),
-    'on.orange.dir': Image(GPath(imDirJn(u'diamond_orange_inc.png')),PNG),
-    'on.yellow.dir': Image(GPath(imDirJn(u'diamond_yellow_inc.png')),PNG),
+    'on.green.dir':  _png(u'diamond_green_inc.png'),
+    'on.grey.dir':   _png(u'diamond_grey_inc.png'),
+    'on.red.dir':    _png(u'diamond_red_inc.png'),
+    'on.white.dir':  _png(u'diamond_white_inc.png'),
+    'on.orange.dir': _png(u'diamond_orange_inc.png'),
+    'on.yellow.dir': _png(u'diamond_yellow_inc.png'),
     #--On/Directory - Wizard
-    'on.green.dir.wiz':  Image(GPath(imDirJn(u'diamond_green_inc_wiz.png')),PNG),
+    'on.green.dir.wiz':  _png(u'diamond_green_inc_wiz.png'),
     #grey
-    'on.red.dir.wiz':    Image(GPath(imDirJn(u'diamond_red_inc_wiz.png')),PNG),
-    'on.white.dir.wiz':  Image(GPath(imDirJn(u'diamond_white_off_wiz.png')),PNG),
-    'on.orange.dir.wiz': Image(GPath(imDirJn(u'diamond_orange_inc_wiz.png')),PNG),
-    'on.yellow.dir.wiz': Image(GPath(imDirJn(u'diamond_yellow_inc_wiz.png')),PNG),
+    'on.red.dir.wiz':    _png(u'diamond_red_inc_wiz.png'),
+    'on.white.dir.wiz':  _png(u'diamond_white_off_wiz.png'),
+    'on.orange.dir.wiz': _png(u'diamond_orange_inc_wiz.png'),
+    'on.yellow.dir.wiz': _png(u'diamond_yellow_inc_wiz.png'),
     #--Broken
-    'corrupt':   Image(GPath(imDirJn(u'red_x.png')),PNG),
+    'corrupt':   _png(u'red_x.png'),
     }.items())
 
 # Gui Ids ---------------------------------------------------------------------

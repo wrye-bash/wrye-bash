@@ -461,7 +461,6 @@ def unpack7z(srcFile, dstDir, progress=None):
 
     # count the files in the archive
     length = 0
-    reList = re.compile(u'Path = (.*?)(?:\r\n|\n)',re.U)
     command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
     ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
     ins = StringIO.StringIO(ins)

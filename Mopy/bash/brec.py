@@ -263,9 +263,9 @@ class ModReader:
             if size != 4:
                 endPos = self.ins.tell() + size
                 raise ModReadError(self.inName,recType,endPos,self.size)
-            id, = self.unpack('I',4,recType)
-            if id == 0: return u''
-            else: return self.strings.get(id,u'LOOKUP FAILED!') #--Same as Skyrim
+            id_, = self.unpack('I',4,recType)
+            if id_ == 0: return u''
+            else: return self.strings.get(id_,u'LOOKUP FAILED!') #--Same as Skyrim
         else:
             return self.readString(size,recType)
 

@@ -138,8 +138,8 @@ class INI_Delete(EnabledLink):
                      _(u'Delete these files? This operation cannot be undone.'),
                      [message]) as dialog:
             if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-            id = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id)
+            id_ = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id_)
             if checks:
                 for i,mod in enumerate(self.selected):
                     if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():

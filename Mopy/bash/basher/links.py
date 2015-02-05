@@ -76,7 +76,7 @@ def InitStatusBar():
     """Initialize status bar links."""
     dirImages = bosh.dirs['images']
     def imageList(template):
-        return [Image(dirImages.join(template % x)) for x in (16,24,32)]
+        return [Image(dirImages.join(template % i)) for i in (16,24,32)]
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
     BashStatusBar.buttons.append(obseButton)
@@ -230,13 +230,14 @@ def InitStatusBar():
                         icon = os.path.expandvars(icon)
                         if not os.path.isabs(icon):
                             # Get the correct path to the dll
-                            for dir in os.environ['PATH'].split(u';'):
-                                test = GPath(dir).join(icon)
+                            for dir_ in os.environ['PATH'].split(u';'):
+                                test = GPath(dir_).join(icon)
                                 if test.exists():
                                     icon = test
                                     break
                     except:
-                        deprint(_(u'Error finding icon for %s:') % target.s,traceback=True)
+                        deprint(_(u'Error finding icon for %s:') % target.s,
+                                traceback=True)
                         icon = u'not\\a\\path'
             icon = GPath(icon)
             # First try a custom icon
@@ -260,11 +261,9 @@ def InitStatusBar():
                     ))
     #--Final couple
     BashStatusBar.buttons.append(
-        App_Button(
-            (bosh.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d', u'--bashmon'),
-            imageList(u'bashmon%s.png'),
-            _(u"Launch BashMon"),
-            uid=u'Bashmon'))
+        App_Button((bosh.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
+                    u'--bashmon'), imageList(u'bashmon%s.png'),
+                   _(u"Launch BashMon"), uid=u'Bashmon'))
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
@@ -314,7 +313,9 @@ def InitInstallerLinks():
         InstallersList.mainMenu.append(sortMenu)
     #--Columns
     InstallersList.mainMenu.append(SeparatorLink())
-    InstallersList.mainMenu.append(List_Columns('bash.installers.cols','bash.installers.allCols',['Package']))
+    InstallersList.mainMenu.append(
+        List_Columns('bash.installers.cols', 'bash.installers.allCols',
+                     ['Package']))
     #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(balt.Tanks_Open())
@@ -346,7 +347,8 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersList.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersList.mainMenu.append(Installers_ConflictsReportShowsLower())
-    InstallersList.mainMenu.append(Installers_ConflictsReportShowBSAConflicts())
+    InstallersList.mainMenu.append(
+        Installers_ConflictsReportShowBSAConflicts())
     InstallersList.mainMenu.append(Installers_WizardOverlay())
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_SkipOBSEPlugins())
@@ -399,7 +401,8 @@ def InitInstallerLinks():
     if True: #--BAIN Conversion
         conversionsMenu = InstallerConverter_MainMenu(_(u"Conversions"))
         conversionsMenu.links.append(InstallerConverter_Create())
-        conversionsMenu.links.append(InstallerConverter_ConvertMenu(_(u"Apply")))
+        conversionsMenu.links.append(
+            InstallerConverter_ConvertMenu(_(u"Apply")))
         InstallersList.itemMenu.append(conversionsMenu)
     InstallersList.itemMenu.append(InstallerProject_Pack())
     InstallersList.itemMenu.append(InstallerArchive_Unpack())
@@ -439,7 +442,8 @@ def InitINILinks():
         sortMenu.links.append(Files_SortBy('Installer'))
         INIList.mainMenu.append(sortMenu)
     INIList.mainMenu.append(SeparatorLink())
-    INIList.mainMenu.append(List_Columns('bash.ini.cols','bash.ini.allCols',['File']))
+    INIList.mainMenu.append(
+        List_Columns('bash.ini.cols', 'bash.ini.allCols', ['File']))
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
@@ -487,7 +491,8 @@ def InitModLinks():
         ModList.mainMenu.append(versionsMenu)
     #--Columns ----------------------------------
     ModList.mainMenu.append(SeparatorLink())
-    ModList.mainMenu.append(List_Columns('bash.mods.cols','bash.mods.allCols',['File']))
+    ModList.mainMenu.append(
+        List_Columns('bash.mods.cols', 'bash.mods.allCols', ['File']))
     #--------------------------------------------
     ModList.mainMenu.append(SeparatorLink())
     #--File Menu---------------------------------
@@ -657,7 +662,8 @@ def InitSaveLinks():
         SaveList.mainMenu.append(subDirMenu)
     #--Columns --------------------------------
     SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(List_Columns('bash.saves.cols','bash.saves.allCols',['File']))
+    SaveList.mainMenu.append(
+        List_Columns('bash.saves.cols', 'bash.saves.allCols', ['File']))
     #------------------------------------------
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
@@ -771,7 +777,8 @@ def InitScreenLinks():
     #--SaveList: Column Links
     ScreensList.mainMenu.append(Files_Open())
     ScreensList.mainMenu.append(SeparatorLink())
-    ScreensList.mainMenu.append(List_Columns('bash.screens.cols','bash.screens.allCols',['File']))
+    ScreensList.mainMenu.append(
+        List_Columns('bash.screens.cols', 'bash.screens.allCols', ['File']))
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
     #--JPEG Quality
@@ -802,7 +809,9 @@ def InitMessageLinks():
     #--SaveList: Column Links
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
-    MessageList.mainMenu.append(List_Columns('bash.messages.cols','bash.messages.allCols',['Subject']))
+    MessageList.mainMenu.append(
+        List_Columns('bash.messages.cols', 'bash.messages.allCols',
+                     ['Subject']))
 
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
@@ -814,7 +823,8 @@ def InitPeopleLinks():
     PeopleList.mainMenu.append(People_AddNew())
     PeopleList.mainMenu.append(People_Import())
     PeopleList.mainMenu.append(SeparatorLink())
-    PeopleList.mainMenu.append(List_Columns('bash.people.cols','bash.people.allCols',['Name']))
+    PeopleList.mainMenu.append(
+        List_Columns('bash.people.cols', 'bash.people.allCols', ['Name']))
     #--Item links
     PeopleList.itemMenu.append(People_Karma())
     PeopleList.itemMenu.append(SeparatorLink())
