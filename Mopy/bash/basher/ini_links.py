@@ -153,7 +153,7 @@ class INI_Apply(EnabledLink):
 
     def _initData(self, window, data):
         super(INI_Apply, self)._initData(window, data)
-        self.iniPanel = self.window.GetParent().GetParent().GetParent()
+        self.iniPanel = self.window.panel
         ini = self.iniPanel.comboBox.GetValue()
         if len(data) == 1:
             tweak = data[0]
@@ -206,7 +206,7 @@ class INI_CreateNew(OneItemLink):
 
     def _initData(self, window, data):
         Link._initData(self,window,data)
-        self.parent = self.window.GetParent().GetParent().GetParent()
+        self.parent = self.window.panel
         ini = self.parent.comboBox.GetValue()
         if not len(data) == 1:
             self.help = _(u'Please choose one Ini Tweak')

@@ -1730,6 +1730,8 @@ class UIList(wx.Panel):
     def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
                  **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        # parent = left -> ThinSplitter -> Panel, consider an init argument
+        self.panel = parent.GetParent().GetParent()
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
@@ -2118,6 +2120,7 @@ class Tank(UIList):
                 if self.GetItem(index) in set(items):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
+        self.panel.SetStatusCount()
 
     #--Details view (if it exists)
     def GetDetailsItem(self):

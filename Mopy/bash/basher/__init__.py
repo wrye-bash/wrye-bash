@@ -238,7 +238,11 @@ class NotebookPanel(wx.Panel):
 
     def SetStatusCount(self):
         """Sets status bar count field."""
-        BashFrame.statusBar.SetStatusText(self._sbText(), 2)
+        if Link.Frame.notebook.currentPage is self: ##: we need to check if
+        # we are the current tab because RefreshUI path may call RefreshUI
+        # of other tabs too - this results for instance in mods count
+        # flickering when deleting a save in the saves tab - ##: hunt down
+            BashFrame.statusBar.SetStatusText(self._sbText(), 2)
 
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
@@ -851,7 +855,7 @@ class INIList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
@@ -935,7 +939,7 @@ class INIList(List):
         tweak = bosh.iniInfos[self.items[hitItem]]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
-        iniPanel = self.GetParent().GetParent().GetParent()
+        iniPanel = self.panel
         choice = iniPanel.GetChoice().tail
         if choice in bush.game.iniFiles:
             message = (_(u"Apply an ini tweak to %s?") % choice
@@ -1125,7 +1129,7 @@ class ModList(List):
                 if file in bosh.modInfos:
                     self.PopulateItem(file,selected=selected)
         modDetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
         #--Saves
         if refreshSaves and BashFrame.saveList:
             BashFrame.saveList.RefreshUI()
@@ -2144,7 +2148,7 @@ class SaveList(List):
             for file in files:
                 self.PopulateItem(file,selected=selected)
         saveDetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3128,10 +3132,9 @@ class InstallersPanel(SashTankPanel):
             BashFrame.modList.RefreshUI('ALL')
         if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
-                #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
-                BashFrame.iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
+                BashFrame.iniList.panel.RefreshUI('ALL')
             else:
-                BashFrame.iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
+                BashFrame.iniList.panel.RefreshUI('TARGETS')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
@@ -3441,7 +3444,7 @@ class ScreensList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3573,7 +3576,7 @@ class BSAList(List):
             for file in files:
                 self.PopulateItem(file,selected=selected)
         BSADetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3841,7 +3844,7 @@ class MessageList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -4140,12 +4143,16 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 deprint(_(u"Error constructing '%s' panel.") % title,traceback=True)
                 if page in settings['bash.tabs']:
                     settings['bash.tabs'][page] = False
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
         pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
+        self.currentPage = self.GetPage(self.GetSelection())
+        # callback was bound before SetSelection() selection - this triggered
+        # OnShowPage() - except if pageIndex was 0 (?!). Moved self.Bind() here
+        # as OnShowPage() is manually called in RefreshData
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
@@ -4196,8 +4203,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Call panel's ShowPanel() and set the current panel."""
         if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self._currentTab = self.GetPage(event.GetSelection())
-            self._currentTab.ShowPanel()
+            self.currentPage = self.GetPage(event.GetSelection())
+            self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
 
     def _onMouseCaptureLost(self, event):
@@ -4489,7 +4496,7 @@ class BashFrame(wx.Frame):
             message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.displayName
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
-            balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
+            balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def Restart(self,args=True,uac=False):
         if not args: return
@@ -4543,13 +4550,6 @@ class BashFrame(wx.Frame):
             if bosh.modInfos.voCurrent:
                 title += u' ['+bosh.modInfos.voCurrent+u']'
         wx.Frame.SetTitle(self,title)
-
-    def SetStatusCount(self):
-        """Sets the status bar count field. Actual work is done by current panel."""
-        if hasattr(self,'notebook'): #--Hack to get around problem with screens tab.
-            selection = self.notebook.GetSelection()
-            selection = max(min(selection,self.notebook.GetPageCount()),0)
-            self.notebook.GetPage(selection).SetStatusCount()
 
     #--Events ---------------------------------------------
     def RefreshData(self, event=None):
@@ -4610,7 +4610,7 @@ class BashFrame(wx.Frame):
             BashFrame.iniList.RefreshUI(popInis)
         #--Current notebook panel
         if gInstallers: gInstallers.frameActivated = True
-        self.notebook.GetPage(self.notebook.GetSelection()).ShowPanel()
+        self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
         ## Not applicable now with libloadorder - perhaps find a way to simulate this warning

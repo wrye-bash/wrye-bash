@@ -242,8 +242,6 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
-        #       iniList-> left    -> splitter ->INIPanel
-        if BashFrame.iniList is not None: panel = BashFrame.iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
@@ -268,7 +266,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                ) % iniFile.sbody
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                         continue
-                if BashFrame.iniList is not None: panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
+                if BashFrame.iniList is not None:
+                    BashFrame.iniList.panel.AddOrSelectIniDropDown(
+                        bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
@@ -279,8 +279,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
             BashFrame.iniList.RefreshUI('VALID')
-            panel.iniContents.RefreshUI()
-            panel.tweakContents.RefreshUI(lastApplied)
+            BashFrame.iniList.panel.iniContents.RefreshUI()
+            BashFrame.iniList.panel.tweakContents.RefreshUI(lastApplied)
         if len(manuallyApply) > 0:
             message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'
