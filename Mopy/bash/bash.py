@@ -285,13 +285,6 @@ def main():
     if opts.debug:
         dump_environment()
 
-    if opts.Psyco:
-        try:
-            import psyco
-            psyco.full()
-        except:
-            pass
-
     # ensure we are in the correct directory so relative paths will work
     # properly
     if hasattr(sys,"frozen"):

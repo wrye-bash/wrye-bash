@@ -107,11 +107,6 @@ def parse():
                         dest='debug',
                         help='Useful if bash is crashing on startup or if you want to print a lot of '
                              'information (e.g. while developing or debugging).')
-    parser.add_option('--no-psyco',
-                        action='store_false',
-                        default=True,
-                        dest='Psyco',
-                        help='Disables import of Psyco')
     parser.set_defaults(mode=0)
     parser.add_option('-C', '--Cbash-mode',
                         action='store_const',
