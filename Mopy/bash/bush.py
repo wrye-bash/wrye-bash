@@ -57,7 +57,7 @@ def _supportedGames(useCache=True):
         # Equivalent of "from game import <modname>"
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
-        except:
+        except ImportError:
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
         submod = getattr(module,modname)

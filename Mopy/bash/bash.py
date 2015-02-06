@@ -122,6 +122,7 @@ def oneInstanceChecker():
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
         os.write(lockfd, u"%d" % os.getpid())
     except OSError as e:
+        # bolt.deprint('One instance checker error: %r' % e, traceback=True)
         # lock file exists and is currently locked by another process
         msg = _(u'Only one instance of Wrye Bash can run.')
         try:
@@ -137,11 +138,11 @@ def oneInstanceChecker():
                 try:
                     import wx
                     _app = wx.App(False)
-                    dialog =wx.MessageDialog(None,msg,_(u'Wrye Bash'),wx.ID_OK)
-                    dialog.ShowModal()
-                    dialog.Destory()
+                    with wx.MessageDialog(None, msg, _(u'Wrye Bash'),
+                                          wx.ID_OK) as dialog:
+                        dialog.ShowModal()
                 except ImportError as e:
-                    print 'error: e'
+                    print 'error: %r' % e
                     import Tkinter
                     root = Tkinter.Tk()
                     frame = Tkinter.Frame(root)
@@ -159,7 +160,7 @@ def oneInstanceChecker():
                     w.pack()
                     root.mainloop()
         except Exception as e:
-            print 'error:', e
+            print 'error: %r' % e
             pass
         try:
             print msg
@@ -361,7 +362,6 @@ def main():
     #  required before the rest has imported
     SetUserPath(uArg=opts.userPath)
 
-    isUAC = False
     try:
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
@@ -388,25 +388,7 @@ def main():
         import balt
     except (bolt.PermissionError, bolt.BoltError) as e:
         _showErrorInGui(e)
-        raise e
-    except (ImportError, StandardError) as e:
-        # try really hard to be able to show the error in any GUI
-        try:
-            _showErrorInAnyGui()
-            return
-        except StandardError as y:
-            print 'An error has occurred with Wrye Bash, and could not be ' \
-                  'displayed.'
-            print 'The following is the error that occurred while trying to ' \
-                  'display the first error:'
-            try:
-                print y
-                traceback.format_exc()
-            except:
-                print '  An error occurred while trying to display the second' \
-                      ' error.'
-            print 'The following is the error that could not be displayed:'
-            raise e
+        return # not actually needed as _showErrorInGui will re-raise e
 
     if not oneInstanceChecker(): return
     atexit.register(exit)
@@ -498,35 +480,43 @@ def main():
 # Show error in gui -----------------------------------------------------------
 def _showErrorInGui(e):
     """Try really hard to be able to show the error in the GUI."""
-    try:
+    o = StringIO.StringIO()
+    traceback.print_exc(file=o)
+    msg = o.getvalue()
+    o.close()
+    title = _(u'Error! Unable to start Wrye Bash.')
+    msg = _(
+        u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s' % msg
+    try: # raise ImportError()
         if 'basher' not in globals():
             # we get here if initBosh threw
             global basher, balt, barb
             import basher
             import barb
             import balt
+        bolt.deprintOn = bool(opts.debug)
+        app = basher.BashApp(redirect=bolt.deprintOn and not hasattr(sys, 'frozen'))
+        balt.showError(None, msg, title=title)
+        app.MainLoop()
     except:
-        raise e
-    if opts.debug:
-        if hasattr(sys, 'frozen'):
-            app = basher.BashApp()
-        else:
-            app = basher.BashApp(False)
-        bolt.deprintOn = True
-    else:
-        app = basher.BashApp()
-    balt.showError(None, u'%s' % e)
-    app.MainLoop()
+        traceback.print_exc() # print current exception then
+        # try really hard to be able to show the error in any GUI
+        try:
+            _showErrorInAnyGui(title + u'\n\n' + msg)
+        except StandardError:
+            print 'An error has occurred with Wrye Bash, and could not be ' \
+                  'displayed.'
+            print 'The following is the error that occurred while trying to ' \
+                  'display the first error:'
+            try:
+                traceback.print_exc()
+            except:
+                print '  An error occurred while trying to display the' \
+                      ' second error.'
+            print 'The following is the error that could not be displayed:'
+    raise e
 
-def _showErrorInAnyGui():
-    o = StringIO.StringIO()
-    traceback.print_exc(file=o)
-    msg = o.getvalue()
-    o.close()
-    msg = (_(u'Error! Unable to start Wrye Bash.') + u'\n\n' + _(
-        u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s') %\
-          msg
-    print msg
+def _showErrorInAnyGui(msg):
     if hasattr(sys, 'frozen'):
         # WBSA we've disabled TKinter, since it's not required, use wx
         # here instead
