@@ -40,8 +40,8 @@ opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
 from bolt import GPath
-basherImported = False
-bashFrame = None # introduced to avoid importing basher to barb.py
+basher = balt = barb =  None
+
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -62,14 +62,12 @@ def SetUserPath(iniPath=None, uArg=None):
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
     # backup settings if app version has changed or on user request
-    if not basherImported:
-        import basher, barb
-        global bashFrame
-        bashFrame = basher.bashFrame
+    global basher, balt, barb
+    if not basher: import basher, balt, barb
     path = None
     quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
-    backup = barb.BackupSettings(bashFrame,path,quit,opts.backup_images)
+    backup = barb.BackupSettings(balt.Link.Frame,path,quit,opts.backup_images)
     if backup.PromptMismatch() or opts.backup:
         try:
             backup.Apply()
@@ -86,17 +84,15 @@ def cmdBackup():
 
 def cmdRestore():
     # restore settings on user request
-    if not basherImported:
-        import basher, barb
-        global bashFrame
-        bashFrame = basher.bashFrame
+    global basher, balt, barb
+    if not basher: import basher, balt, barb
     backup = None
     path = None
     quit = opts.restore and opts.quietquit
     if opts.restore: path = GPath(opts.filename)
     if opts.restore:
         try:
-            backup = barb.RestoreSettings(bashFrame,path,quit,
+            backup = barb.RestoreSettings(balt.Link.Frame, path, quit,
                                           opts.backup_images)
             backup.Apply()
         except barb.BackupCancelled:
@@ -191,7 +187,7 @@ def exit():
             except:
                 pass
 
-    if basherImported:
+    if basher:
         from basher import appRestart
         from basher import uacRestart
         if appRestart:
@@ -408,16 +404,13 @@ def main():
     else:
         app = basher.BashApp()
 
-    if not _rightWxVersion(balt) or not _rightPythonVersion(balt): return
+    if not _rightWxVersion() or not _rightPythonVersion(): return
 
     # process backup/restore options
     # quit if either is true, but only after calling both
     quit = cmdBackup()
     quit = cmdRestore() or quit
     if quit: return
-
-    global basherImported
-    basherImported = True
 
     basher.isUAC = isUAC
     if isUAC:
@@ -473,8 +466,7 @@ def main():
             basher.uacRestart = True
             return
 
-    global bashFrame
-    bashFrame = app.Init() # basher.bashFrame is set here !
+    app.Init() # Link.Frame is set here !
     app.MainLoop()
 
 # Show error in gui -----------------------------------------------------------
@@ -487,10 +479,10 @@ def _showErrorInGui(e):
     title = _(u'Error! Unable to start Wrye Bash.')
     msg = _(
         u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s' % msg
-    try: # raise ImportError()
-        if 'basher' not in globals():
+    try: # raise ImportError("TEST _showErrorInAnyGui")
+        global basher, balt, barb
+        if not basher:
             # we get here if initBosh threw
-            global basher, balt, barb
             import basher
             import barb
             import balt
@@ -656,7 +648,7 @@ def _tinkerSelectGame(ret, msgtext):
     return retCode.get()
 
 # Version checks --------------------------------------------------------------
-def _rightWxVersion(balt_):
+def _rightWxVersion():
     run = True
     import wx
 
@@ -664,7 +656,7 @@ def _rightWxVersion(balt_):
     if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
         # Can't use translatable strings, because they'd most likely end up
         # being in unicode!
-        run = balt_.askYes(None,
+        run = balt.askYes(None,
                           'Warning: you appear to be using a non-unicode '
                           'version of wxPython (%s).  This will cause '
                           'problems!  It is highly recommended you use a '
@@ -673,7 +665,7 @@ def _rightWxVersion(balt_):
                           'Warning: Non-Unicode wxPython detected', )
     return run
 
-def _rightPythonVersion(balt_):
+def _rightPythonVersion():
     run = True
     sysVersion = (
         sys.version_info[0], sys.version_info[1], sys.version_info[2])
@@ -683,14 +675,14 @@ def _rightPythonVersion(balt_):
         # apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
         if sysVersion[:2] == (2, 5):
-            run = balt_.askYes(None, _(
+            run = balt.askYes(None, _(
                 u"Warning: You are using a python version prior to 2.6 and "
                 u"there may be some instances that failures will occur.  "
                 u"Updating to Python 2.7x is recommended but not imperative. "
                 u" Do you still want to run Wrye Bash right now?"),
                               _(u"Warning OLD Python version detected"))
         else:
-            run = balt_.askYes(None, _(
+            run = balt.askYes(None, _(
                 u"Warning: You are using a Python version prior to 2.5x "
                 u"which is totally out of date and ancient and Bash will "
                 u"likely not like it and may totally refuse to work.  Please "

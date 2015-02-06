@@ -37,7 +37,8 @@ import bush
 from . import images_list
 from bosh import startupinfo, dirs
 from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint
-from balt import askSave, askYes, askOpen, askWarning, showError, showWarning, showInfo
+from balt import askSave, askYes, askOpen, askWarning, showError, \
+    showWarning, showInfo, Link
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
@@ -351,8 +352,8 @@ class RestoreSettings(BaseBackupSettings):
 
         # tell the user the restore is compete and warn about restart
         self.WarnRestart()
-        if bash.bashFrame: # should always exist
-            bash.bashFrame.Destroy()
+        if Link.Frame: # should always exist
+            Link.Frame.Destroy()
 
     def PromptFile(self):
         #prompt for backup filename
@@ -409,7 +410,7 @@ class RestoreSettings(BaseBackupSettings):
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
-        bash.bashFrame.Restart()
+        Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
 def pack7z(dstFile, srcDir, progress=None):
