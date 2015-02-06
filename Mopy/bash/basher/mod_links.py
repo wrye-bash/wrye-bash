@@ -22,6 +22,9 @@
 #
 # =============================================================================
 
+"""Menu items for the _item_ menu of the mods tab - their window attribute
+points to BashFrame.modList singleton."""
+
 import StringIO
 import copy
 import os
@@ -63,8 +66,6 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
            'Mod_SetVersion']
-
-modList = None
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -215,8 +216,8 @@ class _Mod_LabelsData(balt.ListEditorData):
 
     def setTo(self, items):
         """Set the bosh.settings[self.setKey] list to the items given - do
-        not update modList for removals (i.e. if a group/rating is removed
-        there may be mods that are still assigned to it)!
+        not update mod List for removals (i.e. if a group/rating is removed
+        there may be mods still assigned to it or rated) - it's a feature.
         """
         items.sort(key=lambda a: a.lower())
         if self.data == items: return False
@@ -228,34 +229,38 @@ class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
 
-    class _Edit(ItemLink):
-        def __init__(self, *args, **kwargs):
-            super(_Mod_Labels._Edit, self).__init__(*args, **kwargs)
-            self.help = self.text
-
-    class _None(ItemLink): help = _(u'Clear labels from selected mod(s)')
-
-    def __init__(self, _Edit=_Edit, _None=_None):
+    def __init__(self):
         super(_Mod_Labels, self).__init__()
         self.labels = bosh.settings[self.setKey]
-        self.extraItems = [_Edit(self.idList.EDIT, self.editMenuText),
-                           SeparatorLink(),
-                           _None(self.idList.NONE, _(u'None')), ]
-        self.extraActions = {self.idList.EDIT: self.DoEdit,
-                             self.idList.NONE: self.DoNone, }
+        #-- Links
+        _self = self
+        class _Edit(ItemLink):
+            text = help = _self.editMenuText
+            def Execute(self, event):
+                """Show label editing dialog."""
+                data = _Mod_LabelsData(self.window, _self)  # ListEditorData
+                with balt.ListEditor(self.window, _self.editWindowTitle, data,
+                                     **_self.extraButtons) as _self.listEditor:
+                    _self.listEditor.ShowModal()  ##: consider only refreshing
+                    # the mod list if this returns true
+                del _self.listEditor  ##: used by the buttons code - should be
+                # encapsulated
+        class _None(ItemLink):
+            text = _(u'None')
+            help = _(u'Clear labels from selected mod(s)')
+            def Execute(self, event):
+                """Handle selection of None."""
+                fileLabels = bosh.modInfos.table.getColumn(_self.column)
+                for fileName in self.selected:
+                    fileLabels[fileName] = u''
+                self.window.PopulateItems()
+        self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     @property
     def items(self):
         items = self.labels[:]
         items.sort(key=lambda a: a.lower())
         return items
-
-    def DoNone(self,event):
-        """Handle selection of None."""
-        fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.selected:
-            fileLabels[fileName] = u''
-        self.window.PopulateItems()
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -267,17 +272,9 @@ class _Mod_Labels(ChoiceLink):
         #  when mods list is sorted by group - DoNone above works (reselects
         #  correct mods) - probably call PopulateItems() here too
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            modList.SortItems()
+            self.window.SortItems()
         self.window.RefreshUI()
 
-    def DoEdit(self,event):
-        """Show label editing dialog."""
-        data = _Mod_LabelsData(self.window, self)  # ListEditorData
-        with balt.ListEditor(self.window, self.editWindowTitle, data,
-                             **self.extraButtons) as self.listEditor:
-            self.listEditor.ShowModal() # consider only refreshing the mod list
-            # if this returns true
-        del self.listEditor # used by the buttons code - should be encapsulated
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -395,7 +392,7 @@ class Mod_Ratings(_Mod_Labels):
         self.addPrompt  = _(u'Add rating:')
         self.editMenuText   = _(u'Edit Ratings...')
         self.editWindowTitle = _(u'Ratings')
-        self.idList     = balt.IdList(10400, 90,'EDIT','NONE')
+        self.idList     = balt.IdList(10400, 90)
         super(Mod_Ratings, self).__init__()
 
 # Mod info menus --------------------------------------------------------------

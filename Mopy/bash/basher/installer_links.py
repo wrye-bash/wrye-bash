@@ -22,11 +22,14 @@
 #
 # =============================================================================
 
+"""Menu items for the __item__ menu of the installer tab. Check before using
+BashFrame.iniList - can be None (ini panel not shown)."""
+
 import StringIO
 import copy
 import re
 import webbrowser
-from . import settingDefaults, Resources, Installers_Link
+from . import settingDefaults, Resources, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
@@ -54,8 +57,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'Installer_Delete',
            'Installer_Subs_SelectAll', 'Installer_Subs_DeselectAll',
            'Installer_Subs_ToggleSelection', 'Installer_Subs_ListSubPackages',
            'Installer_OpenNexus']
- # TODO(ut): globals - iniList should be non None (ini panel not shown)
-iniList = None
+
 gInstallers = None
 
 #------------------------------------------------------------------------------
@@ -240,8 +242,6 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
-        #       iniList-> left    -> splitter ->INIPanel
-        if iniList is not None: panel = iniList.GetParent().GetParent().GetParent()
         for iniFile in ret.IniEdits:
             outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
@@ -249,7 +249,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     out.write(line+u'\n')
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if iniList is not None: iniList.RefreshUI()
+            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
@@ -266,7 +266,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                ) % iniFile.sbody
                     if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
                         continue
-                if iniList is not None: panel.AddOrSelectIniDropDown(bosh.dirs['mods'].join(iniFile))
+                if BashFrame.iniList is not None:
+                    BashFrame.iniList.panel.AddOrSelectIniDropDown(
+                        bosh.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
@@ -275,10 +277,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 # this installer
                 manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None and iniList is not None:
-            iniList.RefreshUI('VALID')
-            panel.iniContents.RefreshUI()
-            panel.tweakContents.RefreshUI(lastApplied)
+        if lastApplied is not None and BashFrame.iniList is not None:
+            BashFrame.iniList.RefreshUI('VALID')
+            BashFrame.iniList.panel.iniContents.RefreshUI()
+            BashFrame.iniList.panel.tweakContents.RefreshUI(lastApplied)
         if len(manuallyApply) > 0:
             message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'
@@ -606,15 +608,15 @@ class Installer_Open(_InstallerLink):
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
-    group = 2  # the regexp group we are interested in - 2 is id, 1 is modname
+    group = 2  # the regexp group we are interested in (2 is id, 1 is modname)
 
     def _enable(self):
         x = self.__class__.regexp.search(self.selected[0].s)
         if not bool(self.isSingleArchive() and x): return False
-        self._id = x.group(self.__class__.group)
-        return bool(self._id)
+        self.mod_url_id = x.group(self.__class__.group)
+        return bool(self.mod_url_id)
 
-    def _url(self): return self.__class__.baseUrl + self._id
+    def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self, event):
         if balt.askContinue(self.gTank, self.message, self.key, self.askTitle):
@@ -645,7 +647,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
     def _url(self):
         return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(ur'\W+|_+', self._id))
+            re.split(ur'\W+|_+', self.mod_url_id))
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA

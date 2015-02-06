@@ -58,11 +58,6 @@ class IdList:
     def __init__(self,baseId,size,*names):
         self.BASE = baseId
         self.MAX = baseId + size - 1
-        #--Extra
-        nextNameId = baseId + size
-        for name in names:
-            setattr(self,name,nextNameId)
-            nextNameId += 1
 
     def __iter__(self):
         """Return iterator."""
@@ -1735,6 +1730,8 @@ class UIList(wx.Panel):
     def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
                  **kwargs):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        # parent = left -> ThinSplitter -> Panel, consider an init argument
+        self.panel = parent.GetParent().GetParent()
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
@@ -1961,14 +1958,14 @@ class Tank(UIList):
 
     def GetId(self,item):
         """Returns id for specified item, creating id if necessary."""
-        id = self.item_itemId.get(item)
-        if id: return id
+        id_ = self.item_itemId.get(item)
+        if id_: return id_
         #--Else get a new item id.
-        id = self.nextItemId
+        id_ = self.nextItemId
         self.nextItemId += 1
-        self.item_itemId[item] = id
-        self.itemId_item[id] = item
-        return id
+        self.item_itemId[item] = id_
+        self.itemId_item[id_] = item
+        return id_
 
     def GetIndex(self,item):
         """Returns index for specified item."""
@@ -2123,6 +2120,7 @@ class Tank(UIList):
                 if self.GetItem(index) in set(items):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
+        self.panel.SetStatusCount()
 
     #--Details view (if it exists)
     def GetDetailsItem(self):
@@ -2192,33 +2190,10 @@ class Tank(UIList):
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
-    class LinksPoint:
-        """Point in a link list. For inserting, removing, appending items."""
-        def __init__(self,_list,index):
-            self._list = _list
-            self._index = index
-        def remove(self):
-            del self._list[self._index]
-        def replace(self,item):
-            self._list[self._index] = item
-        def insert(self,item):
-            self._list.insert(self._index,item)
-            self._index += 1
-        def append(self,item):
-            self._list.insert(self._index+1,item)
-            self._index += 1
-
-    #--Access functions:
-    def getClassPoint(self,classObj):
-        """Returns index"""
-        for index,item in enumerate(self):
-            if isinstance(item,classObj):
-                return Links.LinksPoint(self,index)
-        else:
-            return None
 
     #--Popup a menu from the links
-    def PopupMenu(self,parent,eventWindow=None,*args):
+    def PopupMenu(self, parent=None, eventWindow=None, *args):
+        parent = parent or Link.Frame
         eventWindow = eventWindow or parent
         menu = wx.Menu()
         Link.Popup = menu
@@ -2233,36 +2208,46 @@ class Link(object):
     """Link is a command to be encapsulated in a graphic element (menu item,
     button, etc.).
 
+    Subclasses MUST define a text attribute (the menu label) preferably as a
+    class attribute, or if it depends on current state by overriding
+    _initData().
     Link objects are _not_ menu items. They are instantiated _once_ in
-    InitLinks() and then when the menu is popped up their AppendToMenu
-    method creates a wx MenuItem or wx submenu and appends this to the
-    currently popped up wx menu.
+    InitLinks(). Their AppendToMenu() is responsible for creating a wx MenuItem
+    or wx submenu and append this to the currently popped up wx menu.
+    Contract:
+    - Link.__init__() is called _once_, _before the Bash app is initialized_,
+    except for "local" Link subclasses used in IdList related code.
+    - Link.AppendToMenu() overrides stay confined in balt.
+    - Link.Frame is set once and for all to the (ex) basher.bashFrame
+      singleton. Use (sparingly) as the 'link' between menus and data layer.
     """
-    Frame = None    # BashFrame singleton, set once and for all in BashFrame()
-    Popup = None    # Current popup menu
-    id = None       # Specify id as a class attribute in local Link subclasses
+    Frame = None   # BashFrame singleton, set once and for all in BashFrame()
+    Popup = None   # Current popup menu, set in Links.PopupMenu()
+    text = u''     # Menu label (may depend on UI state when the menu is shown)
 
-    def __init__(self, _id=None, _text=None): # parameters underscored cause
-    # their use should be avoided - prefer to specify text as a class attribute
-    # (or set in_initData()) while messing with id should be confined in balt
+    def __init__(self, _id=None, _text=None):
+        """Assign a wx Id.
+
+        Parameters underscored cause their use should be avoided - prefer to
+        specify text as a class attribute (or set in_initData()), while messing
+        with id should be confined in balt. Still used with IdList.
+        """
         super(Link, self).__init__()
-        self.id = _id or self.__class__.id
-        if _text is not None: self.text = _text # the menu item label - MUST be
-        #  set in _initData() if not set here - used when appending the item
+        self.id = _id or wx.NewId() # register wx callbacks in AppendToMenu overrides
+        self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, data):
-        """Initializes the Link instance data based on UI state when the
+        """Initialize the Link instance data based on UI state when the
         menu is Popped up.
 
-        Called from :AppendToMenu - DO NOT call directly. Override and
-        _always_ call super if you need to use the initialized data in setting
-        instance attributes to be used in appending the menu. Initializes
-        additional attributes for Tank windows (to be eliminated).
+        Called from AppendToMenu - DO NOT call directly. If you need to use the
+        initialized data in setting instance attributes (such as text) override
+        and always _call super_ when overriding. ##: Needs work (Tank, docs)
         :param window: the element the menu is being popped from (usually a
-        List or Tank subclass)
-        :param data: None or the selected items when the menu is appended.
+        UIList subclass)
+        :param data: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
-        index of the right clicked item - set in Links.PopupMenu calls.
+        index of the right-clicked item - see Links.PopupMenu().
         """
         # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
@@ -2274,11 +2259,9 @@ class Link(object):
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
 
-        Link implementation calls _initData generates a wx Id and returns None.
+        Link implementation calls _initData and returns None.
         """
         self._initData(window, data)
-        #--Generate self.id if necessary (i.e. usually)
-        if not self.id: self.id = wx.NewId() # notice id remains the same - __init___ runs ONCE
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):
@@ -2320,7 +2303,7 @@ class MenuLink(Link):
     def __init__(self,name,oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name # class attribute really (see _Link)
+        self.text = name # class attribute really (see Link)
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2349,9 +2332,8 @@ class ChoiceLink(Link):
     Here really to de wx classes which are using the IdList ~~hack~~ class.
     """
     # TODO(ut): turn to a Links subclass ! Rename to IdListLinks
-    idList = IdList(0, 0, 'OVERRIDE')
+    idList = IdList(0, 0)
     extraItems = [] # list<Link> that correspond to named idList attributes
-    extraActions = {} # callback actions for extraItems indexed by item.id
     cls = ItemLink
 
     def _range(self):
@@ -2372,8 +2354,6 @@ class ChoiceLink(Link):
         #--Events
         wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
                           self.DoList)
-        for id_, action in self.extraActions.items():
-            wx.EVT_MENU(Link.Frame, id_, action)
         # notice it returns None
 
     def DoList(self, event): event.Skip()
@@ -2412,7 +2392,7 @@ class AppendableLink(Link):
         if not self._append(window): return
         return super(AppendableLink, self).AppendToMenu(menu, window, data)
 
-# _Link subclasses ------------------------------------------------------------
+# ItemLink subclasses ---------------------------------------------------------
 class EnabledLink(ItemLink):
     """A menu item that may be disabled.
 

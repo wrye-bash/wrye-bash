@@ -21,6 +21,10 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
+"""Menu items for the _main_ menu of the mods tab - their window attribute
+points to BashFrame.modList singleton."""
+
 from . import Resources
 from .dialogs import ListBoxes
 from .. import bosh, balt
@@ -35,8 +39,6 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockTimes',
            'Mods_ScanDirty']
-
-modList = None
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -78,7 +80,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
 class Mods_LoadList(ChoiceLink):
     """Add load list links."""
-    idList = balt.IdList(10000, 90,'SAVE','EDIT','NONE','ALL') # was ID_LOADERS
+    idList = balt.IdList(10000, 90) # was ID_LOADERS
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
@@ -87,17 +89,23 @@ class Mods_LoadList(ChoiceLink):
             GPath(x) for x in bush.game.bethDataFiles
             if x.endswith(u'.esm')
             ]
+        #--Links
+        _self = self
+        class _All(ItemLink):
+            text = _(u'All')
+            def Execute(self, event): _self.DoAll(event)
+        class _None(ItemLink):
+            text = _(u'None')
+            def Execute(self, event): _self.DoNone(event)
+        class _Edit(ItemLink):
+            text = _(u'Edit Lists...')
+            def Execute(self, event): _self.DoEdit(event)
         class _SaveLink(EnabledLink):
-            id, text = self.idList.SAVE, _(u'Save List...') # notice self
+            text = _(u'Save List...')
             def _enable(self): return bool(bosh.modInfos.ordered)
-        self.extraItems = [ItemLink(self.idList.ALL, _(u'All')),
-                           ItemLink(self.idList.NONE, _(u'None')), _SaveLink(),
-                           ItemLink(self.idList.EDIT, _(u'Edit Lists...')),
+            def Execute(self, event): _self.DoSave(event)
+        self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
-        self.extraActions = {self.idList.ALL: self.DoAll,
-                             self.idList.NONE: self.DoNone,
-                             self.idList.SAVE: self.DoSave,
-                             self.idList.EDIT: self.DoEdit, }
 
     @property
     def items(self):
@@ -111,18 +119,18 @@ class Mods_LoadList(ChoiceLink):
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
-        modList.RefreshUI()
+        self.window.RefreshUI()
 
     def DoAll(self,event):
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
             # first select the bashed patch(es) and their masters
-            for bashedPatch in [GPath(modName) for modName in modList.items if modInfos[modName].header.author in (u'BASHED PATCH',u'BASHED LISTS')]:
+            for bashedPatch in [GPath(modName) for modName in self.window.items if modInfos[modName].header.author in (u'BASHED PATCH',u'BASHED LISTS')]:
                 if not modInfos.isSelected(bashedPatch):
                     modInfos.select(bashedPatch, False)
             # then activate mods that are not tagged NoMerge or Deactivate or Filter
-            for mod in [GPath(modName) for modName in modList.items if modName not in modInfos.mergeable and u'Deactivate' not in modInfos[modName].getBashTags() and u'Filter' not in modInfos[modName].getBashTags()]:
+            for mod in [GPath(modName) for modName in self.window.items if modName not in modInfos.mergeable and u'Deactivate' not in modInfos[modName].getBashTags() and u'Filter' not in modInfos[modName].getBashTags()]:
                 if not modInfos.isSelected(mod):
                     modInfos.select(mod, False)
             # then activate as many of the remaining mods as we can
@@ -136,14 +144,14 @@ class Mods_LoadList(ChoiceLink):
             modInfos.autoGhost()
         except bosh.PluginsFullError:
             balt.showError(self.window, _(u"Mod list is full, so some mods were skipped"), _(u'Select All'))
-        modList.RefreshUI()
+        self.window.RefreshUI()
 
     def DoList(self,event):
         """Select mods in list."""
         item = self.items[event.GetId() - self.idList.BASE]
-        selectList = [GPath(modName) for modName in modList.items if GPath(modName) in self.loadListsDict[item]]
+        selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in self.loadListsDict[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
-        modList.RefreshUI()
+        self.window.RefreshUI()
         if errorMessage:
             balt.showError(self.window,errorMessage,item)
 
@@ -217,7 +225,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
-        modList.RefreshUI()
+        self.window.RefreshUI()
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         Link.Frame.SetTitle()
@@ -353,7 +361,7 @@ class Mods_LockTimes(CheckLink):
         if not lockLO: bosh.modInfos.mtimes.clear()
         bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
-        modList.RefreshUI()
+        self.window.RefreshUI()
 
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # CRUFT

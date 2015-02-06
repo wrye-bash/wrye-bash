@@ -24,7 +24,7 @@
 import os
 import subprocess
 import webbrowser
-from . import BashStatusBar
+from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
@@ -36,8 +36,6 @@ __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_Button', 'Tooldir_Button', 'App_Tes4View',
            'App_BOSS', 'App_DocBrowser', 'App_ModChecker', 'App_Settings',
            'App_Help', 'App_Restart', 'App_GenPickle']
-
-modList = None
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -474,7 +472,7 @@ class App_BOSS(App_Button):
             # And refresh to get the new times so WB will keep the order that BOSS specifies
             bosh.modInfos.refresh(doInfos=False)
             # Refresh UI, so WB is made aware of the changes to loadorder.txt
-            modList.RefreshUI('ALL')
+            BashFrame.modList.RefreshUI('ALL')
 
 #------------------------------------------------------------------------------
 class Game_Button(App_Button):

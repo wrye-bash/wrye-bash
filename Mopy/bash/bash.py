@@ -40,8 +40,8 @@ opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
 from bolt import GPath
-basherImported = False
-bashFrame = None # introduced to avoid importing basher to barb.py
+basher = balt = barb =  None
+
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
     drive,path = os.path.splitdrive(homePath)
@@ -62,14 +62,12 @@ def SetUserPath(iniPath=None, uArg=None):
 # Backup/Restore --------------------------------------------------------------
 def cmdBackup():
     # backup settings if app version has changed or on user request
-    if not basherImported:
-        import basher, barb
-        global bashFrame
-        bashFrame = basher.bashFrame
+    global basher, balt, barb
+    if not basher: import basher, balt, barb
     path = None
     quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
-    backup = barb.BackupSettings(bashFrame,path,quit,opts.backup_images)
+    backup = barb.BackupSettings(balt.Link.Frame,path,quit,opts.backup_images)
     if backup.PromptMismatch() or opts.backup:
         try:
             backup.Apply()
@@ -86,17 +84,15 @@ def cmdBackup():
 
 def cmdRestore():
     # restore settings on user request
-    if not basherImported:
-        import basher, barb
-        global bashFrame
-        bashFrame = basher.bashFrame
+    global basher, balt, barb
+    if not basher: import basher, balt, barb
     backup = None
     path = None
     quit = opts.restore and opts.quietquit
     if opts.restore: path = GPath(opts.filename)
     if opts.restore:
         try:
-            backup = barb.RestoreSettings(bashFrame,path,quit,
+            backup = barb.RestoreSettings(balt.Link.Frame, path, quit,
                                           opts.backup_images)
             backup.Apply()
         except barb.BackupCancelled:
@@ -122,6 +118,7 @@ def oneInstanceChecker():
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
         os.write(lockfd, u"%d" % os.getpid())
     except OSError as e:
+        # bolt.deprint('One instance checker error: %r' % e, traceback=True)
         # lock file exists and is currently locked by another process
         msg = _(u'Only one instance of Wrye Bash can run.')
         try:
@@ -137,11 +134,11 @@ def oneInstanceChecker():
                 try:
                     import wx
                     _app = wx.App(False)
-                    dialog =wx.MessageDialog(None,msg,_(u'Wrye Bash'),wx.ID_OK)
-                    dialog.ShowModal()
-                    dialog.Destory()
+                    with wx.MessageDialog(None, msg, _(u'Wrye Bash'),
+                                          wx.ID_OK) as dialog:
+                        dialog.ShowModal()
                 except ImportError as e:
-                    print 'error: e'
+                    print 'error: %r' % e
                     import Tkinter
                     root = Tkinter.Tk()
                     frame = Tkinter.Frame(root)
@@ -159,7 +156,7 @@ def oneInstanceChecker():
                     w.pack()
                     root.mainloop()
         except Exception as e:
-            print 'error:', e
+            print 'error: %r' % e
             pass
         try:
             print msg
@@ -190,7 +187,7 @@ def exit():
             except:
                 pass
 
-    if basherImported:
+    if basher:
         from basher import appRestart
         from basher import uacRestart
         if appRestart:
@@ -288,13 +285,6 @@ def main():
     if opts.debug:
         dump_environment()
 
-    if opts.Psyco:
-        try:
-            import psyco
-            psyco.full()
-        except:
-            pass
-
     # ensure we are in the correct directory so relative paths will work
     # properly
     if hasattr(sys,"frozen"):
@@ -361,7 +351,6 @@ def main():
     #  required before the rest has imported
     SetUserPath(uArg=opts.userPath)
 
-    isUAC = False
     try:
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
@@ -388,25 +377,7 @@ def main():
         import balt
     except (bolt.PermissionError, bolt.BoltError) as e:
         _showErrorInGui(e)
-        raise e
-    except (ImportError, StandardError) as e:
-        # try really hard to be able to show the error in any GUI
-        try:
-            _showErrorInAnyGui()
-            return
-        except StandardError as y:
-            print 'An error has occurred with Wrye Bash, and could not be ' \
-                  'displayed.'
-            print 'The following is the error that occurred while trying to ' \
-                  'display the first error:'
-            try:
-                print y
-                traceback.format_exc()
-            except:
-                print '  An error occurred while trying to display the second' \
-                      ' error.'
-            print 'The following is the error that could not be displayed:'
-            raise e
+        return # not actually needed as _showErrorInGui will re-raise e
 
     if not oneInstanceChecker(): return
     atexit.register(exit)
@@ -426,16 +397,13 @@ def main():
     else:
         app = basher.BashApp()
 
-    if not _rightWxVersion(balt) or not _rightPythonVersion(balt): return
+    if not _rightWxVersion() or not _rightPythonVersion(): return
 
     # process backup/restore options
     # quit if either is true, but only after calling both
     quit = cmdBackup()
     quit = cmdRestore() or quit
     if quit: return
-
-    global basherImported
-    basherImported = True
 
     basher.isUAC = isUAC
     if isUAC:
@@ -491,42 +459,49 @@ def main():
             basher.uacRestart = True
             return
 
-    global bashFrame
-    bashFrame = app.Init() # basher.bashFrame is set here !
+    app.Init() # Link.Frame is set here !
     app.MainLoop()
 
 # Show error in gui -----------------------------------------------------------
 def _showErrorInGui(e):
     """Try really hard to be able to show the error in the GUI."""
-    try:
-        if 'basher' not in globals():
-            # we get here if initBosh threw
-            global basher, balt, barb
-            import basher
-            import barb
-            import balt
-    except:
-        raise e
-    if opts.debug:
-        if hasattr(sys, 'frozen'):
-            app = basher.BashApp()
-        else:
-            app = basher.BashApp(False)
-        bolt.deprintOn = True
-    else:
-        app = basher.BashApp()
-    balt.showError(None, u'%s' % e)
-    app.MainLoop()
-
-def _showErrorInAnyGui():
     o = StringIO.StringIO()
     traceback.print_exc(file=o)
     msg = o.getvalue()
     o.close()
-    msg = (_(u'Error! Unable to start Wrye Bash.') + u'\n\n' + _(
-        u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s') %\
-          msg
-    print msg
+    title = _(u'Error! Unable to start Wrye Bash.')
+    msg = _(
+        u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s' % msg
+    try: # raise ImportError("TEST _showErrorInAnyGui")
+        global basher, balt, barb
+        if not basher:
+            # we get here if initBosh threw
+            import basher
+            import barb
+            import balt
+        bolt.deprintOn = bool(opts.debug)
+        app = basher.BashApp(redirect=bolt.deprintOn and not hasattr(sys, 'frozen'))
+        balt.showError(None, msg, title=title)
+        app.MainLoop()
+    except:
+        traceback.print_exc() # print current exception then
+        # try really hard to be able to show the error in any GUI
+        try:
+            _showErrorInAnyGui(title + u'\n\n' + msg)
+        except StandardError:
+            print 'An error has occurred with Wrye Bash, and could not be ' \
+                  'displayed.'
+            print 'The following is the error that occurred while trying to ' \
+                  'display the first error:'
+            try:
+                traceback.print_exc()
+            except:
+                print '  An error occurred while trying to display the' \
+                      ' second error.'
+            print 'The following is the error that could not be displayed:'
+    raise e
+
+def _showErrorInAnyGui(msg):
     if hasattr(sys, 'frozen'):
         # WBSA we've disabled TKinter, since it's not required, use wx
         # here instead
@@ -666,7 +641,7 @@ def _tinkerSelectGame(ret, msgtext):
     return retCode.get()
 
 # Version checks --------------------------------------------------------------
-def _rightWxVersion(balt_):
+def _rightWxVersion():
     run = True
     import wx
 
@@ -674,7 +649,7 @@ def _rightWxVersion(balt_):
     if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
         # Can't use translatable strings, because they'd most likely end up
         # being in unicode!
-        run = balt_.askYes(None,
+        run = balt.askYes(None,
                           'Warning: you appear to be using a non-unicode '
                           'version of wxPython (%s).  This will cause '
                           'problems!  It is highly recommended you use a '
@@ -683,7 +658,7 @@ def _rightWxVersion(balt_):
                           'Warning: Non-Unicode wxPython detected', )
     return run
 
-def _rightPythonVersion(balt_):
+def _rightPythonVersion():
     run = True
     sysVersion = (
         sys.version_info[0], sys.version_info[1], sys.version_info[2])
@@ -693,14 +668,14 @@ def _rightPythonVersion(balt_):
         # apparent reason such as in 2.5.2 and under.
         bolt.close_fds = False
         if sysVersion[:2] == (2, 5):
-            run = balt_.askYes(None, _(
+            run = balt.askYes(None, _(
                 u"Warning: You are using a python version prior to 2.6 and "
                 u"there may be some instances that failures will occur.  "
                 u"Updating to Python 2.7x is recommended but not imperative. "
                 u" Do you still want to run Wrye Bash right now?"),
                               _(u"Warning OLD Python version detected"))
         else:
-            run = balt_.askYes(None, _(
+            run = balt.askYes(None, _(
                 u"Warning: You are using a Python version prior to 2.5x "
                 u"which is totally out of date and ancient and Bash will "
                 u"likely not like it and may totally refuse to work.  Please "

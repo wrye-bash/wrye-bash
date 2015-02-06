@@ -22,11 +22,14 @@
 #
 # =============================================================================
 
+"""Menu items for the main and item menus of the saves tab - their window
+attribute points to BashFrame.saveList singleton."""
+
 import StringIO
 import re
 import shutil
 import struct
-from . import Resources
+from . import Resources, BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bosh, bolt, balt, bush
@@ -43,11 +46,8 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_ExportScreenshot', 'Save_Unbloat', 'Save_RepairAbomb',
            'Save_RepairFactions', 'Save_RepairHair']
 
-modList = None
-saveList = None
-
-ID_PROFILES  = balt.IdList(10500, 90,'EDIT','DEFAULT')
-ID_PROFILES2 = balt.IdList(10700, 90,'EDIT','DEFAULT') #Needed for Save_Move()
+ID_PROFILES  = balt.IdList(10500, 90)
+ID_PROFILES2 = balt.IdList(10700, 90) #Needed for Save_Move()
 
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------
@@ -157,8 +157,6 @@ class Saves_Profiles(ChoiceLink):
     def __init__(self):
         super(Saves_Profiles, self).__init__()
         self.idList = ID_PROFILES
-        self.extraActions = {self.idList.EDIT: self.DoEdit,
-                            self.idList.DEFAULT: self.DoDefault,}
 
     @property
     def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
@@ -168,32 +166,37 @@ class Saves_Profiles(ChoiceLink):
             return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
     cls = _CheckLink
 
+    class _Default(CheckLink):
+        text = _(u'Default')
+        help = _(u'Set profile to the default (My Games/Saves)')
+
+        def _check(self): return Saves_Profiles.local == u'Saves\\'
+
+        def Execute(self, event):
+            """Handle selection of Default save profile."""
+            arcSaves, newSaves = bosh.saveInfos.localSave, u'Saves\\'
+            bosh.saveInfos.setLocalSave(newSaves)
+            Saves_Profiles.swapPlugins(arcSaves, newSaves)
+            Saves_Profiles.swapOblivionVersion(newSaves)
+            Link.Frame.SetTitle()
+            self.window.details.SetFile(None)
+            BashFrame.modList.RefreshUI()
+            Link.Frame.RefreshData()
+
+    class _Edit(ItemLink):
+        text = _(u"Edit Profiles...")
+        help = _(u'Show save profiles editing dialog')
+
+        def Execute(self, event):
+            """Show save profiles editing dialog."""
+            data = Saves_ProfilesData(self.window)
+            balt.ListEditor.Display(self.window, _(u'Save Profiles'), data)
+
     def _initData(self, window, data):
         super(Saves_Profiles, self)._initData(window, data)
         Saves_Profiles.local = bosh.saveInfos.localSave
-        self.extraItems =[ItemLink(self.idList.EDIT, _(u"Edit Profiles...")),
-                          SeparatorLink()
-        ]
-        class _Default(CheckLink):
-            text = _(u'Default')
-            def _check(self): return Saves_Profiles.local == u'Saves\\'
-        self.extraItems += [_Default(_id=self.idList.DEFAULT)]
-
-    def DoEdit(self,event):
-        """Show profiles editing dialog."""
-        data = Saves_ProfilesData(self.window)
-        balt.ListEditor.Display(self.window, _(u'Save Profiles'), data)
-
-    def DoDefault(self,event):
-        """Handle selection of Default."""
-        arcSaves,newSaves = bosh.saveInfos.localSave,u'Saves\\'
-        bosh.saveInfos.setLocalSave(newSaves)
-        self.swapPlugins(arcSaves,newSaves)
-        self.swapOblivionVersion(newSaves)
-        Link.Frame.SetTitle()
-        self.window.details.SetFile(None)
-        modList.RefreshUI()
-        Link.Frame.RefreshData()
+        self.extraItems = [Saves_Profiles._Edit(), SeparatorLink(),
+                           Saves_Profiles._Default()]
 
     def DoList(self,event):
         """Handle selection of label."""
@@ -207,7 +210,7 @@ class Saves_Profiles(ChoiceLink):
         self.window.details.SetFile(None)
         Link.Frame.RefreshData()
         bosh.modInfos.autoGhost()
-        modList.RefreshUI()
+        BashFrame.modList.RefreshUI()
 
     @staticmethod
     def swapPlugins(arcSaves,newSaves):
@@ -236,8 +239,8 @@ class Save_LoadMasters(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        modList.PopulateItems()
-        saveList.PopulateItems()
+        BashFrame.modList.PopulateItems()
+        self.window.PopulateItems()
         self.window.details.SetFile(fileName)
         if errorMessage:
             balt.showError(self.window,errorMessage,fileName.s)
@@ -613,27 +616,24 @@ class Save_Move(ChoiceLink):
         super(Save_Move, self).__init__()
         self.idList = ID_PROFILES if copyMode else ID_PROFILES2
         self.copyMode = copyMode
-        self.extraActions = {self.idList.DEFAULT: self.DoDefault}
 
     @property
     def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    class _WasCheckLink(EnabledLink): # never checked at that
+    class _SaveProfileLink(EnabledLink):
         def _enable(self):
             return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
-    cls = _WasCheckLink
+    cls = _SaveProfileLink
 
     def _initData(self, window, data):
         super(Save_Move, self)._initData(window, data)
         Save_Move.local = bosh.saveInfos.localSave
+        _self = self
         class _Default(EnabledLink):
             text = _(u'Default')
             def _enable(self): return Save_Move.local != u'Saves\\'
-        self.extraItems = [_Default(_id=self.idList.DEFAULT)]
-
-    def DoDefault(self,event):
-        """Handle selection of Default."""
-        self.MoveFiles(_(u'Default'))
+            def Execute(self, event): _self.MoveFiles(_(u'Default'))
+        self.extraItems = [_Default()]
 
     def DoList(self,event):
         """Handle selection of label."""

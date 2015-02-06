@@ -110,16 +110,9 @@ uacRestart = False # restart Bash with Admin Rights if true
 isUAC = False      # True if the game is under UAC protection
 
 # Singletons ------------------------------------------------------------------
-statusBar = None
-modList = None
-iniList = None
 modDetails = None
-saveList = None
 saveDetails = None
-screensList = None
 gInstallers = None
-gMessageList = None
-bashFrame = None
 gPeople = None # New global - yak
 
 # Settings --------------------------------------------------------------------
@@ -244,7 +237,11 @@ class NotebookPanel(wx.Panel):
 
     def SetStatusCount(self):
         """Sets status bar count field."""
-        statusBar.SetStatusText(self._sbText(), 2)
+        if Link.Frame.notebook.currentPage is self: ##: we need to check if
+        # we are the current tab because RefreshUI path may call RefreshUI
+        # of other tabs too - this results for instance in mods count
+        # flickering when deleting a save in the saves tab - ##: hunt down
+            BashFrame.statusBar.SetStatusText(self._sbText(), 2)
 
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
@@ -312,8 +309,7 @@ class SashPanel(NotebookPanel):
         self.SetSizer(sizer)
 
     def ClosePanel(self):
-        if not hasattr(self, '_firstShow'):
-            # if the panel is never shown leave below alone
+        if not hasattr(self, '_firstShow'): # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
@@ -475,8 +471,8 @@ class List(balt.UIList):
                     u'Delete these items?  This operation cannot be '
                     u'undone.'), [message]) as dialog:
                 if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
-                id = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id)
+                id_ = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id_)
                 if checks:
                     dirJoin = self.data.dir.join
                     for i,mod in enumerate(items):
@@ -858,7 +854,7 @@ class INIList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
@@ -942,7 +938,7 @@ class INIList(List):
         tweak = bosh.iniInfos[self.items[hitItem]]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
-        iniPanel = self.GetParent().GetParent().GetParent()
+        iniPanel = self.panel
         choice = iniPanel.GetChoice().tail
         if choice in bush.game.iniFiles:
             message = (_(u"Apply an ini tweak to %s?") % choice
@@ -954,12 +950,14 @@ class INIList(List):
         dir = tweak.dir
         #--No point applying a tweak that's already applied
         file = dir.join(self.items[hitItem])
-        iniList.data.ini.applyTweakFile(file)
-        iniList.RefreshUI('VALID')
+        self.data.ini.applyTweakFile(file)
+        self.RefreshUI('VALID')
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnItemSelected(self, event): event.Skip()
+    def OnItemSelected(self, event):
+        """This is set by the IniPanel to its OnSelectTweak()."""
+        event.Skip()
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -1044,7 +1042,6 @@ class INILineCtrl(wx.ListCtrl):
         num = self.GetItemCount()
         if resetScroll:
             self.EnsureVisible(0)
-        ini = None
         try:
             with bosh.iniInfos.ini.path.open('r') as ini:
                 lines = ini.readlines()
@@ -1057,8 +1054,8 @@ class INILineCtrl(wx.ListCtrl):
                     self.DeleteItem(len(lines))
         except IOError:
             warn = True
-            if hasattr(bashFrame,'notebook'):
-                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
+            if hasattr(Link.Frame,'notebook'): ##: why all this fuss ?
+                page = Link.Frame.notebook.currentPage
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
             if warn:
@@ -1130,10 +1127,10 @@ class ModList(List):
                 if file in bosh.modInfos:
                     self.PopulateItem(file,selected=selected)
         modDetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
         #--Saves
-        if refreshSaves and saveList:
-            saveList.RefreshUI()
+        if refreshSaves and BashFrame.saveList:
+            BashFrame.saveList.RefreshUI()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -1317,8 +1314,8 @@ class ModList(List):
             listCtrl = self.gList
             try: listCtrl.ClearColumnImage(self.colDict[oldcol])
             except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            if reverse: listCtrl.SetColumnImage(self.colDict[col], self.sm_dn)
-            else: listCtrl.SetColumnImage(self.colDict[col], self.sm_up)
+            listCtrl.SetColumnImage(self.colDict[col],
+                                    self.sm_dn if reverse else self.sm_up)
         except: pass
 
     #--Events ---------------------------------------------
@@ -1684,7 +1681,7 @@ class ModDetails(SashPanel):
             self.SetFile(self.modInfo.name)
             bosh.modInfos.refresh(doInfos=False)
             bosh.modInfos.refreshInfoLists()
-            modList.RefreshUI()
+            BashFrame.modList.RefreshUI()
             return
         #--Backup
         modInfo.makeBackup()
@@ -1699,7 +1696,7 @@ class ModDetails(SashPanel):
                                      'bash.rename.isBadFileName')
                 ):
                 return
-            modList.items[modList.items.index(oldName)] = newName
+            BashFrame.modList.items[BashFrame.modList.items.index(oldName)] = newName
             settings.getChanged('bash.mods.renames')[oldName] = newName
             bosh.modInfos.rename(oldName,newName)
             fileName = newName
@@ -1726,7 +1723,7 @@ class ModDetails(SashPanel):
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
         bosh.modInfos.plugins.refresh()
-        modList.RefreshUI()
+        BashFrame.modList.RefreshUI()
 
     def DoCancel(self,event):
         if self.modInfo:
@@ -1744,53 +1741,55 @@ class ModDetails(SashPanel):
         # (ut) Not the prettiest code in the world but consider this the limit
         # I need to de-wx the code - blame IdList - TODO(ut) ChoiceLink(Links)
         isAuto = bosh.modInfos.table.getItem(modInfo.name,'autoBashTags',True)
+        #--Links
+        _self = self
         class _TagsAuto(CheckLink):
-            id, text = ID_TAGS.AUTO, _(u'Automatic')
+            text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
+
             def _check(self): return isAuto
+
+            def Execute(self, event):
+                """Handle selection of automatic bash tags."""
+                mod_info = _self.modInfo
+                if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
+                    # Disable autoBashTags
+                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',False)
+                else:
+                    # Enable autoBashTags
+                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',True)
+                    mod_info.reloadBashTags()
+                BashFrame.modList.RefreshUI(mod_info.name)
+
         bashTagsDesc = modInfo.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
-            id, text = ID_TAGS.COPY, _(u'Copy to Description')
+            text = _(u'Copy to Description')
             def _enable(self): return not isAuto and modTags != bashTagsDesc
+            def Execute(self, event):
+                """Copy manually assigned bash tags into the mod description"""
+                modInfo = _self.modInfo
+                modInfo.setBashTagsDesc(modInfo.getBashTags())
+                BashFrame.modList.RefreshUI(modInfo.name)
+
         class _TagLink(CheckLink):
             def _initData(self, window, data):
                 super(_TagLink, self)._initData(window, data)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': modInfo.name})
             def _check(self): return self.text in modTags
-        _self = self
+
         class _TagLinks(ChoiceLink):
             idList, cls = ID_TAGS, _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
-                self.extraActions = {self.idList.AUTO: _self.DoAutoBashTags,
-                                     self.idList.COPY: _self.DoCopyBashTags, }
             @property
             def items(self): return _self.allTags
             def DoList(self, event): _self.ToggleBashTag(event)
         tagLinks = Links()
         tagLinks.append(_TagLinks())
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
-
-    def DoAutoBashTags(self,event):
-        """Handle selection of automatic bash tags."""
-        modInfo = self.modInfo
-        if bosh.modInfos.table.getItem(modInfo.name,'autoBashTags'):
-            # Disable autoBashTags
-            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',False)
-        else:
-            # Enable autoBashTags
-            bosh.modInfos.table.setItem(modInfo.name,'autoBashTags',True)
-            modInfo.reloadBashTags()
-        modList.RefreshUI(self.modInfo.name)
-
-    def DoCopyBashTags(self,event):
-        """Copies manually assigned bash tags into the mod description"""
-        modInfo = self.modInfo
-        modInfo.setBashTagsDesc(modInfo.getBashTags())
-        modList.RefreshUI(self.modInfo.name)
 
     def ToggleBashTag(self,event):
         """Toggle bash tag from menu."""
@@ -1800,7 +1799,7 @@ class ModDetails(SashPanel):
         tag = self.allTags[event.GetId()-ID_TAGS.BASE]
         modTags = self.modTags ^ {tag}
         self.modInfo.setBashTags(modTags)
-        modList.RefreshUI(self.modInfo.name)
+        BashFrame.modList.RefreshUI(self.modInfo.name)
 
 #------------------------------------------------------------------------------
 class INIPanel(SashPanel):
@@ -1831,17 +1830,14 @@ class INIPanel(SashPanel):
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
-        global iniList
-        from . import installer_links, ini_links
         self.listData = bosh.iniInfos
-        installer_links.iniList = ini_links.iniList = iniList = \
-            INIList(left, self.listData, self.keyPrefix)
-        self.uiList = iniList
+        BashFrame.iniList = INIList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.iniList
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
-        iniList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelectTweak)
+        self.uiList.OnItemSelected = lambda s, e: self.OnSelectTweak(e)
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -1853,7 +1849,7 @@ class INIPanel(SashPanel):
                 (self.iniContents,1,wx.EXPAND),
                 )
         lSizer = hSizer(
-            (iniList,2,wx.EXPAND),
+            (self.uiList,2,wx.EXPAND),
             )
         rSizer = hSizer(
             (vSizer(
@@ -1870,7 +1866,7 @@ class INIPanel(SashPanel):
         self.RefreshUI()
 
     def OnSelectTweak(self, event):
-        tweakFile = iniList.items[event.GetIndex()]
+        tweakFile = self.uiList.items[event.GetIndex()]
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshUI(tweakFile)
         event.Skip()
@@ -1916,7 +1912,7 @@ class INIPanel(SashPanel):
             self.comboBox.SetItems(self.SortChoices())
             self.comboBox.SetSelection(self.choice)
         if what == 'ALL' or what == 'TWEAKS':
-            iniList.RefreshUI()
+            self.uiList.RefreshUI()
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
@@ -1938,10 +1934,10 @@ class INIPanel(SashPanel):
             bosh.iniInfos.setBaseIni(ini)
             self.button.Enable(True)
         selected = None
-        # iniList can be None below cause we are called in init before iniList
-        # is assigned - possibly to avoid a refresh ?
-        if iniList is not None:
-            selected = iniList.GetSelected()
+        ##: iniList can be None below cause we are called in IniList.__init__()
+        ##: before iniList is assigned - possibly to avoid a refresh ?
+        if BashFrame.iniList is not None:
+            selected = BashFrame.iniList.GetSelected()
             if len(selected) > 0:
                 selected = selected[0]
             else:
@@ -1951,7 +1947,7 @@ class INIPanel(SashPanel):
             self.trackedInfo.track(self.GetChoice())
         self.iniContents.RefreshUI(refresh)
         self.tweakContents.RefreshUI(selected)
-        if iniList is not None: iniList.RefreshUI()
+        if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
 
     def OnRemove(self,event):
         """Called when the 'Remove' button is pressed."""
@@ -1961,7 +1957,7 @@ class INIPanel(SashPanel):
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni()
-        iniList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnEdit(self,event):
         """Called when the 'Edit' button is pressed."""
@@ -2008,7 +2004,7 @@ class INIPanel(SashPanel):
         return keys
 
     def _sbText(self):
-        stati = iniList.CountTweakStatus()
+        stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def AddOrSelectIniDropDown(self, path):
@@ -2022,7 +2018,7 @@ class INIPanel(SashPanel):
         self.choice = self.sortKeys.index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
-        iniList.RefreshUI()
+        self.uiList.RefreshUI()
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -2046,7 +2042,7 @@ class INIPanel(SashPanel):
                 self.comboBox.SetSelection(self.choice)
                 if refresh:
                     self.SetBaseIni(path)
-                    iniList.RefreshUI()
+                    self.uiList.RefreshUI()
                 return
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
@@ -2063,19 +2059,14 @@ class ModPanel(SashPanel):
     def __init__(self,parent):
         SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=150)
         left,right = self.left, self.right
-        global modList
-        from . import mods_links, mod_links, saves_links, app_buttons, \
-            patcher_dialog
         self.listData = bosh.modInfos
-        saves_links.modList = mods_links.modList = mod_links.modList = \
-        app_buttons.modList = patcher_dialog.modList = modList = \
-            ModList(left, self.listData, self.keyPrefix)
-        self.uiList = modList
+        BashFrame.modList = ModList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.modList
         self.modDetails = ModDetails(right)
-        modList.details = self.modDetails
+        self.uiList.details = self.modDetails
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((modList,2,wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -2155,7 +2146,7 @@ class SaveList(List):
             for file in files:
                 self.PopulateItem(file,selected=selected)
         saveDetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -2429,7 +2420,7 @@ class SaveDetails(SashPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
-            saveList.items[saveList.items.index(oldName)] = newName
+            BashFrame.saveList.items[BashFrame.saveList.items.index(oldName)] = newName
             bosh.saveInfos.rename(oldName,newName)
         #--Change masters?
         if changeMasters:
@@ -2443,9 +2434,8 @@ class SaveDetails(SashPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-            saveList.RefreshUI()
-        else:
-            saveList.RefreshUI(saveInfo.name)
+            BashFrame.saveList.RefreshUI()
+        else: BashFrame.saveList.RefreshUI(saveInfo.name)
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -2458,20 +2448,18 @@ class SavePanel(SashPanel):
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
-            raise Exception(u'Wrye Bash cannot read save games for %s.' % bush.game.displayName)
+            raise BoltError(u'Wrye Bash cannot read save games for %s.' %
+                bush.game.displayName)
         SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=200)
         left,right = self.left, self.right
-        global saveList
-        from . import saves_links
         self.listData = bosh.saveInfos
-        saves_links.saveList = saveList = SaveList(left, self.listData,
-                                                   self.keyPrefix)
-        self.uiList = saveList
+        BashFrame.saveList = SaveList(left, self.listData, self.keyPrefix)
+        self.uiList = BashFrame.saveList
         self.saveDetails = SaveDetails(right)
-        saveList.details = self.saveDetails
+        BashFrame.saveList.details = self.saveDetails
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((saveList,2,wx.EXPAND)))
+        left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.saveDetails.SetFile()
@@ -2630,11 +2618,11 @@ class InstallersList(balt.Tank):
             #--Refresh UI
             if refreshNeeded:
                 self.data.refresh(what='I')
-                modList.RefreshUI()
-                if iniList is not None:
+                BashFrame.modList.RefreshUI()
+                if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
                     # and never initialized
-                    iniList.RefreshUI()
+                    BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
 
@@ -2741,9 +2729,9 @@ class InstallersList(balt.Tank):
                     return
             except (CancelError,SkipError):
                 pass
-            modList.RefreshUI()
-            if iniList:
-                iniList.RefreshUI()
+            BashFrame.modList.RefreshUI()
+            if BashFrame.iniList:
+                BashFrame.iniList.RefreshUI()
         gInstallers.frameActivated = True
         gInstallers.ShowPanel()
 
@@ -3139,13 +3127,12 @@ class InstallersPanel(SashTankPanel):
         self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            modList.RefreshUI('ALL')
-        if iniList is not None:
+            BashFrame.modList.RefreshUI('ALL')
+        if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
-                #iniList->INIPanel.splitter.left->INIPanel.splitter->INIPanel
-                iniList.GetParent().GetParent().GetParent().RefreshUI('ALL')
+                BashFrame.iniList.panel.RefreshUI('ALL')
             else:
-                iniList.GetParent().GetParent().GetParent().RefreshUI('TARGETS')
+                BashFrame.iniList.panel.RefreshUI('TARGETS')
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
@@ -3342,7 +3329,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gEspmList.HitTest((x,y))
         self.gEspmList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self,bashFrame,selected)
+        InstallersPanel.espmMenu.PopupMenu(self, selected)
 
     def SubsSelectionMenu(self,event):
         """Handle right click in espm list."""
@@ -3351,7 +3338,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gSubList.HitTest((x,y))
         self.gSubList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self,bashFrame,selected)
+        InstallersPanel.subsMenu.PopupMenu(self, selected)
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
@@ -3455,7 +3442,7 @@ class ScreensList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3535,26 +3522,24 @@ class ScreensPanel(SashPanel):
         SashPanel.__init__(self, parent, minimumSize=100)
         left,right = self.left,self.right
         #--Contents
-        global screensList
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        screensList = ScreensList(left, self.listData, self.keyPrefix)
-        screensList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
-        self.uiList = screensList
+        self.uiList = ScreensList(left, self.listData, self.keyPrefix)
+        self.uiList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((screensList.picture,1,wx.GROW)))
-        left.SetSizer(hSizer((screensList,1,wx.GROW)))
+        right.SetSizer(hSizer((self.uiList.picture,1,wx.GROW)))
+        left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
-        screensList.picture.SetBackground(colors['screens.bkgd.image'])
+        self.uiList.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbText(self):
-        return _(u'Screens:') + u' %d' % (len(screensList.data.data),)
+        return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
-            screensList.RefreshUI()
+            self.uiList.RefreshUI()
             #self.Refresh()
         super(ScreensPanel, self).ShowPanel()
 
@@ -3589,7 +3574,7 @@ class BSAList(List):
             for file in files:
                 self.PopulateItem(file,selected=selected)
         BSADetails.SetFile(detail)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3857,7 +3842,7 @@ class MessageList(List):
         else: #--Iterable
             for file in files:
                 self.PopulateItem(file,selected=selected)
-        bashFrame.SetStatusCount()
+        self.panel.SetStatusCount()
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -3921,13 +3906,11 @@ class MessagePanel(SashPanel):
         SashPanel.__init__(self, parent, isVertical=False, minimumSize=100)
         gTop,gBottom = self.left,self.right
         #--Contents
-        global gMessageList
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        gMessageList = MessageList(gTop, self.listData, self.keyPrefix)
-        gMessageList.gText = wx.lib.iewin.IEHtmlWindow(
+        self.uiList = MessageList(gTop, self.listData, self.keyPrefix)
+        self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        self.uiList = gMessageList
         #--Search ##: move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
         gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
@@ -3937,9 +3920,9 @@ class MessagePanel(SashPanel):
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)
         #--Layout
         gTop.SetSizer(hSizer(
-            (gMessageList,1,wx.GROW)))
+            (self.uiList,1,wx.GROW)))
         gBottom.SetSizer(vSizer(
-            (gMessageList.gText,1,wx.GROW),
+            (self.uiList.gText,1,wx.GROW),
             (hSizer(
                 (gSearchBox,1,wx.GROW),
                 (gSearchButton,0,wx.LEFT,4),
@@ -3950,14 +3933,14 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
     def _sbText(self):
-        used = len(gMessageList.items) if gMessageList.searchResults is None \
-            else len(gMessageList.searchResults)
-        return _(u'PMs:') + u' %d/%d' % (used, len(gMessageList.data.keys()))
+        used = len(self.uiList.items) if self.uiList.searchResults is None \
+            else len(self.uiList.searchResults)
+        return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.messages.refresh():
-            gMessageList.RefreshUI()
+            self.uiList.RefreshUI()
             #self.Refresh()
         super(MessagePanel, self).ShowPanel()
 
@@ -3970,14 +3953,14 @@ class MessagePanel(SashPanel):
     def DoSearch(self,event):
         """Handle search button."""
         term = self.gSearchBox.GetValue()
-        gMessageList.searchResults = gMessageList.data.search(term)
-        gMessageList.RefreshUI()
+        self.uiList.searchResults = self.uiList.data.search(term)
+        self.uiList.RefreshUI()
 
     def DoClear(self,event):
         """Handle clear button."""
         self.gSearchBox.SetValue(u'')
-        gMessageList.searchResults = None
-        gMessageList.RefreshUI()
+        self.uiList.searchResults = None
+        self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
@@ -4158,12 +4141,16 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 deprint(_(u"Error constructing '%s' panel.") % title,traceback=True)
                 if page in settings['bash.tabs']:
                     settings['bash.tabs'][page] = False
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Selection
         pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
+        self.currentPage = self.GetPage(self.GetSelection())
+        # callback was bound before SetSelection() selection - this triggered
+        # OnShowPage() - except if pageIndex was 0 (?!). Moved self.Bind() here
+        # as OnShowPage() is manually called in RefreshData
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
@@ -4179,7 +4166,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             for key in settings['bash.tabs.order']:
                 canDisable = bool(key != 'Mods')
                 menu.append(Tab_Link(key,canDisable))
-            menu.PopupMenu(self,bashFrame,None)
+            menu.PopupMenu(self, Link.Frame, None)
         else:
             event.Skip()
 
@@ -4214,8 +4201,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Call panel's ShowPanel() and set the current panel."""
         if event.GetId() == self.GetId(): ##: why ?
             bolt.GPathPurge()
-            self._currentTab = self.GetPage(event.GetSelection())
-            self._currentTab.ShowPanel()
+            self.currentPage = self.GetPage(event.GetSelection())
+            self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
 
     def _onMouseCaptureLost(self, event):
@@ -4234,8 +4221,7 @@ class BashStatusBar(wx.StatusBar):
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
-        global statusBar
-        statusBar = self
+        BashFrame.statusBar = self
         self.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
@@ -4362,9 +4348,9 @@ class BashStatusBar(wx.StatusBar):
         return None
 
     def HitTest(self,mouseEvent):
-        id = mouseEvent.GetId()
+        id_ = mouseEvent.GetId()
         for i,button in enumerate(self.buttons):
-            if button.GetId() == id:
+            if button.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
                 delta = x/self.size
                 if abs(x) % self.size > self.size:
@@ -4462,14 +4448,20 @@ class BashStatusBar(wx.StatusBar):
 #------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
-    # (ut) till I find a better place
+    ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
     modChecker = None
+    # UILists - use sparingly for inter Panel communication
+    # modList is always set but for example iniList may be None (tab not
+    # enabled). BashFrame should perform the None check (not the clients)
+    saveList = None
+    iniList = None
+    modList = None
+    # the status bar - used by the Panels to SetStatusCount()
+    statusBar = None
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
-        global bashFrame
-        bashFrame = self
         balt.Link.Frame = self
         #--Window
         wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
@@ -4500,7 +4492,7 @@ class BashFrame(wx.Frame):
             message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.displayName
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
-            balt.showWarning(bashFrame,message,_(u'Too many mod files.'))
+            balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def Restart(self,args=True,uac=False):
         if not args: return
@@ -4555,13 +4547,6 @@ class BashFrame(wx.Frame):
                 title += u' ['+bosh.modInfos.voCurrent+u']'
         wx.Frame.SetTitle(self,title)
 
-    def SetStatusCount(self):
-        """Sets the status bar count field. Actual work is done by current panel."""
-        if hasattr(self,'notebook'): #--Hack to get around problem with screens tab.
-            selection = self.notebook.GetSelection()
-            selection = max(min(selection,self.notebook.GetPageCount()),0)
-            self.notebook.GetPage(selection).SetStatusCount()
-
     #--Events ---------------------------------------------
     def RefreshData(self, event=None):
         """Refreshes all data. Can be called manually, but is also triggered by window activation event."""
@@ -4614,14 +4599,14 @@ class BashFrame(wx.Frame):
                     bosh.bsaInfos.resetMTimes()
         #--Repopulate
         if popMods:
-            modList.RefreshUI(popMods) #--Will repop saves too.
+            BashFrame.modList.RefreshUI(popMods) #--Will repop saves too.
         elif popSaves:
-            saveList.RefreshUI(popSaves)
+            BashFrame.saveList.RefreshUI(popSaves)
         if popInis:
-            iniList.RefreshUI(popInis)
+            BashFrame.iniList.RefreshUI(popInis)
         #--Current notebook panel
         if gInstallers: gInstallers.frameActivated = True
-        self.notebook.GetPage(self.notebook.GetSelection()).ShowPanel()
+        self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?
         ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
@@ -4736,7 +4721,7 @@ class BashFrame(wx.Frame):
                 progress.setFull(len(scanList))
                 bosh.modInfos.rescanMergeable(scanList,progress)
         if scanList or difMergeable:
-            modList.RefreshUI(scanList + list(difMergeable))
+            BashFrame.modList.RefreshUI(scanList + list(difMergeable))
         #--Done (end recursion blocker)
         self.inRefreshData = False
 
@@ -4865,7 +4850,7 @@ class BashApp(wx.App):
         self.InitVersion()
         #--MWFrame
         progress.Update(80,_(u'Initializing Windows'))
-        frame = BashFrame( # basher.bashFrame global set here
+        frame = BashFrame( # Link.Frame global set here
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
         progress.Destroy()
@@ -4959,53 +4944,53 @@ def InitSettings(): # this must run first !
 def InitImages():
     """Initialize color and image collections."""
     #--Colors
-    for key,value in settings['bash.colors'].iteritems():
-        colors[key] = value
-
+    for key,value in settings['bash.colors'].iteritems(): colors[key] = value
+    #--Images
+    imgDirJn = bosh.dirs['images'].join
+    def _png(name): return Image(GPath(imgDirJn(name)),PNG)
     #--Standard
-    images['save.on'] = Image(GPath(bosh.dirs['images'].join(u'save_on.png')),PNG)
-    images['save.off'] = Image(GPath(bosh.dirs['images'].join(u'save_off.png')),PNG)
+    images['save.on'] = _png(u'save_on.png')
+    images['save.off'] = _png(u'save_off.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bosh.dirs['images'].join(u'oblivion.png')),png)
-    images['help.16'] = Image(GPath(bosh.dirs['images'].join(u'help16.png')))
-    images['help.24'] = Image(GPath(bosh.dirs['images'].join(u'help24.png')))
-    images['help.32'] = Image(GPath(bosh.dirs['images'].join(u'help32.png')))
+    images['help.16'] = Image(GPath(imgDirJn(u'help16.png')))
+    images['help.24'] = Image(GPath(imgDirJn(u'help24.png')))
+    images['help.32'] = Image(GPath(imgDirJn(u'help32.png')))
     #--ColorChecks
-    images['checkbox.red.x'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
-    images['checkbox.red.x.16'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x.png')),PNG)
-    images['checkbox.red.x.24'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_24.png')),PNG)
-    images['checkbox.red.x.32'] = Image(GPath(bosh.dirs['images'].join(u'checkbox_red_x_32.png')),PNG)
-    images['checkbox.red.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off.png')),PNG))
-    images['checkbox.red.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_24.png')),PNG))
-    images['checkbox.red.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_red_off_32.png')),PNG))
+    images['checkbox.red.x'] = _png(u'checkbox_red_x.png')
+    images['checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
+    images['checkbox.red.x.24'] = _png(u'checkbox_red_x_24.png')
+    images['checkbox.red.x.32'] = _png(u'checkbox_red_x_32.png')
+    images['checkbox.red.off.16'] = _png(u'checkbox_red_off.png')
+    images['checkbox.red.off.24'] = _png(u'checkbox_red_off_24.png')
+    images['checkbox.red.off.32'] = _png(u'checkbox_red_off_32.png')
 
-    images['checkbox.green.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on.png')),PNG))
-    images['checkbox.green.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off.png')),PNG))
-    images['checkbox.green.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_24.png')),PNG))
-    images['checkbox.green.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_24.png')),PNG))
-    images['checkbox.green.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_on_32.png')),PNG))
-    images['checkbox.green.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_green_off_32.png')),PNG))
+    images['checkbox.green.on.16'] = _png(u'checkbox_green_on.png')
+    images['checkbox.green.off.16'] = _png(u'checkbox_green_off.png')
+    images['checkbox.green.on.24'] = _png(u'checkbox_green_on_24.png')
+    images['checkbox.green.off.24'] = _png(u'checkbox_green_off_24.png')
+    images['checkbox.green.on.32'] = _png(u'checkbox_green_on_32.png')
+    images['checkbox.green.off.32'] = _png(u'checkbox_green_off_32.png')
 
-    images['checkbox.blue.on.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on.png')),PNG))
-    images['checkbox.blue.on.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_24.png')),PNG))
-    images['checkbox.blue.on.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_on_32.png')),PNG))
-    images['checkbox.blue.off.16'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off.png')),PNG))
-    images['checkbox.blue.off.24'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_24.png')),PNG))
-    images['checkbox.blue.off.32'] = (Image(GPath(bosh.dirs['images'].join(u'checkbox_blue_off_32.png')),PNG))
+    images['checkbox.blue.on.16'] = _png(u'checkbox_blue_on.png')
+    images['checkbox.blue.on.24'] = _png(u'checkbox_blue_on_24.png')
+    images['checkbox.blue.on.32'] = _png(u'checkbox_blue_on_32.png')
+    images['checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
+    images['checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
+    images['checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
     #--Bash
-    images['bash.16'] = Image(GPath(bosh.dirs['images'].join(u'bash_16.png')),PNG)
-    images['bash.24'] = Image(GPath(bosh.dirs['images'].join(u'bash_24.png')),PNG)
-    images['bash.32'] = Image(GPath(bosh.dirs['images'].join(u'bash_32.png')),PNG)
-    images['bash.16.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_16_blue.png')),PNG)
-    images['bash.24.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_24_blue.png')),PNG)
-    images['bash.32.blue'] = Image(GPath(bosh.dirs['images'].join(u'bash_32_blue.png')),PNG)
+    images['bash.16'] = _png(u'bash_16.png')
+    images['bash.24'] = _png(u'bash_24.png')
+    images['bash.32'] = _png(u'bash_32.png')
+    images['bash.16.blue'] = _png(u'bash_16_blue.png')
+    images['bash.24.blue'] = _png(u'bash_24_blue.png')
+    images['bash.32.blue'] = _png(u'bash_32_blue.png')
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey16.jpg')),JPEG)
-    #images['monkey.32'] = Image(GPath(bosh.dirs['images'].join(u'wryemonkey32.jpg')),JPEG)
+    images['monkey.16'] = Image(GPath(imgDirJn(u'wryemonkey16.jpg')),JPEG)
     #--DocBrowser
-    images['doc.16'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser16.png')),PNG)
-    images['doc.24'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser24.png')),PNG)
-    images['doc.32'] = Image(GPath(bosh.dirs['images'].join(u'DocBrowser32.png')),PNG)
+    images['doc.16'] = _png(u'DocBrowser16.png')
+    images['doc.24'] = _png(u'DocBrowser24.png')
+    images['doc.32'] = _png(u'DocBrowser32.png')
     #--UAC icons
     #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
     #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)

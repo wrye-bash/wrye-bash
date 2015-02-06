@@ -106,7 +106,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         id_ingred = self.id_ingred
         iconPath, modPath, modb_p = (u'Clutter\\IconBook9.dds',
                                      u'Clutter\\Books\\Octavo02.NIF','\x03>@A')
-        for (num,objectId,full,value) in bush.ingred_alchem:
+        for (num,objectId,full,value) in _ingred_alchem:
             book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
                            value, iconPath, modPath, modb_p)
             with sio(book.text) as buff:
@@ -134,7 +134,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         #--Effect catalogs
         iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
                                      u'Clutter\\Books\\Octavo01.NIF','\x03>@A')
-        for (num,objectId,full,value) in bush.effect_alchem:
+        for (num, objectId, full, value) in _effect_alchem:
             book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
                            value, iconPath, modPath, modb_p)
             with sio(book.text) as buff:
@@ -189,7 +189,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
     def finishPatch(self,patchFile,progress):
         """Edits the bashed patch file directly."""
         subProgress = SubProgress(progress)
-        subProgress.setFull(len(bush.effect_alchem) + len(bush.ingred_alchem))
+        subProgress.setFull(len(_effect_alchem) + len(_ingred_alchem))
         pstate = 0
         #--Setup
         try:
@@ -232,7 +232,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        for (num,objectId,full,value) in bush.ingred_alchem:
+        for (num, objectId, full, value) in _ingred_alchem:
             subProgress(pstate, _(u'Cataloging Ingredients...')+u'\n%s' % full)
             pstate += 1
             book = getBook(patchFile, objectId)
@@ -298,7 +298,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                 if mgef in actorEffects: effectName += actorNames[actorValue]
                 effect_ingred.setdefault(effectName, []).append((index,full))
         #--Effect catalogs
-        for (num,objectId,full,value) in bush.effect_alchem:
+        for (num, objectId, full, value) in _effect_alchem:
             subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)
             book = getBook(patchFile,objectId)
             with sio() as buff:
@@ -902,4 +902,16 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
                 log(u'  * %s' % eid)
         self.mod_eids = {}
 
-#------------------------------------------------------------------------------
+# Alchemical Catalogs ---------------------------------------------------------
+_ingred_alchem = (
+    (1,0xCED,_(u'Alchemical Ingredients I'),250),
+    (2,0xCEC,_(u'Alchemical Ingredients II'),500),
+    (3,0xCEB,_(u'Alchemical Ingredients III'),1000),
+    (4,0xCE7,_(u'Alchemical Ingredients IV'),2000),
+)
+_effect_alchem = (
+    (1,0xCEA,_(u'Alchemical Effects I'),500),
+    (2,0xCE9,_(u'Alchemical Effects II'),1000),
+    (3,0xCE8,_(u'Alchemical Effects III'),2000),
+    (4,0xCE6,_(u'Alchemical Effects IV'),4000),
+)

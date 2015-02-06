@@ -156,7 +156,6 @@ messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
 lo = None #--LibloHandle singleton
-links = None
 
 def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
@@ -4618,14 +4617,14 @@ class ModInfos(FileInfos):
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
-    def getTagList(self,modList=None):
+    def getTagList(self,mod_list=None):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
         Either for all mods in the data folder or if specified for one specific mod.
         """
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
         tagList += u'[spoiler][xml]\n'
-        if modList:
-            for modInfo in modList:
+        if mod_list:
+            for modInfo in mod_list:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
                     if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
@@ -5532,12 +5531,12 @@ class ConfigHelpers:
                     #--Mod Rules
                     for modGroup in ruleSet.modGroups:
                         if not modGroup.isActive(activeMerged): continue
-                        modList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
+                        modsList = u' + '.join([x.s for x in modGroup.getActives(activeMerged)])
                         if showNotes and modGroup.notes:
-                            log.setHeader(u'=== '+_(u'NOTES: ') + modList )
+                            log.setHeader(u'=== '+_(u'NOTES: ') + modsList )
                             log(modGroup.notes)
                         if showConfig:
-                            log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modList )
+                            log.setHeader(u'=== '+_(u'CONFIGURATION: ') + modsList )
                             #    + _(u'\nLegend: x: Active, +: Merged, -: Inactive'))
                             for ruleType,ruleMod,comment in modGroup.config:
                                 if ruleType != u'o': continue
@@ -5547,7 +5546,7 @@ class ConfigHelpers:
                                 else: bullet = u'o'
                                 log(u'%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
                         if showSuggest:
-                            log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modList)
+                            log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modsList)
                             for ruleType,ruleMod,comment in modGroup.suggest:
                                 if ((ruleType == u'x' and ruleMod not in activeMerged) or
                                     (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
@@ -5558,7 +5557,7 @@ class ConfigHelpers:
                                 elif ruleType == u'e' and not dirs['mods'].join(ruleMod).exists():
                                     log(u'* '+comment)
                         if showWarn:
-                            log.setHeader(warning + modList)
+                            log.setHeader(warning + modsList)
                             for ruleType,ruleMod,comment in modGroup.warn:
                                 if ((ruleType == u'x' and ruleMod not in activeMerged) or
                                     (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
@@ -5896,6 +5895,9 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
 
 #------------------------------------------------------------------------------
 class ScreensData(DataDict):
+    ##: shadows global
+    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+
     def __init__(self):
         self.dir = dirs['app']
         self.data = {} #--data[Path] = (ext,mtime)
@@ -5903,15 +5905,14 @@ class ScreensData(DataDict):
     def refresh(self):
         """Refresh list of screenshots."""
         self.dir = dirs['app']
-        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot'))
+        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot')) ##: cache ?
         if ssBase.head:
             self.dir = self.dir.join(ssBase.head)
         newData = {}
-        reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$',re.I|re.U)
         #--Loop over files in directory
         for fileName in self.dir.list():
             filePath = self.dir.join(fileName)
-            maImageExt = reImageExt.search(fileName.s)
+            maImageExt = self.reImageExt.search(fileName.s)
             if maImageExt and filePath.isfile():
                 newData[fileName] = (maImageExt.group(1).lower(),filePath.mtime)
         changed = (self.data != newData)
@@ -10493,27 +10494,6 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     # Setup LOOT API
     global configHelpers
     configHelpers = ConfigHelpers()
-
-def initLinks(appDir):
-    #-- Other tools
-    global links
-    links = {}
-    try:
-        import win32com.client
-        sh = win32com.client.Dispatch('WScript.Shell')
-        shCreateShortCut = sh.CreateShortCut
-        appDirJoin = appDir.join
-        for file in appDir.list():
-            file = appDirJoin(file)
-            if file.isfile() and file.cext == u'.lnk':
-                fileS = file.s
-                shortcut = shCreateShortCut(fileS)
-                description = shortcut.Description
-                if not description:
-                    description = u' '.join((_(u'Launch'),file.sbody))
-                links[fileS] = (shortcut.TargetPath,shortcut.WorkingDirectory,shortcut.Arguments,shortcut.IconLocation,description)
-    except:
-        deprint(_(u"Error initializing links:"),traceback=True)
 
 def initDefaultTools():
     #-- Other tool directories

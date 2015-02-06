@@ -2242,12 +2242,12 @@ class StringTable(dict):
                     deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
-                id = -1
+                id_ = -1
                 offset = -1
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id,offset = insUnpack('=2I',8)
+                        id_,offset = insUnpack('=2I',8)
                         pos = insTell()
                         insSeek(stringsStart+offset)
                         if format:
@@ -2261,10 +2261,10 @@ class StringTable(dict):
                         except UnicodeDecodeError:
                             value = unicode(value,backupEncoding)
                         insSeek(pos)
-                        self[id] = value
+                        self[id_] = value
                     except:
                         deprint(u'Error reading string file:')
-                        deprint(u'id:', id)
+                        deprint(u'id:', id_)
                         deprint(u'offset:', offset)
                         deprint(u'filePos:',  insTell())
                         raise

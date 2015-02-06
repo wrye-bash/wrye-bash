@@ -143,9 +143,9 @@ class ListBoxes(Dialog):
         event.Skip()
 
     def OnClick(self,event):
-        id = event.GetId()
-        if id not in (wx.ID_OK,wx.ID_CANCEL):
-            self.EndModal(id)
+        id_ = event.GetId()
+        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
+            self.EndModal(id_)
         else:
             event.Skip()
 
@@ -210,7 +210,7 @@ class ColorDialog(balt.Dialog):
         return self.text_key[self.comboBox.GetValue()]
 
     def UpdateUIColors(self):
-        """Update the bashFrame with the new colors"""
+        """Update the Bash Frame with the new colors"""
         nb = Link.Frame.notebook
         with balt.BusyCursor():
             for (className,title,panel) in tabInfo.itervalues():
