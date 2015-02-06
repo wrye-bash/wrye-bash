@@ -2187,30 +2187,6 @@ class Tank(UIList):
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
-    class LinksPoint:
-        """Point in a link list. For inserting, removing, appending items."""
-        def __init__(self,_list,index):
-            self._list = _list
-            self._index = index
-        def remove(self):
-            del self._list[self._index]
-        def replace(self,item):
-            self._list[self._index] = item
-        def insert(self,item):
-            self._list.insert(self._index,item)
-            self._index += 1
-        def append(self,item):
-            self._list.insert(self._index+1,item)
-            self._index += 1
-
-    #--Access functions:
-    def getClassPoint(self,classObj):
-        """Returns index"""
-        for index,item in enumerate(self):
-            if isinstance(item,classObj):
-                return Links.LinksPoint(self,index)
-        else:
-            return None
 
     #--Popup a menu from the links
     def PopupMenu(self,parent,eventWindow=None,*args):
