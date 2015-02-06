@@ -113,7 +113,6 @@ isUAC = False      # True if the game is under UAC protection
 modDetails = None
 saveDetails = None
 gInstallers = None
-bashFrame = None
 gPeople = None # New global - yak
 
 # Settings --------------------------------------------------------------------
@@ -1043,7 +1042,6 @@ class INILineCtrl(wx.ListCtrl):
         num = self.GetItemCount()
         if resetScroll:
             self.EnsureVisible(0)
-        ini = None
         try:
             with bosh.iniInfos.ini.path.open('r') as ini:
                 lines = ini.readlines()
@@ -1056,8 +1054,8 @@ class INILineCtrl(wx.ListCtrl):
                     self.DeleteItem(len(lines))
         except IOError:
             warn = True
-            if hasattr(bashFrame,'notebook'):
-                page = bashFrame.notebook.GetPage(bashFrame.notebook.GetSelection())
+            if hasattr(Link.Frame,'notebook'): ##: why all this fuss ?
+                page = Link.Frame.notebook.currentPage
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
             if warn:
@@ -3331,7 +3329,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gEspmList.HitTest((x,y))
         self.gEspmList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self,bashFrame,selected)
+        InstallersPanel.espmMenu.PopupMenu(self, selected)
 
     def SubsSelectionMenu(self,event):
         """Handle right click in espm list."""
@@ -3340,7 +3338,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gSubList.HitTest((x,y))
         self.gSubList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self,bashFrame,selected)
+        InstallersPanel.subsMenu.PopupMenu(self, selected)
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
@@ -4168,7 +4166,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             for key in settings['bash.tabs.order']:
                 canDisable = bool(key != 'Mods')
                 menu.append(Tab_Link(key,canDisable))
-            menu.PopupMenu(self,bashFrame,None)
+            menu.PopupMenu(self, Link.Frame, None)
         else:
             event.Skip()
 
@@ -4464,8 +4462,6 @@ class BashFrame(wx.Frame):
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
-        global bashFrame
-        bashFrame = self
         balt.Link.Frame = self
         #--Window
         wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
@@ -4854,7 +4850,7 @@ class BashApp(wx.App):
         self.InitVersion()
         #--MWFrame
         progress.Update(80,_(u'Initializing Windows'))
-        frame = BashFrame( # basher.bashFrame global set here
+        frame = BashFrame( # Link.Frame global set here
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
         progress.Destroy()

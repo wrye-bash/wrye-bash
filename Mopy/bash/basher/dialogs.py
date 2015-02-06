@@ -210,7 +210,7 @@ class ColorDialog(balt.Dialog):
         return self.text_key[self.comboBox.GetValue()]
 
     def UpdateUIColors(self):
-        """Update the bashFrame with the new colors"""
+        """Update the Bash Frame with the new colors"""
         nb = Link.Frame.notebook
         with balt.BusyCursor():
             for (className,title,panel) in tabInfo.itervalues():

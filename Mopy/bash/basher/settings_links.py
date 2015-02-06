@@ -62,7 +62,7 @@ class Settings_BackupSettings(ItemLink):
             msg = msg or _(u'Do you want to backup your Bash settings now?')
             return balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?'))
         BashFrame.SaveSettings(Link.Frame)
-        #backup = barb.BackupSettings(bashFrame)
+        #backup = barb.BackupSettings(Link.Frame)
         try:
             if PromptConfirm():
                 dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
