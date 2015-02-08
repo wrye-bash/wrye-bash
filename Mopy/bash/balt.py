@@ -1740,12 +1740,12 @@ class UIList(wx.Panel):
         sizer = vSizer()
         self.SetSizer(sizer)
         # Settings key
-        self.__class__.keyPrefix = keyPrefix
+        self.keyPrefix = keyPrefix
         #--Columns
         self.colNames = bosh.settings['bash.colNames']
-        self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
-        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort']
-        self.colWidthsKey = self.__class__.keyPrefix + '.colWidths'
+        self.colAligns = bosh.settings[self.keyPrefix + '.colAligns']
+        self.sort = bosh.settings[self.keyPrefix + '.sort']
+        self.colWidthsKey = self.keyPrefix + '.colWidths'
         self.colWidths = bosh.settings[self.colWidthsKey]
         #--attributes
         self.dndColumns = dndColumns
@@ -1787,11 +1787,10 @@ class UIList(wx.Panel):
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(
-            self.__class__.keyPrefix + '.colReverse')
+        return bosh.settings.getChanged(self.keyPrefix + '.colReverse')
 
     @property
-    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
+    def cols(self): return bosh.settings[self.keyPrefix + '.cols']
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1921,12 +1920,12 @@ class UIList(wx.Panel):
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
         bosh.settings[
-            self.__class__.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
+            self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
         self._gList.ScrollLines(
-            bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
+            bosh.settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -2090,7 +2089,7 @@ class Tank(UIList):
         self.SortItems()
 
     def _setSort(self,sort):
-        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
+        self.sort = bosh.settings[self.keyPrefix + '.sort'] = sort
 
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
