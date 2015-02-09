@@ -1484,23 +1484,19 @@ class ModDetails(_SashDetailsPanel):
             self.version = staticText(top,u'v0.00')
             #--File Name
             self.file = textCtrl(top, onKillFocus=self.OnEditFile,
-                                 onText=self.OnTextEdit)# ,size=(textWidth,-1))
-            self.file.SetMaxLength(200)
+                                 onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
             #--Author
             self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
-                                 onText=self.OnTextEdit)# ,size=(textWidth,-1))
-            self.author.SetMaxLength(512)
+                                   onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
             #--Modified
             self.modified = textCtrl(top,size=(textWidth, -1),
                                      onKillFocus=self.OnEditModified,
-                                     onText=self.OnTextEdit)
-            self.modified.SetMaxLength(32)
+                                     onText=self.OnTextEdit, maxChars=32)
             #--Description
             self.description = textCtrl(top, size=(textWidth, 150),
                                         multiline=True, autotooltip=False,
                                         onKillFocus=self.OnEditDescription,
-                                        onText=self.OnTextEdit)
-            self.description.SetMaxLength(512)
+                                        onText=self.OnTextEdit, maxChars=512)
             subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
@@ -2274,8 +2270,7 @@ class SaveDetails(_SashDetailsPanel):
         #--File Name
         self.file = textCtrl(top, size=(textWidth, -1),
                              onKillFocus=self.OnEditFile,
-                             onText=self.OnTextEdit)
-        self.file.SetMaxLength(256)
+                             onText=self.OnTextEdit, maxChars=256)
         #--Player Info
         self.playerInfo = staticText(top,u" \n \n ")
         self.gCoSaves = staticText(top,u'--\n--')
@@ -2287,9 +2282,8 @@ class SaveDetails(_SashDetailsPanel):
         #--Masters
         self.masters = MasterList(masterPanel,None,self.SetEdited)
         #--Save Info
-        self.gInfo = textCtrl(notePanel, size=(textWidth, 100),
-                              multiline=True, onText=self.OnInfoEdit)
-        self.gInfo.SetMaxLength(2048)
+        self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
+                              onText=self.OnInfoEdit, maxChars=2048)
         #--Save/Cancel
         self.save = button(masterPanel,id=wx.ID_SAVE,onClick=self.DoSave)
         self.cancel = button(masterPanel,id=wx.ID_CANCEL,onClick=self.DoCancel)
@@ -3678,13 +3672,11 @@ class BSADetails(wx.Window):
         #--File Name
         self.file = textCtrl(self, size=(textWidth, -1),
                              onText=self.OnTextEdit,
-                             onKillFocus=self.OnEditFile)
-        self.file.SetMaxLength(256)
+                             onKillFocus=self.OnEditFile, maxChars=256)
 
         #--BSA Info
-        self.gInfo = textCtrl(self, size=(textWidth, 100),
-                              multiline=True, onText=self.OnInfoEdit)
-        self.gInfo.SetMaxLength(2048)
+        self.gInfo = textCtrl(self, size=(textWidth, 100), multiline=True,
+                              onText=self.OnInfoEdit, maxChars=2048)
         #--Save/Cancel
         self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
         self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)

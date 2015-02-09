@@ -551,20 +551,14 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
-        self.gName = textCtrl(self,config.name)
-        self.gVersion = textCtrl(self,
-                                 u'%d.%02d' % (config.vMajor, config.vMinor))
-        self.gWebsite = textCtrl(self,config.website)
-        self.gAuthor = textCtrl(self,config.author)
-        self.gEmail = textCtrl(self,config.email)
-        self.gAbstract = textCtrl(self, config.abstract, multiline=True)
-        #--Max Length
-        self.gName.SetMaxLength(100)
-        self.gVersion.SetMaxLength(32)
-        self.gWebsite.SetMaxLength(512)
-        self.gAuthor.SetMaxLength(512)
-        self.gEmail.SetMaxLength(512)
-        self.gAbstract.SetMaxLength(4*1024)
+        self.gName = textCtrl(self, config.name, maxChars=100)
+        self.gVersion = textCtrl(self, u'%d.%02d' % (
+            config.vMajor, config.vMinor), maxChars=32)
+        self.gWebsite = textCtrl(self, config.website, maxChars=512)
+        self.gAuthor = textCtrl(self, config.author, maxChars=512)
+        self.gEmail = textCtrl(self, config.email, maxChars=512)
+        self.gAbstract = textCtrl(self, config.abstract, multiline=True,
+                                  maxChars=4 * 1024)
         #--Layout
         fgSizer = wx.FlexGridSizer(0,2,4,4)
         fgSizer.AddGrowableCol(1,1)
