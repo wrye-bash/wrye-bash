@@ -22,6 +22,9 @@
 #
 # =============================================================================
 
+"""Menu items for the _main_ menu of the installer tab - their window attribute
+points to the InstallersList singleton."""
+
 import copy
 from .. import bosh, balt, bush
 from ..balt import fill, BoolLink, AppendableLink, Link
@@ -63,7 +66,7 @@ class Installers_AddMarker(Installers_Link):
 
     def Execute(self,event):
         """Add a Marker."""
-        self.gTank.addMarker()
+        self.window.addMarker()
 
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
@@ -145,7 +148,7 @@ class Installers_MonitorInstall(Installers_Link):
                      _(u'These files were deleted.  BAIN does not have the capability to remove files when installing.'),
                      ]
             group.extend(delFiles)
-        dialog = ListBoxes(self.gTank,_(u'External Installation'),
+        dialog = ListBoxes(self.window,_(u'External Installation'),
                            _(u'The following changes were detected in the Data directory'),
                            checklists,changedlabels={ListBoxes.ID_OK:_(u'Create Project')})
         choice = dialog.ShowModal()
@@ -191,7 +194,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh UI
         gInstallers.RefreshUIMods()
         # Select new installer
-        self.gTank.SelectLast()
+        self.window.SelectLast()
 
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
@@ -311,7 +314,7 @@ class Installers_AutoWizard(Installers_Link, BoolLink):
 class _Installers_BoolLink_Refresh(Installers_Link, BoolLink):
     def Execute(self,event):
         super(_Installers_BoolLink_Refresh, self).Execute(event)
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
@@ -372,7 +375,7 @@ class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
                     installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
                     gInstallers.data.hasChanged = True
             gInstallers.data.refresh(what='NSC')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 class Installers_Enabled(Installers_Link, BoolLink):
     """Flips installer state."""
@@ -393,9 +396,9 @@ class Installers_Enabled(Installers_Link, BoolLink):
         if enabled:
             gInstallers.refreshed = False
             gInstallers.ShowPanel()
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
         else:
-            self.gTank.DeleteAllItems() ##: TODO(ut): crude
+            self.window.DeleteAllItems() ##: crude
             gInstallers.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, Installers_Link, BoolLink):
@@ -449,7 +452,7 @@ class Installers_SortActive(Installers_Link, BoolLink):
 
     def Execute(self,event):
         super(Installers_SortActive, self).Execute(event)
-        self.gTank.SortItems()
+        self.window.SortItems()
 
 class Installers_SortProjects(Installers_Link, BoolLink):
     """Sort dirs to the top."""
@@ -458,7 +461,7 @@ class Installers_SortProjects(Installers_Link, BoolLink):
 
     def Execute(self,event):
         super(Installers_SortProjects, self).Execute(event)
-        self.gTank.SortItems()
+        self.window.SortItems()
 
 class Installers_SortStructure(Installers_Link, BoolLink):
     """Sort by type."""
@@ -466,7 +469,7 @@ class Installers_SortStructure(Installers_Link, BoolLink):
 
     def Execute(self,event):
         super(Installers_SortStructure, self).Execute(event)
-        self.gTank.SortItems()
+        self.window.SortItems()
 
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
@@ -481,7 +484,7 @@ class Installers_Skip(Installers_Link, BoolLink):
                 progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
                 dataItem[1].refreshDataSizeCrc()
         self.idata.refresh(what='NS')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installers_SkipScreenshots(Installers_Skip):
     """Toggle skipScreenshots setting and update."""

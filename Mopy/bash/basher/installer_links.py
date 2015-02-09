@@ -23,7 +23,8 @@
 # =============================================================================
 
 """Menu items for the __item__ menu of the installer tab. Check before using
-BashFrame.iniList - can be None (ini panel not shown)."""
+BashFrame.iniList - can be None (ini panel not shown). Their window attribute
+points to the InstallersList singleton."""
 
 import StringIO
 import copy
@@ -147,7 +148,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
             self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_InstallerLink):
@@ -379,8 +380,8 @@ class Installer_Delete(_InstallerLink):
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
-    def Execute(self, event): self.gTank.DeleteSelected(shellUI=False,
-                                                        noRecycle=False)
+    def Execute(self, event): self.window.DeleteSelected(shellUI=False,
+                                                         noRecycle=False)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
@@ -427,7 +428,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             self.idata.copy(curName,newName)
             self.idata.refresh(what='N')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
@@ -458,7 +459,7 @@ class Installer_Hide(_InstallerLink):
                 file = bosh.dirs['installers'].join(curName)
                 file.moveTo(newName)
         self.idata.refresh(what='ION')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Rename(_InstallerLink):
     """Renames files by pattern."""
@@ -499,7 +500,7 @@ class Installer_HasExtraData(CheckLink, _InstallerLink):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_OverrideSkips(CheckLink, _InstallerLink):
     """Toggle overrideSkips flag on installer."""
@@ -524,7 +525,7 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
     """Toggle skipRefresh flag on installer."""
@@ -548,7 +549,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
                 installer.refreshBasic(file)
                 installer.refreshStatus(self.idata)
                 self.idata.refresh(what='N')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
 
 class Installer_Install(_InstallerLink):
     """Install selected packages."""
@@ -630,7 +631,7 @@ class Installer_Move(_InstallerLink):
         elif newPos < 0: newPos = len(self.idata.data)
         self.idata.moveArchives(self.selected,newPos)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Open(_InstallerLink):
     """Open selected file(s)."""
@@ -742,7 +743,7 @@ class Installer_Refresh(_InstallerLink):
             # User canceled the refresh
             pass
         self.idata.refresh(what='NSC')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_SkipVoices(CheckLink, _InstallerLink):
     """Toggle skipVoices flag on installer."""
@@ -759,7 +760,7 @@ class Installer_SkipVoices(CheckLink, _InstallerLink):
         installer.skipVoices ^= True
         installer.refreshDataSizeCrc()
         self.idata.refresh(what='NS')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Uninstall(_InstallerLink):
     """Uninstall selected Installers."""
@@ -877,7 +878,7 @@ class Installer_CopyConflicts(_InstallerLink):
                     if iProject.order == -1:
                         data.moveArchives([project],srcInstaller.order + 1)
                     data.refresh(what='I') # InstallersData.refresh()
-                    self.gTank.RefreshUI()
+                    self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -1087,7 +1088,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 if iProject.order == -1:
                     self.idata.moveArchives([project],installer.order+1)
                 self.idata.refresh(what='NS')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
                 #pProject.start()
             else:
                 for archive in self.selected:
@@ -1107,7 +1108,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if iProject.order == -1:
                         self.idata.moveArchives([project],installer.order+1)
                 self.idata.refresh(what='NS')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
@@ -1121,8 +1122,8 @@ class InstallerProject_OmodConfig(_InstallerLink):
 
     def Execute(self,event):
         project = self.selected[0]
-        dialog =InstallerProject_OmodConfigDialog(self.gTank,self.idata,project)
-        dialog.Show()
+        (InstallerProject_OmodConfigDialog(self.window, self.idata,
+                                           project)).Show()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_InstallerLink):
@@ -1154,7 +1155,7 @@ class InstallerProject_Sync(_InstallerLink):
             installer.refreshed = False
             installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
             self.idata.refresh(what='NS')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(AppendableLink, _InstallerLink):
@@ -1283,7 +1284,7 @@ class InstallerConverter_Apply(_InstallerLink):
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
             self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1321,7 +1322,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
             self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""

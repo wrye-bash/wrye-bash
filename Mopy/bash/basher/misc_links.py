@@ -198,8 +198,8 @@ class People_AddNew(People_Link):
         if name in self.pdata: return self._showInfo(
             name + _(u" already exists."), title=self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
-        self.gTank.RefreshUI(details=name) ##: select it !
-        self.gTank.EnsureVisible(name)
+        self.window.RefreshUI(details=name) ##: select it !
+        self.window.EnsureVisible(name)
         self.pdata.setChanged()
 
 #------------------------------------------------------------------------------
@@ -239,7 +239,7 @@ class People_Import(People_Link):
         newNames = self.pdata.loadText(path)
         self._showInfo(_(u"People imported: %d") % len(newNames),
                        title=self.dialogTitle)
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class People_Karma(People_Link, ChoiceLink):
@@ -258,7 +258,7 @@ class People_Karma(People_Link, ChoiceLink):
         for item in self.selected:
             text = self.pdata[item][2]
             self.pdata[item] = (time.time(),karma,text)
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
         self.pdata.setChanged()
 
 # Masters Links ---------------------------------------------------------------

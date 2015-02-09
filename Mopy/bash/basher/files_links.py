@@ -68,11 +68,11 @@ class Files_SortBy(RadioLink):
 
     def _check(self): return self.window.sort == self.sortCol
 
-    def Execute(self,event):
-        if hasattr(self, 'gTank'):
-            self.gTank.SortItems(self.sortCol,'INVERT')
+    def Execute(self, event):
+        if isinstance(self.window, balt.Tank):  # TODO(ut): grotesque
+            self.window.SortItems(self.sortCol, 'INVERT')
         else:
-            self.window.PopulateItems(self.sortCol,-1)
+            self.window.PopulateItems(self.sortCol, -1)
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
@@ -95,17 +95,19 @@ class Files_Unhide(ItemLink):
             srcDir = window.data.bashDir.join(u'Hidden')
             destDir = window.data.dir
         elif self.type == 'installer':
-            window = self.gTank
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
-            srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'.Folder Selection.', wildcard)
+            srcPaths = self._askOpenMulti(
+                title=_(u'Unhide files:'), defaultDir=srcDir,
+                defaultFile=u'.Folder Selection.', wildcard=wildcard)
         else:
             wildcard = u'*.*'
         isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
         if not self.type == 'installer':
-            srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'', wildcard)
+            srcPaths = self._askOpenMulti(_(u'Unhide files:'),
+                                          defaultDir=srcDir, wildcard=wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
@@ -115,7 +117,8 @@ class Files_Unhide(ItemLink):
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
             if newSrcDir == destDir:
-                balt.showError(window,_(u"You can't unhide files from this directory."))
+                self._showError(
+                    _(u"You can't unhide files from this directory."))
                 return
             #--Folder selection?
             if srcFileName.csbody == u'.folder selection':
@@ -127,8 +130,8 @@ class Files_Unhide(ItemLink):
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists():
-                balt.showWarning(window,_(u"File skipped: %s. File is already present.")
-                                 % (srcFileName.s,))
+                self._showWarning(_(u"File skipped: %s. File is already "
+                                    u"present.") % (srcFileName.s,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
