@@ -98,25 +98,25 @@ class Colors:
     """Colour collection and wrapper for wx.ColourDatabase.
     Provides dictionary syntax access (colors[key]) and predefined colours."""
     def __init__(self):
-        self.data = {}
+        self._colors = {}
 
     def __setitem__(self,key,value):
         """Add a color to the database."""
         if not isinstance(value,str):
-            self.data[key] = wx.Colour(*value)
+            self._colors[key] = wx.Colour(*value)
         else:
-            self.data[key] = value
+            self._colors[key] = value
 
     def __getitem__(self,key):
         """Dictionary syntax: color = colours[key]."""
-        if key in self.data:
-            key = self.data[key]
+        if key in self._colors:
+            key = self._colors[key]
             if not isinstance(key,str):
                 return key
         return wx.TheColourDatabase.Find(key)
 
     def __iter__(self):
-        for key in self.data:
+        for key in self._colors:
             yield key
 
 #--Singleton
@@ -227,18 +227,18 @@ class ImageList:
     def __init__(self,width,height):
         self.width = width
         self.height = height
-        self.data = []
+        self.images = []
         self.indices = {}
         self.imageList = None
 
     def Add(self,image,key):
-        self.data.append((key,image))
+        self.images.append((key,image))
 
     def GetImageList(self):
         if not self.imageList:
             indices = self.indices
             imageList = self.imageList = wx.ImageList(self.width,self.height)
-            for key,image in self.data:
+            for key,image in self.images:
                 indices[key] = imageList.Add(image.GetBitmap())
         return self.imageList
 
@@ -1208,12 +1208,12 @@ class ListEditor(Dialog):
         :param kwargs: kwargs['ButtonLabel']=buttonAction
         """
         #--Data
-        self.data = data #--Should be subclass of ListEditorData
+        self._listEditorData = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title)
         # overrides Dialog.sizesKey
-        self.sizesKey = self.data.__class__.__name__
+        self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
         if data.caption:
             captionText = staticText(self,data.caption)
@@ -1225,8 +1225,9 @@ class ListEditor(Dialog):
         #--Infobox
         if data.showInfo:
             self.gInfoBox = textCtrl(self,size=(130,-1),
-                style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
-            if not self.data.infoReadOnly:
+                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
+                      wx.TE_MULTILINE | wx.SUNKEN_BORDER)
+            if not self._listEditorData.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         else:
             self.gInfoBox = None
@@ -1253,15 +1254,14 @@ class ListEditor(Dialog):
             (captionText,0,wx.LEFT|wx.TOP,4),
             (hSizer(
                 (self.listBox,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self.data.infoWeight,wx.EXPAND|wx.TOP,4),
+                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
                 (buttons,0,wx.EXPAND),
                 ),1,wx.EXPAND)
             )
         #--Done
-        className = data.__class__.__name__
-        if className in sizes:
+        if self.sizesKey in sizes:
             self.SetSizer(sizer)
-            self.SetSize(sizes[className])
+            self.SetSize(sizes[self.sizesKey])
         else:
             self.SetSizerAndFit(sizer)
 
@@ -1271,15 +1271,15 @@ class ListEditor(Dialog):
     #--List Commands
     def DoAdd(self,event):
         """Adds a new item."""
-        newItem = self.data.add()
+        newItem = self._listEditorData.add()
         if newItem and newItem not in self.items:
-            self.items = self.data.getItemList()
+            self.items = self._listEditorData.getItemList()
             index = self.items.index(newItem)
             self.listBox.InsertItems([newItem],index)
 
     def SetItemsTo(self, items):
-        if self.data.setTo(items):
-            self.items = self.data.getItemList()
+        if self._listEditorData.setTo(items):
+            self.items = self._listEditorData.getItemList()
             self.listBox.Set(self.items)
 
     def DoRename(self,event):
@@ -1295,7 +1295,7 @@ class ListEditor(Dialog):
             return
         elif newName in self.items:
             showError(self,_(u'Name must be unique.'))
-        elif self.data.rename(curName,newName):
+        elif self._listEditorData.rename(curName,newName):
             self.items[itemDex] = newName
             self.listBox.SetString(itemDex,newName)
 
@@ -1306,7 +1306,7 @@ class ListEditor(Dialog):
         #--Data
         itemDex = selections[0]
         item = self.items[itemDex]
-        if not self.data.remove(item): return
+        if not self._listEditorData.remove(item): return
         #--GUI
         del self.items[itemDex]
         self.listBox.Delete(itemDex)
@@ -1321,18 +1321,18 @@ class ListEditor(Dialog):
         if not selections: return bell()
         item = self.items[selections[0]]
         if self.gInfoBox.IsModified():
-            self.data.setInfo(item,self.gInfoBox.GetValue())
+            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
     #--Save/Cancel
     def DoSave(self,event):
         """Handle save button."""
-        self.data.save()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        self._listEditorData.save()
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
         """Handle cancel button."""
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
 
 #------------------------------------------------------------------------------

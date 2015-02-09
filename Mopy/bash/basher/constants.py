@@ -469,7 +469,7 @@ def _png(name): return Image(GPath(imDirJn(name)), PNG)
 
 #--Image lists
 karmacons = ImageList(16,16)
-karmacons.data.extend({
+karmacons.images.extend({
     'karma+5': _png(u'checkbox_purple_inc.png'),
     'karma+4': _png(u'checkbox_blue_inc.png'),
     'karma+3': _png(u'checkbox_blue_inc.png'),
@@ -483,7 +483,7 @@ karmacons.data.extend({
     'karma-5': _png(u'checkbox_red_off.png'),
     }.items())
 installercons = ImageList(16,16)
-installercons.data.extend({
+installercons.images.extend({
     #--Off/Archive
     'off.green':  _png(u'checkbox_green_off.png'),
     'off.grey':   _png(u'checkbox_grey_off.png'),
