@@ -1728,6 +1728,7 @@ class UIList(wx.Panel):
     icons = {}
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
+    max_items_open = 7 # max number of items one can open without prompt
     #--Style params
     editLabels = False # allow editing the labels - also enables F2 shortcut
 
@@ -1891,6 +1892,18 @@ class UIList(wx.Panel):
 
     def EnsureVisible(self, name): ##: TANK ONLY
         raise AbstractError
+
+    def OpenSelected(self, selected=None):
+        """Open selected files with default program."""
+        dataDir = self.data.dir
+        selected = selected if selected else self.GetSelected()
+        num = len(selected)
+        if num > UIList.max_items_open and not askContinue(self,
+            _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
+            'bash.maxItemsOpen'): return
+        for file_ in selected:
+            file_ = dataDir.join(file_)
+            if file_.exists(): file_.start()
 
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):

@@ -463,11 +463,7 @@ class File_Open(EnabledLink):
 
     def _enable(self): return len(self.selected) > 0
 
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.window.data.dir
-        for file_ in self.selected:
-            dir_.join(file_).start()
+    def Execute(self, event): self.window.OpenSelected(selected=self.selected)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""

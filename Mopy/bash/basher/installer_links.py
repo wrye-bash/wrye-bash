@@ -646,11 +646,7 @@ class Installer_Open(_InstallerLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.idata.dir
-        for file_ in self.selected:
-            dir_.join(file_).start()
+    def Execute(self,event): self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):

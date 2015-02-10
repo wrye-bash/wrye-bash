@@ -2776,12 +2776,6 @@ class InstallersList(balt.Tank):
             if visibleIndex > maxPos: visibleIndex = maxPos
             elif visibleIndex < 0: visibleIndex = 0
             self._gList.EnsureVisible(visibleIndex)
-        elif code in balt.wxReturn:
-        ##Enter - Open selected Installer/
-            selected = self.GetSelected()
-            if selected:
-                path = self.data.dir.join(selected[0])
-                if path.exists(): path.start()
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
             balt.clipboardDropFiles(10, self.OnDropFiles)
@@ -2805,8 +2799,7 @@ class InstallersList(balt.Tank):
                 itemDex = self.GetIndex(nextItem)
                 self.SelectItemAtIndex(itemDex)
         else:
-            path = self.data.dir.join(self.GetItem(hitItem))
-            if path.exists(): path.start()
+            self.OpenSelected(selected=[item])
         event.Skip()
 
     def Rename(self, selected=None):
@@ -2831,7 +2824,7 @@ class InstallersList(balt.Tank):
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
-        ##Ctrl+Shift+N - Add a marker
+        # Ctrl+Shift+N - Add a marker
         if event.CmdDown() and event.ShiftDown() and code == ord('N'):
             self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
@@ -2839,6 +2832,8 @@ class InstallersList(balt.Tank):
             sel = map(lambda x: bosh.dirs['installers'].join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
+        # Enter: Open selected installers
+        elif code in balt.wxReturn: self.OpenSelected()
         super(InstallersList, self).OnKeyUp(event)
 
 #------------------------------------------------------------------------------
@@ -3502,17 +3497,6 @@ class ScreensList(List):
         if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
-    def OnChar(self,event):
-        """Char event: Activate selected items."""
-        ##Enter
-        if event.GetKeyCode() in balt.wxReturn:
-            screensDir = bosh.screensData.dir
-            for file in self.GetSelected():
-                file = screensDir.join(file)
-                if file.exists():
-                    file.start()
-        event.Skip()
-
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         code = event.GetKeyCode()
@@ -3521,6 +3505,8 @@ class ScreensList(List):
             sel = map(lambda x: bosh.screensData.dir.join(x).s,
                       self.GetSelected())
             copyListToClipboard(sel)
+        # Enter: Open selected screens
+        elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
 
     def OnItemSelected(self,event=None):
