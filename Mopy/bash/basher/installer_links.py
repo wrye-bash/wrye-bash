@@ -1420,18 +1420,19 @@ class InstallerConverter_Create(_InstallerLink):
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
     def _enable(self):
-        if not super(InstallerOpenAt_MainMenu, self)._enable(): return False # one  selected only
-        return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
+        return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
+            self.window.data[self.selected[0]], bosh.InstallerArchive)
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     def _enable(self): # TODO(ut) untested for multiple selections
-        """Return False to disable the converter menu otherwise populate its links attribute and return True."""
+        """Return False to disable the converter menu, otherwise populate its
+        links attribute and return True."""
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        instData = self.data # window.data, InstallersData singleton
+        instData = self.window.data # InstallersData singleton
         selectedCRCs = set(instData[archive].crc for archive in selected)
         crcInstallers = set(instData.crc_installer)
         srcCRCs = set(instData.srcCRC_converters)
@@ -1466,6 +1467,6 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     def _enable(self):
         for item in self.selected:
-            if not isinstance(self.data[item],bosh.InstallerArchive):
+            if not isinstance(self.window.data[item], bosh.InstallerArchive):
                 return False
         return True

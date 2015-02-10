@@ -2281,7 +2281,6 @@ class Link(object):
         self.selected = data
         if isinstance(window,Tank): # TODO(ut): eliminate this
             self.gTank = window
-            self.data = window.data # still used in places, should go for good
 
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
@@ -2552,11 +2551,11 @@ class Tanks_Open(ItemLink):
 
     def _initData(self, window, data):
         super(Tanks_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s'") % self.data.dir.tail # data is Tank.data
+        self.help = _(u"Open '%s'") % self.window.data.dir.tail
 
     def Execute(self,event):
         """Handle selection."""
-        dir_ = self.data.dir
+        dir_ = self.window.data.dir
         dir_.makedirs()
         dir_.start()
 
