@@ -43,20 +43,20 @@ class Screens_NextScreenShot(ItemLink):
     """Sets screenshot base name and number."""
     text = _(u'Next Shot...')
     help = _(u'Set screenshot base name and number')
+    rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
 
     def Execute(self,event):
         oblivionIni = bosh.oblivionIni
         base = oblivionIni.getSetting(u'Display', u'sScreenShotBaseName',
                                       u'ScreenShot')
         next_ = oblivionIni.getSetting(u'Display',u'iScreenShotIndex',u'0')
-        rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
-        pattern = balt.askText(self.window,(
+        pattern = self._askText(
             _(u"Screenshot base name, optionally with next screenshot number.")
             + u'\n' +
-            _(u"E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201.")
-            ),_(u"Next Shot..."),base+next_)
+            _(u"E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201."),
+            default=base + next_)
         if not pattern: return
-        maPattern = rePattern.match(pattern)
+        maPattern = self.__class__.rePattern.match(pattern)
         newBase,newNext = maPattern.groups()
         settings = {LString(u'Display'):{
             LString(u'SScreenShotBaseName'): newBase,
@@ -132,8 +132,8 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
         self.text = _(u'Custom [%i]') % self.quality
 
     def Execute(self,event):
-        quality = balt.askNumber(self.window, _(u'JPEG Quality'),
-                                 value=self.quality, min=0, max=100)
+        quality = self._askNumber(_(u'JPEG Quality'), value=self.quality,
+                                  min=0, max=100)
         if quality is None: return
         self.quality = quality
         bosh.settings['bash.screens.jpgCustomQuality'] = self.quality
@@ -160,8 +160,8 @@ class Messages_Archive_Import(ItemLink):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        paths = balt.askOpenMulti(self.window,_(u'Import message archive(s):'),
-                                  textDir, u'', u'*.html')
+        paths = self._askOpenMulti(title=_(u'Import message archive(s):'),
+                                   defaultDir=textDir, wildcard=u'*.html')
         if not paths: return
         bosh.settings['bash.workDir'] = paths[0].head
         for path in paths:
@@ -177,8 +177,7 @@ class Message_Delete(ItemLink):
     def Execute(self,event):
         message = _(u'Delete these %d message(s)? This operation cannot'
                     u' be undone.') % len(self.selected)
-        if not balt.askYes(self.window,message,_(u'Delete Messages')):
-            return
+        if not self._askYes(message, title=_(u'Delete Messages')): return
         #--Do it
         for message in self.selected:
             self.window.data.delete(message)
@@ -194,11 +193,10 @@ class People_AddNew(People_Link):
     help = _(u'Add a new record')
 
     def Execute(self,event):
-        name = balt.askText(self.gTank,_(u"Add new person:"),self.dialogTitle)
+        name = self._askText(_(u"Add new person:"), self.dialogTitle)
         if not name: return
-        if name in self.pdata:
-            return balt.showInfo(self.gTank, name + _(u" already exists."),
-                                 self.dialogTitle)
+        if name in self.pdata: return self._showInfo(
+            name + _(u" already exists."), title=self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
         self.gTank.RefreshUI(details=name) ##: select it !
         self.gTank.gList.EnsureVisible(self.gTank.GetIndex(name))
@@ -214,14 +212,14 @@ class People_Export(People_Link):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        path = balt.askSave(self.gTank, _(u'Export people to text file:'),
-                            textDir, u'People.txt', u'*.txt')
+        path = self._askSave(title=_(u'Export people to text file:'),
+                             defaultDir=textDir, defaultFile=u'People.txt',
+                             wildcard=u'*.txt')
         if not path: return
         bosh.settings['bash.workDir'] = path.head
         self.pdata.dumpText(path,self.selected)
-        balt.showInfo(self.gTank,
-                      _(u'Records exported: %d.') % len(self.selected),
-                      self.dialogTitle)
+        self._showInfo(_(u'Records exported: %d.') % len(self.selected),
+                       title=self.dialogTitle)
 
 #------------------------------------------------------------------------------
 class People_Import(People_Link):
@@ -233,13 +231,14 @@ class People_Import(People_Link):
     def Execute(self,event):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
-        path = balt.askOpen(self.gTank, _(u'Import people from text file:'),
-                            textDir, u'', u'*.txt', mustExist=True)
+        path = self._askOpen(title=_(u'Import people from text file:'),
+                             defaultDir=textDir, wildcard=u'*.txt',
+                             mustExist=True)
         if not path: return
         bosh.settings['bash.workDir'] = path.head
         newNames = self.pdata.loadText(path)
-        balt.showInfo(self.gTank, _(u"People imported: %d") % len(newNames),
-                      self.dialogTitle)
+        self._showInfo(_(u"People imported: %d") % len(newNames),
+                       title=self.dialogTitle)
         self.gTank.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -278,13 +277,15 @@ class Master_ChangeTo(EnabledLink):
         #--File Dialog
         wildcard = _(u'%s Mod Files') % bush.game.displayName \
                    + u' (*.esp;*.esm)|*.esp;*.esm'
-        newPath = balt.askOpen(self.window,_(u'Change master name to:'),
-            bosh.modInfos.dir, masterName, wildcard,mustExist=True)
+        newPath = self._askOpen(title=_(u'Change master name to:'),
+                                defaultDir=bosh.modInfos.dir,
+                                defaultFile=masterName, wildcard=wildcard,
+                                mustExist=True)
         if not newPath: return
         (newDir,newName) = newPath.headTail
         #--Valid directory?
         if newDir != bosh.modInfos.dir:
-            balt.showError(self.window,
+            self._showError(
                _(u"File must be selected from Oblivion Data Files directory."))
             return
         elif newName == masterName:

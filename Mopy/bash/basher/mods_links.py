@@ -143,7 +143,8 @@ class Mods_LoadList(ChoiceLink):
             modInfos.refreshInfoLists()
             modInfos.autoGhost()
         except bosh.PluginsFullError:
-            balt.showError(self.window, _(u"Mod list is full, so some mods were skipped"), _(u'Select All'))
+            self._showError(_(u"Mod list is full, so some mods were skipped"),
+                            _(u'Select All'))
         self.window.RefreshUI()
 
     def DoList(self,event):
@@ -152,8 +153,7 @@ class Mods_LoadList(ChoiceLink):
         selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in self.loadListsDict[item]]
         errorMessage = bosh.modInfos.selectExact(selectList)
         self.window.RefreshUI()
-        if errorMessage:
-            balt.showError(self.window,errorMessage,item)
+        if errorMessage: self._showError(errorMessage, item)
 
     def DoSave(self,event):
         #--No slots left?
@@ -161,11 +161,12 @@ class Mods_LoadList(ChoiceLink):
             balt.showError(self,_(u'All load list slots are full. Please delete an existing load list before adding another.'))
             return
         #--Dialog
-        newItem = (balt.askText(self.window,_(u'Save current load list as:'),u'Wrye Bash') or u'').strip()
+        newItem = (self._askText(_(u'Save current load list as:'),
+                                 u'Wrye Bash') or u'').strip()
         if not newItem: return
         if len(newItem) > 64:
             message = _(u'Load list name must be between 1 and 64 characters long.')
-            return balt.showError(self.window,message)
+            return self._showError(message)
         self.loadListsDict[newItem] = bosh.modInfos.ordered[:]
         bosh.settings.setChanged('bash.loadLists.data')
 
@@ -275,7 +276,8 @@ class Mods_ListMods(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Active Mod Files"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Active Mod Files"), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(ItemLink):
@@ -287,7 +289,8 @@ class Mods_ListBashTags(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):

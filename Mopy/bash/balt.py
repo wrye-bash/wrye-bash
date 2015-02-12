@@ -475,7 +475,7 @@ def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
         return path
 
 #------------------------------------------------------------------------------
-def askContinue(parent,message,continueKey,title=_(u'Warning')):
+def askContinue(parent, message, continueKey, title=_(u'Warning')):
     """Shows a modal continue query if value of continueKey is false. Returns True to continue.
     Also provides checkbox "Don't show this in future." to set continueKey to true."""
     #--ContinueKey set?
@@ -488,7 +488,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
                              buttons=[(wx.ID_OK,'ok'),
                                       (wx.ID_CANCEL,'cancel'),
                                       ],
-                             checkBox_=_(u"Don't show this in the future."),
+                             checkBoxTxt=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
                              )
@@ -536,7 +536,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
                              title=title,
                              message=message,
                              buttons=buttons,
-                             checkBox_=_(u"Don't show this for the rest of operation."),
+                             checkBoxTxt=_(u"Don't show this for the rest of operation."),
                              icon='warning',
                              heading=u'',
                              )
@@ -653,7 +653,7 @@ def _vistaDialog_Hyperlink(*args):
     file = args[1]
     windows.StartURL(file)
 
-def vistaDialog(parent,message,title,buttons=[],checkBox_=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+def vistaDialog(parent,message,title,buttons=[],checkBoxTxt=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
     dialog = windows.TaskDialog(title,heading,message,
@@ -665,16 +665,16 @@ def vistaDialog(parent,message,title,buttons=[],checkBox_=None,icon=None,command
         dialog.set_footer(footer)
     if expander:
         dialog.set_expander(expander,False,not footer)
-    if checkBox_:
-        if isinstance(checkBox_,basestring):
-            dialog.set_check_box(checkBox_,False)
+    if checkBoxTxt:
+        if isinstance(checkBoxTxt,basestring):
+            dialog.set_check_box(checkBoxTxt,False)
         else:
-            dialog.set_check_box(checkBox_[0],checkBox_[1])
+            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
     result = dialog.show(commandLinks)
     for id,title in buttons:
         if title.startswith(u'+'): title = title[1:]
         if title == result[0]:
-            if checkBox_:
+            if checkBoxTxt:
                 return id,result[2]
             else:
                 return id
@@ -2264,6 +2264,76 @@ class Link(object):
         Link implementation calls _initData and returns None.
         """
         self._initData(window, data)
+
+    # Wrappers around balt dialogs - used to single out non trivial uses of
+    # self->window
+    ##: avoid respecifying default params
+    def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return showWarning(self.window, message, title=title, **kwdargs)
+
+    def _askYes(self, message, title=u'', default=True, questionIcon=False):
+        if not title: title = self.text
+        return askYes(self.window, message, title=title, default=default,
+                      questionIcon=questionIcon)
+
+    def _askContinue(self, message, continueKey, title=_(u'Warning')):
+        return askContinue(self.window, message, continueKey, title=title)
+
+    def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', mustExist=False):
+        return askOpen(self.window, title=title, defaultDir=defaultDir,
+                       defaultFile=defaultFile, wildcard=wildcard,
+                       mustExist=mustExist)
+
+    def _askOk(self, message, title=u''):
+        if not title: title = self.text
+        return askOk(self.window, message, title)
+
+    def _showOk(self, message, title=u'', **kwdargs):
+        return showOk(self.window, message, title, **kwdargs)
+
+    def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return askWarning(self.window, message, title, **kwdargs)
+
+    def _askText(self, message, title=u'', default=u''):
+        if not title: title = self.text
+        return askText(self.window, message, title=title, default=default)
+
+    def _showError(self, message, title=_(u'Error'), **kwdargs):
+        return showError(self.window, message, title, **kwdargs)
+
+    def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
+        return askSave(self.window, title, defaultDir, defaultFile, wildcard,
+                       style)
+
+    def _showLog(self, logText, title=u'', style=0, asDialog=True,
+                 fixedFont=False, icons=None, size=True, question=False):
+        return showLog(self.window, logText, title, style, asDialog, fixedFont,
+                       icons, size, question)
+
+    def _showInfo(self, message, title=_(u'Information'), **kwdargs):
+        return showInfo(self.window, message, title, **kwdargs)
+
+    def _showWryeLog(self, logText, title=u'', style=0, asDialog=True,
+                     icons=None):
+        return showWryeLog(self.window, logText, title, style, asDialog, icons)
+
+    def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
+                   max=10000):
+        return askNumber(self.window, message, prompt, title, value, min, max)
+
+    def _askOpenMulti(self, title=u'', defaultDir=u'', defaultFile=u'',
+                      wildcard=u''):
+        return askOpenMulti(self.window, title, defaultDir, defaultFile,
+                            wildcard)
+
+    def _askDirectory(self, message=_(u'Choose a directory.'),
+                      defaultPath=u''):
+        return askDirectory(self.window, message, defaultPath)
+
+    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+        return askContinueShortTerm(self.window, message, title=title)
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):

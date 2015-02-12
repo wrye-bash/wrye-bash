@@ -65,7 +65,8 @@ class INI_ListINIs(ItemLink):
         """Handle printing out the errors."""
         text = self.window.ListTweaks()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'Active INIs'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Active INIs'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -86,7 +87,8 @@ class INI_ListErrors(EnabledLink):
             fileInfo = bosh.iniInfos[i]
             text += u'%s\n' % fileInfo.listErrors()
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'INI Tweak Errors'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'INI Tweak Errors'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(OneItemLink):
@@ -181,8 +183,8 @@ class INI_Apply(EnabledLink):
                        + u'\n\n' +
                        _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to your computer!')
                        )
-            if not balt.askContinue(self.window,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
-                return
+            if not self._askContinue(message, 'bash.iniTweaks.continue',
+                                     _(u'INI Tweaks')): return
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
@@ -222,10 +224,10 @@ class INI_CreateNew(OneItemLink):
         """Handle creating a new INI tweak."""
         pathFrom = self.selected[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = balt.askSave(self.window,
-                            _(u'Copy Tweak with current settings...'),
-                            bosh.dirs['tweaks'], fileName,
-                            _(u'INI Tweak File (*.ini)|*.ini'))
+        path = self._askSave(title=_(u'Copy Tweak with current settings...'),
+                             defaultDir=bosh.dirs['tweaks'],
+                             defaultFile=fileName,
+                             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
         bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI

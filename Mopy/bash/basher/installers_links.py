@@ -82,9 +82,11 @@ class Installers_MonitorInstall(Installers_Link):
 
     def Execute(self,event):
         """Handle Selection."""
-        if not balt.askOk(self.gTank,_(u'Wrye Bash will monitor your data folder for changes when installing a mod via an external application or manual install.  This will require two refreshes of the Data folder and may take some time.')
-                          ,_(u'External Installation')):
-            return
+        msg = _(u'Wrye Bash will monitor your data folder for changes when '
+                u'installing a mod via an external application or manual '
+                u'install.  This will require two refreshes of the Data folder'
+                u' and may take some time.')
+        if not self._askOk(msg, _(u'External Installation')): return
         # Refresh Data
         gInstallers.refreshed = False
         gInstallers.fullRefresh = False
@@ -92,7 +94,9 @@ class Installers_MonitorInstall(Installers_Link):
         # Backup CRC data
         data = copy.copy(gInstallers.data.data_sizeCrcDate)
         # Install and wait
-        balt.showOk(self.gTank,_(u'You may now install your mod.  When installation is complete, press Ok.'),_(u'External Installation'))
+        self._showOk(_(u'You may now install your mod.  When installation is '
+                       u'complete, press Ok.'),
+                     _(u'External Installation'))
         # Refresh Data
         gInstallers.refreshed = False
         gInstallers.fullRefresh = False
@@ -109,7 +113,8 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
-            balt.showOk(self.gTank,_(u'No changes were detected in the Data directory.'),_(u'External Installation'))
+            self._showOk(_(u'No changes were detected in the Data directory.'),
+                         _(u'External Installation'))
             return
 
         # Change to list for sorting
@@ -172,7 +177,8 @@ class Installers_MonitorInstall(Installers_Link):
         # Create Project
         if not include:
             return
-        projectName = balt.askText(self.gTank,_(u'Project Name'),_(u'External Installation'))
+        projectName = self._askText(_(u'Project Name'),
+                                    _(u'External Installation'))
         if not projectName:
             return
         path = bosh.dirs['installers'].join(projectName).root
@@ -208,11 +214,12 @@ class Installers_ListPackages(Installers_Link):
                    + u'\n' +
                    _(u'(Else shows all packages)')
                    )
-        if balt.askYes(self.gTank,message,_(u'Only Show Installed?')):
+        if self._askYes(message,_(u'Only Show Installed?')):
             text = self.idata.getPackageList(False)
         else: text = self.idata.getPackageList()
         balt.copyToClipboard(text)
-        balt.showLog(self.gTank,text,_(u'BAIN Packages'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BAIN Packages'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
@@ -237,7 +244,8 @@ class Installers_UninstallAllPackages(Installers_Link):
 
     def Execute(self,event):
         """Handle selection."""
-        if not balt.askYes(self.gTank,fill(_(u"Really uninstall All Packages?"),70),self.text): return
+        if not self._askYes(fill(_(u"Really uninstall All Packages?"), 70)):
+            return
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(unArchives='ALL',progress=progress)
@@ -263,7 +271,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         """Handle selection."""
         if self.fullRefresh:
             message = balt.fill(_(u"Refresh ALL data from scratch? This may take five to ten minutes (or more) depending on the number of mods you have installed."))
-            if not balt.askWarning(self.gTank,fill(message,80),self.text): return
+            if not self._askWarning(fill(message, 80), self.text): return
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
         gInstallers.ShowPanel()
@@ -286,7 +294,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
             u'Note that if you use TES4LODGen, this will also clean out the '
             u'DistantLOD folder, so on completion please run TES4LodGen '
             u'again.') % u'Oblivion Mods\\Bash Installers\\Bash\\Data Folder Contents <date>'
-        if balt.askYes(self.gTank,fill(fullMessage,70),self.text):
+        if self._askYes(fill(fullMessage, 70)):
             try:
                 with balt.Progress(_(u"Cleaning Data Files..."),
                                    u'\n' + u' ' * 65) as progress:
@@ -351,7 +359,7 @@ class Installers_AutoRefreshBethsoft(Installers_Link, BoolLink):
             message = balt.fill(_(u"Enable installation of Bethsoft Content?") + u'\n\n' +
                                 _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculated.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
                                 )
-            if not balt.askYes(self.gTank,fill(message,80),self.text): return
+            if not self._askYes(fill(message, 80)): return
         super(Installers_AutoRefreshBethsoft, self).Execute(event)
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
@@ -388,8 +396,8 @@ class Installers_Enabled(Installers_Link, BoolLink):
                    + u'\n\n\t' +
                    _(u"If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.")
                    )
-        if not enabled and not balt.askYes(self.gTank,fill(message,80),self.dialogTitle):
-            return
+        if not enabled and not self._askYes(fill(message, 80),
+                                            title=self.dialogTitle): return
         enabled = bosh.settings[self.key] = not enabled
         if enabled:
             gInstallers.refreshed = False
