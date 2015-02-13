@@ -26,6 +26,7 @@
 points to BashFrame.modList singleton."""
 
 import StringIO
+import collections
 import copy
 import os
 import wx
@@ -240,7 +241,7 @@ class _Mod_Labels(ChoiceLink):
                 """Show label editing dialog."""
                 data = _Mod_LabelsData(self.window, _self)  # ListEditorData
                 with balt.ListEditor(self.window, _self.editWindowTitle, data,
-                                     **_self.extraButtons) as _self.listEditor:
+                                     _self.extraButtons) as _self.listEditor:
                     _self.listEditor.ShowModal()  ##: consider only refreshing
                     # the mod list if this returns true
                 del _self.listEditor  ##: used by the buttons code - should be
@@ -341,15 +342,15 @@ class Mod_Groups(_Mod_Labels):
         self.column     = 'group'
         self.setKey     = 'bash.mods.groups'
         self.addPrompt  = _(u'Add group:')
-        self.extraButtons = {_(u'Refresh'): self._doRefresh,
-                             _(u'Sync'): self._doSync,
-                             _(u'Defaults'): self._doDefault
-        }
+        self.extraButtons = collections.OrderedDict([
+            (_(u'Refresh'), self._doRefresh), (_(u'Sync'), self._doSync),
+            (_(u'Reset'), self._doReset)] )
         self.editMenuText   = _(u'Edit Groups...')
         self.editWindowTitle = _(u'Groups')
         self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
-        self.extraItems = [_Mod_Groups_Export(), _Mod_Groups_Import()] + self.extraItems
+        self.extraItems = [_Mod_Groups_Export(),
+                           _Mod_Groups_Import()] + self.extraItems
 
     def _initData(self, window, data):
         super(Mod_Groups, self)._initData(window, data)
@@ -367,19 +368,26 @@ class Mod_Groups(_Mod_Labels):
         self.listEditor.SetItemsTo(list(set(bosh.settings[
             'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
-    ##: warn in items below (askContinue or whatever it's called)
     def _doSync(self, event):
         """Set the list of groups to groups currently assigned to mods."""
+        msg = _(u'This will set the list of available groups to the groups '
+                u'currently assigned to mods. Continue ?')
+        if not balt.askContinue(self.listEditor, msg, 'bash.groups.sync',
+                                _(u'Sync Groups')): return
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
 
-    def _doDefault(self, event):
+    def _doReset(self, event):
         """Set the list of groups to the default groups list.
 
         Won't clear user set groups from the modlist - most probably not
         what the user wants.
         """
+        msg = _(u"This will reset the list of available groups to the default "
+                u"group list. It won't however remove non default groups from "
+                u"mods that are already tagged with them. Continue ?")
+        if not balt.askContinue(self.listEditor, msg, 'bash.groups.reset',
+                                _(u'Reset Groups')): return
         self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
-        # maybe remove user created groups (definitely after askContinue())
 
 #--Ratings --------------------------------------------------------------------
 class Mod_Ratings(_Mod_Labels):

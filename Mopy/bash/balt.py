@@ -1195,7 +1195,7 @@ class Dialog(wx.Dialog):
 class ListEditor(Dialog):
     """Dialog for editing lists."""
 
-    def __init__(self, parent, title, data, **kwargs):
+    def __init__(self, parent, title, data, orderedDict=None):
         """A gui list, with buttons that act on the list items.
 
         Added kwargs to provide extra buttons - this class is built around a
@@ -1237,7 +1237,7 @@ class ListEditor(Dialog):
             (data.showSave,   _(u'Save'),   self.DoSave),
             (data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
-        for k,v in kwargs.items():
+        for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             buttons = vSizer()
