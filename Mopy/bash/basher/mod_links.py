@@ -269,11 +269,8 @@ class _Mod_Labels(ChoiceLink):
         fileLabels = bosh.modInfos.table.getColumn(self.column)
         for fileName in self.selected:
             fileLabels[fileName] = label
-        # FIXME(ut): when reassigning groups reselecting previous mods fails
-        #  when mods list is sorted by group - DoNone above works (reselects
-        #  correct mods) - probably call PopulateItems() here too
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            self.window.SortItems()
+            self.window.PopulateItems() ##: JUST SORT
         self.window.RefreshUI()
 
 

@@ -182,7 +182,7 @@ class Mods_EsmsFirst(CheckLink, EnabledLink):
 
     def Execute(self,event):
         self.window.esmsFirst = not self.window.esmsFirst
-        self.window.PopulateItems()
+        self.window.PopulateItems() ##: JUST SORT
 
 class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
@@ -193,7 +193,7 @@ class Mods_SelectedFirst(CheckLink):
 
     def Execute(self,event):
         self.window.selectedFirst = not self.window.selectedFirst
-        self.window.PopulateItems()
+        self.window.PopulateItems() ##: JUST SORT
 
 # "Oblivion.esm" submenu ------------------------------------------------------
 class Mods_OblivionVersion(CheckLink, EnabledLink):
