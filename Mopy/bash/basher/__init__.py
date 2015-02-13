@@ -482,7 +482,7 @@ class List(balt.UIList):
             return k if k is None else partial(k, self)
         def_key = key(self.default_sort_col)
         if col != self.default_sort_col:
-            #--Default sort, if not already applied
+            #--Default sort
             self.items.sort(key=def_key)
             self.items.sort(key=key(col), reverse=bool(reverse))
         else:
@@ -511,6 +511,7 @@ class List(balt.UIList):
         the old size before this event completes just save what
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
+        settings.setdefault(self.colWidthsKey, {}) ##: hack - move to UIList
         settings.setChanged(self.colWidthsKey)
         event.Skip()
 
@@ -523,7 +524,8 @@ class _ModsSortMixin(object):
 
     _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
-    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
+    def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
+                            True) or self.sort in self._esmsFirstCols
     @esmsFirst.setter
     def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
 
@@ -544,26 +546,27 @@ class _ModsSortMixin(object):
                 active) | bosh.modInfos.imported | bosh.modInfos.merged)
 
 #------------------------------------------------------------------------------
-class MasterList(List):
+class MasterList(_ModsSortMixin, List):
     mainMenu = Links()
     itemMenu = Links()
-    keyPrefix = 'bash.masters' ##: MasterList is a special beast
+    keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
     editLabels = True
+    #--Sorting
     default_sort_col = 'Num'
     sort_keys = {'Num': None, # sort_keys['Save Order'] =
                  'File': lambda self, a: self.data[a].name.s,
                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
-    ##: below copy paste from ModList
-    @property
-    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
-    @esmsFirst.setter
-    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
+    extra_sortings = [_ModsSortMixin._sortEsmsFirst]
 
-    def __init__(self, parent, fileInfo, setEditedFn, listData=None):
-        #--Columns
-        self.cols = settings['bash.masters.cols']
+    @property
+    def cols(self):
+        # using self.__class__.keyPrefix for common saves/mods masters settings
+        return settings[self.__class__.keyPrefix + '.cols']
+
+    def __init__(self, parent, fileInfo, setEditedFn, listData=None,
+                 keyPrefix=keyPrefix):
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
@@ -571,11 +574,9 @@ class MasterList(List):
         self.items = [] #--Item numbers in display order.
         self.fileOrderItems = []
         self.loadOrderNames = []
-        self.esmsFirst = settings['bash.masters.esmsFirst']
-        self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Parent init ##: notice it does not use Panel's keyPrefix...
-        List.__init__(self, parent, listData, self.__class__.keyPrefix,
-                      singleCell=True, sunkenBorder=False)
+        #--Parent init
+        List.__init__(self, parent, listData, keyPrefix, singleCell=True,
+                      sunkenBorder=False)
         self._setEditedFn = setEditedFn
 
     def OnItemSelected(self, event): event.Skip()
@@ -690,13 +691,6 @@ class MasterList(List):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
         #--Selection State
         self.SelectItemAtIndex(itemDex, masterName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        col, reverse = super(MasterList, self).SortItems(col, reverse)
-        #--ESMs First?
-        if self.esmsFirst or col == 'Current Order':
-            self.items.sort(key=lambda a: self.data[a].name.cext) # esm < esp
 
     #--Relist
     def ReList(self):
@@ -1389,7 +1383,7 @@ class _SashDetailsPanel(SashPanel):
 
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
-    keyPrefix = 'bash.mods.details' # used in sash/scroll position
+    keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
@@ -1422,7 +1416,8 @@ class ModDetails(_SashDetailsPanel):
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            self.masters = MasterList(masterPanel,None,self.SetEdited)
+            self.masters = MasterList(masterPanel, None, self.SetEdited,
+                                      keyPrefix=self.keyPrefix)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -2151,7 +2146,7 @@ class SaveList(List):
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
-    keyPrefix = 'bash.saves.details' # used in sash/scroll position
+    keyPrefix = 'bash.saves.details' # used in sash/scroll position, sorting
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
@@ -2175,7 +2170,8 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.masters = MasterList(masterPanel,None,self.SetEdited)
+        self.masters = MasterList(masterPanel, None, self.SetEdited,
+                                  keyPrefix=self.keyPrefix)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)

@@ -1742,13 +1742,11 @@ class UIList(wx.Panel):
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
-        # Settings key
+        #--Settings key
         self.keyPrefix = keyPrefix
-        #--Columns
+        # columns keys - access to the settings is done via properties (mostly)
         self.colNames = bosh.settings['bash.colNames']
-        self.colAligns = bosh.settings[self.keyPrefix + '.colAligns']
-        self.colWidthsKey = self.keyPrefix + '.colWidths'
-        self.colWidths = bosh.settings[self.colWidthsKey]
+        self.colWidthsKey = self.keyPrefix + '.colWidths' # used in OnColumnResize
         #--attributes
         self.dndColumns = dndColumns
         #--gList
@@ -1793,16 +1791,26 @@ class UIList(wx.Panel):
         # Columns
         self.PopulateColumns()
 
+    # Column properties - consider moving to ListCtrl
+    @property
+    def colAligns(self):
+        return bosh.settings.get(self.keyPrefix + '.colAligns', {})
+
+    @property
+    def colWidths(self): return bosh.settings.get(self.colWidthsKey, {})
+
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(self.keyPrefix + '.colReverse')
+        return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
 
     @property
     def cols(self): return bosh.settings[self.keyPrefix + '.cols']
 
     @property
-    def sort(self): return bosh.settings[self.keyPrefix + '.sort']
+    def sort(self):
+        return bosh.settings.get(self.keyPrefix + '.sort',
+                                 self.default_sort_col)
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
