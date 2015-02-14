@@ -268,9 +268,9 @@ class NotebookPanel(wx.Panel):
             if bosh.messages: bosh.messages.save()
             return
         if hasattr(self, 'listData'):
-            # the only SashPanels that do not override us and do not have this
-            # attribute are the ModDetails and SaveDetails panels that use
-            # a MasterList whose data is initially {}
+        # the only SashPanels that do not have this attribute are ModDetails
+        # and SaveDetails that use a MasterList whose data is initially {}
+        # and the SashTankPanels...
             table = self.listData.table
             # items deleted outside Bash
             for deleted in set(table.keys()) - set(self.listData.keys()):
@@ -284,9 +284,8 @@ class SashPanel(NotebookPanel):
     # screens, messages, 230 in saves details, InstallersData.defaultParam(
     # 'sashPos',550)
 
-    def __init__(self, parent, sashGravity=0.5, sashPosKey=None,
-                 isVertical=True, minimumSize=50, style=splitterStyle):
-        ##: sashPosKey parameter is still needed for MasterList subclasses
+    def __init__(self, parent, sashGravity=0.5, isVertical=True,
+                 minimumSize=50, style=splitterStyle):
         NotebookPanel.__init__(self, parent)
         self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
                                                                 style=style)
@@ -298,8 +297,7 @@ class SashPanel(NotebookPanel):
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
         splitter.SetSashGravity(sashGravity)
-        self.sashPosKey = sashPosKey if sashPosKey else \
-            self.__class__.keyPrefix + '.sashPos'
+        self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
         splitter.SetMinimumPaneSize(minimumSize)
@@ -1443,20 +1441,43 @@ class ModList(List):
             self.colReverse[self.sort] = not self.colReverse.get(self.sort,0)
 
 #------------------------------------------------------------------------------
-class ModDetails(SashPanel):
-    """Details panel for mod tab."""
-    keyPrefix = 'bash.mods.details' ##: unused for now
+class _SashDetailsPanel(SashPanel):
+    defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
-    def __init__(self,parent):
-        SashPanel.__init__(self, parent,1.0,'bash.mods.details.SashPos',
-                           isVertical=False,minimumSize=150,style=wx.SW_BORDER|splitterStyle)
-        top,bottom = self.left, self.right
+    def __init__(self, parent):
+        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
+                           style=wx.SW_BORDER | splitterStyle)
+        self.edited = False
+
+    def ShowPanel(self): ##: does not call super
+        if hasattr(self, '_firstShow'):
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+            sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
+                                   self.__class__.defaultSubSashPos)
+            self.subSplitter.SetSashPosition(sashPos)
+            del self._firstShow
+
+    def ClosePanel(self): ##: does not call super
+        if not hasattr(self, '_firstShow'):
+            # Mod details Sash Positions
+            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            settings[self.keyPrefix + '.subSplitterSashPos'] = \
+                self.subSplitter.GetSashPosition()
+
+class ModDetails(_SashDetailsPanel):
+    """Details panel for mod tab."""
+    keyPrefix = 'bash.mods.details'
+
+    def __init__(self, parent):
+        super(ModDetails, self).__init__(parent)
+        top, bottom = self.left, self.right
         #--Singleton
         global modDetails
         modDetails = self
         #--Data
         self.modInfo = None
-        self.edited = False
         textWidth = 200
         if True: #setup
             #--Version
@@ -1513,7 +1534,6 @@ class ModDetails(SashPanel):
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
-        subSplitter.SetSashPosition(settings.get('bash.mods.details.subSplitterSashPos', 0))
         mastersSizer = vSizer(
             (hSizer((staticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.masters,1,wx.EXPAND)),1,wx.EXPAND),
@@ -2076,13 +2096,13 @@ class ModPanel(SashPanel):
     def _sbText(self): return _(u'Mods:') + u' %d/%d' % (
         len(bosh.modInfos.ordered), len(bosh.modInfos.data))
 
+    def ShowPanel(self):
+        super(ModPanel, self).ShowPanel()
+        self.modDetails.ShowPanel()
+
     def ClosePanel(self):
         super(ModPanel, self).ClosePanel()
-        # Mod details Sash Positions
-        splitter = self.modDetails.right.GetParent()
-        settings[self.modDetails.sashPosKey] = splitter.GetSashPosition()
-        splitter = self.modDetails.subSplitter
-        settings['bash.mods.details.subSplitterSashPos'] = splitter.GetSashPosition()
+        self.modDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class SaveList(List):
@@ -2238,21 +2258,18 @@ class SaveList(List):
         self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
-class SaveDetails(SashPanel):
+class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
-    keyPrefix = 'bash.saves.details' ##: unused for now
+    keyPrefix = 'bash.saves.details'
 
     def __init__(self,parent):
-        """Initialize."""
-        SashPanel.__init__(self, parent,0.0,'bash.saves.details.SashPos',
-                           isVertical=False,minimumSize=230,style=wx.SW_BORDER|splitterStyle)
-        top,bottom = self.left, self.right
+        super(SaveDetails, self).__init__(parent)
+        top, bottom = self.left, self.right
         #--Singleton
         global saveDetails
         saveDetails = self
         #--Data
         self.saveInfo = None
-        self.edited = False
         textWidth = 200
         #--File Name
         self.file = textCtrl(top, size=(textWidth, -1),
@@ -2302,7 +2319,6 @@ class SaveDetails(SashPanel):
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,notePanel)
         subSplitter.SetSashGravity(1.0)
-        subSplitter.SetSashPosition(settings.get('bash.saves.details.subSplitterSashPos', 500))
         mastersSizer.SetSizeHints(masterPanel)
         masterPanel.SetSizer(mastersSizer)
         noteSizer.SetSizeHints(masterPanel)
@@ -2468,14 +2484,14 @@ class SavePanel(SashPanel):
 
     def _sbText(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
+    def ShowPanel(self):
+        super(SavePanel, self).ShowPanel()
+        self.saveDetails.ShowPanel()
+
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
         super(SavePanel, self).ClosePanel()
-        # Save details Sash Positions
-        splitter = self.saveDetails.right.GetParent()
-        settings[self.saveDetails.sashPosKey] = splitter.GetSashPosition()
-        splitter = self.saveDetails.subSplitter
-        settings['bash.saves.details.subSplitterSashPos'] = splitter.GetSashPosition()
+        self.saveDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
