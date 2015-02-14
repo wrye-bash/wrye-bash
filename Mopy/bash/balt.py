@@ -1730,6 +1730,9 @@ class UIList(wx.Panel):
     max_items_open = 7 # max number of items one can open without prompt
     #--Style params
     editLabels = False # allow editing the labels - also enables F2 shortcut
+    #--Sorting
+    nonReversibleCols = {'Load Order', 'Current Order'}
+    default_sort_col = 'File' # override as needed
 
     def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
                  **kwargs):

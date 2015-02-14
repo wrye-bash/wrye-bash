@@ -329,8 +329,8 @@ class SashTankPanel(SashPanel):
 #------------------------------------------------------------------------------
 class List(balt.UIList):
     icons = colorChecks
-    default_sort_col = 'File' # override as needed
-    sort_keys = {}
+    sort_keys = {} # sort_keys[col] provides the sort key for this col
+    extra_sortings = [] # extra self.methods for fancy sortings - order matters
 
     def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
                  dndList=False, dndColumns=(), **kwargs):
@@ -487,6 +487,7 @@ class List(balt.UIList):
             self.items.sort(key=key(col), reverse=bool(reverse))
         else:
             self.items.sort(key=def_key, reverse=bool(reverse))
+        for lamda in self.extra_sortings: lamda(self)
         self._setColumnSortIndicator(col, oldcol, reverse)
         return col, reverse
 
@@ -517,6 +518,30 @@ class List(balt.UIList):
     def OnColumnClick(self, event):
         """List OnColumnClick override - cf Tank."""
         self.PopulateItems(self.cols[event.GetColumn()],-1)
+
+class _ModsSortMixin(object):
+
+    _esmsFirstCols = balt.UIList.nonReversibleCols
+    @property
+    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
+    @esmsFirst.setter
+    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
+
+    @property
+    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
+    @selectedFirst.setter
+    def selectedFirst(self, val):
+        settings[self.keyPrefix + '.selectedFirst'] = val
+
+    def _sortEsmsFirst(self):
+        if self.esmsFirst or self.sort in self._esmsFirstCols:
+            self.items.sort(key=lambda a: not self.data[a].isEsm())
+
+    def _activeModsFirst(self):
+        if self.selectedFirst:
+            active = bosh.modInfos.ordered
+            self.items.sort(key=lambda x: x not in set(
+                active) | bosh.modInfos.imported | bosh.modInfos.merged)
 
 #------------------------------------------------------------------------------
 class MasterList(List):
@@ -751,11 +776,14 @@ class INIList(List):
                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
                 }
+    def _sortValidFirst(self):
+        if settings['bash.ini.sortValid']:
+            self.items.sort(key=lambda a: self.data[a].status < 0)
+    extra_sortings = [_sortValidFirst]
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.ini.cols'
-        self.sortValid = settings['bash.ini.sortValid']
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix, sunkenBorder=False)
 
@@ -859,13 +887,6 @@ class INIList(List):
             item.SetBackgroundColour(colors['default.bkgd'])
         listCtrl.SetItem(item)
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    def SortItems(self,col=None,reverse=-2):
-        super(INIList, self).SortItems(col, reverse)
-        #--Valid Tweaks first?
-        self.sortValid = settings['bash.ini.sortValid']
-        if self.sortValid:
-            self.items.sort(key=lambda a: self.data[a].status < 0)
 
     def OnLeftDown(self,event):
         """Handle click on icon events"""
@@ -1002,7 +1023,7 @@ class INILineCtrl(wx.ListCtrl):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class ModList(List):
+class ModList(_ModsSortMixin, List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -1023,6 +1044,8 @@ class ModList(List):
         'Mod Status': lambda self, a: self.data[a].txt_status(),
         'CRC': lambda self, a: self.data[a].cachedCrc(),
     }
+    extra_sortings = [_ModsSortMixin._sortEsmsFirst,
+                      _ModsSortMixin._activeModsFirst]
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -1032,17 +1055,6 @@ class ModList(List):
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
-
-    @property
-    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
-    @esmsFirst.setter
-    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
-
-    @property
-    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
-    @selectedFirst.setter
-    def selectedFirst(self, val):
-        settings[self.keyPrefix + '.selectedFirst'] = val
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1225,18 +1237,6 @@ class ModList(List):
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
         #--Status bar text
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        col, reverse = super(ModList, self).SortItems(col,reverse)
-        #--ESMs First?
-        if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key=lambda a: not self.data[a].isEsm())
-        #--Selected First?
-        selected = bosh.modInfos.ordered
-        if self.selectedFirst:
-            active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
-            self.items.sort(key=lambda x: x not in active)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
