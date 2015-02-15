@@ -299,7 +299,7 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Files': 1,
         },
     'bash.installers.page':0,
-    'bash.installers.enabled': True,
+    'bash.installers.enabled': False,
     'bash.installers.autoAnneal': True,
     'bash.installers.autoWizard':True,
     'bash.installers.wizardOverlay':True,
