@@ -2774,7 +2774,7 @@ class InstallersList(balt.Tank):
                 if path.exists(): path.start()
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
-            balt.clipboardDropFiles(10, self.OnDrKopFiles)
+            balt.clipboardDropFiles(10, self.OnDropFiles)
         else:
             event.Skip()
 
