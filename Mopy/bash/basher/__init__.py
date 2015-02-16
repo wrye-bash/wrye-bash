@@ -2805,13 +2805,14 @@ class InstallersPanel(SashTankPanel):
             wx.PostEvent(self.GetEventHandler(), event)
 
             settings['bash.installers.isFirstRun'] = False
-            message = (_(u'Do you want to enable Installers?')
-                       + u'\n\n\t' +
-                       _(u'If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.')
-                       + u'\n\n\t' +
-                       _(u"If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'.")
-                       )
-            settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
+            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
+                u'If you do, Bash will first need to initialize some data. '
+                u'This can take on the order of five minutes if there are '
+                u'many mods installed.') + u'\n\n\t' + _(
+                u"If not, you can enable it at any time by right-clicking "
+                u"the column header menu and selecting 'Enabled'.")
+            settings['bash.installers.enabled'] = balt.askYes(self, message,
+                                                              self.data.title)
             Link.Frame.BindRefresh(bind=True)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return

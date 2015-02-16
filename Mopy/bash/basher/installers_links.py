@@ -27,7 +27,7 @@ points to the InstallersList singleton."""
 
 import copy
 from .. import bosh, balt, bush
-from ..balt import fill, BoolLink, AppendableLink, Link, ItemLink
+from ..balt import BoolLink, AppendableLink, Link, ItemLink
 from . import Resources, Installers_Link
 from .dialogs import ListBoxes, CreateNewProject
 from ..bolt import SubProgress
@@ -238,8 +238,7 @@ class Installers_UninstallAllPackages(Installers_Link):
 
     def Execute(self,event):
         """Uninstall all packages."""
-        if not self._askYes(fill(_(u"Really uninstall All Packages?"), 70)):
-            return
+        if not self._askYes(_(u"Really uninstall All Packages?")): return
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(unArchives='ALL',progress=progress)
@@ -250,6 +249,9 @@ class Installers_UninstallAllPackages(Installers_Link):
 
 class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
+    msg = _(u"Refresh ALL data from scratch? This may take five to ten minutes"
+            u" (or more) depending on the number of mods you have installed.")
+
     def __init__(self, fullRefresh=False):
         super(Installers_Refresh, self).__init__()
         self.fullRefresh = fullRefresh
@@ -260,12 +262,10 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             u"Rescan the Data directory and all project directories.")
 
     def _append(self, window): return bosh.settings['bash.installers.enabled']
-
     def Execute(self,event):
         """Refreshes all Installers data"""
-        if self.fullRefresh:
-            message = balt.fill(_(u"Refresh ALL data from scratch? This may take five to ten minutes (or more) depending on the number of mods you have installed."))
-            if not self._askWarning(fill(message, 80), self.text): return
+        if self.fullRefresh and not self._askWarning(self.msg, self.text):
+            return
         gInstallers.refreshed = False
         gInstallers.fullRefresh = self.fullRefresh
         gInstallers.ShowPanel()
@@ -277,18 +277,16 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     text = _(u'Clean Data')
     help = _(u'This will remove all mod files that are not linked to an'
              u' active installer out of the Data folder.')
+    fullMessage = _(u"Clean Data directory?") + u"  " + help + u"  " + _(
+        u'This includes files that were installed manually or by another '
+        u'program.  Files will be moved to the "%s" directory instead of '
+        u'being deleted so you can retrieve them later if necessary.  '
+        u'Note that if you use TES4LODGen, this will also clean out the '
+        u'DistantLOD folder, so on completion please run TES4LodGen again.'
+        ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
 
     def Execute(self,event):
-        """Handle selection."""
-        fullMessage = _(
-            u"Clean Data directory?") + u"  " + self.help + u"  " + _(
-            u'This includes files that were installed manually or by another '
-            u'program.  Files will be moved to the "%s" directory instead of '
-            u'being deleted so you can retrieve them later if necessary.  '
-            u'Note that if you use TES4LODGen, this will also clean out the '
-            u'DistantLOD folder, so on completion please run TES4LodGen '
-            u'again.') % u'Oblivion Mods\\Bash Installers\\Bash\\Data Folder Contents <date>'
-        if self._askYes(fill(fullMessage, 70)):
+        if self._askYes(self.fullMessage):
             try:
                 with balt.Progress(_(u"Cleaning Data Files..."),
                                    u'\n' + u' ' * 65) as progress:
@@ -345,13 +343,15 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     key = 'bash.installers.autoRefreshBethsoft'
     help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
+    message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
+        u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to "
+        u"have their CRCs calculated.  This will be accomplished by a full "
+        u"refresh of BAIN data an may take quite some time.  Are you sure "
+        u"you want to continue?")
 
     def Execute(self,event):
-        if not bosh.settings[self.key]:
-            message = balt.fill(_(u"Enable installation of Bethsoft Content?") + u'\n\n' +
-                                _(u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to have their CRCs calculated.  This will be accomplished by a full refresh of BAIN data an may take quite some time.  Are you sure you want to continue?")
-                                )
-            if not self._askYes(fill(message, 80)): return
+        if not bosh.settings[self.key] and not self._askYes(self.message):
+            return
         super(Installers_AutoRefreshBethsoft, self).Execute(event)
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
@@ -380,15 +380,14 @@ class Installers_Enabled(BoolLink):
     text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
+    message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
+        u"If you do, Bash will first need to initialize some data. This can "
+        u"take on the order of five minutes if there are many mods installed.")
 
     def Execute(self,event):
         """Enable/Disable the installers tab."""
         enabled = bosh.settings[self.key]
-        message = (_(u"Do you want to enable Installers?")
-                   + u'\n\n\t' +
-                   _(u"If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.")
-                   )
-        if not enabled and not self._askYes(fill(message, 80),
+        if not enabled and not self._askYes(self.message,
                                             title=self.dialogTitle): return
         enabled = bosh.settings[self.key] = not enabled
         if enabled:
