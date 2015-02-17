@@ -172,15 +172,12 @@ class Mods_LoadList(ChoiceLink):
         balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
 
 # "Sort by" submenu -----------------------------------------------------------
-class Mods_EsmsFirst(CheckLink):
+class Mods_EsmsFirst(CheckLink, EnabledLink):
     """Sort esms to the top."""
-    help = _(u'Sort masters by type')
+    help = _(u'Sort masters by type. Always on if current sort is Load Order.')
+    text = _(u'Type')
 
-    def __init__(self, prefix=u''):
-        super(Mods_EsmsFirst, self).__init__()
-        self.prefix = prefix
-        self.text = self.prefix + _(u'Type')
-
+    def _enable(self): return not self.window.forceEsmFirst()
     def _check(self): return self.window.esmsFirst
 
     def Execute(self,event):
@@ -190,11 +187,7 @@ class Mods_EsmsFirst(CheckLink):
 class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
     help = _(u'Sort loaded mods to the top')
-
-    def __init__(self, prefix=u''):
-        super(Mods_SelectedFirst, self).__init__()
-        self.prefix = prefix
-        self.text = self.prefix + _(u'Selection')
+    text = _(u'Selection')
 
     def _check(self): return self.window.selectedFirst
 

@@ -545,6 +545,8 @@ class _ModsSortMixin(object):
             self.items.sort(key=lambda x: x not in set(
                 active) | bosh.modInfos.imported | bosh.modInfos.merged)
 
+    def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
+
 #------------------------------------------------------------------------------
 class MasterList(_ModsSortMixin, List):
     mainMenu = Links()

@@ -58,13 +58,11 @@ class Files_Open(ItemLink):
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
 
-    def __init__(self, sortCol, prefix=''):
+    def __init__(self, sortCol):
         super(Files_SortBy, self).__init__()
         self.sortCol = sortCol
-        self.sortName = bosh.settings['bash.colNames'][sortCol]
-        self.prefix = prefix
-        self.text = self.prefix + self.sortName
-        self.help = _(u'Sort by %s') % self.sortName
+        self.text = bosh.settings['bash.colNames'][sortCol]
+        self.help = _(u'Sort by %s') % self.text
 
     def _check(self): return self.window.sort == self.sortCol
 
