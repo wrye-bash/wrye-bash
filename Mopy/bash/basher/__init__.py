@@ -141,7 +141,7 @@ class Installers_Link(ItemLink):
     @property
     def idata(self): return gInstallers.data # InstallersData singleton
 
-class People_Link(ItemLink):
+class People_Link(Link):
     """PeopleData mixin"""
 
     @property

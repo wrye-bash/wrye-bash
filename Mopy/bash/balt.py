@@ -2434,8 +2434,9 @@ class ChoiceLink(Link):
 
     def AppendToMenu(self,menu,window,data):
         """Append idList items and register their callbacks."""
-        subMenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
-        if subMenu: menu = subMenu # our super is a MenuLink instance not mere Link instance
+        submenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
+        if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
+            menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, data)
         for link in self._range():
@@ -2443,7 +2444,7 @@ class ChoiceLink(Link):
         #--Events
         wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
                           self.DoList)
-        # notice it returns None
+        # returns None
 
     def DoList(self, event): event.Skip()
 

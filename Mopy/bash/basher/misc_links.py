@@ -186,7 +186,7 @@ class Message_Delete(ItemLink):
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class People_AddNew(People_Link):
+class People_AddNew(ItemLink, People_Link):
     """Add a new record."""
     dialogTitle = _(u'Add New Person')
     text = _(u'Add...')
@@ -203,7 +203,7 @@ class People_AddNew(People_Link):
         self.pdata.setChanged()
 
 #------------------------------------------------------------------------------
-class People_Export(People_Link):
+class People_Export(ItemLink, People_Link):
     """Export people to text archive."""
     dialogTitle = _(u"Export People")
     text = _(u'Export...')
@@ -222,7 +222,7 @@ class People_Export(People_Link):
                        title=self.dialogTitle)
 
 #------------------------------------------------------------------------------
-class People_Import(People_Link):
+class People_Import(ItemLink, People_Link):
     """Import people from text archive."""
     dialogTitle = _(u"Import People")
     text = _(u'Import...')
@@ -242,13 +242,12 @@ class People_Import(People_Link):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class People_Karma(People_Link, ChoiceLink):
+class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     """Add Karma setting links."""
-    text = _(u'Karma')
     idList = ID_GROUPS
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
-    class _Karma(People_Link):
+    class _Karma(ItemLink, People_Link):
         def Execute(self, event):
             karma = int(self.text)
             for item in self.selected:
