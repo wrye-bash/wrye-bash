@@ -248,18 +248,19 @@ class People_Karma(People_Link, ChoiceLink):
     idList = ID_GROUPS
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
+    class _Karma(People_Link):
+        def Execute(self, event):
+            karma = int(self.text)
+            for item in self.selected:
+                text = self.pdata[item][2]
+                self.pdata[item] = (time.time(), karma, text)
+            self.window.RefreshUI()
+            self.pdata.setChanged()
+
+    cls = _Karma
+
     @property
     def items(self): return self.__class__.labels
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        idList = ID_GROUPS
-        karma = range(5,-6,-1)[event.GetId()-idList.BASE]
-        for item in self.selected:
-            text = self.pdata[item][2]
-            self.pdata[item] = (time.time(),karma,text)
-        self.window.RefreshUI()
-        self.pdata.setChanged()
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
