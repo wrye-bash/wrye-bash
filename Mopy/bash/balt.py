@@ -2525,17 +2525,13 @@ class RadioLink(CheckLink):
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
     text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
-
-    def __init__(self, opposite=False):
-        super(BoolLink, self).__init__()
-        self.opposite = opposite
+    opposite = False
 
     def _check(self):
         # check if not the same as self.opposite (so usually check if True)
-        return bosh.settings[self.key] ^ self.opposite
+        return bosh.settings[self.key] ^ self.__class__.opposite
 
-    def Execute(self,event):
-        bosh.settings[self.key] ^= True # toggle
+    def Execute(self,event): bosh.settings[self.key] ^= True # toggle
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
