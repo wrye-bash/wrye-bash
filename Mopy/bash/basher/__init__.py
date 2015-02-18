@@ -341,8 +341,6 @@ class List(balt.UIList):
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
-        #--Events: Items
-        self.hitIcon = 0
         #--Events: Columns
         self.checkcol = []
         self._gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
@@ -700,7 +698,7 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
-    sort_keys = {'File': None, # lambda _self, a: attrgetter('cext'), ##: why ?
+    sort_keys = {'File': None,
                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
                 }
@@ -828,17 +826,14 @@ class INIList(List):
                        )
             if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
-        dir = tweak.dir
         #--No point applying a tweak that's already applied
-        file = dir.join(self.items[hitItem])
-        self.data.ini.applyTweakFile(file)
+        file_ = tweak.dir.join(self.items[hitItem])
+        self.data.ini.applyTweakFile(file_)
         self.RefreshUI('VALID')
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnItemSelected(self, event):
-        """This is set by the IniPanel to its OnSelectTweak()."""
-        event.Skip()
+    def OnItemSelected(self, event): self.panel.OnSelectTweak(event)
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -951,7 +946,7 @@ class ModList(_ModsSortMixin, List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     sort_keys = {
-        'File': None, #lambda self, a: attrgetter('cext'), ##: why ?
+        'File': None,
         'Author': lambda self, a: self.data[a].header.author.lower(),
         'Rating': lambda self, a: bosh.modInfos.table.getItem(
                      a, 'rating', u''),
@@ -1597,14 +1592,15 @@ class ModDetails(_SashDetailsPanel):
         #--Links closure
         mod_info = self.modInfo
         mod_tags = mod_info.getBashTags()
-        isAuto = bosh.modInfos.table.getItem(mod_info.name,'autoBashTags',True)
+        is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
+                                              True)
         all_tags = self.allTags
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
-            def _check(self): return isAuto
+            def _check(self): return is_auto
             def Execute(self, event):
                 """Handle selection of automatic bash tags."""
                 if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
@@ -1619,7 +1615,7 @@ class ModDetails(_SashDetailsPanel):
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
             text = _(u'Copy to Description')
-            def _enable(self): return not isAuto and mod_tags != bashTagsDesc
+            def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self, event):
                 """Copy manually assigned bash tags into the mod description"""
                 mod_info.setBashTagsDesc(mod_info.getBashTags())
@@ -1688,7 +1684,6 @@ class INIPanel(SashPanel):
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
-        self.uiList.OnItemSelected = lambda s, e: self.OnSelectTweak(e)
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -2332,8 +2327,6 @@ class InstallersList(balt.Tank):
     def __init__(self, parent, data, keyPrefix, details=None):
         balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
                            dndList=True, dndFiles=True, dndColumns=['Order'])
-        self.hitItem = None
-        self.hitTime = 0
 
     #--Item Info
     def getColumns(self, item):

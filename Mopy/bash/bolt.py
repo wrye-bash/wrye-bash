@@ -1856,10 +1856,6 @@ class TankData:
         """Refreshes underlying data as needed."""
         pass
 
-    def getRefreshReport(self):
-        """Returns a (string) report on the refresh operation."""
-        return None
-
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
         return item

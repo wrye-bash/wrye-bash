@@ -42,7 +42,7 @@ class INI_SortValid(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI()
+        self.window.SortItems()
 
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
