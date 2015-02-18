@@ -3333,7 +3333,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gEspmList.HitTest((x,y))
         self.gEspmList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self, selected)
+        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, selected)
 
     def SubsSelectionMenu(self,event):
         """Handle right click in espm list."""
@@ -3342,7 +3342,7 @@ class InstallersPanel(SashTankPanel):
         selected = self.gSubList.HitTest((x,y))
         self.gSubList.SetSelection(selected)
         #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self, selected)
+        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, selected)
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
