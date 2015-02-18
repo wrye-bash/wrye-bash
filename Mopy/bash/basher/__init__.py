@@ -2309,9 +2309,11 @@ class InstallersList(balt.Tank):
     editLabels = True
     default_sort_col = 'Package'
     sort_keys = {'Package': None,
-                 'Files': lambda self, x: len(self.data[x].fileSizeCrcs),
+                 'Files': lambda self, x: len(self.data[x].fileSizeCrcs)
+                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
                  'Order': lambda self, x: self.data[x].order,
-                 'Size': lambda self, x: self.data[x].size,
+                 'Size': lambda self, x: self.data[x].size
+                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
                  'Modified': lambda self, x: self.data[x].modified,
                 }
     #--Special sorters
@@ -2333,8 +2335,19 @@ class InstallersList(balt.Tank):
         self.hitItem = None
         self.hitTime = 0
 
-    def GetColumnDex(self,column):
-        return settingDefaults['bash.installers.cols'].index(column)
+    #--Item Info
+    def getColumns(self, item):
+        labels, installer = {}, self.data[item]
+        marker = isinstance(installer, bosh.InstallerMarker)
+        labels['Package'] = item.s
+        labels['Files'] = formatInteger(
+            len(installer.fileSizeCrcs)) if not marker else u''
+        labels['Order'] = unicode(installer.order)
+        labels['Modified'] = formatDate(installer.modified)
+        siz = installer.size
+        siz = u'0' if siz == 0 else formatInteger(max(siz, 1024) / 1024)
+        labels['Size'] = siz + u' KB' if not marker else u''
+        return labels
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -3733,8 +3746,13 @@ class PeopleList(balt.Tank):
                  'Header': lambda self, x: self.data[x][2][:50].lower(),
                 }
 
-    def GetColumnDex(self,column):
-        return settingDefaults['bash.people.cols'].index(column)
+    def getColumns(self, item):
+        labels, itemData = {}, self.data[item]
+        labels['Name'] = item
+        karma = itemData[1]
+        labels['Karma'] = (u'-', u'+')[karma >= 0] * abs(karma)
+        labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
+        return labels
 
     def MouseOverItem(self, item):
         """People's Tab: mouse over item is a noop."""

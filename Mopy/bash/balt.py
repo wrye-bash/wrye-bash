@@ -2159,11 +2159,10 @@ class Tank(UIList):
         if index < 0: return
         data,listCtrl = self.data,self._gList
         item = item or self.GetItem(index)
-        valuesForAllColumns = data.getColumns(item) ##: aka populateItemAlaTank
+        valuesForAllColumns = self.getColumns(item)
         for iColumn,column in enumerate(self.cols):
-            colDex = self.GetColumnDex(column) ##: here to serve getColumns
-            value = valuesForAllColumns[colDex]
-            if newItem and (colDex == 0):
+            value = valuesForAllColumns[column]
+            if newItem and (0 == iColumn):
                 listCtrl.InsertListCtrlItem(index, value, item)
             else:
                 listCtrl.SetStringItem(index, iColumn, value)
@@ -2177,9 +2176,6 @@ class Tank(UIList):
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
         listCtrl.SetItem(gItem)
-
-    def GetColumnDex(self,column): ##: remove
-        raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
@@ -2209,6 +2205,10 @@ class Tank(UIList):
         """(Optionally) Shows a report of changes after a data refresh."""
         report = self.data.getRefreshReport()
         if report: showInfo(self,report,self.data.title)
+
+    def getColumns(self, item): ##: to UIList !
+        """Returns text labels for item to populate list control."""
+        raise AbstractError
 
     def RefreshUI(self,items='ALL',details='SAME'):
         """Refreshes UI for specified file."""
