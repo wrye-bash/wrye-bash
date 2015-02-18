@@ -7749,7 +7749,8 @@ class InstallersData(bolt.TankData, DataDict):
 
     def addMarker(self,name):
         path = GPath(name)
-        self.data[path] = InstallerMarker(path)
+        self[path] = InstallerMarker(path)
+        self.refresh(what='OS')
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""

@@ -1602,6 +1602,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self.doDnD = True
+        #--Item/Id mapping
+        self._item_itemId = {}
+        self._itemId_item = {}
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
@@ -1712,10 +1715,48 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
 
     def dndAllow(self):
-        if self.doDnD:
-            if self.fnDndAllow: return self.fnDndAllow()
-            return True
-        return False
+        return self.doDnD and (not self.fnDndAllow or self.fnDndAllow())
+
+    # API (alpha) -------------------------------------------------------------
+
+    # Internal id <-> item mappings used in SortItems for now
+    # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
+
+    def __id(self, item):
+        i = long(wx.NewId())
+        self._item_itemId[item] = i
+        self._itemId_item[i] = item
+        return i
+
+    def InsertListCtrlItem(self, index, value, item):
+        """Insert an item to the list control giving it an internal id."""
+        i = self.__id(item)
+        some_long = self.InsertStringItem(index, value) # index ?
+        gItem = self.GetItem(index) # that's what Tank did
+        gItem.SetData(i)  # Associate our id with that row.
+        self.SetItem(gItem) # this is needed too - yak
+        return some_long
+
+    def RemoveItemAt(self, index):
+        """Remove item at specified list index."""
+        itemId = self.GetItemData(index)
+        item = self._itemId_item[itemId]
+        del self._item_itemId[item]
+        del self._itemId_item[itemId]
+        self.DeleteItem(index)
+
+    def FindIndexOf(self, item):
+        """Return index of specified item."""
+        return self.FindItemData(-1, self._item_itemId[item])
+
+    def FindItemAt(self, index):
+        """Return item for specified list index."""
+        return self._itemId_item[self.GetItemData(index)]
+
+    def ReorderItems(self, ordered):
+        """Reorder the list control displayed items to match ordered."""
+        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(ordered))
+        self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
@@ -2057,10 +2098,6 @@ class Tank(UIList):
         #--Data
         self.data = data
         self.details = details
-        #--Item/Id mapping
-        self.nextItemId = 1
-        self.item_itemId = {}
-        self.itemId_item = {}
         #--ListCtrl
         # no sunken borders by default
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
@@ -2088,40 +2125,26 @@ class Tank(UIList):
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
         """Returns item for specified list index."""
-        return self.itemId_item[self._gList.GetItemData(index)]
-
-    def GetId(self,item):
-        """Returns id for specified item, creating id if necessary."""
-        id_ = self.item_itemId.get(item)
-        if id_: return id_
-        #--Else get a new item id.
-        id_ = self.nextItemId
-        self.nextItemId += 1
-        self.item_itemId[item] = id_
-        self.itemId_item[id_] = item
-        return id_
+        return self._gList.FindItemAt(index)
 
     def GetIndex(self,item):
         """Returns index for specified item."""
-        return self._gList.FindItemData(-1,self.GetId(item))
-
-    def UpdateIds(self):
-        """Updates item/id mappings to account for removed items."""
-        removed = set(self.item_itemId.keys()) - set(self.data.keys())
-        for item in removed:
-            itemId = self.item_itemId[item]
-            del self.item_itemId[item]
-            del self.itemId_item[itemId]
+        return self._gList.FindIndexOf(item)
 
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def UpdateItem(self,index,item=None,selected=tuple()):
+    def UpdateItem(self, index, item=None, selected=tuple(), newItem=False):
         """Populate Item for specified item."""
         if index < 0: return
         data,listCtrl = self.data,self._gList
         item = item or self.GetItem(index)
+        valuesForAllColumns = data.getColumns(item) ##: aka populateItemAlaTank
         for iColumn,column in enumerate(self.cols):
-            colDex = self.GetColumnDex(column)
-            listCtrl.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
+            colDex = self.GetColumnDex(column) ##: here to serve getColumns
+            value = valuesForAllColumns[colDex]
+            if newItem and (colDex == 0):
+                listCtrl.InsertListCtrlItem(index, value, item)
+            else:
+                listCtrl.SetStringItem(index, iColumn, value)
         gItem = listCtrl.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
@@ -2131,7 +2154,6 @@ class Tank(UIList):
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
-        gItem.SetData(self.GetId(item))
         listCtrl.SetItem(gItem)
 
     def GetColumnDex(self,column): ##: remove
@@ -2149,18 +2171,16 @@ class Tank(UIList):
         while index < listCtrl.GetItemCount():
             item = self.GetItem(index)
             if item not in items:
-                listCtrl.DeleteItem(index)
+                listCtrl.RemoveItemAt(index)
             else:
                 self.UpdateItem(index,item,selected)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
         for item in items:
-            listCtrl.InsertStringItem(index,u'')
-            self.UpdateItem(index,item,selected)
+            self.UpdateItem(index, item, selected, newItem=True)
             index += 1
-        #--Cleanup
-        self.UpdateIds()
+        #--Sort
         self.SortItems()
 
     def SortItems(self,column=None,reverse='CURRENT'):
@@ -2175,8 +2195,7 @@ class Tank(UIList):
         * 'INVERT': Invert if column is same as current sort column.
         """
         items = self._SortItems(column, reverse, items=self.data.keys())
-        sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
-        self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
+        self._gList.ReorderItems(items)
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""

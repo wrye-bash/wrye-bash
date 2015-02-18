@@ -1959,12 +1959,9 @@ class SaveList(List):
         List.__init__(self, parent, listData, keyPrefix)
 
     def OnBeginEditLabel(self,event):
-        """Start renaming saves"""
-        item = self.items[event.GetIndex()]
-        # Change the selection to not include the extension
-        editbox = self._gList.GetEditControl()
+        """Start renaming saves: deselect the extension."""
         to = len(GPath(event.GetLabel()).sbody)
-        editbox.SetSelection(0,to)
+        (self._gList.GetEditControl()).SetSelection(0,to)
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
@@ -2646,10 +2643,10 @@ class InstallersList(balt.Tank):
                 self._gList.EditLabel(index)
 
     def addMarker(self):
-        index = self.GetIndex(GPath(u'===='))
-        if index == -1:
+        try:
+            index = self.GetIndex(GPath(u'===='))
+        except KeyError: # u'====' not found in the internal dictionary
             self.data.addMarker(u'====')
-            self.data.refresh(what='OS')
             gInstallers.RefreshUIMods()
             index = self.GetIndex(GPath(u'===='))
         if index != -1:
