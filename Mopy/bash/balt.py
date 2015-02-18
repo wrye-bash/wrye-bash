@@ -1920,6 +1920,38 @@ class UIList(wx.Panel):
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()
 
+    #--Sorting ----------------------------------------------------------------
+    def _GetSortSettings(self,column,reverse):
+        """Return parsed col, reverse arguments. Used by _SortItems.
+        col: sort variable.
+          Defaults to last sort. (self.sort)
+        reverse: sort order
+          1: Descending order
+          0: Ascending order
+         -1: Use current reverse settings for sort variable, unless
+             last sort was on same sort variable -- in which case,
+             reverse the sort order.
+         -2: Use current reverse setting for sort variable.
+        """
+        if reverse == -1: reverse = 'INVERT'
+        if reverse == -2: reverse = 'CURRENT'
+        if self.sortDirty:
+            self.sortDirty = False
+            column, reverse = None, 'CURRENT'
+        curColumn = self.sort
+        column = column or curColumn
+        curReverse = self.colReverse.get(column, False)
+        if column in self.nonReversibleCols: #--Disallow reverse for load
+            reverse = False
+        elif reverse == 'INVERT' and column == curColumn:
+            reverse = not curReverse
+        elif reverse in {'INVERT','CURRENT'}:
+            reverse = curReverse
+        #--Done
+        self.sort = column
+        self.colReverse[column] = reverse
+        return column, reverse, curColumn
+
     def _setColumnSortIndicator(self, col, oldcol, reverse):
         # set column sort image
         try:
@@ -2122,24 +2154,13 @@ class Tank(UIList):
         * 'INVERT': Invert if column is same as current sort column.
         """
         #--Parse column and reverse arguments.
-        if self.sortDirty:
-            self.sortDirty = False
-            (column, reverse) = (None,'CURRENT')
-        curColumn = self.sort
-        column = column or curColumn
-        curReverse = self.colReverse.get(column,False)
-        if reverse == 'INVERT' and column == curColumn:
-            reverse = not curReverse
-        elif reverse in ('INVERT','CURRENT'):
-            reverse = curReverse
-        self.colReverse[column] = reverse
-        self.sort = column
+        column, reverse, oldcol = self._GetSortSettings(column, reverse)
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done - set column sort indicator
-        self._setColumnSortIndicator(column, curColumn, reverse)
+        self._setColumnSortIndicator(column, oldcol, reverse)
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""

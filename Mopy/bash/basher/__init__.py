@@ -375,15 +375,12 @@ class List(balt.UIList):
     def PopulateItems(self,col=None,reverse=-2,selected='SAME'):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        #--Sort Dirty?
-        if self.sortDirty:
-            self.sortDirty = 0
-            (col, reverse) = (None,-1)
         #--Items to select afterwards. (Defaults to current selection.)
+        # do it _before_ sorting
         if selected == 'SAME': selected = set(self.GetSelected())
         #--Reget items
         self.GetItems()
-        self.SortItems(col,reverse)
+        self._SortItems(col,reverse)
         #--Delete Current items
         listCtrl = self._gList
         listItemCount = listCtrl.GetItemCount()
@@ -447,36 +444,8 @@ class List(balt.UIList):
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
 
-    def GetSortSettings(self,col,reverse):
-        """Return parsed col, reverse arguments. Used by SortSettings.
-        col: sort variable.
-          Defaults to last sort. (self.sort)
-        reverse: sort order
-          1: Descending order
-          0: Ascending order
-         -1: Use current reverse settings for sort variable, unless
-             last sort was on same sort variable -- in which case,
-             reverse the sort order.
-         -2: Use current reverse setting for sort variable.
-        """
-        oldcol = self.sort
-        #--Sort Column
-        col = col or self.sort
-        #--Reverse
-        oldReverse = self.colReverse.get(col,0)
-        if col == 'Load Order' or col == 'Current Order': #--Disallow reverse for load
-            reverse = 0
-        elif reverse == -1 and col == self.sort:
-            reverse = not oldReverse
-        elif reverse < 0:
-            reverse = oldReverse
-        #--Done
-        self.sort = col
-        self.colReverse[col] = reverse
-        return col, reverse, oldcol
-
-    def SortItems(self,col=None,reverse=-2):
-        col, reverse, oldcol = self.GetSortSettings(col, reverse)
+    def _SortItems(self,col=None,reverse=-2):
+        col, reverse, oldcol = self._GetSortSettings(col, reverse)
         def key(k): # if key is None then keep it None else provide self
             k = self.sort_keys[k]
             return k if k is None else partial(k, self)
