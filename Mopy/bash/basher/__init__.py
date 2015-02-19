@@ -2949,6 +2949,7 @@ class InstallersPanel(SashTankPanel):
         """Panel is shown. Update self.data."""
         # TODO(ut): refactor, self.refreshing set to True once, extract methods
         if settings.get('bash.installers.isFirstRun',True):
+            Link.Frame.BindRefresh(bind=False)
             # I have no idea why this is necessary but if the
             # mouseCaptureLost event is not fired before showing the askYes
             # dialog it throws an exception
@@ -2964,6 +2965,7 @@ class InstallersPanel(SashTankPanel):
                        _(u"If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'.")
                        )
             settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
+            Link.Frame.BindRefresh(bind=True)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
         data = self.uiList.data
@@ -4479,7 +4481,7 @@ class BashFrame(wx.Frame):
         self.notebook = notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-        self.Bind(wx.EVT_ACTIVATE, self.RefreshData)
+        self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
@@ -4495,6 +4497,9 @@ class BashFrame(wx.Frame):
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
                 message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
+
+    def BindRefresh(self, bind=True, _event=wx.EVT_ACTIVATE):
+        self.Bind(_event, self.RefreshData) if bind else self.Unbind(_event)
 
     def Restart(self,args=True,uac=False):
         if not args: return
