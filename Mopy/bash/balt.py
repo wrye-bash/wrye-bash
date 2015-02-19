@@ -392,7 +392,7 @@ def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     return gCheckBox
 
 def staticText(parent, label=u'', pos=defPos, size=defSize, style=0,
-               noAutoResize=True, name=u"staticText"):
+               noAutoResize=False, name=u"staticText"):
     """Static text element."""
     if noAutoResize: style |= wx.ST_NO_AUTORESIZE
     return wx.StaticText(parent, defId, label, pos, size, style, name)
