@@ -270,7 +270,7 @@ class _Mod_Labels(ChoiceLink):
         self.__class__.cls = _LabelLink
 
     @property
-    def items(self):
+    def _choices(self):
         items = self.labels[:]
         items.sort(key=lambda a: a.lower())
         return items

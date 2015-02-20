@@ -258,7 +258,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     cls = _Karma
 
     @property
-    def items(self): return self.__class__.labels
+    def _choices(self): return self.__class__.labels
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------

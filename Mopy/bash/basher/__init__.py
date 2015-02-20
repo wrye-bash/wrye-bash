@@ -1638,7 +1638,7 @@ class ModDetails(_SashDetailsPanel):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
             @property
-            def items(self): return all_tags
+            def _choices(self): return all_tags
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())

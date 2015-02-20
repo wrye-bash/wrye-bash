@@ -88,7 +88,7 @@ class Mods_LoadList(ChoiceLink):
         self.loadListsDict['Bethesda ESMs'] = [
             GPath(x) for x in bush.game.bethDataFiles
             if x.endswith(u'.esm')
-            ]
+            ] # FIXME: selects both Oblivion.esm AND Oblivion1_1.esm
         #--Links
         _self = self
         class _All(ItemLink):
@@ -116,7 +116,7 @@ class Mods_LoadList(ChoiceLink):
         self.__class__.cls = _LoListLink
 
     @property
-    def items(self):
+    def _choices(self):
         items = self.loadListsDict.keys()
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items

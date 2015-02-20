@@ -2473,10 +2473,10 @@ class ChoiceLink(Link):
     cls = ItemLink
 
     def _range(self):
-        for item in self.items: yield self.__class__.cls(_text=item)
+        for choice in self._choices: yield self.__class__.cls(_text=choice)
 
     @property
-    def items(self): return []
+    def _choices(self): return []
 
     def AppendToMenu(self,menu,window,data):
         """Append Link items."""

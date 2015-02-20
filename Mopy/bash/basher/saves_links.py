@@ -152,7 +152,7 @@ class Saves_Profiles(ChoiceLink):
     local = None
 
     @property
-    def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
     class _CheckLink(CheckLink):
         def _check(self):
@@ -613,7 +613,7 @@ class Save_Move(ChoiceLink):
         self.copyMode = copyMode
 
     @property
-    def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
     def _initData(self, window, data):
         super(Save_Move, self)._initData(window, data)
