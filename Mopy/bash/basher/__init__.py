@@ -91,7 +91,7 @@ from ..balt import splitterStyle
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons, \
-    PNG, JPEG, ICO, BMP, TIF, ID_TAGS
+    PNG, JPEG, ICO, BMP, TIF
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -1633,7 +1633,7 @@ class ModDetails(_SashDetailsPanel):
                 BashFrame.modList.RefreshUI(mod_info.name)
         # Menu
         class _TagLinks(ChoiceLink):
-            idList, cls = ID_TAGS, _TagLink
+            cls = _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]

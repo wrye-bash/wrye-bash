@@ -28,7 +28,7 @@ from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image
 from .. import balt, bosh, bush
 from .import People_Link
-from .constants import ID_GROUPS, settingDefaults
+from .constants import settingDefaults
 from ..bolt import GPath, LString
 
 __all__ = ['List_Columns', 'Master_ChangeTo', 'Master_Disable',
@@ -244,7 +244,6 @@ class People_Import(ItemLink, People_Link):
 #------------------------------------------------------------------------------
 class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     """Add Karma setting links."""
-    idList = ID_GROUPS
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
     class _Karma(ItemLink, People_Link):

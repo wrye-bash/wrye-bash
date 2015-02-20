@@ -46,9 +46,6 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_ExportScreenshot', 'Save_Unbloat', 'Save_RepairAbomb',
            'Save_RepairFactions', 'Save_RepairHair']
 
-ID_PROFILES  = balt.IdList(10500, 90)
-ID_PROFILES2 = balt.IdList(10700, 90) #Needed for Save_Move()
-
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -153,10 +150,6 @@ class Saves_ProfilesData(balt.ListEditorData):
 class Saves_Profiles(ChoiceLink):
     """Select a save set profile -- i.e., the saves directory."""
     local = None
-
-    def __init__(self):
-        super(Saves_Profiles, self).__init__()
-        self.idList = ID_PROFILES
 
     @property
     def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
@@ -617,7 +610,6 @@ class Save_Move(ChoiceLink):
 
     def __init__(self, copyMode=False):
         super(Save_Move, self).__init__()
-        self.idList = ID_PROFILES if copyMode else ID_PROFILES2
         self.copyMode = copyMode
 
     @property

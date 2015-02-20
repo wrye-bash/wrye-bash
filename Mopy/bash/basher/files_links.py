@@ -464,9 +464,6 @@ class File_Open(EnabledLink):
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
-    def __init__(self):
-        super(File_RevertToBackup, self).__init__()
-        self.idList = balt.IdList(6100, 0)
 
     def _initData(self, window, data):
         super(File_RevertToBackup, self)._initData(window, data)

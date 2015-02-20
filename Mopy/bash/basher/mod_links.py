@@ -38,7 +38,7 @@ from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
 from . import Resources
 from .frames import DocBrowser
-from .constants import ID_GROUPS, JPEG, settingDefaults
+from .constants import JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
@@ -345,7 +345,6 @@ class Mod_Groups(_Mod_Labels):
             (_(u'Reset'), self._doReset)] )
         self.editMenuText   = _(u'Edit Groups...')
         self.editWindowTitle = _(u'Groups')
-        self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
@@ -396,7 +395,6 @@ class Mod_Ratings(_Mod_Labels):
         self.addPrompt  = _(u'Add rating:')
         self.editMenuText   = _(u'Edit Ratings...')
         self.editWindowTitle = _(u'Ratings')
-        self.idList     = balt.IdList(10400, 90)
         super(Mod_Ratings, self).__init__()
 
 # Mod info menus --------------------------------------------------------------
