@@ -60,6 +60,7 @@ import re
 import sys
 import time
 from types import StringTypes, ClassType
+from functools import partial
 
 #--wxPython
 import wx
@@ -356,7 +357,7 @@ class List(balt.UIList):
         self.items = self.data.keys()
         return self.items
 
-    def PopulateItems(self,col=None,reverse=-2,selected='SAME'):
+    def PopulateItems(self,col=None,reverse='CURRENT',selected='SAME'):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
         #--Items to select afterwards. (Defaults to current selection.)
@@ -379,7 +380,7 @@ class List(balt.UIList):
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
         #--No items?
-        if not 'items' in self.__dict__: return []
+        if not 'items' in self.__dict__: return [] # set in GetItems()
         selected = []
         itemDex = -1
         while True:
@@ -455,7 +456,7 @@ class List(balt.UIList):
     #--Item Sort
     def OnColumnClick(self, event):
         """List OnColumnClick override - cf Tank."""
-        self.PopulateItems(self.cols[event.GetColumn()],-1)
+        self.PopulateItems(self.cols[event.GetColumn()], 'INVERT')
 
 class _ModsSortMixin(object):
 
@@ -1072,8 +1073,6 @@ class ModList(_ModsSortMixin, List):
                 listCtrl.InsertStringItem(itemDex, value)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
-        #--Default message
-        mouseText = u''
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
@@ -1084,6 +1083,7 @@ class ModList(_ModsSortMixin, List):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,checkMark))
         #--Font color
         item = listCtrl.GetItem(itemDex)
+        #--Default message
         mouseText = u''
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
@@ -1160,7 +1160,6 @@ class ModList(_ModsSortMixin, List):
         self.mouseTexts[itemDex] = mouseText
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-        #--Status bar text
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2596,23 +2595,21 @@ class InstallersList(balt.Tank):
         code = event.GetKeyCode()
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
         if event.CmdDown() and code in balt.wxArrows:
-            if len(self.GetSelected()) < 1: return
-            orderKey = lambda x: self.data.data[x].order
-            maxPos = max(self.data.data[x].order for x in self.data.data)
-            if code in balt.wxArrowDown:
-                moveMod = 1
-                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[-1]) + 2
-            else:
-                moveMod = -1
-                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[0]) - 2
-            for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=(moveMod != -1)):
+            selected = self.GetSelected()
+            if len(selected) < 1: return
+            orderKey = partial(self.sort_keys['Order'], self)
+            moveMod = 1 if code in balt.wxArrowDown else -1 # move down or up
+            sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
+            # get the index two positions after the last or before the first
+            visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
+            maxPos = max(x.order for x in self.data.values())
+            for thisFile in sorted_:
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
             self.data.refresh(what='IN')
             self.RefreshUI()
-            if visibleIndex > maxPos: visibleIndex = maxPos
-            elif visibleIndex < 0: visibleIndex = 0
+            visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self._gList.EnsureVisible(visibleIndex)
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
@@ -3292,7 +3289,6 @@ class ScreensList(List):
                 self._gList.InsertStringItem(itemDex, value)
             else:
                 self._gList.SetStringItem(itemDex, colDex, value)
-        #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
@@ -3654,7 +3650,6 @@ class MessageList(List):
                 self._gList.InsertStringItem(itemDex, value)
             else:
                 self._gList.SetStringItem(itemDex, colDex, value)
-        #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
 

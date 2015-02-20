@@ -70,7 +70,7 @@ class Files_SortBy(RadioLink):
         if isinstance(self.window, balt.Tank):  # TODO(ut): grotesque
             self.window.SortItems(self.sortCol, 'INVERT')
         else:
-            self.window.PopulateItems(self.sortCol, -1)
+            self.window.PopulateItems(self.sortCol, 'INVERT') ##: SORT
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""

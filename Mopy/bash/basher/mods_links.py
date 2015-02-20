@@ -106,6 +106,14 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self, event): _self.DoSave(event)
         self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
+        class _LoListLink(ItemLink):
+            def Execute(self, event):
+                """Select mods in list."""
+                selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in _self.loadListsDict[self.text]]
+                errorMessage = bosh.modInfos.selectExact(selectList)
+                self.window.RefreshUI()
+                if errorMessage: self._showError(errorMessage, self.text)
+        self.__class__.cls = _LoListLink
 
     @property
     def items(self):
@@ -143,14 +151,6 @@ class Mods_LoadList(ChoiceLink):
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
         self.window.RefreshUI()
-
-    def DoList(self,event):
-        """Select mods in list."""
-        item = self.items[event.GetId() - self.idList.BASE]
-        selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in self.loadListsDict[item]]
-        errorMessage = bosh.modInfos.selectExact(selectList)
-        self.window.RefreshUI()
-        if errorMessage: self._showError(errorMessage, item)
 
     def DoSave(self,event):
         #--No slots left?

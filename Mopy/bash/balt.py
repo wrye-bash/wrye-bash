@@ -1930,15 +1930,13 @@ class UIList(wx.Panel):
         col: sort variable.
           Defaults to last sort. (self.sort)
         reverse: sort order
-          1: Descending order
-          0: Ascending order
-         -1: Use current reverse settings for sort variable, unless
+          True: Descending order
+          False: Ascending order
+         'INVERT': Use current reverse settings for sort variable, unless
              last sort was on same sort variable -- in which case,
              reverse the sort order.
-         -2: Use current reverse setting for sort variable.
+         'CURRENT': Use current reverse setting for sort variable.
         """
-        if reverse == -1: reverse = 'INVERT'
-        if reverse == -2: reverse = 'CURRENT'
         if self.sortDirty:
             self.sortDirty = False
             column, reverse = None, 'CURRENT'

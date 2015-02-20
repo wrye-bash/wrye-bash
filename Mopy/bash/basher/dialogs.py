@@ -369,13 +369,13 @@ class ImportFaceDialog(balt.Dialog):
             self.data = dict((u'%08X %s' % (key,face.pcName),face) for key,face in faces.items())
         else:
             self.data = faces
-        self.items = sorted(self.data.keys(),key=string.lower)
+        self.list_items = sorted(self.data.keys(),key=string.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title)
         self.SetSizeHints(550,300)
         #--List Box
-        self.listBox = balt.listBox(self, choices=self.items,
-                                 onSelect=self.EvtListBox)
+        self.listBox = balt.listBox(self, choices=self.list_items,
+                                    onSelect=self.EvtListBox)
         self.listBox.SetSizeHints(175,150)
         #--Name,Race,Gender Checkboxes
         flags = bosh.PCFaces.flags(bosh.settings.get('bash.faceImport.flags', 0x4))
@@ -432,7 +432,7 @@ class ImportFaceDialog(balt.Dialog):
     def EvtListBox(self,event):
         """Responds to listbox selection."""
         itemDex = event.GetSelection()
-        item = self.items[itemDex]
+        item = self.list_items[itemDex]
         face = self.data[item]
         self.nameText.SetLabel(face.pcName)
         self.raceText.SetLabel(face.getRaceName())
@@ -451,7 +451,7 @@ class ImportFaceDialog(balt.Dialog):
             bell()
             return
         itemDex = selections[0]
-        item = self.items[itemDex]
+        item = self.list_items[itemDex]
         #--Do import
         flags = bosh.PCFaces.flags()
         flags.hair = flags.eye = True
