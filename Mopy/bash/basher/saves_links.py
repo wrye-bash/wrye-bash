@@ -164,6 +164,19 @@ class Saves_Profiles(ChoiceLink):
     class _CheckLink(CheckLink):
         def _check(self):
             return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
+        def Execute(self, event):
+            """Handle selection of label."""
+            arcSaves = bosh.saveInfos.localSave
+            newSaves = u'Saves\\%s\\' % (self.text,)
+            bosh.saveInfos.setLocalSave(newSaves)
+            Saves_Profiles.swapPlugins(arcSaves,newSaves)
+            Saves_Profiles.swapOblivionVersion(newSaves)
+            Link.Frame.SetTitle()
+            self.window.details.SetFile(None)
+            Link.Frame.RefreshData()
+            bosh.modInfos.autoGhost()
+            BashFrame.modList.RefreshUI()
+
     cls = _CheckLink
 
     class _Default(CheckLink):
@@ -197,20 +210,6 @@ class Saves_Profiles(ChoiceLink):
         Saves_Profiles.local = bosh.saveInfos.localSave
         self.extraItems = [Saves_Profiles._Edit(), SeparatorLink(),
                            Saves_Profiles._Default()]
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        profile = self.items[event.GetId()-self.idList.BASE]
-        arcSaves = bosh.saveInfos.localSave
-        newSaves = u'Saves\\%s\\' % (profile,)
-        bosh.saveInfos.setLocalSave(newSaves)
-        self.swapPlugins(arcSaves,newSaves)
-        self.swapOblivionVersion(newSaves)
-        Link.Frame.SetTitle()
-        self.window.details.SetFile(None)
-        Link.Frame.RefreshData()
-        bosh.modInfos.autoGhost()
-        BashFrame.modList.RefreshUI()
 
     @staticmethod
     def swapPlugins(arcSaves,newSaves):
@@ -624,11 +623,6 @@ class Save_Move(ChoiceLink):
     @property
     def items(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    class _SaveProfileLink(EnabledLink):
-        def _enable(self):
-            return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
-    cls = _SaveProfileLink
-
     def _initData(self, window, data):
         super(Save_Move, self)._initData(window, data)
         Save_Move.local = bosh.saveInfos.localSave
@@ -637,12 +631,12 @@ class Save_Move(ChoiceLink):
             text = _(u'Default')
             def _enable(self): return Save_Move.local != u'Saves\\'
             def Execute(self, event): _self.MoveFiles(_(u'Default'))
+        class _SaveProfileLink(EnabledLink):
+            def _enable(self):
+                return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
+            def Execute(self, event): _self.MoveFiles(self.text)
+        self.__class__.cls = _SaveProfileLink
         self.extraItems = [_Default()]
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        profile = self.items[event.GetId()-self.idList.BASE]
-        self.MoveFiles(profile)
 
     def MoveFiles(self,profile):
         fileInfos = self.window.data
