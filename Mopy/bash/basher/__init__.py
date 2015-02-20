@@ -464,7 +464,8 @@ class _ModsSortMixin(object):
     def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
 
     @property
-    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
+    def selectedFirst(self):
+        return settings.get(self.keyPrefix + '.selectedFirst', False)
     @selectedFirst.setter
     def selectedFirst(self, val):
         settings[self.keyPrefix + '.selectedFirst'] = val
@@ -493,7 +494,12 @@ class MasterList(_ModsSortMixin, List):
                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
-    _extra_sortings = [_ModsSortMixin._sortEsmsFirst]
+    def _activeModsFirst(self, items):
+        if self.selectedFirst:
+            active = bosh.modInfos.ordered
+            items.sort(key=lambda x: self.data[x].name not in set(
+                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
 
     @property

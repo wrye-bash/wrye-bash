@@ -279,6 +279,7 @@ def InitMasterLinks():
     if True: #--Sort by
         sortMenu = MenuLink(_(u"Sort by"))
         sortMenu.links.append(Mods_EsmsFirst())
+        sortMenu.links.append(Mods_SelectedFirst())
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Num'))
