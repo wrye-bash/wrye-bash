@@ -792,7 +792,7 @@ class INIList(List):
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
-        self.mouseTexts[itemDex] = mousetext
+        self.mouseTexts[fileName] = mousetext
         listCtrl.SetItemImage(itemDex,self.icons.Get(icon,checkMark))
         #--Font/BG Color
         item = listCtrl.GetItem(itemDex)
@@ -1139,7 +1139,7 @@ class ModList(_ModsSortMixin, List):
                 font.SetUnderlined(True)
                 item.SetFont(font)
         listCtrl.SetItem(item)
-        self.mouseTexts[itemDex] = mouseText
+        self.mouseTexts[fileName] = mouseText
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
 

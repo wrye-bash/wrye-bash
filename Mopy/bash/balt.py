@@ -1833,7 +1833,7 @@ class UIList(wx.Panel):
         self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
         self.mouseItem = None
-        self.mouseTexts = {}
+        self.mouseTexts = {} # dictionary item->mouse text
         self.mouseTextPrev = u''
         self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
@@ -1897,14 +1897,13 @@ class UIList(wx.Panel):
             self.MouseOverItem(None)
         event.Skip()
 
-    def MouseOverItem(self, item):
+    def MouseOverItem(self, itemDex):
         """Handle mouse entered item by showing tip or similar."""
-        if item is None:
+        if itemDex is None:
             Link.Frame.GetStatusBar().SetStatusText(u'', 1)
             return
-        if item < 0: return
-        # TODO(ut): Tank vs List - search for GetItem - IIUC Tank has a cache
-        if isinstance(self, Tank): item = self.GetItem(item)
+        if itemDex < 0: return
+        item = self.GetItem(itemDex) # get the item (bolt Path) for this index
         text = self.mouseTexts.get(item, u'')
         if text != self.mouseTextPrev:
             Link.Frame.GetStatusBar().SetStatusText(text, 1)
