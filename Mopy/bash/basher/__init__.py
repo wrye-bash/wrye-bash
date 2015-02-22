@@ -2459,79 +2459,86 @@ class InstallersList(balt.Tank):
                 self.RefreshUI()
             event.Veto()
 
-    def OnDropFiles(self, x, y, filenames):
-        filenames = [GPath(x) for x in filenames]
-        omodnames = [x for x in filenames if not x.isdir() and x.cext == u'.omod']
-        converters = [x for x in filenames if self.data.validConverterName(x)]
-        filenames = [x for x in filenames if x.isdir() or x.cext in bosh.readExts and x not in converters]
-        if len(omodnames) > 0:
-            failed = []
-            completed = []
-            progress = balt.Progress(_(u'Extracting OMODs...'),u'\n'+u' '*60,abort=True)
-            progress.setFull(len(omodnames))
-            try:
-                for i,omod in enumerate(omodnames):
-                    progress(i,omod.stail)
-                    outDir = bosh.dirs['installers'].join(omod.body)
-                    if outDir.exists():
-                        if balt.askYes(progress.dialog,_(u"The project '%s' already exists.  Overwrite with '%s'?") % (omod.sbody,omod.stail)):
-                            balt.shellDelete(outDir,self,False,False,False)
-                        else:
-                            continue
-                    try:
-                        bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
-                        completed.append(omod)
-                    except (CancelError,SkipError):
-                        # Omod extraction was cancelled, or user denied admin rights if needed
-                        raise
-                    except:
-                        deprint(_(u"Failed to extract '%s'.") % omod.stail + u'\n\n', traceback=True)
-            except CancelError:
-                skipped = set(omodnames) - set(completed)
-                msg = u''
-                if len(completed) > 0:
-                    completed = [u' * ' + x.stail for x in completed]
-                    msg += _(u'The following OMODs were unpacked:')+u'\n%s\n\n' % u'\n'.join(completed)
-                if len(skipped) > 0:
-                    skipped = [u' * ' + x.stail for x in skipped]
-                    msg += _(u'The following OMODs were skipped:')+u'\n%s\n\n' % u'\n'.join(skipped)
-                if len(failed) > 0:
-                    msg += _(u'The following OMODs failed to extract:')+u'\n%s' % u'\n'.join(failed)
-                balt.showOk(self,msg,_(u'OMOD Extraction Canceled'))
-            else:
-                if len(failed) > 0:
-                    balt.showWarning(self,
-                                     _(u'The following OMODs failed to extract.  This could be a file IO error, or an unsupported OMOD format:')+u'\n\n'+u'\n'.join(failed),
-                                     _(u'OMOD Extraction Complete'))
-            finally:
-                progress(len(omodnames),_(u'Refreshing...'))
-                self.data.refresh(what='I')
-                self.RefreshUI()
-                progress.Destroy()
-        if not filenames and not converters:
-            return
+    def _extractOmods(self, omodnames):
+        failed = []
+        completed = []
+        progress = balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
+                                 abort=True)
+        progress.setFull(len(omodnames))
+        try:
+            for i, omod in enumerate(omodnames):
+                progress(i, omod.stail)
+                outDir = bosh.dirs['installers'].join(omod.body)
+                if outDir.exists():
+                    if balt.askYes(
+                        progress.dialog, _(
+                        u"The project '%s' already exists.  Overwrite "
+                        u"with '%s'?") % (omod.sbody, omod.stail)):
+                        balt.shellDelete(outDir, parent=self, askOk_=False,
+                                         recycle=True)  # recycle
+                    else: continue
+                try:
+                    bosh.OmodFile(omod).extractToProject(
+                        outDir, SubProgress(progress, i))
+                    completed.append(omod)
+                except (CancelError, SkipError):
+                    # Omod extraction was cancelled, or user denied admin
+                    # rights if needed
+                    raise
+                except: deprint(
+                        _(u"Failed to extract '%s'.") % omod.stail + u'\n\n',
+                        traceback=True)
+        except CancelError:
+            skipped = set(omodnames) - set(completed)
+            msg = u''
+            if len(completed) > 0:
+                completed = [u' * ' + x.stail for x in completed]
+                msg += _(u'The following OMODs were unpacked:') + \
+                       u'\n%s\n\n' % u'\n'.join(completed)
+            if len(skipped) > 0:
+                skipped = [u' * ' + x.stail for x in skipped]
+                msg += _(u'The following OMODs were skipped:') + \
+                       u'\n%s\n\n' % u'\n'.join(skipped)
+            if len(failed) > 0:
+                msg += _(u'The following OMODs failed to extract:') + \
+                       u'\n%s' % u'\n'.join(failed)
+            balt.showOk(self, msg, _(u'OMOD Extraction Canceled'))
+        else:
+            if len(failed) > 0: balt.showWarning(self, _(
+                u'The following OMODs failed to extract.  This could be '
+                u'a file IO error, or an unsupported OMOD format:') + u'\n\n'
+                + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
+        finally:
+            progress(len(omodnames), _(u'Refreshing...'))
+            self.data.refresh(what='I')
+            self.RefreshUI()
+            progress.Destroy()
+
+    def _askCopyOrMove(self, filenames):
         action = settings['bash.installers.onDropFiles.action']
         if action not in ['COPY','MOVE']:
-            message = _(u'You have dragged the following files into Wrye Bash:')+u'\n'
-            for file in filenames:
-                message += u' * ' + file.s + u'\n'
-            message += u'\n'
-            message += _(u'What would you like to do with them?')
-
-            dialog= balt.Dialog(self,_(u'Move or Copy?'),size=(400,200))
+            if len(filenames):
+                message = _(u'You have dragged the following files into Wrye '
+                            u'Bash:') + u'\n\n * '
+                message += u'\n * '.join(f.s for f in filenames) + u'\n'
+            else: message = _(u'You have dragged some converters into Wrye '
+                            u'Bash.')
+            message += u'\n' + _(u'What would you like to do with them?')
+            dialog = balt.Dialog(self,_(u'Move or Copy?'))
             icon = staticBitmap(dialog)
             gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-
             sizer = vSizer(
                 (hSizer(
                     (icon,0,wx.ALL,6),
-                    (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
+                    (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
                     ),1,wx.EXPAND|wx.ALL,6),
                 (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                 (hSizer(
                     spacer,
-                    button(dialog,label=_(u'Move'),onClick=lambda x: dialog.EndModal(1)),
-                    (button(dialog,label=_(u'Copy'),onClick=lambda x: dialog.EndModal(2)),0,wx.LEFT,4),
+                    button(dialog,label=_(u'Move'),
+                           onClick=lambda x: dialog.EndModal(1)),
+                    (button(dialog,label=_(u'Copy'),
+                            onClick=lambda x: dialog.EndModal(2)),0,wx.LEFT,4),
                     (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
                     ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                 )
@@ -2541,32 +2548,48 @@ class InstallersList(balt.Tank):
                 action = 'MOVE'
             elif result == 2:
                 action = 'COPY'
-            else:
-                return
             if gCheckBox.GetValue():
                 settings['bash.installers.onDropFiles.action'] = action
-        with balt.BusyCursor():
-            installersJoin = bosh.dirs['installers'].join
-            convertersJoin = bosh.dirs['converters'].join
-            filesTo = [installersJoin(x.tail) for x in filenames]
-            filesTo.extend(convertersJoin(x.tail) for x in converters)
-            filenames.extend(converters)
-            try:
-                if action == 'COPY':
-                    #--Copy the dropped files
-                    balt.shellCopy(filenames,filesTo,self,False,False,False)
-                elif action == 'MOVE':
-                    #--Move the dropped files
-                    balt.shellMove(filenames,filesTo,self,False,False,False)
-                else:
-                    return
-            except (CancelError,SkipError):
-                pass
-            BashFrame.modList.RefreshUI()
-            if BashFrame.iniList:
-                BashFrame.iniList.RefreshUI()
-        self.panel.frameActivated = True
-        self.panel.ShowPanel()
+        return action
+
+    def OnDropFiles(self, x, y, filenames):
+        filenames = [GPath(x) for x in filenames]
+        omodnames = [x for x in filenames if
+                     not x.isdir() and x.cext == u'.omod']
+        converters = [x for x in filenames if self.data.validConverterName(x)]
+        filenames = [x for x in filenames if x.isdir()
+                     or x.cext in bosh.readExts and x not in converters]
+        try:
+            Link.Frame.BindRefresh(bind=False)
+            if len(omodnames) > 0: self._extractOmods(omodnames)
+            if not filenames and not converters:
+                return
+            action = self._askCopyOrMove(filenames)
+            if action not in ['COPY','MOVE']: return
+            with balt.BusyCursor():
+                installersJoin = bosh.dirs['installers'].join
+                convertersJoin = bosh.dirs['converters'].join
+                filesTo = [installersJoin(x.tail) for x in filenames]
+                filesTo.extend(convertersJoin(x.tail) for x in converters)
+                filenames.extend(converters)
+                try:
+                    if action == 'COPY':
+                        #--Copy the dropped files
+                        balt.shellCopy(filenames,filesTo,self,False,False,False)
+                    elif action == 'MOVE':
+                        #--Move the dropped files
+                        balt.shellMove(filenames,filesTo,self,False,False,False)
+                    else:
+                        return
+                except (CancelError,SkipError):
+                    pass
+                BashFrame.modList.RefreshUI()
+                if BashFrame.iniList:
+                    BashFrame.iniList.RefreshUI()
+            self.panel.frameActivated = True
+            self.panel.ShowPanel()
+        finally:
+            Link.Frame.BindRefresh(bind=True)
 
     def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
         super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
