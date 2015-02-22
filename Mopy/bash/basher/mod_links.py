@@ -1644,7 +1644,7 @@ class Mod_Fids_Replace(OneItemLink):
             replacer.readFromText(textPath)
             progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = replacer.updateMod(fileInfo)
-            progress(1.0,_(u"Done."))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
         else: self._showLog(changed, title=_(u'Objects Changed'),
@@ -1715,6 +1715,20 @@ class _Mod_Export_Link(EnabledLink):
 class _Mod_Import_Link(OneItemLink):
 
     def _parser(self): raise AbstractError
+
+    def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
+        with balt.Progress(self.__class__.progressTitle) as progress:
+            parser = self._parser()
+            progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
+            if ext == u'.csv':
+                parser.readFromText(textPath)
+            else:
+                srcInfo = bosh.ModInfo(textDir, textName)
+                parser.readFromMod(srcInfo)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
+            changed = parser.writeToMod(fileInfo)
+            progress(1.0, _(u'Done.'))
+        return changed
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -2103,7 +2117,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
             itemStats.readFromText(textPath)
             progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = itemStats.writeToMod(fileInfo)
-            progress(1.0,_(u"Done."))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
             self._showOk(_(u"No relevant stats to import."),_(u"Import Stats"))
@@ -2134,6 +2148,9 @@ class Mod_Prices_Export(_Mod_Export_Link):
 
 class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file."""
+    askTitle = _(u'Import prices from:')
+    csvFile = u'_Prices.csv'
+    progressTitle = _(u'Import Prices')
     text = _(u'Prices...')
     help = _(u'Import item prices from text file')
 
@@ -2145,10 +2162,10 @@ class Mod_Prices_Import(_Mod_Import_Link):
                                  _(u'Import prices')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Prices.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import prices from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_Prices.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2158,19 +2175,9 @@ class Mod_Prices_Import(_Mod_Import_Link):
             self._showError(
                 _(u'Source file must be a Prices.csv file or esp/m.'))
             return
-        #--Export
-        changed = None
-        with balt.Progress(_(u'Import Prices')) as progress:
-            itemPrices = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            if ext == u'.csv':
-                itemPrices.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemPrices.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = itemPrices.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant prices to import.'),
@@ -2477,6 +2484,9 @@ class Mod_FullNames_Export(_Mod_Export_Link):
 
 class Mod_FullNames_Import(_Mod_Import_Link):
     """Import full names from text file or other mod."""
+    askTitle = _(u'Import names from:')
+    csvFile = u'_Names.csv'
+    progressTitle = _(u'Import Names')
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
 
@@ -2488,10 +2498,10 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                                  _(u'Import Names')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Names.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2501,19 +2511,9 @@ class Mod_FullNames_Import(_Mod_Import_Link):
             self._showError(
                 _(u'Source file must be mod (.esp or .esm) or csv file.'))
             return
-        #--Export
-        renamed = None
-        with balt.Progress(_(u"Import Names")) as progress:
-            fullNames = self._parser()
-            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
-            if ext == u'.csv':
-                fullNames.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                fullNames.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            renamed = fullNames.writeToMod(fileInfo)
-            progress(1.0,_(u"Done."))
+        #--Import
+        renamed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not renamed:
             self._showOk(_(u"No changes required."))
@@ -2628,6 +2628,9 @@ class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
 
 class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     """Import stats from text file or other mod."""
+    askTitle = _(u'Import item data from:')
+    csvFile = u'_ItemData.csv'
+    progressTitle = _(u'Import Item Data')
     text = _(u'Item Data...')
     help = _(u'Import pretty much complete item data from text file or other'
              u' mod')
@@ -2642,10 +2645,10 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
                                  _(u'Import Item Data')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_ItemData.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import item data from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_ItemData.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2654,19 +2657,9 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
         if ext != '.csv':
             self._showError(_(u'Source file must be a ItemData.csv file.'))
             return
-        #--Export
-        changed = None
-        with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            if ext == u'.csv':
-                itemStats.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemStats.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = itemStats.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant data to import.'),
