@@ -30,14 +30,14 @@ import datetime
 import cPickle
 import StringIO
 from subprocess import Popen, PIPE
-import sys
 import bash
 import bass
 import bosh
 import bush
 from . import images_list
 from bosh import startupinfo, dirs
-from bolt import BoltError, AbstractError, StateError, GPath, Progress, deprint
+from bolt import BoltError, AbstractError, StateError, GPath, Progress, \
+    deprint, Path
 from balt import askSave, askYes, askOpen, askWarning, showError, \
     showWarning, showInfo, Link
 
@@ -440,7 +440,7 @@ def pack7z(dstFile, srcDir, progress=None):
     for line in ins:
         # filenames with non latin characters would raise UnicodeDecodeError
         # idea from: http://stackoverflow.com/a/9951851/281545
-        line = unicode(line, sys.getfilesystemencoding())
+        line = unicode(line, Path.sys_fs_enc)
         maCompressing = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)
@@ -485,7 +485,7 @@ def unpack7z(srcFile, dstDir, progress=None):
     errorLine = []
     index = 0
     for line in ins:
-        line = unicode(line, sys.getfilesystemencoding())
+        line = unicode(line, Path.sys_fs_enc)
         maExtracting = regMatch(line)
         if len(errorLine) or regErrMatch(line):
             errorLine.append(line)

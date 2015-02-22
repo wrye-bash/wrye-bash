@@ -492,6 +492,7 @@ class Path(object):
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
     mtimeResets = [] #--Used by getmtime
+    sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
 
     @staticmethod
     def get(name):
@@ -654,7 +655,25 @@ class Path(object):
 
     @staticmethod
     def tempDir(prefix=None):
-        return GPath(tempfile.mkdtemp(prefix=prefix))
+        try: # workaround for http://bugs.python.org/issue1681974 see there
+            return GPath(tempfile.mkdtemp(prefix=prefix))
+        except UnicodeDecodeError:
+            try:
+                traceback.print_exc()
+                print 'Trying to pass temp dir in...'
+                tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
+                return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
+            except UnicodeDecodeError:
+                try:
+                    traceback.print_exc()
+                    print 'Trying to encode temp dir prefix...'
+                    return GPath(tempfile.mkdtemp(
+                        prefix=prefix.encode(Path.sys_fs_enc)).decode(
+                        Path.sys_fs_enc))
+                except:
+                    traceback.print_exc()
+                    print 'Failed to create tmp dir, Bash will not function ' \
+                          'correctly.'
 
     @staticmethod
     def baseTempDir():
@@ -1941,7 +1960,7 @@ def deprint(*args,**keyargs):
     else:
         msg = u''
     try:
-        msg += u' '.join([u'%s'%x for x in args])
+        msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
@@ -1952,14 +1971,14 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % repr(x)
 
     if keyargs.get('traceback',False):
-        o = StringIO.StringIO(msg)
-        o.write(u'\n')
+        o = StringIO.StringIO()
         traceback.print_exc(file=o)
         value = o.getvalue()
         try:
-            msg += u'%s' % value
+            msg += u'\n%s' % unicode(value, 'utf-8')
         except UnicodeError:
-            msg += u'%s' % repr(value)
+            traceback.print_exc()
+            msg += u'\n%s' % repr(value)
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output

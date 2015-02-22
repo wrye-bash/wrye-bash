@@ -265,6 +265,9 @@ def dump_environment():
     print u"input encoding: %s; output encoding: %s; locale: %s" % (
         sys.stdin.encoding,getattr(sys.stdout,'encoding',None),
         locale.getdefaultlocale())
+    fse = sys.getfilesystemencoding()
+    print u"filesystem encoding: %s" % fse, (
+        (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u'')
 
 # Main ------------------------------------------------------------------------
 def main():
@@ -289,10 +292,10 @@ def main():
     # properly
     if hasattr(sys,"frozen"):
         pathToProg = os.path.dirname(
-            unicode(sys.executable,sys.getfilesystemencoding()))
+            unicode(sys.executable, bolt.Path.sys_fs_enc))
     else:
         pathToProg = os.path.dirname(
-            unicode(sys.argv[0],sys.getfilesystemencoding()))
+            unicode(sys.argv[0], bolt.Path.sys_fs_enc))
     if pathToProg:
         os.chdir(pathToProg)
     del pathToProg
