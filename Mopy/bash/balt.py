@@ -37,6 +37,8 @@ import string
 import os
 import textwrap
 import time
+from functools import partial
+#--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
@@ -1731,6 +1733,8 @@ class UIList(wx.Panel):
     #--Sorting
     nonReversibleCols = {'Load Order', 'Current Order'}
     default_sort_col = 'File' # override as needed
+    sort_keys = {} # sort_keys[col] provides the sort key for this col
+    extra_sortings = [] # extra self.methods for fancy sortings - order matters
 
     def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
                  **kwargs):
@@ -1952,6 +1956,25 @@ class UIList(wx.Panel):
         self.colReverse[column] = reverse
         return column, reverse, curColumn
 
+    def _SortItems(self, col=None, reverse='CURRENT', sortSpecial=True,
+                   items=None):
+        items = items if items is not None else self.items # List has items Tank provides them (for now)
+        col, reverse, oldcol = self._GetSortSettings(col, reverse)
+        def key(k): # if key is None then keep it None else provide self
+            k = self.sort_keys[k]
+            return k if k is None else partial(k, self)
+        def_key = key(self.default_sort_col)
+        if col != self.default_sort_col:
+            #--Default sort
+            items.sort(key=def_key)
+            items.sort(key=key(col), reverse=bool(reverse))
+        else:
+            items.sort(key=def_key, reverse=bool(reverse))
+        if sortSpecial:
+            for lamda in self.extra_sortings: lamda(self, items)
+        self._setColumnSortIndicator(col, oldcol, reverse)
+        return items
+
     def _setColumnSortIndicator(self, col, oldcol, reverse):
         # set column sort image
         try:
@@ -2153,14 +2176,9 @@ class Tank(UIList):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        #--Parse column and reverse arguments.
-        column, reverse, oldcol = self._GetSortSettings(column, reverse)
-        #--Sort
-        items = self.data.getSorted(column,reverse)
+        items = self._SortItems(column, reverse, items=self.data.keys())
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
         self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
-        #--Done - set column sort indicator
-        self._setColumnSortIndicator(column, oldcol, reverse)
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""

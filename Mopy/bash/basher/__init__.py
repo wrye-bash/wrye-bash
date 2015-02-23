@@ -55,7 +55,6 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
-from functools import partial
 import os
 import re
 import sys
@@ -329,8 +328,6 @@ class SashTankPanel(SashPanel):
 #------------------------------------------------------------------------------
 class List(balt.UIList):
     icons = colorChecks
-    sort_keys = {} # sort_keys[col] provides the sort key for this col
-    extra_sortings = [] # extra self.methods for fancy sortings - order matters
 
     def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
                  dndList=False, dndColumns=(), **kwargs):
@@ -444,22 +441,6 @@ class List(balt.UIList):
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
 
-    def _SortItems(self,col=None,reverse=-2):
-        col, reverse, oldcol = self._GetSortSettings(col, reverse)
-        def key(k): # if key is None then keep it None else provide self
-            k = self.sort_keys[k]
-            return k if k is None else partial(k, self)
-        def_key = key(self.default_sort_col)
-        if col != self.default_sort_col:
-            #--Default sort
-            self.items.sort(key=def_key)
-            self.items.sort(key=key(col), reverse=bool(reverse))
-        else:
-            self.items.sort(key=def_key, reverse=bool(reverse))
-        for lamda in self.extra_sortings: lamda(self)
-        self._setColumnSortIndicator(col, oldcol, reverse)
-        return col, reverse
-
     #--Event Handlers -------------------------------------
     def onUpdateUI(self,event):
         if self.checkcol:
@@ -504,14 +485,13 @@ class _ModsSortMixin(object):
     def selectedFirst(self, val):
         settings[self.keyPrefix + '.selectedFirst'] = val
 
-    def _sortEsmsFirst(self):
-        if self.esmsFirst or self.sort in self._esmsFirstCols:
-            self.items.sort(key=lambda a: not self.data[a].isEsm())
+    def _sortEsmsFirst(self, items):
+        if self.esmsFirst: items.sort(key=lambda a: not self.data[a].isEsm())
 
-    def _activeModsFirst(self):
+    def _activeModsFirst(self, items):
         if self.selectedFirst:
             active = bosh.modInfos.ordered
-            self.items.sort(key=lambda x: x not in set(
+            items.sort(key=lambda x: x not in set(
                 active) | bosh.modInfos.imported | bosh.modInfos.merged)
 
     def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
@@ -741,9 +721,9 @@ class INIList(List):
                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
                 }
-    def _sortValidFirst(self):
+    def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
-            self.items.sort(key=lambda a: self.data[a].status < 0)
+            items.sort(key=lambda a: self.data[a].status < 0)
     extra_sortings = [_sortValidFirst]
 
     def __init__(self, parent, listData, keyPrefix):
@@ -2356,6 +2336,25 @@ class InstallersList(balt.Tank):
     icons = installercons
     # _shellUI = True # FIXME(ut): shellUI path does not grok markers
     editLabels = True
+    default_sort_col = 'Package'
+    sort_keys = {'Package': None,
+                 'Files': lambda self, x: len(self.data[x].fileSizeCrcs),
+                 'Order': lambda self, x: self.data[x].order,
+                 'Size': lambda self, x: self.data[x].size,
+                 'Modified': lambda self, x: self.data[x].modified,
+                }
+    #--Special sorters
+    def _sortStructure(self, items):
+        if settings['bash.installers.sortStructure']:
+            items.sort(key=lambda self, x: self.data[x].type)
+    def _sortActive(self, items):
+        if settings['bash.installers.sortActive']:
+            items.sort(key=lambda x: not self.data[x].isActive)
+    def _sortProjects(self, items):
+        if settings['bash.installers.sortProjects']:
+            items.sort(key=lambda x: not isinstance(self.data[x],
+                                                    bosh.InstallerProject))
+    extra_sortings = [_sortStructure, _sortActive, _sortProjects]
 
     def __init__(self, parent, data, keyPrefix, details=None):
         balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
@@ -2652,9 +2651,10 @@ class InstallersList(balt.Tank):
         if isinstance(self.data[item],bosh.InstallerMarker):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
-            sorted = self.data.getSorted('order',False,False)
+            sorted_ = self._SortItems(col='order', reverse=False,
+                                     sortSpecial=False, items=self.data.keys())
             item = self.data[item]
-            for nextItem in sorted[item.order+1:]:
+            for nextItem in sorted_[item.order+1:]:
                 installer = self.data[nextItem]
                 if isinstance(installer,bosh.InstallerMarker):
                     break
@@ -3783,6 +3783,11 @@ class PeopleList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
+    default_sort_col = 'Name'
+    sort_keys = {'Name': lambda self, x: x.lower(),
+                 'Karma': lambda self, x: self.data[x][1],
+                 'Header': lambda self, x: self.data[x][2][:50].lower(),
+                }
 
     def GetColumnDex(self,column):
         return settingDefaults['bash.people.cols'].index(column)

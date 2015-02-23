@@ -5821,21 +5821,6 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
         self.tankColumns = ['Name','Karma','Header']
         self.title = _(u'People')
 
-    #--Collection
-    def getSorted(self,column,reverse):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Name':
-            items.sort(key=string.lower,reverse=reverse)
-        elif column == 'Karma':
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][1],reverse=reverse)
-        elif column == 'Header':
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][2][:50].lower(),reverse=reverse)
-        return items
-
     #--Item Info
     def getColumns(self,item=None):
         """Returns text labels for item or for row header if item == None."""
@@ -7832,32 +7817,6 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
             self.converterFile.save()
             self.hasChanged = False
-
-    def getSorted(self,column,reverse,sortSpecial=True):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Package':
-            items.sort(reverse=reverse)
-        elif column == 'Files':
-            items.sort(key=lambda x: len(data[x].fileSizeCrcs),reverse=reverse)
-        else:
-            items.sort()
-            attr = column.lower()
-            if column in ('Package','Group'):
-                getter = lambda x: object.__getattribute__(data[x],attr).lower()
-            else:
-                getter = lambda x: object.__getattribute__(data[x],attr)
-            items.sort(key=getter,reverse=reverse)
-        #--Special sorters
-        if sortSpecial:
-            if settings['bash.installers.sortStructure']:
-                items.sort(key=lambda x: data[x].type)
-            if settings['bash.installers.sortActive']:
-                items.sort(key=lambda x: not data[x].isActive)
-            if settings['bash.installers.sortProjects']:
-                items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
-        return items
 
     #--Item Info
     def getColumns(self,item=None):
