@@ -1261,13 +1261,13 @@ GmstTweaks = [
 #--Tags supported by this game
 allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
 
-#--Patchers available when building a Bashed Patch
+#--Gui patcher classes available when building a Bashed Patch
 patchers = (
     u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
     u'NamesPatcher', u'StatsPatcher'
     )
 
-#--CBash patchers available when building a Bashed Patch
+#--CBash Gui patcher classes available when building a Bashed Patch
 CBash_patchers = tuple()
 
 # For ListsMerger

@@ -2987,9 +2987,9 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
-    def loadActive(self):
+    def loadActive(self, lo_with_corrected_master=None):
         """Get list of active plugins from plugins.txt through libloadorder which cleans out bad entries."""
-        self.selected = lo.GetActivePlugins() # GPath list (but not sorted)
+        self.selected = lo.GetActivePlugins(lo_with_corrected_master=lo_with_corrected_master) # GPath list (but not sorted)
         if self.pathPlugins.exists():
             self.mtimePlugins = self.pathPlugins.mtime
             self.sizePlugins = self.pathPlugins.size
@@ -3082,8 +3082,8 @@ class Plugins:
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
         if hasChanged or forceRefresh:
-            self.loadActive()
             self.loadLoadOrder()
+            self.loadActive(lo_with_corrected_master=self.LoadOrder)
         return hasChanged
 
     def fixLoadOrder(self):

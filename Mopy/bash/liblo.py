@@ -509,11 +509,11 @@ def Init(path):
             def count(self,item):
                 return 1 if item in self else 0
 
-        def GetActivePlugins(self):
+        def GetActivePlugins(self, lo_with_corrected_master=None):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
-            return self.GetOrdered([GPath(_uni(plugins[i])) for i in xrange(num.value)])
+            return self.GetOrdered([GPath(_uni(plugins[i])) for i in xrange(num.value)], selfLoadOrder=lo_with_corrected_master)
         def _GetActivePlugins(self):
             ret = self.ActivePluginsList(self.GetActivePlugins())
             ret.SetHandle(self)
@@ -549,10 +549,11 @@ def Init(path):
             for plugin in plugins:
                 self.SetPluginActive(plugin,False)
 
-        def GetOrdered(self,plugins):
+        def GetOrdered(self,plugins,selfLoadOrder=None):
             """Returns a list of the given plugins, sorted accoring to their
                load order"""
-            return [x for x in self.LoadOrder if x in plugins]
+            selfLoadOrder = selfLoadOrder if selfLoadOrder else self.LoadOrder
+            return [x for x in selfLoadOrder if x in plugins]
 
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())

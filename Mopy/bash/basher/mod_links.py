@@ -40,7 +40,7 @@ from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
-from .patcher_dialog import PatchDialog
+from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
 from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -775,6 +775,20 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
     def Execute(self,event):
         """Handle activation event."""
+        patchDialog = None
+        try: ##: Monkey patch so the modList does not refresh between dialogs
+            balt.Link.Frame.BindRefresh(bind=False)
+            fileName = self._Execute()
+            if not fileName: return ##: complex, prevent settings save
+        except CancelError:
+            return
+        finally:
+            if not balt.Link.Frame.isPatching: balt.Link.Frame.BindRefresh(bind=True)
+            if patchDialog: patchDialog.Destroy() ##: not sure if needed - does not fix leak - see #113
+        # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
+        Link.Frame.SaveSettings()
+
+    def _Execute(self):
         # Clean up some memory
         bolt.GPathPurge()
         # Create plugin dictionaries -- used later. Speeds everything up! Yay!
@@ -824,11 +838,23 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     self.window.RefreshUI()
 
         #--Check if we should be deactivating some plugins
-        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if bosh.modInfos[x].mtime < fileInfo.mtime]
-        unfiltered = [x for x in ActivePriortoPatch if u'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in ActivePriortoPatch if u'NoMerge' not in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable and x not in unfiltered]
-        noMerge = [x for x in ActivePriortoPatch if u'NoMerge' in bosh.modInfos[x].getBashTags() and x in bosh.modInfos.mergeable and x not in unfiltered and x not in merge]
-        deactivate = [x for x in ActivePriortoPatch if u'Deactivate' in bosh.modInfos[x].getBashTags() and not 'Filter' in bosh.modInfos[x].getBashTags() and x not in unfiltered and x not in merge and x not in noMerge]
+        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if
+                              bosh.modInfos[x].mtime < fileInfo.mtime]
+        unfiltered = [x for x in ActivePriortoPatch if
+                      u'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in ActivePriortoPatch if
+                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
+                 and x in bosh.modInfos.mergeable
+                 and x not in unfiltered]
+        noMerge = [x for x in ActivePriortoPatch if
+                   u'NoMerge' in bosh.modInfos[x].getBashTags()
+                   and x in bosh.modInfos.mergeable
+                   and x not in unfiltered and x not in merge]
+        deactivate = [x for x in ActivePriortoPatch if
+                      u'Deactivate' in bosh.modInfos[x].getBashTags()
+                      and not 'Filter' in bosh.modInfos[x].getBashTags()
+                      and x not in unfiltered and x not in merge
+                      and x not in noMerge]
 
         checklists = []
         unfilteredKey = _(u"Tagged 'Filter'")
@@ -905,14 +931,9 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={ListBoxes.ID_OK:_(u'Continue Despite Errors')})
             if warning.ShowModal() == ListBoxes.ID_CANCEL:
                 return
-        try:
-            patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
-        except CancelError:
-            return
+        patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
         patchDialog.ShowModal()
-        self.window.RefreshUI(detail=fileName)
-        # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
-        Link.Frame.SaveSettings()
+        return fileName
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
@@ -943,13 +964,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
-        if doCBash:
-            patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
-        else:
-            patchers = [copy.deepcopy(x) for x in PatchDialog.patchers]
+        patchers = [copy.deepcopy(x) for x in
+                     (CBash_gui_patchers if doCBash else gui_patchers)]
         patchers.sort(key=lambda a: a.__class__.name)
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
-        patcherNames = [x.__class__.__name__ for x in patchers]
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= %s %s' % (self.selected[0],_(u'Config')))
