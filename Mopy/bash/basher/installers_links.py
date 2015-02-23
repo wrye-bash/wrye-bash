@@ -53,8 +53,6 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_SkipLandscapeLODTextures',
            'Installers_SkipLandscapeLODNormals', 'Installers_RenameStrings']
 
-gInstallers = None
-
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -82,21 +80,21 @@ class Installers_MonitorInstall(Installers_Link):
                 u' and may take some time.')
         if not self._askOk(msg, _(u'External Installation')): return
         # Refresh Data
-        gInstallers.refreshed = False
-        gInstallers.fullRefresh = False
-        gInstallers.ShowPanel(canCancel=False)
+        self.iPanel.refreshed = False
+        self.iPanel.fullRefresh = False
+        self.iPanel.ShowPanel(canCancel=False)
         # Backup CRC data
-        data = copy.copy(gInstallers.data.data_sizeCrcDate)
+        data = copy.copy(self.iPanel.data.data_sizeCrcDate)
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'),
                      _(u'External Installation'))
         # Refresh Data
-        gInstallers.refreshed = False
-        gInstallers.fullRefresh = False
-        gInstallers.ShowPanel(canCancel=False)
+        self.iPanel.refreshed = False
+        self.iPanel.fullRefresh = False
+        self.iPanel.ShowPanel(canCancel=False)
         # Determine changes
-        curData = gInstallers.data.data_sizeCrcDate
+        curData = self.iPanel.data.data_sizeCrcDate
         oldFiles = set(data)
         curFiles = set(curData)
         newFiles = curFiles - oldFiles
@@ -187,12 +185,12 @@ class Installers_MonitorInstall(Installers_Link):
         with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
             bosh.InstallerProject.createFromData(path,include,progress)
         # Refresh Installers - so we can manipulate the InstallerProject item
-        gInstallers.ShowPanel()
+        self.iPanel.ShowPanel()
         # Update the status of the installer (as installer last)
         path = path.relpath(bosh.dirs['installers'])
         self.idata.install([path],None,True,False)
         # Refresh UI
-        gInstallers.RefreshUIMods()
+        self.iPanel.RefreshUIMods()
         # Select new installer
         self.window.SelectLast()
 
@@ -228,7 +226,7 @@ class Installers_AnnealAll(Installers_Link):
                 self.idata.anneal(progress=progress)
         finally:
             self.idata.refresh(what='NS')
-            gInstallers.RefreshUIMods()
+            self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
 class Installers_UninstallAllPackages(Installers_Link):
@@ -244,7 +242,7 @@ class Installers_UninstallAllPackages(Installers_Link):
                 self.idata.uninstall(unArchives='ALL',progress=progress)
         finally:
             self.idata.refresh(what='NS')
-            gInstallers.RefreshUIMods()
+            self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
 class Installers_Refresh(AppendableLink, Installers_Link):
@@ -266,9 +264,9 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         """Refreshes all Installers data"""
         if self.fullRefresh and not self._askWarning(self.msg, self.text):
             return
-        gInstallers.refreshed = False
-        gInstallers.fullRefresh = self.fullRefresh
-        gInstallers.ShowPanel()
+        self.iPanel.refreshed = False
+        self.iPanel.fullRefresh = self.fullRefresh
+        self.iPanel.ShowPanel()
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
@@ -293,7 +291,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
                     self.idata.clean(progress=progress)
             finally:
                 self.idata.refresh(what='NS')
-                gInstallers.RefreshUIMods()
+                self.iPanel.RefreshUIMods()
                 Link.Frame.RefreshData()
 
 #------------------------------------------------------------------------------
@@ -335,7 +333,7 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
 
     def Execute(self,event):
         super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
-        gInstallers.ShowPanel()
+        self.window.panel.ShowPanel()
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
@@ -355,15 +353,13 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         super(Installers_AutoRefreshBethsoft, self).Execute(event)
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
-            gInstallers.refreshed = False
-            gInstallers.fullRefresh = False
-            gInstallers.ShowPanel()
+            self.iPanel.refreshed = False
+            self.iPanel.fullRefresh = False
+            self.iPanel.ShowPanel()
         # Refresh Installers
         toRefresh = set()
-        for name in gInstallers.data.data:
-            installer = gInstallers.data.data[name]
-            if installer.hasBethFiles:
-                toRefresh.add((name,installer))
+        for name, installer in self.iPanel.data.iteritems():
+            if installer.hasBethFiles: toRefresh.add((name,installer))
         if toRefresh:
             with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60) as progress:
                 progress.setFull(len(toRefresh))
@@ -371,8 +367,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                     progress(index,_(u'Refreshing Packages...')+u'\n'+name.s)
                     apath = bosh.dirs['installers'].join(name)
                     installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
-                    gInstallers.data.hasChanged = True
-            gInstallers.data.refresh(what='NSC')
+                    self.iPanel.data.hasChanged = True
+            self.iPanel.data.refresh(what='NSC')
             self.window.RefreshUI()
 
 class Installers_Enabled(BoolLink):
@@ -391,12 +387,12 @@ class Installers_Enabled(BoolLink):
                                             title=self.dialogTitle): return
         enabled = bosh.settings[self.key] = not enabled
         if enabled:
-            gInstallers.refreshed = False
-            gInstallers.ShowPanel()
+            self.window.panel.refreshed = False
+            self.window.panel.ShowPanel()
             self.window.RefreshUI()
         else:
             self.window.DeleteAllItems() ##: crude
-            gInstallers.RefreshDetails(None)
+            self.window.panel.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, BoolLink):
     """Toggle BSA Redirection."""

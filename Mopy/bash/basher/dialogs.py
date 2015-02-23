@@ -32,8 +32,6 @@ from ..balt import Dialog, Links, button, hSizer, ItemLink, Link, colors, \
 from . import Resources, bEnableWizard, tabInfo
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 
-gInstallers = None
-
 class _CheckList_SelectAll(ItemLink):
     """Menu item used in ListBoxes."""
     def __init__(self,select=True):
@@ -588,8 +586,7 @@ class CreateNewProject(balt.Dialog):
 
         # Move successful
         self.fullRefresh = False
-        gInstallers.refreshed = False
-        gInstallers.fullRefresh = self.fullRefresh
-        gInstallers.ShowPanel()
-
-#------------------------------------------------------------------------------
+        from . import BashFrame ##: here due to cyclic import of ListBoxes...
+        BashFrame.iPanel.refreshed = False
+        BashFrame.iPanel.fullRefresh = self.fullRefresh
+        BashFrame.iPanel.ShowPanel()
