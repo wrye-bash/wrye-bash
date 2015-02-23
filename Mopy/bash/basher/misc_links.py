@@ -339,7 +339,8 @@ class List_Column(CheckLink, EnabledLink):
         self.allColumnsKey = allColumnsKey
         self.enable = enable
         self.text = bosh.settings['bash.colNames'][self.colName]
-        self.help = _(u"Show/Hide '%s' column.") % self.text
+        self.help = _(u"Show/Hide '%(colname)s' column.") % {
+            'colname': self.text}
 
     def _enable(self): return self.enable
 

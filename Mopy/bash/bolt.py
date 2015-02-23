@@ -1864,15 +1864,6 @@ class TankData:
         """
         return self.tankParams.get(self.tankKey+'.'+key,default)
 
-    def defaultParam(self,key,value):
-        """Works like setdefault for dictionaries."""
-        return self.tankParams.setdefault(self.tankKey+'.'+key,value)
-
-    def updateParam(self,key,default=None):
-        """Get a param, but also mark it as changed.
-        Used for deep params like lists and dictionaries."""
-        return self.tankParams.getChanged(self.tankKey+'.'+key,default)
-
     #--Collection
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""

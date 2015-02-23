@@ -5819,9 +5819,6 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
         self.tankKey = 'bash.people'
         self.tankColumns = ['Name','Karma','Header']
         self.title = _(u'People')
-        self.defaultParam('columns',self.tankColumns[:])
-        self.defaultParam('colWidths',{'Name':60,'Karma':20})
-        self.defaultParam('colAligns',{'Karma':'CENTER'})
 
     #--Collection
     def getSorted(self,column,reverse):
@@ -7748,11 +7745,6 @@ class InstallersData(bolt.TankData, DataDict):
         self.tankColumns = ['Package','Order','Modified','Size','Files']
         self.transColumns = [_(u'Package'),_(u'Order'),_(u'Modified'),_(u'Size'),_(u'Files')]
         self.title = _(u'Installers')
-        #--Default Params
-        self.defaultParam('columns',self.tankColumns)
-        self.defaultParam('colWidths',{
-            'Package':250,'Order':10,'Group':60,'Modified':60,'Size':40,'Files':20})
-        self.defaultParam('colAligns',{'Order':'RIGHT','Size':'RIGHT','Files':'RIGHT','Modified':'RIGHT'})
         #--Persistent data
         self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
@@ -7936,14 +7928,6 @@ class InstallersData(bolt.TankData, DataDict):
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
         return item.s
-
-    def getColumn(self,item,column):
-        """Returns item data as a dictionary."""
-        raise UncodedError
-
-    def setColumn(self,item,column,value):
-        """Sets item values from a dictionary."""
-        raise UncodedError
 
     #--Dict Functions -----------------------------------------------------------
     def __delitem__(self,item):

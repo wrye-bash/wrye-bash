@@ -356,7 +356,7 @@ class List(balt.UIList):
         self.gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
 
     #--New way for self.cols, so PopulateColumns will work with
-    #  the optional columns menu
+    #  the optional columns menu ##: 3774b28f548742144ac1753643d87361b40f9523
     def _getCols(self):
         if hasattr(self,'colsKey'):
             return settings[self.colsKey]

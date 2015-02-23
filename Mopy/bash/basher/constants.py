@@ -327,11 +327,10 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
-
+    'bash.installers.columns':['Package','Order','Modified','Size','Files'],
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': defPos,
-
     #--Wrye Bash: INI Tweaks
     'bash.ini.allCols': ['File','Installer'],
     'bash.ini.cols': ['File','Installer'],
@@ -447,6 +446,7 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.people.colAligns': {
         'Karma': 1,
         },
+    'bash.people.columns': ['Name','Karma','Header'],
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,
