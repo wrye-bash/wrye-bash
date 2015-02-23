@@ -40,7 +40,7 @@ from .frames import DocBrowser
 from .constants import ID_GROUPS, JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
-from .patcher_dialog import PatchDialog
+from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
 from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -943,13 +943,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
-        if doCBash:
-            patchers = [copy.deepcopy(x) for x in PatchDialog.CBash_patchers]
-        else:
-            patchers = [copy.deepcopy(x) for x in PatchDialog.patchers]
+        patchers = [copy.deepcopy(x) for x in
+                     (CBash_gui_patchers if doCBash else gui_patchers)]
         patchers.sort(key=lambda a: a.__class__.name)
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
-        patcherNames = [x.__class__.__name__ for x in patchers]
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= %s %s' % (self.selected[0],_(u'Config')))

@@ -1296,34 +1296,31 @@ allTags = sorted((u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Clim
                   u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells', u'Actors.SpellsForceAdd',
                   u'NPC.Race', u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported', u'Npc.HairOnly', u'Npc.EyesOnly')) ##, 'ForceMerge'
 
-#--Patchers available when building a Bashed Patch
+#--Gui patcher classes available when building a Bashed Patch
 patchers = (
     'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
     'KFFZPatcher', 'ActorImporter', 'DeathItemPatcher', 'NPCAIPackagePatcher',
     'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
-    'GmstTweaker', 'GraphicsPatcher', 'ImportFactions',
-    'ImportInventory', 'SpellsPatcher', 'TweakActors', 'ImportRelations',
-    'ImportScripts', 'ImportActorsSpells',
-    'ListsMerger', 'MFactMarker', 'NamesPatcher', 'NamesTweaker',
-    'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
+    'GmstTweaker', 'GraphicsPatcher', 'ImportFactions', 'ImportInventory',
+    'SpellsPatcher', 'TweakActors', 'ImportRelations', 'ImportScripts',
+    'ImportActorsSpells', 'ListsMerger', 'MFactMarker', 'NamesPatcher',
+    'NamesTweaker', 'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
     'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
     )
 
-#--CBash patchers available when building a Bashed Patch
+#--CBash Gui patcher classes available when building a Bashed Patch
 CBash_patchers = (
     'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
     'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
     'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
     'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
-    'CBash_ClothesTweaker', 'CBash_GmstTweaker',
-    'CBash_GraphicsPatcher', 'CBash_ImportFactions', 'CBash_ImportInventory',
-    'CBash_SpellsPatcher', 'CBash_TweakActors', 'CBash_ImportRelations',
-    'CBash_ImportScripts',
+    'CBash_ClothesTweaker', 'CBash_GmstTweaker', 'CBash_GraphicsPatcher',
+    'CBash_ImportFactions', 'CBash_ImportInventory', 'CBash_SpellsPatcher',
+    'CBash_TweakActors', 'CBash_ImportRelations', 'CBash_ImportScripts',
     'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
     'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
-    'CBash_RacePatcher', 'CBash_RoadImporter',
-    'CBash_SoundPatcher', 'CBash_StatsPatcher', 'CBash_SEWorldEnforcer',
-    'CBash_ContentsChecker',
+    'CBash_RacePatcher', 'CBash_RoadImporter', 'CBash_SoundPatcher',
+    'CBash_StatsPatcher', 'CBash_SEWorldEnforcer', 'CBash_ContentsChecker',
     )
 
 # For ListsMerger

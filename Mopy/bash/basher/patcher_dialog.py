@@ -37,10 +37,13 @@ from .. import bosh, bolt, balt
 from ..patcher import configIsCBash
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
+# Final lists of gui patcher classes instances, initialized in
+# gui_patchers.InitPatchers() based on game. These must be copied as needed.
+gui_patchers = []       #--All patchers.
+CBash_gui_patchers = [] #--All patchers (CBash mode).
+
 class PatchDialog(balt.Dialog):
     """Bash Patch update dialog."""
-    patchers = []       #--All patchers. These are copied as needed.
-    CBash_patchers = [] #--All patchers (CBash mode).  These are copied as needed.
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
         self.parent = parent
@@ -66,10 +69,8 @@ class PatchDialog(balt.Dialog):
                 patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        if doCBash:
-            self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.CBash_patchers]
-        else:
-            self.patchers = [copy.deepcopy(patcher) for patcher in PatchDialog.patchers]
+        self.patchers = [copy.deepcopy(p) for p in
+                         (CBash_gui_patchers if doCBash else gui_patchers)]
         self.patchers.sort(key=lambda a: a.__class__.name)
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
