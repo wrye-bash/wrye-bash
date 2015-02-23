@@ -1720,7 +1720,6 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
     """Tmp class to factor out common code in basher.List and balt.Tank."""
-    _sizeHints = (100, 100) # min ListCtrl size TODO(ut): random overrides
     # optional menus
     mainMenu = None
     itemMenu = None
@@ -1740,7 +1739,6 @@ class UIList(wx.Panel):
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
-        self.SetSizeHints(*self.__class__._sizeHints)
         # Settings key
         self.__class__.keyPrefix = keyPrefix
         #--Columns

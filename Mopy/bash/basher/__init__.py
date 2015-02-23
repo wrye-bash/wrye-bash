@@ -280,12 +280,10 @@ class NotebookPanel(wx.Panel):
 #------------------------------------------------------------------------------
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
-    defaultSashPos = 100  ##: 200 in SashTankPanel, 230 in saves, 120 in
-    # screens, messages, 230 in saves details, InstallersData.defaultParam(
-    # 'sashPos',550)
+    defaultSashPos = minimumSize = 256
 
     def __init__(self, parent, sashGravity=0.5, isVertical=True,
-                 minimumSize=50, style=splitterStyle):
+                 style=splitterStyle):
         NotebookPanel.__init__(self, parent)
         self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
                                                                 style=style)
@@ -300,7 +298,7 @@ class SashPanel(NotebookPanel):
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
-        splitter.SetMinimumPaneSize(minimumSize)
+        splitter.SetMinimumPaneSize(self.__class__.minimumSize)
         sizer = vSizer(
             (splitter,1,wx.EXPAND),
             )
@@ -316,10 +314,9 @@ class SashPanel(NotebookPanel):
 class SashTankPanel(SashPanel):
 
     def __init__(self,data,parent):
-        minimumSize = 80
         self.data = data
         self.detailsItem = None
-        super(SashTankPanel,self).__init__(parent, minimumSize=minimumSize)
+        super(SashTankPanel,self).__init__(parent)
 
     def ClosePanel(self):
         self.SaveDetails()
@@ -331,7 +328,6 @@ class SashTankPanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class List(balt.UIList):
-    _sizeHints = (-1, 50) # overrides UIList
     icons = colorChecks
 
     def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
@@ -2074,7 +2070,7 @@ class ModPanel(SashPanel):
     keyPrefix = 'bash.mods'
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=150)
+        SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
         BashFrame.modList = ModList(left, self.listData, self.keyPrefix)
@@ -2461,7 +2457,7 @@ class SavePanel(SashPanel):
         if not bush.game.ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
-        SashPanel.__init__(self, parent, sashGravity=1.0, minimumSize=200)
+        SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
         BashFrame.saveList = SaveList(left, self.listData, self.keyPrefix)
@@ -3374,7 +3370,6 @@ class ScreensList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    _sizeHints = (100, 100)
     icons = None # no icons
     _shellUI = True
     editLabels = True
@@ -3522,7 +3517,7 @@ class ScreensPanel(SashPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent, minimumSize=100)
+        SashPanel.__init__(self, parent)
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
@@ -3808,7 +3803,6 @@ class MessageList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    _sizeHints = (100, 100)
     icons = None # no icons
 
     def __init__(self, parent, listData, keyPrefix):
@@ -3904,7 +3898,7 @@ class MessagePanel(SashPanel):
     def __init__(self,parent):
         """Initialize."""
         import wx.lib.iewin
-        SashPanel.__init__(self, parent, isVertical=False, minimumSize=100)
+        SashPanel.__init__(self, parent, isVertical=False)
         gTop,gBottom = self.left,self.right
         #--Contents
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
