@@ -68,11 +68,11 @@ class Files_SortBy(RadioLink):
 
     def _check(self): return self.window.sort == self.sortCol
 
-    def Execute(self,event):
-        if hasattr(self, 'gTank'):
-            self.gTank.SortItems(self.sortCol,'INVERT')
+    def Execute(self, event):
+        if isinstance(self.window, balt.Tank):  # TODO(ut): grotesque
+            self.window.SortItems(self.sortCol, 'INVERT')
         else:
-            self.window.PopulateItems(self.sortCol,-1)
+            self.window.PopulateItems(self.sortCol, -1)
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
@@ -95,17 +95,19 @@ class Files_Unhide(ItemLink):
             srcDir = window.data.bashDir.join(u'Hidden')
             destDir = window.data.dir
         elif self.type == 'installer':
-            window = self.gTank
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bosh.dirs['installers']
-            srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'.Folder Selection.', wildcard)
+            srcPaths = self._askOpenMulti(
+                title=_(u'Unhide files:'), defaultDir=srcDir,
+                defaultFile=u'.Folder Selection.', wildcard=wildcard)
         else:
             wildcard = u'*.*'
         isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
         if not self.type == 'installer':
-            srcPaths = balt.askOpenMulti(window,_(u'Unhide files:'),srcDir, u'', wildcard)
+            srcPaths = self._askOpenMulti(_(u'Unhide files:'),
+                                          defaultDir=srcDir, wildcard=wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
@@ -115,7 +117,8 @@ class Files_Unhide(ItemLink):
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
             if newSrcDir == destDir:
-                balt.showError(window,_(u"You can't unhide files from this directory."))
+                self._showError(
+                    _(u"You can't unhide files from this directory."))
                 return
             #--Folder selection?
             if srcFileName.csbody == u'.folder selection':
@@ -127,8 +130,8 @@ class Files_Unhide(ItemLink):
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists():
-                balt.showWarning(window,_(u"File skipped: %s. File is already present.")
-                                 % (srcFileName.s,))
+                self._showWarning(_(u"File skipped: %s. File is already "
+                                    u"present.") % (srcFileName.s,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
@@ -172,7 +175,7 @@ class File_Delete(ItemLink):
                         try:
                             self.window.data.delete(mod)
                         except BoltError as e:
-                            balt.showError(self.window, _(u'%s') % e)
+                            self._showError(u'%r' % e)
             self.window.RefreshUI()
 
 class File_Duplicate(ItemLink):
@@ -206,8 +209,8 @@ class File_Duplicate(ItemLink):
                                ) % (modName.sroot,modName.s)
                 else: #hasVoices
                     message = _(u'This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod.') % modName.s
-                if not balt.askWarning(self.window,message,_(u'Duplicate ')+fileName.s):
-                    continue
+                if not self._askWarning(
+                        message, _(u'Duplicate ') + fileName.s): continue
             #--Continue copy
             (root,ext) = fileName.rootExt
             if ext.lower() == u'.bak': ext = u'.ess'
@@ -222,11 +225,14 @@ class File_Duplicate(ItemLink):
             destName = destName.s
             destDir.makedirs()
             if len(data) == 1:
-                destPath = balt.askSave(self.window,_(u'Duplicate as:'), destDir,destName,wildcard)
+                destPath = self._askSave(
+                    title=_(u'Duplicate as:'), defaultDir=destDir,
+                    defaultFile=destName, wildcard=wildcard)
                 if not destPath: return
                 destDir,destName = destPath.headTail
             if (destDir == fileInfo.dir) and (destName == fileName):
-                balt.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
+                self._showError(
+                    _(u"Files cannot be duplicated to themselves!"))
                 continue
             if fileInfo.isMod():
                 newTime = bosh.modInfos.getFreeTime(fileInfo.getPath().mtime)
@@ -251,7 +257,7 @@ class File_Hide(ItemLink):
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not balt.askYes(self.window,message,_(u'Hide Files')): return
+            if not self._askYes(message, _(u'Hide Files')): return
         #--Do it
         destRoot = self.window.data.bashDir.join(u'Hidden')
         fileInfos = self.window.data
@@ -271,7 +277,7 @@ class File_Hide(ItemLink):
             if not self.window.data.moveIsSafe(fileName,destDir):
                 message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
                     % fileName.s)
-                if not balt.askYes(self.window,message,_(u'Hide Files')): continue
+                if not self._askYes(message, _(u'Hide Files')): continue
             #--Do it
             self.window.data.move(fileName,destDir,False)
         #--Refresh stuff
@@ -292,7 +298,8 @@ class File_ListMasters(OneItemLink):
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=fileName.s, asDialog=False, fixedFont=False,
+                      icons=Resources.bashBlue)
 
 class File_Redate(AppendableLink, ItemLink):
     """Move the selected files to start at a specified date."""
@@ -306,14 +313,15 @@ class File_Redate(AppendableLink, ItemLink):
         #--Get current start time.
         modInfos = self.window.data
         #--Ask user for revised time.
-        newTimeStr = balt.askText(self.window,_(u'Redate selected mods starting at...'),
-            _(u'Redate Mods'),formatDate(int(time.time())))
+        newTimeStr = self._askText(_(u'Redate selected mods starting at...'),
+                                   title=_(u'Redate Mods'),
+                                   default=formatDate(int(time.time())))
         if not newTimeStr: return
         try:
             newTimeTup = bosh.unformatDate(newTimeStr,u'%c')
             newTime = int(time.mktime(newTimeTup))
         except ValueError:
-            balt.showError(self.window,_(u'Unrecognized date: ')+newTimeStr)
+            self._showError(_(u'Unrecognized date: ') + newTimeStr)
             return
         except OverflowError:
             balt.showError(self,_(u'Bash cannot handle dates greater than January 19, 2038.)'))
@@ -341,8 +349,8 @@ class File_Sort(EnabledLink):
                    + u'\n\n' +
                    _(u'Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
                    )
-        if not balt.askContinue(self.window,message,'bash.sortMods.continue',_(u'Sort Mods')):
-            return
+        if not self._askContinue(message, 'bash.sortMods.continue',
+                                 _(u'Sort Mods')): return
         #--Get first time from first selected file.
         modInfos = self.window.data
         fileNames = self.selected
@@ -379,8 +387,9 @@ class File_Snapshot(ItemLink):
             (destDir,destName,wildcard) = fileInfo.getNextSnapshot()
             destDir.makedirs()
             if len(data) == 1:
-                destPath = balt.askSave(self.window,_(u'Save snapshot as:'),
-                    destDir,destName,wildcard)
+                destPath = self._askSave(
+                    title=_(u'Save snapshot as:'), defaultDir=destDir,
+                    defaultFile=destName, wildcard=wildcard)
                 if not destPath: return
                 (destDir,destName) = destPath.headTail
             #--Extract version number
@@ -416,14 +425,15 @@ class File_RevertToSnapshot(OneItemLink):
         wildcard = fileInfo.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
-        snapPath = balt.askOpen(self.window,_(u'Revert %s to snapshot:') % fileName.s,
-            srcDir, u'', wildcard,mustExist=True)
+        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName.s,
+                                 defaultDir=srcDir, wildcard=wildcard,
+                                 mustExist=True)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
         message = (_(u"Revert %s to snapshot %s dated %s?")
             % (fileInfo.name.s, snapName.s, formatDate(snapPath.mtime)))
-        if not balt.askYes(self.window,message,_(u'Revert to Snapshot')): return
+        if not self._askYes(message, _(u'Revert to Snapshot')): return
         with balt.BusyCursor():
             destPath = fileInfo.getPath()
             snapPath.copyTo(destPath)
@@ -456,11 +466,7 @@ class File_Open(EnabledLink):
 
     def _enable(self): return len(self.selected) > 0
 
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.window.data.dir
-        for file_ in self.selected:
-            dir_.join(file_).start()
+    def Execute(self, event): self.window.OpenSelected(selected=self.selected)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
@@ -499,7 +505,7 @@ class File_RevertToBackup(ChoiceLink):
         #--Warning box
         message = _(u"Revert %s to backup dated %s?") % (fileName.s,
             formatDate(backup.mtime))
-        if balt.askYes(self.window,message,_(u'Revert to Backup')):
+        if self._askYes(message, _(u'Revert to Backup')):
             with balt.BusyCursor():
                 dest = fileInfo.dir.join(fileName)
                 backup.copyTo(dest)

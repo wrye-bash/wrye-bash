@@ -98,25 +98,25 @@ class Colors:
     """Colour collection and wrapper for wx.ColourDatabase.
     Provides dictionary syntax access (colors[key]) and predefined colours."""
     def __init__(self):
-        self.data = {}
+        self._colors = {}
 
     def __setitem__(self,key,value):
         """Add a color to the database."""
         if not isinstance(value,str):
-            self.data[key] = wx.Colour(*value)
+            self._colors[key] = wx.Colour(*value)
         else:
-            self.data[key] = value
+            self._colors[key] = value
 
     def __getitem__(self,key):
         """Dictionary syntax: color = colours[key]."""
-        if key in self.data:
-            key = self.data[key]
+        if key in self._colors:
+            key = self._colors[key]
             if not isinstance(key,str):
                 return key
         return wx.TheColourDatabase.Find(key)
 
     def __iter__(self):
-        for key in self.data:
+        for key in self._colors:
             yield key
 
 #--Singleton
@@ -227,18 +227,18 @@ class ImageList:
     def __init__(self,width,height):
         self.width = width
         self.height = height
-        self.data = []
+        self.images = []
         self.indices = {}
         self.imageList = None
 
     def Add(self,image,key):
-        self.data.append((key,image))
+        self.images.append((key,image))
 
     def GetImageList(self):
         if not self.imageList:
             indices = self.indices
             imageList = self.imageList = wx.ImageList(self.width,self.height)
-            for key,image in self.data:
+            for key,image in self.images:
                 indices[key] = imageList.Add(image.GetBitmap())
         return self.imageList
 
@@ -258,24 +258,26 @@ def ensureDisplayed(frame,x=100,y=100):
         topLeft = wx.Display(0).GetGeometry().GetTopLeft()
         frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
-def setCheckListItems(gList,names,values):
-    """Convenience method for setting a bunch of wxCheckListBox items. The main advantage
-    of this is that it doesn't clear the list unless it needs to. Which is good if you want
-    to preserve the scroll position of the list."""
+def setCheckListItems(checkListBox, names, values):
+    """Convenience method for setting a bunch of wxCheckListBox items. The
+    main advantage of this is that it doesn't clear the list unless it needs
+    to. Which is good if you want to preserve the scroll position of the list.
+    """
     if not names:
-        gList.Clear()
+        checkListBox.Clear()
     else:
-        for index,(name,value) in enumerate(zip(names,values)):
-            if index >= gList.GetCount():
-                gList.Append(name)
+        for index, (name, value) in enumerate(zip(names, values)):
+            if index >= checkListBox.GetCount():
+                checkListBox.Append(name)
             else:
                 if index == -1:
-                    deprint(u"index = -1, name = %s, value = %s" % (name, value))
+                    deprint(
+                        u"index = -1, name = %s, value = %s" % (name, value))
                     continue
-                gList.SetString(index,name)
-            gList.Check(index,value)
-        for index in range(gList.GetCount(),len(names),-1):
-            gList.Delete(index-1)
+                checkListBox.SetString(index, name)
+            checkListBox.Check(index, value)
+        for index in range(checkListBox.GetCount(), len(names), -1):
+            checkListBox.Delete(index - 1)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -294,10 +296,11 @@ class textCtrl(wx.TextCtrl):
 
     def __init__(self, parent, value=u'', size=defSize, style=0,
                  multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
-                 onKillFocus=None, onText=None):
+                 maxChars=None, onKillFocus=None, onText=None):
         if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
         wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
                              name=name)
+        if maxChars: self.SetMaxLength(maxChars)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
@@ -475,7 +478,7 @@ def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
         return path
 
 #------------------------------------------------------------------------------
-def askContinue(parent,message,continueKey,title=_(u'Warning')):
+def askContinue(parent, message, continueKey, title=_(u'Warning')):
     """Shows a modal continue query if value of continueKey is false. Returns True to continue.
     Also provides checkbox "Don't show this in future." to set continueKey to true."""
     #--ContinueKey set?
@@ -488,7 +491,7 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
                              buttons=[(wx.ID_OK,'ok'),
                                       (wx.ID_CANCEL,'cancel'),
                                       ],
-                             checkBox_=_(u"Don't show this in the future."),
+                             checkBoxTxt=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
                              )
@@ -536,7 +539,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
                              title=title,
                              message=message,
                              buttons=buttons,
-                             checkBox_=_(u"Don't show this for the rest of operation."),
+                             checkBoxTxt=_(u"Don't show this for the rest of operation."),
                              icon='warning',
                              heading=u'',
                              )
@@ -653,7 +656,7 @@ def _vistaDialog_Hyperlink(*args):
     file = args[1]
     windows.StartURL(file)
 
-def vistaDialog(parent,message,title,buttons=[],checkBox_=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+def vistaDialog(parent,message,title,buttons=[],checkBoxTxt=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
     dialog = windows.TaskDialog(title,heading,message,
@@ -665,16 +668,16 @@ def vistaDialog(parent,message,title,buttons=[],checkBox_=None,icon=None,command
         dialog.set_footer(footer)
     if expander:
         dialog.set_expander(expander,False,not footer)
-    if checkBox_:
-        if isinstance(checkBox_,basestring):
-            dialog.set_check_box(checkBox_,False)
+    if checkBoxTxt:
+        if isinstance(checkBoxTxt,basestring):
+            dialog.set_check_box(checkBoxTxt,False)
         else:
-            dialog.set_check_box(checkBox_[0],checkBox_[1])
+            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
     result = dialog.show(commandLinks)
     for id,title in buttons:
         if title.startswith(u'+'): title = title[1:]
         if title == result[0]:
-            if checkBox_:
+            if checkBoxTxt:
                 return id,result[2]
             else:
                 return id
@@ -1205,12 +1208,12 @@ class ListEditor(Dialog):
         :param kwargs: kwargs['ButtonLabel']=buttonAction
         """
         #--Data
-        self.data = data #--Should be subclass of ListEditorData
+        self._listEditorData = data #--Should be subclass of ListEditorData
         self.items = data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title)
         # overrides Dialog.sizesKey
-        self.sizesKey = self.data.__class__.__name__
+        self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
         if data.caption:
             captionText = staticText(self,data.caption)
@@ -1222,8 +1225,9 @@ class ListEditor(Dialog):
         #--Infobox
         if data.showInfo:
             self.gInfoBox = textCtrl(self,size=(130,-1),
-                style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
-            if not self.data.infoReadOnly:
+                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
+                      wx.TE_MULTILINE | wx.SUNKEN_BORDER)
+            if not self._listEditorData.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         else:
             self.gInfoBox = None
@@ -1250,15 +1254,14 @@ class ListEditor(Dialog):
             (captionText,0,wx.LEFT|wx.TOP,4),
             (hSizer(
                 (self.listBox,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self.data.infoWeight,wx.EXPAND|wx.TOP,4),
+                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
                 (buttons,0,wx.EXPAND),
                 ),1,wx.EXPAND)
             )
         #--Done
-        className = data.__class__.__name__
-        if className in sizes:
+        if self.sizesKey in sizes:
             self.SetSizer(sizer)
-            self.SetSize(sizes[className])
+            self.SetSize(sizes[self.sizesKey])
         else:
             self.SetSizerAndFit(sizer)
 
@@ -1268,15 +1271,15 @@ class ListEditor(Dialog):
     #--List Commands
     def DoAdd(self,event):
         """Adds a new item."""
-        newItem = self.data.add()
+        newItem = self._listEditorData.add()
         if newItem and newItem not in self.items:
-            self.items = self.data.getItemList()
+            self.items = self._listEditorData.getItemList()
             index = self.items.index(newItem)
             self.listBox.InsertItems([newItem],index)
 
     def SetItemsTo(self, items):
-        if self.data.setTo(items):
-            self.items = self.data.getItemList()
+        if self._listEditorData.setTo(items):
+            self.items = self._listEditorData.getItemList()
             self.listBox.Set(self.items)
 
     def DoRename(self,event):
@@ -1292,7 +1295,7 @@ class ListEditor(Dialog):
             return
         elif newName in self.items:
             showError(self,_(u'Name must be unique.'))
-        elif self.data.rename(curName,newName):
+        elif self._listEditorData.rename(curName,newName):
             self.items[itemDex] = newName
             self.listBox.SetString(itemDex,newName)
 
@@ -1303,7 +1306,7 @@ class ListEditor(Dialog):
         #--Data
         itemDex = selections[0]
         item = self.items[itemDex]
-        if not self.data.remove(item): return
+        if not self._listEditorData.remove(item): return
         #--GUI
         del self.items[itemDex]
         self.listBox.Delete(itemDex)
@@ -1318,18 +1321,18 @@ class ListEditor(Dialog):
         if not selections: return bell()
         item = self.items[selections[0]]
         if self.gInfoBox.IsModified():
-            self.data.setInfo(item,self.gInfoBox.GetValue())
+            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
     #--Save/Cancel
     def DoSave(self,event):
         """Handle save button."""
-        self.data.save()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        self._listEditorData.save()
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
         """Handle cancel button."""
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
 
 #------------------------------------------------------------------------------
@@ -1717,7 +1720,6 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
     """Tmp class to factor out common code in basher.List and balt.Tank."""
-    _sizeHints = (100, 100) # min ListCtrl size TODO(ut): random overrides
     # optional menus
     mainMenu = None
     itemMenu = None
@@ -1725,6 +1727,7 @@ class UIList(wx.Panel):
     icons = {}
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
+    max_items_open = 7 # max number of items one can open without prompt
     #--Style params
     editLabels = False # allow editing the labels - also enables F2 shortcut
 
@@ -1736,14 +1739,13 @@ class UIList(wx.Panel):
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
-        self.SetSizeHints(*self.__class__._sizeHints)
         # Settings key
-        self.__class__.keyPrefix = keyPrefix
+        self.keyPrefix = keyPrefix
         #--Columns
         self.colNames = bosh.settings['bash.colNames']
-        self.colAligns = bosh.settings[self.__class__.keyPrefix + '.colAligns']
-        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort']
-        self.colWidthsKey = self.__class__.keyPrefix + '.colWidths'
+        self.colAligns = bosh.settings[self.keyPrefix + '.colAligns']
+        self.sort = bosh.settings[self.keyPrefix + '.sort']
+        self.colWidthsKey = self.keyPrefix + '.colWidths'
         self.colWidths = bosh.settings[self.colWidthsKey]
         #--attributes
         self.dndColumns = dndColumns
@@ -1752,41 +1754,45 @@ class UIList(wx.Panel):
         if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
         if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
-        self.gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
+        self._gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
                               dndList=dndList, fnDndAllow=self.dndAllow,
                               fnDropFiles=self.OnDropFiles,
                               fnDropIndexes=self.OnDropIndexes)
-        if self.icons: self.gList.SetImageList(self.icons.GetImageList(),
+        if self.icons: self._gList.SetImageList(self.icons.GetImageList(),
                                                wx.IMAGE_LIST_SMALL)
         if self.__class__.editLabels:
-            self.gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self.gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
-        self.gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        self.gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        self.gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        self.gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self.gList.Bind(wx.EVT_CHAR, self.OnChar)
+        self._gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self._gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
+        self._gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self._gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self._gList.Bind(wx.EVT_CHAR, self.OnChar)
         #--Events: Columns
-        self.gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self._gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Events: Items
-        self.gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        self.gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self.gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self._gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
         self.mouseItem = None
         self.mouseTexts = {}
         self.mouseTextPrev = u''
-        self.gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        self.gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
+        # Columns
+        self.PopulateColumns()
 
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(
-            self.__class__.keyPrefix + '.colReverse')
+        return bosh.settings.getChanged(self.keyPrefix + '.colReverse')
+
+    @property
+    def cols(self): return bosh.settings[self.keyPrefix + '.cols']
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1809,12 +1815,12 @@ class UIList(wx.Panel):
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
         size = self.GetClientSizeTuple()
-        self.gList.SetSize(size)
+        self._gList.SetSize(size)
 
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
-            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
+            (mouseItem,mouseHitFlag) = self._gList.HitTest(event.GetPosition())
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
                 self.MouseOverItem(mouseItem)
@@ -1864,18 +1870,70 @@ class UIList(wx.Panel):
     #-- Item selection --------------------------------------------------------
     def SelectItemAtIndex(self, index, select=True,
                           _select=wx.LIST_STATE_SELECTED):
-        self.gList.SetItemState(index, select * _select, _select)
+        self._gList.SetItemState(index, select * _select, _select)
 
     def ClearSelected(self):
         """Unselect all items."""
-        gList = self.gList
-        for i in xrange(gList.GetItemCount()): self.SelectItemAtIndex(i, False)
-        # (ut) below is the Tank variation - profile
-        # if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
-        #     gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        listCtrl = self._gList
+        for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
+        ##: (ut) below is the Tank variation - profile
+        # if listCtrl.GetItemState(index,wx.LIST_STATE_SELECTED):
+        #     listCtrl.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def SelectAll(self):
-        for i in range(self.gList.GetItemCount()): self.SelectItemAtIndex(i)
+        for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
+
+    def SelectLast(self):
+        self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
+
+    def DeleteAllItems(self):
+        self._gList.DeleteAllItems()
+
+    def EnsureVisible(self, name): ##: TANK ONLY
+        raise AbstractError
+
+    def OpenSelected(self, selected=None):
+        """Open selected files with default program."""
+        dataDir = self.data.dir
+        selected = selected if selected else self.GetSelected()
+        num = len(selected)
+        if num > UIList.max_items_open and not askContinue(self,
+            _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
+            'bash.maxItemsOpen'): return
+        for file_ in selected:
+            file_ = dataDir.join(file_)
+            if file_.exists(): file_.start()
+
+    #--Populate Columns -------------------------------------------------------
+    def PopulateColumns(self):
+        """Create/name columns in ListCtrl."""
+        cols = self.cols # this may be updated in List_Column.Execute()
+        self.numCols = len(cols) # used in List.PopulateItem()
+        colDict = self.colDict = {} # used in setting column sort indicator
+        listCtrl = self._gList
+        for colDex in xrange(self.numCols):
+            colKey = cols[colDex]
+            colDict[colKey] = colDex
+            colName = self.colNames.get(colKey, colKey)
+            colWidth = self.colWidths.get(colKey, 30)
+            colAlign = wxListAligns[self.colAligns.get(colKey, 0)]
+            if colDex >= listCtrl.GetColumnCount(): # Make a new column
+                listCtrl.InsertColumn(colDex, colName, colAlign)
+                listCtrl.SetColumnWidth(colDex, colWidth)
+            else: # Update an existing column
+                column = listCtrl.GetColumn(colDex)
+                if column.GetText() == colName:
+                    # Don't change it, just make sure the width is correct
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+                elif column.GetText() not in self.cols:
+                    # Column that doesn't exist anymore
+                    listCtrl.DeleteColumn(colDex)
+                else: # New column
+                    listCtrl.InsertColumn(colDex, colName, colAlign)
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+        while listCtrl.GetColumnCount() > self.numCols:
+            listCtrl.DeleteColumn(self.numCols)
+        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
 
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
@@ -1888,26 +1946,26 @@ class UIList(wx.Panel):
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if bosh.inisettings['AutoSizeListColumns']:
-            colCount = xrange(self.gList.GetColumnCount())
-            for i in colCount: self.gList.SetColumnWidth(i, -bosh.inisettings[
+            colCount = xrange(self._gList.GetColumnCount())
+            for i in colCount: self._gList.SetColumnWidth(i, -bosh.inisettings[
                     'AutoSizeListColumns'])
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
         bosh.settings[
-            self.__class__.keyPrefix + '.scrollPos'] = self.gList.GetScrollPos(
+            self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self.gList.ScrollLines(
-            bosh.settings.get(self.__class__.keyPrefix + '.scrollPos', 0))
+        self._gList.ScrollLines(
+            bosh.settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
         if not selected: selected = self.GetSelected()
         if len(selected) > 0:
-            index = self.gList.FindItem(0, selected[0].s)
-            if index != -1: self.gList.EditLabel(index)
+            index = self._gList.FindItem(0, selected[0].s)
+            if index != -1: self._gList.EditLabel(index)
 
 #------------------------------------------------------------------------------
 class Tank(UIList):
@@ -1928,16 +1986,11 @@ class Tank(UIList):
         kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
         UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
                         dndList=dndList, dndColumns=dndColumns, **kwargs)
-        #--Columns
-        self.UpdateColumns()
         #--Items
         self.sortDirty = False
         self.UpdateItems()
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-
-    @property
-    def cols(self): return bosh.settings[self.__class__.keyPrefix + '.cols']
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -1945,7 +1998,7 @@ class Tank(UIList):
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
-            newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
@@ -1955,7 +2008,7 @@ class Tank(UIList):
     #--Item/Id/Index Translation ----------------------------------------------
     def GetItem(self,index):
         """Returns item for specified list index."""
-        return self.itemId_item[self.gList.GetItemData(index)]
+        return self.itemId_item[self._gList.GetItemData(index)]
 
     def GetId(self,item):
         """Returns id for specified item, creating id if necessary."""
@@ -1970,7 +2023,7 @@ class Tank(UIList):
 
     def GetIndex(self,item):
         """Returns index for specified item."""
-        return self.gList.FindItemData(-1,self.GetId(item))
+        return self._gList.FindItemData(-1,self.GetId(item))
 
     def UpdateIds(self):
         """Updates item/id mappings to account for removed items."""
@@ -1981,84 +2034,49 @@ class Tank(UIList):
             del self.itemId_item[itemId]
 
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def PopulateColumns(self):
-        """Alias for UpdateColumns, for List_Columns"""
-        self.UpdateColumns()
-
-    def UpdateColumns(self):
-        """Create/name columns in ListCtrl."""
-        cols = self.cols
-        numCols = len(cols)
-        for colDex in range(numCols):
-            colKey = cols[colDex]
-            colName = self.colNames.get(colKey,colKey)
-            colWidth = self.colWidths.get(colKey,30)
-            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= self.gList.GetColumnCount():
-                # Make a new column
-                self.gList.InsertColumn(colDex,colName,colAlign)
-                self.gList.SetColumnWidth(colDex,colWidth)
-            else:
-                # Update an existing column
-                column = self.gList.GetColumn(colDex)
-                if column.GetText() == colName:
-                    # Don't change it, just make sure the width is correct
-                    self.gList.SetColumnWidth(colDex,colWidth)
-                elif column.GetText() not in self.cols:
-                    # Column that doesn't exist anymore
-                    self.gList.DeleteColumn(colDex)
-                    colDex -= 1
-                else:
-                    # New column
-                    self.gList.InsertColumn(colDex,colName,colAlign)
-                    self.gList.SetColumnWidth(colDex,colWidth)
-        while self.gList.GetColumnCount() > numCols:
-            self.gList.DeleteColumn(numCols)
-        self.gList.SetColumnWidth(numCols, wx.LIST_AUTOSIZE_USEHEADER)
-
     def UpdateItem(self,index,item=None,selected=tuple()):
         """Populate Item for specified item."""
         if index < 0: return
-        data,gList = self.data,self.gList
+        data,listCtrl = self.data,self._gList
         item = item or self.GetItem(index)
         for iColumn,column in enumerate(self.cols):
             colDex = self.GetColumnDex(column)
-            gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
-        gItem = gList.GetItem(index)
+            listCtrl.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
+        gItem = listCtrl.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(gList.GetTextColour())
+        else: gItem.SetTextColour(listCtrl.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
         gItem.SetData(self.GetId(item))
-        gList.SetItem(gItem)
+        listCtrl.SetItem(gItem)
 
     def GetColumnDex(self,column): ##: remove
         raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
-        gList = self.gList
+        listCtrl = self._gList
         items = set(self.data.keys())
         index = 0
         #--Items to select afterwards. (Defaults to current selection.)
         if selected == 'SAME': selected = set(self.GetSelected())
         #--Update existing items.
         self.mouseTexts.clear()
-        while index < gList.GetItemCount():
+        while index < listCtrl.GetItemCount():
             item = self.GetItem(index)
             if item not in items:
-                gList.DeleteItem(index)
+                listCtrl.DeleteItem(index)
             else:
                 self.UpdateItem(index,item,selected)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
         for item in items:
-            gList.InsertStringItem(index,u'')
+            listCtrl.InsertStringItem(index,u'')
             self.UpdateItem(index,item,selected)
             index += 1
         #--Cleanup
@@ -2066,7 +2084,7 @@ class Tank(UIList):
         self.SortItems()
 
     def _setSort(self,sort):
-        self.sort = bosh.settings[self.__class__.keyPrefix + '.sort'] = sort
+        self.sort = bosh.settings[self.keyPrefix + '.sort'] = sort
 
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
@@ -2095,7 +2113,7 @@ class Tank(UIList):
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
-        self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
+        self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
         #--Done
 
     def RefreshReport(self):
@@ -2117,7 +2135,7 @@ class Tank(UIList):
         elif items in self.data:
             self.UpdateItem(self.GetIndex(items),items,selected=selected)
         else: #--Iterable
-            for index in xrange(self.gList.GetItemCount()):
+            for index in xrange(self._gList.GetItemCount()):
                 if self.GetItem(index) in set(items):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
@@ -2137,10 +2155,13 @@ class Tank(UIList):
 
     #--Selected items
     def GetSelected(self):
-        """Return list of items selected (hilighted) in the interface."""
-        gList = self.gList
-        return [self.GetItem(x) for x in xrange(gList.GetItemCount())
-            if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
+        """Return list of items selected (highlighted) in the interface."""
+        listCtrl = self._gList
+        return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
+
+    def EnsureVisible(self, name): ##: TANK ONLY
+        self._gList.EnsureVisible(self.GetIndex(name))
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
@@ -2151,12 +2172,12 @@ class Tank(UIList):
         """Column resized. Save column size info."""
         colDex = event.GetColumn()
         colName = self.cols[colDex]
-        width = self.gList.GetColumnWidth(colDex)
+        width = self._gList.GetColumnWidth(colDex)
         if width < 5:
             width = 5
-            self.gList.SetColumnWidth(colDex, 5)
+            self._gList.SetColumnWidth(colDex, 5)
             event.Veto()
-            self.gList.resizeLastColumn(0)
+            self._gList.resizeLastColumn(0)
         else:
             event.Skip()
         self.colWidths[colName] = width
@@ -2243,7 +2264,7 @@ class Link(object):
 
         Called from AppendToMenu - DO NOT call directly. If you need to use the
         initialized data in setting instance attributes (such as text) override
-        and always _call super_ when overriding. ##: Needs work (Tank, docs)
+        and always _call super_ when overriding. ##: Needs work (docs)
         :param window: the element the menu is being popped from (usually a
         UIList subclass)
         :param data: the selected items when the menu is appended or None.
@@ -2253,9 +2274,6 @@ class Link(object):
         # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
         self.selected = data
-        if isinstance(window,Tank): # TODO(ut): eliminate this
-            self.gTank = window
-            self.data = window.data # still used in places, should go for good
 
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.
@@ -2263,6 +2281,76 @@ class Link(object):
         Link implementation calls _initData and returns None.
         """
         self._initData(window, data)
+
+    # Wrappers around balt dialogs - used to single out non trivial uses of
+    # self->window
+    ##: avoid respecifying default params
+    def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return showWarning(self.window, message, title=title, **kwdargs)
+
+    def _askYes(self, message, title=u'', default=True, questionIcon=False):
+        if not title: title = self.text
+        return askYes(self.window, message, title=title, default=default,
+                      questionIcon=questionIcon)
+
+    def _askContinue(self, message, continueKey, title=_(u'Warning')):
+        return askContinue(self.window, message, continueKey, title=title)
+
+    def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', mustExist=False):
+        return askOpen(self.window, title=title, defaultDir=defaultDir,
+                       defaultFile=defaultFile, wildcard=wildcard,
+                       mustExist=mustExist)
+
+    def _askOk(self, message, title=u''):
+        if not title: title = self.text
+        return askOk(self.window, message, title)
+
+    def _showOk(self, message, title=u'', **kwdargs):
+        return showOk(self.window, message, title, **kwdargs)
+
+    def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return askWarning(self.window, message, title, **kwdargs)
+
+    def _askText(self, message, title=u'', default=u''):
+        if not title: title = self.text
+        return askText(self.window, message, title=title, default=default)
+
+    def _showError(self, message, title=_(u'Error'), **kwdargs):
+        return showError(self.window, message, title, **kwdargs)
+
+    def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
+        return askSave(self.window, title, defaultDir, defaultFile, wildcard,
+                       style)
+
+    def _showLog(self, logText, title=u'', style=0, asDialog=True,
+                 fixedFont=False, icons=None, size=True, question=False):
+        return showLog(self.window, logText, title, style, asDialog, fixedFont,
+                       icons, size, question)
+
+    def _showInfo(self, message, title=_(u'Information'), **kwdargs):
+        return showInfo(self.window, message, title, **kwdargs)
+
+    def _showWryeLog(self, logText, title=u'', style=0, asDialog=True,
+                     icons=None):
+        return showWryeLog(self.window, logText, title, style, asDialog, icons)
+
+    def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
+                   max=10000):
+        return askNumber(self.window, message, prompt, title, value, min, max)
+
+    def _askOpenMulti(self, title=u'', defaultDir=u'', defaultFile=u'',
+                      wildcard=u''):
+        return askOpenMulti(self.window, title, defaultDir, defaultFile,
+                            wildcard)
+
+    def _askDirectory(self, message=_(u'Choose a directory.'),
+                      defaultPath=u''):
+        return askDirectory(self.window, message, defaultPath)
+
+    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+        return askContinueShortTerm(self.window, message, title=title)
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):
@@ -2346,8 +2434,9 @@ class ChoiceLink(Link):
 
     def AppendToMenu(self,menu,window,data):
         """Append idList items and register their callbacks."""
-        subMenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
-        if subMenu: menu = subMenu # our super is a MenuLink instance not mere Link instance
+        submenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
+        if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
+            menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, data)
         for link in self._range():
@@ -2355,7 +2444,7 @@ class ChoiceLink(Link):
         #--Events
         wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
                           self.DoList)
-        # notice it returns None
+        # returns None
 
     def DoList(self, event): event.Skip()
 
@@ -2436,17 +2525,13 @@ class RadioLink(CheckLink):
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
     text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
-
-    def __init__(self, opposite=False):
-        super(BoolLink, self).__init__()
-        self.opposite = opposite
+    opposite = False
 
     def _check(self):
         # check if not the same as self.opposite (so usually check if True)
-        return bosh.settings[self.key] ^ self.opposite
+        return bosh.settings[self.key] ^ self.__class__.opposite
 
-    def Execute(self,event):
-        bosh.settings[self.key] ^= True # toggle
+    def Execute(self,event): bosh.settings[self.key] ^= True # toggle
 
 # Tanks Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2456,11 +2541,11 @@ class Tanks_Open(ItemLink):
 
     def _initData(self, window, data):
         super(Tanks_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s'") % self.data.dir.tail # data is Tank.data
+        self.help = _(u"Open '%s'") % self.window.data.dir.tail
 
     def Execute(self,event):
         """Handle selection."""
-        dir_ = self.data.dir
+        dir_ = self.window.data.dir
         dir_.makedirs()
         dir_.start()
 
@@ -2473,7 +2558,7 @@ class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in Peop
 
     def Execute(self,event):
         with BusyCursor():
-            self.gTank.DeleteSelected()
+            self.window.DeleteSelected()
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2501,3 +2586,8 @@ def clipboardDropFiles(millis, callable_):
 def getKeyState(key): return wx.GetKeyState(key)
 def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
 def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)
+
+wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
+wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
+wxArrows = wxArrowUp | wxArrowDown
+wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}

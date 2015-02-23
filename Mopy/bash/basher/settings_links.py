@@ -135,10 +135,11 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,
-            _(u'Export list of allowed/disallowed %s plugin dlls to:') % bush.game.se_sd,
-            textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
-            u'*.txt')
+        title = _(u'Export list of allowed/disallowed %s plugin dlls to:') % \
+                bush.game.se_sd
+        file_ = bush.game.se.shortName + u' ' + _(u'dll permissions') + u'.txt'
+        textPath = self._askSave(title=title, defaultDir=textDir,
+                                 defaultFile=file_, wildcard=u'*.txt')
         if not textPath: return
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
@@ -170,17 +171,19 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.window,
-            _(u'Import list of allowed/disallowed %s plugin dlls from:') % bush.game.se_sd,
-            textDir, bush.game.se.shortName+u' '+_(u'dll permissions')+u'.txt',
-            u'*.txt',mustExist=True)
+        defFile = bush.game.se.shortName + u' ' + _(
+            u'dll permissions') + u'.txt'
+        title = _(u'Import list of allowed/disallowed %s plugin dlls from:') \
+                % bush.game.se_sd
+        textPath = self._askOpen(title=title, defaultDir=textDir,
+                                 defaultFile=defFile, wildcard=u'*.txt',
+                                 mustExist=True)
         if not textPath: return
         message = (_(u'Merge permissions from file with current dll permissions?')
                    + u'\n' +
                    _(u"('No' Replaces current permissions instead.)")
                    )
-        if not balt.askYes(self.window,message,_(u'Merge permissions?')): replace = True
-        else: replace = False
+        replace = not self._askYes(message, _(u'Merge permissions?'))
         try:
             with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}
@@ -204,10 +207,14 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
             else:
                 bosh.settings['bash.installers.goodDlls'], bosh.settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
         except UnicodeError:
-            balt.showError(self.window,_(u'Wrye Bash could not load %s, because it is not saved in UTF-8 format.  Please resave it in UTF-8 format and try again.') % textPath.s)
+            self._showError(_(u'Wrye Bash could not load %s, because it is not'
+                              u' saved in UTF-8 format.  Please resave it in '
+                              u'UTF-8 format and try again.') % textPath.s)
         except Exception as e:
             deprint(u'Error reading', textPath.s, traceback=True)
-            balt.showError(self.window,_(u'Wrye Bash could not load %s, because there was an error in the format of the file.') % textPath.s)
+            self._showError(_(u'Wrye Bash could not load %s, because there was'
+                              u' an error in the format of the file.')
+                            % textPath.s)
 
 #------------------------------------------------------------------------------
 class Settings_Colors(ItemLink):
@@ -468,12 +475,11 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages.  For more info, '
             u'see Internationalization section of Bash readme.')
-        if not balt.askContinue(self.window, message,
-                                'bash.dumpTranslator.continue',
+        if not self._askContinue(message, 'bash.dumpTranslator.continue',
                                 _(u'Dump Translator')): return
         outPath = bosh.dirs['l10n']
         with balt.BusyCursor():
             outFile = bolt.dumpTranslator(outPath.s, _bassLang())
-        balt.showOk(self.window, _(
+        self._showOk(_(
             u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
-                    _(u'Dump Translator') + u': ' + outPath.stail)
+                     _(u'Dump Translator') + u': ' + outPath.stail)

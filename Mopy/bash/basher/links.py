@@ -826,7 +826,7 @@ def InitPeopleLinks():
     PeopleList.mainMenu.append(
         List_Columns('bash.people.cols', 'bash.people.allCols', ['Name']))
     #--Item links
-    PeopleList.itemMenu.append(People_Karma())
+    PeopleList.itemMenu.append(People_Karma(_(u'Karma')))
     PeopleList.itemMenu.append(SeparatorLink())
     PeopleList.itemMenu.append(People_AddNew())
     PeopleList.itemMenu.append(balt.Tank_Delete())

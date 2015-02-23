@@ -327,11 +327,10 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
-
+    'bash.installers.columns':['Package','Order','Modified','Size','Files'],
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': defPos,
-
     #--Wrye Bash: INI Tweaks
     'bash.ini.allCols': ['File','Installer'],
     'bash.ini.cols': ['File','Installer'],
@@ -447,6 +446,7 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.people.colAligns': {
         'Karma': 1,
         },
+    'bash.people.columns': ['Name','Karma','Header'],
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,
@@ -469,7 +469,7 @@ def _png(name): return Image(GPath(imDirJn(name)), PNG)
 
 #--Image lists
 karmacons = ImageList(16,16)
-karmacons.data.extend({
+karmacons.images.extend({
     'karma+5': _png(u'checkbox_purple_inc.png'),
     'karma+4': _png(u'checkbox_blue_inc.png'),
     'karma+3': _png(u'checkbox_blue_inc.png'),
@@ -483,7 +483,7 @@ karmacons.data.extend({
     'karma-5': _png(u'checkbox_red_off.png'),
     }.items())
 installercons = ImageList(16,16)
-installercons.data.extend({
+installercons.images.extend({
     #--Off/Archive
     'off.green':  _png(u'checkbox_green_off.png'),
     'off.grey':   _png(u'checkbox_grey_off.png'),

@@ -489,8 +489,8 @@ class CreateNewProject(balt.Dialog):
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
         # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
         # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = wx.Button(self,wx.ID_OK)
-        cancelButton = wx.Button(self,wx.ID_CANCEL)
+        okButton = button(self, id=wx.ID_OK, onClick=self.OnClose)
+        cancelButton = button(self, id=wx.ID_CANCEL, onClick=self.OnClose)
         # Panel Layout
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
@@ -512,8 +512,6 @@ class CreateNewProject(balt.Dialog):
         self.SetInitialSize()
         # Event Handlers
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
-        okButton.Bind(wx.EVT_BUTTON,self.OnClose)
-        cancelButton.Bind(wx.EVT_BUTTON,self.OnClose)
         # Dialog Icon Handlers
         self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
         self.OnCheckBoxChange(self)

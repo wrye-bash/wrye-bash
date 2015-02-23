@@ -23,7 +23,8 @@
 # =============================================================================
 
 """Menu items for the __item__ menu of the installer tab. Check before using
-BashFrame.iniList - can be None (ini panel not shown)."""
+BashFrame.iniList - can be None (ini panel not shown). Their window attribute
+points to the InstallersList singleton."""
 
 import StringIO
 import copy
@@ -108,6 +109,47 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+    def _promptSolidBlockSize(self, title, value=0):
+        return self._askNumber(
+            _(u'Use what maximum size for each solid block?') + u'\n' + _(
+                u"Enter '0' to use 7z's default size."), prompt=u'MB',
+            title=title, value=value, min=0, max=102400)
+
+    def _pack(self, archive, installer, project, release=False):
+        #--Archive configuration options ##: this should be in an "archives.py"
+        blockSize = None
+        if archive.cext in bosh.noSolidExts:
+            isSolid = False
+        else:
+            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+                isSolid = self._askYes(_(u'Use solid compression for %s?')
+                                       % archive.s, default=False)
+                if isSolid:
+                    blockSize = self._promptSolidBlockSize(title=self.text)
+            else:
+                isSolid = True
+        with balt.Progress(_(u'Packing to Archive...'),
+                           u'\n' + u' ' * 60) as progress:
+            #--Pack
+            installer.packToArchive(project, archive, isSolid, blockSize,
+                                    SubProgress(progress, 0, 0.8),
+                                    release=release)
+            #--Add the new archive to Bash
+            if archive not in self.idata:
+                self.idata[archive] = bosh.InstallerArchive(archive)
+            #--Refresh UI
+            iArchive = self.idata[archive]
+            pArchive = bosh.dirs['installers'].join(archive)
+            iArchive.blockSize = blockSize
+            iArchive.refreshed = False
+            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99),
+                                  True)
+            if iArchive.order == -1:
+                self.idata.moveArchives([archive], installer.order + 1)
+            #--Refresh UI
+            self.idata.refresh(what='I')
+            self.window.RefreshUI()
+
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
@@ -179,7 +221,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             else:
                 pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
             try:
-                wizard = InstallerWizard(self, subs, pageSize, pos)
+                wizard = InstallerWizard(self.window, self.idata,
+                                         self.selected[0], self.bAuto,
+                                         self.isSingleArchive(), subs,
+                                         pageSize, pos)
             except CancelError:
                 return
             balt.ensureDisplayed(wizard)
@@ -264,8 +309,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                + u'\n\n' +
                                _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!')
                                ) % iniFile.sbody
-                    if not balt.askContinue(self.gTank,message,'bash.iniTweaks.continue',_(u'INI Tweaks')):
-                        continue
+                    if not self._askContinue(message,
+                                             'bash.iniTweaks.continue',
+                                             _(u'INI Tweaks')): continue
                 if BashFrame.iniList is not None:
                     BashFrame.iniList.panel.AddOrSelectIniDropDown(
                         bosh.dirs['mods'].join(iniFile))
@@ -285,7 +331,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
-            balt.showInfo(self.gTank,message)
+            self._showInfo(message)
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
@@ -334,8 +380,8 @@ class Installer_Delete(_InstallerLink):
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
-    def Execute(self, event): self.gTank.DeleteSelected(shellUI=False,
-                                                        noRecycle=False)
+    def Execute(self, event): self.window.DeleteSelected(shellUI=False,
+                                                         noRecycle=False)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
@@ -362,27 +408,27 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         while newName in self.idata:
             newName = root + (_(u' Copy (%d)') % index) + ext
             index += 1
-        result = balt.askText(self.gTank,_(u"Duplicate %s to:") % curName.s,
-            self.text,newName.s)
+        result = self._askText(_(u"Duplicate %s to:") % curName.s,
+                               default=newName.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
         newName = GPath(result).tail
         if not newName.s:
-            balt.showWarning(self.gTank,_(u"%s is not a valid name.") % result)
+            self._showWarning(_(u"%s is not a valid name.") % result)
             return
         if newName in self.idata:
-            balt.showWarning(self.gTank,_(u"%s already exists.") % newName.s)
+            self._showWarning(_(u"%s already exists.") % newName.s)
             return
         if self.idata.dir.join(curName).isfile() and curName.cext != newName.cext:
-            balt.showWarning(self.gTank,
-                _(u"%s does not have correct extension (%s).") % (newName.s,curName.ext))
+            self._showWarning(_(u"%s does not have correct extension (%s).")
+                              % (newName.s,curName.ext))
             return
         #--Duplicate
         with balt.BusyCursor():
             self.idata.copy(curName,newName)
             self.idata.refresh(what='N')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
@@ -400,20 +446,20 @@ class Installer_Hide(_InstallerLink):
         """Handle selection."""
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not balt.askYes(self.gTank,message,_(u'Hide Files')): return
+            if not self._askYes(message, _(u'Hide Files')): return
         destDir = bosh.dirs['modsBash'].join(u'Hidden')
         for curName in self.selected:
             newName = destDir.join(curName)
             if newName.exists():
                 message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
                     % newName.stail)
-                if not balt.askYes(self.gTank,message,_(u'Hide Files')): return
+                if not self._askYes(message, _(u'Hide Files')): return
             #Move
             with balt.BusyCursor():
                 file = bosh.dirs['installers'].join(curName)
                 file.moveTo(newName)
         self.idata.refresh(what='ION')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Rename(_InstallerLink):
     """Renames files by pattern."""
@@ -454,7 +500,7 @@ class Installer_HasExtraData(CheckLink, _InstallerLink):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_OverrideSkips(CheckLink, _InstallerLink):
     """Toggle overrideSkips flag on installer."""
@@ -479,7 +525,7 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
     """Toggle skipRefresh flag on installer."""
@@ -503,7 +549,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
                 installer.refreshBasic(file)
                 installer.refreshStatus(self.idata)
                 self.idata.refresh(what='N')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
 
 class Installer_Install(_InstallerLink):
     """Install selected packages."""
@@ -528,14 +574,14 @@ class Installer_Install(_InstallerLink):
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
-                    balt.showError(self.window,u'%s'%e)
+                    self._showError(u'%s'%e)
                 else:
                     if tweaks:
-                        balt.showInfo(self.window,
-                            _(u'The following INI Tweaks were created, because the existing INI was different than what BAIN installed:')
-                            +u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x,y) in tweaks]),
-                            _(u'INI Tweaks')
-                            )
+                        msg = _(u'The following INI Tweaks were created, '
+                                u'because the existing INI was different than '
+                                u'what BAIN installed:') + u'\n' + u'\n'.join(
+                                [u' * %s\n' % x.stail for (x, y) in tweaks])
+                        self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
             self.idata.refresh(what='N')
             gInstallers.RefreshUIMods()
@@ -556,7 +602,8 @@ class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
         text = installer.listSource(archive)
         #--Get masters list
         balt.copyToClipboard(text)
-        balt.showLog(self.gTank,text,_(u'Package Structure'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Package Structure'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
@@ -571,20 +618,20 @@ class Installer_Move(_InstallerLink):
                    + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
-        newPos = balt.askText(self.gTank,message,self.text,unicode(curPos))
+        newPos = self._askText(message, default=unicode(curPos))
         if not newPos: return
         newPos = newPos.strip()
         try:
             newPos = int(newPos)
         except:
-            balt.showError(self.gTank,_(u'Position must be an integer.'))
+            self._showError(_(u'Position must be an integer.'))
             return
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata.data)
         self.idata.moveArchives(self.selected,newPos)
         self.idata.refresh(what='N')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Open(_InstallerLink):
     """Open selected file(s)."""
@@ -600,11 +647,7 @@ class Installer_Open(_InstallerLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.idata.dir
-        for file_ in self.selected:
-            dir_.join(file_).start()
+    def Execute(self,event): self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -619,7 +662,7 @@ class _Installer_OpenAt(_InstallerLink):
     def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self, event):
-        if balt.askContinue(self.gTank, self.message, self.key, self.askTitle):
+        if self._askContinue(self.message, self.key, self.askTitle):
             webbrowser.open(self._url())
 
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
@@ -700,7 +743,7 @@ class Installer_Refresh(_InstallerLink):
             # User canceled the refresh
             pass
         self.idata.refresh(what='NSC')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_SkipVoices(CheckLink, _InstallerLink):
     """Toggle skipVoices flag on installer."""
@@ -717,7 +760,7 @@ class Installer_SkipVoices(CheckLink, _InstallerLink):
         installer.skipVoices ^= True
         installer.refreshDataSizeCrc()
         self.idata.refresh(what='NS')
-        self.gTank.RefreshUI()
+        self.window.RefreshUI()
 
 class Installer_Uninstall(_InstallerLink):
     """Uninstall selected Installers."""
@@ -835,7 +878,7 @@ class Installer_CopyConflicts(_InstallerLink):
                     if iProject.order == -1:
                         data.moveArchives([project],srcInstaller.order + 1)
                     data.refresh(what='I') # InstallersData.refresh()
-                    self.gTank.RefreshUI()
+                    self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -883,9 +926,8 @@ class Installer_Espm_Rename(EnabledLink):
         if curName[0] == u'*':
             curName = curName[1:]
         _file = GPath(curName)
-        newName = balt.askText(self.window,
-                               _(u"Enter new name (without the extension):"),
-                               _(u"Rename Esp/m"), _file.sbody)
+        newName = self._askText(_(u"Enter new name (without the extension):"),
+                                title=_(u"Rename Esp/m"), default=_file.sbody)
         if not newName: return
         if newName in gInstallers.espms: return
         installer.setEspmName(curName, newName + _file.cext)
@@ -936,8 +978,8 @@ class Installer_Espm_List(EnabledLink):
                     espm_list.GetString(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        balt.showLog(self.window, subs, _(u'Esp/m List'), asDialog=False,
-                     fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Esp/m List'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
@@ -997,8 +1039,8 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
                 index)] + gInstallers.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        balt.showLog(self.window, subs, _(u'Sub-Package Lists'),
-                     asDialog=False, fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Sub-Package Lists'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
@@ -1017,21 +1059,22 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             archive = self.selected[0]
             installer = self.idata[archive]
             project = archive.root
-            result = balt.askText(self.gTank,_(u"Unpack %s to Project:") % archive.s,
-                self.text,project.s)
+            result = self._askText(_(u"Unpack %s to Project:") % archive.s,
+                                   default=project.s)
             result = (result or u'').strip()
             if not result: return
             #--Error checking
             project = GPath(result).tail
             if not project.s or project.cext in bosh.readExts:
-                balt.showWarning(self.gTank,_(u"%s is not a valid project name.") % result)
+                self._showWarning(_(u"%s is not a valid project name.") % result)
                 return
             if self.idata.dir.join(project).isfile():
-                balt.showWarning(self.gTank,_(u"%s is a file.") % project.s)
+                self._showWarning(_(u"%s is a file.") % project.s)
                 return
             if project in self.idata:
-                if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
-                    return
+                if not self._askYes(
+                            _(u"%s already exists. Overwrite it?") % project.s,
+                            default=False): return
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
             if self.isSingleArchive():
@@ -1045,15 +1088,16 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 if iProject.order == -1:
                     self.idata.moveArchives([project],installer.order+1)
                 self.idata.refresh(what='NS')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
                 #pProject.start()
             else:
                 for archive in self.selected:
                     project = archive.root
                     installer = self.idata[archive]
                     if project in self.idata:
-                        if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % project.s,self.text,False):
-                            continue
+                        if not self._askYes(
+                            _(u"%s already exists. Overwrite it?") % project.s,
+                            default=False): continue
                     installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                     if project not in self.idata:
                         self.idata[project] = bosh.InstallerProject(project)
@@ -1064,7 +1108,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if iProject.order == -1:
                         self.idata.moveArchives([project],installer.order+1)
                 self.idata.refresh(what='NS')
-                self.gTank.RefreshUI()
+                self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
@@ -1078,8 +1122,8 @@ class InstallerProject_OmodConfig(_InstallerLink):
 
     def Execute(self,event):
         project = self.selected[0]
-        dialog =InstallerProject_OmodConfigDialog(self.gTank,self.idata,project)
-        dialog.Show()
+        (InstallerProject_OmodConfigDialog(self.window, self.idata,
+                                           project)).Show()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Sync(_InstallerLink):
@@ -1098,13 +1142,11 @@ class InstallerProject_Sync(_InstallerLink):
         installer = self.idata[project]
         missing = installer.missingFiles
         mismatched = installer.mismatchedFiles
-        message = (_(u'Update %s according to data directory?')
-                   + u'\n' +
-                   _(u'Files to delete:')
-                   + u'%d\n' +
-                   _(u'Files to update:')
-                   + u'%d') % (project.s,len(missing),len(mismatched))
-        if not balt.askWarning(self.gTank,message,self.text): return
+        message = (_(u'Update %s according to data directory?') + u'\n' +
+                   _(u'Files to delete:') + u'%d\n' +
+                   _(u'Files to update:') + u'%d') % (
+                        project.s, len(missing), len(mismatched))
+        if not self._askWarning(message, title=self.text): return
         #--Sync it, baby!
         with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
@@ -1113,7 +1155,7 @@ class InstallerProject_Sync(_InstallerLink):
             installer.refreshed = False
             installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
             self.idata.refresh(what='NS')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(AppendableLink, _InstallerLink):
@@ -1130,54 +1172,25 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
         installer = self.idata[project]
         archive = bosh.GPath(project.s + bosh.defaultExt)
         #--Confirm operation
-        result = balt.askText(self.gTank,_(u'Pack %s to Archive:') % project.s,
-            self.text,archive.s)
+        result = self._askText(_(u'Pack %s to Archive:') % project.s,
+                               default=archive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
         if self.idata.dir.join(archive).isdir():
-            balt.showWarning(self.gTank,_(u'%s is a directory.') % archive.s)
+            self._showWarning(_(u'%s is a directory.') % archive.s)
             return
         if archive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
+            self._showWarning(_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
             archive = GPath(archive.sroot + bosh.defaultExt).tail
         if archive in self.idata:
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % archive.s,self.text,False): return
-        #--Archive configuration options
-        blockSize = None
-        if archive.cext in bosh.noSolidExts:
-            isSolid = False
-        else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = balt.askYes(self.gTank,_(u'Use solid compression for %s?') % archive.s,self.text,False)
-                if isSolid:
-                    blockSize = balt.askNumber(self.gTank,
-                        _(u'Use what maximum size for each solid block?')
-                        + u'\n' +
-                        _(u"Enter '0' to use 7z's default size.")
-                        ,u'MB',self.text,0,0,102400)
-            else: isSolid = True
-        with balt.Progress(_(u'Packing to Archive...'),u'\n'+u' '*60) as progress:
-            #--Pack
-            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8))
-            #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
-            iArchive.blockSize = blockSize
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive],installer.order+1)
-            #--Refresh UI
-            self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            if not self._askYes(_(u'%s already exists. Overwrite it?')
+                                        % archive.s, default=False): return
+        self._pack(archive, installer, project, release=False)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(_InstallerLink):
@@ -1192,53 +1205,25 @@ class InstallerProject_ReleasePack(_InstallerLink):
         installer = self.idata[project]
         archive = bosh.GPath(project.s + bosh.defaultExt)
         #--Confirm operation
-        result = balt.askText(self.gTank,_(u"Pack %s to Archive:") % project.s,
-            self.text,archive.s)
+        result = self._askText(_(u"Pack %s to Archive:") % project.s,
+                               default=archive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
         archive = GPath(result).tail
         if not archive.s:
-            balt.showWarning(self.gTank,_(u"%s is not a valid archive name.") % result)
+            self._showWarning(_(u"%s is not a valid archive name.") % result)
             return
         if self.idata.dir.join(archive).isdir():
-            balt.showWarning(self.gTank,_(u"%s is a directory.") % archive.s)
+            self._showWarning(_(u"%s is a directory.") % archive.s)
             return
         if archive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank,_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
+            self._showWarning(_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
             archive = GPath(archive.sroot + bosh.defaultExt).tail
         if archive in self.idata:
-            if not balt.askYes(self.gTank,_(u"%s already exists. Overwrite it?") % archive.s,self.text,False): return
-        #--Archive configuration options
-        blockSize = None
-        if archive.cext in bosh.noSolidExts:
-            isSolid = False
-        else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
-                isSolid = balt.askYes(self.gTank,_(u"Use solid compression for %s?") % archive.s,self.text,False)
-                if isSolid:
-                    blockSize = balt.askNumber(self.gTank,
-                        _(u'Use what maximum size for each solid block?')
-                        + u'\n' +
-                        _(u"Enter '0' to use 7z's default size."),'MB',self.text,0,0,102400)
-            else: isSolid = True
-        with balt.Progress(_(u"Packing to Archive..."),u'\n'+u' '*60) as progress:
-            #--Pack
-            installer.packToArchive(project,archive,isSolid,blockSize,SubProgress(progress,0,0.8),release=True)
-            #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
-            iArchive.blockSize = blockSize
-            iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.8,0.99),True)
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive],installer.order+1)
-            #--Refresh UI
-            self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            if not self._askYes(_(u"%s already exists. Overwrite it?")
+                                        % archive.s, default=False): return
+        self._pack(archive, installer, project, release=True)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(_InstallerLink):
@@ -1259,25 +1244,28 @@ class InstallerConverter_Apply(_InstallerLink):
         message = _(u'Using:')+u'\n* '
         message += u'\n* '.join(sorted(u'(%08X) - %s' % (x,self.idata.crc_installer[x].archive) for x in self.converter.srcCRCs)) + u'\n'
         #--Confirm operation
-        result = balt.askText(self.gTank,message,self.dialogTitle,result + bosh.defaultExt)
+        result = self._askText(message, title=self.dialogTitle,
+                               default=result + bosh.defaultExt)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
         destArchive = GPath(result).tail
         if not destArchive.s:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
         if destArchive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank,_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
+            self._showWarning(_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.idata:
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % destArchive.s,self.dialogTitle,False): return
+            if not self._askYes(_(
+                    u'%s already exists. Overwrite it?') % destArchive.s,
+                                title=self.dialogTitle, default=False): return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.idata.crc_installer,SubProgress(progress,0.0,0.99))
             if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
                 deprint(u'An error occurred while attempting to apply an Auto-BCF:',traceback=True)
-                balt.showWarning(self.gTank,
+                self._showWarning(
                     _(u'%s: An error occurred while applying an Auto-BCF.' % destArchive.s))
                 # hasBCF will be set to False if there is an error while
                 # rearranging files
@@ -1296,7 +1284,7 @@ class InstallerConverter_Apply(_InstallerLink):
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
             self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1306,25 +1294,26 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
         name = self.selected[0]
         archive = self.idata[name]
         #--Ask for an output filename
-        destArchive = balt.askText(self.gTank, _(u'Output file:'),
-                                   _(u'Apply BCF...'), name.stail)
+        destArchive = self._askText(_(u'Output file:'),
+                                    title=_(u'Apply BCF...'),
+                                    default=name.stail)
         destArchive = (destArchive if destArchive else u'').strip()
         if not destArchive: return
         destArchive = GPath(destArchive)
         #--Error checking
         if not destArchive.s:
-            balt.showWarning(self.gTank, _(
-                u'%s is not a valid archive name.') % destArchive.s)
+            self._showWarning(_(u'%s is not a valid archive name.')
+                              % destArchive.s)
             return
         if destArchive.cext not in bosh.writeExts:
-            balt.showWarning(self.gTank, _(
-                u'The %s extension is unsupported. Using %s instead.') % (
+            self._showWarning(
+                _(u'The %s extension is unsupported. Using %s instead.') % (
                                  destArchive.cext, bosh.defaultExt))
             destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
         if destArchive in self.idata:
-            if not balt.askYes(self.gTank, _(
-                    u'%s already exists. Overwrite it?') % destArchive.s,
-                               _(u'Apply BCF...'), False):
+            if not self._askYes(_(u'%s already exists. Overwrite it?')
+                                % destArchive.s, _(u'Apply BCF...'),
+                                default=False):
                 return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
             self.idata.applyEmbeddedBCFs([archive],[destArchive],progress)
@@ -1333,7 +1322,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
             self.idata.refresh(what='I')
-            self.gTank.RefreshUI()
+            self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""
@@ -1344,16 +1333,17 @@ class InstallerConverter_Create(_InstallerLink):
         #--Generate allowable targets
         readTypes = u'*%s' % u';*'.join(bosh.readExts)
         #--Select target archive
-        destArchive = balt.askOpen(self.gTank,_(u"Select the BAIN'ed Archive:"),
-                                   self.idata.dir,u'', readTypes,mustExist=True)
+        destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
+                                    defaultDir=self.idata.dir,
+                                    wildcard=readTypes, mustExist=True)
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
         if not destArchive.s or destArchive.cext not in bosh.readExts:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % destArchive.s)
+            self._showWarning(_(u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive not in self.idata:
-            balt.showWarning(self.gTank,_(u'%s must be in the Bash Installers directory.') % destArchive.s)
+            self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive.s)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bosh.defaultExt).tail
@@ -1362,32 +1352,32 @@ class InstallerConverter_Create(_InstallerLink):
         message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.idata[x].crc,x.s) for x in self.selected))
         message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive.s) + u'\n'
         #--Confirm operation
-        result = balt.askText(self.gTank,message,self.dialogTitle,BCFArchive.s)
+        result = self._askText(message, title=self.dialogTitle,
+                               default=BCFArchive.s)
         result = (result or u'').strip()
         if not result: return
         #--Error checking
         BCFArchive = GPath(result).tail
         if not BCFArchive.s:
-            balt.showWarning(self.gTank,_(u'%s is not a valid archive name.') % result)
+            self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
         if BCFArchive.cext != bosh.defaultExt:
-            balt.showWarning(self.gTank,_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
+            self._showWarning(_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
         if bosh.dirs['converters'].join(BCFArchive).exists():
-            if not balt.askYes(self.gTank,_(u'%s already exists. Overwrite it?') % BCFArchive.s,self.dialogTitle,False): return
+            if not self._askYes(_(
+                    u'%s already exists. Overwrite it?') % BCFArchive.s,
+                                title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
             self.idata.removeConverter(BCFArchive)
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:
-            blockSize = balt.askNumber(self.gTank,u'mb',
-                _(u'Use what maximum size for each solid block?')
-                + u'\n' +
-                _(u"Enter '0' to use 7z's default size."),
-                self.dialogTitle,destInstaller.blockSize or 0,0,102400)
+            blockSize = self._promptSolidBlockSize(
+                title=self.dialogTitle, value=destInstaller.blockSize or 0)
         progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
         log = None
         try:
@@ -1423,7 +1413,7 @@ class InstallerConverter_Create(_InstallerLink):
         finally:
             progress.Destroy()
             if log:
-                balt.showLog(self.gTank, log.out.getvalue(), _(u'BCF Information'))
+                self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
 
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------
@@ -1431,18 +1421,19 @@ class InstallerConverter_Create(_InstallerLink):
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
     def _enable(self):
-        if not super(InstallerOpenAt_MainMenu, self)._enable(): return False # one  selected only
-        return isinstance(self.data[self.selected[0]],bosh.InstallerArchive)
+        return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
+            self.window.data[self.selected[0]], bosh.InstallerArchive)
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     def _enable(self): # TODO(ut) untested for multiple selections
-        """Return False to disable the converter menu otherwise populate its links attribute and return True."""
+        """Return False to disable the converter menu, otherwise populate its
+        links attribute and return True."""
         linkSet = set()
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        instData = self.data # window.data, InstallersData singleton
+        instData = self.window.data # InstallersData singleton
         selectedCRCs = set(instData[archive].crc for archive in selected)
         crcInstallers = set(instData.crc_installer)
         srcCRCs = set(instData.srcCRC_converters)
@@ -1477,6 +1468,6 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     def _enable(self):
         for item in self.selected:
-            if not isinstance(self.data[item],bosh.InstallerArchive):
+            if not isinstance(self.window.data[item], bosh.InstallerArchive):
                 return False
         return True

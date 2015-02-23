@@ -242,8 +242,7 @@ class Save_LoadMasters(OneItemLink):
         BashFrame.modList.PopulateItems()
         self.window.PopulateItems()
         self.window.details.SetFile(fileName)
-        if errorMessage:
-            balt.showError(self.window,errorMessage,fileName.s)
+        if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):
@@ -259,7 +258,8 @@ class Save_ImportFace(OneItemLink):
         srcDir = fileInfo.dir
         wildcard = _(u'%s Files')%bush.game.displayName+u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
         #--File dialog
-        srcPath = balt.askOpen(self.window,_(u'Face Source:'),srcDir, u'', wildcard,mustExist=True)
+        srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
+                                wildcard=wildcard, mustExist=True)
         if not srcPath: return
         if bosh.reSaveExt.search(srcPath.s):
             self.FromSave(fileInfo,srcPath)
@@ -287,7 +287,8 @@ class Save_ImportFace(OneItemLink):
         srcFaces = bosh.PCFaces.mod_getFaces(srcInfo)
         #--No faces to import?
         if not srcFaces:
-            balt.showOk(self.window,_(u'No player (PC) faces found in %s.') % srcName.s,srcName.s)
+            self._showOk(_(u'No player (PC) faces found in %s.') % srcName.s,
+                         srcName.s)
             return
         #--Dialog
         ImportFaceDialog.Display(self.window, srcName.s, fileInfo, srcFaces)
@@ -302,8 +303,9 @@ class Save_RenamePlayer(EnabledLink):
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.selected[0]]
-        newName = balt.askText(self.window,_(u"Enter new player name. E.g. Conan the Bold"),
-            _(u"Rename player"),saveInfo.header.pcName)
+        newName = self._askText(
+            _(u"Enter new player name. E.g. Conan the Bold"),
+            title=_(u"Rename player"), default=saveInfo.header.pcName)
         if not newName: return
         for save in self.selected:
             savedPlayer = bosh.Save_NPCEdits(self.window.data[GPath(save)])
@@ -351,7 +353,7 @@ class Save_DiffMasters(EnabledLink):
         extra = newMasters - oldMasters
         if not missing and not extra:
             message = _(u'Masters are the same.')
-            balt.showInfo(self.window,message,_(u'Diff Masters'))
+            self._showInfo(message, title=_(u'Diff Masters'))
         else:
             message = u''
             if missing:
@@ -361,7 +363,7 @@ class Save_DiffMasters(EnabledLink):
             if extra:
                 message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName.s
                 message += u'\n* '.join(x.s for x in bosh.modInfos.getOrdered(extra))
-            balt.showWryeLog(self.window,message,_(u'Diff Masters'))
+            self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------
 class Save_Rename(EnabledLink):
@@ -381,8 +383,10 @@ class Save_Renumber(EnabledLink):
 
     def Execute(self,event):
         #--File Info
-        newNumber = balt.askNumber(self.window,_(u"Enter new number to start numbering the selected saves at."),
-            prompt=_(u'Save Number'),title=_(u'Re-number Saves'),value=1,min=1,max=10000)
+        newNumber = self._askNumber(
+            _(u"Enter new number to start numbering the selected saves at."),
+            prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
+            min=1, max=10000)
         if not newNumber: return
         rePattern = re.compile(ur'^(save )(\d*)(.*)',re.I|re.U)
         for index, name in enumerate(self.selected):
@@ -531,7 +535,7 @@ class Save_EditCreated(OneItemLink):
         recordTypes = Save_EditCreated.recordTypes.get(self.type,(self.type,))
         records = [record for record in saveFile.created if record.recType in recordTypes]
         if not records:
-            balt.showOk(self.window,_(u'No items to edit.'))
+            self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
         data = Save_EditCreatedData(self.window,saveFile,recordTypes)
@@ -597,11 +601,11 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
     def Execute(self,event):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        dialog = balt.askNumber(self.window,
-            (_(u'Enter the number of uses you desire per recharge for all custom made enchantments.')
-             + u'\n' +
-             _(u'(Enter 0 for unlimited uses)')),
-            prompt=_(u'Uses'),title=_(u'Number of Uses'),value=50,min=0,max=10000)
+        dialog = self._askNumber(
+            _(u'Enter the number of uses you desire per recharge for all '
+              u'custom made enchantments.') + u'\n' + _(
+                u'(Enter 0 for unlimited uses)'), prompt=_(u'Uses'),
+            title=_(u'Number of Uses'), value=50, min=0, max=10000)
         if not dialog: return
         Enchantments = bosh.SaveEnchantments(fileInfo)
         Enchantments.load()
@@ -646,7 +650,7 @@ class Save_Move(ChoiceLink):
         if profile != _(u'Default'):
             destDir = destDir.join(profile)
         if destDir == fileInfos.dir:
-            balt.showError(self.window,_(u"You can't move saves to the current profile!"))
+            self._showError(_(u"You can't move saves to the current profile!"))
             return
         savesTable = bosh.saveInfos.table
         #--bashDir
@@ -657,7 +661,8 @@ class Save_Move(ChoiceLink):
             if ask and not self.window.data.moveIsSafe(fileName,destDir):
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
                     % (fileName.s,profile))
-                result = balt.askContinueShortTerm(self.window,message,_(u'Move File'))
+                result = self._askContinueShortTerm(message,
+                                                    title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
                 if not result: continue
                 elif result == 2: ask = False #so don't warn for rest of operation
@@ -671,7 +676,8 @@ class Save_Move(ChoiceLink):
         destTable.save()
         Link.Frame.RefreshData()
         if self.copyMode:
-            balt.showInfo(self.window,_(u'%d files copied to %s.') % (count,profile),_(u'Copy File'))
+            self._showInfo(_(u'%d files copied to %s.') % (count, profile),
+                           title=_(u'Copy File'))
 
 #------------------------------------------------------------------------------
 class Save_RepairAbomb(OneItemLink):
@@ -692,16 +698,17 @@ class Save_RepairAbomb(OneItemLink):
         progress = 100*abombFloat/struct.unpack('f',struct.pack('I',0x49000000))[0]
         newCounter = 0x41000000
         if abombCounter <= newCounter:
-            balt.showOk(self.window,_(u'Abomb counter is too low to reset.'),_(u'Repair Abomb'))
+            self._showOk(_(u'Abomb counter is too low to reset.'),
+                         _(u'Repair Abomb'))
             return
         message = (_(u"Reset Abomb counter? (Current progress: %.0f%%.)")
                    + u'\n\n' +
                    _(u"Note: Abomb animation slowing won't occur until progress is near 100%%.")
                    ) % progress
-        if balt.askYes(self.window,message,_(u'Repair Abomb'),default=False):
+        if self._askYes(message, _(u'Repair Abomb'), default=False):
             saveFile.setAbomb(newCounter)
             saveFile.safeSave()
-            balt.showOk(self.window,_(u'Abomb counter reset.'),_(u'Repair Abomb'))
+            self._showOk(_(u'Abomb counter reset.'), _(u'Repair Abomb'))
 
 #------------------------------------------------------------------------------
 ## TODO: This is probably unneccessary now.  v105 was a long time ago
@@ -719,11 +726,11 @@ class Save_RepairFactions(EnabledLink): # CRUFT
                    + u'\n\n' +
                    _(u'WARNING!  This repair is NOT perfect!  Do not use it unless you have to!')
                    )
-        if not balt.askContinue(self.window,message,
-                'bash.repairFactions.continue',_(u'Repair Factions')):
-            return
+        if not self._askContinue(message, 'bash.repairFactions.continue',
+                                 _(u'Repair Factions')): return
         question = _(u"Restore dropped factions too?  WARNING:  This may involve clicking through a LOT of yes/no dialogs.")
-        restoreDropped = balt.askYes(self.window, question, _(u'Repair Factions'),default=False)
+        restoreDropped = self._askYes(question, _(u'Repair Factions'),
+                                      default=False)
         legitNullSpells = bush.repairFactions_legitNullSpells
         legitNullFactions = bush.repairFactions_legitNullFactions
         legitDroppedFactions = bush.repairFactions_legitDroppedFactions
@@ -822,7 +829,8 @@ class Save_RepairFactions(EnabledLink): # CRUFT
                                     factEid = fact_eid.get(orderedId,'------')
                                     question = _(u'Restore %s to %s faction?') % (npcEid,factEid)
                                     deprint(_(u'refactioned') +u' %08X %08X %s %s' % (recId,fid,npcEid,factEid))
-                                    if not balt.askYes(self.window, question, saveName.s,default=False):
+                                    if not self._askYes(question, saveName.s,
+                                                        default=False):
                                         continue
                                     log(u'. %08X %s -- **%s, %d**' % (recId,eid,factEid,level))
                                     npc.factions.append((iref,level))
@@ -836,7 +844,8 @@ class Save_RepairFactions(EnabledLink): # CRUFT
                 if unNulledCount or refactionedCount:
                     saveFile.safeSave()
                 message += u'\n%d %d %s' % (refactionedCount,unNulledCount,saveName.s,)
-        balt.showWryeLog(self.window,log.out.getvalue(),_(u'Repair Factions'),icons=Resources.bashBlue)
+        self._showWryeLog(log.out.getvalue(), title=_(u'Repair Factions'),
+                          icons=Resources.bashBlue)
         log.out.close()
 
 #------------------------------------------------------------------------------
@@ -850,9 +859,9 @@ class Save_RepairHair(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         if bosh.PCFaces.save_repairHair(fileInfo):
-            balt.showOk(self.window,_(u'Hair repaired.'))
+            self._showOk(_(u'Hair repaired.'))
         else:
-            balt.showOk(self.window,_(u'No repair necessary.'),fileName.s)
+            self._showOk(_(u'No repair necessary.'), fileName.s)
 
 #------------------------------------------------------------------------------
 class Save_ReweighPotions(OneItemLink):
@@ -862,17 +871,17 @@ class Save_ReweighPotions(OneItemLink):
 
     def Execute(self,event):
         #--Query value
-        result = balt.askText(self.window,
-            _(u"Set weight of all player potions to..."),
-            _(u"Reweigh Potions"),
-            u'%0.2f' % (bosh.settings.get('bash.reweighPotions.newWeight',0.2),))
+        default = u'%0.2f' % (bosh.settings.get(
+            'bash.reweighPotions.newWeight', 0.2),)
+        result = self._askText(_(u"Set weight of all player potions to..."),
+                               title=_(u"Reweigh Potions"), default=default)
         if not result: return
         try:
             newWeight = float(result.strip())
             if newWeight < 0 or newWeight > 100:
                 raise Exception('')
         except:
-            balt.showOk(self.window,_(u'Invalid weight: %s') % newWeight)
+            self._showOk(_(u'Invalid weight: %s') % newWeight)
             return
         bosh.settings['bash.reweighPotions.newWeight'] = newWeight
         #--Do it
@@ -893,10 +902,10 @@ class Save_ReweighPotions(OneItemLink):
             if count:
                 saveFile.safeSave(SubProgress(progress,0.6,1.0))
                 progress.Destroy()
-                balt.showOk(self.window,_(u'Potions reweighed: %d.') % count,fileName.s)
+                self._showOk(_(u'Potions reweighed: %d.') % count, fileName.s)
             else:
                 progress.Destroy()
-                balt.showOk(self.window,_(u'No potions to reweigh!'),fileName.s)
+                self._showOk(_(u'No potions to reweigh!'), fileName.s)
 
 #------------------------------------------------------------------------------
 class Save_Stats(OneItemLink):
@@ -915,7 +924,8 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
-            balt.showLog(self.window,text,fileName.s,asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+            self._showLog(text, title=fileName.s, asDialog=False,
+                          fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(AppendableLink, EnabledLink):
@@ -941,8 +951,8 @@ class Save_StatObse(AppendableLink, EnabledLink):
             saveFile.logStatObse(log)
         text = log.out.getvalue()
         log.out.close()
-        balt.showLog(self.window, text, self.fileName.s, asDialog=False,
-                     fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=self.fileName.s, asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(OneItemLink):
@@ -963,7 +973,7 @@ class Save_Unbloat(OneItemLink):
             createdCounts,nullRefCount = saveFile.findBloating(SubProgress(progress,0.8,1.0))
         #--Dialog
         if not createdCounts and not nullRefCount:
-            balt.showOk(self.window,_(u'No bloating found.'),saveName.s)
+            self._showOk(_(u'No bloating found.'), saveName.s)
             return
         message = u''
         if createdCounts:
@@ -975,21 +985,15 @@ class Save_Unbloat(OneItemLink):
                    + u'\n'+message+u'\n' +
                    _(u'WARNING: This is a risky procedure that may corrupt your savegame!  Use only if necessary!')
                    )
-        if not balt.askYes(self.window,message,_(u'Remove bloating?')):
-            return
+        if not self._askYes(message, _(u'Remove bloating?')): return
         #--Remove bloating
         with balt.Progress(_(u'Removing Bloat')) as progress:
             nums = saveFile.removeBloating(createdCounts.keys(),True,SubProgress(progress,0,0.9))
             progress(0.9,_(u'Saving...'))
             saveFile.safeSave()
-        balt.showOk(self.window,
-            (_(u'Uncreated Objects: %d')
-             + u'\n' +
-             _(u'Uncreated Refs: %d')
-             + u'\n' +
-             _(u'UnNulled Refs: %d')
-             ) % nums,
-            saveName.s)
+        self._showOk((_(u'Uncreated Objects: %d') + u'\n' +
+                      _(u'Uncreated Refs: %d') + u'\n' +
+                      _(u'UnNulled Refs: %d')) % nums, saveName.s)
         self.window.RefreshUI(saveName)
 
 #------------------------------------------------------------------------------
@@ -1003,8 +1007,8 @@ class Save_UpdateNPCLevels(EnabledLink):
     def Execute(self,event):
         debug = True
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
-        if not balt.askContinue(self.window,message,'bash.updateNpcLevels.continue',_(u'Update NPC Levels')):
-            return
+        if not self._askContinue(message, 'bash.updateNpcLevels.continue',
+                                 _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             offsetFlag = 0x80
@@ -1071,4 +1075,4 @@ class Save_UpdateNPCLevels(EnabledLink):
         if modErrors:
             message += u'\n\n'+_(u'Some mods had load errors and were skipped:')+u'\n* '
             message += u'\n* '.join(modErrors)
-        balt.showOk(self.window,message,_(u'Update NPC Levels'))
+        self._showOk(message, _(u'Update NPC Levels'))

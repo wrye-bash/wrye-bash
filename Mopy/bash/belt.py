@@ -74,10 +74,11 @@ class WizardReturn(object):
 #  dynamically creates pages based on a script
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
-    def __init__(self, link, subs, pageSize, pos):
-        wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _(u'Installer Wizard'),
-                            pos=pos,
-                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
+    def __init__(self, parentWindow, idata, path, bAuto, bArchive, subs,
+                 pageSize, pos):
+        wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
+                            pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
+                                           wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
 
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
@@ -92,9 +93,7 @@ class InstallerWizard(wiz.Wizard):
         self.finishing = False
 
         #parser that will spit out the pages
-        path = link.selected[0]
-        installer = link.data[path]
-        bArchive = link.isSingleArchive()
+        installer = idata[path]
         if bArchive:
             with balt.Progress(_(u'Extracting wizard files...'),u'\n'+u' '*60,abort=True) as progress:
                 # Extract the wizard, and any images as well
@@ -115,8 +114,8 @@ class InstallerWizard(wiz.Wizard):
                     ], bosh.SubProgress(progress,0,0.9), recurse=True)
             self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
-            self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
-        self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
+            self.wizard_file = idata.dir.join(path.s, installer.hasWizard)
+        self.parser = WryeParser(self, installer, subs, bArchive, path, bAuto)
 
         #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)

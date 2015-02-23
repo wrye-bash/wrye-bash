@@ -101,12 +101,12 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def Execute(self,event):
         """Handle execution."""
-        if not balt.askYes(self.window,
-                           _(u"This is an advanced feature for editing 'Filter' patches in TES4Edit.  It will create dummy plugins for each missing master.  Are you sure you want to continue?")
-                           + u'\n\n' +
-                           _(u"To remove these files later, use 'Clean Dummy Masters...'"),
-                           _(u'Create Files')):
-            return
+        msg = _(u"This is an advanced feature for editing 'Filter' patches in "
+                u"TES4Edit.  It will create dummy plugins for each missing "
+                u"master.  Are you sure you want to continue?")
+        if not self._askYes(msg + u'\n\n' +
+            _(u"To remove these files later, use 'Clean Dummy Masters...'"),
+            title=_(u'Create Files')): return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
         modInfo = bosh.modInfos[self.selected[0]]
         lastTime = modInfo.mtime - 1
@@ -291,16 +291,16 @@ class _Mod_Groups_Export(EnabledLink):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
-                                textName, u'*' + self.__class__.csvFile)
+        textPath = self._askSave(title=self.__class__.askTitle,
+                                 defaultDir=textDir, defaultFile=textName,
+                                 wildcard=u'*' + self.__class__.csvFile)
         if not textPath: return
         #--Export
         modGroups = bosh.ModGroups()
         modGroups.readFromModInfos(self.selected)
         modGroups.writeToText(textPath)
-        balt.showOk(self.window,
-            _(u"Exported %d mod/groups.") % (len(modGroups.mod_group),),
-            _(u"Export Groups"))
+        self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group),
+                     _(u"Export Groups"))
 
 class _Mod_Groups_Import(EnabledLink):
     """Import mod groups from text file."""
@@ -314,18 +314,17 @@ class _Mod_Groups_Import(EnabledLink):
         message = _(
             u"Import groups from a text file ? This will assign to selected "
             u"mods the group they are assigned in the text file, if any.")
-        if not balt.askContinue(self.window, message,
-                                'bash.groups.import.continue',
-                                _(u'Import Groups')): return
+        if not self._askContinue(message, 'bash.groups.import.continue',
+                                 _(u'Import Groups')): return
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
+        textPath = self._askOpen(_(u'Import names from:'),textDir,
             u'', u'*_Groups.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         if textName.cext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a csv file.'))
+            self._showError(_(u'Source file must be a csv file.'))
             return
         #--Import
         modGroups = bosh.ModGroups()
@@ -333,9 +332,8 @@ class _Mod_Groups_Import(EnabledLink):
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
         self.window.RefreshUI()
-        balt.showOk(self.window,
-            _(u"Imported %d mod/groups (%d changed).") % (len(modGroups.mod_group),changed),
-            _(u"Import Groups"))
+        self._showOk(_(u"Imported %d mod/groups (%d changed).") % (
+            len(modGroups.mod_group), changed), _(u"Import Groups"))
 
 class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
@@ -421,8 +419,9 @@ class Mod_Details(OneItemLink):
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
-            balt.showLog(self.window,buff.getvalue(), modInfo.name.s,
-                asDialog=False, fixedFont=True, icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=modInfo.name.s,
+                          asDialog=False, fixedFont=True,
+                          icons=Resources.bashBlue)
             buff.close()
 
 class Mod_ShowReadme(OneItemLink):
@@ -452,7 +451,8 @@ class Mod_ListBashTags(ItemLink):
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u"Bash Tags"),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 def _getUrl(fileName, installer, text):
     """"Try to get the url of the file (order of priority will be: TESNexus,
@@ -519,7 +519,8 @@ class Mod_CreateBOSSReport(EnabledLink):
 
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'BOSS Report'),asDialog=False,fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BOSS Report'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -576,8 +577,8 @@ class Mod_CopyModInfo(ItemLink):
         if spoiler: text += u'[/spoiler]'
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        balt.showLog(self.window,text,_(u'Mod Info Report'),asDialog=False,
-                     fixedFont=False,icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Mod Info Report'), asDialog=False,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -745,7 +746,8 @@ class Mod_MarkMergeable(EnabledLink):
         self.window.RefreshUI(yes)
         self.window.RefreshUI(no)
         if message != u'':
-            balt.showWryeLog(self.window,message,_(u'Mark Mergeable'),icons=Resources.bashBlue)
+            self._showWryeLog(message, title=_(u'Mark Mergeable'),
+                              icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(EnabledLink):
@@ -802,25 +804,31 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         if not bosh.modInfos.ordered:
-            balt.showWarning(self.window,
-                             (_(u'That which does not exist cannot be patched.')
-                              + u'\n' +
-                              _(u'Load some mods and try again.')
-                              ),
-                              _(u'Existential Error'))
+            self._showWarning(
+                _(u'That which does not exist cannot be patched.') + u'\n' +
+                _(u'Load some mods and try again.'),
+                _(u'Existential Error'))
             return
         # Verify they want to build a previous Python patch in CBash mode, or vice versa
-        if self.doCBash and not balt.askContinue(self.window,
-            _(u"Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function."),
+        if self.doCBash and not self._askContinue(_(
+                u"Building with CBash is cool.  It's faster and allows more "
+                u"things to be handled, but it is still in BETA.  If you "
+                u"have problems, post them in the official thread, then use "
+                u"the non-CBash build function."),
             'bash.patch.ReallyUseCBash.295'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
             return
         importConfig = True
+        msg = _(u"The patch you are rebuilding (%s) was created in %s "
+                u"mode.  You are trying to rebuild it using %s mode.  Should "
+                u"Wrye Bash attempt to import your settings (some may not be "
+                u"copied correctly)?  Selecting 'No' will load the bashed"
+                u" patch defaults.")
         if self.CBashMismatch:
-            if not balt.askYes(self.window,
-                    _(u"The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Should Wrye Bash attempt to import your settings (some may not be copied correctly)?  Selecting 'No' will load the bashed patch defaults.")
-                        % (self.selected[0].s,[u'CBash',u'Python'][self.doCBash],[u'Python',u'CBash'][self.doCBash]),
-                    'bash.patch.CBashMismatch'):
-                importConfig = False
+            old_mode = [u'CBash', u'Python'][self.doCBash]
+            new_mode = [u'Python', u'CBash'][self.doCBash]
+            msg = msg % (self.selected[0].s, old_mode, new_mode)
+            title = _(u'Import %s config ?') % old_mode
+            if not self._askYes(msg, title=title): importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
             if self.doCBash:
                 CBash_PatchFile.patchTime = fileInfo.mtime
@@ -886,9 +894,11 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             group.extend(deactivate)
             checklists.append(group)
         if checklists:
-            dialog = ListBoxes(Link.Frame,_(u"Deactivate these mods prior to patching"),
-                _(u"The following mods should be deactivated prior to building the patch."),
-                checklists,changedlabels={ListBoxes.ID_CANCEL:_(u'Skip')})
+            dialog = ListBoxes(
+                Link.Frame, _(u"Deactivate these mods prior to patching"),
+                _(u"The following mods should be deactivated prior to building"
+                  u" the patch."),
+                checklists, changedlabels={ListBoxes.ID_CANCEL: _(u'Skip')})
             if dialog.ShowModal() != ListBoxes.ID_CANCEL:
                 deselect = set()
                 for (list_,key) in [(unfiltered,unfilteredKey),
@@ -1048,8 +1058,8 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         clip.close()
         text = log.out.getvalue()
         log.out.close()
-        balt.showWryeLog(self.window,text,_(u'Bashed Patch Configuration'),
-                         icons=Resources.bashBlue)
+        self._showWryeLog(text, title=_(u'Bashed Patch Configuration'),
+                          icons=Resources.bashBlue)
 
 class Mod_ExportPatchConfig(_Mod_BP_Link):
     """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
@@ -1065,7 +1075,10 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         outDir = bosh.dirs['patches']
         outDir.makedirs()
         #--File dialog
-        outPath = balt.askSave(self.window,_(u'Export Bashed Patch configuration to:'),outDir,patchName, u'*_Configuration.dat')
+        outPath = self._askSave(
+            title=_(u'Export Bashed Patch configuration to:'),
+            defaultDir=outDir, defaultFile=patchName,
+            wildcard=u'*_Configuration.dat')
         if not outPath: return
         pklPath = outPath+u'.pkl'
         table = bolt.Table(bosh.PickleDict(outPath, pklPath))
@@ -1229,8 +1242,9 @@ class Mod_ScanDirty(ItemLink):
         if error:
             log(_(u'The following %d mods had errors while scanning:') % len(error))
             for mod in error: log(mod)
-        balt.showWryeLog(self.window,log.out.getvalue(),
-            _(u'Dirty Edit Scan Results'),asDialog=False,icons=Resources.bashBlue)
+        self._showWryeLog(log.out.getvalue(),
+                          title=_(u'Dirty Edit Scan Results'), asDialog=False,
+                          icons=Resources.bashBlue)
         log.out.close()
 
 #------------------------------------------------------------------------------
@@ -1245,12 +1259,13 @@ class Mod_RemoveWorldOrphans(EnabledLink):
 
     def Execute(self,event):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
-        if not balt.askContinue(self.window,message,'bash.removeWorldOrphans.continue',_(u'Remove World Orphans')):
-            return
+        if not self._askContinue(message, 'bash.removeWorldOrphans.continue',
+                                 _(u'Remove World Orphans')): return
         for item in self.selected:
             fileName = GPath(item)
             if bosh.reOblivion.match(fileName.s):
-                balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Remove World Orphans'))
+                self._showWarning(_(u"Skipping %s") % fileName.s,
+                                  _(u'Remove World Orphans'))
                 continue
             fileInfo = bosh.modInfos[fileName]
             #--Export
@@ -1267,9 +1282,10 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 progress(1.0,_(u"Done."))
             #--Log
             if orphans:
-                balt.showOk(self.window,_(u"Orphan cell blocks removed: %d.") % orphans,fileName.s)
+                self._showOk(_(u"Orphan cell blocks removed: %d.") % orphans,
+                             fileName.s)
             else:
-                balt.showOk(self.window,_(u"No changes required."),fileName.s)
+                self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
 class Mod_CleanMod(EnabledLink):
@@ -1282,9 +1298,8 @@ class Mod_CleanMod(EnabledLink):
 
     def Execute(self,event):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
-        if not balt.askContinue(self.window,message,'bash.cleanMod.continue',
-            _(u'Nvidia Fog Fix')):
-            return
+        if not self._askContinue(message, 'bash.cleanMod.continue',
+                                 _(u'Nvidia Fog Fix')): return
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
             progress.setFull(len(self.selected))
             fixed = []
@@ -1298,11 +1313,11 @@ class Mod_CleanMod(EnabledLink):
                     fixed.append(u'* %4d %s' % (len(cleanMod.fixedCells),fileName.s))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
-            balt.showWryeLog(self.window,message,_(u'Nvidia Fog Fix'),
-                             icons=Resources.bashBlue)
+            self._showWryeLog(message, title=_(u'Nvidia Fog Fix'),
+                              icons=Resources.bashBlue)
         else:
             message = _(u'No changes required.')
-            balt.showOk(self.window,message,_(u'Nvidia Fog Fix'))
+            self._showOk(message, _(u'Nvidia Fog Fix'))
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(EnabledLink):
@@ -1316,17 +1331,16 @@ class Mod_UndeleteRefs(EnabledLink):
 
     def Execute(self,event):
         message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
-        if not balt.askContinue(self.window,message,'bash.undeleteRefs.continue',
-            _(u'Undelete Refs')):
-            return
+        if not self._askContinue(message, 'bash.undeleteRefs.continue',
+                                 _(u'Undelete Refs')): return
         with balt.Progress(_(u'Undelete Refs')) as progress:
             progress.setFull(len(self.selected))
             hasFixed = False
             log = bolt.LogFile(StringIO.StringIO())
             for index,fileName in enumerate(map(GPath,self.selected)):
                 if bosh.reOblivion.match(fileName.s):
-                    balt.showWarning(self.window,_(u'Skipping')+u' '+fileName.s,
-                                     _(u'Undelete Refs'))
+                    self._showWarning(_(u'Skipping') + u' ' + fileName.s,
+                                      _(u'Undelete Refs'))
                     continue
                 progress(index,_(u'Scanning')+u' '+fileName.s+u'.')
                 fileInfo = bosh.modInfos[fileName]
@@ -1341,7 +1355,8 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        balt.showWryeLog(self.window,message,_(u'Undelete Refs'),icons=Resources.bashBlue)
+        self._showWryeLog(message, title=_(u'Undelete Refs'),
+                          icons=Resources.bashBlue)
         log.out.close()
 
 # Rest of menu Links ----------------------------------------------------------
@@ -1352,21 +1367,24 @@ class Mod_AddMaster(OneItemLink):
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
-        if not balt.askContinue(self.window,message,'bash.addMaster.continue',_(u'Add Master')):
-            return
+        if not self._askContinue(message, 'bash.addMaster.continue',
+                                 _(u'Add Master')): return
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         wildcard = _(u'%s Masters')%bush.game.displayName+u' (*.esm;*.esp)|*.esm;*.esp'
-        masterPaths = balt.askOpenMulti(self.window,_(u'Add master:'),fileInfo.dir, u'', wildcard)
+        masterPaths = self._askOpenMulti(
+                            title=_(u'Add master:'), defaultDir=fileInfo.dir,
+                            wildcard=wildcard)
         if not masterPaths: return
         names = []
         for masterPath in masterPaths:
             (dir_,name) = masterPath.headTail
             if dir_ != fileInfo.dir:
-                return balt.showError(self.window,
-                    _(u"File must be selected from %s Data Files directory.") % bush.game.fsName)
+                return self._showError(_(
+                    u"File must be selected from %s Data Files directory.")
+                                       % bush.game.fsName)
             if name in fileInfo.header.masters:
-                return balt.showError(self.window,_(u"%s is already a master!") % name.s)
+                return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
         for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
@@ -1405,9 +1423,7 @@ class Mod_CopyToEsmp(EnabledLink):
             newName = curName.root+u'.'+newType
             #--Replace existing file?
             if modsDir.join(newName).exists():
-                if not balt.askYes(self.window,
-                                   _(u'Replace existing %s?') % (newName.s,),
-                                   self.text):
+                if not self._askYes(_(u'Replace existing %s?') % (newName.s,)):
                     continue
                 bosh.modInfos[newName].makeBackup()
             #--New Time
@@ -1435,12 +1451,13 @@ class Mod_DecompileAll(EnabledLink):
 
     def Execute(self,event):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
-        if not balt.askContinue(self.window,message,'bash.decompileAll.continue',_(u'Decompile All')):
-            return
+        if not self._askContinue(message, 'bash.decompileAll.continue',
+                                 _(u'Decompile All')): return
         for item in self.selected:
             fileName = GPath(item)
             if bosh.reOblivion.match(fileName.s):
-                balt.showWarning(self.window,_(u"Skipping %s") % fileName.s,_(u'Decompile All'))
+                self._showWarning(_(u"Skipping %s") % fileName.s,
+                                  _(u'Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
             loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['SCPT'])
@@ -1474,16 +1491,16 @@ class Mod_DecompileAll(EnabledLink):
                 modFile.SCPT.setChanged()
             if len(removed) >= 50 or badGenericLore:
                 modFile.safeSave()
-                balt.showOk(self.window,
-                            (_(u'Scripts removed: %d.')
-                             + u'\n' +
-                             _(u'Scripts remaining: %d')
-                             ) % (len(removed),len(modFile.SCPT.records)),
-                            fileName.s)
+                self._showOk((_(u'Scripts removed: %d.') + u'\n' +
+                              _(u'Scripts remaining: %d')) %
+                             (len(removed), len(modFile.SCPT.records)),
+                             fileName.s)
             elif removed:
-                balt.showOk(self.window,_(u"Only %d scripts were identical.  This is probably intentional, so no changes have been made.") % len(removed),fileName.s)
+                self._showOk(_(u"Only %d scripts were identical.  This is "
+                               u"probably intentional, so no changes have "
+                               u"been made.") % len(removed),fileName.s)
             else:
-                balt.showOk(self.window,_(u"No changes required."),fileName.s)
+                self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
 class Mod_FlipSelf(EnabledLink):
@@ -1507,8 +1524,8 @@ class Mod_FlipSelf(EnabledLink):
                    + u'\n\n' +
                    _(u'This command flips an internal bit in the mod, converting an esp to an esm and vice versa.  Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod.')
                    )
-        if not balt.askContinue(self.window,message,'bash.flipToEsmp.continue',_(u'Flip to Esm')):
-            return
+        if not self._askContinue(message, 'bash.flipToEsmp.continue',
+                                 _(u'Flip to Esm')): return
         for item in self.selected:
             fileInfo = bosh.modInfos[item]
             header = fileInfo.header
@@ -1547,8 +1564,7 @@ class Mod_FlipMasters(OneItemLink):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
-        if not balt.askContinue(self.window,message,'bash.flipMasters.continue'):
-            return
+        if not self._askContinue(message, 'bash.flipMasters.continue'): return
         fileName= self.fileName
         fileInfo = self.fileInfo
         updated = [fileName]
@@ -1578,8 +1594,8 @@ class Mod_SetVersion(EnabledLink):
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
-        if not balt.askContinue(self.window,message,'bash.setModVersion.continue',_(u'Set File Version')):
-            return
+        if not self._askContinue(message, 'bash.setModVersion.continue',
+                                 _(u'Set File Version')): return
         self.fileInfo.header.version = 0.8
         self.fileInfo.header.setChanged()
         self.fileInfo.writeHeader()
@@ -1602,20 +1618,19 @@ class Mod_Fids_Replace(OneItemLink):
 
     def Execute(self,event):
         message = _(u"For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file.")
-        if not balt.askContinue(self.window,message,'bash.formIds.replace.continue',
-            _(u'Import Form IDs')):
-            return
+        if not self._askContinue(message, 'bash.formIds.replace.continue',
+                                 _(u'Import Form IDs')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Form ID mapper file:'),textDir,
+        textPath = self._askOpen(_(u'Form ID mapper file:'),textDir,
             u'', u'*_Formids.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         if textName.cext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a csv file.'))
+            self._showError(_(u'Source file must be a csv file.'))
             return
         #--Export
         changed = None
@@ -1627,10 +1642,9 @@ class Mod_Fids_Replace(OneItemLink):
             changed = replacer.updateMod(fileInfo)
             progress(1.0,_(u"Done."))
         #--Log
-        if not changed:
-            balt.showOk(self.window,_(u"No changes required."))
-        else:
-            balt.showLog(self.window,changed,_(u'Objects Changed'),icons=Resources.bashBlue)
+        if not changed: self._showOk(_(u"No changes required."))
+        else: self._showLog(changed, title=_(u'Objects Changed'),
+                            icons=Resources.bashBlue)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1641,7 +1655,8 @@ class Mod_Face_Import(OneItemLink):
         srcDir = bosh.saveInfos.dir
         wildcard = _(u'%s Files')%bush.game.displayName+u' (*.ess;*.esr)|*.ess;*.esr'
         #--File dialog
-        srcPath = balt.askOpen(self.window,_(u'Face Source:'),srcDir, u'', wildcard,mustExist=True)
+        srcPath = self._askOpen(_(u'Face Source:'), defaultDir=srcDir,
+                                wildcard=wildcard, mustExist=True)
         if not srcPath: return
         #--Get face
         srcDir,srcName = srcPath.headTail
@@ -1660,7 +1675,7 @@ class Mod_Face_Import(OneItemLink):
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
         self.window.RefreshUI()
-        balt.showOk(self.window,_(u'Imported face to: %s') % npc.eid,fileName.s)
+        self._showOk(_(u'Imported face to: %s') % npc.eid, fileName.s)
 
 #--Common
 class _Mod_Export_Link(EnabledLink):
@@ -1673,8 +1688,9 @@ class _Mod_Export_Link(EnabledLink):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window, self.__class__.askTitle, textDir,
-                                textName, u'*' + self.__class__.csvFile)
+        textPath = self._askSave(title=self.__class__.askTitle,
+                                 defaultDir=textDir, defaultFile=textName,
+                                 wildcard=u'*' + self.__class__.csvFile)
         if not textPath: return
         (textDir, textName) = textPath.headTail
         #--Export
@@ -1710,17 +1726,16 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
-        if not balt.askContinue(self.window,message,
-                'bash.actorLevels.export.continue',
-                _(u'Export NPC Levels')):
-            return
+        if not self._askContinue(message, 'bash.actorLevels.export.continue',
+                                 _(u'Export NPC Levels')): return
         fileName = GPath(self.selected[0])
         textName = fileName.root+u'_NPC_Levels.csv'
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askSave(self.window,_(u'Export NPC levels to:'),textDir,
-                                textName, u'*_NPC_Levels.csv')
+        textPath = self._askSave(title=_(u'Export NPC levels to:'),
+                                 defaultDir=textDir, defaultFile=textName,
+                                 wildcard=u'*_NPC_Levels.csv')
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Export
@@ -1747,23 +1762,21 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         message = (_(u'This command will import NPC level info from a previously exported file.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
-        if not balt.askContinue(self.window,message,
-                'bash.actorLevels.import.continue',
-                _(u'Import NPC Levels')):
-            return
+        if not self._askContinue(message, 'bash.actorLevels.import.continue',
+                                 _(u'Import NPC Levels')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_NPC_Levels.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import NPC levels from:'),
+        textPath = self._askOpen(_(u'Import NPC levels from:'),
             textDir,textName,u'*_NPC_Levels.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a _NPC_Levels.csv file.'))
+            self._showError(_(u'Source file must be a _NPC_Levels.csv file.'))
             return
         #--Export
         changed = None
@@ -1776,13 +1789,13 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant NPC levels to import.'),
-                        _(u'Import NPC Levels'))
+            self._showOk(_(u'No relevant NPC levels to import.'),
+                         _(u'Import NPC Levels'))
         else:
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            balt.showLog(self.window,buff.getvalue(),_(u'Import NPC Levels'),
-                         icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'),
+                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1810,22 +1823,22 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         message = (_(u"This command will import faction relation info from a previously exported file.")
                    + u'\n\n' +
                    _(u"See the Bash help file for more info."))
-        if not balt.askContinue(self.window,message,
-                'bash.factionRelations.import.continue',_(u'Import Relations')):
-            return
+        if not self._askContinue(
+                message, 'bash.factionRelations.import.continue',
+                _(u'Import Relations')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Relations.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import faction relations from:'),
+        textPath = self._askOpen(_(u'Import faction relations from:'),
             textDir, textName, u'*_Relations.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a _Relations.csv file.'))
+            self._showError(_(u'Source file must be a _Relations.csv file.'))
             return
         #--Export
         changed = None
@@ -1838,15 +1851,15 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,
-                _(u'No relevant faction relations to import.'),
-                _(u'Import Relations'))
+            self._showOk(_(u'No relevant faction relations to import.'),
+                         _(u'Import Relations'))
         else:
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
             text = buff.getvalue()
             buff.close()
-            balt.showLog(self.window,text,_(u'Import Relations'),icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Relations'),
+                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1874,22 +1887,21 @@ class Mod_Factions_Import(_Mod_Import_Link):
         message = (_(u"This command will import faction ranks from a previously exported file.")
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
-        if not balt.askContinue(self.window,message,
-                'bash.factionRanks.import.continue',_(u'Import Factions')):
-            return
+        if not self._askContinue(message, 'bash.factionRanks.import.continue',
+                                 _(u'Import Factions')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Factions.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import Factions from:'),
+        textPath = self._askOpen(_(u'Import Factions from:'),
             textDir, textName, u'*_Factions.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,
+            self._showError(
                 _(u'Source file must be a _Factions.csv file.'))
             return
         #--Export
@@ -1903,15 +1915,16 @@ class Mod_Factions_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant faction ranks to import.'),
-                        _(u'Import Factions'))
+            self._showOk(_(u'No relevant faction ranks to import.'),
+                         _(u'Import Factions'))
         else:
             buff = StringIO.StringIO()
             for groupName in sorted(changed):
                 buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
             text = buff.getvalue()
             buff.close()
-            balt.showLog(self.window,text,_(u'Import Factions'),icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Factions'),
+                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -1965,8 +1978,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():
             defaultPath.makedirs()
-        textDir = balt.askDirectory(self.window,
-            _(u'Choose directory to export scripts to'),defaultPath)
+        textDir = self._askDirectory(
+            message=_(u'Choose directory to export scripts to'),
+            defaultPath=defaultPath)
         if textDir != defaultPath:
             for asDir,sDirs,sFiles in os.walk(defaultPath.s):
                 if not (sDirs or sFiles):
@@ -1978,8 +1992,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         scriptText.readFromMod(fileInfo,fileName.s)
         exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
         #finally:
-        balt.showLog(self.window,exportedScripts,_(u'Export Scripts'),
-                     icons=Resources.bashBlue)
+        self._showLog(exportedScripts, title=_(u'Export Scripts'),
+                      icons=Resources.bashBlue)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file or other mod."""
@@ -1990,31 +2004,31 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
-        if not balt.askContinue(self.window,message,'bash.scripts.import.continue',
-            _(u'Import Scripts')):
-            return
+        if not self._askContinue(message, 'bash.scripts.import.continue',
+                                 _(u'Import Scripts')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
         if not defaultPath.exists():
             defaultPath = bosh.dirs['patches']
-        textDir = balt.askDirectory(self.window,
-            _(u'Choose directory to import scripts from'),defaultPath)
+        textDir = self._askDirectory(
+            message=_(u'Choose directory to import scripts from'),
+            defaultPath=defaultPath)
         if textDir is None:
             return
         message = (_(u"Import scripts that don't exist in the esp as new"
                      u" scripts?") + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
-        makeNew = balt.askYes(self.window, message, _(u'Import Scripts'),
-                              questionIcon=True)
+        makeNew = self._askYes(message, _(u'Import Scripts'),
+                               questionIcon=True)
         scriptText = self._parser()
         scriptText.readFromText(textDir.s,fileInfo)
         changed, added = scriptText.writeToMod(fileInfo,makeNew)
         #--Log
         if not (len(changed) or len(added)):
-            balt.showOk(self.window,_(u"No changed or new scripts to import."),
-                        _(u"Import Scripts"))
+            self._showOk(_(u"No changed or new scripts to import."),
+                         _(u"Import Scripts"))
             return
         if changed:
             changedScripts = (_(u'Imported %d changed scripts from %s:') +
@@ -2035,8 +2049,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
             report = changedScripts
         elif added:
             report = addedScripts
-        balt.showLog(self.window, report, _(u'Import Scripts'),
-                     icons=Resources.bashBlue)
+        self._showLog(report, title=_(u'Import Scripts'),
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemStats, CBash_ItemStats
@@ -2061,22 +2075,21 @@ class Mod_Stats_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
-        if not balt.askContinue(self.window,message,'bash.stats.import.continue',
-            _(u'Import Stats')):
-            return
+        if not self._askContinue(message, 'bash.stats.import.continue',
+                                 _(u'Import Stats')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Stats.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import stats from:'),
+        textPath = self._askOpen(_(u'Import stats from:'),
             textDir, textName, u'*_Stats.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a Stats.csv file.'))
+            self._showError(_(u'Source file must be a Stats.csv file.'))
             return
         #--Export
         changed = None
@@ -2089,15 +2102,17 @@ class Mod_Stats_Import(_Mod_Import_Link):
             progress(1.0,_(u"Done."))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u"No relevant stats to import."),_(u"Import Stats"))
+            self._showOk(_(u"No relevant stats to import."),_(u"Import Stats"))
         else:
             if not len(changed):
-                balt.showOk(self.window,_(u"No changed stats to import."),_(u"Import Stats"))
+                self._showOk(_(u"No changed stats to import."),
+                             _(u"Import Stats"))
             else:
                 buff = StringIO.StringIO()
                 for modName in sorted(changed):
                     buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                balt.showLog(self.window,buff.getvalue(),_(u'Import Stats'),icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Import Stats'),
+                              icons=Resources.bashBlue)
                 buff.close()
 
 #------------------------------------------------------------------------------
@@ -2122,22 +2137,22 @@ class Mod_Prices_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
-        if not balt.askContinue(self.window,message,
-            'bash.prices.import.continue',_(u'Import prices')):
-            return
+        if not self._askContinue(message, 'bash.prices.import.continue',
+                                 _(u'Import prices')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Prices.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import prices from:'),
+        textPath = self._askOpen(_(u'Import prices from:'),
             textDir, textName, u'*_Prices.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext not in [u'.csv',u'.ghost',u'.esm',u'.esp']:
-            balt.showError(self.window,_(u'Source file must be a Prices.csv file or esp/m.'))
+            self._showError(
+                _(u'Source file must be a Prices.csv file or esp/m.'))
             return
         #--Export
         changed = None
@@ -2154,15 +2169,15 @@ class Mod_Prices_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant prices to import.'),
-                        _(u'Import Prices'))
+            self._showOk(_(u'No relevant prices to import.'),
+                         _(u'Import Prices'))
         else:
             buff = StringIO.StringIO()
             for modName in sorted(changed):
                 buff.write(_(u'Imported Prices:')
                            + u'\n* %s: %d\n' % (modName.s,changed[modName]))
-            balt.showLog(self.window,buff.getvalue(),_(u'Import Prices'),
-                         icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Prices'),
+                          icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2189,24 +2204,21 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
-        if not balt.askContinue(self.window,message,
-            'bash.SigilStone.import.continue',
-            _(u'Import Sigil Stones details')):
-            return
+        if not self._askContinue(message, 'bash.SigilStone.import.continue',
+                                 _(u'Import Sigil Stones details')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_SigilStones.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,
-            _(u'Import Sigil Stone details from:'),
+        textPath = self._askOpen(_(u'Import Sigil Stone details from:'),
             textDir, textName, u'*_SigilStones.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a _SigilStones.csv file'))
+            self._showError(_(u'Source file must be a _SigilStones.csv file'))
             return
         #--Export
         changed = None
@@ -2219,17 +2231,17 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,
-                _(u'No relevant Sigil Stone details to import.'),
-                _(u'Import Sigil Stone details'))
+            self._showOk(_(u'No relevant Sigil Stone details to import.'),
+                         _(u'Import Sigil Stone details'))
         else:
             buff = StringIO.StringIO()
             buff.write((_(u'Imported Sigil Stone details to mod %s:')
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            balt.showLog(self.window,buff.getvalue(),
-                         _(u'Import Sigil Stone details'),icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(),
+                          title=_(u'Import Sigil Stone details'),
+                          icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2248,8 +2260,8 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
                    + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
-        doDetailed = balt.askYes(self.window, message, _(u'Export Spells'),
-                                 questionIcon=True)
+        doDetailed = self._askYes(message, _(u'Export Spells'),
+                                  questionIcon=True)
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
 
@@ -2263,30 +2275,28 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                    + u'\n' +
                    _(u'(If not they will just be skipped).')
                    )
-        doDetailed = balt.askYes(self.window,message,_(u'Import Spell details'),
-                                 questionIcon=True)
+        doDetailed = self._askYes(message, _(u'Import Spell details'),
+                                  questionIcon=True)
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
 
     def Execute(self,event):
         message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
-        if not balt.askContinue(self.window,message,
-            'bash.SpellRecords.import.continue',
-            _(u'Import Spell details')):
-            return
+        if not self._askContinue(message, 'bash.SpellRecords.import.continue',
+                                 _(u'Import Spell details')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Spells.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import Spell details from:'),
+        textPath = self._askOpen(_(u'Import Spell details from:'),
             textDir, textName, u'*_Spells.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a _Spells.csv file'))
+            self._showError(_(u'Source file must be a _Spells.csv file'))
             return
         #--Export
         changed = None
@@ -2299,17 +2309,16 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant Spell details to import.'),
-                        _(u'Import Spell details'))
+            self._showOk(_(u'No relevant Spell details to import.'),
+                         _(u'Import Spell details'))
         else:
             buff = StringIO.StringIO()
             buff.write((_(u'Imported Spell details to mod %s:')
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            balt.showLog(self.window,buff.getvalue(),_(u'Import Spell details'),
-
-                         icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Spell details'),
+                          icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2336,23 +2345,21 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
-        if not balt.askContinue(self.window,message,
-            'bash.Ingredient.import.continue',
-            _(u'Import Ingredients details')):
-            return
+        if not self._askContinue(message, 'bash.Ingredient.import.continue',
+                                 _(u'Import Ingredients details')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Ingredients.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import Ingredient details from:'),
+        textPath = self._askOpen(_(u'Import Ingredient details from:'),
             textDir,textName,u'*_Ingredients.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a _Ingredients.csv file'))
+            self._showError(_(u'Source file must be a _Ingredients.csv file'))
             return
         #--Export
         changed = None
@@ -2365,17 +2372,16 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,
-                _(u'No relevant Ingredient details to import.'),
-                _(u'Import Ingredient details'))
+            self._showOk(_(u'No relevant Ingredient details to import.'),
+                         _(u'Import Ingredient details'))
         else:
             buff = StringIO.StringIO()
             buff.write((_(u'Imported Ingredient details to mod %s:')
                         + u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            balt.showLog(self.window,buff.getvalue(),
-                _(u'Import Ingredient details'),icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(),
+                title=_(u'Import Ingredient details'), icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2400,21 +2406,20 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
-        if not balt.askContinue(self.window,message,'bash.editorIds.import.continue',
-            _(u'Import Editor Ids')):
-            return
+        if not self._askContinue(message, 'bash.editorIds.import.continue',
+                                 _(u'Import Editor Ids')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Eids.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import names from:'),textDir,
+        textPath = self._askOpen(_(u'Import names from:'),textDir,
             textName, u'*_Eids.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         if textName.cext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a csv file.'))
+            self._showError(_(u'Source file must be a csv file.'))
             return
         #--Import
         questionableEidsSet = set()
@@ -2430,7 +2435,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 progress(1.0,_(u"Done."))
             #--Log
             if not changed:
-                balt.showOk(self.window,_(u"No changes required."))
+                self._showOk(_(u"No changes required."))
             else:
                 buff = StringIO.StringIO()
                 format_ = u"%s'%s' >> '%s'\n"
@@ -2448,9 +2453,10 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                         buff.write(u"  '%s'\n" % badEid)
                 text = buff.getvalue()
                 buff.close()
-                balt.showLog(self.window,text,_(u'Objects Changed'),icons=Resources.bashBlue)
+                self._showLog(text, title=_(u'Objects Changed'),
+                              icons=Resources.bashBlue)
         except bolt.BoltError as e:
-            balt.showWarning(self.window, '%r' % e)
+            self._showWarning('%r' % e)
 
 #------------------------------------------------------------------------------
 from ..parsers import FullNames, CBash_FullNames
@@ -2474,22 +2480,22 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 
     def Execute(self,event):
         message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
-        if not balt.askContinue(self.window,message,'bash.fullNames.import.continue',
-            _(u'Import Names')):
-            return
+        if not self._askContinue(message, 'bash.fullNames.import.continue',
+                                 _(u'Import Names')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Names.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import names from:'),
+        textPath = self._askOpen(_(u'Import names from:'),
             textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext not in (u'.esp',u'.esm',u'.csv'):
-            balt.showError(self.window,_(u'Source file must be mod (.esp or .esm) or csv file.'))
+            self._showError(
+                _(u'Source file must be mod (.esp or .esm) or csv file.'))
             return
         #--Export
         renamed = None
@@ -2506,7 +2512,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
             progress(1.0,_(u"Done."))
         #--Log
         if not renamed:
-            balt.showOk(self.window,_(u"No changes required."))
+            self._showOk(_(u"No changes required."))
         else:
             with bolt.sio() as buff:
                 format_ = u'%s:   %s >> %s\n'
@@ -2517,7 +2523,8 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                         buff.write(format_ % (eid,full,newFull))
                     except:
                         print u'unicode error:', (format_, eid, full, newFull)
-                balt.showLog(self.window,buff.getvalue(),_(u'Objects Renamed'),icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'),
+                              icons=Resources.bashBlue)
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
@@ -2547,22 +2554,21 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
 
     def Execute(self,event):
         message = (_(u"Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"))
-        if not balt.askContinue(self.window,message,
-            'bash.MapMarkers.import.continue',_(u'Import Map Markers')):
-            return
+        if not self._askContinue(message, 'bash.MapMarkers.import.continue',
+                                 _(u'Import Map Markers')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_MapMarkers.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import Map Markers from:'),
+        textPath = self._askOpen(_(u'Import Map Markers from:'),
             textDir, textName, u'*_MapMarkers.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != u'.csv':
-            balt.showError(self.window,_(u'Source file must be a MapMarkers.csv file'))
+            self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
         #--Export
         changed = None
@@ -2575,16 +2581,16 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant Map Markers to import.'),
-                        _(u'Import Map Markers'))
+            self._showOk(_(u'No relevant Map Markers to import.'),
+                         _(u'Import Map Markers'))
         else:
             buff = StringIO.StringIO()
             buff.write((_(u'Imported Map Markers to mod %s:')
                         + u'\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            balt.showLog(self.window,buff.getvalue(),_(u'Import Map Markers'),
-                         icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'),
+                          icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2628,22 +2634,21 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
 
     def Execute(self,event):
         message = (_(u"Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"))
-        if not balt.askContinue(self.window,message,'bash.itemdata.import.continue',
-            _(u'Import Item Data')):
-            return
+        if not self._askContinue(message, 'bash.itemdata.import.continue',
+                                 _(u'Import Item Data')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_ItemData.csv'
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = balt.askOpen(self.window,_(u'Import item data from:'),
+        textPath = self._askOpen(_(u'Import item data from:'),
             textDir, textName, u'*_ItemData.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext != '.csv':
-            balt.showError(self.window,_(u'Source file must be a ItemData.csv file.'))
+            self._showError(_(u'Source file must be a ItemData.csv file.'))
             return
         #--Export
         changed = None
@@ -2660,14 +2665,15 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
-            balt.showOk(self.window,_(u'No relevant data to import.'),
-                        _(u'Import Item Data'))
+            self._showOk(_(u'No relevant data to import.'),
+                         _(u'Import Item Data'))
         else:
             buff = StringIO.StringIO()
             for modName in sorted(changed):
                 buff.write(_(u'Imported Item Data:')
                            + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
-            balt.showLog(self.window,buff.getvalue(),_(u'Import Item Data'),icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Item Data'),
+                          icons=Resources.bashBlue)
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2679,7 +2685,7 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
 
     def Execute(self,event):
         message = _(u'Obsolete. Mods are now automatically tagged when possible.')
-        balt.showInfo(self.window,message,_(u'Mark Levelers'))
+        self._showInfo(message, title=_(u'Mark Levelers'))
 
 #------------------------------------------------------------------------------
 from ..bolt import deprint
@@ -2693,23 +2699,24 @@ class MasterList_AddMasters(ItemLink): # CRUFT
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master.  Useful for splitting mods into esm/esp pairs.")
-        if not balt.askContinue(self.window,message,'bash.addMaster.continue',_(u'Add Masters')):
-            return
+        if not self._askContinue(message, 'bash.addMaster.continue',
+                                 _(u'Add Masters')): return
         modInfo = self.window.fileInfo
         wildcard = bush.game.displayName+u' '+_(u'Masters')+u' (*.esm;*.esp)|*.esm;*.esp'
-        masterPaths = balt.askOpenMulti(self.window,_(u'Add masters:'),
-                        modInfo.dir, u'', wildcard)
+        masterPaths = self._askOpenMulti(
+                            title=_(u'Add masters:'), defaultDir=modInfo.dir,
+                            wildcard=wildcard)
         if not masterPaths: return
         names = []
         for masterPath in masterPaths:
             (dir_,name) = masterPath.headTail
             if dir_ != modInfo.dir:
-                return balt.showError(self.window,
-                    _(u"File must be selected from %s Data Files directory.")
-                    % bush.game.fsName)
+                return self._showError(_(
+                    u"File must be selected from %s Data Files directory.")
+                                       % bush.game.fsName)
             if name in modInfo.header.masters:
-                return balt.showError(self.window,
-                    name.s+u' '+_(u"is already a master."))
+                return self._showError(
+                    name.s + u' ' + _(u"is already a master."))
             names.append(name)
         for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
             if masterName in bosh.modInfos:
@@ -2728,9 +2735,8 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
 
     def Execute(self,event):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")
-        if not balt.askContinue(self.window,message,'bash.cleanMaster.continue',
-                                _(u'Clean Masters')):
-            return
+        if not self._askContinue(message, 'bash.cleanMaster.continue',
+                                 _(u'Clean Masters')): return
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
 
@@ -2767,5 +2773,4 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
                 dialog.Destroy()
                 deprint(u'to remove:', removed)
             else:
-                balt.showOk(self.window,_(u'No Masters to clean.'),
-                            _(u'Clean Masters'))
+                self._showOk(_(u'No Masters to clean.'), _(u'Clean Masters'))
