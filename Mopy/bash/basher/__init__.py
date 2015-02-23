@@ -4484,6 +4484,7 @@ class BashFrame(wx.Frame):
         self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
+        self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
@@ -4571,7 +4572,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refresh()
         #--Check plugins.txt and mods directory...
-        modInfosChanged = bosh.modInfos.refresh()
+        modInfosChanged = not self.booting and bosh.modInfos.refresh()
         if modInfosChanged:
             popMods = 'ALL'
         #--Have any mtimes been reset?
@@ -4594,10 +4595,10 @@ class BashFrame(wx.Frame):
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Check savegames directory...
-        if bosh.saveInfos.refresh():
+        if not self.booting and bosh.saveInfos.refresh():
             popSaves = 'ALL'
         #--Check INI Tweaks...
-        if bosh.iniInfos.refresh():
+        if not self.booting and bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
         if bush.game.fsName != 'Skyrim':

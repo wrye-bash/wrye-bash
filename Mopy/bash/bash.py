@@ -404,7 +404,7 @@ def main():
 
     # process backup/restore options
     # quit if either is true, but only after calling both
-    quit = cmdBackup()
+    quit = cmdBackup() ##: takes time
     quit = cmdRestore() or quit
     if quit: return
 
@@ -462,7 +462,8 @@ def main():
             basher.uacRestart = True
             return
 
-    app.Init() # Link.Frame is set here !
+    frame = app.Init() # Link.Frame is set here !
+    frame.booting = False
     app.MainLoop()
 
 # Show error in gui -----------------------------------------------------------
