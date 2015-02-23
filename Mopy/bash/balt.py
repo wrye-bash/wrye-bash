@@ -2264,12 +2264,13 @@ class Link(object):
 
         Called from AppendToMenu - DO NOT call directly. If you need to use the
         initialized data in setting instance attributes (such as text) override
-        and always _call super_ when overriding. ##: Needs work (docs)
+        and always _call super_ when overriding.
         :param window: the element the menu is being popped from (usually a
         UIList subclass)
         :param data: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
-        index of the right-clicked item - see Links.PopupMenu().
+        index of the right-clicked item. In main (column header) menus it's
+        the column clicked on or the first column. Set in Links.PopupMenu().
         """
         # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
