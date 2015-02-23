@@ -836,7 +836,8 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
                 )
             )
     #--Show
-    if asDialog: window.Display()
+    if asDialog:
+        with window: window.ShowModal()
     else: window.Show()
     return bosh.question
 
