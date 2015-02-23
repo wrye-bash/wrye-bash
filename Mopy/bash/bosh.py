@@ -4677,6 +4677,8 @@ class ModInfos(FileInfos):
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
                 raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
+            # Unghost
+            self[fileName].setGhost(False)
             #--Select masters
             if modSet is None: modSet = set(self.keys())
             #--Check for bad masternames:
