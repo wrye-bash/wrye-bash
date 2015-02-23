@@ -64,6 +64,7 @@ class Settings_BackupSettings(ItemLink):
         BashFrame.SaveSettings(Link.Frame)
         #backup = barb.BackupSettings(Link.Frame)
         try:
+            Link.Frame.BindRefresh(bind=False)
             if PromptConfirm():
                 dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
                 icon = staticBitmap(dialog)
@@ -80,13 +81,15 @@ class Settings_BackupSettings(ItemLink):
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     )
                 dialog.SetSizer(sizer)
-                backup = barb.BackupSettings(Link.Frame,backup_images=dialog.ShowModal())
-                backup.Apply()
+                images = dialog.ShowModal()
+                with balt.BusyCursor():
+                    backup = barb.BackupSettings(Link.Frame,backup_images=images)
+                    backup.Apply()
         except StateError:
             backup.WarnFailed()
         except barb.BackupCancelled:
             pass
-        #end try
+        finally: Link.Frame.BindRefresh(bind=True)
         backup = None
 
 #------------------------------------------------------------------------------
