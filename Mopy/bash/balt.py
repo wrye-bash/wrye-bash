@@ -1773,16 +1773,21 @@ class UIList(wx.Panel):
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
     #--Style params
-    editLabels = False # allow editing the labels - also enables F2 shortcut
+    _editLabels = False # allow editing the labels - also enables F2 shortcut
+    _sunkenBorder = True
+    _singleCell = False
     #--Sorting
     nonReversibleCols = {'Load Order', 'Current Order'}
-    default_sort_col = 'File' # override as needed
-    sort_keys = {} # sort_keys[col] provides the sort key for this col
-    extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    _default_sort_col = 'File' # override as needed
+    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    _extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    #--DnD
+    _dndFiles = _dndList = False
+    _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
-                 **kwargs):
+    def __init__(self, parent, keyPrefix, details=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.details = details
         # parent = left -> ThinSplitter -> Panel, consider an init argument
         self.panel = parent.GetParent().GetParent()
         #--Layout
@@ -1793,17 +1798,17 @@ class UIList(wx.Panel):
         # columns keys - access to the settings is done via properties (mostly)
         self.colNames = bosh.settings['bash.colNames']
         self.colWidthsKey = self.keyPrefix + '.colWidths' # used in OnColumnResize
-        #--attributes
-        self.dndColumns = dndColumns
         #--gList
         ctrlStyle = wx.LC_REPORT
-        if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
-        if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
-        if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
-        self._gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
-                              dndList=dndList, fnDndAllow=self.dndAllow,
-                              fnDropFiles=self.OnDropFiles,
-                              fnDropIndexes=self.OnDropIndexes)
+        if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
+        if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
+        self._gList = ListCtrl(self, style=ctrlStyle,
+                               dndFiles=self.__class__._dndFiles,
+                               dndList=self.__class__._dndList,
+                               fnDndAllow=self.dndAllow,
+                               fnDropFiles=self.OnDropFiles,
+                               fnDropIndexes=self.OnDropIndexes)
         if self.icons:
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
@@ -1811,7 +1816,7 @@ class UIList(wx.Panel):
             self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
             self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
             self._gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
-        if self.__class__.editLabels:
+        if self.__class__._editLabels:
             self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
             self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
@@ -1853,7 +1858,7 @@ class UIList(wx.Panel):
     @property
     def sort(self):
         return bosh.settings.get(self.keyPrefix + '.sort',
-                                 self.default_sort_col)
+                                 self._default_sort_col)
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
@@ -1909,7 +1914,7 @@ class UIList(wx.Panel):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
-        elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
+        elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
             with BusyCursor(): self.DeleteSelected(
                 shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
@@ -1924,7 +1929,7 @@ class UIList(wx.Panel):
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
-    #--Edit labels - only registered if editLabels != False
+    #--Edit labels - only registered if _editLabels != False
     def OnBeginEditLabel(self,event): event.Skip()
     def OnLabelEdited(self,event): event.Skip()
 
@@ -2019,17 +2024,17 @@ class UIList(wx.Panel):
         items = items if items is not None else self.items # List has items Tank provides them (for now)
         col, reverse, oldcol = self._GetSortSettings(col, reverse)
         def key(k): # if key is None then keep it None else provide self
-            k = self.sort_keys[k]
+            k = self._sort_keys[k]
             return k if k is None else partial(k, self)
-        def_key = key(self.default_sort_col)
-        if col != self.default_sort_col:
+        def_key = key(self._default_sort_col)
+        if col != self._default_sort_col:
             #--Default sort
             items.sort(key=def_key)
             items.sort(key=key(col), reverse=bool(reverse))
         else:
             items.sort(key=def_key, reverse=bool(reverse))
         if sortSpecial:
-            for lamda in self.extra_sortings: lamda(self, items)
+            for lamda in self._extra_sortings: lamda(self, items)
         self._setColumnSortIndicator(col, oldcol, reverse)
         return items
 
@@ -2087,7 +2092,7 @@ class UIList(wx.Panel):
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
-        return self.sort in self.dndColumns
+        return self.sort in self._dndColumns
 
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError
@@ -2120,17 +2125,13 @@ class UIList(wx.Panel):
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
+    _sunkenBorder = False
 
-    def __init__(self, parent, data, keyPrefix, details=None, dndList=False,
-                 dndFiles=False, dndColumns=(), **kwargs):
+    def __init__(self, parent, data, keyPrefix, details=None):
         #--Data
         self.data = data
-        self.details = details
         #--ListCtrl
-        # no sunken borders by default
-        kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
-        UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
-                        dndList=dndList, dndColumns=dndColumns, **kwargs)
+        UIList.__init__(self, parent, keyPrefix, details)
         #--Items
         self.sortDirty = False
         self.UpdateItems()

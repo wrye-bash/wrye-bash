@@ -330,14 +330,12 @@ class SashTankPanel(SashPanel):
 class List(balt.UIList):
     icons = colorChecks
 
-    def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
-                 dndList=False, dndColumns=(), **kwargs):
+    def __init__(self, parent, listData=None, keyPrefix='', details=None):
         #--ListCtrl
         #--MasterList: masterInfo = self.data[item], where item is id number
         # rest of List subclasses provide a non None listData
         self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
-                             dndList=dndList, dndColumns=dndColumns, **kwargs)
+        balt.UIList.__init__(self, parent, keyPrefix, details=details)
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
@@ -487,15 +485,16 @@ class MasterList(_ModsSortMixin, List):
     mainMenu = Links()
     itemMenu = Links()
     keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
-    editLabels = True
+    _editLabels = True
     #--Sorting
-    default_sort_col = 'Num'
-    sort_keys = {'Num': None, # sort_keys['Save Order'] =
+    _default_sort_col = 'Num'
+    _sort_keys = {'Num': None, # sort_keys['Save Order'] =
                  'File': lambda self, a: self.data[a].name.s,
                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
-    extra_sortings = [_ModsSortMixin._sortEsmsFirst]
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst]
+    _sunkenBorder, _singleCell = False, True
 
     @property
     def cols(self):
@@ -511,8 +510,7 @@ class MasterList(_ModsSortMixin, List):
         self.fileOrderItems = []
         self.loadOrderNames = []
         #--Parent init
-        List.__init__(self, parent, listData, keyPrefix, singleCell=True,
-                      sunkenBorder=False)
+        List.__init__(self, parent, listData, keyPrefix)
         self._setEditedFn = setEditedFn
 
     def OnItemSelected(self, event): event.Skip()
@@ -698,14 +696,14 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
-    sort_keys = {'File': None,
+    _sort_keys = {'File': None,
                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
                 }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
             items.sort(key=lambda a: self.data[a].status < 0)
-    extra_sortings = [_sortValidFirst]
+    _extra_sortings = [_sortValidFirst]
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -945,7 +943,7 @@ class ModList(_ModsSortMixin, List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    sort_keys = {
+    _sort_keys = {
         'File': None,
         'Author': lambda self, a: self.data[a].header.author.lower(),
         'Rating': lambda self, a: bosh.modInfos.table.getItem(
@@ -962,15 +960,10 @@ class ModList(_ModsSortMixin, List):
         'Mod Status': lambda self, a: self.data[a].txt_status(),
         'CRC': lambda self, a: self.data[a].cachedCrc(),
     }
-    extra_sortings = [_ModsSortMixin._sortEsmsFirst,
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst,
                       _ModsSortMixin._activeModsFirst]
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Data/Items
-        self.details = None #--Set by panel
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix, dndList=True,
-                      dndColumns=['Load Order'], sunkenBorder=False)
+    _dndList, _dndColumns = True, ['Load Order']
+    _sunkenBorder = False
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1906,10 +1899,10 @@ class ModPanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
-        BashFrame.modList = ModList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.modList
         self.modDetails = ModDetails(right)
-        self.uiList.details = self.modDetails
+        self.uiList = BashFrame.modList = ModList(left, listData=self.listData,
+                                                  keyPrefix=self.keyPrefix,
+                                                  details=self.modDetails)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
@@ -1934,8 +1927,8 @@ class SaveList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    editLabels = True
-    sort_keys = {'File'    : None, # just sort by name
+    _editLabels = True
+    _sort_keys = {'File'    : None, # just sort by name
                  'Modified': lambda self, a: self.data[a].mtime,
                  'Size'    : lambda self, a: self.data[a].size,
                  'Status'  : lambda self, a: self.data[a].getStatus(),
@@ -1943,12 +1936,6 @@ class SaveList(List):
                  'PlayTime': lambda self, a: self.data[a].header.gameTicks,
                  'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                  }
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Data/Items
-        self.details = None #--Set by panel
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
 
     def OnBeginEditLabel(self,event):
         """Start renaming saves: deselect the extension."""
@@ -2272,10 +2259,10 @@ class SavePanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        BashFrame.saveList = SaveList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.saveList
         self.saveDetails = SaveDetails(right)
-        BashFrame.saveList.details = self.saveDetails
+        self.uiList = BashFrame.saveList = SaveList(left, self.listData,
+                                                    keyPrefix=self.keyPrefix,
+                                                    details=self.saveDetails)
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
@@ -2301,9 +2288,9 @@ class InstallersList(balt.Tank):
     itemMenu = Links()
     icons = installercons
     # _shellUI = True # FIXME(ut): shellUI path does not grok markers
-    editLabels = True
-    default_sort_col = 'Package'
-    sort_keys = {'Package': None,
+    _editLabels = True
+    _default_sort_col = 'Package'
+    _sort_keys = {'Package': None,
                  'Files': lambda self, x: len(self.data[x].fileSizeCrcs)
                  if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
                  'Order': lambda self, x: self.data[x].order,
@@ -2322,11 +2309,9 @@ class InstallersList(balt.Tank):
         if settings['bash.installers.sortProjects']:
             items.sort(key=lambda x: not isinstance(self.data[x],
                                                     bosh.InstallerProject))
-    extra_sortings = [_sortStructure, _sortActive, _sortProjects]
-
-    def __init__(self, parent, data, keyPrefix, details=None):
-        balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
-                           dndList=True, dndFiles=True, dndColumns=['Order'])
+    _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
+    #--DnD
+    _dndList, _dndFiles, _dndColumns = True, True, ['Order']
 
     #--Item Info
     def getColumns(self, item):
@@ -2598,7 +2583,7 @@ class InstallersList(balt.Tank):
         if event.CmdDown() and code in balt.wxArrows:
             selected = self.GetSelected()
             if len(selected) < 1: return
-            orderKey = partial(self.sort_keys['Order'], self)
+            orderKey = partial(self._sort_keys['Order'], self)
             moveMod = 1 if code in balt.wxArrowDown else -1 # move down or up
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
@@ -3192,8 +3177,8 @@ class ScreensList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _shellUI = True
-    editLabels = True
-    sort_keys = {'File'    : None,
+    _editLabels = True
+    _sort_keys = {'File'    : None,
                  'Modified': lambda self, a: self.data[a][1],
                 }
 
@@ -3346,16 +3331,10 @@ class BSAList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     icons = None # no icons
-    sort_keys = {'File': None,
+    _sort_keys = {'File': None,
                  'Modified': lambda self, a: self.data[a].mtime,
                  'Size': lambda self, a: self.data[a].size,
                 }
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Data/Items
-        self.details = None #--Set by panel
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3565,9 +3544,9 @@ class BSAPanel(NotebookPanel):
         NotebookPanel.__init__(self, parent)
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
-        bsaList = BSAList(self, self.listData, self.keyPrefix)
         self.BSADetails = BSADetails(self)
-        BSAList.details = self.BSADetails
+        self.uilist = BSAList(self, self.listData, self.keyPrefix,
+                              details=self.BSADetails)
         #--Layout
         sizer = hSizer(
             (BSAList,1,wx.GROW),
@@ -3588,15 +3567,14 @@ class MessageList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     reNoRe = re.compile(u'^Re: *',re.U)
-    default_sort_col = 'Date'
-    sort_keys = {'Date': lambda self, a: self.data[a][2],
+    _default_sort_col = 'Date'
+    _sort_keys = {'Date': lambda self, a: self.data[a][2],
                  'Subject': lambda self, a: MessageList.reNoRe.sub(
                      u'', self.data[a][0]),
                  'Author': lambda self, a: self.data[a][1],
                 }
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
@@ -3729,8 +3707,8 @@ class PeopleList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
-    default_sort_col = 'Name'
-    sort_keys = {'Name': lambda self, x: x.lower(),
+    _default_sort_col = 'Name'
+    _sort_keys = {'Name': lambda self, x: x.lower(),
                  'Karma': lambda self, x: self.data[x][1],
                  'Header': lambda self, x: self.data[x][2][:50].lower(),
                 }
