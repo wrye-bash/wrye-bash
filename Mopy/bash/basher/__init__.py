@@ -459,9 +459,9 @@ class List(balt.UIList):
              reverse the sort order.
          -2: Use current reverse setting for sort variable.
         """
+        oldcol = self.sort
         #--Sort Column
-        if not col:
-            col = self.sort
+        col = col or self.sort
         #--Reverse
         oldReverse = self.colReverse.get(col,0)
         if col == 'Load Order': #--Disallow reverse for load
@@ -473,27 +473,20 @@ class List(balt.UIList):
         #--Done
         self.sort = col
         self.colReverse[col] = reverse
-        return col,reverse
+        return col, reverse, oldcol
 
     def SortItems(self,col=None,reverse=-2):
-        # bit complex due to sorting by name - simplify if def_key is always None
-        col, reverse = self.GetSortSettings(col, reverse)
-        oldcol = settings[self.keyPrefix + '.sort']
-        settings[self.keyPrefix + '.sort'] = col
-        #--Start with sort by name
-        self.items.sort(key=None)
+        col, reverse, oldcol = self.GetSortSettings(col, reverse)
         def key(k): # if key is None then keep it None else provide self
             k = self.sort_keys[k]
             return k if k is None else partial(k, self)
         def_key = key(self.default_sort_col)
         if col != self.default_sort_col:
             #--Default sort, if not already applied
-            if def_key is not None: self.items.sort(key=def_key)
+            self.items.sort(key=def_key)
             self.items.sort(key=key(col), reverse=bool(reverse))
         else:
-            if def_key is not None: self.items.sort(key=def_key,
-                                                    reverse=bool(reverse))
-            elif reverse: self.items.reverse()
+            self.items.sort(key=def_key, reverse=bool(reverse))
         self._setColumnSortIndicator(col, oldcol, reverse)
         return col, reverse
 
@@ -669,7 +662,7 @@ class MasterList(List):
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
+        (col, reverse, oldcol) = self.GetSortSettings(col,reverse)
         #--Sort
         data = self.data
         #--Start with sort by type
@@ -1292,8 +1285,7 @@ class ModList(List):
         """Char event: Reorder, Check/Uncheck."""
         ##Ctrl+Up and Ctrl+Down
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
-            (settings['bash.mods.sort'] == 'Load Order')
-            ):
+            (self.sort == 'Load Order')):
                 orderKey = lambda x: self.items.index(x)
                 moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
                 isReversed = (moveMod != -1)
@@ -1426,7 +1418,7 @@ class _SashDetailsPanel(SashPanel):
 
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
-    keyPrefix = 'bash.mods.details'
+    keyPrefix = 'bash.mods.details' # used in sash/scroll position
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
@@ -2188,7 +2180,7 @@ class SaveList(List):
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
-    keyPrefix = 'bash.saves.details'
+    keyPrefix = 'bash.saves.details' # used in sash/scroll position
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)

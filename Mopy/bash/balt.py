@@ -1744,7 +1744,6 @@ class UIList(wx.Panel):
         #--Columns
         self.colNames = bosh.settings['bash.colNames']
         self.colAligns = bosh.settings[self.keyPrefix + '.colAligns']
-        self.sort = bosh.settings[self.keyPrefix + '.sort']
         self.colWidthsKey = self.keyPrefix + '.colWidths'
         self.colWidths = bosh.settings[self.colWidthsKey]
         #--attributes
@@ -1798,6 +1797,11 @@ class UIList(wx.Panel):
 
     @property
     def cols(self): return bosh.settings[self.keyPrefix + '.cols']
+
+    @property
+    def sort(self): return bosh.settings[self.keyPrefix + '.sort']
+    @sort.setter
+    def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -2099,9 +2103,6 @@ class Tank(UIList):
         self.UpdateIds()
         self.SortItems()
 
-    def _setSort(self,sort):
-        self.sort = bosh.settings[self.keyPrefix + '.sort'] = sort
-
     def SortItems(self,column=None,reverse='CURRENT'):
         """Sort items. Real work is done by data object, and that completed
         sort is then "cloned" list through an intermediate cmp function.
@@ -2125,7 +2126,7 @@ class Tank(UIList):
         elif reverse in ('INVERT','CURRENT'):
             reverse = curReverse
         self.colReverse[column] = reverse
-        self._setSort(column)
+        self.sort = column
         #--Sort
         items = self.data.getSorted(column,reverse)
         sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
