@@ -61,7 +61,6 @@ import re
 import sys
 import time
 from types import StringTypes, ClassType
-from operator import attrgetter
 
 #--wxPython
 import wx
@@ -330,7 +329,7 @@ class SashTankPanel(SashPanel):
 #------------------------------------------------------------------------------
 class List(balt.UIList):
     icons = colorChecks
-    default_sort_col = 'OVERRIDE'
+    default_sort_col = 'File' # override as needed
     sort_keys = {}
 
     def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
@@ -784,7 +783,6 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
-    default_sort_col = 'File'
     sort_keys = {'File': None, # lambda _self, a: attrgetter('cext'), ##: why ?
                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
@@ -1044,17 +1042,43 @@ class ModList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    sort_keys = {
+        'File': None, #lambda self, a: attrgetter('cext'), ##: why ?
+        'Author': lambda self, a: self.data[a].header.author.lower(),
+        'Rating': lambda self, a: bosh.modInfos.table.getItem(
+                     a, 'rating', u''),
+        'Group': lambda self, a: bosh.modInfos.table.getItem(a, 'group', u''),
+        'Installer': lambda self, a: bosh.modInfos.table.getItem(
+                     a, 'installer', u''),
+        # FIXME(ut): quadratic + accessing modInfos.plugins which is private
+        'Load Order': lambda self, a: a in bosh.modInfos.plugins.LoadOrder and
+                                      bosh.modInfos.plugins.LoadOrder.index(a),
+        'Modified': lambda self, a: self.data[a].getPath().mtime,
+        'Size': lambda self, a: self.data[a].size,
+        'Status': lambda self, a: self.data[a].getStatus(),
+        'Mod Status': lambda self, a: self.data[a].txt_status(),
+        'CRC': lambda self, a: self.data[a].cachedCrc(),
+    }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
         self.colsKey = 'bash.mods.cols'
         #--Data/Items
         self.details = None #--Set by panel
-        self.esmsFirst = settings['bash.mods.esmsFirst']
-        self.selectedFirst = settings['bash.mods.selectedFirst']
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix, dndList=True,
                       dndColumns=['Load Order'], sunkenBorder=False)
+
+    @property
+    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
+    @esmsFirst.setter
+    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
+
+    @property
+    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
+    @selectedFirst.setter
+    def selectedFirst(self, val):
+        settings[self.keyPrefix + '.selectedFirst'] = val
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1240,46 +1264,15 @@ class ModList(List):
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        oldcol = settings['bash.mods.sort']
-        settings['bash.mods.sort'] = col
-        selected = bosh.modInfos.ordered
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        self.items.sort(key = attrgetter('cext'))
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Author':
-            self.items.sort(key=lambda a: data[a].header.author.lower())
-        elif col == 'Rating':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',u''))
-        elif col == 'Group':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
-        elif col == 'Load Order':
-            self.items = bosh.modInfos.getOrdered(self.items,False)
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].getPath().mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        elif col == 'Status':
-            self.items.sort(key=lambda a: data[a].getStatus())
-        elif col == 'Mod Status':
-            self.items.sort(key=lambda a: data[a].txt_status())
-        elif col == 'CRC':
-            self.items.sort(key=lambda a: data[a].cachedCrc())
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
+        col, reverse = super(ModList, self).SortItems(col,reverse)
+        #--ESMs First?
+        if self.esmsFirst or col == 'Load Order':
+            self.items.sort(key=lambda a: not self.data[a].isEsm())
         #--Selected First?
-        settings['bash.mods.selectedFirst'] = self.selectedFirst
+        selected = bosh.modInfos.ordered
         if self.selectedFirst:
             active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
             self.items.sort(key=lambda x: x not in active)
-        self._setColumnSortIndicator(col, oldcol, reverse)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2063,7 +2056,6 @@ class SaveList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     editLabels = True
-    default_sort_col = 'File'
     sort_keys = {'File'    : None, # just sort by name
                  'Modified': lambda self, a: self.data[a].mtime,
                  'Size'    : lambda self, a: self.data[a].size,
@@ -3317,7 +3309,6 @@ class ScreensList(List):
     icons = None # no icons
     _shellUI = True
     editLabels = True
-    default_sort_col = 'File'
     sort_keys = {'File'    : None,
                  'Modified': lambda self, a: self.data[a][1],
                 }
@@ -3477,7 +3468,6 @@ class BSAList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     icons = None # no icons
-    default_sort_col = 'File'
     sort_keys = {'File': None,
                  'Modified': lambda self, a: self.data[a].mtime,
                  'Size': lambda self, a: self.data[a].size,
