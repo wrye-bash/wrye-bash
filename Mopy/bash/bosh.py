@@ -54,7 +54,7 @@ import bolt
 import bush
 import bass
 from bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    UncodedError, PermissionError, FileError
+    PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from bolt import _unicode, _encode
@@ -964,7 +964,6 @@ class ObseFile:
 
     def load(self):
         """Read file."""
-        import binascii
         size = self.path.size
         with self.path.open('rb') as ins:
             buff = ins.read(size)

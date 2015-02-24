@@ -30,7 +30,7 @@ from .. import bosh, balt, bush
 from ..balt import fill, BoolLink, AppendableLink, Link, ItemLink
 from . import Resources, Installers_Link
 from .dialogs import ListBoxes, CreateNewProject
-from ..bolt import GPath, SubProgress
+from ..bolt import SubProgress
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_Refresh', 'Installers_AddMarker',

@@ -779,13 +779,13 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         """Handle activation event."""
         patchDialog = None
         try: ##: Monkey patch so the modList does not refresh between dialogs
-            balt.Link.Frame.BindRefresh(bind=False)
+            Link.Frame.BindRefresh(bind=False)
             fileName = self._Execute()
             if not fileName: return ##: complex, prevent settings save
         except CancelError:
             return
         finally:
-            if not balt.Link.Frame.isPatching: balt.Link.Frame.BindRefresh(bind=True)
+            if not Link.Frame.isPatching: Link.Frame.BindRefresh(bind=True)
             if patchDialog: patchDialog.Destroy() ##: not sure if needed - does not fix leak - see #113
         # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
         Link.Frame.SaveSettings()

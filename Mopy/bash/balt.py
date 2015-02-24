@@ -28,8 +28,8 @@
 import bolt
 import bosh
 from bolt import GPath, deprint
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
-
+from bolt import BoltError, AbstractError, ArgumentError, StateError, \
+    CancelError, SkipError
 #--Python
 import cPickle
 import StringIO
@@ -636,8 +636,6 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return value
 
 # Message Dialogs -------------------------------------------------------------
-import win32gui
-import win32api
 import windows
 canVista = windows.TASK_DIALOG_AVAILABLE
 
@@ -1865,13 +1863,11 @@ class UIList(wx.Panel):
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): # Ctrl+A
-            self.SelectAll()
-        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            with BusyCursor():
-                self.DeleteSelected(shellUI=self.__class__._shellUI,
-                                    noRecycle=event.ShiftDown())
+        if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
         elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
+        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+            with BusyCursor(): self.DeleteSelected(
+                shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
         event.Skip()
 
     #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?

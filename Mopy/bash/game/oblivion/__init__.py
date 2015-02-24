@@ -173,7 +173,7 @@ class ess:
 
     @staticmethod
     def writeMasters(ins,out,header):
-        """Rewrites mastesr of existing save file."""
+        """Rewrites masters of existing save file."""
         def unpack(format,size): return struct.unpack(format,ins.read(size))
         def pack(format,*args): out.write(struct.pack(format,*args))
         #--Header

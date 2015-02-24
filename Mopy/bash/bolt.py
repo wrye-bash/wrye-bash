@@ -450,9 +450,9 @@ class sio(StringIO.StringIO):
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
-#Path = None
+
 def GPath(name):
-    """Returns common path object for specified name/path."""
+    """Path factory and cache."""
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
