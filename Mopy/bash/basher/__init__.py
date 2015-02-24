@@ -784,6 +784,11 @@ class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
+    default_sort_col = 'File'
+    sort_keys = {'File': None, # lambda _self, a: attrgetter('cext'), ##: why ?
+                 'Installer': lambda self, a: bosh.iniInfos.table.getItem(
+                     a, 'installer', u''),
+                }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -894,20 +899,7 @@ class INIList(List):
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
     def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.ini.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        self.items.sort(key = attrgetter('cext'))
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.iniInfos.table.getItem(a,'installer',u''))
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
+        super(INIList, self).SortItems(col, reverse)
         #--Valid Tweaks first?
         self.sortValid = settings['bash.ini.sortValid']
         if self.sortValid:
@@ -3485,6 +3477,11 @@ class BSAList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     icons = None # no icons
+    default_sort_col = 'File'
+    sort_keys = {'File': None,
+                 'Modified': lambda self, a: self.data[a].mtime,
+                 'Size': lambda self, a: self.data[a].size,
+                }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -3540,24 +3537,6 @@ class BSAList(List):
         #self.gList.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.BSAs.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3741,7 +3720,13 @@ class MessageList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
+    reNoRe = re.compile(u'^Re: *',re.U)
+    default_sort_col = 'Date'
+    sort_keys = {'Date': lambda self, a: self.data[a][2],
+                 'Subject': lambda self, a: MessageList.reNoRe.sub(
+                     u'', self.data[a][0]),
+                 'Author': lambda self, a: self.data[a][1],
+                }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -3802,25 +3787,6 @@ class MessageList(List):
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.messages.sort'] = col
-        data = self.data
-        #--Start with sort by date
-        self.items.sort(key=lambda a: data[a][2])
-        if col == 'Subject':
-            reNoRe = re.compile(u'^Re: *',re.U)
-            self.items.sort(key=lambda a: reNoRe.sub(u'',data[a][0]))
-        elif col == 'Author':
-            self.items.sort(key=lambda a: data[a][1])
-        elif col == 'Date':
-            pass #--Default sort
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
