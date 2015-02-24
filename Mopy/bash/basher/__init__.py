@@ -346,19 +346,6 @@ class List(balt.UIList):
         self.checkcol = []
         self._gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
 
-    #--New way for self.cols, so PopulateColumns will work with
-    #  the optional columns menu ##: 3774b28f548742144ac1753643d87361b40f9523
-    def _getCols(self):
-        if hasattr(self,'colsKey'):
-            return settings[self.colsKey]
-        else:
-            return self._cols
-    def _setCols(self,value):
-        if hasattr(self,'colsKey'):
-            del self.colsKey
-        self._cols = value
-    cols = property(_getCols,_setCols)
-
     #--Items ----------------------------------------------
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         """Populate ListCtrl for specified item. [ABSTRACT]"""
@@ -726,12 +713,6 @@ class INIList(List):
             items.sort(key=lambda a: self.data[a].status < 0)
     extra_sortings = [_sortValidFirst]
 
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.ini.cols'
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix, sunkenBorder=False)
-
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
         following format:
@@ -993,8 +974,6 @@ class ModList(_ModsSortMixin, List):
                       _ModsSortMixin._activeModsFirst]
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.mods.cols'
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
@@ -1975,8 +1954,6 @@ class SaveList(List):
                  }
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.saves.cols'
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
@@ -3242,12 +3219,6 @@ class ScreensList(List):
                  'Modified': lambda self, a: self.data[a][1],
                 }
 
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.screens.cols'
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
-
     def OnDClick(self,event):
         """Double click a screenshot"""
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
@@ -3403,8 +3374,6 @@ class BSAList(List):
                 }
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.cols = settings['bash.BSAs.cols']
         #--Data/Items
         self.details = None #--Set by panel
         #--Parent init
@@ -3648,8 +3617,6 @@ class MessageList(List):
                 }
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.messages.cols'
         #--Other
         self.gText = None
         self.searchResults = None
