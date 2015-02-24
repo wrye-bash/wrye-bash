@@ -464,7 +464,7 @@ class List(balt.UIList):
         col = col or self.sort
         #--Reverse
         oldReverse = self.colReverse.get(col,0)
-        if col == 'Load Order': #--Disallow reverse for load
+        if col == 'Load Order' or col == 'Current Order': #--Disallow reverse for load
             reverse = 0
         elif reverse == -1 and col == self.sort:
             reverse = not oldReverse
@@ -524,6 +524,17 @@ class MasterList(List):
     itemMenu = Links()
     keyPrefix = 'bash.masters' ##: MasterList is a special beast
     editLabels = True
+    default_sort_col = 'Num'
+    sort_keys = {'Num': None, # sort_keys['Save Order'] =
+                 'File': lambda self, a: self.data[a].name.s,
+                 'Current Order': lambda self, a: self.loadOrderNames.index(
+                     self.data[a].name), # sort_keys['Load Order'] =
+                 }
+    ##: below copy paste from ModList
+    @property
+    def esmsFirst(self): return settings[self.keyPrefix + '.esmsFirst']
+    @esmsFirst.setter
+    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None):
         #--Columns
@@ -541,11 +552,6 @@ class MasterList(List):
         List.__init__(self, parent, listData, self.__class__.keyPrefix,
                       singleCell=True, sunkenBorder=False)
         self._setEditedFn = setEditedFn
-
-    @property
-    def colReverse(self):
-        """Do not reverse columns in Master Lists."""
-        return {}
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
@@ -662,40 +668,10 @@ class MasterList(List):
 
     #--Sort Items
     def SortItems(self,col=None,reverse=-2):
-        (col, reverse, oldcol) = self.GetSortSettings(col,reverse)
-        #--Sort
-        data = self.data
-        #--Start with sort by type
-        self.items.sort()
-        self.items.sort(key=lambda a: data[a].name.cext)
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Rating':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',u''))
-        elif col == 'Group':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col in ['Save Order','Num']:
-            self.items.sort()
-        elif col in ['Load Order','Current Order']:
-            loadOrderNames = self.loadOrderNames
-            data = self.data
-            self.items.sort(key=lambda a: loadOrderNames.index(data[a].name))
-        elif col == 'Status':
-            self.items.sort(lambda a,b: cmp(self.GetMasterStatus(a),self.GetMasterStatus(b)))
-        elif col == 'Author':
-            self.items.sort(lambda a,b: cmp(data[a].author.lower(),data[b].author.lower()))
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
+        col, reverse = super(MasterList, self).SortItems(col, reverse)
         #--ESMs First?
-        settings['bash.masters.esmsFirst'] = self.esmsFirst
-        if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key=lambda a: not data[a].isEsm())
+        if self.esmsFirst or col == 'Current Order':
+            self.items.sort(key=lambda a: self.data[a].name.cext) # esm < esp
 
     #--Relist
     def ReList(self):
@@ -719,11 +695,6 @@ class MasterList(List):
         self.ReList()
         self.PopulateItems()
         self._setEditedFn()
-
-    #--Item Sort
-    def OnColumnClick(self, event):
-        """MasterList: Don't do column head sort."""
-        event.Skip()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
