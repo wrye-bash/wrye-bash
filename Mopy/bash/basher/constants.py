@@ -212,22 +212,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.statusbar.hide': set(),
     'bash.statusbar.order': [],
     'bash.statusbar.showversion': False,
-    #--Wrye Bash: Statistics
-    'bash.fileStats.cols': ['Type','Count','Size'],
-    'bash.fileStats.sort': 'Type',
-    'bash.fileStats.colReverse': {
-        'Count':1,
-        'Size':1,
-        },
-    'bash.fileStats.colWidths': {
-        'Type':50,
-        'Count':50,
-        'Size':75,
-        },
-    'bash.fileStats.colAligns': {
-        'Count':1,
-        'Size':1,
-        },
     #--Wrye Bash: Group and Rating
     'bash.mods.autoGhost': False,
     'bash.mods.groups': list(bush.defaultGroups),
