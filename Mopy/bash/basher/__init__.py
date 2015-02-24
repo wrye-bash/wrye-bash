@@ -55,6 +55,7 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
+from functools import partial
 import os
 import re
 import sys
@@ -329,6 +330,8 @@ class SashTankPanel(SashPanel):
 #------------------------------------------------------------------------------
 class List(balt.UIList):
     icons = colorChecks
+    default_sort_col = 'OVERRIDE'
+    sort_keys = {}
 
     def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
                  dndList=False, dndColumns=(), **kwargs):
@@ -472,6 +475,28 @@ class List(balt.UIList):
         self.sort = col
         self.colReverse[col] = reverse
         return col,reverse
+
+    def SortItems(self,col=None,reverse=-2):
+        # bit complex due to sorting by name - simplify if def_key is always None
+        col, reverse = self.GetSortSettings(col, reverse)
+        oldcol = settings[self.keyPrefix + '.sort']
+        settings[self.keyPrefix + '.sort'] = col
+        #--Start with sort by name
+        self.items.sort(key=None)
+        def key(k): # if key is None then keep it None else provide self
+            k = self.sort_keys[k]
+            return k if k is None else partial(k, self)
+        def_key = key(self.default_sort_col)
+        if col != self.default_sort_col:
+            #--Default sort, if not already applied
+            if def_key is not None: self.items.sort(key=def_key)
+            self.items.sort(key=key(col), reverse=bool(reverse))
+        else:
+            if def_key is not None: self.items.sort(key=def_key,
+                                                    reverse=bool(reverse))
+            elif reverse: self.items.reverse()
+        self._setColumnSortIndicator(col, oldcol, reverse)
+        return col, reverse
 
     #--Event Handlers -------------------------------------
     def onUpdateUI(self,event):
@@ -2046,6 +2071,15 @@ class SaveList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     editLabels = True
+    default_sort_col = 'File'
+    sort_keys = {'File'    : None, # just sort by name
+                 'Modified': lambda self, a: self.data[a].mtime,
+                 'Size'    : lambda self, a: self.data[a].size,
+                 'Status'  : lambda self, a: self.data[a].getStatus(),
+                 'Player'  : lambda self, a: self.data[a].header.pcName,
+                 'PlayTime': lambda self, a: self.data[a].header.gameTicks,
+                 'Cell'    : lambda self, a: self.data[a].header.pcLocation,
+                 }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -2141,34 +2175,6 @@ class SaveList(List):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        oldcol = settings['bash.saves.sort']
-        settings['bash.saves.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        elif col == 'Status':
-            self.items.sort(key=lambda a: data[a].getStatus())
-        elif col == 'Player':
-            self.items.sort(key=lambda a: data[a].header.pcName)
-        elif col == 'PlayTime':
-            self.items.sort(key=lambda a: data[a].header.gameTicks)
-        elif col == 'Cell':
-            self.items.sort(key=lambda a: data[a].header.pcLocation)
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
-        self._setColumnSortIndicator(col, oldcol, reverse)
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -3319,6 +3325,10 @@ class ScreensList(List):
     icons = None # no icons
     _shellUI = True
     editLabels = True
+    default_sort_col = 'File'
+    sort_keys = {'File'    : None,
+                 'Modified': lambda self, a: self.data[a][1],
+                }
 
     def __init__(self, parent, listData, keyPrefix):
         #--Columns
@@ -3344,9 +3354,7 @@ class ScreensList(List):
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""
         if event.IsEditCancelled(): return
-
         newName = event.GetLabel()
-
         selected = self.GetSelected()
         rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I|re.U)
         maPattern = rePattern.match(newName)
@@ -3420,22 +3428,6 @@ class ScreensList(List):
         #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.screens.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a][1])
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
