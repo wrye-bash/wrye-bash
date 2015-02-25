@@ -24,7 +24,7 @@
 
 import re
 import time
-from ..balt import EnabledLink, AppendableLink, ItemLink, Link, RadioLink, \
+from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image
 from .. import balt, bosh, bush
 from .import People_Link

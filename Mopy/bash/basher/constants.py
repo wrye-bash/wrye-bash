@@ -212,24 +212,8 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
     'bash.statusbar.hide': set(),
     'bash.statusbar.order': [],
     'bash.statusbar.showversion': False,
-    #--Wrye Bash: Statistics
-    'bash.fileStats.cols': ['Type','Count','Size'],
-    'bash.fileStats.sort': 'Type',
-    'bash.fileStats.colReverse': {
-        'Count':1,
-        'Size':1,
-        },
-    'bash.fileStats.colWidths': {
-        'Type':50,
-        'Count':50,
-        'Size':75,
-        },
-    'bash.fileStats.colAligns': {
-        'Count':1,
-        'Size':1,
-        },
     #--Wrye Bash: Group and Rating
-    'bash.mods.autoGhost':False,
+    'bash.mods.autoGhost': False,
     'bash.mods.groups': list(bush.defaultGroups),
     'bash.mods.ratings': ['+','1','2','3','4','5','=','~'],
     #--Wrye Bash: Col (Sort) Names
@@ -262,7 +246,7 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Subject': _(u'Subject'),
         },
     #--Wrye Bash: Masters
-    'bash.masters.cols': ['File','Num', 'Current Order'],
+    'bash.masters.cols': ['File', 'Num', 'Current Order'],
     'bash.masters.esmsFirst': 1,
     'bash.masters.selectedFirst': 0,
     'bash.masters.sort': 'Num',
@@ -569,7 +553,8 @@ toolbar_buttons = (
         _(u"Oblivion Mod List Generator")),
         (u'BSACMD', imageList(u'tools/bsacommander%s.png'),
         _(u"Launch BSA Commander")),
-        (u'Tabula', imageList(u'tools/tabula%s.png'), _(u"Launch Tabula")),
+        (u'Tabula', imageList(u'tools/tabula%s.png'),
+         _(u"Launch Tabula")),
         (u'Tes4FilesPath', imageList(u'tools/tes4files%s.png'),
         _(u"Launch TES4Files")),
 )

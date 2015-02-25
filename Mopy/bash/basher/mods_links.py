@@ -106,15 +106,20 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self, event): _self.DoSave(event)
         self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
+        class _LoListLink(ItemLink):
+            def Execute(self, event):
+                """Select mods in list."""
+                selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in _self.loadListsDict[self.text]]
+                errorMessage = bosh.modInfos.selectExact(selectList)
+                self.window.RefreshUI()
+                if errorMessage: self._showError(errorMessage, self.text)
+        self.__class__.cls = _LoListLink
 
     @property
     def items(self):
         items = self.loadListsDict.keys()
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items
-
-    def SortWindow(self):
-        self.window.PopulateItems()
 
     def DoNone(self,event):
         """Unselect all mods."""
@@ -147,14 +152,6 @@ class Mods_LoadList(ChoiceLink):
                             _(u'Select All'))
         self.window.RefreshUI()
 
-    def DoList(self,event):
-        """Select mods in list."""
-        item = self.items[event.GetId() - self.idList.BASE]
-        selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in self.loadListsDict[item]]
-        errorMessage = bosh.modInfos.selectExact(selectList)
-        self.window.RefreshUI()
-        if errorMessage: self._showError(errorMessage, item)
-
     def DoSave(self,event):
         #--No slots left?
         if len(self.loadListsDict) >= (self.idList.MAX - self.idList.BASE + 1):
@@ -175,35 +172,28 @@ class Mods_LoadList(ChoiceLink):
         balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
 
 # "Sort by" submenu -----------------------------------------------------------
-class Mods_EsmsFirst(CheckLink):
+class Mods_EsmsFirst(CheckLink, EnabledLink):
     """Sort esms to the top."""
-    help = _(u'Sort masters by type')
+    help = _(u'Sort masters by type. Always on if current sort is Load Order.')
+    text = _(u'Type')
 
-    def __init__(self, prefix=u''):
-        super(Mods_EsmsFirst, self).__init__()
-        self.prefix = prefix
-        self.text = self.prefix + _(u'Type')
-
+    def _enable(self): return not self.window.forceEsmFirst()
     def _check(self): return self.window.esmsFirst
 
     def Execute(self,event):
         self.window.esmsFirst = not self.window.esmsFirst
-        self.window.PopulateItems()
+        self.window.SortItems()
 
 class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
     help = _(u'Sort loaded mods to the top')
-
-    def __init__(self, prefix=u''):
-        super(Mods_SelectedFirst, self).__init__()
-        self.prefix = prefix
-        self.text = self.prefix + _(u'Selection')
+    text = _(u'Selection')
 
     def _check(self): return self.window.selectedFirst
 
     def Execute(self,event):
         self.window.selectedFirst = not self.window.selectedFirst
-        self.window.PopulateItems()
+        self.window.SortItems()
 
 # "Oblivion.esm" submenu ------------------------------------------------------
 class Mods_OblivionVersion(CheckLink, EnabledLink):

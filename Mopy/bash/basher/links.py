@@ -281,13 +281,8 @@ def InitMasterLinks():
         sortMenu.links.append(Mods_EsmsFirst())
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
-        sortMenu.links.append(Files_SortBy('Author'))
-        sortMenu.links.append(Files_SortBy('Group'))
-        sortMenu.links.append(Files_SortBy('Installer'))
-        sortMenu.links.append(Files_SortBy('Load Order'))
-        sortMenu.links.append(Files_SortBy('Modified'))
-        sortMenu.links.append(Files_SortBy('Save Order'))
-        sortMenu.links.append(Files_SortBy('Status'))
+        sortMenu.links.append(Files_SortBy('Num'))
+        sortMenu.links.append(Files_SortBy('Current Order'))
         MasterList.mainMenu.append(sortMenu)
 
     #--MasterList: Item Links

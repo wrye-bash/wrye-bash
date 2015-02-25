@@ -22,9 +22,14 @@
 #
 # =============================================================================
 
-"""Menu items for the __item__ menu of the installer tab. Check before using
-BashFrame.iniList - can be None (ini panel not shown). Their window attribute
-points to the InstallersList singleton."""
+"""Installer*: Menu items for the __item__ menu of the installer tab. Their
+window attribute points to the InstallersList singleton. Check before using
+BashFrame.iniList - can be None (ini panel not shown).
+Installer_Espm_*: Menu items for the Esp/m Filter list in the installer tab.
+Their window attribute points to the InstallersPanel singleton.
+Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
+Their window attribute points to the InstallersPanel singleton.
+"""
 
 import StringIO
 import copy
@@ -58,8 +63,6 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'Installer_Delete',
            'Installer_Subs_SelectAll', 'Installer_Subs_DeselectAll',
            'Installer_Subs_ToggleSelection', 'Installer_Subs_ListSubPackages',
            'Installer_OpenNexus']
-
-gInstallers = None
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -205,9 +208,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             subs = []
             oldRemaps = copy.copy(installer.remaps)
             installer.remaps = {}
-            gInstallers.refreshCurrent(installer)
-            for index in range(gInstallers.gSubList.GetCount()):
-                subs.append(gInstallers.gSubList.GetString(index))
+            self.iPanel.refreshCurrent(installer)
+            for index in range(self.iPanel.gSubList.GetCount()):
+                subs.append(self.iPanel.gSubList.GetString(index))
             saved = bosh.settings['bash.wizard.size']
             default = settingDefaults['bash.wizard.size']
             pos = bosh.settings['bash.wizard.pos']
@@ -240,30 +243,30 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         bosh.settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
         if ret.Canceled:
             installer.remaps = oldRemaps
-            gInstallers.refreshCurrent(installer)
+            self.iPanel.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(gInstallers.gSubList.GetCount()):
+        for index in xrange(self.iPanel.gSubList.GetCount()):
             select = installer.subNames[index + 1] in ret.SelectSubPackages
-            gInstallers.gSubList.Check(index, select)
+            self.iPanel.gSubList.Check(index, select)
             installer.subActives[index + 1] = select
-        gInstallers.refreshCurrent(installer)
+        self.iPanel.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
-        espms = gInstallers.gEspmList.GetStrings()
+        espms = self.iPanel.gEspmList.GetStrings()
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
-        for index, espm in enumerate(gInstallers.espms):
+        for index, espm in enumerate(self.iPanel.espms):
             if espms[index] in ret.SelectEspms:
-                gInstallers.gEspmList.Check(index, True)
+                self.iPanel.gEspmList.Check(index, True)
             else:
-                gInstallers.gEspmList.Check(index, False)
+                self.iPanel.gEspmList.Check(index, False)
                 installer.espmNots.add(espm)
-        gInstallers.refreshCurrent(installer)
+        self.iPanel.refreshCurrent(installer)
         #Rename the espms that need renaming
         for oldName in ret.RenameEspms:
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
-        gInstallers.refreshCurrent(installer)
+        self.iPanel.refreshCurrent(installer)
         #Install if necessary
         if ret.Install:
             #If it's currently installed, anneal
@@ -274,7 +277,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                         self.idata.anneal(self.selected, progress)
                 finally:
                     self.idata.refresh(what='NS')
-                    gInstallers.RefreshUIMods()
+                    self.iPanel.RefreshUIMods()
             else:
                 #Install, if it's not installed
                 try:
@@ -282,7 +285,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                         self.idata.install(self.selected, progress)
                 finally:
                     self.idata.refresh(what='N')
-                    gInstallers.RefreshUIMods()
+                    self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
@@ -373,7 +376,7 @@ class Installer_Anneal(_InstallerLink):
             pass
         finally:
             self.idata.refresh(what='NS')
-            gInstallers.RefreshUIMods()
+            self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
 class Installer_Delete(_InstallerLink):
@@ -584,7 +587,7 @@ class Installer_Install(_InstallerLink):
                         self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
             self.idata.refresh(what='N')
-            gInstallers.RefreshUIMods()
+            self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
 class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
@@ -779,7 +782,7 @@ class Installer_Uninstall(_InstallerLink):
         finally:
             self.idata.refresh(what='NS')
             bosh.modInfos.plugins.saveLoadOrder()
-            gInstallers.RefreshUIMods()
+            self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
 class Installer_CopyConflicts(_InstallerLink):
@@ -887,31 +890,31 @@ class Installer_Espm_SelectAll(EnabledLink):
     """Select All Esp/ms in installer for installation."""
     text = _(u'Select All')
 
-    def _enable(self): return len(gInstallers.espms) != 0
+    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
+        installer = self.window.data[self.window.detailsItem]
         installer.espmNots = set()
-        for i in range(len(gInstallers.espms)):
-            gInstallers.gEspmList.Check(i, True)
-        gInstallers.refreshCurrent(installer)
+        for i in range(len(self.window.espms)):
+            self.window.gEspmList.Check(i, True)
+        self.window.refreshCurrent(installer)
 
 class Installer_Espm_DeselectAll(EnabledLink):
     """Deselect All Esp/ms in installer for installation."""
     text = _(u'Deselect All')
 
-    def _enable(self): return len(gInstallers.espms) != 0
+    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
+        installer = self.window.data[self.window.detailsItem]
         espmNots = installer.espmNots = set()
-        for i in range(len(gInstallers.espms)):
-            gInstallers.gEspmList.Check(i, False)
-            espm =GPath(gInstallers.gEspmList.GetString(i).replace(u'&&',u'&'))
+        for i in range(len(self.window.espms)):
+            self.window.gEspmList.Check(i, False)
+            espm =GPath(self.window.gEspmList.GetString(i).replace(u'&&',u'&'))
             espmNots.add(espm)
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Espm_Rename(EnabledLink):
     """Changes the installed name for an Esp/m."""
@@ -921,17 +924,18 @@ class Installer_Espm_Rename(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
-        curName =gInstallers.gEspmList.GetString(self.selected).replace(u'&&',u'&')
+        installer = self.window.data[self.window.detailsItem]
+        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+                                                                         u'&')
         if curName[0] == u'*':
             curName = curName[1:]
         _file = GPath(curName)
         newName = self._askText(_(u"Enter new name (without the extension):"),
                                 title=_(u"Rename Esp/m"), default=_file.sbody)
         if not newName: return
-        if newName in gInstallers.espms: return
+        if newName in self.window.espms: return
         installer.setEspmName(curName, newName + _file.cext)
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Espm_Reset(EnabledLink):
     """Resets the installed name for an Esp/m."""
@@ -939,8 +943,9 @@ class Installer_Espm_Reset(EnabledLink):
 
     def _enable(self):
         if self.selected == -1: return False
-        self.installer = installer = gInstallers.data[gInstallers.detailsItem]
-        curName =gInstallers.gEspmList.GetString(self.selected).replace(u'&&',u'&')
+        self.installer = installer = self.window.data[self.window.detailsItem]
+        curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
+                                                                         u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
         return installer.isEspmRenamed(curName)
@@ -948,31 +953,31 @@ class Installer_Espm_Reset(EnabledLink):
     def Execute(self,event):
         """Handle selection."""
         self.installer.resetEspmName(self.curName)
-        gInstallers.refreshCurrent(self.installer)
+        self.window.refreshCurrent(self.installer)
 
 class Installer_Espm_ResetAll(EnabledLink):
     """Resets all renamed Esp/ms."""
     text = _(u'Reset All Names')
 
-    def _enable(self): return len(gInstallers.espms) != 0
+    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
+        installer = self.window.data[self.window.detailsItem]
         installer.resetAllEspmNames()
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Espm_List(EnabledLink):
     """Lists all Esp/ms in installer for user information/w/e."""
     text = _(u'List Esp/ms')
 
-    def _enable(self): return len(gInstallers.espms) != 0
+    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self,event):
         """Handle selection."""
-        subs = _(u'Esp/m List for %s:') % gInstallers.data[
-            gInstallers.detailsItem].archive + u'\n[spoiler]\n'
-        espm_list = gInstallers.gEspmList
+        subs = _(u'Esp/m List for %s:') % self.window.data[
+            self.window.detailsItem].archive + u'\n[spoiler]\n'
+        espm_list = self.window.gEspmList
         for index in range(espm_list.GetCount()):
             subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
                     espm_list.GetString(index) + '\n'
@@ -985,7 +990,7 @@ class Installer_Espm_List(EnabledLink):
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
 class _Installer_Subs(EnabledLink):
-    def _enable(self): return gInstallers.gSubList.GetCount() > 1
+    def _enable(self): return self.window.gSubList.GetCount() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):
     """Select All sub-packages in installer for installation."""
@@ -993,11 +998,11 @@ class Installer_Subs_SelectAll(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
-        for index in xrange(gInstallers.gSubList.GetCount()):
-            gInstallers.gSubList.Check(index, True)
+        installer = self.window.data[self.window.detailsItem]
+        for index in xrange(self.window.gSubList.GetCount()):
+            self.window.gSubList.Check(index, True)
             installer.subActives[index + 1] = True
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Subs_DeselectAll(_Installer_Subs):
     """Deselect All sub-packages in installer for installation."""
@@ -1005,11 +1010,11 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
-        for index in xrange(gInstallers.gSubList.GetCount()):
-            gInstallers.gSubList.Check(index, False)
+        installer = self.window.data[self.window.detailsItem]
+        for index in xrange(self.window.gSubList.GetCount()):
+            self.window.gSubList.Check(index, False)
             installer.subActives[index + 1] = False
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Subs_ToggleSelection(_Installer_Subs):
     """Toggles selection state of all sub-packages in installer for
@@ -1018,12 +1023,12 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
-        for index in xrange(gInstallers.gSubList.GetCount()):
+        installer = self.window.data[self.window.detailsItem]
+        for index in xrange(self.window.gSubList.GetCount()):
             check = not installer.subActives[index+1]
-            gInstallers.gSubList.Check(index, check)
+            self.window.gSubList.Check(index, check)
             installer.subActives[index + 1] = check
-        gInstallers.refreshCurrent(installer)
+        self.window.refreshCurrent(installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
@@ -1031,12 +1036,12 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = gInstallers.data[gInstallers.detailsItem]
+        installer = self.window.data[self.window.detailsItem]
         subs = _(u'Sub-Packages List for %s:') % installer.archive
         subs += u'\n[spoiler]\n'
-        for index in xrange(gInstallers.gSubList.GetCount()):
-            subs += [u'   ', u'** '][gInstallers.gSubList.IsChecked(
-                index)] + gInstallers.gSubList.GetString(index) + u'\n'
+        for index in xrange(self.window.gSubList.GetCount()):
+            subs += [u'   ', u'** '][self.window.gSubList.IsChecked(
+                index)] + self.window.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), asDialog=False,
@@ -1052,6 +1057,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
+        self.window = window # and the idata access is via self.window
         return self.isSelectedArchives()
 
     def Execute(self,event):
@@ -1164,6 +1170,7 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
 
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
+        self.window = window # and the idata access is via self.window
         return self.isSingleProject()
 
     def Execute(self,event):

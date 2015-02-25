@@ -60,7 +60,7 @@ import re
 import sys
 import time
 from types import StringTypes, ClassType
-from operator import attrgetter
+from functools import partial
 
 #--wxPython
 import wx
@@ -112,8 +112,6 @@ isUAC = False      # True if the game is under UAC protection
 # Singletons ------------------------------------------------------------------
 modDetails = None
 saveDetails = None
-gInstallers = None
-gPeople = None # New global - yak
 
 # Settings --------------------------------------------------------------------
 settings = None
@@ -134,18 +132,20 @@ def SetUAC(item):
         else:
             balt.setUAC(item,isUAC)
 
-# Tank link mixins to access the Tank data - not final
+##: DEPRECATED: Tank link mixins to access the Tank data. They should be
+# replaced by self.window.method but I keep them till encapsulation reduces
+# their use to a minimum
 class Installers_Link(ItemLink):
     """InstallersData mixin"""
-
     @property
-    def idata(self): return gInstallers.data # InstallersData singleton
+    def idata(self): return self.window.data # InstallersData singleton
+    @property
+    def iPanel(self): return self.window.panel # ex gInstallers InstallersPanel
 
 class People_Link(Link):
     """PeopleData mixin"""
-
     @property
-    def pdata(self): return gPeople.data # PeopleData singleton
+    def pdata(self): return self.window.data # PeopleData singleton
 
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
@@ -215,7 +215,7 @@ tabInfo = {
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
     'PM Archive':['MessagePanel', _(u"PM Archive"), None],
     'People':['PeoplePanel', _(u"People"), None],
-    }
+}
 
 from .dialogs import ListBoxes # TODO(ut): cyclic import
 # Windows ---------------------------------------------------------------------
@@ -330,35 +330,18 @@ class SashTankPanel(SashPanel):
 class List(balt.UIList):
     icons = colorChecks
 
-    def __init__(self, parent, listData=None, keyPrefix='', dndFiles=False,
-                 dndList=False, dndColumns=(), **kwargs):
+    def __init__(self, parent, listData=None, keyPrefix='', details=None):
         #--ListCtrl
         #--MasterList: masterInfo = self.data[item], where item is id number
         # rest of List subclasses provide a non None listData
         self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
-                             dndList=dndList, dndColumns=dndColumns, **kwargs)
+        balt.UIList.__init__(self, parent, keyPrefix, details=details)
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
-        #--Events: Items
-        self.hitIcon = 0
         #--Events: Columns
         self.checkcol = []
         self._gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
-
-    #--New way for self.cols, so PopulateColumns will work with
-    #  the optional columns menu ##: 3774b28f548742144ac1753643d87361b40f9523
-    def _getCols(self):
-        if hasattr(self,'colsKey'):
-            return settings[self.colsKey]
-        else:
-            return self._cols
-    def _setCols(self,value):
-        if hasattr(self,'colsKey'):
-            del self.colsKey
-        self._cols = value
-    cols = property(_getCols,_setCols)
 
     #--Items ----------------------------------------------
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -370,33 +353,35 @@ class List(balt.UIList):
         self.items = self.data.keys()
         return self.items
 
-    def PopulateItems(self,col=None,reverse=-2,selected='SAME'):
+    def PopulateItems(self,col=None,reverse='CURRENT',selected='SAME'):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        #--Sort Dirty?
-        if self.sortDirty:
-            self.sortDirty = 0
-            (col, reverse) = (None,-1)
         #--Items to select afterwards. (Defaults to current selection.)
+        # do it _before_ sorting
         if selected == 'SAME': selected = set(self.GetSelected())
         #--Reget items
-        self.GetItems()
-        self.SortItems(col,reverse)
-        #--Delete Current items
+        items = set(self.GetItems())
         listCtrl = self._gList
-        listItemCount = listCtrl.GetItemCount()
-        #--Populate items
-        for itemDex in xrange(len(self.items)):
-            mode = int(itemDex >= listItemCount)
-            self.PopulateItem(itemDex,mode,selected)
-        #--Delete items?
-        while listCtrl.GetItemCount() > len(self.items):
-            listCtrl.DeleteItem(listCtrl.GetItemCount()-1)
+        index = 0
+        #--Update existing items.
+        while index < listCtrl.GetItemCount():
+            item = self.GetItem(index)
+            if item not in items:
+                listCtrl.RemoveItemAt(index)
+            else:
+                self.PopulateItem(index,selected=selected)
+                items.remove(item)
+                index += 1
+        #--Add remaining new items
+        for item in filter(lambda x: x in items, self.items): # otherwise index out of bounds
+            self.PopulateItem(item, mode=True, selected=selected) ##: yak
+        #--Sort
+        self.SortItems(col, reverse)
 
     def GetSelected(self):
         """Return list of items selected (hilighted) in the interface."""
         #--No items?
-        if not 'items' in self.__dict__: return []
+        if not 'items' in self.__dict__: return [] # set in GetItems()
         selected = []
         itemDex = -1
         while True:
@@ -405,7 +390,7 @@ class List(balt.UIList):
             if itemDex == -1 or itemDex >= len(self.items):
                 break
             else:
-                selected.append(self.items[itemDex])
+                selected.append(self.GetItem(itemDex))
         return selected
 
     def DeleteSelected(self,shellUI=False,noRecycle=False):
@@ -445,34 +430,6 @@ class List(balt.UIList):
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
 
-    def GetSortSettings(self,col,reverse):
-        """Return parsed col, reverse arguments. Used by SortSettings.
-        col: sort variable.
-          Defaults to last sort. (self.sort)
-        reverse: sort order
-          1: Descending order
-          0: Ascending order
-         -1: Use current reverse settings for sort variable, unless
-             last sort was on same sort variable -- in which case,
-             reverse the sort order.
-         -2: Use current reverse setting for sort variable.
-        """
-        #--Sort Column
-        if not col:
-            col = self.sort
-        #--Reverse
-        oldReverse = self.colReverse.get(col,0)
-        if col == 'Load Order': #--Disallow reverse for load
-            reverse = 0
-        elif reverse == -1 and col == self.sort:
-            reverse = not oldReverse
-        elif reverse < 0:
-            reverse = oldReverse
-        #--Done
-        self.sort = col
-        self.colReverse[col] = reverse
-        return col,reverse
-
     #--Event Handlers -------------------------------------
     def onUpdateUI(self,event):
         if self.checkcol:
@@ -493,71 +450,87 @@ class List(balt.UIList):
         the old size before this event completes just save what
         column is being edited and process after in OnUpdateUI()"""
         self.checkcol = [event.GetColumn()]
+        settings.setdefault(self.colWidthsKey, {}) ##: hack - move to UIList
         settings.setChanged(self.colWidthsKey)
         event.Skip()
 
-    #--Item Sort
-    def OnColumnClick(self, event):
-        """List OnColumnClick override - cf Tank."""
-        self.PopulateItems(self.cols[event.GetColumn()],-1)
+class _ModsSortMixin(object):
+
+    _esmsFirstCols = balt.UIList.nonReversibleCols
+    @property
+    def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
+                            True) or self.sort in self._esmsFirstCols
+    @esmsFirst.setter
+    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
+
+    @property
+    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
+    @selectedFirst.setter
+    def selectedFirst(self, val):
+        settings[self.keyPrefix + '.selectedFirst'] = val
+
+    def _sortEsmsFirst(self, items):
+        if self.esmsFirst: items.sort(key=lambda a: not self.data[a].isEsm())
+
+    def _activeModsFirst(self, items):
+        if self.selectedFirst:
+            active = bosh.modInfos.ordered
+            items.sort(key=lambda x: x not in set(
+                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+
+    def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
 
 #------------------------------------------------------------------------------
-class MasterList(List):
+class MasterList(_ModsSortMixin, List):
     mainMenu = Links()
     itemMenu = Links()
-    keyPrefix = 'bash.masters' ##: MasterList is a special beast
-    editLabels = True
+    keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
+    _editLabels = True
+    #--Sorting
+    _default_sort_col = 'Num'
+    _sort_keys = {'Num': None, # sort_keys['Save Order'] =
+                 'File': lambda self, a: self.data[a].name.s.lower(),
+                 'Current Order': lambda self, a: self.loadOrderNames.index(
+                     self.data[a].name), # sort_keys['Load Order'] =
+                 }
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst]
+    _sunkenBorder, _singleCell = False, True
 
-    def __init__(self, parent, fileInfo, setEditedFn, listData=None):
-        #--Columns
-        self.cols = settings['bash.masters.cols']
+    @property
+    def cols(self):
+        # using self.__class__.keyPrefix for common saves/mods masters settings
+        return settings[self.__class__.keyPrefix + '.cols']
+
+    def __init__(self, parent, fileInfo, setEditedFn, listData=None,
+                 keyPrefix=keyPrefix):
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
-        self.prevId = -1
         self.items = [] #--Item numbers in display order.
-        self.fileOrderItems = []
         self.loadOrderNames = []
-        self.esmsFirst = settings['bash.masters.esmsFirst']
-        self.selectedFirst = settings['bash.masters.selectedFirst']
-        #--Parent init ##: notice it does not use Panel's keyPrefix...
-        List.__init__(self, parent, listData, self.__class__.keyPrefix,
-                      singleCell=True, sunkenBorder=False)
+        #--Parent init
+        List.__init__(self, parent, listData, keyPrefix)
         self._setEditedFn = setEditedFn
-
-    @property
-    def colReverse(self):
-        """Do not reverse columns in Master Lists."""
-        return {}
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
-
-    #--NewItemNum
-    def newId(self):
-        self.prevId += 1
-        return self.prevId
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
         self.ClearSelected()
         self.edited = False
         self.fileInfo = fileInfo
-        self.prevId = -1
         self.data.clear()
         del self.items[:]
-        del self.fileOrderItems[:]
         #--Null fileInfo?
         if not fileInfo:
-            self.PopulateItems()
+            self.PopulateItems() #Delete all items ??
             return
         #--Fill data and populate
-        for masterName in fileInfo.header.masters:
-            item = self.newId()
+        for mi, masterName in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masterName,0)
-            self.data[item] = masterInfo
-            self.items.append(item)
-            self.fileOrderItems.append(item)
+            self.data[mi] = masterInfo
+            self.items.append(mi)
         self.ReList()
         self.PopulateItems()
 
@@ -568,7 +541,7 @@ class MasterList(List):
         status = masterInfo.getStatus()
         if status == 30:
             return status
-        fileOrderIndex = self.fileOrderItems.index(item)
+        fileOrderIndex = item
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.ordered
         if fileOrderIndex != loadOrderIndex:
@@ -587,7 +560,10 @@ class MasterList(List):
 
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
-        itemId = self.items[itemDex]
+        if mode: # inserting, GetItem will result in a wx error dialog
+            itemId = itemDex
+        else:
+            itemId = self.GetItem(itemDex)
         masterInfo = self.data[itemId]
         masterName = masterInfo.name
         cols = self.cols
@@ -601,16 +577,16 @@ class MasterList(List):
                     voCurrent = bosh.modInfos.voCurrent
                     if voCurrent: value += u' ['+voCurrent+u']'
             elif col == 'Num':
-                value = u'%02X' % (self.fileOrderItems.index(itemId),)
+                value = u'%02X' % itemId
             elif col == 'Current Order':
                 #print itemId
-                if masterName in bosh.modInfos.plugins.LoadOrder:
-                    value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                if masterName in bosh.modInfos.ordered:
+                    value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
                 else:
                     value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
-                listCtrl.InsertStringItem(itemDex, value)
+                listCtrl.InsertListCtrlItem(itemDex, value, itemId)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
         #--Font color
@@ -643,46 +619,9 @@ class MasterList(List):
         #--Selection State
         self.SelectItemAtIndex(itemDex, masterName in selected)
 
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        #--Sort
-        data = self.data
-        #--Start with sort by type
-        self.items.sort()
-        self.items.sort(key=lambda a: data[a].name.cext)
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Rating':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',u''))
-        elif col == 'Group':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col in ['Save Order','Num']:
-            self.items.sort()
-        elif col in ['Load Order','Current Order']:
-            loadOrderNames = self.loadOrderNames
-            data = self.data
-            self.items.sort(key=lambda a: loadOrderNames.index(data[a].name))
-        elif col == 'Status':
-            self.items.sort(lambda a,b: cmp(self.GetMasterStatus(a),self.GetMasterStatus(b)))
-        elif col == 'Author':
-            self.items.sort(lambda a,b: cmp(data[a].author.lower(),data[b].author.lower()))
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
-        #--ESMs First?
-        settings['bash.masters.esmsFirst'] = self.esmsFirst
-        if self.esmsFirst or col == 'Load Order':
-            self.items.sort(key=lambda a: not data[a].isEsm())
-
     #--Relist
     def ReList(self):
-        fileOrderNames = [self.data[item].name for item in self.fileOrderItems]
+        fileOrderNames = [v.name for v in self.data.values()]
         self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames,False)
 
     #--InitEdit
@@ -702,11 +641,6 @@ class MasterList(List):
         self.ReList()
         self.PopulateItems()
         self._setEditedFn()
-
-    #--Item Sort
-    def OnColumnClick(self, event):
-        """MasterList: Don't do column head sort."""
-        event.Skip()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -752,20 +686,21 @@ class MasterList(List):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data[item].name for item in self.fileOrderItems]
+        return [self.data[item].name for item in sorted(self.items)]
 
 #------------------------------------------------------------------------------
 class INIList(List):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.ini.cols'
-        self.sortValid = settings['bash.ini.sortValid']
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix, sunkenBorder=False)
+    _sort_keys = {'File': None,
+                 'Installer': lambda self, a: bosh.iniInfos.table.getItem(
+                     a, 'installer', u''),
+                }
+    def _sortValidFirst(self, items):
+        if settings['bash.ini.sortValid']:
+            items.sort(key=lambda a: self.data[a].status < 0)
+    _extra_sortings = [_sortValidFirst]
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -815,10 +750,11 @@ class INIList(List):
         self.panel.SetStatusCount()
 
     def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
+        #--String name of item? ##: YAK
         if not isinstance(itemDex,int):
+            fileName = itemDex
             itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
+        else: fileName = GPath(self.GetItem(itemDex))
         fileInfo = self.data[fileName]
         cols = self.cols
         listCtrl = self._gList
@@ -829,7 +765,7 @@ class INIList(List):
             elif col == 'Installer':
                 value = self.data.table.getItem(fileName, 'installer', u'')
             if mode and colDex == 0:
-                listCtrl.InsertStringItem(itemDex, value)
+                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
         status = fileInfo.getStatus()
@@ -868,26 +804,6 @@ class INIList(List):
         listCtrl.SetItem(item)
         self.SelectItemAtIndex(itemDex, fileName in selected)
 
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.ini.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        self.items.sort(key = attrgetter('cext'))
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.iniInfos.table.getItem(a,'installer',u''))
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
-        #--Valid Tweaks first?
-        self.sortValid = settings['bash.ini.sortValid']
-        if self.sortValid:
-            self.items.sort(key=lambda a: self.data[a].status < 0)
-
     def OnLeftDown(self,event):
         """Handle click on icon events"""
         event.Skip()
@@ -905,17 +821,14 @@ class INIList(List):
                        )
             if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
-        dir = tweak.dir
         #--No point applying a tweak that's already applied
-        file = dir.join(self.items[hitItem])
-        self.data.ini.applyTweakFile(file)
+        file_ = tweak.dir.join(self.items[hitItem])
+        self.data.ini.applyTweakFile(file_)
         self.RefreshUI('VALID')
         iniPanel.iniContents.RefreshUI()
         iniPanel.tweakContents.RefreshUI(self.data[0])
 
-    def OnItemSelected(self, event):
-        """This is set by the IniPanel to its OnSelectTweak()."""
-        event.Skip()
+    def OnItemSelected(self, event): self.panel.OnSelectTweak(event)
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -1023,26 +936,31 @@ class INILineCtrl(wx.ListCtrl):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class ModList(List):
+class ModList(_ModsSortMixin, List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.mods.cols'
-        #--Data/Items
-        self.details = None #--Set by panel
-        self.esmsFirst = settings['bash.mods.esmsFirst']
-        self.selectedFirst = settings['bash.mods.selectedFirst']
-        #--Parent init
-        # Image List: Column sorting order indicators # TODO(ut): to UIList
-        # explorer style ^ == ascending
-        checkboxesIL = self.icons.GetImageList()
-        self.sm_up = checkboxesIL.Add(balt.SmallUpArrow.GetBitmap())
-        self.sm_dn = checkboxesIL.Add(balt.SmallDnArrow.GetBitmap())
-        List.__init__(self, parent, listData, keyPrefix, dndList=True,
-                      dndColumns=['Load Order'], sunkenBorder=False)
+    _sort_keys = {
+        'File': None,
+        'Author': lambda self, a: self.data[a].header.author.lower(),
+        'Rating': lambda self, a: bosh.modInfos.table.getItem(
+                     a, 'rating', u''),
+        'Group': lambda self, a: bosh.modInfos.table.getItem(a, 'group', u''),
+        'Installer': lambda self, a: bosh.modInfos.table.getItem(
+                     a, 'installer', u''),
+        # FIXME(ut): quadratic + accessing modInfos.plugins which is private
+        'Load Order': lambda self, a: a in bosh.modInfos.plugins.LoadOrder and
+                                      bosh.modInfos.plugins.LoadOrder.index(a),
+        'Modified': lambda self, a: self.data[a].getPath().mtime,
+        'Size': lambda self, a: self.data[a].size,
+        'Status': lambda self, a: self.data[a].getStatus(),
+        'Mod Status': lambda self, a: self.data[a].txt_status(),
+        'CRC': lambda self, a: self.data[a].cachedCrc(),
+    }
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst,
+                      _ModsSortMixin._activeModsFirst]
+    _dndList, _dndColumns = True, ['Load Order']
+    _sunkenBorder = False
 
     #-- Drag and Drop-----------------------------------------------------
     def OnDropIndexes(self, indexes, newIndex):
@@ -1094,8 +1012,9 @@ class ModList(List):
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
+            fileName = itemDex
             itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
+        else: fileName = GPath(self.GetItem(itemDex))
         fileInfo = self.data[fileName]
         fileBashTags = bosh.modInfos[fileName].getBashTags()
         cols = self.cols
@@ -1133,11 +1052,9 @@ class ModList(List):
                 value = u'-'
             #--Insert/SetString
             if mode and (colDex == 0):
-                listCtrl.InsertStringItem(itemDex, value)
+                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
-        #--Default message
-        mouseText = u''
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
@@ -1148,6 +1065,7 @@ class ModList(List):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,checkMark))
         #--Font color
         item = listCtrl.GetItem(itemDex)
+        #--Default message
         mouseText = u''
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
@@ -1224,57 +1142,6 @@ class ModList(List):
         self.mouseTexts[itemDex] = mouseText
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-        #--Status bar text
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        oldcol = settings['bash.mods.sort']
-        settings['bash.mods.sort'] = col
-        selected = bosh.modInfos.ordered
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        self.items.sort(key = attrgetter('cext'))
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Author':
-            self.items.sort(key=lambda a: data[a].header.author.lower())
-        elif col == 'Rating':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'rating',u''))
-        elif col == 'Group':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'group',u''))
-        elif col == 'Installer':
-            self.items.sort(key=lambda a: bosh.modInfos.table.getItem(a,'installer',u''))
-        elif col == 'Load Order':
-            self.items = bosh.modInfos.getOrdered(self.items,False)
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].getPath().mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        elif col == 'Status':
-            self.items.sort(key=lambda a: data[a].getStatus())
-        elif col == 'Mod Status':
-            self.items.sort(key=lambda a: data[a].txt_status())
-        elif col == 'CRC':
-            self.items.sort(key=lambda a: data[a].cachedCrc())
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
-        #--Selected First?
-        settings['bash.mods.selectedFirst'] = self.selectedFirst
-        if self.selectedFirst:
-            active = set(selected) | bosh.modInfos.imported | bosh.modInfos.merged
-            self.items.sort(key=lambda x: x not in active)
-        #set column sort image
-        try:
-            listCtrl = self._gList
-            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
-            except: pass # if old column no longer is active this will fail but not a problem since it doesn't exist anyways.
-            listCtrl.SetColumnImage(self.colDict[col],
-                                    self.sm_dn if reverse else self.sm_up)
-        except: pass
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -1294,8 +1161,7 @@ class ModList(List):
         """Char event: Reorder, Check/Uncheck."""
         ##Ctrl+Up and Ctrl+Down
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
-            (settings['bash.mods.sort'] == 'Load Order')
-            ):
+            (self.sort == 'Load Order')):
                 orderKey = lambda x: self.items.index(x)
                 moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
                 isReversed = (moveMod != -1)
@@ -1374,7 +1240,7 @@ class ModList(List):
                         msg = _(u'Plugins may not be sorted before the game\'s master file.')
                     else:
                         msg = e.msg
-                    balt.showError(self,_(u'%s') % msg)
+                    balt.showError(self, u'%s' % msg)
             #--Select?
             else:
                 ## For now, allow selecting unicode named files, for testing
@@ -1428,7 +1294,7 @@ class _SashDetailsPanel(SashPanel):
 
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
-    keyPrefix = 'bash.mods.details'
+    keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
@@ -1461,7 +1327,8 @@ class ModDetails(_SashDetailsPanel):
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            self.masters = MasterList(masterPanel,None,self.SetEdited)
+            self.masters = MasterList(masterPanel, None, self.SetEdited,
+                                      keyPrefix=self.keyPrefix)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -1715,14 +1582,15 @@ class ModDetails(_SashDetailsPanel):
         #--Links closure
         mod_info = self.modInfo
         mod_tags = mod_info.getBashTags()
-        isAuto = bosh.modInfos.table.getItem(mod_info.name,'autoBashTags',True)
+        is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
+                                              True)
         all_tags = self.allTags
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
-            def _check(self): return isAuto
+            def _check(self): return is_auto
             def Execute(self, event):
                 """Handle selection of automatic bash tags."""
                 if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
@@ -1737,7 +1605,7 @@ class ModDetails(_SashDetailsPanel):
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
             text = _(u'Copy to Description')
-            def _enable(self): return not isAuto and mod_tags != bashTagsDesc
+            def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self, event):
                 """Copy manually assigned bash tags into the mod description"""
                 mod_info.setBashTagsDesc(mod_info.getBashTags())
@@ -1806,7 +1674,6 @@ class INIPanel(SashPanel):
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
-        self.uiList.OnItemSelected = lambda s, e: self.OnSelectTweak(e)
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -2029,10 +1896,10 @@ class ModPanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
-        BashFrame.modList = ModList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.modList
         self.modDetails = ModDetails(right)
-        self.uiList.details = self.modDetails
+        self.uiList = BashFrame.modList = ModList(left, listData=self.listData,
+                                                  keyPrefix=self.keyPrefix,
+                                                  details=self.modDetails)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
@@ -2057,23 +1924,20 @@ class SaveList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    editLabels = True
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.saves.cols'
-        #--Data/Items
-        self.details = None #--Set by panel
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+    _editLabels = True
+    _sort_keys = {'File'    : None, # just sort by name
+                 'Modified': lambda self, a: self.data[a].mtime,
+                 'Size'    : lambda self, a: self.data[a].size,
+                 'Status'  : lambda self, a: self.data[a].getStatus(),
+                 'Player'  : lambda self, a: self.data[a].header.pcName,
+                 'PlayTime': lambda self, a: self.data[a].header.gameTicks,
+                 'Cell'    : lambda self, a: self.data[a].header.pcLocation,
+                 }
 
     def OnBeginEditLabel(self,event):
-        """Start renaming saves"""
-        item = self.items[event.GetIndex()]
-        # Change the selection to not include the extension
-        editbox = self._gList.GetEditControl()
+        """Start renaming saves: deselect the extension."""
         to = len(GPath(event.GetLabel()).sbody)
-        editbox.SetSelection(0,to)
+        (self._gList.GetEditControl()).SetSelection(0,to)
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
@@ -2121,8 +1985,9 @@ class SaveList(List):
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
+            fileName = itemDex
             itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
+        else: fileName = GPath(self.GetItem(itemDex))
         fileInfo = self.data[fileName]
         cols = self.cols
         listCtrl = self._gList
@@ -2144,7 +2009,7 @@ class SaveList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                listCtrl.InsertStringItem(itemDex, value)
+                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
         #--Image
@@ -2153,32 +2018,6 @@ class SaveList(List):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.saves.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        elif col == 'Status':
-            self.items.sort(key=lambda a: data[a].getStatus())
-        elif col == 'Player':
-            self.items.sort(key=lambda a: data[a].header.pcName)
-        elif col == 'PlayTime':
-            self.items.sort(key=lambda a: data[a].header.gameTicks)
-        elif col == 'Cell':
-            self.items.sort(key=lambda a: data[a].header.pcLocation)
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -2208,7 +2047,7 @@ class SaveList(List):
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
-    keyPrefix = 'bash.saves.details'
+    keyPrefix = 'bash.saves.details' # used in sash/scroll position, sorting
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
@@ -2232,7 +2071,8 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.masters = MasterList(masterPanel,None,self.SetEdited)
+        self.masters = MasterList(masterPanel, None, self.SetEdited,
+                                  keyPrefix=self.keyPrefix)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -2416,10 +2256,10 @@ class SavePanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        BashFrame.saveList = SaveList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.saveList
         self.saveDetails = SaveDetails(right)
-        BashFrame.saveList.details = self.saveDetails
+        self.uiList = BashFrame.saveList = SaveList(left, self.listData,
+                                                    keyPrefix=self.keyPrefix,
+                                                    details=self.saveDetails)
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
@@ -2445,16 +2285,44 @@ class InstallersList(balt.Tank):
     itemMenu = Links()
     icons = installercons
     # _shellUI = True # FIXME(ut): shellUI path does not grok markers
-    editLabels = True
+    _editLabels = True
+    _default_sort_col = 'Package'
+    _sort_keys = {'Package': None,
+                 'Files': lambda self, x: len(self.data[x].fileSizeCrcs)
+                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
+                 'Order': lambda self, x: self.data[x].order,
+                 'Size': lambda self, x: self.data[x].size
+                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
+                 'Modified': lambda self, x: self.data[x].modified,
+                }
+    #--Special sorters
+    def _sortStructure(self, items):
+        if settings['bash.installers.sortStructure']:
+            items.sort(key=lambda self, x: self.data[x].type)
+    def _sortActive(self, items):
+        if settings['bash.installers.sortActive']:
+            items.sort(key=lambda x: not self.data[x].isActive)
+    def _sortProjects(self, items):
+        if settings['bash.installers.sortProjects']:
+            items.sort(key=lambda x: not isinstance(self.data[x],
+                                                    bosh.InstallerProject))
+    _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
+    #--DnD
+    _dndList, _dndFiles, _dndColumns = True, True, ['Order']
 
-    def __init__(self, parent, data, keyPrefix, details=None):
-        balt.Tank.__init__(self, parent, data, keyPrefix, details=details,
-                           dndList=True, dndFiles=True, dndColumns=['Order'])
-        self.hitItem = None
-        self.hitTime = 0
-
-    def GetColumnDex(self,column):
-        return settingDefaults['bash.installers.cols'].index(column)
+    #--Item Info
+    def getColumns(self, item):
+        labels, installer = {}, self.data[item]
+        marker = isinstance(installer, bosh.InstallerMarker)
+        labels['Package'] = item.s
+        labels['Files'] = formatInteger(
+            len(installer.fileSizeCrcs)) if not marker else u''
+        labels['Order'] = unicode(installer.order)
+        labels['Modified'] = formatDate(installer.modified)
+        siz = installer.size
+        siz = u'0' if siz == 0 else formatInteger(max(siz, 1024) / 1024)
+        labels['Size'] = siz + u' KB' if not marker else u''
+        return labels
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -2695,8 +2563,8 @@ class InstallersList(balt.Tank):
             BashFrame.modList.RefreshUI()
             if BashFrame.iniList:
                 BashFrame.iniList.RefreshUI()
-        gInstallers.frameActivated = True
-        gInstallers.ShowPanel()
+        self.panel.frameActivated = True
+        self.panel.ShowPanel()
 
     def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
         super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
@@ -2710,23 +2578,21 @@ class InstallersList(balt.Tank):
         code = event.GetKeyCode()
         ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
         if event.CmdDown() and code in balt.wxArrows:
-            if len(self.GetSelected()) < 1: return
-            orderKey = lambda x: self.data.data[x].order
-            maxPos = max(self.data.data[x].order for x in self.data.data)
-            if code in balt.wxArrowDown:
-                moveMod = 1
-                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[-1]) + 2
-            else:
-                moveMod = -1
-                visibleIndex = self.GetIndex(sorted(self.GetSelected(),key=orderKey)[0]) - 2
-            for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=(moveMod != -1)):
+            selected = self.GetSelected()
+            if len(selected) < 1: return
+            orderKey = partial(self._sort_keys['Order'], self)
+            moveMod = 1 if code in balt.wxArrowDown else -1 # move down or up
+            sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
+            # get the index two positions after the last or before the first
+            visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
+            maxPos = max(x.order for x in self.data.values())
+            for thisFile in sorted_:
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
             self.data.refresh(what='IN')
             self.RefreshUI()
-            if visibleIndex > maxPos: visibleIndex = maxPos
-            elif visibleIndex < 0: visibleIndex = 0
+            visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self._gList.EnsureVisible(visibleIndex)
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
@@ -2742,9 +2608,10 @@ class InstallersList(balt.Tank):
         if isinstance(self.data[item],bosh.InstallerMarker):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
-            sorted = self.data.getSorted('order',False,False)
+            sorted_ = self._SortItems(col='order', reverse=False,
+                                     sortSpecial=False, items=self.data.keys())
             item = self.data[item]
-            for nextItem in sorted[item.order+1:]:
+            for nextItem in sorted_[item.order+1:]:
                 installer = self.data[nextItem]
                 if isinstance(installer,bosh.InstallerMarker):
                     break
@@ -2762,11 +2629,11 @@ class InstallersList(balt.Tank):
                 self._gList.EditLabel(index)
 
     def addMarker(self):
-        index = self.GetIndex(GPath(u'===='))
-        if index == -1:
+        try:
+            index = self.GetIndex(GPath(u'===='))
+        except KeyError: # u'====' not found in the internal dictionary
             self.data.addMarker(u'====')
-            self.data.refresh(what='OS')
-            gInstallers.RefreshUIMods()
+            self.panel.RefreshUIMods()
             index = self.GetIndex(GPath(u'===='))
         if index != -1:
             self.ClearSelected()
@@ -2797,11 +2664,7 @@ class InstallersPanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        global gInstallers
-        gInstallers = self
-        from . import installers_links, installer_links, dialogs
-        installers_links.gInstallers = installer_links.gInstallers = \
-            dialogs.gInstallers = self
+        BashFrame.iPanel = self
         data = bosh.InstallersData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
@@ -2898,8 +2761,6 @@ class InstallersPanel(SashTankPanel):
             commentsSplitter.SetSashPosition(-commentsHeight)
         else:
             commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
-        #--Events
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -2910,21 +2771,15 @@ class InstallersPanel(SashTankPanel):
         # TODO(ut): refactor, self.refreshing set to True once, extract methods
         if settings.get('bash.installers.isFirstRun',True):
             Link.Frame.BindRefresh(bind=False)
-            # I have no idea why this is necessary but if the
-            # mouseCaptureLost event is not fired before showing the askYes
-            # dialog it throws an exception
-            event = wx.CommandEvent()
-            event.SetEventType(wx.EVT_MOUSE_CAPTURE_LOST.typeId)
-            wx.PostEvent(self.GetEventHandler(), event)
-
             settings['bash.installers.isFirstRun'] = False
-            message = (_(u'Do you want to enable Installers?')
-                       + u'\n\n\t' +
-                       _(u'If you do, Bash will first need to initialize some data. This can take on the order of five minutes if there are many mods installed.')
-                       + u'\n\n\t' +
-                       _(u"If not, you can enable it at any time by right-clicking the column header menu and selecting 'Enabled'.")
-                       )
-            settings['bash.installers.enabled'] = balt.askYes(self,fill(message,80),self.data.title)
+            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
+                u'If you do, Bash will first need to initialize some data. '
+                u'This can take on the order of five minutes if there are '
+                u'many mods installed.') + u'\n\n\t' + _(
+                u"If not, you can enable it at any time by right-clicking "
+                u"the column header menu and selecting 'Enabled'.")
+            settings['bash.installers.enabled'] = balt.askYes(self, message,
+                                                              self.data.title)
             Link.Frame.BindRefresh(bind=True)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
@@ -3066,14 +2921,6 @@ class InstallersPanel(SashTankPanel):
             sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
         super(InstallersPanel, self).ClosePanel()
-
-    def _onMouseCaptureLost(self, event):
-        """Handle the onMouseCaptureLost event
-
-        Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
-
-        """
-        pass
 
     #--Details view (if it exists)
     def SaveDetails(self):
@@ -3326,21 +3173,17 @@ class ScreensList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
     _shellUI = True
-    editLabels = True
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.screens.cols'
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+    _editLabels = True
+    _sort_keys = {'File'    : None,
+                 'Modified': lambda self, a: self.data[a][1],
+                }
 
     def OnDClick(self,event):
         """Double click a screenshot"""
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        item = self.items[hitItem]
+        item = self.GetItem(hitItem)
         bosh.screensData.dir.join(item).start()
 
     def OnBeginEditLabel(self,event):
@@ -3354,9 +3197,7 @@ class ScreensList(List):
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""
         if event.IsEditCancelled(): return
-
         newName = event.GetLabel()
-
         selected = self.GetSelected()
         rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I|re.U)
         maPattern = rePattern.match(newName)
@@ -3411,8 +3252,9 @@ class ScreensList(List):
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
+            fileName = itemDex
             itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
+        else: fileName = GPath(self.GetItem(itemDex))
         fileInfo = self.data[fileName]
         cols = self.cols
         for colDex in range(self.numCols):
@@ -3424,28 +3266,11 @@ class ScreensList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self._gList.InsertStringItem(itemDex, value)
+                self._gList.InsertListCtrlItem(itemDex, value, fileName)
             else:
                 self._gList.SetStringItem(itemDex, colDex, value)
-        #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.screens.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a][1])
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -3503,14 +3328,10 @@ class BSAList(List):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     icons = None # no icons
-
-    def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.cols = settings['bash.BSAs.cols']
-        #--Data/Items
-        self.details = None #--Set by panel
-        #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+    _sort_keys = {'File': None,
+                 'Modified': lambda self, a: self.data[a].mtime,
+                 'Size': lambda self, a: self.data[a].size,
+                }
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3534,8 +3355,9 @@ class BSAList(List):
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
+            fileName = itemDex
             itemDex = self.items.index(itemDex)
-        fileName = GPath(self.items[itemDex])
+        else: fileName = GPath(self.GetItem(itemDex))
         fileInfo = self.data[fileName]
         cols = self.cols
         for colDex in range(self.numCols):
@@ -3549,7 +3371,7 @@ class BSAList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self._gList.InsertStringItem(itemDex, value)
+                self._gList.InsertListCtrlItem(itemDex, value, fileName)
             else:
                 self._gList.SetStringItem(itemDex, colDex, value)
         #--Image
@@ -3558,24 +3380,6 @@ class BSAList(List):
         #self.gList.SetItemImage(itemDex,self.icons.Get(status,on))
         #--Selection State
         self.SelectItemAtIndex(itemDex, fileName in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.BSAs.sort'] = col
-        data = self.data
-        #--Start with sort by name
-        self.items.sort()
-        if col == 'File':
-            pass #--Done by default
-        elif col == 'Modified':
-            self.items.sort(key=lambda a: data[a].mtime)
-        elif col == 'Size':
-            self.items.sort(key=lambda a: data[a].size)
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3737,9 +3541,9 @@ class BSAPanel(NotebookPanel):
         NotebookPanel.__init__(self, parent)
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
-        bsaList = BSAList(self, self.listData, self.keyPrefix)
         self.BSADetails = BSADetails(self)
-        BSAList.details = self.BSADetails
+        self.uilist = BSAList(self, self.listData, self.keyPrefix,
+                              details=self.BSADetails)
         #--Layout
         sizer = hSizer(
             (BSAList,1,wx.GROW),
@@ -3759,12 +3563,15 @@ class MessageList(List):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
+    reNoRe = re.compile(u'^Re: *',re.U)
+    _default_sort_col = 'Date'
+    _sort_keys = {'Date': lambda self, a: self.data[a][2],
+                 'Subject': lambda self, a: MessageList.reNoRe.sub(
+                     u'', self.data[a][0]),
+                 'Author': lambda self, a: self.data[a][1],
+                }
 
     def __init__(self, parent, listData, keyPrefix):
-        #--Columns
-        self.colsKey = 'bash.messages.cols'
-        #--Other
         self.gText = None
         self.searchResults = None
         #--Parent init
@@ -3799,8 +3606,9 @@ class MessageList(List):
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
+            item = itemDex
             itemDex = self.items.index(itemDex)
-        item = self.items[itemDex]
+        else: item = self.GetItem(itemDex)
         subject,author,date = self.data[item][:3]
         cols = self.cols
         for colDex in range(self.numCols):
@@ -3814,31 +3622,11 @@ class MessageList(List):
             else:
                 value = u'-'
             if mode and (colDex == 0):
-                self._gList.InsertStringItem(itemDex, value)
+                self._gList.InsertListCtrlItem(itemDex, value, item)
             else:
                 self._gList.SetStringItem(itemDex, colDex, value)
-        #--Image
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
-
-    #--Sort Items
-    def SortItems(self,col=None,reverse=-2):
-        (col, reverse) = self.GetSortSettings(col,reverse)
-        settings['bash.messages.sort'] = col
-        data = self.data
-        #--Start with sort by date
-        self.items.sort(key=lambda a: data[a][2])
-        if col == 'Subject':
-            reNoRe = re.compile(u'^Re: *',re.U)
-            self.items.sort(key=lambda a: reNoRe.sub(u'',data[a][0]))
-        elif col == 'Author':
-            self.items.sort(key=lambda a: data[a][1])
-        elif col == 'Date':
-            pass #--Default sort
-        else:
-            raise BashError(u'Unrecognized sort key: '+col)
-        #--Ascending
-        if reverse: self.items.reverse()
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
@@ -3916,9 +3704,19 @@ class PeopleList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
+    _default_sort_col = 'Name'
+    _sort_keys = {'Name': lambda self, x: x.lower(),
+                 'Karma': lambda self, x: self.data[x][1],
+                 'Header': lambda self, x: self.data[x][2][:50].lower(),
+                }
 
-    def GetColumnDex(self,column):
-        return settingDefaults['bash.people.cols'].index(column)
+    def getColumns(self, item):
+        labels, itemData = {}, self.data[item]
+        labels['Name'] = item
+        karma = itemData[1]
+        labels['Karma'] = (u'-', u'+')[karma >= 0] * abs(karma)
+        labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
+        return labels
 
     def MouseOverItem(self, item):
         """People's Tab: mouse over item is a noop."""
@@ -3931,8 +3729,6 @@ class PeoplePanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        global gPeople
-        gPeople = self
         data = bosh.PeopleData()
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
@@ -4406,6 +4202,8 @@ class BashFrame(wx.Frame):
     saveList = None
     iniList = None
     modList = None
+    # Panels - use sparingly
+    iPanel = None # BAIN panel
     # the status bar - used by the Panels to SetStatusCount()
     statusBar = None
 
@@ -4559,7 +4357,7 @@ class BashFrame(wx.Frame):
         if popInis:
             BashFrame.iniList.RefreshUI(popInis)
         #--Current notebook panel
-        if gInstallers: gInstallers.frameActivated = True
+        if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
         #--Does plugins.txt have any bad or missing files?

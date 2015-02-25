@@ -54,7 +54,7 @@ import bolt
 import bush
 import bass
 from bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    UncodedError, PermissionError, FileError
+    PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from bolt import _unicode, _encode
@@ -964,7 +964,6 @@ class ObseFile:
 
     def load(self):
         """Read file."""
-        import binascii
         size = self.path.size
         with self.path.open('rb') as ins:
             buff = ins.read(size)
@@ -5818,40 +5817,7 @@ class PeopleData(PickleTankData, bolt.TankData, DataDict):
         bolt.TankData.__init__(self,settings)
         PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
         #--Default settings. Subclasses should define these.
-        self.tankKey = 'bash.people'
-        self.tankColumns = ['Name','Karma','Header']
         self.title = _(u'People')
-
-    #--Collection
-    def getSorted(self,column,reverse):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Name':
-            items.sort(key=string.lower,reverse=reverse)
-        elif column == 'Karma':
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][1],reverse=reverse)
-        elif column == 'Header':
-            items.sort(key=string.lower)
-            items.sort(key=lambda x: data[x][2][:50].lower(),reverse=reverse)
-        return items
-
-    #--Item Info
-    def getColumns(self,item=None):
-        """Returns text labels for item or for row header if item == None."""
-        columns = self.getParam('columns',self.tankColumns)
-        if item is None: return columns[:]
-        labels,itemData = [],self.data[item]
-        for column in columns:
-            if column == 'Name': labels.append(item)
-            elif column == 'Karma':
-                karma = itemData[1]
-                labels.append((u'-',u'+')[karma>=0]*abs(karma))
-            elif column == 'Header':
-                header = itemData[2].split(u'\n',1)[0][:75]
-                labels.append(header)
-        return labels
 
     def getName(self,item):
         """Returns a string name of item for use in dialogs, etc."""
@@ -6142,7 +6108,7 @@ class Installer(object):
         #--Done
         return changed
 
-    #--Initization, etc -------------------------------------------------------
+    #--Initialization, etc -------------------------------------------------------
     def initDefault(self):
         """Inits everything to default values."""
         #--Package Only
@@ -7743,8 +7709,6 @@ class InstallersData(bolt.TankData, DataDict):
         self.bashDir = dirs['bainData']
         #--Tank Stuff
         bolt.TankData.__init__(self,settings)
-        self.tankKey = 'bash.installers'
-        self.tankColumns = ['Package','Order','Modified','Size','Files']
         self.transColumns = [_(u'Package'),_(u'Order'),_(u'Modified'),_(u'Size'),_(u'Files')]
         self.title = _(u'Installers')
         #--Persistent data
@@ -7765,7 +7729,8 @@ class InstallersData(bolt.TankData, DataDict):
 
     def addMarker(self,name):
         path = GPath(name)
-        self.data[path] = InstallerMarker(path)
+        self[path] = InstallerMarker(path)
+        self.refresh(what='OS')
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
@@ -7833,65 +7798,6 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
             self.converterFile.save()
             self.hasChanged = False
-
-    def getSorted(self,column,reverse,sortSpecial=True):
-        """Returns items sorted according to column and reverse."""
-        data = self.data
-        items = data.keys()
-        if column == 'Package':
-            items.sort(reverse=reverse)
-        elif column == 'Files':
-            items.sort(key=lambda x: len(data[x].fileSizeCrcs),reverse=reverse)
-        else:
-            items.sort()
-            attr = column.lower()
-            if column in ('Package','Group'):
-                getter = lambda x: object.__getattribute__(data[x],attr).lower()
-            else:
-                getter = lambda x: object.__getattribute__(data[x],attr)
-            items.sort(key=getter,reverse=reverse)
-        #--Special sorters
-        if sortSpecial:
-            if settings['bash.installers.sortStructure']:
-                items.sort(key=lambda x: data[x].type)
-            if settings['bash.installers.sortActive']:
-                items.sort(key=lambda x: not data[x].isActive)
-            if settings['bash.installers.sortProjects']:
-                items.sort(key=lambda x: not isinstance(data[x],InstallerProject))
-        return items
-
-    #--Item Info
-    def getColumns(self,item=None):
-        """Returns text labels for item or for row header if item == None."""
-        columns = self.getParam('columns')
-        if item is None: return columns[:]
-        labels,installer = [],self.data[item]
-        marker = isinstance(installer, InstallerMarker)
-        for column in columns:
-            if column == 'Package':
-                value = item.s
-            elif column == 'Files':
-                if not marker:
-                    value = formatInteger(len(installer.fileSizeCrcs))
-            else:
-                value = object.__getattribute__(installer,column.lower())
-                if column == 'Order':
-                    value = unicode(value)
-                elif marker:
-                    value = u''
-                elif column in ('Package','Group'):
-                    pass
-                elif column == 'Modified':
-                    value = formatDate(value)
-                elif column == 'Size':
-                    if value == 0:
-                        value = u'0 KB'
-                    else:
-                        value = formatInteger(max(value,1024)/1024)+u' KB'
-                else:
-                    raise ArgumentError(column)
-            labels.append(value)
-        return labels
 
     def getGuiKeys(self,item):
         """Returns keys for icon and text and background colors."""

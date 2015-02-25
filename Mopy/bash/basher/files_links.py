@@ -58,21 +58,15 @@ class Files_Open(ItemLink):
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
 
-    def __init__(self, sortCol, prefix=''):
+    def __init__(self, sortCol):
         super(Files_SortBy, self).__init__()
         self.sortCol = sortCol
-        self.sortName = bosh.settings['bash.colNames'][sortCol]
-        self.prefix = prefix
-        self.text = self.prefix + self.sortName
-        self.help = _(u'Sort by %s') % self.sortName
+        self.text = bosh.settings['bash.colNames'][sortCol]
+        self.help = _(u'Sort by %s') % self.text
 
     def _check(self): return self.window.sort == self.sortCol
 
-    def Execute(self, event):
-        if isinstance(self.window, balt.Tank):  # TODO(ut): grotesque
-            self.window.SortItems(self.sortCol, 'INVERT')
-        else:
-            self.window.PopulateItems(self.sortCol, -1)
+    def Execute(self, event): self.window.SortItems(self.sortCol, 'INVERT')
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""

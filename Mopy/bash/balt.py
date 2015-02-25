@@ -28,8 +28,8 @@
 import bolt
 import bosh
 from bolt import GPath, deprint
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
-
+from bolt import BoltError, AbstractError, ArgumentError, StateError, \
+    CancelError, SkipError
 #--Python
 import cPickle
 import StringIO
@@ -37,6 +37,8 @@ import string
 import os
 import textwrap
 import time
+from functools import partial
+#--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
@@ -636,8 +638,6 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return value
 
 # Message Dialogs -------------------------------------------------------------
-import win32gui
-import win32api
 import windows
 canVista = windows.TASK_DIALOG_AVAILABLE
 
@@ -1197,7 +1197,7 @@ class Dialog(wx.Dialog):
 class ListEditor(Dialog):
     """Dialog for editing lists."""
 
-    def __init__(self, parent, title, data, **kwargs):
+    def __init__(self, parent, title, data, orderedDict=None):
         """A gui list, with buttons that act on the list items.
 
         Added kwargs to provide extra buttons - this class is built around a
@@ -1239,7 +1239,7 @@ class ListEditor(Dialog):
             (data.showSave,   _(u'Save'),   self.DoSave),
             (data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
-        for k,v in kwargs.items():
+        for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             buttons = vSizer()
@@ -1550,6 +1550,9 @@ class Progress(bolt.Progress):
 #------------------------------------------------------------------------------
 class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.
+
+    ALWAYS add new items via InsertListCtrlItem() and delete them via
+    RemoveItemAt().
     Also extended to support drag-and-drop.  To define custom drag-and-drop
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
@@ -1602,6 +1605,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self.doDnD = True
+        #--Item/Id mapping
+        self._item_itemId = {}
+        self._itemId_item = {}
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
@@ -1712,10 +1718,48 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
 
     def dndAllow(self):
-        if self.doDnD:
-            if self.fnDndAllow: return self.fnDndAllow()
-            return True
-        return False
+        return self.doDnD and (not self.fnDndAllow or self.fnDndAllow())
+
+    # API (alpha) -------------------------------------------------------------
+
+    # Internal id <-> item mappings used in SortItems for now
+    # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
+
+    def __id(self, item):
+        i = long(wx.NewId())
+        self._item_itemId[item] = i
+        self._itemId_item[i] = item
+        return i
+
+    def InsertListCtrlItem(self, index, value, item):
+        """Insert an item to the list control giving it an internal id."""
+        i = self.__id(item)
+        some_long = self.InsertStringItem(index, value) # index ?
+        gItem = self.GetItem(index) # that's what Tank did
+        gItem.SetData(i)  # Associate our id with that row.
+        self.SetItem(gItem) # this is needed too - yak
+        return some_long
+
+    def RemoveItemAt(self, index):
+        """Remove item at specified list index."""
+        itemId = self.GetItemData(index)
+        item = self._itemId_item[itemId]
+        del self._item_itemId[item]
+        del self._itemId_item[itemId]
+        self.DeleteItem(index)
+
+    def FindIndexOf(self, item):
+        """Return index of specified item."""
+        return self.FindItemData(-1, self._item_itemId[item])
+
+    def FindItemAt(self, index):
+        """Return item for specified list index."""
+        return self._itemId_item[self.GetItemData(index)]
+
+    def ReorderItems(self, ordered):
+        """Reorder the list control displayed items to match ordered."""
+        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(ordered))
+        self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
@@ -1724,43 +1768,55 @@ class UIList(wx.Panel):
     mainMenu = None
     itemMenu = None
     #--gList image collection
-    icons = {}
+    icons = ImageList(16,16)
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
     #--Style params
-    editLabels = False # allow editing the labels - also enables F2 shortcut
+    _editLabels = False # allow editing the labels - also enables F2 shortcut
+    _sunkenBorder = True
+    _singleCell = False
+    #--Sorting
+    nonReversibleCols = {'Load Order', 'Current Order'}
+    _default_sort_col = 'File' # override as needed
+    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    _extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    #--DnD
+    _dndFiles = _dndList = False
+    _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, dndFiles, dndList, dndColumns=(),
-                 **kwargs):
+    def __init__(self, parent, keyPrefix, details=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.details = details
         # parent = left -> ThinSplitter -> Panel, consider an init argument
         self.panel = parent.GetParent().GetParent()
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
-        # Settings key
+        #--Settings key
         self.keyPrefix = keyPrefix
-        #--Columns
+        # columns keys - access to the settings is done via properties (mostly)
         self.colNames = bosh.settings['bash.colNames']
-        self.colAligns = bosh.settings[self.keyPrefix + '.colAligns']
-        self.sort = bosh.settings[self.keyPrefix + '.sort']
-        self.colWidthsKey = self.keyPrefix + '.colWidths'
-        self.colWidths = bosh.settings[self.colWidthsKey]
-        #--attributes
-        self.dndColumns = dndColumns
+        self.colWidthsKey = self.keyPrefix + '.colWidths' # used in OnColumnResize
         #--gList
         ctrlStyle = wx.LC_REPORT
-        if kwargs.pop('singleCell', False): ctrlStyle |= wx.LC_SINGLE_SEL
-        if self.__class__.editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
-        if kwargs.pop('sunkenBorder', True): ctrlStyle |= wx.SUNKEN_BORDER
-        self._gList = ListCtrl(self, style=ctrlStyle, dndFiles=dndFiles,
-                              dndList=dndList, fnDndAllow=self.dndAllow,
-                              fnDropFiles=self.OnDropFiles,
-                              fnDropIndexes=self.OnDropIndexes)
-        if self.icons: self._gList.SetImageList(self.icons.GetImageList(),
-                                               wx.IMAGE_LIST_SMALL)
-        if self.__class__.editLabels:
+        if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
+        if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
+        self._gList = ListCtrl(self, style=ctrlStyle,
+                               dndFiles=self.__class__._dndFiles,
+                               dndList=self.__class__._dndList,
+                               fnDndAllow=self.dndAllow,
+                               fnDropFiles=self.OnDropFiles,
+                               fnDropIndexes=self.OnDropIndexes)
+        if self.icons:
+            # Image List: Column sorting order indicators
+            # explorer style ^ == ascending
+            checkboxesIL = self.icons.GetImageList()
+            self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
+            self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
+            self._gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+        if self.__class__._editLabels:
             self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
             self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
@@ -1786,13 +1842,25 @@ class UIList(wx.Panel):
         # Columns
         self.PopulateColumns()
 
+    # Column properties - consider moving to a ListCtrl mixin
+    @property
+    def colAligns(self):
+        return bosh.settings.get(self.keyPrefix + '.colAligns', {})
+    @property
+    def colWidths(self): return bosh.settings.getChanged(self.colWidthsKey, {})
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(self.keyPrefix + '.colReverse')
-
+        return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
     def cols(self): return bosh.settings[self.keyPrefix + '.cols']
+    # the current sort column
+    @property
+    def sort(self):
+        return bosh.settings.get(self.keyPrefix + '.sort',
+                                 self._default_sort_col)
+    @sort.setter
+    def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1845,26 +1913,28 @@ class UIList(wx.Panel):
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): # Ctrl+A
-            self.SelectAll()
+        if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
+        elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            with BusyCursor():
-                self.DeleteSelected(shellUI=self.__class__._shellUI,
-                                    noRecycle=event.ShiftDown())
-        elif self.__class__.editLabels and code == wx.WXK_F2: self.Rename()
+            with BusyCursor(): self.DeleteSelected(
+                shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
         event.Skip()
+
+    ##: Columns callbacks - belong to a ListCtrl mixin
+    def OnColumnClick(self, event):
+        """Column header was left clicked on. Sort on that column."""
+        self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
     #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
-    #--Edit labels - only registered if editLabels != False
+    #--Edit labels - only registered if _editLabels != False
     def OnBeginEditLabel(self,event): event.Skip()
     def OnLabelEdited(self,event): event.Skip()
 
     #--ABSTRACT ##: different Tank and List overrides - must unify
     def OnItemSelected(self, event): raise AbstractError
-    def OnColumnClick(self, event): raise AbstractError
     def OnColumnResize(self, event): raise AbstractError
 
     #-- Item selection --------------------------------------------------------
@@ -1889,8 +1959,8 @@ class UIList(wx.Panel):
     def DeleteAllItems(self):
         self._gList.DeleteAllItems()
 
-    def EnsureVisible(self, name): ##: TANK ONLY
-        raise AbstractError
+    def EnsureVisible(self, name):
+        self._gList.EnsureVisible(self.GetIndex(name))
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
@@ -1903,6 +1973,90 @@ class UIList(wx.Panel):
         for file_ in selected:
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()
+
+    #--Sorting ----------------------------------------------------------------
+    def SortItems(self,column=None,reverse='CURRENT'):
+        """Sort items. Real work is done by _SortItems, and that completed
+        sort is then "cloned" to the list control.
+
+        :param column: column to sort. Defaults to current sort column.
+        :param reverse:
+        * True: Reverse order
+        * False: Normal order
+        * 'CURRENT': Same as current order for column.
+        * 'INVERT': Invert if column is same as current sort column.
+        """
+        _items = self.data.keys() if isinstance(self, Tank) else self.items
+        items = self._SortItems(column, reverse, items=_items)
+        self._gList.ReorderItems(items)
+
+    def _GetSortSettings(self,column,reverse):
+        """Return parsed col, reverse arguments. Used by _SortItems.
+        col: sort variable.
+          Defaults to last sort. (self.sort)
+        reverse: sort order
+          True: Descending order
+          False: Ascending order
+         'INVERT': Use current reverse settings for sort variable, unless
+             last sort was on same sort variable -- in which case,
+             reverse the sort order.
+         'CURRENT': Use current reverse setting for sort variable.
+        """
+        if self.sortDirty:
+            self.sortDirty = False
+            column, reverse = None, 'CURRENT'
+        curColumn = self.sort
+        column = column or curColumn
+        curReverse = self.colReverse.get(column, False)
+        if column in self.nonReversibleCols: #--Disallow reverse for load
+            reverse = False
+        elif reverse == 'INVERT' and column == curColumn:
+            reverse = not curReverse
+        elif reverse in {'INVERT','CURRENT'}:
+            reverse = curReverse
+        #--Done
+        self.sort = column
+        self.colReverse[column] = reverse
+        return column, reverse, curColumn
+
+    def _SortItems(self, col=None, reverse='CURRENT', sortSpecial=True,
+                   items=None):
+        items = items if items is not None else self.items # List has items Tank provides them (for now)
+        col, reverse, oldcol = self._GetSortSettings(col, reverse)
+        def key(k): # if key is None then keep it None else provide self
+            k = self._sort_keys[k]
+            return k if k is None else partial(k, self)
+        def_key = key(self._default_sort_col)
+        if col != self._default_sort_col:
+            #--Default sort
+            items.sort(key=def_key)
+            items.sort(key=key(col), reverse=bool(reverse))
+        else:
+            items.sort(key=def_key, reverse=bool(reverse))
+        if sortSpecial:
+            for lamda in self._extra_sortings: lamda(self, items)
+        self._setColumnSortIndicator(col, oldcol, reverse)
+        return items
+
+    def _setColumnSortIndicator(self, col, oldcol, reverse):
+        # set column sort image
+        try:
+            listCtrl = self._gList
+            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
+            except: pass # if old column no longer is active this will fail but
+                #  not a problem since it doesn't exist anyways.
+            listCtrl.SetColumnImage(self.colDict[col],
+                                    self.sm_dn if reverse else self.sm_up)
+        except: pass
+
+    #--Item/Index Translation -------------------------------------------------
+    def GetItem(self,index):
+        """Returns item for specified list index."""
+        return self._gList.FindItemAt(index)
+
+    def GetIndex(self,item):
+        """Returns index for specified item."""
+        return self._gList.FindIndexOf(item)
 
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
@@ -1938,7 +2092,7 @@ class UIList(wx.Panel):
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
-        return self.sort in self.dndColumns
+        return self.sort in self._dndColumns
 
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError
@@ -1971,21 +2125,13 @@ class UIList(wx.Panel):
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
+    _sunkenBorder = False
 
-    def __init__(self, parent, data, keyPrefix, details=None, dndList=False,
-                 dndFiles=False, dndColumns=(), **kwargs):
+    def __init__(self, parent, data, keyPrefix, details=None):
         #--Data
         self.data = data
-        self.details = details
-        #--Item/Id mapping
-        self.nextItemId = 1
-        self.item_itemId = {}
-        self.itemId_item = {}
         #--ListCtrl
-        # no sunken borders by default
-        kwargs['sunkenBorder'] = kwargs.pop('sunkenBorder', False)
-        UIList.__init__(self, parent, keyPrefix, dndFiles=dndFiles,
-                        dndList=dndList, dndColumns=dndColumns, **kwargs)
+        UIList.__init__(self, parent, keyPrefix, details)
         #--Items
         self.sortDirty = False
         self.UpdateItems()
@@ -2005,43 +2151,19 @@ class Tank(UIList):
         self.data.refresh(what='N')
         self.RefreshUI()
 
-    #--Item/Id/Index Translation ----------------------------------------------
-    def GetItem(self,index):
-        """Returns item for specified list index."""
-        return self.itemId_item[self._gList.GetItemData(index)]
-
-    def GetId(self,item):
-        """Returns id for specified item, creating id if necessary."""
-        id_ = self.item_itemId.get(item)
-        if id_: return id_
-        #--Else get a new item id.
-        id_ = self.nextItemId
-        self.nextItemId += 1
-        self.item_itemId[item] = id_
-        self.itemId_item[id_] = item
-        return id_
-
-    def GetIndex(self,item):
-        """Returns index for specified item."""
-        return self._gList.FindItemData(-1,self.GetId(item))
-
-    def UpdateIds(self):
-        """Updates item/id mappings to account for removed items."""
-        removed = set(self.item_itemId.keys()) - set(self.data.keys())
-        for item in removed:
-            itemId = self.item_itemId[item]
-            del self.item_itemId[item]
-            del self.itemId_item[itemId]
-
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def UpdateItem(self,index,item=None,selected=tuple()):
+    def UpdateItem(self, index, item=None, selected=tuple(), newItem=False):
         """Populate Item for specified item."""
         if index < 0: return
         data,listCtrl = self.data,self._gList
         item = item or self.GetItem(index)
+        valuesForAllColumns = self.getColumns(item)
         for iColumn,column in enumerate(self.cols):
-            colDex = self.GetColumnDex(column)
-            listCtrl.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
+            value = valuesForAllColumns[column]
+            if newItem and (0 == iColumn):
+                listCtrl.InsertListCtrlItem(index, value, item)
+            else:
+                listCtrl.SetStringItem(index, iColumn, value)
         gItem = listCtrl.GetItem(index)
         iconKey,textKey,backKey = data.getGuiKeys(item)
         self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
@@ -2051,11 +2173,7 @@ class Tank(UIList):
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self.defaultTextBackground)
 ##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
-        gItem.SetData(self.GetId(item))
         listCtrl.SetItem(gItem)
-
-    def GetColumnDex(self,column): ##: remove
-        raise AbstractError
 
     def UpdateItems(self,selected='SAME'):
         """Update all items."""
@@ -2069,57 +2187,21 @@ class Tank(UIList):
         while index < listCtrl.GetItemCount():
             item = self.GetItem(index)
             if item not in items:
-                listCtrl.DeleteItem(index)
+                listCtrl.RemoveItemAt(index)
             else:
                 self.UpdateItem(index,item,selected)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
         for item in items:
-            listCtrl.InsertStringItem(index,u'')
-            self.UpdateItem(index,item,selected)
+            self.UpdateItem(index, item, selected, newItem=True)
             index += 1
-        #--Cleanup
-        self.UpdateIds()
+        #--Sort
         self.SortItems()
 
-    def _setSort(self,sort):
-        self.sort = bosh.settings[self.keyPrefix + '.sort'] = sort
-
-    def SortItems(self,column=None,reverse='CURRENT'):
-        """Sort items. Real work is done by data object, and that completed
-        sort is then "cloned" list through an intermediate cmp function.
-
-        :param column: column to sort. Defaults to current sort column.
-        :param reverse:
-        * True: Reverse order
-        * False: Normal order
-        * 'CURRENT': Same as current order for column.
-        * 'INVERT': Invert if column is same as current sort column.
-        """
-        #--Parse column and reverse arguments.
-        if self.sortDirty:
-            self.sortDirty = False
-            (column, reverse) = (None,'CURRENT')
-        curColumn = self.sort
-        column = column or curColumn
-        curReverse = self.colReverse.get(column,False)
-        if reverse == 'INVERT' and column == curColumn:
-            reverse = not curReverse
-        elif reverse in ('INVERT','CURRENT'):
-            reverse = curReverse
-        self.colReverse[column] = reverse
-        self._setSort(column)
-        #--Sort
-        items = self.data.getSorted(column,reverse)
-        sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
-        self._gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
-        #--Done
-
-    def RefreshReport(self):
-        """(Optionally) Shows a report of changes after a data refresh."""
-        report = self.data.getRefreshReport()
-        if report: showInfo(self,report,self.data.title)
+    def getColumns(self, item): ##: to UIList !
+        """Returns text labels for item to populate list control."""
+        raise AbstractError
 
     def RefreshUI(self,items='ALL',details='SAME'):
         """Refreshes UI for specified file."""
@@ -2160,9 +2242,6 @@ class Tank(UIList):
         return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
             if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
-    def EnsureVisible(self, name): ##: TANK ONLY
-        self._gList.EnsureVisible(self.GetIndex(name))
-
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
@@ -2182,10 +2261,6 @@ class Tank(UIList):
             event.Skip()
         self.colWidths[colName] = width
         bosh.settings.setChanged(self.colWidthsKey)
-
-    def OnColumnClick(self, event):
-        """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):

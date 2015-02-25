@@ -241,7 +241,7 @@ class PatchDialog(balt.Dialog):
             self.patchInfo.refresh()
             #--Done
             progress.Destroy()
-            balt.Link.Frame.BindRefresh(bind=True)
+            Link.Frame.BindRefresh(bind=True)
             timer2 = time.clock()
             #--Readme and log
             log.setHeader(None)
@@ -317,7 +317,7 @@ class PatchDialog(balt.Dialog):
             raise
         finally:
             Link.Frame.isPatching = False
-            balt.Link.Frame.BindRefresh(bind=True)
+            Link.Frame.BindRefresh(bind=True)
             if self.doCBash:
                 try: patchFile.Current.Close()
                 except: pass
