@@ -1899,14 +1899,15 @@ class SaveList(List):
         if event.IsEditCancelled(): return
         #--File Info
         newName = event.GetLabel()
-        if not newName.lower().endswith(u'.ess'):
-            newName += u'.ess'
+        if not newName.lower().endswith(bush.game.ess.ext):
+            newName += bush.game.ess.ext
         newFileName = newName
         selected = self.GetSelected()
         # renamed = []
         for index, path in enumerate(selected):
             if index:
-                newFileName = newName.replace(u'.ess',u'%d.ess' % index)
+                newFileName = newName.replace(bush.game.ess.ext, (
+                    u'%d' % index) + bush.game.ess.ext)
             if newFileName != path.s:
                 oldPath = bosh.saveInfos.dir.join(path.s)
                 newPath = bosh.saveInfos.dir.join(newFileName)
@@ -1938,7 +1939,7 @@ class SaveList(List):
         fileInfo = self.data[fileName]
         #--Image
         status = fileInfo.getStatus()
-        on = fileName.cext == u'.ess'
+        on = fileName.cext == bush.game.ess.ext
         self._gList.SetItemImage(itemDex,self.icons.Get(status,on))
 
     #--Events ---------------------------------------------
@@ -1954,11 +1955,16 @@ class SaveList(List):
     #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
+        msg = _(u"Clicking on a save icon will disable/enable the save "
+                u"by changing its extension to %(ess)s (enabled) or .esr "
+                u"(disabled). Autosaves and quicksaves will be left alone."
+                 % {'ess': bush.game.ess.ext})
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
+            if not balt.askContinue(self, msg, 'bash.saves.askDisable'): return
             fileName = GPath(self.items[hitItem])
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
-            if newName != fileName: self.RefreshUI()
+            if newName != fileName: self.RefreshUI() ##: files=[fileName]
         #--Pass Event onward
         event.Skip()
 
@@ -2118,7 +2124,7 @@ class SaveDetails(_SashDetailsPanel):
         fileStr = self.file.GetValue()
         if fileStr == self.fileStr: return
         #--Extension Changed?
-        if self.fileStr[-4:].lower() not in (u'.ess',u'.bak'):
+        if self.fileStr[-4:].lower() not in (bush.game.ess.ext, u'.bak'):
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
             self.file.SetValue(self.fileStr)
         #--Else file exists?

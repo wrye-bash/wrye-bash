@@ -207,7 +207,7 @@ class File_Duplicate(ItemLink):
                         message, _(u'Duplicate ') + fileName.s): continue
             #--Continue copy
             (root,ext) = fileName.rootExt
-            if ext.lower() == u'.bak': ext = u'.ess'
+            if ext.lower() == u'.bak': ext = bush.game.ess.ext
             (destDir,wildcard) = (fileInfo.dir, u'*'+ext)
             destName = GPath(root+u' Copy'+ext)
             destPath = destDir.join(destName)

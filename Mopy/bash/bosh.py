@@ -3250,7 +3250,7 @@ class FileInfo:
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
     def isEss(self):
-        return self.name.cext == u'.ess'
+        return self.name.cext == bush.game.ess.ext
 
     def sameAs(self,fileInfo):
         """Returns true if other fileInfo refers to same file as this fileInfo."""
@@ -5070,17 +5070,19 @@ class SaveInfos(FileInfos):
         self.refresh()
 
     #--Enabled ----------------------------------------------------------------
-    def isEnabled(self,fileName):
+    @staticmethod
+    def isEnabled(fileName):
         """True if fileName is enabled)."""
-        return fileName.cext == u'.ess'
+        return fileName.cext == bush.game.ess.ext
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
         isEnabled = self.isEnabled(fileName)
-        if isEnabled or value == isEnabled or re.match(u'(autosave|quicksave)',fileName.s,re.I|re.U):
+        if value == isEnabled or re.match(u'(autosave|quicksave)', fileName.s,
+                                          re.I | re.U):
             return fileName
         (root,ext) = fileName.rootExt
-        newName = root + ((value and u'.ess') or u'.esr')
+        newName = root + ((value and bush.game.ess.ext) or u'.esr')
         self.rename(fileName,newName)
         return newName
 
