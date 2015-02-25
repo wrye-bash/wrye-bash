@@ -489,7 +489,7 @@ class MasterList(_ModsSortMixin, List):
     #--Sorting
     _default_sort_col = 'Num'
     _sort_keys = {'Num': None, # sort_keys['Save Order'] =
-                 'File': lambda self, a: self.data[a].name.s,
+                 'File': lambda self, a: self.data[a].name.s.lower(),
                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
@@ -507,7 +507,6 @@ class MasterList(_ModsSortMixin, List):
         self.edited = False
         self.fileInfo = fileInfo
         self.items = [] #--Item numbers in display order.
-        self.fileOrderItems = []
         self.loadOrderNames = []
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix)
@@ -523,7 +522,6 @@ class MasterList(_ModsSortMixin, List):
         self.fileInfo = fileInfo
         self.data.clear()
         del self.items[:]
-        del self.fileOrderItems[:]
         #--Null fileInfo?
         if not fileInfo:
             self.PopulateItems() #Delete all items ??
@@ -533,7 +531,6 @@ class MasterList(_ModsSortMixin, List):
             masterInfo = bosh.MasterInfo(masterName,0)
             self.data[mi] = masterInfo
             self.items.append(mi)
-            self.fileOrderItems.append(mi)
         self.ReList()
         self.PopulateItems()
 
@@ -544,7 +541,7 @@ class MasterList(_ModsSortMixin, List):
         status = masterInfo.getStatus()
         if status == 30:
             return status
-        fileOrderIndex = self.fileOrderItems.index(item)
+        fileOrderIndex = item
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.ordered
         if fileOrderIndex != loadOrderIndex:
@@ -580,11 +577,11 @@ class MasterList(_ModsSortMixin, List):
                     voCurrent = bosh.modInfos.voCurrent
                     if voCurrent: value += u' ['+voCurrent+u']'
             elif col == 'Num':
-                value = u'%02X' % (self.fileOrderItems.index(itemId),)
+                value = u'%02X' % itemId
             elif col == 'Current Order':
                 #print itemId
-                if masterName in bosh.modInfos.plugins.LoadOrder:
-                    value = u'%02X' % (self.loadOrderNames.index(masterName),)
+                if masterName in bosh.modInfos.ordered:
+                    value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
                 else:
                     value = u''
             #--Insert/Set Value
@@ -624,7 +621,7 @@ class MasterList(_ModsSortMixin, List):
 
     #--Relist
     def ReList(self):
-        fileOrderNames = [self.data[item].name for item in self.fileOrderItems]
+        fileOrderNames = [v.name for v in self.data.values()]
         self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames,False)
 
     #--InitEdit
@@ -689,7 +686,7 @@ class MasterList(_ModsSortMixin, List):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data[item].name for item in self.fileOrderItems]
+        return [self.data[item].name for item in sorted(self.items)]
 
 #------------------------------------------------------------------------------
 class INIList(List):
