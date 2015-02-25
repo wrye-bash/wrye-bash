@@ -66,11 +66,7 @@ class Files_SortBy(RadioLink):
 
     def _check(self): return self.window.sort == self.sortCol
 
-    def Execute(self, event):
-        if isinstance(self.window, balt.Tank):  # TODO(ut): grotesque
-            self.window.SortItems(self.sortCol, 'INVERT')
-        else:
-            self.window.PopulateItems(self.sortCol, 'INVERT') ##: SORT
+    def Execute(self, event): self.window.SortItems(self.sortCol, 'INVERT')
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""

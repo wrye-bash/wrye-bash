@@ -1550,6 +1550,9 @@ class Progress(bolt.Progress):
 #------------------------------------------------------------------------------
 class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.
+
+    ALWAYS add new items via InsertListCtrlItem() and delete them via
+    RemoveItemAt().
     Also extended to support drag-and-drop.  To define custom drag-and-drop
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
@@ -1915,6 +1918,11 @@ class UIList(wx.Panel):
                 shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
         event.Skip()
 
+    ##: Columns callbacks - belong to a ListCtrl mixin
+    def OnColumnClick(self, event):
+        """Column header was left clicked on. Sort on that column."""
+        self.SortItems(self.cols[event.GetColumn()],'INVERT')
+
     #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
@@ -1925,7 +1933,6 @@ class UIList(wx.Panel):
 
     #--ABSTRACT ##: different Tank and List overrides - must unify
     def OnItemSelected(self, event): raise AbstractError
-    def OnColumnClick(self, event): raise AbstractError
     def OnColumnResize(self, event): raise AbstractError
 
     #-- Item selection --------------------------------------------------------
@@ -1966,6 +1973,21 @@ class UIList(wx.Panel):
             if file_.exists(): file_.start()
 
     #--Sorting ----------------------------------------------------------------
+    def SortItems(self,column=None,reverse='CURRENT'):
+        """Sort items. Real work is done by _SortItems, and that completed
+        sort is then "cloned" to the list control.
+
+        :param column: column to sort. Defaults to current sort column.
+        :param reverse:
+        * True: Reverse order
+        * False: Normal order
+        * 'CURRENT': Same as current order for column.
+        * 'INVERT': Invert if column is same as current sort column.
+        """
+        _items = self.data.keys() if isinstance(self, Tank) else self.items
+        items = self._SortItems(column, reverse, items=_items)
+        self._gList.ReorderItems(items)
+
     def _GetSortSettings(self,column,reverse):
         """Return parsed col, reverse arguments. Used by _SortItems.
         col: sort variable.
@@ -2024,6 +2046,15 @@ class UIList(wx.Panel):
             listCtrl.SetColumnImage(self.colDict[col],
                                     self.sm_dn if reverse else self.sm_up)
         except: pass
+
+    #--Item/Index Translation -------------------------------------------------
+    def GetItem(self,index):
+        """Returns item for specified list index."""
+        return self._gList.FindItemAt(index)
+
+    def GetIndex(self,item):
+        """Returns index for specified item."""
+        return self._gList.FindIndexOf(item)
 
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
@@ -2122,15 +2153,6 @@ class Tank(UIList):
         self.data.refresh(what='N')
         self.RefreshUI()
 
-    #--Item/Id/Index Translation ----------------------------------------------
-    def GetItem(self,index):
-        """Returns item for specified list index."""
-        return self._gList.FindItemAt(index)
-
-    def GetIndex(self,item):
-        """Returns index for specified item."""
-        return self._gList.FindIndexOf(item)
-
     #--Updating/Sorting/Refresh -----------------------------------------------
     def UpdateItem(self, index, item=None, selected=tuple(), newItem=False):
         """Populate Item for specified item."""
@@ -2182,20 +2204,6 @@ class Tank(UIList):
             index += 1
         #--Sort
         self.SortItems()
-
-    def SortItems(self,column=None,reverse='CURRENT'):
-        """Sort items. Real work is done by data object, and that completed
-        sort is then "cloned" list through an intermediate cmp function.
-
-        :param column: column to sort. Defaults to current sort column.
-        :param reverse:
-        * True: Reverse order
-        * False: Normal order
-        * 'CURRENT': Same as current order for column.
-        * 'INVERT': Invert if column is same as current sort column.
-        """
-        items = self._SortItems(column, reverse, items=self.data.keys())
-        self._gList.ReorderItems(items)
 
     def RefreshReport(self):
         """(Optionally) Shows a report of changes after a data refresh."""
@@ -2263,10 +2271,6 @@ class Tank(UIList):
             event.Skip()
         self.colWidths[colName] = width
         bosh.settings.setChanged(self.colWidthsKey)
-
-    def OnColumnClick(self, event):
-        """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):

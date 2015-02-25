@@ -270,7 +270,7 @@ class _Mod_Labels(ChoiceLink):
         for fileName in self.selected:
             fileLabels[fileName] = label
         if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            self.window.PopulateItems() ##: JUST SORT
+            self.window.SortItems()
         self.window.RefreshUI()
 
 
