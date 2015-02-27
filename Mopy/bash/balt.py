@@ -1925,7 +1925,10 @@ class UIList(wx.Panel):
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
     #--Edit labels - only registered if _editLabels != False
-    def OnBeginEditLabel(self,event): event.Skip()
+    def OnBeginEditLabel(self,event):
+        """Start renaming: deselect the extension."""
+        to = len(GPath(event.GetLabel()).sbody)
+        (self._gList.GetEditControl()).SetSelection(0,to)
     def OnLabelEdited(self,event): event.Skip()
 
     #--ABSTRACT ##: different Tank and List overrides - must unify

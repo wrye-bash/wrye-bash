@@ -1934,11 +1934,6 @@ class SaveList(List):
                  'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                  }
 
-    def OnBeginEditLabel(self,event):
-        """Start renaming saves: deselect the extension."""
-        to = len(GPath(event.GetLabel()).sbody)
-        (self._gList.GetEditControl()).SetSelection(0,to)
-
     def OnLabelEdited(self, event):
         """Savegame renamed."""
         if event.IsEditCancelled(): return
@@ -3185,14 +3180,6 @@ class ScreensList(List):
         if hitItem < 0: return
         item = self.GetItem(hitItem)
         bosh.screensData.dir.join(item).start()
-
-    def OnBeginEditLabel(self,event):
-        """Start renaming screenshots"""
-        item = self.items[event.GetIndex()]
-        # Change the selection to not include the extension
-        editbox = self._gList.GetEditControl()
-        to = len(GPath(event.GetLabel()).sbody)
-        editbox.SetSelection(0,to)
 
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""
