@@ -2441,10 +2441,10 @@ class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
     help = u'UNUSED'
 
-    def __init__(self,name,oneDatumOnly=False):
+    def __init__(self, name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name # class attribute really (see Link)
+        self.text = name or self.__class__.text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 

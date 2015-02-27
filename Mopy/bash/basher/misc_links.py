@@ -244,6 +244,7 @@ class People_Import(ItemLink, People_Link):
 #------------------------------------------------------------------------------
 class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     """Add Karma setting links."""
+    text = _(u'Karma')
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
     class _Karma(ItemLink, People_Link):

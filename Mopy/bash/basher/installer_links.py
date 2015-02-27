@@ -1427,12 +1427,14 @@ class InstallerConverter_Create(_InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerOpenAt_MainMenu(balt.MenuLink):
     """Main Open At Menu"""
+    text = _(u"Open at")
     def _enable(self):
         return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
             self.window.data[self.selected[0]], bosh.InstallerArchive)
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
+    text = _(u"Apply")
     def _enable(self): # TODO(ut) untested for multiple selections
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
@@ -1473,6 +1475,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
+    text = _(u"Conversions")
     def _enable(self):
         for item in self.selected:
             if not isinstance(self.window.data[item], bosh.InstallerArchive):
