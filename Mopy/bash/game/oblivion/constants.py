@@ -24,7 +24,7 @@
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
-bethDataFiles = set((
+bethDataFiles = {
     #--Vanilla
     u'oblivion.esm',
     u'oblivion_1.1.esm',
@@ -44,10 +44,10 @@ bethDataFiles = set((
     u'dlcshiveringisles - sounds.bsa',
     u'dlcshiveringisles - textures.bsa',
     u'dlcshiveringisles - voices.bsa',
-    ))
+}
 
 #--Every file in the Data directory from Bethsoft
-allBethFiles = set((
+allBethFiles = {
     # Section 1: Vanilla files
     u'Credits.txt',
     u'Oblivion - Meshes.bsa',
@@ -138,7 +138,7 @@ allBethFiles = set((
     u'Knights.bsa',
     u'Knights.esp',
     u'DLCList.txt',
-    ))
+}
 
 # Function Info ---------------------------------------------------------------
 conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param

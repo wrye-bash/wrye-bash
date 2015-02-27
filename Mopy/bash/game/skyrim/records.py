@@ -651,7 +651,7 @@ class MelString16(MelString):
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
-        if value != None:
+        if value is not None:
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
@@ -686,7 +686,7 @@ class MelString32(MelString):
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
-        if value != None:
+        if value is not None:
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))

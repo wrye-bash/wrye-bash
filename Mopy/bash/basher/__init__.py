@@ -535,13 +535,13 @@ class MasterList(_ModsSortMixin, List):
         self.PopulateItems()
 
     #--Get Master Status
-    def GetMasterStatus(self,item):
-        masterInfo = self.data[item]
+    def GetMasterStatus(self, mi):
+        masterInfo = self.data[mi]
         masterName = masterInfo.name
         status = masterInfo.getStatus()
         if status == 30:
             return status
-        fileOrderIndex = item
+        fileOrderIndex = mi
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.ordered
         if fileOrderIndex != loadOrderIndex:
@@ -561,10 +561,10 @@ class MasterList(_ModsSortMixin, List):
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         if mode: # inserting, GetItem will result in a wx error dialog
-            itemId = itemDex
+            mi = itemDex
         else:
-            itemId = self.GetItem(itemDex)
-        masterInfo = self.data[itemId]
+            mi = self.GetItem(itemDex)
+        masterInfo = self.data[mi]
         masterName = masterInfo.name
         cols = self.cols
         listCtrl = self._gList
@@ -577,7 +577,7 @@ class MasterList(_ModsSortMixin, List):
                     voCurrent = bosh.modInfos.voCurrent
                     if voCurrent: value += u' ['+voCurrent+u']'
             elif col == 'Num':
-                value = u'%02X' % itemId
+                value = u'%02X' % mi
             elif col == 'Current Order':
                 #print itemId
                 if masterName in bosh.modInfos.ordered:
@@ -586,7 +586,7 @@ class MasterList(_ModsSortMixin, List):
                     value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
-                listCtrl.InsertListCtrlItem(itemDex, value, itemId)
+                listCtrl.InsertListCtrlItem(itemDex, value, mi)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
         #--Font color
@@ -613,7 +613,7 @@ class MasterList(_ModsSortMixin, List):
             item.SetBackgroundColour(colors['default.bkgd'])
         listCtrl.SetItem(item)
         #--Image
-        status = self.GetMasterStatus(itemId)
+        status = self.GetMasterStatus(mi)
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
         #--Selection State
@@ -644,7 +644,7 @@ class MasterList(_ModsSortMixin, List):
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
-        if self.fileInfo: balt.UIList.DoColumnMenu(self, event, column)
+        if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
 
     #--Item Menu
     def DoItemMenu(self,event):
@@ -3289,7 +3289,7 @@ class ScreensList(List):
         fileName = self.items[event.m_itemIndex]
         filePath = bosh.screensData.dir.join(fileName)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-        self.picture.SetBitmap(bitmap)
+        self.panel.picture.SetBitmap(bitmap)
 
 #------------------------------------------------------------------------------
 class ScreensPanel(SashPanel):
@@ -3303,14 +3303,14 @@ class ScreensPanel(SashPanel):
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
         self.uiList = ScreensList(left, self.listData, self.keyPrefix)
-        self.uiList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
+        self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((self.uiList.picture,1,wx.GROW)))
+        right.SetSizer(hSizer((self.picture,1,wx.GROW)))
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
-        self.uiList.picture.SetBackground(colors['screens.bkgd.image'])
+        self.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbText(self):
         return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)

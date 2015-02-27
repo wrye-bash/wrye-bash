@@ -83,12 +83,8 @@ def fonts():
     font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    try:
-        font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
-        font_italic.SetStyle(wx.FONTSTYLE_SLANT)
-    except: #OLD wxpython!
-        font_bold.SetWeight(wx.BOLD)
-        font_italic.SetStyle(wx.SLANT)
+    font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
+    font_italic.SetStyle(wx.FONTSTYLE_SLANT)
     return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
@@ -1649,7 +1645,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                     start = index
                 indexes.append(index)
             else:
-                if start >=0 and stop < 0:
+                if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
 
@@ -1694,7 +1690,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         else:
             # Dropped on top of an item
             target = index
-            if target >= start and target <= stop:
+            if start <= target <= stop:
                 # Trying to drop it back on itself
                 return
             elif target < start:

@@ -494,7 +494,7 @@ class MelBase:
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
-        if value != None: out.packSub(self.subType,value)
+        if value is not None: out.packSub(self.subType,value)
 
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is True, then fid is set
@@ -739,7 +739,7 @@ class MelGroup(MelBase):
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         target = record.__getattribute__(self.attr)
-        if target == None:
+        if target is None:
             target = self.getDefault()
             record.__setattr__(self.attr,target)
         slots = []
@@ -839,7 +839,7 @@ class MelString(MelBase):
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
         value = record.__getattribute__(self.attr)
-        if value != None:
+        if value is not None:
             firstEncoding = bolt.pluginEncoding
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
@@ -877,7 +877,7 @@ class MelUnicode(MelString):
 
     def dumpData(self,record,out):
         value = record.__getattribute__(self.attr)
-        if value != None:
+        if value is not None:
             firstEncoding = self.encoding
             if self.maxSize:
                 value = bolt.winNewLines(value.strip())
@@ -1232,7 +1232,7 @@ class MelSet:
 
     def loadData(self,record,ins,endPos):
         """Loads data from input stream. Called by load()."""
-        doFullTest = (self.full0 != None)
+        doFullTest = (self.full0 is not None)
         recType = record.recType
         loaders = self.loaders
         _debug = self._debug
@@ -1529,7 +1529,7 @@ class MreRecord(object):
     def dumpData(self,out):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
-        if self.subrecords == None:
+        if self.subrecords is None:
             raise bolt.StateError(u'Subrecords not unpacked. [%s: %s %08X]' %
                 (self.inName, self.recType, self.fid))
         for subrecord in self.subrecords:
@@ -1563,7 +1563,7 @@ class MreRecord(object):
             if attr not in self.__slots__: return value
             return self.__getattribute__(attr)
         #--Subrecords available?
-        if self.subrecords != None:
+        if self.subrecords is not None:
             for subrecord in self.subrecords:
                 if subrecord.subType == subType:
                     value = bolt.cstrip(subrecord.data)
