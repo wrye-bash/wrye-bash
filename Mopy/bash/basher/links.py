@@ -279,6 +279,7 @@ def InitMasterLinks():
     if True: #--Sort by
         sortMenu = MenuLink(_(u"Sort by"))
         sortMenu.links.append(Mods_EsmsFirst())
+        sortMenu.links.append(Mods_SelectedFirst())
         sortMenu.links.append(SeparatorLink())
         sortMenu.links.append(Files_SortBy('File'))
         sortMenu.links.append(Files_SortBy('Num'))
@@ -362,7 +363,7 @@ def InitInstallerLinks():
     InstallersList.itemMenu.append(Installer_Duplicate())
     InstallersList.itemMenu.append(Installer_Delete())
     if True: #--Open At...
-        openAtMenu = InstallerOpenAt_MainMenu(_(u"Open at"), oneDatumOnly=True)
+        openAtMenu = InstallerOpenAt_MainMenu(oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
@@ -394,10 +395,9 @@ def InitInstallerLinks():
     InstallersList.itemMenu.append(SeparatorLink())
     #--Build
     if True: #--BAIN Conversion
-        conversionsMenu = InstallerConverter_MainMenu(_(u"Conversions"))
+        conversionsMenu = InstallerConverter_MainMenu()
         conversionsMenu.links.append(InstallerConverter_Create())
-        conversionsMenu.links.append(
-            InstallerConverter_ConvertMenu(_(u"Apply")))
+        conversionsMenu.links.append(InstallerConverter_ConvertMenu())
         InstallersList.itemMenu.append(conversionsMenu)
     InstallersList.itemMenu.append(InstallerProject_Pack())
     InstallersList.itemMenu.append(InstallerArchive_Unpack())
@@ -821,7 +821,7 @@ def InitPeopleLinks():
     PeopleList.mainMenu.append(
         List_Columns('bash.people.cols', 'bash.people.allCols', ['Name']))
     #--Item links
-    PeopleList.itemMenu.append(People_Karma(_(u'Karma')))
+    PeopleList.itemMenu.append(People_Karma())
     PeopleList.itemMenu.append(SeparatorLink())
     PeopleList.itemMenu.append(People_AddNew())
     PeopleList.itemMenu.append(balt.Tank_Delete())

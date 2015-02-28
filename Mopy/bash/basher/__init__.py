@@ -91,7 +91,7 @@ from ..balt import splitterStyle
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons, \
-    PNG, JPEG, ICO, BMP, TIF, ID_TAGS
+    PNG, JPEG, ICO, BMP, TIF
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -464,7 +464,8 @@ class _ModsSortMixin(object):
     def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
 
     @property
-    def selectedFirst(self): return settings[self.keyPrefix + '.selectedFirst']
+    def selectedFirst(self):
+        return settings.get(self.keyPrefix + '.selectedFirst', False)
     @selectedFirst.setter
     def selectedFirst(self, val):
         settings[self.keyPrefix + '.selectedFirst'] = val
@@ -493,7 +494,12 @@ class MasterList(_ModsSortMixin, List):
                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
-    _extra_sortings = [_ModsSortMixin._sortEsmsFirst]
+    def _activeModsFirst(self, items):
+        if self.selectedFirst:
+            active = bosh.modInfos.ordered
+            items.sort(key=lambda x: self.data[x].name not in set(
+                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+    _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
 
     @property
@@ -535,13 +541,13 @@ class MasterList(_ModsSortMixin, List):
         self.PopulateItems()
 
     #--Get Master Status
-    def GetMasterStatus(self,item):
-        masterInfo = self.data[item]
+    def GetMasterStatus(self, mi):
+        masterInfo = self.data[mi]
         masterName = masterInfo.name
         status = masterInfo.getStatus()
         if status == 30:
             return status
-        fileOrderIndex = item
+        fileOrderIndex = mi
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.ordered
         if fileOrderIndex != loadOrderIndex:
@@ -561,10 +567,10 @@ class MasterList(_ModsSortMixin, List):
     #--Populate Item
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         if mode: # inserting, GetItem will result in a wx error dialog
-            itemId = itemDex
+            mi = itemDex
         else:
-            itemId = self.GetItem(itemDex)
-        masterInfo = self.data[itemId]
+            mi = self.GetItem(itemDex)
+        masterInfo = self.data[mi]
         masterName = masterInfo.name
         cols = self.cols
         listCtrl = self._gList
@@ -577,7 +583,7 @@ class MasterList(_ModsSortMixin, List):
                     voCurrent = bosh.modInfos.voCurrent
                     if voCurrent: value += u' ['+voCurrent+u']'
             elif col == 'Num':
-                value = u'%02X' % itemId
+                value = u'%02X' % mi
             elif col == 'Current Order':
                 #print itemId
                 if masterName in bosh.modInfos.ordered:
@@ -586,7 +592,7 @@ class MasterList(_ModsSortMixin, List):
                     value = u''
             #--Insert/Set Value
             if mode and (colDex == 0):
-                listCtrl.InsertListCtrlItem(itemDex, value, itemId)
+                listCtrl.InsertListCtrlItem(itemDex, value, mi)
             else:
                 listCtrl.SetStringItem(itemDex, colDex, value)
         #--Font color
@@ -613,7 +619,7 @@ class MasterList(_ModsSortMixin, List):
             item.SetBackgroundColour(colors['default.bkgd'])
         listCtrl.SetItem(item)
         #--Image
-        status = self.GetMasterStatus(itemId)
+        status = self.GetMasterStatus(mi)
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
         #--Selection State
@@ -644,7 +650,7 @@ class MasterList(_ModsSortMixin, List):
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
-        if self.fileInfo: balt.UIList.DoColumnMenu(self, event, column)
+        if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
 
     #--Item Menu
     def DoItemMenu(self,event):
@@ -1627,12 +1633,12 @@ class ModDetails(_SashDetailsPanel):
                 BashFrame.modList.RefreshUI(mod_info.name)
         # Menu
         class _TagLinks(ChoiceLink):
-            idList, cls = ID_TAGS, _TagLink
+            cls = _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
             @property
-            def items(self): return all_tags
+            def _choices(self): return all_tags
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())
@@ -1933,11 +1939,6 @@ class SaveList(List):
                  'PlayTime': lambda self, a: self.data[a].header.gameTicks,
                  'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                  }
-
-    def OnBeginEditLabel(self,event):
-        """Start renaming saves: deselect the extension."""
-        to = len(GPath(event.GetLabel()).sbody)
-        (self._gList.GetEditControl()).SetSelection(0,to)
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
@@ -3186,14 +3187,6 @@ class ScreensList(List):
         item = self.GetItem(hitItem)
         bosh.screensData.dir.join(item).start()
 
-    def OnBeginEditLabel(self,event):
-        """Start renaming screenshots"""
-        item = self.items[event.GetIndex()]
-        # Change the selection to not include the extension
-        editbox = self._gList.GetEditControl()
-        to = len(GPath(event.GetLabel()).sbody)
-        editbox.SetSelection(0,to)
-
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""
         if event.IsEditCancelled(): return
@@ -3289,7 +3282,7 @@ class ScreensList(List):
         fileName = self.items[event.m_itemIndex]
         filePath = bosh.screensData.dir.join(fileName)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-        self.picture.SetBitmap(bitmap)
+        self.panel.picture.SetBitmap(bitmap)
 
 #------------------------------------------------------------------------------
 class ScreensPanel(SashPanel):
@@ -3303,14 +3296,14 @@ class ScreensPanel(SashPanel):
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
         self.uiList = ScreensList(left, self.listData, self.keyPrefix)
-        self.uiList.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
+        self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((self.uiList.picture,1,wx.GROW)))
+        right.SetSizer(hSizer((self.picture,1,wx.GROW)))
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
 
     def RefreshUIColors(self):
-        self.uiList.picture.SetBackground(colors['screens.bkgd.image'])
+        self.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbText(self):
         return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)

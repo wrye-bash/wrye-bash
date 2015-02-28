@@ -25,7 +25,7 @@
 """This module contains some constants ripped out of basher.py"""
 
 from .. import bush, bosh
-from ..balt import Image, ImageList, IdList, defPos
+from ..balt import Image, ImageList, defPos
 from ..bolt import GPath
 
 # Color Descriptions ----------------------------------------------------------
@@ -527,11 +527,6 @@ installercons.images.extend({
     #--Broken
     'corrupt':   _png(u'red_x.png'),
     }.items())
-
-# Gui Ids ---------------------------------------------------------------------
-#--Label Menus
-ID_GROUPS    = IdList(10100,290)
-ID_TAGS      = IdList(10600, 90)
 
 #--Buttons
 def imageList(template):

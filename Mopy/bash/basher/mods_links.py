@@ -80,7 +80,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
 class Mods_LoadList(ChoiceLink):
     """Add load list links."""
-    idList = balt.IdList(10000, 90) # was ID_LOADERS
+    max_load_orders_saved = 64
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
@@ -88,7 +88,7 @@ class Mods_LoadList(ChoiceLink):
         self.loadListsDict['Bethesda ESMs'] = [
             GPath(x) for x in bush.game.bethDataFiles
             if x.endswith(u'.esm')
-            ]
+            ] # FIXME: selects both Oblivion.esm AND Oblivion1_1.esm
         #--Links
         _self = self
         class _All(ItemLink):
@@ -116,7 +116,7 @@ class Mods_LoadList(ChoiceLink):
         self.__class__.cls = _LoListLink
 
     @property
-    def items(self):
+    def _choices(self):
         items = self.loadListsDict.keys()
         items.sort(lambda a,b: cmp(a.lower(),b.lower()))
         return items
@@ -154,8 +154,9 @@ class Mods_LoadList(ChoiceLink):
 
     def DoSave(self,event):
         #--No slots left?
-        if len(self.loadListsDict) >= (self.idList.MAX - self.idList.BASE + 1):
-            balt.showError(self,_(u'All load list slots are full. Please delete an existing load list before adding another.'))
+        if len(self.loadListsDict) >= (self.max_load_orders_saved + 1):
+            self._showError(_(u'All load list slots are full. Please delete an'
+                              u' existing load list before adding another.'))
             return
         #--Dialog
         newItem = (self._askText(_(u'Save current load list as:'),

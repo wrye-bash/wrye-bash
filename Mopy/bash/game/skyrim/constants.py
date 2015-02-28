@@ -24,7 +24,7 @@
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
-bethDataFiles = set((
+bethDataFiles = {
     #--Vanilla
     u'skyrim.esm',
     u'update.esm',
@@ -50,10 +50,10 @@ bethDataFiles = set((
     u'highrestexturepack01.bsa',
     u'highrestexturepack02.bsa',
     u'highrestexturepack03.bsa',
-    ))
+}
 
 #--Every file in the Data directory from Bethsoft
-allBethFiles = set((
+allBethFiles = {
     # Section 1: Vanilla files
     u'Skyrim.esm',
     u'Update.bsa',
@@ -15414,7 +15414,7 @@ allBethFiles = set((
     u'Video\\BGS_Logo.bik',
     # Section 5: SKSE INI File
     u'SKSE\\skse.ini',
-    ))
+}
 
 # Function Info ---------------------------------------------------------------
 conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param

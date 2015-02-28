@@ -231,7 +231,7 @@ class Parser(object):
             self.passTokens = passTokens
             self.passCommas = passCommas
             if max_args == KEY.NA: max_args = min_args
-            if max_args < min_args and max_args >= 0: max_args = min_args
+            if min_args > max_args >= 0: max_args = min_args
             self.minArgs = min_args
             self.maxArgs = max_args
 

@@ -12754,14 +12754,14 @@ class ObMGEFRecord(ObBaseRecord):
     IsFogType = CBashMaskedType('flags', 0x06000000, 0x06000000, 'IsBallType')  #Changeable
 
     def get_IsSprayType(self):
-        return self.flags != None and not self.IsFogType and (self.flags & 0x02000000) != 0
+        return self.flags is not None and not self.IsFogType and (self.flags & 0x02000000) != 0
     def set_IsSprayType(self, nValue):
         if nValue: self.flags = (self.flags & ~0x06000000) | 0x02000000
         elif self.IsSprayType: self.IsBallType = True
     IsSprayType = property(get_IsSprayType, set_IsSprayType)  #Changeable
 
     def get_IsBoltType(self):
-        return self.flags != None and not self.IsFogType and (self.flags & 0x04000000) != 0
+        return self.flags is not None and not self.IsFogType and (self.flags & 0x04000000) != 0
     def set_IsBoltType(self, nValue):
         if nValue: self.flags = (self.flags & ~0x06000000) | 0x04000000
         elif self.IsBoltType: self.IsBallType = True
@@ -14065,17 +14065,17 @@ class ObWTHRRecord(ObBaseRecord):
     exportattrs.remove('modt_p')
 
 #Helper functions
-validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
-                  'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
-                  'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
-                  'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
-                  'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
-                  'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
-                  'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
-                  'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
-                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+validTypes = {'GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+              'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
+              'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
+              'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
+              'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
+              'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
+              'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
+              'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
+              'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'}
 
-aggregateTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+aggregateTypes = {'GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
                   'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
                   'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
@@ -14083,10 +14083,10 @@ aggregateTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
                   'CLMT','REGN','WRLD','CELLS','ACHRS','ACRES','REFRS',
                   'PGRDS','LANDS','ROADS','DIAL','INFOS','QUST','IDLE',
-                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'}
 
-pickupables = set(['APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
-                   'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'])
+pickupables = {'APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
+               'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'}
 
 type_record = dict([('BASE',ObBaseRecord),(None,None),('',None),
                     ('GMST',ObGMSTRecord),('GLOB',ObGLOBRecord),('CLAS',ObCLASRecord),

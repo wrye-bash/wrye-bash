@@ -1886,7 +1886,7 @@ class MreRefr(MelRecord):
                     out.write(struct.pack('=4sH','XMRK',0))
                     out.packSub('FNAM','B',record.flags.dump())
                     value = record.full
-                    if value != None:
+                    if value is not None:
                         out.packSub0('FULL',value)
                     out.packSub('TNAM','Bs',record.markerType, record.unused5)
                 except struct.error:

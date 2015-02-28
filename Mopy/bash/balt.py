@@ -44,27 +44,6 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 
-# Basics ---------------------------------------------------------------------
-class IdList:
-    """DEPRECATED: Provides sequences of semi-unique ids. Useful for choice menus.
-
-    Sequence ids come in range from baseId up through (baseId + size - 1).
-    Named ids will be assigned ids starting at baseId + size.
-
-    Example:
-      loadIds = IdList(10000, 90,'SAVE','EDIT','NONE')
-    sequence ids are accessed by an iterator: i.e. iter(loadIds), and
-    named ids accessed by name. e.g. loadIds.SAVE, loadIds.EDIT, loadIds.NONE
-    """
-
-    def __init__(self,baseId,size,*names):
-        self.BASE = baseId
-        self.MAX = baseId + size - 1
-
-    def __iter__(self):
-        """Return iterator."""
-        for id_ in xrange(self.BASE,self.MAX+1): yield id_
-
 # Constants -------------------------------------------------------------------
 defId = wx.ID_ANY
 defVal = wx.DefaultValidator
@@ -83,12 +62,8 @@ def fonts():
     font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    try:
-        font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
-        font_italic.SetStyle(wx.FONTSTYLE_SLANT)
-    except: #OLD wxpython!
-        font_bold.SetWeight(wx.BOLD)
-        font_italic.SetStyle(wx.SLANT)
+    font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
+    font_italic.SetStyle(wx.FONTSTYLE_SLANT)
     return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
@@ -1649,7 +1624,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                     start = index
                 indexes.append(index)
             else:
-                if start >=0 and stop < 0:
+                if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
 
@@ -1694,7 +1669,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         else:
             # Dropped on top of an item
             target = index
-            if target >= start and target <= stop:
+            if start <= target <= stop:
                 # Trying to drop it back on itself
                 return
             elif target < start:
@@ -1929,7 +1904,10 @@ class UIList(wx.Panel):
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
     #--Edit labels - only registered if _editLabels != False
-    def OnBeginEditLabel(self,event): event.Skip()
+    def OnBeginEditLabel(self,event):
+        """Start renaming: deselect the extension."""
+        to = len(GPath(event.GetLabel()).sbody)
+        (self._gList.GetEditControl()).SetSelection(0,to)
     def OnLabelEdited(self,event): event.Skip()
 
     #--ABSTRACT ##: different Tank and List overrides - must unify
@@ -2312,7 +2290,7 @@ class Link(object):
     or wx submenu and append this to the currently popped up wx menu.
     Contract:
     - Link.__init__() is called _once_, _before the Bash app is initialized_,
-    except for "local" Link subclasses used in IdList related code.
+    except for "local" Link subclasses used in ChoiceLink related code.
     - Link.AppendToMenu() overrides stay confined in balt.
     - Link.Frame is set once and for all to the (ex) basher.bashFrame
       singleton. Use (sparingly) as the 'link' between menus and data layer.
@@ -2321,15 +2299,14 @@ class Link(object):
     Popup = None   # Current popup menu, set in Links.PopupMenu()
     text = u''     # Menu label (may depend on UI state when the menu is shown)
 
-    def __init__(self, _id=None, _text=None):
+    def __init__(self, _text=None):
         """Assign a wx Id.
 
-        Parameters underscored cause their use should be avoided - prefer to
-        specify text as a class attribute (or set in_initData()), while messing
-        with id should be confined in balt. Still used with IdList.
+        Parameter _text underscored cause its use should be avoided - prefer to
+        specify text as a class attribute (or set in it _initData()).
         """
         super(Link, self).__init__()
-        self.id = _id or wx.NewId() # register wx callbacks in AppendToMenu overrides
+        self.id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, data):
@@ -2464,10 +2441,10 @@ class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
     help = u'UNUSED'
 
-    def __init__(self,name,oneDatumOnly=False):
+    def __init__(self, name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name # class attribute really (see Link)
+        self.text = name or self.__class__.text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2491,24 +2468,18 @@ class MenuLink(Link):
         Link.Frame.GetStatusBar().SetText('')
 
 class ChoiceLink(Link):
-    """HACK: Choice menu using the IdList class to define its items.
-
-    Here really to de wx classes which are using the IdList ~~hack~~ class.
-    """
-    # TODO(ut): turn to a Links subclass ! Rename to IdListLinks
-    idList = IdList(0, 0)
-    extraItems = [] # list<Link> that correspond to named idList attributes
+    """List of Choices with optional menu items to edit etc those choices."""
+    extraItems = [] # list<Link>
     cls = ItemLink
 
     def _range(self):
-        for id_, item in zip(self.idList, self.items):
-            yield self.__class__.cls(id_, item)
+        for choice in self._choices: yield self.__class__.cls(_text=choice)
 
     @property
-    def items(self): return []
+    def _choices(self): return []
 
     def AppendToMenu(self,menu,window,data):
-        """Append idList items and register their callbacks."""
+        """Append Link items."""
         submenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
         if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
             menu = submenu
@@ -2516,12 +2487,7 @@ class ChoiceLink(Link):
             link.AppendToMenu(menu, window, data)
         for link in self._range():
             link.AppendToMenu(menu, window, data)
-        #--Events
-        wx.EVT_MENU_RANGE(Link.Frame, self.idList.BASE, self.idList.MAX,
-                          self.DoList)
         # returns None
-
-    def DoList(self, event): event.Skip()
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""

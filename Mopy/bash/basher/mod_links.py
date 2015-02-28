@@ -38,7 +38,7 @@ from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
 from . import Resources
 from .frames import DocBrowser
-from .constants import ID_GROUPS, JPEG, settingDefaults
+from .constants import JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
@@ -257,22 +257,23 @@ class _Mod_Labels(ChoiceLink):
                 self.window.PopulateItems()
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
+    def _initData(self, window, data):
+        super(_Mod_Labels, self)._initData(window, data)
+        _self = self
+        class _LabelLink(ItemLink):
+            def Execute(self, event):
+                fileLabels = bosh.modInfos.table.getColumn(_self.column)
+                for fileName in self.selected: fileLabels[fileName] = self.text
+                if isinstance(_self, Mod_Groups):
+                    bosh.modInfos.refresh(doInfos=False)  # needed ?
+                self.window.RefreshUI()
+        self.__class__.cls = _LabelLink
+
     @property
-    def items(self):
+    def _choices(self):
         items = self.labels[:]
         items.sort(key=lambda a: a.lower())
         return items
-
-    def DoList(self,event):
-        """Handle selection of label."""
-        label = self.items[event.GetId()-self.idList.BASE]
-        fileLabels = bosh.modInfos.table.getColumn(self.column)
-        for fileName in self.selected:
-            fileLabels[fileName] = label
-        if isinstance(self,Mod_Groups) and bosh.modInfos.refresh(doInfos=False):
-            self.window.SortItems()
-        self.window.RefreshUI()
-
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -344,7 +345,6 @@ class Mod_Groups(_Mod_Labels):
             (_(u'Reset'), self._doReset)] )
         self.editMenuText   = _(u'Edit Groups...')
         self.editWindowTitle = _(u'Groups')
-        self.idList     = ID_GROUPS
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
@@ -354,7 +354,7 @@ class Mod_Groups(_Mod_Labels):
         data = set(data)
         mod_group = bosh.modInfos.table.getColumn('group').items()
         modGroup = set([x[1] for x in mod_group if x[0] in data])
-        class _CheckGroup(CheckLink):
+        class _CheckGroup(CheckLink, self.__class__.cls):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
                 return self.text in modGroup
@@ -395,7 +395,6 @@ class Mod_Ratings(_Mod_Labels):
         self.addPrompt  = _(u'Add rating:')
         self.editMenuText   = _(u'Edit Ratings...')
         self.editWindowTitle = _(u'Ratings')
-        self.idList     = balt.IdList(10400, 90)
         super(Mod_Ratings, self).__init__()
 
 # Mod info menus --------------------------------------------------------------
