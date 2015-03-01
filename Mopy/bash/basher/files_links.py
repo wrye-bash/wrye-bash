@@ -348,15 +348,9 @@ class File_Sort(EnabledLink):
         #--Get first time from first selected file.
         modInfos = self.window.data
         fileNames = self.selected
-        # TODO(ut): balo relic ?
-        dotTimes = [modInfos[fileName].mtime for fileName in fileNames if fileName.s[0] in u'.=+']
-        if dotTimes:
-            newTime = min(dotTimes)
-        else:
-            newTime = min(modInfos[fileName].mtime for fileName in self.selected)
+        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
         fileNames.sort(key=lambda a: a.cext)
-        fileNames.sort(key=lambda a: a.s[0] not in u'.=')
         for fileName in fileNames:
             modInfos[fileName].setmtime(newTime)
             newTime += 60

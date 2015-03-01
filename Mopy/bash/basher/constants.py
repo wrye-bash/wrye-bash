@@ -84,10 +84,6 @@ colorInfo = {
         _(u'Tabs: Mods') + u'\n\n' +
         _(u'This is the background color used for a ghosted plugin.'),
     ),
-    'mods.bkgd.groupHeader': (_(u'Group Header'),
-        _(u'Tabs: Mods') + u'\n\n' +
-        _(u'This is the background color used for a Group marker.'),
-    ),
     'ini.bkgd.invalid': (_(u'Invalid INI Tweak'),
         _(u'Tabs: INI Edits') + u'\n\n' +
         _(u'This is the background color used for a tweak file that is invalid'
@@ -170,7 +166,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
         'mods.bkgd.exOverload':         (0xFF, 0x99, 0x00),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
-        'mods.bkgd.groupHeader':        (0xD8, 0xD8, 0xD8),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
         'tweak.bkgd.invalid':           (0xFF, 0xD5, 0xAA),

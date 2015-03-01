@@ -4580,28 +4580,19 @@ class ModInfos(FileInfos):
                 log.setHeader(head+_(u'Active Mod Files:'))
                 masters = set(self.ordered)
                 merged,imported = self.merged,self.imported
-            headers = set(mod for mod in self.data if mod.s[0] in u'.=+')
-            allMods = masters | merged | imported | headers
+            allMods = masters | merged | imported
             allMods = self.getOrdered([x for x in allMods if x in self])
             #--List
-            modIndex,header = 0, None
+            modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', False)
             for name in allMods:
                 if name in masters:
                     prefix = bul+u'%02X' % modIndex
                     modIndex += 1
-                elif name in headers:
-                    match = re.match(u'^[\.+= ]*(.*?)\.es[pm]',name.s,flags=re.U)
-                    if match: name = GPath(match.group(1))
-                    header = bul+u'==  ' +name.s
-                    continue
                 elif name in merged:
                     prefix = bul+u'++'
                 else:
                     prefix = bul+sImported
-                if header:
-                    log(header)
-                    header = None
                 text = u'%s  %s' % (prefix,name.s,)
                 if showVersion:
                     version = self.getVersion(name)

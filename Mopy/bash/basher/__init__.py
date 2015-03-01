@@ -1084,9 +1084,6 @@ class ModList(_ModsSortMixin, List):
         elif fileInfo.hasTimeConflict():
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
             mouseText += _(u"Has same time as another (unloaded) mod.  ")
-        elif fileName.s[0] in u'.+=':
-            item.SetBackgroundColour(colors['mods.bkgd.groupHeader'])
-            mouseText += _(u"Group header.  ")
         elif fileInfo.isGhost:
             item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
             mouseText += _(u"File is ghosted.  ")
