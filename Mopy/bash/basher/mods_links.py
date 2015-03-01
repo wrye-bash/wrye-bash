@@ -328,8 +328,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        files = bosh.modInfos.autoGhost(True)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(True))
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):

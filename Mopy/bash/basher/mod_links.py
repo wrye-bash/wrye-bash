@@ -598,7 +598,7 @@ class _Mod_AllowGhosting_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(ItemLink):
@@ -615,7 +615,7 @@ class _Mod_DisallowGhosting_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
@@ -654,7 +654,7 @@ class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
                 oldGhost = fileInfo.isGhost
                 if fileInfo.setGhost(toGhost) != oldGhost:
                     files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class _Mod_AllowGhostingInvert_All(ItemLink):
@@ -671,7 +671,7 @@ class _Mod_AllowGhostingInvert_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(TransLink):
@@ -696,7 +696,7 @@ class Mod_AllowGhosting(TransLink):
                     toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
                     oldGhost = fileInfo.isGhost
                     if fileInfo.setGhost(toGhost) != oldGhost:
-                        self.window.RefreshUI(fileName)
+                        self.window.RefreshUI(files=[fileName])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
@@ -746,8 +746,8 @@ class Mod_MarkMergeable(EnabledLink):
             message += u'\n\n'
         if no:
             message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-        self.window.RefreshUI(yes)
-        self.window.RefreshUI(no)
+        self.window.RefreshUI(files=yes)
+        self.window.RefreshUI(files=no)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -1110,7 +1110,7 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
     def Execute(self,event):
         for fileName in self.selected:
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
-        self.window.RefreshUI(self.selected)
+        self.window.RefreshUI(files=self.selected)
 
 class _Mod_SkipDirtyCheckInvert(ItemLink):
     text = _(u"Invert checking against LOOT's dirty mod list")
@@ -1121,7 +1121,7 @@ class _Mod_SkipDirtyCheckInvert(ItemLink):
         for fileName in self.selected:
             ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
-        self.window.RefreshUI(self.selected)
+        self.window.RefreshUI(files=self.selected)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1141,7 +1141,7 @@ class Mod_SkipDirtyCheck(TransLink):
                     fileName = self.selected[0]
                     self.ignoreDirty ^= True
                     bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
-                    self.window.RefreshUI(fileName)
+                    self.window.RefreshUI(files=[fileName])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
@@ -1579,7 +1579,7 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        self.window.RefreshUI(updated,fileName)
+        self.window.RefreshUI(files=updated, details=fileName)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(EnabledLink):

@@ -472,7 +472,7 @@ class App_BOSS(App_Button):
             # And refresh to get the new times so WB will keep the order that BOSS specifies
             bosh.modInfos.refresh(doInfos=False)
             # Refresh UI, so WB is made aware of the changes to loadorder.txt
-            BashFrame.modList.RefreshUI('ALL')
+            BashFrame.modList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Game_Button(App_Button):

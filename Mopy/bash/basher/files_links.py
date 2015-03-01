@@ -437,7 +437,7 @@ class File_RevertToSnapshot(OneItemLink):
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.details.SetFile(None)
-            self.window.RefreshUI(fileName)
+            self.window.RefreshUI(files=[fileName])
 
 class File_Backup(ItemLink):
     """Backup file."""
@@ -507,4 +507,4 @@ class File_RevertToBackup(ChoiceLink):
                     self.window.data.refreshFile(fileName)
                 except bosh.FileError:
                     balt.showError(self,_(u'Old file is corrupt!'))
-                self.window.RefreshUI(fileName)
+                self.window.RefreshUI(files=[fileName])

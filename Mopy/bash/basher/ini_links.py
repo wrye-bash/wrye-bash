@@ -196,9 +196,9 @@ class INI_Apply(EnabledLink):
                 self.window.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUI('VALID')
-            iniPanel.iniContents.RefreshUI()
-            iniPanel.tweakContents.RefreshUI(self.selected[0])
+            self.window.RefreshUIValid()
+            iniPanel.iniContents.RefreshIniContents()
+            iniPanel.tweakContents.RefreshTweakLineCtrl(self.selected[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
@@ -208,8 +208,7 @@ class INI_CreateNew(OneItemLink):
 
     def _initData(self, window, data):
         Link._initData(self,window,data)
-        self.parent = self.window.panel
-        ini = self.parent.comboBox.GetValue()
+        ini = self.window.panel.comboBox.GetValue()
         if not len(data) == 1:
             self.help = _(u'Please choose one Ini Tweak')
         else:
@@ -245,4 +244,4 @@ class INI_CreateNew(OneItemLink):
                             setting]
         target.saveSettings(settings)
         self.window.RefreshUI(detail=path)
-        self.parent.tweakContents.RefreshUI(path.tail)
+        self.window.panel.tweakContents.RefreshTweakLineCtrl(path.tail)

@@ -842,7 +842,7 @@ class Save_Unbloat(OneItemLink):
         self._showOk((_(u'Uncreated Objects: %d') + u'\n' +
                       _(u'Uncreated Refs: %d') + u'\n' +
                       _(u'UnNulled Refs: %d')) % nums, saveName.s)
-        self.window.RefreshUI(saveName)
+        self.window.RefreshUI(files=[saveName])
 
 #------------------------------------------------------------------------------
 class Save_UpdateNPCLevels(EnabledLink):

@@ -2174,7 +2174,7 @@ class Tank(UIList):
         """Returns text labels for item to populate list control."""
         raise AbstractError
 
-    def RefreshUI(self,items='ALL',details='SAME'):
+    def RefreshUI(self, files='ALL', details='SAME'):
         """Refreshes UI for specified file."""
         selected = self.GetSelected()
         if details == 'SAME':
@@ -2183,13 +2183,11 @@ class Tank(UIList):
             if isinstance(details, basestring):
                 selected = tuple([details]) # see People_AddNew
             else: selected = tuple(details)
-        if items == 'ALL':
+        if files == 'ALL':
             self.UpdateItems(selected=selected)
-        elif items in self.data:
-            self.UpdateItem(self.GetIndex(items),items,selected=selected)
         else: #--Iterable
             for index in xrange(self._gList.GetItemCount()):
-                if self.GetItem(index) in set(items):
+                if self.GetItem(index) in set(files):
                     self.UpdateItem(index,None,selected=selected)
         self.RefreshDetails(details)
         self.panel.SetStatusCount()
