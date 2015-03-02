@@ -340,7 +340,7 @@ class Mods_ScanDirty(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.PopulateItems()
+        self.window.RefreshUI()
 
 class Mods_LockTimes(CheckLink):
     """Turn on resetMTimes feature."""

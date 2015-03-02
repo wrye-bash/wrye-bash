@@ -223,7 +223,7 @@ class Saves_Profiles(ChoiceLink):
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):
-    """Sets the load list to the save game's masters.""" # FIXME(ut): test
+    """Sets the load list to the save game's masters."""
     text = _(u'Load Masters')
     help = _(u"Set the load list to the save game's masters")
 
@@ -231,9 +231,8 @@ class Save_LoadMasters(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        BashFrame.modList.PopulateItems()
-        self.window.PopulateItems()
-        self.window.details.SetFile(fileName)
+        BashFrame.modList.RefreshUI() # will refresh saves too
+        self.window.SelectItem(fileName) # refresh details
         if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------

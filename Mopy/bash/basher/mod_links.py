@@ -195,10 +195,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.sort()
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
+        changed= []
         for fileName in colGroup.keys():
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
-        self.parent.PopulateItems()
+                changed.append(fileName)
+        self.parent.RefreshUI(files=changed)
         #--Done
         return newName
 
@@ -208,10 +210,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
+        changed= []
         for fileName in colGroup.keys():
             if colGroup[fileName] == item:
                 del colGroup[fileName]
-        self.parent.PopulateItems()
+                changed.append(fileName)
+        self.parent.RefreshUI(files=changed)
         #--Done
         return True
 
@@ -254,7 +258,7 @@ class _Mod_Labels(ChoiceLink):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
                     fileLabels[fileName] = u''
-                self.window.PopulateItems()
+                self.window.RefreshUI(files=self.selected)
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     def _initData(self, window, data):
@@ -266,7 +270,7 @@ class _Mod_Labels(ChoiceLink):
                 for fileName in self.selected: fileLabels[fileName] = self.text
                 if isinstance(_self, Mod_Groups):
                     bosh.modInfos.refresh(doInfos=False)  # needed ?
-                self.window.RefreshUI()
+                self.window.RefreshUI(files=self.selected)
         self.__class__.cls = _LabelLink
 
     @property
