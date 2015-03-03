@@ -694,7 +694,7 @@ class MasterList(_ModsSortMixin, List):
         newName = GPath(event.GetText())
         #--No change?
         if newName in bosh.modInfos:
-            masterInfo = self.data[self.items[itemDex]]
+            masterInfo = self.data[self.GetItem(itemDex)]
             oldName = masterInfo.name
             masterInfo.setName(newName)
             self.ReList()
@@ -709,7 +709,7 @@ class MasterList(_ModsSortMixin, List):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data[item].name for item in sorted(self.items)]
+        return [self.data[item].name for item in sorted(self.data.keys())]
 
 #------------------------------------------------------------------------------
 class INIList(List):
@@ -754,9 +754,8 @@ class INIList(List):
         return tweaklist
 
     def RefreshUIValid(self):
-        files = [GPath(self.items[x]) for x in xrange(len(self.items)) if
-                 self.data[GPath(self.items[x])].status >= 0]
-        self.RefreshUI(files=files)
+        valid = filter(lambda k: self.data[k].status >= 0, self.data.keys())
+        self.RefreshUI(files=valid)
 
     def getColumns(self, fileName):
         labels, table = {}, self.data.table
@@ -807,7 +806,7 @@ class INIList(List):
         event.Skip()
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
-        tweak = bosh.iniInfos[self.items[hitItem]]
+        tweak = bosh.iniInfos[self.GetItem(hitItem)]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.panel
@@ -820,7 +819,7 @@ class INIList(List):
             if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
         #--No point applying a tweak that's already applied
-        file_ = tweak.dir.join(self.items[hitItem])
+        file_ = tweak.dir.join(self.GetItem(hitItem))
         self.data.ini.applyTweakFile(file_)
         self.RefreshUIValid()
         iniPanel.iniContents.RefreshIniContents()
@@ -964,9 +963,11 @@ class ModList(_ModsSortMixin, List):
     def OnDropIndexes(self, indexes, newIndex):
         order = bosh.modInfos.plugins.LoadOrder
         # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
-        start = order.index(self.items[indexes[0]])
-        stop = order.index(self.items[indexes[-1]]) + 1
-        newPos = order.index(self.items[newIndex]) if (len(self.items) > newIndex) else order.index(self.items[-1])
+        start = order.index(self.GetItem(indexes[0]))
+        stop = order.index(self.GetItem(indexes[-1])) + 1
+        count = self._gList.GetItemCount()
+        newPos = order.index(self.GetItem(newIndex)) if (
+            count > newIndex) else order.index(self.GetItem(count - 1))
         # Dummy checks: can't move the game's master file anywhere else but position 0
         if newPos <= 0: return
         master = bosh.modInfos.masterName
@@ -1097,7 +1098,7 @@ class ModList(_ModsSortMixin, List):
         """Handle doubleclicking a mod in the Mods List."""
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        fileInfo = self.data[self.items[hitItem]]
+        fileInfo = self.data[self.GetItem(hitItem)]
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
             DocBrowser().Show()
@@ -1111,13 +1112,14 @@ class ModList(_ModsSortMixin, List):
         ##Ctrl+Up and Ctrl+Down
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
             (self.sort == 'Load Order')):
-                orderKey = lambda x: self.items.index(x)
+                orderKey = lambda x: self.GetIndex(x)
                 moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
                 isReversed = (moveMod != -1)
+                count = self._gList.GetItemCount()
                 for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
-                    swapItem = self.items.index(thisFile) + moveMod
-                    if swapItem < 0 or len(self.items) - 1 < swapItem: break
-                    swapFile = self.items[swapItem]
+                    swapItemDex = self.GetIndex(thisFile) + moveMod
+                    if swapItemDex < 0 or count - 1 < swapItemDex: break
+                    swapFile = self.GetItem(swapItemDex)
                     try:
                         bosh.modInfos.swapOrder(thisFile,swapFile)
                     except bolt.BoltError as e:
@@ -1154,7 +1156,7 @@ class ModList(_ModsSortMixin, List):
         (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             listCtrl.SetDnD(False)
-            self._checkUncheckMod(self.items[hitItem])
+            self._checkUncheckMod(self.GetItem(hitItem))
         else:
             listCtrl.SetDnD(True)
         #--Pass Event onward
@@ -1162,7 +1164,7 @@ class ModList(_ModsSortMixin, List):
 
     def OnItemSelected(self,event):
         """Item Selected: Set mod details."""
-        modName = self.items[event.m_itemIndex]
+        modName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(modName)
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
@@ -1652,7 +1654,7 @@ class INIPanel(SashPanel):
         self.RefreshPanel()
 
     def OnSelectTweak(self, event):
-        tweakFile = self.uiList.items[event.GetIndex()]
+        tweakFile = self.uiList.GetItem(event.GetIndex())
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshTweakLineCtrl(tweakFile)
         event.Skip()
@@ -1951,7 +1953,7 @@ class SaveList(List):
                  % {'ess': bush.game.ess.ext})
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             if not balt.askContinue(self, msg, 'bash.saves.askDisable'): return
-            fileName = GPath(self.items[hitItem])
+            fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
             if newName != fileName: self.RefreshUI() ##: files=[fileName]
@@ -1959,7 +1961,7 @@ class SaveList(List):
         event.Skip()
 
     def OnItemSelected(self,event=None):
-        saveName = self.items[event.m_itemIndex]
+        saveName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
@@ -3182,7 +3184,7 @@ class ScreensList(List):
         super(ScreensList, self).OnKeyUp(event)
 
     def OnItemSelected(self,event=None):
-        fileName = self.items[event.m_itemIndex]
+        fileName = self.GetItem(event.m_itemIndex)
         filePath = bosh.screensData.dir.join(fileName)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.panel.picture.SetBitmap(bitmap)
@@ -3241,7 +3243,7 @@ class BSAList(List):
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            fileName = GPath(self.items[hitItem])
+            fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
             if newName != fileName: self.RefreshUI()
@@ -3249,7 +3251,7 @@ class BSAList(List):
         event.Skip()
 
     def OnItemSelected(self,event=None):
-        BSAName = self.items[event.m_itemIndex]
+        BSAName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(BSAName)
 
 #------------------------------------------------------------------------------
@@ -3504,7 +3506,7 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
     def _sbCount(self):
-        used = len(self.uiList.items) if self.uiList.searchResults is None \
+        used = len(self.listData.keys()) if self.uiList.searchResults is None \
             else len(self.uiList.searchResults)
         return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
 
