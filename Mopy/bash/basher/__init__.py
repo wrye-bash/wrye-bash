@@ -331,15 +331,19 @@ class List(balt.UIList):
         self.PopulateItems()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
+    def PopulateItem(self, itemDex=-1, item=None, mode=0, selected=set()):
         """Populate ListCtrl for specified item."""
-        #--String name of item? ##: YAK
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
-        cols = self.cols
         listCtrl = self._gList
+        if item is not None:
+            fileName = GPath(item)
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = listCtrl.GetItemCount() # insert at the end
+                mode = True
+        else: # no way we're inserting with a None item
+            fileName = GPath(self.GetItem(itemDex))
+        cols = self.cols
         labels = self.getColumns(fileName)
         for colDex in range(len(cols)):
             col = cols[colDex]
@@ -378,8 +382,8 @@ class List(balt.UIList):
                 items.remove(item)
                 index += 1
         #--Add remaining new items
-        for item in filter(lambda x: x in items, self.items): # otherwise index out of bounds
-            self.PopulateItem(item, mode=True, selected=selected) ##: yak
+        for item in items:
+            self.PopulateItem(item=item, mode=True, selected=selected)
         #--Sort
         self.SortItems(col, reverse)
         self.autosizeColumns()
@@ -407,7 +411,7 @@ class List(balt.UIList):
             if isinstance(self, ModList): ##: why is this needed ?
                 files = filter(lambda x: x in bosh.modInfos, files)
             for file_ in files:
-                self.PopulateItem(file_, selected=selected)
+                self.PopulateItem(item=file_, selected=selected)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
@@ -581,37 +585,53 @@ class MasterList(_ModsSortMixin, List):
     def GetItems(self):
         return self.items
 
+    def getColumns(self, mi):
+        labels, masterInfo = {}, self.data[mi]
+        masterName = masterInfo.name
+        value = masterName.s
+        if masterName == u'Oblivion.esm':
+            voCurrent = bosh.modInfos.voCurrent
+            if voCurrent: value += u' ['+voCurrent+u']'
+        labels['File'] = value
+        labels['Num'] = u'%02X' % mi
+        if masterName in bosh.modInfos.ordered:
+            value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
+        else:
+            value = u''
+        labels['Current Order'] = value
+        return labels
+
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        if mode: # inserting, GetItem will result in a wx error dialog
-            mi = itemDex
+    def PopulateItem(self, itemDex=-1, item=None, mode=0, selected=set()):
+        mode = False
+        listCtrl = self._gList
+        if item is not None: # inserting, GetItem will result in a wx error dialog
+            mi = item
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = listCtrl.GetItemCount() # insert at the end
+                mode = True
         else:
             mi = self.GetItem(itemDex)
         masterInfo = self.data[mi]
         masterName = masterInfo.name
         cols = self.cols
-        listCtrl = self._gList
+        labels = self.getColumns(mi)
         for colDex in range(len(cols)):
-            #--Value
             col = cols[colDex]
-            if col == 'File':
-                value = masterName.s
-                if masterName == u'Oblivion.esm':
-                    voCurrent = bosh.modInfos.voCurrent
-                    if voCurrent: value += u' ['+voCurrent+u']'
-            elif col == 'Num':
-                value = u'%02X' % mi
-            elif col == 'Current Order':
-                #print itemId
-                if masterName in bosh.modInfos.ordered:
-                    value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
-                else:
-                    value = u''
-            #--Insert/Set Value
-            if mode and (colDex == 0):
-                listCtrl.InsertListCtrlItem(itemDex, value, mi)
+            if mode and colDex == 0:
+                listCtrl.InsertListCtrlItem(itemDex, labels[col], mi)
             else:
-                listCtrl.SetStringItem(itemDex, colDex, value)
+                listCtrl.SetStringItem(itemDex, colDex, labels[col])
+        self.setUI(mi, itemDex)
+        #--Selection State
+        self.SelectItemAtIndex(itemDex, masterName in selected)
+
+    def setUI(self, mi, itemDex):
+        listCtrl = self._gList
+        masterInfo = self.data[mi]
+        masterName = masterInfo.name
         #--Font color
         item = listCtrl.GetItem(itemDex)
         if masterInfo.isEsm():
@@ -639,8 +659,6 @@ class MasterList(_ModsSortMixin, List):
         status = self.GetMasterStatus(mi)
         oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, masterName in selected)
 
     #--Relist
     def ReList(self):
