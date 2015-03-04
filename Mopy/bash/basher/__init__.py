@@ -331,28 +331,30 @@ class List(balt.UIList):
         self.PopulateItems()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None):
-        """Populate ListCtrl for specified item."""
-        mode = False
-        listCtrl = self._gList
-        if item is not None:
-            fileName = GPath(item)
-            try:
-                itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = listCtrl.GetItemCount() # insert at the end
-                mode = True
-        else: # no way we're inserting with a None item
-            fileName = GPath(self.GetItem(itemDex))
+    def _populate(self, fileName, itemDex, mode):
         cols = self.cols
         labels = self.getColumns(fileName)
         for colDex in range(len(cols)):
             col = cols[colDex]
             if mode and colDex == 0:
-                listCtrl.InsertListCtrlItem(itemDex, labels[col], fileName)
+                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
             else:
-                listCtrl.SetStringItem(itemDex, colDex, labels[col])
+                self._gList.SetStringItem(itemDex, colDex, labels[col])
         self.setUI(fileName, itemDex)
+
+    def PopulateItem(self, itemDex=-1, item=None):
+        """Populate ListCtrl for specified item."""
+        mode = False
+        if item is not None:
+            fileName = GPath(item)
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = self._gList.GetItemCount() # insert at the end
+                mode = True
+        else: # no way we're inserting with a None item
+            fileName = GPath(self.GetItem(itemDex))
+        self._populate(fileName, itemDex, mode)
 
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
@@ -597,25 +599,16 @@ class MasterList(_ModsSortMixin, List):
     #--Populate Item
     def PopulateItem(self, itemDex=-1, item=None):
         mode = False
-        listCtrl = self._gList
-        if item is not None: # inserting, GetItem will result in a wx error dialog
+        if item is not None:
             mi = item
             try:
                 itemDex = self.GetIndex(item)
             except KeyError:
-                itemDex = listCtrl.GetItemCount() # insert at the end
+                itemDex = self._gList.GetItemCount() # insert at the end
                 mode = True
         else:
             mi = self.GetItem(itemDex)
-        cols = self.cols
-        labels = self.getColumns(mi)
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and colDex == 0:
-                listCtrl.InsertListCtrlItem(itemDex, labels[col], mi)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(mi, itemDex)
+        self._populate(mi, itemDex, mode)
 
     def setUI(self, mi, itemDex):
         listCtrl = self._gList
@@ -3456,20 +3449,16 @@ class MessageList(List):
         labels['Author'] = author
         return labels
 
-    def PopulateItem(self,itemDex,mode=0):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            item = itemDex
-            itemDex = self.items.index(itemDex)
-        else: item = self.GetItem(itemDex)
-        labels = self.getColumns(item)
-        cols = self.cols
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and (colDex == 0):
-                self._gList.InsertListCtrlItem(itemDex, labels[col], item)
-            else:
-                self._gList.SetStringItem(itemDex, colDex, labels[col])
+    def PopulateItem(self, itemDex=-1, item=None):
+        mode = False
+        if item is not None:
+            fileName = item
+            try: itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = self._gList.GetItemCount() # insert at the end
+                mode = True
+        else: fileName = self.GetItem(itemDex)
+        self._populate(fileName, itemDex, mode)
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
