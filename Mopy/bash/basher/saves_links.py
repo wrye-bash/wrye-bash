@@ -29,10 +29,11 @@ import StringIO
 import re
 import shutil
 import struct
-from . import Resources, BashFrame
+from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bosh, bolt, balt, bush
+from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError

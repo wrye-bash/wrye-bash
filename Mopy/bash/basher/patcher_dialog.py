@@ -29,11 +29,12 @@ import re
 import time
 import wx
 from datetime import timedelta
+from . import SetUAC, BashFrame
+from .. import bosh, bolt, balt
+from ..bass import Resources
 from ..balt import button, staticText, vSizer, hSizer, spacer, Link
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
-from . import SetUAC, Resources, BashFrame
-from .. import bosh, bolt, balt
 from ..patcher import configIsCBash
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 

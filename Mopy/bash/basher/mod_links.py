@@ -31,12 +31,12 @@ import copy
 import os
 import wx
 from .. import bosh, bolt, balt, bush
+from ..bass import Resources
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
-from . import Resources
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
@@ -2699,7 +2699,6 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
 #------------------------------------------------------------------------------
 from ..bolt import deprint
 from ..cint import ObCollection
-from .dialogs import ListBoxes
 
 class MasterList_AddMasters(ItemLink): # CRUFT
     """Adds a master."""

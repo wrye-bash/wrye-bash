@@ -69,6 +69,7 @@ import wx.gizmos
 #--Localization
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
+from ..bass import Resources
 from ..bosh import formatInteger,formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path
@@ -80,7 +81,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink
+    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes
 from ..balt import button, checkBox, staticText, \
     spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
@@ -192,14 +193,6 @@ class ColorChecks(balt.ImageList):
 
 colorChecks = ColorChecks()
 
-class Resources:
-    fonts = None
-    #--Icon Bundles
-    bashRed = None
-    bashBlue = None
-    bashDocBrowser = None
-    bashMonkey = None
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
@@ -212,7 +205,6 @@ tabInfo = {
     'People':['PeoplePanel', _(u"People"), None],
 }
 
-from .dialogs import ListBoxes # TODO(ut): cyclic import
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):

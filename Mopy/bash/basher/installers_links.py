@@ -26,10 +26,11 @@
 points to the InstallersList singleton."""
 
 import copy
+from . import Installers_Link
+from .dialogs import CreateNewProject
 from .. import bosh, balt, bush
-from ..balt import BoolLink, AppendableLink, Link, ItemLink
-from . import Resources, Installers_Link
-from .dialogs import ListBoxes, CreateNewProject
+from ..balt import BoolLink, AppendableLink, Link, ItemLink, ListBoxes
+from ..bass import Resources
 from ..bolt import SubProgress
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',

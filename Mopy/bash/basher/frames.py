@@ -26,8 +26,8 @@ import StringIO
 import re
 import string
 import wx
-from . import Resources
 from .. import balt, bosh, bolt
+from ..bass import Resources
 from ..balt import textCtrl, staticText, vSizer, hSizer, spacer, button, \
     roTextCtrl, bitmapButton, bell, Link, toggleButton
 from ..bolt import GPath, BoltError, deprint

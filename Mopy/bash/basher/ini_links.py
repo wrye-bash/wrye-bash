@@ -26,10 +26,10 @@
 attribute points to BashFrame.iniList singleton.
 """
 
-from . import Resources
-from .dialogs import ListBoxes
-from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 from .. import bosh, balt, bush
+from ..bass import Resources
+from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink, \
+    ListBoxes
 
 __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
            'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',

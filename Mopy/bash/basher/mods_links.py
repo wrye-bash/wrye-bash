@@ -25,12 +25,11 @@
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
-from . import Resources
-from .dialogs import ListBoxes
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
+from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link
+    SeparatorLink, Link, ListBoxes
 from ..bolt import GPath
 from ..patcher.patch_files import PatchFile
 
