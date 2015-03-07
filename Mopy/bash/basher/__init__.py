@@ -329,9 +329,6 @@ class List(balt.UIList):
         #--Items
         self.sortDirty = 0
         self.PopulateItems()
-        #--Events: Columns
-        self.checkcol = []
-        self._gList.Bind(wx.EVT_UPDATE_UI, self.onUpdateUI)
 
     #--Items ----------------------------------------------
     def PopulateItem(self,itemDex,mode=0,selected=set()):
@@ -367,6 +364,7 @@ class List(balt.UIList):
             self.PopulateItem(item, mode=True, selected=selected) ##: yak
         #--Sort
         self.SortItems(col, reverse)
+        self.autosizeColumns()
 
     __all = ()
     def RefreshUI(self, files=__all, detail='SAME', **kwargs):
@@ -452,30 +450,6 @@ class List(balt.UIList):
                                 balt.showError(self, u'%s' % e)
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
-
-    #--Event Handlers -------------------------------------
-    def onUpdateUI(self,event):
-        if self.checkcol:
-            colDex = self.checkcol[0]
-            colName = self.cols[colDex]
-            width = self._gList.GetColumnWidth(colDex)
-            if width < 25:
-                width = 25
-                self._gList.SetColumnWidth(colDex, 25)
-                self._gList.resizeLastColumn(0)
-            self.colWidths[colName] = width
-            self.checkcol = []
-        event.Skip()
-
-    #--Column Resize
-    def OnColumnResize(self,event):
-        """Due to a nastyness that ListCtrl.GetColumnWidth(col) returns
-        the old size before this event completes just save what
-        column is being edited and process after in OnUpdateUI()"""
-        self.checkcol = [event.GetColumn()]
-        settings.setdefault(self.colWidthsKey, {}) ##: hack - move to UIList
-        settings.setChanged(self.colWidthsKey)
-        event.Skip()
 
 class _ModsSortMixin(object):
 
@@ -1278,6 +1252,7 @@ class _SashDetailsPanel(SashPanel):
                                    self.__class__.defaultSubSashPos)
             self.subSplitter.SetSashPosition(sashPos)
             del self._firstShow
+        self.uilist.autosizeColumns()
 
     def ClosePanel(self): ##: does not call super
         if not hasattr(self, '_firstShow'):
@@ -1318,8 +1293,8 @@ class ModDetails(_SashDetailsPanel):
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            self.masters = MasterList(masterPanel, None, self.SetEdited,
-                                      keyPrefix=self.keyPrefix)
+            self.uilist = MasterList(
+                masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -1350,7 +1325,7 @@ class ModDetails(_SashDetailsPanel):
         subSplitter.SetSashGravity(0.5)
         mastersSizer = vSizer(
             (hSizer((staticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
-            (hSizer((self.masters,1,wx.EXPAND)),1,wx.EXPAND),
+            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4)
@@ -1400,7 +1375,7 @@ class ModDetails(_SashDetailsPanel):
         self.modified.SetValue(self.modifiedStr)
         self.description.SetValue(self.descriptionStr)
         self.version.SetLabel(self.versionStr)
-        self.masters.SetFileInfo(modInfo)
+        self.uilist.SetFileInfo(modInfo)
         self.gTags.SetValue(tagsStr)
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
@@ -1489,7 +1464,7 @@ class ModDetails(_SashDetailsPanel):
         changeDate = (self.modifiedStr != formatDate(modInfo.mtime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
-        changeMasters = self.masters.edited
+        changeMasters = self.uilist.edited
         #--Warn on rename if file has BSA and/or dialog
         hasBsa, hasVoices = modInfo.hasResources()
         if changeName and (hasBsa or hasVoices):
@@ -1539,7 +1514,7 @@ class ModDetails(_SashDetailsPanel):
         if changeHedr or changeMasters:
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = bolt.winNewLines(self.descriptionStr.strip())
-            modInfo.header.masters = self.masters.GetNewMasters()
+            modInfo.header.masters = self.uilist.GetNewMasters()
             modInfo.header.changed = True
             modInfo.writeHeader()
         #--Change date?
@@ -2046,8 +2021,8 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.masters = MasterList(masterPanel, None, self.SetEdited,
-                                  keyPrefix=self.keyPrefix)
+        self.uilist = MasterList(
+            masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -2066,7 +2041,7 @@ class SaveDetails(_SashDetailsPanel):
             (self.picture,1,wx.TOP|wx.EXPAND,4),
             )
         mastersSizer = vSizer(
-            (self.masters,1,wx.EXPAND|wx.TOP,4),
+            (self.uilist,1,wx.EXPAND|wx.TOP,4),
             (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4),
@@ -2127,7 +2102,7 @@ class SaveDetails(_SashDetailsPanel):
                                   self.playMinutes/60,(self.playMinutes%60),
                                   self.curCellStr))
         self.gCoSaves.SetLabel(self.coSaves)
-        self.masters.SetFileInfo(saveInfo)
+        self.uilist.SetFileInfo(saveInfo)
         #--Picture
         if not self.picData:
             self.picture.SetBitmap(None)
@@ -2191,7 +2166,7 @@ class SaveDetails(_SashDetailsPanel):
         saveInfo = self.saveInfo
         #--Change Tests
         changeName = (self.fileStr != saveInfo.name)
-        changeMasters = self.masters.edited
+        changeMasters = self.uilist.edited
         #--Backup
         saveInfo.makeBackup()
         prevMTime = saveInfo.mtime
@@ -2202,7 +2177,7 @@ class SaveDetails(_SashDetailsPanel):
             bosh.saveInfos.rename(oldName,newName)
         #--Change masters?
         if changeMasters:
-            saveInfo.header.masters = self.masters.GetNewMasters()
+            saveInfo.header.masters = self.uilist.GetNewMasters()
             saveInfo.header.writeMasters(saveInfo.getPath())
             saveInfo.setmtime(prevMTime)
         #--Done
@@ -3465,7 +3440,6 @@ class BSADetails(wx.Window):
         BSAInfo = self.BSAInfo
         #--Change Tests
         changeName = (self.fileStr != BSAInfo.name)
-        #changeMasters = self.masters.edited
         #--Backup
         BSAInfo.makeBackup()
         prevMTime = BSAInfo.mtime

@@ -10523,7 +10523,6 @@ def initDefaultSettings():
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
-    inisettings['AutoSizeListColumns'] = 0
     inisettings['SoundSuccess'] = GPath(u'')
     inisettings['SoundError'] = GPath(u'')
     inisettings['EnableSplashScreen'] = True

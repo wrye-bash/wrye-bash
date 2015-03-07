@@ -322,10 +322,32 @@ class List_Columns(MenuLink):
     """Customize visible columns."""
     text = _(u"Columns")
 
+    class _AutoWidth(RadioLink):
+        wxFlag = 0
+        def _check(self): return self.wxFlag == self.window.autoColWidths
+        def Execute(self, event):
+            self.window.autoColWidths = self.wxFlag
+            self.window.autosizeColumns()
+
+    class _Manual(_AutoWidth):
+        text = _(u'Manual')
+        help = _(
+            u'Allow to manually resize columns. Applies to all Bash lists')
+    class _Contents(_AutoWidth):
+        text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
+        help = _(u'Fit columns to their content. Applies to all Bash lists.'
+                 u' You can hit Ctrl + Numpad+ to the same effect')
+    class _Header(_AutoWidth):
+        text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
+        help = _(u'Fit columns to their content, keep header always visible. '
+                 u' Applies to all Bash lists')
+
     def __init__(self, columnsKey, allColumnsKey, persistentColumns):
         super(List_Columns, self).__init__(self.__class__.text)
         self.columnsKey = columnsKey
         self.allColumnsKey = allColumnsKey
+        self.links = [self._Manual(), self._Contents(), self._Header(),
+                      balt.SeparatorLink()]
         for col in settingDefaults[self.allColumnsKey]:
             enable = col not in persistentColumns
             self.links.append(

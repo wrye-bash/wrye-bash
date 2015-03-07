@@ -1745,6 +1745,8 @@ class UIList(wx.Panel):
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
+    #--Cols
+    _min_column_width = 24
     #--Style params
     _editLabels = False # allow editing the labels - also enables F2 shortcut
     _sunkenBorder = True
@@ -1768,9 +1770,6 @@ class UIList(wx.Panel):
         self.SetSizer(sizer)
         #--Settings key
         self.keyPrefix = keyPrefix
-        # columns keys - access to the settings is done via properties (mostly)
-        self.colNames = bosh.settings['bash.colNames']
-        self.colWidthsKey = self.keyPrefix + '.colWidths' # used in OnColumnResize
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
@@ -1815,15 +1814,22 @@ class UIList(wx.Panel):
         # Columns
         self.PopulateColumns()
 
-    # Column properties - consider moving to a ListCtrl mixin
+    # Column properties
     @property
-    def colWidths(self): return bosh.settings.getChanged(self.colWidthsKey, {})
+    def colWidths(self):
+        return bosh.settings.getChanged(self.keyPrefix + '.colWidths', {})
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
         return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
     def cols(self): return bosh.settings[self.keyPrefix + '.cols']
+    @property
+    def autoColWidths(self): return bosh.settings.get(
+        'bash.autoSizeListColumns', 0)
+    @autoColWidths.setter
+    def autoColWidths(self, val):
+        bosh.settings['bash.autoSizeListColumns'] = val
     # the current sort column
     @property
     def sort(self):
@@ -1831,6 +1837,9 @@ class UIList(wx.Panel):
                                  self._default_sort_col)
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
+
+    #--ABSTRACT
+    def OnItemSelected(self, event): raise AbstractError
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1894,6 +1903,27 @@ class UIList(wx.Panel):
         """Column header was left clicked on. Sort on that column."""
         self.SortItems(self.cols[event.GetColumn()],'INVERT')
 
+    def OnColumnResize(self, event):
+        """Column resized: enforce minimal width and save column size info."""
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        width = self._gList.GetColumnWidth(colDex)
+        if width < self._min_column_width:
+            width = self._min_column_width
+            self._gList.SetColumnWidth(colDex, self._min_column_width)
+            event.Veto() # if we do not veto the column will be resized anyway!
+            self._gList.resizeLastColumn(0) # resize last column to fill
+        else:
+            event.Skip()
+        self.colWidths[colName] = width
+
+    # gList columns autosize---------------------------------------------------
+    def autosizeColumns(self):
+        if self.autoColWidths:
+            colCount = xrange(self._gList.GetColumnCount())
+            for i in colCount:
+                self._gList.SetColumnWidth(i, -self.autoColWidths)
+
     #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
@@ -1904,10 +1934,6 @@ class UIList(wx.Panel):
         to = len(GPath(event.GetLabel()).sbody)
         (self._gList.GetEditControl()).SetSelection(0,to)
     def OnLabelEdited(self,event): event.Skip()
-
-    #--ABSTRACT ##: different Tank and List overrides - must unify
-    def OnItemSelected(self, event): raise AbstractError
-    def OnColumnResize(self, event): raise AbstractError
 
     #-- Item selection --------------------------------------------------------
     def SelectItemAtIndex(self, index, select=True,
@@ -2040,7 +2066,7 @@ class UIList(wx.Panel):
         for colDex in xrange(self.numCols):
             colKey = cols[colDex]
             colDict[colKey] = colDex
-            colName = self.colNames.get(colKey, colKey)
+            colName = bosh.settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.GetColumnCount(): # Make a new column
                 listCtrl.InsertColumn(colDex, colName)
@@ -2058,7 +2084,7 @@ class UIList(wx.Panel):
                     listCtrl.SetColumnWidth(colDex, colWidth)
         while listCtrl.GetColumnCount() > self.numCols:
             listCtrl.DeleteColumn(self.numCols)
-        listCtrl.SetColumnWidth(self.numCols, wx.LIST_AUTOSIZE_USEHEADER)
+        self.autosizeColumns()
 
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
@@ -2067,13 +2093,6 @@ class UIList(wx.Panel):
 
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError
-
-    # gList columns autosize---------------------------------------------------
-    def autosizeColumns(self):
-        if bosh.inisettings['AutoSizeListColumns']:
-            colCount = xrange(self._gList.GetColumnCount())
-            for i in colCount: self._gList.SetColumnWidth(i, -bosh.inisettings[
-                    'AutoSizeListColumns'])
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
@@ -2207,21 +2226,6 @@ class Tank(UIList):
     def OnItemSelected(self,event):
         """Item Selected: Refresh details."""
         self.RefreshDetails(self.GetItem(event.m_itemIndex))
-
-    def OnColumnResize(self,event):
-        """Column resized. Save column size info."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        width = self._gList.GetColumnWidth(colDex)
-        if width < 5:
-            width = 5
-            self._gList.SetColumnWidth(colDex, 5)
-            event.Veto()
-            self._gList.resizeLastColumn(0)
-        else:
-            event.Skip()
-        self.colWidths[colName] = width
-        bosh.settings.setChanged(self.colWidthsKey)
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
