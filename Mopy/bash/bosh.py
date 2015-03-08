@@ -84,7 +84,6 @@ readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
 settings = None
-installersWindow = None # TODO(ut): InstallersList singleton, shouldn't be here
 
 allTags = bush.game.allTags
 allTagsSet = set(allTags)
@@ -6428,7 +6427,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.se.shortName + _(u' DLL Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
@@ -6452,7 +6451,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install an asi by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install an asi by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.sd.longName + _(u' ASI Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.sd.longName + _(u' ASI Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
@@ -6476,7 +6475,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install a jar by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install a jar by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.sp.longName + _(u' JAR Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.sp.longName + _(u' JAR Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue

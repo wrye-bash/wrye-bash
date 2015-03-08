@@ -2521,7 +2521,6 @@ class InstallersPanel(SashTankPanel):
         #--Contents
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
                                      details=self, panel=self)
-        bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()

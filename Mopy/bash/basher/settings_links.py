@@ -181,7 +181,8 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
                    + u'\n' +
                    _(u"('No' Replaces current permissions instead.)")
                    )
-        replace = not self._askYes(message, _(u'Merge permissions?'))
+        replace = not balt.askYes(Link.Frame, message,
+                                  _(u'Merge permissions?'))
         try:
             with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}
