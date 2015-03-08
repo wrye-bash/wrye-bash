@@ -5805,16 +5805,10 @@ class Messages(DataDict):
         self.save()
 
 #------------------------------------------------------------------------------
-class PeopleData(PickleTankData, bolt.TankData, DataDict):
-    """Data for a People Tank."""
+class PeopleData(PickleTankData, DataDict):
+    """Data for a People UIList."""
     def __init__(self):
-        PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        textKey = backKey = None
-        iconKey = u'karma%+d' % self.data[item][1]
-        return iconKey,textKey,backKey
+        PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
 
     #--Operations
     def loadText(self,path):
@@ -7686,10 +7680,8 @@ class InstallerProject(Installer):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-class InstallersData(bolt.TankData, DataDict):
+class InstallersData(DataDict):
     """Installers tank data. This is the data source for """
-    status_color = {-20:'grey',-10:'red',0:'white',10:'orange',20:'yellow',30:'green'}
-    type_textKey = {1:'default.text',2:'installers.text.complex'}
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -7781,40 +7773,6 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
             self.converterFile.save()
             self.hasChanged = False
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        installer = self.data[item]
-        #--Text
-        if installer.type == 2 and len(installer.subNames) == 2:
-            textKey = self.type_textKey[1]
-        else:
-            textKey = self.type_textKey.get(installer.type,'installers.text.invalid')
-        #--Background
-        backKey = (installer.skipDirFiles and 'installers.bkgd.skipped') or None
-        if installer.dirty_sizeCrc:
-            backKey = 'installers.bkgd.dirty'
-        elif installer.underrides:
-            backKey = 'installers.bkgd.outOfOrder'
-        #--Icon
-        iconKey = ('off','on')[installer.isActive]+'.'+self.status_color[installer.status]
-        if installer.type < 0:
-            iconKey = 'corrupt'
-        elif isinstance(installer,InstallerProject):
-            iconKey += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
-            iconKey += '.wiz'
-        return iconKey,textKey,backKey
-
-    def getMouseText(self,iconKey,textKey,backKey):
-        """Returns mouse text to use, given the iconKey,textKey, and backKey."""
-        text = u''
-        if backKey == 'installers.bkgd.outOfOrder':
-            text += _(u'Needs Annealing due to a change in Install Order.')
-        elif backKey == 'installers.bkgd.dirty':
-            text += _(u'Needs Annealing due to a change in configuration.')
-        #--TODO: add mouse  mouse tips
-        return text
 
     #--Dict Functions -----------------------------------------------------------
     def __delitem__(self,item):

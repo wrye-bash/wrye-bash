@@ -41,7 +41,6 @@ gui_patchers.py   : the gui patcher classes used by the patcher dialog
 patcher_dialog.py : the patcher dialog
 
 The layout is still fluid - there may be a links package, or a package per tab.
-Currently there is an effort to unify balt.Tank and List.
 A central global variable is balt.Link.Frame, the BashFrame singleton.
 
 Non-GUI objects and functions are provided by the bosh module. Of those, the
@@ -2108,6 +2107,10 @@ class InstallersList(balt.Tank):
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, ['Order']
+    #--GUI
+    _status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
+                     20: 'yellow', 30: 'green'}
+    _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
     def getColumns(self, item):
@@ -2120,6 +2123,40 @@ class InstallersList(balt.Tank):
         labels['Size'] = self._round(installer.size)
         labels['Files'] = formatInteger(len(installer.fileSizeCrcs))
         return labels
+
+    def getGuiKeys(self, item):
+        """Returns keys for icon and text and background colors."""
+        installer = self.data[item]
+        #--Text
+        if installer.type == 2 and len(installer.subNames) == 2:
+            textKey = self._type_textKey[1]
+        else: textKey = self._type_textKey.get(installer.type,
+                                             'installers.text.invalid')
+        #--Background
+        backKey = (
+                  installer.skipDirFiles and 'installers.bkgd.skipped') or None
+        if installer.dirty_sizeCrc: backKey = 'installers.bkgd.dirty'
+        elif installer.underrides: backKey = 'installers.bkgd.outOfOrder'
+        #--Icon
+        iconKey = ('off', 'on')[installer.isActive] + '.' + self._status_color[
+            installer.status]
+        if installer.type < 0: iconKey = 'corrupt'
+        elif isinstance(installer, bosh.InstallerProject): iconKey += '.dir'
+        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+            iconKey += '.wiz'
+        return iconKey, textKey, backKey
+
+    def getMouseText(self,iconKey,textKey,backKey):
+        """Return mouse text to use, given the iconKey, textKey and backKey."""
+        text = u''
+        #if textKey == 'installers.text.invalid': # I need a 'text.markers'
+        #    text += _(u'Marker Package. Use for grouping installers together')
+        if backKey == 'installers.bkgd.outOfOrder':
+            text += _(u'Needs Annealing due to a change in Install Order.')
+        elif backKey == 'installers.bkgd.dirty':
+            text += _(u'Needs Annealing due to a change in configuration.')
+        #--TODO: add mouse  mouse tips
+        return text
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -3433,6 +3470,12 @@ class PeopleList(balt.Tank):
         labels['Karma'] = (u'-', u'+')[karma >= 0] * abs(karma)
         labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
         return labels
+
+    def getGuiKeys(self, item):
+        """Return keys for icon and text and background colors."""
+        textKey = backKey = None
+        iconKey = u'karma%+d' % self.data[item][1]
+        return iconKey, textKey, backKey
 
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):

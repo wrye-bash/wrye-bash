@@ -1834,28 +1834,6 @@ class Table(DataDict):
         self.hasChanged = True
         return self.data.pop(key,default)
 
-#------------------------------------------------------------------------------
-class TankData:
-    """Data source for a Tank table."""
-    # DEPRECATED: belongs to Panels/UIList
-
-    #--Collection
-    def setChanged(self,hasChanged=True):
-        """Mark as having changed."""
-        pass
-
-    def refresh(self):
-        """Refreshes underlying data as needed."""
-        pass
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        iconKey = textKey = backKey = None
-        return iconKey,textKey,backKey
-
-    def getMouseText(self,*args,**kwdargs):
-        return u''
-
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
 def copyattrs(source,dest,attrs):

@@ -1736,7 +1736,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
-    """Tmp class to factor out common code in basher.List and balt.Tank."""
+    """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
     mainMenu = None
     itemMenu = None
@@ -2045,9 +2045,6 @@ class UIList(wx.Panel):
         """Unselect all items."""
         listCtrl = self._gList
         for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
-        ##: (ut) below is the Tank variation - profile
-        # if listCtrl.GetItemState(index,wx.LIST_STATE_SELECTED):
-        #     listCtrl.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def SelectAll(self):
         for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
@@ -2234,17 +2231,24 @@ class Tank(UIList):
     @staticmethod
     def _gpath(item): return item ##: maybe in installers use GPath ??
 
+    def getGuiKeys(self, item):
+        """Returns keys for icon and text and background colors."""
+        iconKey = textKey = backKey = None
+        return iconKey, textKey, backKey
+
+    def getMouseText(self, *args, **kwdargs): return u''
+
     def setUI(self, fileName, itemDex):
-        data, listCtrl = self.data, self._gList
-        gItem = listCtrl.GetItem(itemDex)
-        iconKey, textKey, backKey = data.getGuiKeys(fileName)
-        self.mouseTexts[fileName] = data.getMouseText(iconKey, textKey, backKey)
+        gItem = self._gList.GetItem(itemDex)
+        iconKey, textKey, backKey = self.getGuiKeys(fileName)
+        self.mouseTexts[fileName] = self.getMouseText(
+            iconKey, textKey, backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(listCtrl.GetTextColour())
+        else: gItem.SetTextColour(self._gList.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        listCtrl.SetItem(gItem)
+        self._gList.SetItem(gItem)
 
     #--Details view (if it exists)
     def GetDetailsItem(self):
