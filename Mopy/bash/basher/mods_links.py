@@ -266,8 +266,8 @@ class Mods_ListMods(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Active Mod Files"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Active Mod Files"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(ItemLink):
@@ -279,8 +279,8 @@ class Mods_ListBashTags(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):

@@ -424,8 +424,7 @@ class Mod_Details(OneItemLink):
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
             self._showLog(buff.getvalue(), title=modInfo.name.s,
-                          asDialog=False, fixedFont=True,
-                          icons=Resources.bashBlue)
+                          fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
 class Mod_ShowReadme(OneItemLink):
@@ -455,8 +454,8 @@ class Mod_ListBashTags(ItemLink):
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 def _getUrl(fileName, installer, text):
     """"Try to get the url of the file (order of priority will be: TESNexus,
@@ -523,8 +522,8 @@ class Mod_CreateBOSSReport(EnabledLink):
 
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BOSS Report'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BOSS Report'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -581,8 +580,8 @@ class Mod_CopyModInfo(ItemLink):
         if spoiler: text += u'[/spoiler]'
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Mod Info Report'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1648,7 +1647,7 @@ class Mod_Fids_Replace(OneItemLink):
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
         else: self._showLog(changed, title=_(u'Objects Changed'),
-                            icons=Resources.bashBlue)
+                            asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1729,6 +1728,14 @@ class _Mod_Import_Link(OneItemLink):
             changed = parser.writeToMod(fileInfo)
             progress(1.0, _(u'Done.'))
         return changed
+
+    def _showLog(self, logText, title=u'', style=0, asDialog=True,
+                 fixedFont=False, icons=Resources.bashBlue, size=True,
+                 question=False):
+        return super(_Mod_Import_Link, self)._showLog(
+            logText, title=title or self.__class__.progressTitle, style=style,
+            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size,
+            question=question)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -1812,8 +1819,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         else:
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'))
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1876,8 +1882,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
             text = buff.getvalue()
             buff.close()
-            self._showLog(text, title=_(u'Import Relations'),
-                          icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Relations'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1941,8 +1946,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
                 buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
             text = buff.getvalue()
             buff.close()
-            self._showLog(text, title=_(u'Import Factions'),
-                          icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Factions'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -2011,7 +2015,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
-                      icons=Resources.bashBlue)
+                      asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file or other mod."""
@@ -2067,8 +2071,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
             report = changedScripts
         elif added:
             report = addedScripts
-        self._showLog(report, title=_(u'Import Scripts'),
-                      icons=Resources.bashBlue)
+        self._showLog(report, title=_(u'Import Scripts'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemStats, CBash_ItemStats
@@ -2129,8 +2132,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                 buff = StringIO.StringIO()
                 for modName in sorted(changed):
                     buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                self._showLog(buff.getvalue(), title=_(u'Import Stats'),
-                              icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Import Stats'))
                 buff.close()
 
 #------------------------------------------------------------------------------
@@ -2187,8 +2189,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
             for modName in sorted(changed):
                 buff.write(_(u'Imported Prices:')
                            + u'\n* %s: %d\n' % (modName.s,changed[modName]))
-            self._showLog(buff.getvalue(), title=_(u'Import Prices'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2251,8 +2252,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue(),
-                          title=_(u'Import Sigil Stone details'),
-                          icons=Resources.bashBlue)
+                          title=_(u'Import Sigil Stone details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2328,8 +2328,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Spell details'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Spell details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2392,7 +2391,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue(),
-                title=_(u'Import Ingredient details'), icons=Resources.bashBlue)
+                          title=_(u'Import Ingredient details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2464,8 +2463,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                         buff.write(u"  '%s'\n" % badEid)
                 text = buff.getvalue()
                 buff.close()
-                self._showLog(text, title=_(u'Objects Changed'),
-                              icons=Resources.bashBlue)
+                self._showLog(text, title=_(u'Objects Changed'))
         except bolt.BoltError as e:
             self._showWarning('%r' % e)
 
@@ -2527,8 +2525,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                         buff.write(format_ % (eid,full,newFull))
                     except:
                         print u'unicode error:', (format_, eid, full, newFull)
-                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'),
-                              icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
@@ -2593,8 +2590,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
                         + u'\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2669,8 +2665,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
             for modName in sorted(changed):
                 buff.write(_(u'Imported Item Data:')
                            + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
-            self._showLog(buff.getvalue(), title=_(u'Import Item Data'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------

@@ -2370,7 +2370,7 @@ class Link(object):
         return askSave(self.window, title, defaultDir, defaultFile, wildcard,
                        style)
 
-    def _showLog(self, logText, title=u'', style=0, asDialog=True,
+    def _showLog(self, logText, title=u'', style=0, asDialog=False,
                  fixedFont=False, icons=None, size=True, question=False):
         return showLog(self.window, logText, title, style, asDialog, fixedFont,
                        icons, size, question)

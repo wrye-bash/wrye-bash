@@ -65,8 +65,8 @@ class INI_ListINIs(ItemLink):
         """Handle printing out the errors."""
         text = self.window.ListTweaks()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Active INIs'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Active INIs'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -87,8 +87,8 @@ class INI_ListErrors(EnabledLink):
             fileInfo = bosh.iniInfos[i]
             text += u'%s\n' % fileInfo.listErrors()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'INI Tweak Errors'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'INI Tweak Errors'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(OneItemLink):

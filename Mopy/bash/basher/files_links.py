@@ -292,7 +292,7 @@ class File_ListMasters(OneItemLink):
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
-        self._showLog(text, title=fileName.s, asDialog=False, fixedFont=False,
+        self._showLog(text, title=fileName.s, fixedFont=False,
                       icons=Resources.bashBlue)
 
 class File_Redate(AppendableLink, ItemLink):

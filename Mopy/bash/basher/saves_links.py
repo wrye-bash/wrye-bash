@@ -772,8 +772,8 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
-            self._showLog(text, title=fileName.s, asDialog=False,
-                          fixedFont=False, icons=Resources.bashBlue)
+            self._showLog(text, title=fileName.s, fixedFont=False,
+                          icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(AppendableLink, EnabledLink):
@@ -799,8 +799,8 @@ class Save_StatObse(AppendableLink, EnabledLink):
             saveFile.logStatObse(log)
         text = log.out.getvalue()
         log.out.close()
-        self._showLog(text, title=self.fileName.s, asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=self.fileName.s, fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(OneItemLink):
