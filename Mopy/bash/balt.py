@@ -51,8 +51,6 @@ defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
 splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
-#--Indexed
-wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
 
 # wx Types
 wxPoint = wx.Point
@@ -1819,9 +1817,6 @@ class UIList(wx.Panel):
 
     # Column properties - consider moving to a ListCtrl mixin
     @property
-    def colAligns(self):
-        return bosh.settings.get(self.keyPrefix + '.colAligns', {})
-    @property
     def colWidths(self): return bosh.settings.getChanged(self.colWidthsKey, {})
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
@@ -2046,9 +2041,8 @@ class UIList(wx.Panel):
             colDict[colKey] = colDex
             colName = self.colNames.get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
-            colAlign = wxListAligns[self.colAligns.get(colKey, 0)]
             if colDex >= listCtrl.GetColumnCount(): # Make a new column
-                listCtrl.InsertColumn(colDex, colName, colAlign)
+                listCtrl.InsertColumn(colDex, colName)
                 listCtrl.SetColumnWidth(colDex, colWidth)
             else: # Update an existing column
                 column = listCtrl.GetColumn(colDex)
@@ -2059,7 +2053,7 @@ class UIList(wx.Panel):
                     # Column that doesn't exist anymore
                     listCtrl.DeleteColumn(colDex)
                 else: # New column
-                    listCtrl.InsertColumn(colDex, colName, colAlign)
+                    listCtrl.InsertColumn(colDex, colName)
                     listCtrl.SetColumnWidth(colDex, colWidth)
         while listCtrl.GetColumnCount() > self.numCols:
             listCtrl.DeleteColumn(self.numCols)

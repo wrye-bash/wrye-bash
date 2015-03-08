@@ -256,9 +256,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Num':30,
         'Current Order':60,
         },
-    'bash.masters.colAligns': {
-        'Save Order':1,
-        },
     #--Wrye Bash: Mod Docs
     'bash.modDocs.show': False,
     'bash.modDocs.size': (300,400),
@@ -275,12 +272,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Modified':135,
         'Size':75,
         'Files':55,
-        },
-    'bash.installers.colAligns': {
-        'Order': 1,
-        'Modified': 1,
-        'Size': 1,
-        'Files': 1,
         },
     'bash.installers.page':0,
     'bash.installers.enabled': True,
@@ -325,7 +316,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'File':300,
         'Installer':100,
         },
-    'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
     'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
@@ -348,10 +338,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'CRC':60,
         'Mod Status':50,
         },
-    'bash.mods.colAligns': {
-        'Size':1,
-        'Load Order':1,
-        },
     'bash.mods.renames': {},
     'bash.mods.scanDirty': False,
     'bash.mods.export.skip': u'',
@@ -372,16 +358,8 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Player':70,
         'Cell':80,
         },
-    'bash.saves.colAligns': {
-        'Size':1,
-        'PlayTime':1,
-        },
     #Wrye Bash: BSAs
     'bash.BSAs.cols': ['File','Modified','Size'],
-    'bash.BSAs.colAligns': {
-        'Size':1,
-        'Modified':1,
-        },
     'bash.BSAs.colReverse': {
         'Modified':1,
         },
@@ -403,7 +381,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Modified':150,
         'Size':75,
         },
-    'bash.screens.colAligns': {},
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
     #--Wrye Bash: Messages
@@ -416,7 +393,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Author':100,
         'Date':150,
         },
-    'bash.messages.colAligns': {},
     #--Wrye Bash: People
     'bash.people.allCols': ['Name','Karma','Header'],
     'bash.people.cols': ['Name','Karma','Header'],
@@ -426,9 +402,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Name': 80,
         'Karma': 25,
         'Header': 50,
-        },
-    'bash.people.colAligns': {
-        'Karma': 1,
         },
     'bash.people.columns': ['Name','Karma','Header'],
     #--Tes4View/Edit/Trans
