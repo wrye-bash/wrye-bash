@@ -285,7 +285,6 @@ def InitMasterLinks():
         sortMenu.links.append(Files_SortBy('Num'))
         sortMenu.links.append(Files_SortBy('Current Order'))
         MasterList.mainMenu.append(sortMenu)
-
     #--MasterList: Item Links
     MasterList.itemMenu.append(Master_ChangeTo())
     MasterList.itemMenu.append(Master_Disable())
@@ -312,7 +311,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(ColumnsMenu())
     #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
-    InstallersList.mainMenu.append(balt.Tanks_Open())
+    InstallersList.mainMenu.append(Files_Open())
     InstallersList.mainMenu.append(Installers_Refresh(fullRefresh=False))
     InstallersList.mainMenu.append(Installers_Refresh(fullRefresh=True))
     InstallersList.mainMenu.append(Installers_AddMarker())
@@ -354,7 +353,6 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_SkipLandscapeLODTextures())
     InstallersList.mainMenu.append(Installers_SkipLandscapeLODNormals())
     InstallersList.mainMenu.append(Installers_RenameStrings())
-
     #--Item links
     #--File
     InstallersList.itemMenu.append(Installer_Open())
@@ -404,7 +402,6 @@ def InitInstallerLinks():
     InstallersList.itemMenu.append(Installer_CopyConflicts())
     InstallersList.itemMenu.append(InstallerProject_OmodConfig())
     InstallersList.itemMenu.append(Installer_ListStructure())
-
     #--espms Main Menu
     InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
     InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())
@@ -415,7 +412,6 @@ def InitInstallerLinks():
     InstallersPanel.espmMenu.append(Installer_Espm_Reset())
     InstallersPanel.espmMenu.append(SeparatorLink())
     InstallersPanel.espmMenu.append(Installer_Espm_ResetAll())
-
     #--Sub-Package Main Menu
     InstallersPanel.subsMenu.append(Installer_Subs_SelectAll())
     InstallersPanel.subsMenu.append(Installer_Subs_DeselectAll())
@@ -440,7 +436,6 @@ def InitINILinks():
     INIList.mainMenu.append(INI_AllowNewLines())
     INIList.mainMenu.append(Files_Open())
     INIList.mainMenu.append(INI_ListINIs())
-
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
     INIList.itemMenu.append(INI_CreateNew())
@@ -505,7 +500,6 @@ def InitModLinks():
     if bush.game.fsName != u'Skyrim':
         ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
-
     #--ModList: Item Links
     if bosh.inisettings['ShowDevTools']:
         ModList.itemMenu.append(Mod_FullLoad())
@@ -658,7 +652,6 @@ def InitSaveLinks():
     SaveList.mainMenu.append(SeparatorLink())
     SaveList.mainMenu.append(Files_Open())
     SaveList.mainMenu.append(Files_Unhide('save'))
-
     #--SaveList: Item Links
     if True: #--File
         fileMenu = MenuLink(_(u"File")) #>>
@@ -724,7 +717,6 @@ def InitBSALinks():
     BSAList.mainMenu.append(SeparatorLink())
     BSAList.mainMenu.append(Files_Open())
     BSAList.mainMenu.append(Files_Unhide('save'))
-
     #--BSAList: Item Links
     if True: #--File
         fileMenu = MenuLink(_(u"File")) #>>
@@ -776,7 +768,6 @@ def InitScreenLinks():
         qualityMenu.links.append(Screen_JpgQualityCustom())
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
-
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
     ScreensList.itemMenu.append(Screen_Rename())
@@ -797,7 +788,6 @@ def InitMessageLinks():
     MessageList.mainMenu.append(Messages_Archive_Import())
     MessageList.mainMenu.append(SeparatorLink())
     MessageList.mainMenu.append(ColumnsMenu())
-
     #--ScreensList: Item Links
     MessageList.itemMenu.append(Message_Delete())
 

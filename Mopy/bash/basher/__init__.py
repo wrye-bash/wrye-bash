@@ -145,53 +145,6 @@ class People_Link(Link):
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
 
-# Images ----------------------------------------------------------------------
-class ColorChecks(balt.ImageList):
-    """ColorChecks ImageList. Used by several List classes."""
-    def __init__(self):
-        balt.ImageList.__init__(self,16,16)
-        for state in (u'on',u'off',u'inc',u'imp'):
-            for status in (u'purple',u'blue',u'green',u'orange',u'yellow',u'red'):
-                shortKey = status+u'.'+state
-                imageKey = u'checkbox.'+shortKey
-                file = GPath(bosh.dirs['images'].join(u'checkbox_'+status+u'_'+state+u'.png'))
-                image = images[imageKey] = Image(file,PNG)
-                self.Add(image,shortKey)
-
-    def Get(self,status,on):
-        self.GetImageList()
-        if on == 3:
-            if status <= -20: shortKey = 'purple.imp'
-            elif status <= -10: shortKey = 'blue.imp'
-            elif status <= 0: shortKey = 'green.imp'
-            elif status <=10: shortKey = 'yellow.imp'
-            elif status <=20: shortKey = 'orange.imp'
-            else: shortKey = 'red.imp'
-        elif on == 2:
-            if status <= -20: shortKey = 'purple.inc'
-            elif status <= -10: shortKey = 'blue.inc'
-            elif status <= 0: shortKey = 'green.inc'
-            elif status <=10: shortKey = 'yellow.inc'
-            elif status <=20: shortKey = 'orange.inc'
-            else: shortKey = 'red.inc'
-        elif on:
-            if status <= -20: shortKey = 'purple.on'
-            elif status <= -10: shortKey = 'blue.on'
-            elif status <= 0: shortKey = 'green.on'
-            elif status <=10: shortKey = 'yellow.on'
-            elif status <=20: shortKey = 'orange.on'
-            else: shortKey = 'red.on'
-        else:
-            if status <= -20: shortKey = 'purple.off'
-            elif status <= -10: shortKey = 'blue.off'
-            elif status == 0: shortKey = 'green.off'
-            elif status <=10: shortKey = 'yellow.off'
-            elif status <=20: shortKey = 'orange.off'
-            else: shortKey = 'red.off'
-        return self.indices[shortKey]
-
-colorChecks = ColorChecks()
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
@@ -309,46 +262,6 @@ class SashTankPanel(SashPanel):
         return self.detailsItem
 
 #------------------------------------------------------------------------------
-class List(balt.UIList):
-    icons = colorChecks
-
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if shellUI:
-            try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except balt.AccessDeniedError:
-                pass
-            dirJoin = self.data.dir.join
-            for item in items:
-                itemPath = dirJoin(item)
-                if not itemPath.exists():
-                    bosh.trackedInfos.track(itemPath)
-        else:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
-            with ListBoxes(self, _(u'Delete Items'), _(
-                    u'Delete these items?  This operation cannot be '
-                    u'undone.'), [message]) as dialog:
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
-                id_ = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    dirJoin = self.data.dir.join
-                    for i,mod in enumerate(items):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(dirJoin(mod))
-                            except bolt.BoltError as e:
-                                balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refresh(True)
-        self.RefreshUI()
-
 class _ModsSortMixin(object):
 
     _esmsFirstCols = balt.UIList.nonReversibleCols
@@ -377,7 +290,7 @@ class _ModsSortMixin(object):
     def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
 
 #------------------------------------------------------------------------------
-class MasterList(_ModsSortMixin, List):
+class MasterList(_ModsSortMixin, balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
     keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
@@ -576,7 +489,7 @@ class MasterList(_ModsSortMixin, List):
         return [self.data[item].name for item in sorted(self.GetItems())]
 
 #------------------------------------------------------------------------------
-class INIList(List):
+class INIList(balt.UIList):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
@@ -797,7 +710,7 @@ class INILineCtrl(wx.ListCtrl):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class ModList(_ModsSortMixin, List):
+class ModList(_ModsSortMixin, balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -1750,7 +1663,7 @@ class ModPanel(SashPanel):
         self.modDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
-class SaveList(List):
+class SaveList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3037,7 +2950,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
-class ScreensList(List):
+class ScreensList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3150,7 +3063,7 @@ class ScreensPanel(SashPanel):
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
-class BSAList(List):
+class BSAList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3345,7 +3258,7 @@ class BSAPanel(NotebookPanel):
         bosh.BSAInfos.profiles.save()
 
 #------------------------------------------------------------------------------
-class MessageList(List):
+class MessageList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu

@@ -221,6 +221,53 @@ class ImageList:
         self.GetImageList()
         return self.indices[key]
 
+# Images ----------------------------------------------------------------------
+class ColorChecks(ImageList):
+    """ColorChecks ImageList. Used by several List classes."""
+    def __init__(self):
+        ImageList.__init__(self, 16, 16)
+        for state in (u'on', u'off', u'inc', u'imp'):
+            for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
+                           u'red'):
+                shortKey = status + u'.' + state
+                imageKey = u'checkbox.' + shortKey
+                file = GPath(bosh.dirs['images'].join(
+                    u'checkbox_' + status + u'_' + state + u'.png'))
+                image = images[imageKey] = Image(file, Image.typesDict['png'])
+                self.Add(image, shortKey)
+
+    def Get(self,status,on):
+        self.GetImageList()
+        if on == 3:
+            if status <= -20: shortKey = 'purple.imp'
+            elif status <= -10: shortKey = 'blue.imp'
+            elif status <= 0: shortKey = 'green.imp'
+            elif status <=10: shortKey = 'yellow.imp'
+            elif status <=20: shortKey = 'orange.imp'
+            else: shortKey = 'red.imp'
+        elif on == 2:
+            if status <= -20: shortKey = 'purple.inc'
+            elif status <= -10: shortKey = 'blue.inc'
+            elif status <= 0: shortKey = 'green.inc'
+            elif status <=10: shortKey = 'yellow.inc'
+            elif status <=20: shortKey = 'orange.inc'
+            else: shortKey = 'red.inc'
+        elif on:
+            if status <= -20: shortKey = 'purple.on'
+            elif status <= -10: shortKey = 'blue.on'
+            elif status <= 0: shortKey = 'green.on'
+            elif status <=10: shortKey = 'yellow.on'
+            elif status <=20: shortKey = 'orange.on'
+            else: shortKey = 'red.on'
+        else:
+            if status <= -20: shortKey = 'purple.off'
+            elif status <= -10: shortKey = 'blue.off'
+            elif status == 0: shortKey = 'green.off'
+            elif status <=10: shortKey = 'yellow.off'
+            elif status <=20: shortKey = 'orange.off'
+            else: shortKey = 'red.off'
+        return self.indices[shortKey]
+
 # Functions -------------------------------------------------------------------
 def fill(text,width=60):
     """Wraps paragraph to width characters."""
@@ -1741,7 +1788,9 @@ class UIList(wx.Panel):
     mainMenu = None
     itemMenu = None
     #--gList image collection
-    icons = ImageList(16,16)
+    __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
+    # yet initialized when balt is imported, so I can't use ColorChecks here
+    icons = __icons
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
@@ -1773,6 +1822,9 @@ class UIList(wx.Panel):
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
         self._colDict = {} # used in setting column sort indicator
+        #--gList image collection
+        self.__class__.icons = ColorChecks() \
+            if self.__class__.icons is self.__icons else self.__class__.icons
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
@@ -2214,6 +2266,43 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
+    def DeleteSelected(self,shellUI=False,noRecycle=False):
+        """Deletes selected items."""
+        items = self.GetSelected()
+        if not items: return
+        if not shellUI:
+            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
+            message.extend(sorted(items))
+            with ListBoxes(self, _(u'Delete Items'), _(
+                    u'Delete these items?  This operation cannot be '
+                    u'undone.'), [message]) as dialog:
+                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
+                id_ = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id_)
+                if checks:
+                    dirJoin = self.data.dir.join
+                    for i,mod in enumerate(items):
+                        if checks.IsChecked(i):
+                            try:
+                                self.data.delete(mod)
+                                # Temporarily Track this file for BAIN, so BAIN will
+                                # update the status of its installers
+                                bosh.trackedInfos.track(dirJoin(mod))
+                            except bolt.BoltError as e:
+                                showError(self, u'%s' % e)
+        else:
+            try:
+                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
+            except AccessDeniedError:
+                pass
+            dirJoin = self.data.dir.join
+            for item in items:
+                itemPath = dirJoin(item)
+                if not itemPath.exists():
+                    bosh.trackedInfos.track(itemPath)
+        bosh.modInfos.plugins.refresh(True)
+        self.RefreshUI()
+
     #--Helpers ----------------------------------------------------------------
     @staticmethod
     def _round(siz):
@@ -2600,22 +2689,6 @@ class BoolLink(CheckLink):
         return bosh.settings[self.key] ^ self.__class__.opposite
 
     def Execute(self,event): bosh.settings[self.key] ^= True # toggle
-
-# Tanks Links -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Tanks_Open(ItemLink):
-    """Opens data directory in explorer."""
-    text = _(u'Open...')
-
-    def _initData(self, window, data):
-        super(Tanks_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s'") % self.window.data.dir.tail
-
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.window.data.dir
-        dir_.makedirs()
-        dir_.start()
 
 # Tank Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
