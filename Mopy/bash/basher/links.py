@@ -714,7 +714,6 @@ def InitSaveLinks():
         SaveList.itemMenu.append(SeparatorLink())
         SaveList.itemMenu.append(Save_Unbloat())
         SaveList.itemMenu.append(Save_RepairAbomb())
-        SaveList.itemMenu.append(Save_RepairFactions())
         SaveList.itemMenu.append(Save_RepairHair())
 
 #------------------------------------------------------------------------------
@@ -763,7 +762,6 @@ def InitBSALinks():
     BSAList.itemMenu.append(SeparatorLink())
     BSAList.itemMenu.append(Save_Unbloat())
     BSAList.itemMenu.append(Save_RepairAbomb())
-    BSAList.itemMenu.append(Save_RepairFactions())
     BSAList.itemMenu.append(Save_RepairHair())
 
 #------------------------------------------------------------------------------
