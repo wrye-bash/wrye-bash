@@ -3624,7 +3624,9 @@ class ModInfo(FileInfo):
             description = reBashTags.sub(strKeys,description)
         else:
             description = description + u'\n' + strKeys
+        if len(description) > 511: return False
         self.writeDescription(description)
+        return True
 
     def getBashTags(self):
         """Returns any Bash flag keys."""

@@ -1594,7 +1594,7 @@ class ModDetails(_SashDetailsPanel):
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
             def _check(self): return is_auto
-            def Execute(self, event):
+            def Execute(self, event_):
                 """Handle selection of automatic bash tags."""
                 if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
                     # Disable autoBashTags
@@ -1609,10 +1609,17 @@ class ModDetails(_SashDetailsPanel):
         class _CopyDesc(EnabledLink):
             text = _(u'Copy to Description')
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
-            def Execute(self, event):
+            def Execute(self, event_):
                 """Copy manually assigned bash tags into the mod description"""
-                mod_info.setBashTagsDesc(mod_info.getBashTags())
-                BashFrame.modList.RefreshUI([mod_info.name])
+                if mod_info.setBashTagsDesc(mod_info.getBashTags()):
+                    BashFrame.modList.RefreshUI(files=[mod_info.name])
+                else:
+                    thinSplitterWin = self.window.GetParent().GetParent(
+                        ).GetParent().GetParent()
+                    balt.showError(thinSplitterWin,
+                        _(u'Description field including the Bash Tags must be '
+                          u'at most 511 characters. Edit the description to '
+                          u'leave enough room.'))
         # Tags links
         class _TagLink(CheckLink):
             def _initData(self, window, data):
@@ -1620,7 +1627,7 @@ class ModDetails(_SashDetailsPanel):
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': mod_info.name})
             def _check(self): return self.text in mod_tags
-            def Execute(self, event):
+            def Execute(self, event_):
                 """Toggle bash tag from menu."""
                 if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
                     # Disable autoBashTags
