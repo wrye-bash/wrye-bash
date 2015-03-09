@@ -1952,7 +1952,7 @@ class UIList(wx.Panel):
             if file_.exists(): file_.start()
 
     #--Sorting ----------------------------------------------------------------
-    def SortItems(self,column=None,reverse='CURRENT'):
+    def SortItems(self, column=None, reverse='CURRENT'):
         """Sort items. Real work is done by _SortItems, and that completed
         sort is then "cloned" to the list control.
 
@@ -1964,20 +1964,22 @@ class UIList(wx.Panel):
         * 'INVERT': Invert if column is same as current sort column.
         """
         _items = self.data.keys() if isinstance(self, Tank) else self.items
+        column, reverse, oldcol = self._GetSortSettings(column, reverse)
         items = self._SortItems(column, reverse, items=_items)
         self._gList.ReorderItems(items)
+        self._setColumnSortIndicator(column, oldcol, reverse)
 
-    def _GetSortSettings(self,column,reverse):
-        """Return parsed col, reverse arguments. Used by _SortItems.
+    def _GetSortSettings(self, column, reverse):
+        """Return parsed col, reverse arguments. Used by SortItems.
         col: sort variable.
           Defaults to last sort. (self.sort)
         reverse: sort order
           True: Descending order
           False: Ascending order
+         'CURRENT': Use current reverse setting for sort variable.
          'INVERT': Use current reverse settings for sort variable, unless
              last sort was on same sort variable -- in which case,
              reverse the sort order.
-         'CURRENT': Use current reverse setting for sort variable.
         """
         if self.sortDirty:
             self.sortDirty = False
@@ -1996,10 +1998,8 @@ class UIList(wx.Panel):
         self.colReverse[column] = reverse
         return column, reverse, curColumn
 
-    def _SortItems(self, col=None, reverse='CURRENT', sortSpecial=True,
-                   items=None):
+    def _SortItems(self, col, reverse, items=None, sortSpecial=True):
         items = items if items is not None else self.items # List has items Tank provides them (for now)
-        col, reverse, oldcol = self._GetSortSettings(col, reverse)
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
@@ -2007,12 +2007,11 @@ class UIList(wx.Panel):
         if col != self._default_sort_col:
             #--Default sort
             items.sort(key=def_key)
-            items.sort(key=key(col), reverse=bool(reverse))
+            items.sort(key=key(col), reverse=reverse)
         else:
-            items.sort(key=def_key, reverse=bool(reverse))
+            items.sort(key=def_key, reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
-        self._setColumnSortIndicator(col, oldcol, reverse)
         return items
 
     def _setColumnSortIndicator(self, col, oldcol, reverse):

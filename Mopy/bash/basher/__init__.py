@@ -2609,7 +2609,7 @@ class InstallersList(balt.Tank):
         if isinstance(self.data[item],bosh.InstallerMarker):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
-            sorted_ = self._SortItems(col='order', reverse=False,
+            sorted_ = self._SortItems(col='Order', reverse=False,
                                      sortSpecial=False, items=self.data.keys())
             item = self.data[item]
             for nextItem in sorted_[item.order+1:]:
