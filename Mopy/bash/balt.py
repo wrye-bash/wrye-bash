@@ -1850,7 +1850,7 @@ class UIList(wx.Panel):
     #--ABSTRACT
     def OnItemSelected(self, event): raise AbstractError
 
-    def getColumns(self, item):
+    def getLabels(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
 
@@ -1872,7 +1872,7 @@ class UIList(wx.Panel):
             fileName = self.GetItem(itemDex)
         fileName = self._gpath(fileName)
         cols = self.cols
-        labels = self.getColumns(fileName)
+        labels = self.getLabels(fileName)
         for colDex in range(len(cols)):
             col = cols[colDex]
             if insert and colDex == 0:

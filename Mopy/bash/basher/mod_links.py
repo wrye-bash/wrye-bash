@@ -547,36 +547,15 @@ class Mod_CopyModInfo(ItemLink):
             # add a blank line in between mods
             if isFirst: isFirst = False
             else: text += u'\n\n'
-            fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: text += fileName.s
             else: text = _getUrl(fileName, installer, text)
-            for col in bosh.settings['bash.mods.cols']:
+            labels = self.window.getLabels(fileName)
+            for col in self.window.cols:
                 if col == 'File': continue
-                elif col == 'Rating':
-                    value = bosh.modInfos.table.getItem(fileName,'rating',u'')
-                elif col == 'Group':
-                    value = bosh.modInfos.table.getItem(fileName,'group',u'')
-                elif col == 'Installer':
-                    value = bosh.modInfos.table.getItem(fileName,'installer', u'')
-                elif col == 'Modified':
-                    value = formatDate(fileInfo.mtime)
-                elif col == 'Size':
-                    value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
-                elif col == 'Author' and fileInfo.header:
-                    value = fileInfo.header.author
-                elif col == 'Load Order':
-                    ordered = bosh.modInfos.ordered
-                    if fileName in ordered:
-                        value = u'%02X' % list(ordered).index(fileName)
-                    else:
-                        value = u''
-                elif col == 'CRC':
-                    value = u'%08X' % fileInfo.cachedCrc()
-                elif col == 'Mod Status':
-                    value = fileInfo.txt_status()
-                text += u'\n%s: %s' % (col, value)
+                text += u'\n%s: %s' % (
+                    col, labels[col] if labels[col] else u'-')
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:

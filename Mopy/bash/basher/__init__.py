@@ -456,7 +456,7 @@ class MasterList(_ModsSortMixin, List):
         else:
             return status
 
-    def getColumns(self, mi):
+    def getLabels(self, mi):
         labels, masterInfo = {}, self.data[mi]
         masterName = masterInfo.name
         value = masterName.s
@@ -621,7 +621,7 @@ class INIList(List):
         valid = filter(lambda k: self.data[k].status >= 0, self.data.keys())
         self.RefreshUI(files=valid)
 
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
         labels['Installer'] = table.getItem(fileName, 'installer', u'')
@@ -850,7 +850,7 @@ class ModList(_ModsSortMixin, List):
         self.RefreshUI()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = {}, self.data[fileName]
         value = fileName.s
         if fileName == u'Oblivion.esm' and bosh.modInfos.voCurrent:
@@ -1793,7 +1793,7 @@ class SaveList(List):
         # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo.mtime)
@@ -2113,7 +2113,7 @@ class InstallersList(balt.Tank):
     _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
-    def getColumns(self, item):
+    def getLabels(self, item):
         labels, installer = defaultdict(lambda: u''), self.data[item]
         marker = isinstance(installer, bosh.InstallerMarker)
         labels['Package'] = item.s
@@ -3092,7 +3092,7 @@ class ScreensList(List):
             event.Veto()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo[1]) # unused
@@ -3161,7 +3161,7 @@ class BSAList(List):
                  }
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo.mtime)
@@ -3370,7 +3370,7 @@ class MessageList(List):
         return self.data.keys()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels = defaultdict(lambda: u'-')
         subject,author,date = self.data[fileName][:3]
         labels['Subject'] = subject
@@ -3463,7 +3463,7 @@ class PeopleList(balt.Tank):
                   'Header': lambda self, x: self.data[x][2][:50].lower(),
                  }
 
-    def getColumns(self, item):
+    def getLabels(self, item):
         labels, itemData = {}, self.data[item]
         labels['Name'] = item
         karma = itemData[1]
