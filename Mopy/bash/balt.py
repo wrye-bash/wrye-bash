@@ -1772,6 +1772,7 @@ class UIList(wx.Panel):
         self.keyPrefix = keyPrefix
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
+        self._colDict = {} # used in setting column sort indicator
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
@@ -1844,6 +1845,10 @@ class UIList(wx.Panel):
 
     #--ABSTRACT
     def OnItemSelected(self, event): raise AbstractError
+
+    def getColumns(self, item):
+        """Returns text labels for item to populate list control."""
+        raise AbstractError
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -2040,11 +2045,11 @@ class UIList(wx.Panel):
         # set column sort image
         try:
             listCtrl = self._gList
-            try: listCtrl.ClearColumnImage(self.colDict[oldcol])
+            try: listCtrl.ClearColumnImage(self._colDict[oldcol])
             except KeyError:
                 pass # if old column no longer is active this will fail but
                 #  not a problem since it doesn't exist anyways.
-            listCtrl.SetColumnImage(self.colDict[col],
+            listCtrl.SetColumnImage(self._colDict[col],
                                     self.sm_dn if reverse else self.sm_up)
         except KeyError: pass
 
@@ -2060,13 +2065,13 @@ class UIList(wx.Panel):
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
-        cols = self.cols # this may be updated in ColumnsMenu.Execute()
-        self.numCols = len(cols) # used in List.PopulateItem()
-        colDict = self.colDict = {} # used in setting column sort indicator
-        listCtrl = self._gList
-        for colDex in xrange(self.numCols):
+        cols = self.cols # this may have been updated in ColumnsMenu.Execute()
+        numCols = len(cols)
+        names = set(bosh.settings['bash.colNames'].get(key) for key in cols)
+        self._colDict.clear()
+        colDex, listCtrl = 0, self._gList
+        while colDex < numCols: ##: simplify!
             colKey = cols[colDex]
-            colDict[colKey] = colDex
             colName = bosh.settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.GetColumnCount(): # Make a new column
@@ -2074,17 +2079,21 @@ class UIList(wx.Panel):
                 listCtrl.SetColumnWidth(colDex, colWidth)
             else: # Update an existing column
                 column = listCtrl.GetColumn(colDex)
-                if column.GetText() == colName:
+                text = column.GetText()
+                if text == colName:
                     # Don't change it, just make sure the width is correct
                     listCtrl.SetColumnWidth(colDex, colWidth)
-                elif column.GetText() not in self.cols:
+                elif text not in names:
                     # Column that doesn't exist anymore
                     listCtrl.DeleteColumn(colDex)
+                    continue # do not increment colDex or update colDict
                 else: # New column
                     listCtrl.InsertColumn(colDex, colName)
                     listCtrl.SetColumnWidth(colDex, colWidth)
-        while listCtrl.GetColumnCount() > self.numCols:
-            listCtrl.DeleteColumn(self.numCols)
+            self._colDict[colKey] = colDex
+            colDex += 1
+        while listCtrl.GetColumnCount() > numCols:
+            listCtrl.DeleteColumn(numCols)
         self.autosizeColumns()
 
     #--Drag and Drop-----------------------------------------------------------
@@ -2111,6 +2120,13 @@ class UIList(wx.Panel):
         if len(selected) > 0:
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
+
+    #--Helpers ----------------------------------------------------------------
+    @staticmethod
+    def _round(siz):
+        """Round non zero sizes to 1 KB."""
+        siz = u'0' if siz == 0 else bosh.formatInteger(max(siz, 1024) / 1024)
+        return siz + u' KB'
 
 #------------------------------------------------------------------------------
 class Tank(UIList):
@@ -2185,10 +2201,6 @@ class Tank(UIList):
             index += 1
         #--Sort
         self.SortItems()
-
-    def getColumns(self, item): ##: to UIList !
-        """Returns text labels for item to populate list control."""
-        raise AbstractError
 
     def RefreshUI(self, files='ALL', details='SAME'):
         """Refreshes UI for specified file."""

@@ -54,11 +54,12 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
+from collections import defaultdict
 import os
 import re
 import sys
 import time
-from types import StringTypes, ClassType
+from types import ClassType
 from functools import partial
 
 #--wxPython
@@ -69,8 +70,8 @@ import wx.gizmos
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
 from ..bosh import formatInteger,formatDate
-from ..bolt import BoltError, AbstractError, CancelError, SkipError, GPath, \
-    SubProgress, deprint, Path
+from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
+    deprint, Path
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -331,8 +332,26 @@ class List(balt.UIList):
 
     #--Items ----------------------------------------------
     def PopulateItem(self,itemDex,mode=0,selected=set()):
-        """Populate ListCtrl for specified item. [ABSTRACT]"""
-        raise AbstractError
+        """Populate ListCtrl for specified item."""
+        #--String name of item? ##: YAK
+        if not isinstance(itemDex,int):
+            fileName = itemDex
+            itemDex = self.items.index(itemDex)
+        else: fileName = GPath(self.GetItem(itemDex))
+        cols = self.cols
+        listCtrl = self._gList
+        labels = self.getColumns(fileName)
+        for colDex in range(len(cols)):
+            col = cols[colDex]
+            if mode and colDex == 0:
+                listCtrl.InsertListCtrlItem(itemDex, labels[col], fileName)
+            else:
+                listCtrl.SetStringItem(itemDex, colDex, labels[col])
+        self.setUI(fileName, itemDex)
+        self.SelectItemAtIndex(itemDex, fileName in selected)
+
+    def setUI(self, fileName, itemDex):
+        """Set font, status icon, background text etc."""
 
     def GetItems(self):
         """Set and return self.items."""
@@ -528,7 +547,7 @@ class MasterList(_ModsSortMixin, List):
         del self.items[:]
         #--Null fileInfo?
         if not fileInfo:
-            self.PopulateItems() #Delete all items ??
+            self.DeleteAllItems()
             return
         #--Fill data and populate
         for mi, masterName in enumerate(fileInfo.header.masters):
@@ -572,7 +591,7 @@ class MasterList(_ModsSortMixin, List):
         masterName = masterInfo.name
         cols = self.cols
         listCtrl = self._gList
-        for colDex in range(self.numCols):
+        for colDex in range(len(cols)):
             #--Value
             col = cols[colDex]
             if col == 'File':
@@ -739,25 +758,15 @@ class INIList(List):
                  self.data[GPath(self.items[x])].status >= 0]
         self.RefreshUI(files=files)
 
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item? ##: YAK
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
+    def getColumns(self, fileName):
+        labels, table = {}, self.data.table
+        labels['File'] = fileName.s
+        labels['Installer'] = table.getItem(fileName, 'installer', u'')
+        return labels
+
+    def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
-        cols = self.cols
         listCtrl = self._gList
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            if col == 'File':
-                value = fileName.s
-            elif col == 'Installer':
-                value = self.data.table.getItem(fileName, 'installer', u'')
-            if mode and colDex == 0:
-                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, value)
         status = fileInfo.getStatus()
         #--Image
         checkMark = 0
@@ -792,7 +801,6 @@ class INIList(List):
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
         listCtrl.SetItem(item)
-        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     def OnLeftDown(self,event):
         """Handle click on icon events"""
@@ -977,52 +985,29 @@ class ModList(_ModsSortMixin, List):
         self.RefreshUI()
 
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
+    def getColumns(self, fileName):
+        labels, fileInfo = {}, self.data[fileName]
+        value = fileName.s
+        if fileName == u'Oblivion.esm' and bosh.modInfos.voCurrent:
+            value += u' ['+bosh.modInfos.voCurrent+u']'
+        labels['File'] = value
+        get = partial(bosh.modInfos.table.getItem, fileName)
+        labels['Rating'] = get('rating', u'')
+        labels['Group'] = get('group', u'')
+        labels['Installer'] = get('installer', u'')
+        labels['Modified'] = formatDate(fileInfo.getPath().mtime)
+        labels['Size'] = self._round(fileInfo.size)
+        labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
+        order = bosh.modInfos.ordered
+        value = u'%02X' % order.index(fileName) if fileName in order else u''
+        labels['Load Order'] = value
+        labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
+        labels['Mod Status'] = fileInfo.txt_status()
+        return labels
+
+    def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
-        fileBashTags = bosh.modInfos[fileName].getBashTags()
-        cols = self.cols
         listCtrl = self._gList
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            #--Get Value
-            if col == 'File':
-                value = fileName.s
-                if fileName == u'Oblivion.esm' and bosh.modInfos.voCurrent:
-                    value += u' ['+bosh.modInfos.voCurrent+u']'
-            elif col == 'Rating':
-                value = bosh.modInfos.table.getItem(fileName,'rating',u'')
-            elif col == 'Group':
-                value = bosh.modInfos.table.getItem(fileName,'group',u'')
-            elif col == 'Installer':
-                value = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            elif col == 'Modified':
-                value = formatDate(fileInfo.getPath().mtime)
-            elif col == 'Size':
-                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
-            elif col == 'Author' and fileInfo.header:
-                value = fileInfo.header.author
-            elif col == 'Load Order':
-                ordered = bosh.modInfos.ordered
-                if fileName in ordered:
-                    value = u'%02X' % ordered.index(fileName)
-                else:
-                    value = u''
-            elif col == 'CRC':
-                value = u'%08X' % fileInfo.cachedCrc()
-            elif col == 'Mod Status':
-                value = fileInfo.txt_status()
-            else:
-                value = u'-'
-            #--Insert/SetString
-            if mode and (colDex == 0):
-                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, value)
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
@@ -1035,6 +1020,7 @@ class ModList(_ModsSortMixin, List):
         item = listCtrl.GetItem(itemDex)
         #--Default message
         mouseText = u''
+        fileBashTags = bosh.modInfos[fileName].getBashTags()
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if fileName in bosh.modInfos.missing_strings:
@@ -1108,8 +1094,6 @@ class ModList(_ModsSortMixin, List):
                 item.SetFont(font)
         listCtrl.SetItem(item)
         self.mouseTexts[fileName] = mouseText
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -1932,42 +1916,24 @@ class SaveList(List):
         # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
 
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
+    def getColumns(self, fileName):
+        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
+        labels['File'] = fileName.s
+        labels['Modified'] = formatDate(fileInfo.mtime)
+        labels['Size'] = self._round(fileInfo.size)
+        if not fileInfo.header: return labels
+        labels['Player'] = fileInfo.header.pcName
+        playMinutes = fileInfo.header.gameTicks / 60000
+        labels['PlayTime'] = u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
+        labels['Cell'] = fileInfo.header.pcLocation
+        return labels
+
+    def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
-        cols = self.cols
-        listCtrl = self._gList
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            if col == 'File':
-                value = fileName.s
-            elif col == 'Modified':
-                value = formatDate(fileInfo.mtime)
-            elif col == 'Size':
-                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
-            elif col == 'Player' and fileInfo.header:
-                value = fileInfo.header.pcName
-            elif col == 'PlayTime' and fileInfo.header:
-                playMinutes = fileInfo.header.gameTicks/60000
-                value = u'%d:%02d' % (playMinutes/60,(playMinutes % 60))
-            elif col == 'Cell' and fileInfo.header:
-                value = fileInfo.header.pcLocation
-            else:
-                value = u'-'
-            if mode and (colDex == 0):
-                listCtrl.InsertListCtrlItem(itemDex, value, fileName)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, value)
         #--Image
         status = fileInfo.getStatus()
         on = fileName.cext == u'.ess'
-        listCtrl.SetItemImage(itemDex,self.icons.Get(status,on))
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, fileName in selected)
+        self._gList.SetItemImage(itemDex,self.icons.Get(status,on))
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -2260,16 +2226,14 @@ class InstallersList(balt.Tank):
 
     #--Item Info
     def getColumns(self, item):
-        labels, installer = {}, self.data[item]
+        labels, installer = defaultdict(lambda: u''), self.data[item]
         marker = isinstance(installer, bosh.InstallerMarker)
         labels['Package'] = item.s
-        labels['Files'] = formatInteger(
-            len(installer.fileSizeCrcs)) if not marker else u''
         labels['Order'] = unicode(installer.order)
         labels['Modified'] = formatDate(installer.modified)
-        siz = installer.size
-        siz = u'0' if siz == 0 else formatInteger(max(siz, 1024) / 1024)
-        labels['Size'] = siz + u' KB' if not marker else u''
+        if marker: return labels
+        labels['Size'] = self._round(installer.size)
+        labels['Files'] = formatInteger(len(installer.fileSizeCrcs))
         return labels
 
     def OnBeginEditLabel(self,event):
@@ -3195,28 +3159,11 @@ class ScreensList(List):
             event.Veto()
 
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
-        fileInfo = self.data[fileName]
-        cols = self.cols
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            if col == 'File':
-                value = fileName.s
-            elif col == 'Modified':
-                value = formatDate(fileInfo[1])
-            else:
-                value = u'-'
-            if mode and (colDex == 0):
-                self._gList.InsertListCtrlItem(itemDex, value, fileName)
-            else:
-                self._gList.SetStringItem(itemDex, colDex, value)
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, fileName in selected)
+    def getColumns(self, fileName):
+        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
+        labels['File'] = fileName.s
+        labels['Modified'] = formatDate(fileInfo[1]) # unused
+        return labels
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -3280,34 +3227,12 @@ class BSAList(List):
                  }
 
     #--Populate Item
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            fileName = itemDex
-            itemDex = self.items.index(itemDex)
-        else: fileName = GPath(self.GetItem(itemDex))
-        fileInfo = self.data[fileName]
-        cols = self.cols
-        for colDex in range(self.numCols):
-            col = cols[colDex]
-            if col == 'File':
-                value = fileName.s
-            elif col == 'Modified':
-                value = formatDate(fileInfo.mtime)
-            elif col == 'Size':
-                value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
-            else:
-                value = u'-'
-            if mode and (colDex == 0):
-                self._gList.InsertListCtrlItem(itemDex, value, fileName)
-            else:
-                self._gList.SetStringItem(itemDex, colDex, value)
-        #--Image
-        #status = fileInfo.getStatus()
-        # on = fileName.cext == u'.bsa'
-        #self.gList.SetItemImage(itemDex,self.icons.Get(status,on))
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, fileName in selected)
+    def getColumns(self, fileName):
+        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
+        labels['File'] = fileName.s
+        labels['Modified'] = formatDate(fileInfo.mtime)
+        labels['Size'] = self._round(fileInfo.size)
+        return labels
 
     #--Event: Left Down
     def OnLeftDown(self,event):
@@ -3514,28 +3439,28 @@ class MessageList(List):
         return self.items
 
     #--Populate Item
+    def getColumns(self, fileName):
+        labels = defaultdict(lambda: u'-')
+        subject,author,date = self.data[fileName][:3]
+        labels['Subject'] = subject
+        labels['Date'] = formatDate(date)
+        labels['Author'] = author
+        return labels
+
     def PopulateItem(self,itemDex,mode=0,selected=set()):
         #--String name of item?
         if not isinstance(itemDex,int):
             item = itemDex
             itemDex = self.items.index(itemDex)
         else: item = self.GetItem(itemDex)
-        subject,author,date = self.data[item][:3]
+        labels = self.getColumns(item)
         cols = self.cols
-        for colDex in range(self.numCols):
+        for colDex in range(len(cols)):
             col = cols[colDex]
-            if col == 'Subject':
-                value = subject
-            elif col == 'Author':
-                value = author
-            elif col == 'Date':
-                value = formatDate(date)
-            else:
-                value = u'-'
             if mode and (colDex == 0):
-                self._gList.InsertListCtrlItem(itemDex, value, item)
+                self._gList.InsertListCtrlItem(itemDex, labels[col], item)
             else:
-                self._gList.SetStringItem(itemDex, colDex, value)
+                self._gList.SetStringItem(itemDex, colDex, labels[col])
         #--Selection State
         self.SelectItemAtIndex(itemDex, item in selected)
 
