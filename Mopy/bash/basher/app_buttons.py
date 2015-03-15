@@ -49,9 +49,7 @@ class StatusBar_Hide(ItemLink):
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip})
 
-    def Execute(self,event):
-        sb = Link.Frame.GetStatusBar()
-        sb.HideButton(self.window)
+    def Execute(self,event): Link.Frame.statusBar.HideButton(self.window)
 
 class StatusBar_Button(ItemLink):
     """Launch an application."""
@@ -281,7 +279,7 @@ class App_Button(StatusBar_Button):
                     args = [exePath.s]
                 args.extend(self.exeArgs)
                 if extraArgs: args.extend(extraArgs)
-                Link.Frame.GetStatusBar().SetStatusText(u' '.join(args[1:]),1)
+                Link.Frame.SetStatusInfo(u' '.join(args[1:]))
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
                     self.workingDir.setcwd()
@@ -690,7 +688,8 @@ class App_Settings(StatusBar_Button):
         return self.gButton
 
     def Execute(self,event):
-        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.GetStatusBar(),Link.Frame,None)
+        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
+                                             None)
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):

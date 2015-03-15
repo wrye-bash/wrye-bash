@@ -1870,13 +1870,13 @@ class UIList(wx.Panel):
     def MouseOverItem(self, itemDex):
         """Handle mouse entered item by showing tip or similar."""
         if itemDex is None:
-            Link.Frame.GetStatusBar().SetStatusText(u'', 1)
+            Link.Frame.SetStatusInfo(u'')
             return
         if itemDex < 0: return
         item = self.GetItem(itemDex) # get the item (bolt Path) for this index
         text = self.mouseTexts.get(item, u'')
         if text != self.mouseTextPrev:
-            Link.Frame.GetStatusBar().SetStatusText(text, 1)
+            Link.Frame.SetStatusInfo(text)
             self.mouseTextPrev = text
 
     def OnKeyUp(self, event):
@@ -2419,7 +2419,7 @@ class ItemLink(Link):
         """Hover over an item, set the statusbar text"""
         if Link.Popup:
             item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
-            Link.Frame.GetStatusBar().SetText(item.GetHelp() if item else u'')
+            Link.Frame.SetStatusInfo(item.GetHelp() if item else u'')
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
@@ -2449,7 +2449,7 @@ class MenuLink(Link):
     @staticmethod
     def OnMenuOpen(event):
         """Hover over a submenu, clear the status bar text"""
-        Link.Frame.GetStatusBar().SetText('')
+        Link.Frame.SetStatusInfo(u'')
 
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""

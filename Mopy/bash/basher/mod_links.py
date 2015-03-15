@@ -408,16 +408,16 @@ class Mod_Details(OneItemLink):
         modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
-            modDetails = bosh.ModDetails()
-            modDetails.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
+            mod_details = bosh.ModDetails()
+            mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
-            for group in sorted(modDetails.group_records):
+            for group in sorted(mod_details.group_records):
                 buff.write(group+u'\n')
                 if group in ('CELL','WRLD','DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
-                records = modDetails.group_records[group]
+                records = mod_details.group_records[group]
                 records.sort(key = lambda a: a[1].lower())
                 #if group != 'GMST': records.sort(key = lambda a: a[0] >> 24)
                 for fid,eid in records:

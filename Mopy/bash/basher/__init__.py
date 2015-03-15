@@ -41,7 +41,6 @@ gui_patchers.py   : the gui patcher classes used by the patcher dialog
 patcher_dialog.py : the patcher dialog
 
 The layout is still fluid - there may be a links package, or a package per tab.
-Relics of basher are some global variables - these must eventually disappear.
 Currently there is an effort to unify balt.Tank and List.
 A central global variable is balt.Link.Frame, the BashFrame singleton.
 
@@ -107,10 +106,6 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
 appRestart = False # restart Bash if true
 uacRestart = False # restart Bash with Admin Rights if true
 isUAC = False      # True if the game is under UAC protection
-
-# Singletons ------------------------------------------------------------------
-modDetails = None
-saveDetails = None
 
 # Settings --------------------------------------------------------------------
 settings = None
@@ -232,15 +227,11 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def _sbText(self): return u''
+    def _sbCount(self): return u''
 
     def SetStatusCount(self):
         """Sets status bar count field."""
-        if Link.Frame.notebook.currentPage is self: ##: we need to check if
-        # we are the current tab because Refresh UI path may call Refresh UI
-        # of other tabs too - this results for instance in mods count
-        # flickering when deleting a save in the saves tab - ##: hunt down
-            BashFrame.statusBar.SetStatusText(self._sbText(), 2)
+        Link.Frame.SetStatusCount(self, self._sbCount())
 
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
@@ -1302,9 +1293,6 @@ class ModDetails(_SashDetailsPanel):
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
         top, bottom = self.left, self.right
-        #--Singleton
-        global modDetails
-        modDetails = self
         #--Data
         self.modInfo = None
         textWidth = 200
@@ -1849,7 +1837,7 @@ class INIPanel(SashPanel):
         self.sortKeys = keys
         return keys
 
-    def _sbText(self):
+    def _sbCount(self):
         stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
@@ -1918,7 +1906,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI()
         self.modDetails.SetFile()
 
-    def _sbText(self): return _(u'Mods:') + u' %d/%d' % (
+    def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(bosh.modInfos.ordered), len(bosh.modInfos.data))
 
     def ShowPanel(self):
@@ -2042,9 +2030,6 @@ class SaveDetails(_SashDetailsPanel):
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
         top, bottom = self.left, self.right
-        #--Singleton
-        global saveDetails
-        saveDetails = self
         #--Data
         self.saveInfo = None
         textWidth = 200
@@ -2258,7 +2243,7 @@ class SavePanel(SashPanel):
         self.saveDetails.SetFile()
         self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def _sbText(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
+    def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
     def ShowPanel(self):
         super(SavePanel, self).ShowPanel()
@@ -2923,7 +2908,7 @@ class InstallersPanel(SashTankPanel):
                 self.RefreshInfoPage(index,self.data[self.detailsItem])
             event.Skip()
 
-    def _sbText(self):
+    def _sbCount(self):
         active = len(filter(lambda x: x.isActive, self.data.itervalues()))
         text = _(u'Packages:') + u' %d/%d' % (active, len(self.data.data))
         return text
@@ -3301,7 +3286,7 @@ class ScreensPanel(SashPanel):
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
 
-    def _sbText(self):
+    def _sbCount(self):
         return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)
 
     def ShowPanel(self):
@@ -3523,7 +3508,7 @@ class BSAPanel(NotebookPanel):
         self.SetSizer(sizer)
         self.BSADetails.Fit()
 
-    def _sbText(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
+    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
@@ -3625,7 +3610,7 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gTop)
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
-    def _sbText(self):
+    def _sbCount(self):
         used = len(self.uiList.items) if self.uiList.searchResults is None \
             else len(self.uiList.searchResults)
         return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
@@ -3703,7 +3688,7 @@ class PeoplePanel(SashTankPanel):
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
-    def _sbText(self): return _(u'People:') + u' %d' % len(self.data.data)
+    def _sbCount(self): return _(u'People:') + u' %d' % len(self.data.data)
 
     def ShowPanel(self):
         if self.uiList.data.refresh(): self.uiList.RefreshUI()
@@ -3920,13 +3905,10 @@ class BashStatusBar(wx.StatusBar):
 
     def __init__(self, parent):
         wx.StatusBar.__init__(self, parent)
-        BashFrame.statusBar = self
         self.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
         wx.EVT_SIZE(self,self.OnSize)
-        #--Clear text notice
-        self.Bind(wx.EVT_TIMER, self.OnTimer)
         #--Setup Drag-n-Drop reordering
         self.dragging = wx.NOT_FOUND
         self.dragStart = 0
@@ -4134,16 +4116,6 @@ class BashStatusBar(wx.StatusBar):
             xPos += self.size
         if event: event.Skip()
 
-    def SetText(self,text=u'',timeout=5):
-        """Set's display text as specified. Empty string clears the field."""
-        self.SetStatusText(text,1)
-        if timeout > 0:
-            wx.Timer(self).Start(timeout*1000,wx.TIMER_ONE_SHOT)
-
-    def OnTimer(self,evt):
-        """Clears display text as specified. Empty string clears the field."""
-        self.SetStatusText(u'',1)
-
 #------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
@@ -4158,8 +4130,9 @@ class BashFrame(wx.Frame):
     modList = None
     # Panels - use sparingly
     iPanel = None # BAIN panel
-    # the status bar - used by the Panels to SetStatusCount()
-    statusBar = None
+
+    @property
+    def statusBar(self): return self.GetStatusBar()
 
     def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
         #--Singleton
@@ -4252,6 +4225,18 @@ class BashFrame(wx.Frame):
             if bosh.modInfos.voCurrent:
                 title += u' ['+bosh.modInfos.voCurrent+u']'
         wx.Frame.SetTitle(self,title)
+
+    def SetStatusCount(self, requestingPanel, countTxt):
+        """Sets status bar count field."""
+        if self.notebook.currentPage is requestingPanel: # we need to check if
+        # requesting Panel is currently shown because Refresh UI path may call
+        # Refresh UI of other tabs too - this results for instance in mods
+        # count flickering when deleting a save in saves tab - ##: hunt down
+            self.statusBar.SetStatusText(countTxt, 2)
+
+    def SetStatusInfo(self, infoTxt):
+        """Sets status bar info field."""
+        self.statusBar.SetStatusText(infoTxt, 1)
 
     #--Events ---------------------------------------------
     def RefreshData(self, event=None):
