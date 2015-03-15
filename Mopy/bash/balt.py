@@ -2006,9 +2006,6 @@ class UIList(wx.Panel):
              last sort was on same sort variable -- in which case,
              reverse the sort order.
         """
-        if self.sortDirty:
-            self.sortDirty = False
-            column, reverse = None, 'CURRENT'
         curColumn = self.sort
         column = column or curColumn
         curReverse = self.colReverse.get(column, False)
@@ -2127,7 +2124,6 @@ class Tank(UIList):
         #--ListCtrl
         UIList.__init__(self, parent, keyPrefix, details)
         #--Items
-        self.sortDirty = False
         self.UpdateItems()
         #--Hack: Default text item background color
         self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)

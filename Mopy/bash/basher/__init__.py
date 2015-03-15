@@ -327,7 +327,6 @@ class List(balt.UIList):
         self.data = {} if listData is None else listData # TODO(ut): to UIList
         balt.UIList.__init__(self, parent, keyPrefix, details=details)
         #--Items
-        self.sortDirty = 0
         self.PopulateItems()
 
     #--Items ----------------------------------------------
@@ -1231,10 +1230,6 @@ class ModList(_ModsSortMixin, List):
         #--Refresh
         bosh.modInfos.refresh()
         self.RefreshUI()
-        #--Mark sort as dirty
-        if self.selectedFirst:
-            self.sortDirty = 1
-            self.colReverse[self.sort] = not self.colReverse.get(self.sort,0)
 
 #------------------------------------------------------------------------------
 class _SashDetailsPanel(SashPanel):
