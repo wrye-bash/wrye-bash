@@ -726,13 +726,13 @@ from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
                        package=bush.game.__name__)
 for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
-    globals()[name] = type(name, (typeInfo[0], Patcher), {})
-    if typeInfo[1]:
-        otherPatcherDict[name] = typeInfo[1]
+    globals()[name] = type(name, (typeInfo.clazz, Patcher), {})
+    if typeInfo.twinPatcher:
+        otherPatcherDict[name] = typeInfo.twinPatcher
 for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
-    globals()[name] = type(name, (typeInfo[0], ListPatcher), {})
-    if typeInfo[1]:
-        otherPatcherDict[name] = typeInfo[1]
+    globals()[name] = type(name, (typeInfo.clazz, ListPatcher), {})
+    if typeInfo.twinPatcher:
+        otherPatcherDict[name] = typeInfo.twinPatcher
 
 del import_module
 

@@ -35,6 +35,10 @@ from ....patcher.base import Patcher, CBash_Patcher
 from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
     CBash_ListPatcher
 
+__all__ = ['AlchemicalCatalogs', 'CBash_AlchemicalCatalogs', 'CoblExhaustion',
+           'MFactMarker', 'CBash_MFactMarker', 'CBash_CoblExhaustion',
+           'SEWorldEnforcer', 'CBash_SEWorldEnforcer']
+
 class _AAlchemicalCatalogs(SpecialPatcher):
     """Updates COBL alchemical catalogs."""
     name = _(u'Cobl Catalogs')

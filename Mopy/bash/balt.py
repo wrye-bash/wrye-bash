@@ -906,7 +906,7 @@ try:
     from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
 
 except ImportError:
-    shellcon = None
+    shellcon = shell = None
     FO_DELETE = 0
     FO_MOVE = 1
     FO_COPY = 2
@@ -1176,13 +1176,13 @@ class ListEditor(Dialog):
         Added kwargs to provide extra buttons - this class is built around a
         ListEditorData instance which needlessly complicates things - mainly
         a bunch of booleans to enable buttons but also the list of data that
-        corresponds to (read is duplicated by) ListEditor.items.
+        corresponds to (read is duplicated by) ListEditor._list_items.
         ListEditorData should be nested here.
         :param kwargs: kwargs['ButtonLabel']=buttonAction
         """
         #--Data
         self._listEditorData = data #--Should be subclass of ListEditorData
-        self.items = data.getItemList()
+        self._list_items = data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title)
         # overrides Dialog.sizesKey
@@ -1193,7 +1193,7 @@ class ListEditor(Dialog):
         else:
             captionText = None
         #--List Box
-        self.listBox = listBox(self, choices=self.items)
+        self.listBox = listBox(self, choices=self._list_items)
         self.listBox.SetSizeHints(125,150)
         #--Infobox
         if data.showInfo:
@@ -1245,15 +1245,15 @@ class ListEditor(Dialog):
     def DoAdd(self,event):
         """Adds a new item."""
         newItem = self._listEditorData.add()
-        if newItem and newItem not in self.items:
-            self.items = self._listEditorData.getItemList()
-            index = self.items.index(newItem)
+        if newItem and newItem not in self._list_items:
+            self._list_items = self._listEditorData.getItemList()
+            index = self._list_items.index(newItem)
             self.listBox.InsertItems([newItem],index)
 
     def SetItemsTo(self, items):
         if self._listEditorData.setTo(items):
-            self.items = self._listEditorData.getItemList()
-            self.listBox.Set(self.items)
+            self._list_items = self._listEditorData.getItemList()
+            self.listBox.Set(self._list_items)
 
     def DoRename(self,event):
         """Renames selected item."""
@@ -1266,10 +1266,10 @@ class ListEditor(Dialog):
         newName = askText(self,_(u'Rename to:'),_(u'Rename'),curName)
         if not newName or newName == curName:
             return
-        elif newName in self.items:
+        elif newName in self._list_items:
             showError(self,_(u'Name must be unique.'))
         elif self._listEditorData.rename(curName,newName):
-            self.items[itemDex] = newName
+            self._list_items[itemDex] = newName
             self.listBox.SetString(itemDex,newName)
 
     def DoRemove(self,event):
@@ -1278,10 +1278,10 @@ class ListEditor(Dialog):
         if not selections: return bell()
         #--Data
         itemDex = selections[0]
-        item = self.items[itemDex]
+        item = self._list_items[itemDex]
         if not self._listEditorData.remove(item): return
         #--GUI
-        del self.items[itemDex]
+        del self._list_items[itemDex]
         self.listBox.Delete(itemDex)
         if self.gInfoBox:
             self.gInfoBox.DiscardEdits()
@@ -1292,7 +1292,7 @@ class ListEditor(Dialog):
         """Info box text has been edited."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
-        item = self.items[selections[0]]
+        item = self._list_items[selections[0]]
         if self.gInfoBox.IsModified():
             self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
@@ -2014,11 +2014,12 @@ class UIList(wx.Panel):
         try:
             listCtrl = self._gList
             try: listCtrl.ClearColumnImage(self.colDict[oldcol])
-            except: pass # if old column no longer is active this will fail but
+            except KeyError:
+                pass # if old column no longer is active this will fail but
                 #  not a problem since it doesn't exist anyways.
             listCtrl.SetColumnImage(self.colDict[col],
                                     self.sm_dn if reverse else self.sm_up)
-        except: pass
+        except KeyError: pass
 
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
@@ -2026,7 +2027,7 @@ class UIList(wx.Panel):
         return self._gList.FindItemAt(index)
 
     def GetIndex(self,item):
-        """Returns index for specified item."""
+        """Return index for item, raise KeyError if item not present."""
         return self._gList.FindIndexOf(item)
 
     #--Populate Columns -------------------------------------------------------

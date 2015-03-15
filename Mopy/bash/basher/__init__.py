@@ -80,8 +80,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, copyListToClipboard, roTextCtrl, staticBitmap, \
-    AppendableLink
+    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink
 from ..balt import button, checkBox, staticText, \
     spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
@@ -426,7 +425,7 @@ class List(balt.UIList):
                                 # update the status of its installers
                                 bosh.trackedInfos.track(dirJoin(mod))
                             except bolt.BoltError as e:
-                                balt.showError(self, _(u'%s') % e)
+                                balt.showError(self, u'%s' % e)
         bosh.modInfos.plugins.refresh(True)
         self.RefreshUI()
 
@@ -490,8 +489,8 @@ class MasterList(_ModsSortMixin, List):
     #--Sorting
     _default_sort_col = 'Num'
     _sort_keys = {'Num': None, # sort_keys['Save Order'] =
-                 'File': lambda self, a: self.data[a].name.s.lower(),
-                 'Current Order': lambda self, a: self.loadOrderNames.index(
+                  'File': lambda self, a: self.data[a].name.s.lower(),
+                  'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), # sort_keys['Load Order'] =
                  }
     def _activeModsFirst(self, items):
@@ -700,9 +699,9 @@ class INIList(List):
     itemMenu = Links()  #--Single item menu
     _shellUI = True
     _sort_keys = {'File': None,
-                 'Installer': lambda self, a: bosh.iniInfos.table.getItem(
+                  'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
-                }
+                 }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
             items.sort(key=lambda a: self.data[a].status < 0)
@@ -987,7 +986,7 @@ class ModList(_ModsSortMixin, List):
         try:
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
-            balt.showError(self, _(u'%s') % e)
+            balt.showError(self, u'%s' % e)
         bosh.modInfos.plugins.refresh(True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
@@ -1178,7 +1177,7 @@ class ModList(_ModsSortMixin, List):
                     try:
                         bosh.modInfos.swapOrder(thisFile,swapFile)
                     except bolt.BoltError as e:
-                        balt.showError(self, _(u'%s') % e)
+                        balt.showError(self, u'%s' % e)
                     bosh.modInfos.refreshInfoLists()
                     self.RefreshUI(refreshSaves=False)
                 self.RefreshUI([],refreshSaves=True)
@@ -1190,7 +1189,8 @@ class ModList(_ModsSortMixin, List):
         code = event.GetKeyCode()
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
-            toActivate = [item for item in selected if not self.data.isSelected(GPath(item))]
+            toActivate = [item for item in selected if
+                          not self.data.isSelected(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._checkUncheckMod(*selected)
@@ -1201,7 +1201,7 @@ class ModList(_ModsSortMixin, List):
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda mod: self.data[mod].getPath().s,
                       self.GetSelected())
-            copyListToClipboard(sel)
+            balt.copyListToClipboard(sel)
         super(ModList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):
@@ -1932,12 +1932,12 @@ class SaveList(List):
     itemMenu = Links() #--Single item menu
     _editLabels = True
     _sort_keys = {'File'    : None, # just sort by name
-                 'Modified': lambda self, a: self.data[a].mtime,
-                 'Size'    : lambda self, a: self.data[a].size,
-                 'Status'  : lambda self, a: self.data[a].getStatus(),
-                 'Player'  : lambda self, a: self.data[a].header.pcName,
-                 'PlayTime': lambda self, a: self.data[a].header.gameTicks,
-                 'Cell'    : lambda self, a: self.data[a].header.pcLocation,
+                  'Modified': lambda self, a: self.data[a].mtime,
+                  'Size'    : lambda self, a: self.data[a].size,
+                  'Status'  : lambda self, a: self.data[a].getStatus(),
+                  'Player'  : lambda self, a: self.data[a].header.pcName,
+                  'PlayTime': lambda self, a: self.data[a].header.gameTicks,
+                  'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                  }
 
     def OnLabelEdited(self, event):
@@ -2027,7 +2027,7 @@ class SaveList(List):
         if event.CmdDown() and code == ord('C'):
             sel = map(lambda save: self.data[save].getPath().s,
                       self.GetSelected())
-            copyListToClipboard(sel)
+            balt.copyListToClipboard(sel)
         super(SaveList, self).OnKeyUp(event)
 
     #--Event: Left Down
@@ -2288,14 +2288,15 @@ class InstallersList(balt.Tank):
     # _shellUI = True # FIXME(ut): shellUI path does not grok markers
     _editLabels = True
     _default_sort_col = 'Package'
-    _sort_keys = {'Package': None,
-                 'Files': lambda self, x: len(self.data[x].fileSizeCrcs)
+    _sort_keys = {
+        'Package' : None,
+        'Files'   : lambda self, x: len(self.data[x].fileSizeCrcs)
                  if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
-                 'Order': lambda self, x: self.data[x].order,
-                 'Size': lambda self, x: self.data[x].size
+        'Order'   : lambda self, x: self.data[x].order,
+        'Size'    : lambda self, x: self.data[x].size
                  if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
-                 'Modified': lambda self, x: self.data[x].modified,
-                }
+        'Modified': lambda self, x: self.data[x].modified,
+    }
     #--Special sorters
     def _sortStructure(self, items):
         if settings['bash.installers.sortStructure']:
@@ -2651,7 +2652,7 @@ class InstallersList(balt.Tank):
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda x: bosh.dirs['installers'].join(x).s,
                       self.GetSelected())
-            copyListToClipboard(sel)
+            balt.copyListToClipboard(sel)
         # Enter: Open selected installers
         elif code in balt.wxReturn: self.OpenSelected()
         super(InstallersList, self).OnKeyUp(event)
@@ -3177,8 +3178,8 @@ class ScreensList(List):
     _shellUI = True
     _editLabels = True
     _sort_keys = {'File'    : None,
-                 'Modified': lambda self, a: self.data[a][1],
-                }
+                  'Modified': lambda self, a: self.data[a][1],
+                 }
 
     def OnDClick(self,event):
         """Double click a screenshot"""
@@ -3273,7 +3274,7 @@ class ScreensList(List):
         if event.CmdDown() and code == ord('C'):
             sel = map(lambda x: bosh.screensData.dir.join(x).s,
                       self.GetSelected())
-            copyListToClipboard(sel)
+            balt.copyListToClipboard(sel)
         # Enter: Open selected screens
         elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
@@ -3322,9 +3323,9 @@ class BSAList(List):
     itemMenu = Links() #--Single item menu
     icons = None # no icons
     _sort_keys = {'File': None,
-                 'Modified': lambda self, a: self.data[a].mtime,
-                 'Size': lambda self, a: self.data[a].size,
-                }
+                  'Modified': lambda self, a: self.data[a].mtime,
+                  'Size': lambda self, a: self.data[a].size,
+                 }
 
     def RefreshUI(self,files='ALL',detail='SAME'):
         """Refreshes UI for specified files."""
@@ -3559,10 +3560,10 @@ class MessageList(List):
     reNoRe = re.compile(u'^Re: *',re.U)
     _default_sort_col = 'Date'
     _sort_keys = {'Date': lambda self, a: self.data[a][2],
-                 'Subject': lambda self, a: MessageList.reNoRe.sub(
+                  'Subject': lambda self, a: MessageList.reNoRe.sub(
                      u'', self.data[a][0]),
-                 'Author': lambda self, a: self.data[a][1],
-                }
+                  'Author': lambda self, a: self.data[a][1],
+                 }
 
     def __init__(self, parent, listData, keyPrefix):
         self.gText = None
@@ -3699,9 +3700,9 @@ class PeopleList(balt.Tank):
     icons = karmacons
     _default_sort_col = 'Name'
     _sort_keys = {'Name': lambda self, x: x.lower(),
-                 'Karma': lambda self, x: self.data[x][1],
-                 'Header': lambda self, x: self.data[x][2][:50].lower(),
-                }
+                  'Karma': lambda self, x: self.data[x][1],
+                  'Header': lambda self, x: self.data[x][2][:50].lower(),
+                 }
 
     def getColumns(self, item):
         labels, itemData = {}, self.data[item]
@@ -3874,7 +3875,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                         deprint(title+_(u' panel disabled due to Import Error (most likely comtypes)'),traceback=True)
                         continue
                 if page == 'Mods':
-                    deprint(_(u"Fatal error constructing '%s' panel.") % title,traceback=True)
+                    deprint(_(u"Fatal error constructing '%s' panel.") % title)
                     raise
                 deprint(_(u"Error constructing '%s' panel.") % title,traceback=True)
                 if page in settings['bash.tabs']:

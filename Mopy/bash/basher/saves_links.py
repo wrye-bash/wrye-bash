@@ -154,7 +154,7 @@ class Saves_Profiles(ChoiceLink):
     @property
     def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    class _CheckLink(CheckLink):
+    class _ProfileLink(CheckLink):
         def _check(self):
             return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
         def Execute(self, event):
@@ -170,7 +170,7 @@ class Saves_Profiles(ChoiceLink):
             bosh.modInfos.autoGhost()
             BashFrame.modList.RefreshUI()
 
-    cls = _CheckLink
+    cls = _ProfileLink
 
     class _Default(CheckLink):
         text = _(u'Default')
@@ -198,11 +198,11 @@ class Saves_Profiles(ChoiceLink):
             data = Saves_ProfilesData(self.window)
             balt.ListEditor.Display(self.window, _(u'Save Profiles'), data)
 
+    extraItems = [_Edit(), SeparatorLink(), _Default()]
+
     def _initData(self, window, data):
         super(Saves_Profiles, self)._initData(window, data)
         Saves_Profiles.local = bosh.saveInfos.localSave
-        self.extraItems = [Saves_Profiles._Edit(), SeparatorLink(),
-                           Saves_Profiles._Default()]
 
     @staticmethod
     def swapPlugins(arcSaves,newSaves):
