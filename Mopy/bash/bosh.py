@@ -7820,7 +7820,7 @@ class InstallersData(bolt.TankData, DataDict):
 
     def getMouseText(self,iconKey,textKey,backKey):
         """Returns mouse text to use, given the iconKey,textKey, and backKey."""
-        text = ''
+        text = u''
         if backKey == 'installers.bkgd.outOfOrder':
             text += _(u'Needs Annealing due to a change in Install Order.')
         elif backKey == 'installers.bkgd.dirty':

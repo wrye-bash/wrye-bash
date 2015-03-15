@@ -3561,10 +3561,6 @@ class PeopleList(balt.Tank):
         labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
         return labels
 
-    def MouseOverItem(self, item):
-        """People's Tab: mouse over item is a noop."""
-        pass
-
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""

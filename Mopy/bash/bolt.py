@@ -1863,7 +1863,7 @@ class TankData:
         return iconKey,textKey,backKey
 
     def getMouseText(self,*args,**kwdargs):
-        pass
+        return u''
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
