@@ -210,8 +210,8 @@ class Installers_ListPackages(Installers_Link):
             text = self.idata.getPackageList(False)
         else: text = self.idata.getPackageList()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BAIN Packages'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""

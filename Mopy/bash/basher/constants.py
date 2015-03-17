@@ -31,118 +31,115 @@ from ..bolt import GPath
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
     'default.text': (_(u'Default Text'),
-                     _(u'This is the text color used for list items when no other is specified.  For example, an ESP that is not mergeable or ghosted, and has no other problems.'),
-                     ),
+        _(u'This is the text color used for list items when no other is '
+        u'specified.  For example, an ESP that is not mergeable or ghosted, '
+        u'and has no other problems.'),
+    ),
     'default.bkgd': (_(u'Default Background'),
-                     _(u'This is the text background color used for list items when no other is specified.  For example, an ESM that is not ghosted.'),
-                     ),
+        _(u'This is the text background color used for list items when no '
+          u'other is specified.  For example, an ESM that is not ghosted.'),
+    ),
     'mods.text.esm': (_(u'ESM'),
-                      _(u'Tabs: Mods, Saves')
-                      + u'\n\n' +
-                      _(u'This is the text color used for ESMs in the Mods Tab, and in the Masters info on both the Mods Tab and Saves Tab.'),
-                      ),
+        _(u'Tabs: Mods, Saves') + u'\n\n' +
+        _(u'This is the text color used for ESMs in the Mods Tab, and in the '
+          u'Masters info on both the Mods Tab and Saves Tab.'),),
     'mods.text.mergeable': (_(u'Mergeable Plugin'),
-                            _(u'Tabs: Mods')
-                            + u'\n\n' +
-                            _(u'This is the text color used for mergeable plugins.'),
-                            ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u'This is the text color used for mergeable plugins.'),
+    ),
     'mods.text.noMerge': (_(u"'NoMerge' Plugin"),
-                          _(u'Tabs: Mods')
-                          + u'\n\n' +
-                          _(u"This is the text color used for a mergeable plugin that is tagged 'NoMerge'."),
-                          ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u"This is the text color used for a mergeable plugin that is "
+          u"tagged 'NoMerge'."),
+    ),
     'mods.bkgd.doubleTime.exists': (_(u'Inactive Time Conflict'),
-                                    _(u'Tabs: Mods')
-                                    + u'\n\n' +
-                                    _(u'This is the background color used for a plugin with an inactive time conflict.  This means that two or more plugins have the same timestamp, but only one (or none) of them is active.'),
-                                    ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u'This is the background color used for a plugin with an inactive '
+          u'time conflict.  This means that two or more plugins have the same '
+          u'timestamp, but only one (or none) of them is active.'),
+    ),
     'mods.bkgd.doubleTime.load': (_(u'Active Time Conflict'),
-                                  _(u'Tabs: Mods')
-                                  + u'\n\n' +
-                                  _(u'This is the background color used for a plugin with an active time conflict.  This means that two or more plugins with the same timestamp are active.'),
-                                  ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u'This is the background color used for a plugin with an active '
+          u'time conflict.  This means that two or more plugins with the same '
+          u'timestamp are active.'),
+    ),
     'mods.bkgd.deactivate': (_(u"'Deactivate' Plugin"),
-                             _(u'Tabs: Mods')
-                             + u'\n\n' +
-                             _(u"This is the background color used for an active plugin that is tagged 'Deactivate'."),
-                             ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u"This is the background color used for an active plugin that is "
+          u"tagged 'Deactivate'."),
+    ),
     'mods.bkgd.exOverload': (_(u'Exclusion Group Overloaded'),
-                             _(u'Tabs: Mods')
-                             + u'\n\n' +
-                             _(u'This is the background color used for an active plugin in an overloaded Exclusion Group.  This means that two or more plugins in an Exclusion Group are active, where an Exclusion Group is any group of mods that start with the same name, followed by a comma.')
-                             + u'\n\n' +
-                             _(u'An example exclusion group:')
-                             + u'\n' +
-                             _(u'Bashed Patch, 0.esp')
-                             + u'\n' +
-                             _(u'Bashed Patch, 1.esp')
-                             + u'\n\n' +
-                             _(u'Both of the above plugins belong to the "Bashed Patch," Exclusion Group.'),
-                             ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u'This is the background color used for an active plugin in an '
+          u'overloaded Exclusion Group.  This means that two or more plugins '
+          u'in an Exclusion Group are active, where an Exclusion Group is any '
+          u'group of mods that start with the same name, followed by a comma.')
+        + u'\n\n' + _(u'An example exclusion group:') + u'\n' +
+        _(u'Bashed Patch, 0.esp') + u'\n' + _(u'Bashed Patch, 1.esp') + u'\n\n'
+        + _(u'Both of the above plugins belong to the "Bashed Patch," '
+            u'Exclusion Group.'),
+    ),
     'mods.bkgd.ghosted': (_(u'Ghosted Plugin'),
-                          _(u'Tabs: Mods')
-                          + u'\n\n' +
-                          _(u'This is the background color used for a ghosted plugin.'),
-                          ),
-    'mods.bkgd.groupHeader': (_(u'Group Header'),
-                              _(u'Tabs: Mods')
-                              + u'\n\n' +
-                              _(u'This is the background color used for a Group marker.'),
-                              ),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u'This is the background color used for a ghosted plugin.'),
+    ),
     'ini.bkgd.invalid': (_(u'Invalid INI Tweak'),
-                         _(u'Tabs: INI Edits')
-                         + u'\n\n' +
-                         _(u'This is the background color used for a tweak file that is invalid for the currently selected target INI.'),
-                         ),
+        _(u'Tabs: INI Edits') + u'\n\n' +
+        _(u'This is the background color used for a tweak file that is invalid'
+          u' for the currently selected target INI.'),
+    ),
     'tweak.bkgd.invalid': (_(u'Invalid Tweak Line'),
-                           _(u'Tabs: INI Edits')
-                           + u'\n\n' +
-                           _(u'This is the background color used for a line in a tweak file that is invalid for the currently selected target INI.'),
-                           ),
+        _(u'Tabs: INI Edits') + u'\n\n' +
+        _(u'This is the background color used for a line in a tweak file that '
+          u'is invalid for the currently selected target INI.'),
+    ),
     'tweak.bkgd.mismatched': (_(u'Mismatched Tweak Line'),
-                              _(u'Tabs: INI Edits')
-                              + u'\n\n' +
-                              _(u'This is the background color used for a line in a tweak file that does not match what is set in the target INI.'),
-                              ),
+        _(u'Tabs: INI Edits') + u'\n\n' +
+        _(u'This is the background color used for a line in a tweak file that '
+          u'does not match what is set in the target INI.'),
+    ),
     'tweak.bkgd.matched': (_(u'Matched Tweak Line'),
-                           _(u'Tabs: INI Edits')
-                           + u'\n\n' +
-                           _(u'This is the background color used for a line in a tweak file that matches what is set in the target INI.'),
-                           ),
+        _(u'Tabs: INI Edits') + u'\n\n' +
+        _(u'This is the background color used for a line in a tweak file that '
+          u'matches what is set in the target INI.'),
+    ),
     'installers.text.complex': (_(u'Complex Installer'),
-                                _(u'Tabs: Installers')
-                                + u'\n\n' +
-                                _(u'This is the text color used for a complex BAIN package.'),
-                                ),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the text color used for a complex BAIN package.'),
+    ),
     'installers.text.invalid': (_(u'Marker'),
-                                _(u'Tabs: Installers')
-                                + u'\n\n' +
-                                _(u'This is the text color used for Markers.'),
-                                ),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the text color used for Markers.'),
+    ),
     'installers.bkgd.skipped': (_(u'Skipped Files'),
-                                _(u'Tabs: Installers')
-                                + u'\n\n' +
-                                _(u'This is the background color used for a package with files that will not be installed by BAIN.  This means some files are selected to be installed, but due to your current Skip settings (for example, Skip DistantLOD), will not be installed.'),
-                                ),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the background color used for a package with files that '
+          u'will not be installed by BAIN.  This means some files are selected'
+          u' to be installed, but due to your current Skip settings (for '
+          u'example, Skip DistantLOD), will not be installed.'),
+    ),
     'installers.bkgd.outOfOrder': (_(u'Installer Out of Order'),
-                                   _(u'Tabs: Installers')
-                                   + u'\n\n' +
-                                   _(u'This is the background color used for an installer with files installed, that should be overridden by a package with a higher install order.  It can be repaired with an Anneal or Anneal All.'),
-                                   ),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the background color used for an installer with files '
+          u'installed, that should be overridden by a package with a higher '
+          u'install order.  It can be repaired with an Anneal or Anneal All.'),
+    ),
     'installers.bkgd.dirty': (_(u'Dirty Installer'),
-                              _(u'Tabs: Installers')
-                              + u'\n\n' +
-                              _(u'This is the background color used for an installer that is configured in a "dirty" manner.  This means changes have been made to its configuration, and an Anneal or Install needs to be performed to make the install match what is configured.'),
-                              ),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the background color used for an installer that is '
+          u'configured in a "dirty" manner.  This means changes have been made'
+          u' to its configuration, and an Anneal or Install needs to be '
+          u'performed to make the install match what is configured.'),
+    ),
     'screens.bkgd.image': (_(u'Screenshot Background'),
-                           _(u'Tabs: Saves, Screens')
-                           + u'\n\n' +
-                           _(u'This is the background color used for images.'),
-                           ),
-    }
+        _(u'Tabs: Saves, Screens') + u'\n\n' +
+        _(u'This is the background color used for images.'),
+    ),
+}
 
 #--Load config/defaults
-settingDefaults = { # TODO(178): belongs to bosh (or better to a settings package)
+settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
     'bash.readme': (0,u'0'),
@@ -169,7 +166,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
         'mods.bkgd.exOverload':         (0xFF, 0x99, 0x00),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
-        'mods.bkgd.groupHeader':        (0xD8, 0xD8, 0xD8),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
         'tweak.bkgd.invalid':           (0xFF, 0xD5, 0xAA),
@@ -256,9 +252,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Num':30,
         'Current Order':60,
         },
-    'bash.masters.colAligns': {
-        'Save Order':1,
-        },
     #--Wrye Bash: Mod Docs
     'bash.modDocs.show': False,
     'bash.modDocs.size': (300,400),
@@ -275,12 +268,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Modified':135,
         'Size':75,
         'Files':55,
-        },
-    'bash.installers.colAligns': {
-        'Order': 1,
-        'Modified': 1,
-        'Size': 1,
-        'Files': 1,
         },
     'bash.installers.page':0,
     'bash.installers.enabled': True,
@@ -325,13 +312,14 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'File':300,
         'Installer':100,
         },
-    'bash.ini.colAligns': {},
     'bash.ini.choices': {},
     'bash.ini.choice': 0,
     'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
-    'bash.mods.allCols': ['File','Load Order','Rating','Group','Installer','Modified','Size','Author','CRC','Mod Status'],
-    'bash.mods.cols': ['File','Load Order','Installer','Modified','Size','Author','CRC'],
+    'bash.mods.allCols': ['File', 'Load Order', 'Rating', 'Group', 'Installer',
+                          'Modified', 'Size', 'Author', 'CRC', 'Mod Status'],
+    'bash.mods.cols': ['File', 'Load Order', 'Installer', 'Modified', 'Size',
+                       'Author', 'CRC'],
     'bash.mods.esmsFirst': 1,
     'bash.mods.selectedFirst': 0,
     'bash.mods.sort': 'Load Order',
@@ -347,10 +335,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Size':75,
         'CRC':60,
         'Mod Status':50,
-        },
-    'bash.mods.colAligns': {
-        'Size':1,
-        'Load Order':1,
         },
     'bash.mods.renames': {},
     'bash.mods.scanDirty': False,
@@ -372,16 +356,8 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Player':70,
         'Cell':80,
         },
-    'bash.saves.colAligns': {
-        'Size':1,
-        'PlayTime':1,
-        },
     #Wrye Bash: BSAs
     'bash.BSAs.cols': ['File','Modified','Size'],
-    'bash.BSAs.colAligns': {
-        'Size':1,
-        'Modified':1,
-        },
     'bash.BSAs.colReverse': {
         'Modified':1,
         },
@@ -403,7 +379,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Modified':150,
         'Size':75,
         },
-    'bash.screens.colAligns': {},
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
     #--Wrye Bash: Messages
@@ -416,7 +391,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Author':100,
         'Date':150,
         },
-    'bash.messages.colAligns': {},
     #--Wrye Bash: People
     'bash.people.allCols': ['Name','Karma','Header'],
     'bash.people.cols': ['Name','Karma','Header'],
@@ -426,9 +400,6 @@ settingDefaults = { # TODO(178): belongs to bosh (or better to a settings packag
         'Name': 80,
         'Karma': 25,
         'Header': 50,
-        },
-    'bash.people.colAligns': {
-        'Karma': 1,
         },
     'bash.people.columns': ['Name','Karma','Header'],
     #--Tes4View/Edit/Trans
@@ -554,7 +525,7 @@ toolbar_buttons = (
         _(u"Launch TES4Files")),
 )
 
-try: ##: FIXME: due to constants being imported in showErrorInGui
+try: # FIXME: due to constants being imported in showErrorInGui
     app_buttons = (
         ((bosh.tooldirs['OblivionBookCreatorPath'],
           bosh.inisettings['OblivionBookCreatorJavaArg']),

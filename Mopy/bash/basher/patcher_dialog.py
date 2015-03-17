@@ -295,8 +295,9 @@ class PatchDialog(balt.Dialog):
                     oldFiles = bosh.modInfos.ordered[:]
                     bosh.modInfos.select(patchName)
                     changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
-                    if len(changedFiles) > 1:
-                        Link.Frame.GetStatusBar().SetText(_(u'Masters Activated: ') + unicode(len(changedFiles)-1))
+                    count = len(changedFiles)
+                    if count > 1: Link.Frame.SetStatusInfo(
+                            _(u'Masters Activated: ') + unicode(count - 1))
                     bosh.modInfos[patchName].setGhost(False)
                     bosh.modInfos.refreshInfoLists()
                 except bosh.PluginsFullError:

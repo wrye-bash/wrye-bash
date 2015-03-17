@@ -65,8 +65,8 @@ class INI_ListINIs(ItemLink):
         """Handle printing out the errors."""
         text = self.window.ListTweaks()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Active INIs'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Active INIs'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -87,8 +87,8 @@ class INI_ListErrors(EnabledLink):
             fileInfo = bosh.iniInfos[i]
             text += u'%s\n' % fileInfo.listErrors()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'INI Tweak Errors'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'INI Tweak Errors'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(OneItemLink):
@@ -196,9 +196,9 @@ class INI_Apply(EnabledLink):
                 self.window.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUI('VALID')
-            iniPanel.iniContents.RefreshUI()
-            iniPanel.tweakContents.RefreshUI(self.selected[0])
+            self.window.RefreshUIValid()
+            iniPanel.iniContents.RefreshIniContents()
+            iniPanel.tweakContents.RefreshTweakLineCtrl(self.selected[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
@@ -208,8 +208,7 @@ class INI_CreateNew(OneItemLink):
 
     def _initData(self, window, data):
         Link._initData(self,window,data)
-        self.parent = self.window.panel
-        ini = self.parent.comboBox.GetValue()
+        ini = self.window.panel.comboBox.GetValue()
         if not len(data) == 1:
             self.help = _(u'Please choose one Ini Tweak')
         else:
@@ -244,5 +243,5 @@ class INI_CreateNew(OneItemLink):
                         settings[section][setting] = new_settings[section][
                             setting]
         target.saveSettings(settings)
-        self.window.RefreshUI(detail=path)
-        self.parent.tweakContents.RefreshUI(path.tail)
+        self.window.RefreshUI()
+        self.window.SelectItem(path.tail)

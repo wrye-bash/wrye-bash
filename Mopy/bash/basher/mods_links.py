@@ -230,7 +230,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     def Execute(self,event):
         newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
-            self.window.RefreshUI(detail=newPatchName)
+            self.window.RefreshUI(files=[newPatchName])
+            self.window.SelectItem(newPatchName)
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -254,7 +255,8 @@ class Mods_CreateBlank(ItemLink):
         mod_group = fileInfos.table.getColumn('group')
         mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
-        self.window.RefreshUI(detail=newName)
+        self.window.RefreshUI(files=[newName])
+        self.window.SelectItem(newName)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
@@ -266,8 +268,8 @@ class Mods_ListMods(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Active Mod Files"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Active Mod Files"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(ItemLink):
@@ -279,8 +281,8 @@ class Mods_ListBashTags(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
@@ -328,8 +330,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        files = bosh.modInfos.autoGhost(True)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(True))
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):

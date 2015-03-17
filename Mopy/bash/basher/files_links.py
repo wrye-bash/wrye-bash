@@ -207,7 +207,7 @@ class File_Duplicate(ItemLink):
                         message, _(u'Duplicate ') + fileName.s): continue
             #--Continue copy
             (root,ext) = fileName.rootExt
-            if ext.lower() == u'.bak': ext = u'.ess'
+            if ext.lower() == u'.bak': ext = bush.game.ess.ext
             (destDir,wildcard) = (fileInfo.dir, u'*'+ext)
             destName = GPath(root+u' Copy'+ext)
             destPath = destDir.join(destName)
@@ -292,7 +292,7 @@ class File_ListMasters(OneItemLink):
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
-        self._showLog(text, title=fileName.s, asDialog=False, fixedFont=False,
+        self._showLog(text, title=fileName.s, fixedFont=False,
                       icons=Resources.bashBlue)
 
 class File_Redate(AppendableLink, ItemLink):
@@ -348,15 +348,9 @@ class File_Sort(EnabledLink):
         #--Get first time from first selected file.
         modInfos = self.window.data
         fileNames = self.selected
-        # TODO(ut): balo relic ?
-        dotTimes = [modInfos[fileName].mtime for fileName in fileNames if fileName.s[0] in u'.=+']
-        if dotTimes:
-            newTime = min(dotTimes)
-        else:
-            newTime = min(modInfos[fileName].mtime for fileName in self.selected)
+        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
         fileNames.sort(key=lambda a: a.cext)
-        fileNames.sort(key=lambda a: a.s[0] not in u'.=')
         for fileName in fileNames:
             modInfos[fileName].setmtime(newTime)
             newTime += 60
@@ -437,7 +431,7 @@ class File_RevertToSnapshot(OneItemLink):
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.details.SetFile(None)
-            self.window.RefreshUI(fileName)
+            self.window.RefreshUI(files=[fileName])
 
 class File_Backup(ItemLink):
     """Backup file."""
@@ -507,4 +501,4 @@ class File_RevertToBackup(ChoiceLink):
                     self.window.data.refreshFile(fileName)
                 except bosh.FileError:
                     balt.showError(self,_(u'Old file is corrupt!'))
-                self.window.RefreshUI(fileName)
+                self.window.RefreshUI(files=[fileName])

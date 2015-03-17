@@ -408,24 +408,23 @@ class Mod_Details(OneItemLink):
         modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
-            modDetails = bosh.ModDetails()
-            modDetails.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
+            mod_details = bosh.ModDetails()
+            mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
-            for group in sorted(modDetails.group_records):
+            for group in sorted(mod_details.group_records):
                 buff.write(group+u'\n')
                 if group in ('CELL','WRLD','DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
-                records = modDetails.group_records[group]
+                records = mod_details.group_records[group]
                 records.sort(key = lambda a: a[1].lower())
                 #if group != 'GMST': records.sort(key = lambda a: a[0] >> 24)
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
             self._showLog(buff.getvalue(), title=modInfo.name.s,
-                          asDialog=False, fixedFont=True,
-                          icons=Resources.bashBlue)
+                          fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
 class Mod_ShowReadme(OneItemLink):
@@ -455,8 +454,8 @@ class Mod_ListBashTags(ItemLink):
             files.append(bosh.modInfos[fileName])
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 def _getUrl(fileName, installer, text):
     """"Try to get the url of the file (order of priority will be: TESNexus,
@@ -523,8 +522,8 @@ class Mod_CreateBOSSReport(EnabledLink):
 
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BOSS Report'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BOSS Report'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -581,8 +580,8 @@ class Mod_CopyModInfo(ItemLink):
         if spoiler: text += u'[/spoiler]'
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Mod Info Report'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -599,7 +598,7 @@ class _Mod_AllowGhosting_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(ItemLink):
@@ -616,7 +615,7 @@ class _Mod_DisallowGhosting_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
@@ -655,7 +654,7 @@ class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
                 oldGhost = fileInfo.isGhost
                 if fileInfo.setGhost(toGhost) != oldGhost:
                     files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class _Mod_AllowGhostingInvert_All(ItemLink):
@@ -672,7 +671,7 @@ class _Mod_AllowGhostingInvert_All(ItemLink):
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(toGhost) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files)
+        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(TransLink):
@@ -697,7 +696,7 @@ class Mod_AllowGhosting(TransLink):
                     toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
                     oldGhost = fileInfo.isGhost
                     if fileInfo.setGhost(toGhost) != oldGhost:
-                        self.window.RefreshUI(fileName)
+                        self.window.RefreshUI(files=[fileName])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
@@ -747,19 +746,19 @@ class Mod_MarkMergeable(EnabledLink):
             message += u'\n\n'
         if no:
             message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-        self.window.RefreshUI(yes)
-        self.window.RefreshUI(no)
+        self.window.RefreshUI(files=yes)
+        self.window.RefreshUI(files=no)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class _Mod_BP_Link(EnabledLink):
+class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return (len(self.selected) == 1 and
-            bosh.modInfos[self.selected[0]].header.author in (u'BASHED PATCH',
-                                                          u'BASHED LISTS'))
+        return (super(_Mod_BP_Link, self)._enable() and
+                bosh.modInfos[self.selected[0]].header.author in (
+                    u'BASHED PATCH', u'BASHED LISTS'))
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -924,7 +923,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.save()
-                        self.window.RefreshUI(detail=fileName)
+                        self.window.RefreshUI()
 
         previousMods = set()
         missing = {}
@@ -1111,7 +1110,7 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
     def Execute(self,event):
         for fileName in self.selected:
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
-        self.window.RefreshUI(self.selected)
+        self.window.RefreshUI(files=self.selected)
 
 class _Mod_SkipDirtyCheckInvert(ItemLink):
     text = _(u"Invert checking against LOOT's dirty mod list")
@@ -1122,7 +1121,7 @@ class _Mod_SkipDirtyCheckInvert(ItemLink):
         for fileName in self.selected:
             ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
             bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
-        self.window.RefreshUI(self.selected)
+        self.window.RefreshUI(files=self.selected)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1142,7 +1141,7 @@ class Mod_SkipDirtyCheck(TransLink):
                     fileName = self.selected[0]
                     self.ignoreDirty ^= True
                     bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
-                    self.window.RefreshUI(fileName)
+                    self.window.RefreshUI(files=[fileName])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
@@ -1440,8 +1439,8 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo = modInfos[newName]
             newInfo.setType(newType)
             newInfo.setmtime(newTime)
-            #--Repopulate
-            self.window.RefreshUI(detail=newName)
+        #--Repopulate
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
@@ -1537,7 +1536,7 @@ class Mod_FlipSelf(EnabledLink):
             fileInfo.writeHeader()
             #--Repopulate
             bosh.modInfos.refresh(doInfos=False)
-            self.window.RefreshUI(detail=fileInfo.name)
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
@@ -1580,10 +1579,10 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        self.window.RefreshUI(updated,fileName)
+        self.window.RefreshUI(files=updated, details=fileName)
 
 #------------------------------------------------------------------------------
-class Mod_SetVersion(EnabledLink):
+class Mod_SetVersion(OneItemLink):
     """Sets version of file back to 0.8."""
     text = _(u'Version 0.8')
     help = _(u'Sets version of file back to 0.8')
@@ -1593,18 +1592,20 @@ class Mod_SetVersion(EnabledLink):
         self.fileInfo = window.data[data[0]]
 
     def _enable(self):
-        return (len(self.selected) == 1) and (
-            int(10 * self.fileInfo.header.version) != 8)
+        return (super(Mod_SetVersion, self)._enable() and
+                int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
         if not self._askContinue(message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
+        self.fileInfo.makeBackup()
         self.fileInfo.header.version = 0.8
         self.fileInfo.header.setChanged()
         self.fileInfo.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(detail=self.fileInfo.name)
+        self.window.RefreshUI(files=[self.fileInfo.name])
+        self.window.SelectItem(self.fileInfo.name)
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
@@ -1644,11 +1645,11 @@ class Mod_Fids_Replace(OneItemLink):
             replacer.readFromText(textPath)
             progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = replacer.updateMod(fileInfo)
-            progress(1.0,_(u"Done."))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
         else: self._showLog(changed, title=_(u'Objects Changed'),
-                            icons=Resources.bashBlue)
+                            asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1715,6 +1716,28 @@ class _Mod_Export_Link(EnabledLink):
 class _Mod_Import_Link(OneItemLink):
 
     def _parser(self): raise AbstractError
+
+    def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
+        with balt.Progress(self.__class__.progressTitle) as progress:
+            parser = self._parser()
+            progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
+            if ext == u'.csv':
+                parser.readFromText(textPath)
+            else:
+                srcInfo = bosh.ModInfo(textDir, textName)
+                parser.readFromMod(srcInfo)
+            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
+            changed = parser.writeToMod(fileInfo)
+            progress(1.0, _(u'Done.'))
+        return changed
+
+    def _showLog(self, logText, title=u'', style=0, asDialog=True,
+                 fixedFont=False, icons=Resources.bashBlue, size=True,
+                 question=False):
+        return super(_Mod_Import_Link, self)._showLog(
+            logText, title=title or self.__class__.progressTitle, style=style,
+            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size,
+            question=question)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -1798,8 +1821,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         else:
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'))
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1862,8 +1884,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
             text = buff.getvalue()
             buff.close()
-            self._showLog(text, title=_(u'Import Relations'),
-                          icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Relations'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1927,8 +1948,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
                 buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
             text = buff.getvalue()
             buff.close()
-            self._showLog(text, title=_(u'Import Factions'),
-                          icons=Resources.bashBlue)
+            self._showLog(text, title=_(u'Import Factions'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -1997,7 +2017,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
-                      icons=Resources.bashBlue)
+                      asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file or other mod."""
@@ -2053,8 +2073,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
             report = changedScripts
         elif added:
             report = addedScripts
-        self._showLog(report, title=_(u'Import Scripts'),
-                      icons=Resources.bashBlue)
+        self._showLog(report, title=_(u'Import Scripts'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemStats, CBash_ItemStats
@@ -2103,7 +2122,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
             itemStats.readFromText(textPath)
             progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
             changed = itemStats.writeToMod(fileInfo)
-            progress(1.0,_(u"Done."))
+            progress(1.0,_(u'Done.'))
         #--Log
         if not changed:
             self._showOk(_(u"No relevant stats to import."),_(u"Import Stats"))
@@ -2115,8 +2134,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                 buff = StringIO.StringIO()
                 for modName in sorted(changed):
                     buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                self._showLog(buff.getvalue(), title=_(u'Import Stats'),
-                              icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Import Stats'))
                 buff.close()
 
 #------------------------------------------------------------------------------
@@ -2134,6 +2152,9 @@ class Mod_Prices_Export(_Mod_Export_Link):
 
 class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file."""
+    askTitle = _(u'Import prices from:')
+    csvFile = u'_Prices.csv'
+    progressTitle = _(u'Import Prices')
     text = _(u'Prices...')
     help = _(u'Import item prices from text file')
 
@@ -2145,10 +2166,10 @@ class Mod_Prices_Import(_Mod_Import_Link):
                                  _(u'Import prices')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Prices.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import prices from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_Prices.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2158,19 +2179,9 @@ class Mod_Prices_Import(_Mod_Import_Link):
             self._showError(
                 _(u'Source file must be a Prices.csv file or esp/m.'))
             return
-        #--Export
-        changed = None
-        with balt.Progress(_(u'Import Prices')) as progress:
-            itemPrices = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            if ext == u'.csv':
-                itemPrices.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemPrices.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = itemPrices.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant prices to import.'),
@@ -2180,8 +2191,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
             for modName in sorted(changed):
                 buff.write(_(u'Imported Prices:')
                            + u'\n* %s: %d\n' % (modName.s,changed[modName]))
-            self._showLog(buff.getvalue(), title=_(u'Import Prices'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2244,8 +2254,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue(),
-                          title=_(u'Import Sigil Stone details'),
-                          icons=Resources.bashBlue)
+                          title=_(u'Import Sigil Stone details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2321,8 +2330,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Spell details'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Spell details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2385,7 +2393,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue(),
-                title=_(u'Import Ingredient details'), icons=Resources.bashBlue)
+                          title=_(u'Import Ingredient details'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2457,8 +2465,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                         buff.write(u"  '%s'\n" % badEid)
                 text = buff.getvalue()
                 buff.close()
-                self._showLog(text, title=_(u'Objects Changed'),
-                              icons=Resources.bashBlue)
+                self._showLog(text, title=_(u'Objects Changed'))
         except bolt.BoltError as e:
             self._showWarning('%r' % e)
 
@@ -2477,6 +2484,9 @@ class Mod_FullNames_Export(_Mod_Export_Link):
 
 class Mod_FullNames_Import(_Mod_Import_Link):
     """Import full names from text file or other mod."""
+    askTitle = _(u'Import names from:')
+    csvFile = u'_Names.csv'
+    progressTitle = _(u'Import Names')
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
 
@@ -2488,10 +2498,10 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                                  _(u'Import Names')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Names.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2501,19 +2511,9 @@ class Mod_FullNames_Import(_Mod_Import_Link):
             self._showError(
                 _(u'Source file must be mod (.esp or .esm) or csv file.'))
             return
-        #--Export
-        renamed = None
-        with balt.Progress(_(u"Import Names")) as progress:
-            fullNames = self._parser()
-            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
-            if ext == u'.csv':
-                fullNames.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                fullNames.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            renamed = fullNames.writeToMod(fileInfo)
-            progress(1.0,_(u"Done."))
+        #--Import
+        renamed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not renamed:
             self._showOk(_(u"No changes required."))
@@ -2527,8 +2527,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                         buff.write(format_ % (eid,full,newFull))
                     except:
                         print u'unicode error:', (format_, eid, full, newFull)
-                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'),
-                              icons=Resources.bashBlue)
+                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
@@ -2593,8 +2592,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
                         + u'\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'))
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2628,6 +2626,9 @@ class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
 
 class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     """Import stats from text file or other mod."""
+    askTitle = _(u'Import item data from:')
+    csvFile = u'_ItemData.csv'
+    progressTitle = _(u'Import Item Data')
     text = _(u'Item Data...')
     help = _(u'Import pretty much complete item data from text file or other'
              u' mod')
@@ -2642,10 +2643,10 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
                                  _(u'Import Item Data')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_ItemData.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import item data from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_ItemData.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2654,19 +2655,9 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
         if ext != '.csv':
             self._showError(_(u'Source file must be a ItemData.csv file.'))
             return
-        #--Export
-        changed = None
-        with balt.Progress(_(u'Import Item Data')) as progress:
-            itemStats = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            if ext == u'.csv':
-                itemStats.readFromText(textPath)
-            else:
-                srcInfo = bosh.ModInfo(textDir,textName)
-                itemStats.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = itemStats.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant data to import.'),
@@ -2676,8 +2667,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
             for modName in sorted(changed):
                 buff.write(_(u'Imported Item Data:')
                            + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
-            self._showLog(buff.getvalue(), title=_(u'Import Item Data'),
-                          icons=Resources.bashBlue)
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------

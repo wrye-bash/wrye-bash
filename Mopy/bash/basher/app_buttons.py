@@ -49,9 +49,7 @@ class StatusBar_Hide(ItemLink):
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip})
 
-    def Execute(self,event):
-        sb = Link.Frame.GetStatusBar()
-        sb.HideButton(self.window)
+    def Execute(self,event): Link.Frame.statusBar.HideButton(self.window)
 
 class StatusBar_Button(ItemLink):
     """Launch an application."""
@@ -281,7 +279,7 @@ class App_Button(StatusBar_Button):
                     args = [exePath.s]
                 args.extend(self.exeArgs)
                 if extraArgs: args.extend(extraArgs)
-                Link.Frame.GetStatusBar().SetStatusText(u' '.join(args[1:]),1)
+                Link.Frame.SetStatusInfo(u' '.join(args[1:]))
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
                     self.workingDir.setcwd()
@@ -472,7 +470,7 @@ class App_BOSS(App_Button):
             # And refresh to get the new times so WB will keep the order that BOSS specifies
             bosh.modInfos.refresh(doInfos=False)
             # Refresh UI, so WB is made aware of the changes to loadorder.txt
-            BashFrame.modList.RefreshUI('ALL')
+            BashFrame.modList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Game_Button(App_Button):
@@ -690,7 +688,8 @@ class App_Settings(StatusBar_Button):
         return self.gButton
 
     def Execute(self,event):
-        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.GetStatusBar(),Link.Frame,None)
+        BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
+                                             None)
 
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):

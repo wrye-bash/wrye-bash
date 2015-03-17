@@ -327,9 +327,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUI('VALID')
-            BashFrame.iniList.panel.iniContents.RefreshUI()
-            BashFrame.iniList.panel.tweakContents.RefreshUI(lastApplied)
+            BashFrame.iniList.RefreshUIValid()
+            BashFrame.iniList.panel.iniContents.RefreshIniContents()
+            BashFrame.iniList.panel.tweakContents.RefreshTweakLineCtrl(lastApplied)
         if len(manuallyApply) > 0:
             message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'
@@ -605,8 +605,8 @@ class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
         text = installer.listSource(archive)
         #--Get masters list
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Package Structure'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Package Structure'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
@@ -983,8 +983,8 @@ class Installer_Espm_List(EnabledLink):
                     espm_list.GetString(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        self._showLog(subs, title=_(u'Esp/m List'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Esp/m List'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
@@ -1044,8 +1044,8 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
                 index)] + self.window.gSubList.GetString(index) + u'\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        self._showLog(subs, title=_(u'Sub-Package Lists'), asDialog=False,
-                      fixedFont=False, icons=Resources.bashBlue)
+        self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False,
+                      icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------

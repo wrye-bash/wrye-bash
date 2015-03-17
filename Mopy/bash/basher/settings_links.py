@@ -237,7 +237,7 @@ class Settings_IconSize(RadioLink):
 
     def Execute(self,event):
         bosh.settings['bash.statusbar.iconSize'] = self.size
-        Link.Frame.GetStatusBar().UpdateIconSizes()
+        Link.Frame.statusBar.UpdateIconSizes()
 
 #------------------------------------------------------------------------------
 class Settings_StatusBar_ShowVersions(CheckLink):
@@ -420,8 +420,7 @@ class Settings_UnHideButton(ItemLink):
         self.text = tip
         self.help = _(u"Unhide the '%s' status bar button.") % tip
 
-    def Execute(self,event):
-        Link.Frame.GetStatusBar().UnhideButton(self.link)
+    def Execute(self,event): Link.Frame.statusBar.UnhideButton(self.link)
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):

@@ -21,6 +21,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import namedtuple
+
+PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twinPatcher'])
 
 def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
     for key in patchConfigs:

@@ -247,7 +247,7 @@ class PageError(PageInstaller):
 class PageSelect(PageInstaller):
     def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
         PageInstaller.__init__(self, parent)
-        self.items = listItems
+        self.listItems = listItems
         self.images = listImages
         self.descs = listDescs
         self.bMany = bMany
@@ -312,7 +312,6 @@ class PageSelect(PageInstaller):
         except:
             pass
 
-
     def Selection(self, index):
         self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
         self.index = index
@@ -334,13 +333,13 @@ class PageSelect(PageInstaller):
         temp = []
         if self.bMany:
             index = -1
-            for item in self.items:
+            for item in self.listItems:
                 index += 1
                 if self.listOptions.IsChecked(index):
                     temp.append(item)
         else:
             for i in self.listOptions.GetSelections():
-                temp.append(self.items[i])
+                temp.append(self.listItems[i])
         if self.parent.parser.choiceIdex < len(self.parent.parser.choices):
             oldChoices = self.parent.parser.choices[self.parent.parser.choiceIdex]
             if temp == oldChoices:

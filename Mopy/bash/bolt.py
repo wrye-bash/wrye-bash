@@ -53,9 +53,6 @@ if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
-#-- Forward declarations
-class Path(object): pass
-
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
 #  This is only useful when reading fields from mods, as the encoding is not

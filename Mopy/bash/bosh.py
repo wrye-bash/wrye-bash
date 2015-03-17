@@ -3250,7 +3250,7 @@ class FileInfo:
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
     def isEss(self):
-        return self.name.cext == u'.ess'
+        return self.name.cext == bush.game.ess.ext
 
     def sameAs(self,fileInfo):
         """Returns true if other fileInfo refers to same file as this fileInfo."""
@@ -3624,7 +3624,9 @@ class ModInfo(FileInfo):
             description = reBashTags.sub(strKeys,description)
         else:
             description = description + u'\n' + strKeys
+        if len(description) > 511: return False
         self.writeDescription(description)
+        return True
 
     def getBashTags(self):
         """Returns any Bash flag keys."""
@@ -4578,28 +4580,19 @@ class ModInfos(FileInfos):
                 log.setHeader(head+_(u'Active Mod Files:'))
                 masters = set(self.ordered)
                 merged,imported = self.merged,self.imported
-            headers = set(mod for mod in self.data if mod.s[0] in u'.=+')
-            allMods = masters | merged | imported | headers
+            allMods = masters | merged | imported
             allMods = self.getOrdered([x for x in allMods if x in self])
             #--List
-            modIndex,header = 0, None
+            modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', False)
             for name in allMods:
                 if name in masters:
                     prefix = bul+u'%02X' % modIndex
                     modIndex += 1
-                elif name in headers:
-                    match = re.match(u'^[\.+= ]*(.*?)\.es[pm]',name.s,flags=re.U)
-                    if match: name = GPath(match.group(1))
-                    header = bul+u'==  ' +name.s
-                    continue
                 elif name in merged:
                     prefix = bul+u'++'
                 else:
                     prefix = bul+sImported
-                if header:
-                    log(header)
-                    header = None
                 text = u'%s  %s' % (prefix,name.s,)
                 if showVersion:
                     version = self.getVersion(name)
@@ -5068,17 +5061,19 @@ class SaveInfos(FileInfos):
         self.refresh()
 
     #--Enabled ----------------------------------------------------------------
-    def isEnabled(self,fileName):
+    @staticmethod
+    def isEnabled(fileName):
         """True if fileName is enabled)."""
-        return fileName.cext == u'.ess'
+        return fileName.cext == bush.game.ess.ext
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
         isEnabled = self.isEnabled(fileName)
-        if isEnabled or value == isEnabled or re.match(u'(autosave|quicksave)',fileName.s,re.I|re.U):
+        if value == isEnabled or re.match(u'(autosave|quicksave)', fileName.s,
+                                          re.I | re.U):
             return fileName
         (root,ext) = fileName.rootExt
-        newName = root + ((value and u'.ess') or u'.esr')
+        newName = root + ((value and bush.game.ess.ext) or u'.esr')
         self.rename(fileName,newName)
         return newName
 
@@ -7977,7 +7972,7 @@ class InstallersData(bolt.TankData, DataDict):
             #--Apply settings to the new archive
             iArchive = self[destArchive]
             converter.applySettings(iArchive)
-            #--RefreshUI
+            #--Refresh UI
             pArchive = dirs['installers'].join(destArchive)
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
@@ -10521,7 +10516,6 @@ def initDefaultSettings():
     inisettings['AutoItemCheck'] = True
     inisettings['SkipHideConfirmation'] = False
     inisettings['SkipResetTimeNotifications'] = False
-    inisettings['AutoSizeListColumns'] = 0
     inisettings['SoundSuccess'] = GPath(u'')
     inisettings['SoundError'] = GPath(u'')
     inisettings['EnableSplashScreen'] = True
