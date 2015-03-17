@@ -1949,6 +1949,12 @@ class UIList(wx.Panel):
                           _select=wx.LIST_STATE_SELECTED):
         self._gList.SetItemState(index, select * _select, _select)
 
+    def SelectItem(self, item, deselectOthers=False):
+        dex = self.GetIndex(item)
+        if deselectOthers: self.ClearSelected()
+        else: self.SelectItemAtIndex(dex, select=False)
+        self.SelectItemAtIndex(dex)
+
     def ClearSelected(self):
         """Unselect all items."""
         listCtrl = self._gList
@@ -1993,7 +1999,7 @@ class UIList(wx.Panel):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        _items = self.data.keys() if isinstance(self, Tank) else self.items
+        _items = self.data.keys() if isinstance(self, Tank) else self.GetItems()
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
         items = self._SortItems(column, reverse, items=_items)
         self._gList.ReorderItems(items)

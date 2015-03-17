@@ -331,8 +331,9 @@ class List(balt.UIList):
         self.PopulateItems()
 
     #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None, mode=0, selected=set()):
+    def PopulateItem(self, itemDex=-1, item=None):
         """Populate ListCtrl for specified item."""
+        mode = False
         listCtrl = self._gList
         if item is not None:
             fileName = GPath(item)
@@ -352,7 +353,6 @@ class List(balt.UIList):
             else:
                 listCtrl.SetStringItem(itemDex, colDex, labels[col])
         self.setUI(fileName, itemDex)
-        self.SelectItemAtIndex(itemDex, fileName in selected)
 
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
@@ -362,12 +362,9 @@ class List(balt.UIList):
         self.items = self.data.keys()
         return self.items
 
-    def PopulateItems(self,col=None,reverse='CURRENT',selected='SAME'):
+    def PopulateItems(self):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        #--Items to select afterwards. (Defaults to current selection.)
-        # do it _before_ sorting
-        if selected == 'SAME': selected = set(self.GetSelected())
         #--Reget items
         items = set(self.GetItems())
         listCtrl = self._gList
@@ -378,20 +375,19 @@ class List(balt.UIList):
             if item not in items:
                 listCtrl.RemoveItemAt(index)
             else:
-                self.PopulateItem(index,selected=selected)
+                self.PopulateItem(index)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
         for item in items:
-            self.PopulateItem(item=item, mode=True, selected=selected)
+            self.PopulateItem(item=item)
         #--Sort
-        self.SortItems(col, reverse)
+        self.SortItems()
         self.autosizeColumns()
 
     __all = ()
-    def RefreshUI(self, files=__all, detail='SAME', **kwargs):
-        """Populate specified files or ALL files, set status bar count
-        and details item if applicable."""
+    def RefreshUI(self, files=__all, **kwargs):
+        """Populate specified files or ALL files, set status bar count."""
         # TODO(ut) needs work:
         ##: Currently the code uses PopulateItems and Refresh UI at random.
         # PopulateItems must be encapsulated and all calls to it must pass
@@ -400,22 +396,19 @@ class List(balt.UIList):
         #  PopulateItems on ALL items - a nono. Refresh UI has 140 uses...
         ##: the isinstance calls are evil - make sure the first is needed
         # and try to make pop('refreshSaves', FALSE)
-        if detail == 'SAME':
-            selected = set(self.GetSelected())
-        else:
-            selected = {detail}
         #--Populate
         if files is self.__all:
-            self.PopulateItems(selected=selected)
+            self.PopulateItems()
         else:  #--Iterable
             if isinstance(self, ModList): ##: why is this needed ?
                 files = filter(lambda x: x in bosh.modInfos, files)
             for file_ in files:
-                self.PopulateItem(item=file_, selected=selected)
+                self.PopulateItem(item=file_)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        if self.details: self.details.SetFile(detail)
+            # if it was a single item then refresh details for it:
+            if len(files) == 1: self.SelectItem(files[0])
         if isinstance(self, ModList) and kwargs.pop(
                 'refreshSaves', True) and BashFrame.saveList:
             BashFrame.saveList.RefreshUI()
@@ -602,7 +595,7 @@ class MasterList(_ModsSortMixin, List):
         return labels
 
     #--Populate Item
-    def PopulateItem(self, itemDex=-1, item=None, mode=0, selected=set()):
+    def PopulateItem(self, itemDex=-1, item=None):
         mode = False
         listCtrl = self._gList
         if item is not None: # inserting, GetItem will result in a wx error dialog
@@ -614,8 +607,6 @@ class MasterList(_ModsSortMixin, List):
                 mode = True
         else:
             mi = self.GetItem(itemDex)
-        masterInfo = self.data[mi]
-        masterName = masterInfo.name
         cols = self.cols
         labels = self.getColumns(mi)
         for colDex in range(len(cols)):
@@ -625,8 +616,6 @@ class MasterList(_ModsSortMixin, List):
             else:
                 listCtrl.SetStringItem(itemDex, colDex, labels[col])
         self.setUI(mi, itemDex)
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, masterName in selected)
 
     def setUI(self, mi, itemDex):
         listCtrl = self._gList
@@ -1505,7 +1494,6 @@ class ModDetails(_SashDetailsPanel):
                                      'bash.rename.isBadFileName')
                 ):
                 return
-            BashFrame.modList.items[BashFrame.modList.items.index(oldName)] = newName
             settings.getChanged('bash.mods.renames')[oldName] = newName
             bosh.modInfos.rename(oldName,newName)
             fileName = newName
@@ -2154,7 +2142,6 @@ class SaveDetails(_SashDetailsPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
-            BashFrame.saveList.items[BashFrame.saveList.items.index(oldName)] = newName
             bosh.saveInfos.rename(oldName,newName)
         #--Change masters?
         if changeMasters:
@@ -2169,7 +2156,9 @@ class SaveDetails(_SashDetailsPanel):
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
             BashFrame.saveList.RefreshUI()
-        else: BashFrame.saveList.RefreshUI(files=[saveInfo.name])
+        else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
+            BashFrame.saveList.RefreshUI()
+
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -3386,7 +3375,6 @@ class BSADetails(wx.Window):
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
-            BSAList.items[BSAList.items.index(oldName)] = newName
             bosh.BSAInfos.rename(oldName,newName)
         #--Done
         try:
@@ -3465,7 +3453,7 @@ class MessageList(List):
         labels['Author'] = author
         return labels
 
-    def PopulateItem(self,itemDex,mode=0,selected=set()):
+    def PopulateItem(self,itemDex,mode=0):
         #--String name of item?
         if not isinstance(itemDex,int):
             item = itemDex
@@ -3479,8 +3467,6 @@ class MessageList(List):
                 self._gList.InsertListCtrlItem(itemDex, labels[col], item)
             else:
                 self._gList.SetStringItem(itemDex, colDex, labels[col])
-        #--Selection State
-        self.SelectItemAtIndex(itemDex, item in selected)
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()

@@ -243,5 +243,5 @@ class INI_CreateNew(OneItemLink):
                         settings[section][setting] = new_settings[section][
                             setting]
         target.saveSettings(settings)
-        self.window.RefreshUI(detail=path)
-        self.window.panel.tweakContents.RefreshTweakLineCtrl(path.tail)
+        self.window.RefreshUI()
+        self.window.SelectItem(path.tail)

@@ -753,12 +753,12 @@ class Mod_MarkMergeable(EnabledLink):
                               icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class _Mod_BP_Link(EnabledLink):
+class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return (len(self.selected) == 1 and
-            bosh.modInfos[self.selected[0]].header.author in (u'BASHED PATCH',
-                                                          u'BASHED LISTS'))
+        return (super(_Mod_BP_Link, self)._enable() and
+                bosh.modInfos[self.selected[0]].header.author in (
+                    u'BASHED PATCH', u'BASHED LISTS'))
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -923,7 +923,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.save()
-                        self.window.RefreshUI(detail=fileName)
+                        self.window.RefreshUI()
 
         previousMods = set()
         missing = {}
@@ -1439,8 +1439,8 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo = modInfos[newName]
             newInfo.setType(newType)
             newInfo.setmtime(newTime)
-            #--Repopulate
-            self.window.RefreshUI(detail=newName)
+        #--Repopulate
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
@@ -1536,7 +1536,7 @@ class Mod_FlipSelf(EnabledLink):
             fileInfo.writeHeader()
             #--Repopulate
             bosh.modInfos.refresh(doInfos=False)
-            self.window.RefreshUI(detail=fileInfo.name)
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
@@ -1582,7 +1582,7 @@ class Mod_FlipMasters(OneItemLink):
         self.window.RefreshUI(files=updated, details=fileName)
 
 #------------------------------------------------------------------------------
-class Mod_SetVersion(EnabledLink):
+class Mod_SetVersion(OneItemLink):
     """Sets version of file back to 0.8."""
     text = _(u'Version 0.8')
     help = _(u'Sets version of file back to 0.8')
@@ -1592,18 +1592,20 @@ class Mod_SetVersion(EnabledLink):
         self.fileInfo = window.data[data[0]]
 
     def _enable(self):
-        return (len(self.selected) == 1) and (
-            int(10 * self.fileInfo.header.version) != 8)
+        return (super(Mod_SetVersion, self)._enable() and
+                int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
         if not self._askContinue(message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
+        self.fileInfo.makeBackup()
         self.fileInfo.header.version = 0.8
         self.fileInfo.header.setChanged()
         self.fileInfo.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(detail=self.fileInfo.name)
+        self.window.RefreshUI(files=[self.fileInfo.name])
+        self.window.SelectItem(self.fileInfo.name)
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
