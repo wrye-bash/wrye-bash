@@ -1770,6 +1770,8 @@ class UIList(wx.Panel):
         self.SetSizer(sizer)
         #--Settings key
         self.keyPrefix = keyPrefix
+        #--Columns
+        self.__class__.persistent_columns = {self._default_sort_col}
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
@@ -1823,7 +1825,9 @@ class UIList(wx.Panel):
         """Dictionary column->isReversed."""
         return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
-    def cols(self): return bosh.settings[self.keyPrefix + '.cols']
+    def cols(self): return bosh.settings.getChanged(self.keyPrefix + '.cols')
+    @property
+    def allCols(self): return bosh.settings[self.keyPrefix + '.allCols']
     @property
     def autoColWidths(self): return bosh.settings.get(
         'bash.autoSizeListColumns', 0)
@@ -2059,7 +2063,7 @@ class UIList(wx.Panel):
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
-        cols = self.cols # this may be updated in List_Column.Execute()
+        cols = self.cols # this may be updated in ColumnsMenu.Execute()
         self.numCols = len(cols) # used in List.PopulateItem()
         colDict = self.colDict = {} # used in setting column sort indicator
         listCtrl = self._gList

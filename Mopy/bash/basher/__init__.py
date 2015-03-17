@@ -502,7 +502,9 @@ class MasterList(_ModsSortMixin, List):
     @property
     def cols(self):
         # using self.__class__.keyPrefix for common saves/mods masters settings
-        return settings[self.__class__.keyPrefix + '.cols']
+        return settings.getChanged(self.__class__.keyPrefix + '.cols')
+    @property # only used in ColumnsMenu which is not available in MasterList
+    def allCols(self): return ['File', 'Num', 'Current Order']
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None,
                  keyPrefix=keyPrefix):
@@ -3504,6 +3506,7 @@ class MessageList(List):
     def __init__(self, parent, listData, keyPrefix):
         self.gText = None
         self.searchResults = None
+        self.persistent_columns = {'Subject'}
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix)
 

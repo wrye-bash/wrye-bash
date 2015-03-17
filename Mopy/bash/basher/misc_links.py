@@ -28,10 +28,9 @@ from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image
 from .. import balt, bosh, bush
 from .import People_Link
-from .constants import settingDefaults
 from ..bolt import GPath, LString
 
-__all__ = ['List_Columns', 'Master_ChangeTo', 'Master_Disable',
+__all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screen_JpgQuality',
            'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'Messages_Archive_Import', 'Message_Delete', 'People_AddNew',
@@ -318,17 +317,42 @@ class Master_Disable(AppendableLink, EnabledLink):
 
 # Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class List_Columns(MenuLink):
+class _Column(CheckLink, EnabledLink):
+
+    def __init__(self, _text='COLKEY'): # not really the link text in this case
+        super(_Column, self).__init__()
+        self.colName = _text
+        self.text = bosh.settings['bash.colNames'][self.colName]
+        self.help = _(u"Show/Hide '%(colname)s' column.") % {
+            'colname': self.text}
+
+    def _enable(self):
+        return self.colName not in self.window.persistent_columns
+
+    def _check(self): return self.colName in self.window.cols
+
+    def Execute(self,event):
+        if self.colName in self.window.cols:
+            self.window.cols.remove(self.colName)
+        else:
+            #--Ensure the same order each time
+            cols = self.window.cols[:]
+            del self.window.cols[:]
+            self.window.cols.extend([x for x in self.window.allCols if
+                                     x in cols or x == self.colName])
+        self.window.PopulateColumns()
+        self.window.RefreshUI()
+
+class ColumnsMenu(ChoiceLink, MenuLink):
     """Customize visible columns."""
     text = _(u"Columns")
-
+    # extraItems
     class _AutoWidth(RadioLink):
         wxFlag = 0
         def _check(self): return self.wxFlag == self.window.autoColWidths
         def Execute(self, event):
             self.window.autoColWidths = self.wxFlag
             self.window.autosizeColumns()
-
     class _Manual(_AutoWidth):
         text = _(u'Manual')
         help = _(
@@ -341,42 +365,8 @@ class List_Columns(MenuLink):
         text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
         help = _(u'Fit columns to their content, keep header always visible. '
                  u' Applies to all Bash lists')
-
-    def __init__(self, columnsKey, allColumnsKey, persistentColumns):
-        super(List_Columns, self).__init__(self.__class__.text)
-        self.columnsKey = columnsKey
-        self.allColumnsKey = allColumnsKey
-        self.links = [self._Manual(), self._Contents(), self._Header(),
-                      balt.SeparatorLink()]
-        for col in settingDefaults[self.allColumnsKey]:
-            enable = col not in persistentColumns
-            self.links.append(
-                List_Column(self.columnsKey, self.allColumnsKey, col, enable))
-
-class List_Column(CheckLink, EnabledLink):
-
-    def __init__(self,columnsKey,allColumnsKey,colName,enable=True):
-        super(List_Column, self).__init__()
-        self.colName = colName
-        self.columnsKey = columnsKey
-        self.allColumnsKey = allColumnsKey
-        self.enable = enable
-        self.text = bosh.settings['bash.colNames'][self.colName]
-        self.help = _(u"Show/Hide '%(colname)s' column.") % {
-            'colname': self.text}
-
-    def _enable(self): return self.enable
-
-    def _check(self): return self.colName in bosh.settings[self.columnsKey]
-
-    def Execute(self,event):
-        if self.colName in bosh.settings[self.columnsKey]:
-            bosh.settings[self.columnsKey].remove(self.colName)
-            bosh.settings.setChanged(self.columnsKey)
-        else:
-            #--Ensure the same order each time
-            bosh.settings[self.columnsKey] = [
-                x for x in settingDefaults[self.allColumnsKey]
-                if x in bosh.settings[self.columnsKey] or x == self.colName]
-        self.window.PopulateColumns()
-        self.window.RefreshUI()
+    extraItems = [_Manual(), _Contents(), _Header(), balt.SeparatorLink()]
+    # choices
+    cls = _Column
+    @property
+    def _choices(self): return self.window.allCols
