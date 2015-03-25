@@ -1945,6 +1945,12 @@ class UIList(wx.Panel):
     def OnLabelEdited(self,event): event.Skip()
 
     #-- Item selection --------------------------------------------------------
+    def GetSelected(self):
+        """Return list of items selected (highlighted) in the interface."""
+        listCtrl = self._gList
+        return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
     def SelectItemAtIndex(self, index, select=True,
                           _select=wx.LIST_STATE_SELECTED):
         self._gList.SetItemState(index, select * _select, _select)
@@ -2232,13 +2238,6 @@ class Tank(UIList):
         if self.details: return self.details.RefreshDetails(item)
         item = item or self.GetDetailsItem()
         if item not in self.data: item = None
-
-    #--Selected items
-    def GetSelected(self):
-        """Return list of items selected (highlighted) in the interface."""
-        listCtrl = self._gList
-        return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):

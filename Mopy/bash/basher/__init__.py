@@ -416,21 +416,6 @@ class List(balt.UIList):
             BashFrame.saveList.RefreshUI()
         self.panel.SetStatusCount()
 
-    def GetSelected(self):
-        """Return list of items selected (hilighted) in the interface."""
-        #--No items?
-        if not 'items' in self.__dict__: return [] # set in GetItems()
-        selected = []
-        itemDex = -1
-        while True:
-            itemDex = self._gList.GetNextItem(itemDex,
-                wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
-            if itemDex == -1 or itemDex >= len(self.items):
-                break
-            else:
-                selected.append(self.GetItem(itemDex))
-        return selected
-
     def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
