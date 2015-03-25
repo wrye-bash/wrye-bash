@@ -327,89 +327,6 @@ class List(balt.UIList):
         # rest of List subclasses provide a non None listData
         self.data = {} if listData is None else listData # TODO(ut): to UIList
         balt.UIList.__init__(self, parent, keyPrefix, details=details)
-        #--Items
-        self.PopulateItems()
-
-    #--Items ----------------------------------------------
-    def _populate(self, fileName, itemDex, mode):
-        cols = self.cols
-        labels = self.getColumns(fileName)
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and colDex == 0:
-                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
-            else:
-                self._gList.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(fileName, itemDex)
-
-    def PopulateItem(self, itemDex=-1, item=None):
-        """Populate ListCtrl for specified item."""
-        mode = False
-        if item is not None:
-            fileName = GPath(item)
-            try:
-                itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = self._gList.GetItemCount() # insert at the end
-                mode = True
-        else: # no way we're inserting with a None item
-            fileName = GPath(self.GetItem(itemDex))
-        self._populate(fileName, itemDex, mode)
-
-    def setUI(self, fileName, itemDex):
-        """Set font, status icon, background text etc."""
-
-    def PopulateItems(self):
-        """Sort items and populate entire list."""
-        self.mouseTexts.clear()
-        #--Reget items
-        items = set(self.GetItems())
-        listCtrl = self._gList
-        index = 0
-        #--Update existing items.
-        while index < listCtrl.GetItemCount():
-            item = self.GetItem(index)
-            if item not in items:
-                listCtrl.RemoveItemAt(index)
-            else:
-                self.PopulateItem(index)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.PopulateItem(item=item)
-        #--Sort
-        self.SortItems()
-        self.autosizeColumns()
-
-    __all = ()
-    def RefreshUI(self, files=__all, **kwargs):
-        """Populate specified files or ALL files, set status bar count."""
-        # TODO(ut) needs work:
-        ##: Currently the code uses PopulateItems and Refresh UI at random.
-        # PopulateItems must be encapsulated and all calls to it must pass
-        # through Refresh UI. Uses of the later must be optimized - pass in
-        # ONLY the items we need refreshed - most of the time Refresh UI calls
-        #  PopulateItems on ALL items - a nono. Refresh UI has 140 uses...
-        ##: the isinstance calls are evil - make sure the first is needed
-        # and try to make pop('refreshSaves', FALSE)
-        #--Populate
-        if files is self.__all:
-            self.PopulateItems()
-        else:  #--Iterable
-            if isinstance(self, ModList): ##: why is this needed ?
-                files = filter(lambda x: x in bosh.modInfos, files)
-            for file_ in files:
-                self.PopulateItem(item=file_)
-            #--Sort
-            self.SortItems()
-            self.autosizeColumns()
-            # if it was a single item then refresh details for it:
-            if len(files) == 1: self.SelectItem(files[0])
-        if isinstance(self, ModList) and kwargs.pop(
-                'refreshSaves', True) and BashFrame.saveList:
-            BashFrame.saveList.RefreshUI()
-        self.panel.SetStatusCount()
 
     def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
@@ -569,19 +486,8 @@ class MasterList(_ModsSortMixin, List):
         labels['Current Order'] = value
         return labels
 
-    #--Populate Item
-    def PopulateItem(self, itemDex=-1, item=None):
-        mode = False
-        if item is not None:
-            mi = item
-            try:
-                itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = self._gList.GetItemCount() # insert at the end
-                mode = True
-        else:
-            mi = self.GetItem(itemDex)
-        self._populate(mi, itemDex, mode)
+    @staticmethod
+    def _gpath(mi): return mi
 
     def setUI(self, mi, itemDex):
         listCtrl = self._gList
@@ -1064,6 +970,15 @@ class ModList(_ModsSortMixin, List):
                 item.SetFont(font)
         listCtrl.SetItem(item)
         self.mouseTexts[fileName] = mouseText
+
+    def RefreshUI(self, **kwargs):
+        # make sure filter() is needed - try to make pop('refreshSaves', FALSE)
+        files = kwargs.get('files', ())
+        if files : ##: why is this needed ?
+            kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
+        super(ModList, self).RefreshUI(**kwargs)
+        if kwargs.pop('refreshSaves', True) and Link.Frame.saveList:
+            Link.Frame.saveList.RefreshUI()
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2695,7 +2610,7 @@ class InstallersPanel(SashTankPanel):
                 u"If not, you can enable it at any time by right-clicking "
                 u"the column header menu and selecting 'Enabled'.")
             settings['bash.installers.enabled'] = balt.askYes(self, message,
-                                                              self.data.title)
+                                                              _(u'Installers'))
             Link.Frame.BindRefresh(bind=True)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
@@ -3423,16 +3338,8 @@ class MessageList(List):
         labels['Author'] = author
         return labels
 
-    def PopulateItem(self, itemDex=-1, item=None):
-        mode = False
-        if item is not None:
-            fileName = item
-            try: itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = self._gList.GetItemCount() # insert at the end
-                mode = True
-        else: fileName = self.GetItem(itemDex)
-        self._populate(fileName, itemDex, mode)
+    @staticmethod
+    def _gpath(item): return item
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
@@ -3562,7 +3469,7 @@ class PeoplePanel(SashTankPanel):
         karma = int(self.gKarma.GetValue())
         text = self.data[self.detailsItem][2]
         self.data[self.detailsItem] = (time.time(),karma,text)
-        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
+        self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
     #--Details view (if it exists)
@@ -3572,7 +3479,7 @@ class PeoplePanel(SashTankPanel):
         if not self.detailsItem or self.detailsItem not in self.data: return
         mtime,karma,text = self.data[self.detailsItem]
         self.data[self.detailsItem] = (time.time(),karma,self.gText.GetValue().strip())
-        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
+        self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
     def RefreshDetails(self,item=None):

@@ -5809,14 +5809,7 @@ class Messages(DataDict):
 class PeopleData(PickleTankData, bolt.TankData, DataDict):
     """Data for a People Tank."""
     def __init__(self):
-        bolt.TankData.__init__(self,settings)
         PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
-        #--Default settings. Subclasses should define these.
-        self.title = _(u'People')
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item
 
     def getGuiKeys(self,item):
         """Returns keys for icon and text and background colors."""
@@ -7702,10 +7695,6 @@ class InstallersData(bolt.TankData, DataDict):
     def __init__(self):
         self.dir = dirs['installers']
         self.bashDir = dirs['bainData']
-        #--Tank Stuff
-        bolt.TankData.__init__(self,settings)
-        self.transColumns = [_(u'Package'),_(u'Order'),_(u'Modified'),_(u'Size'),_(u'Files')]
-        self.title = _(u'Installers')
         #--Persistent data
         self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
@@ -7827,10 +7816,6 @@ class InstallersData(bolt.TankData, DataDict):
             text += _(u'Needs Annealing due to a change in configuration.')
         #--TODO: add mouse  mouse tips
         return text
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item.s
 
     #--Dict Functions -----------------------------------------------------------
     def __delitem__(self,item):
@@ -8098,7 +8083,8 @@ class InstallersData(bolt.TankData, DataDict):
             changed |= installer.refreshStatus(self)
         return changed
 
-    def validConverterName(self,path):
+    @staticmethod
+    def validConverterName(path):
         return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
 
     def refreshConverters(self,progress=None,fullRefresh=False):

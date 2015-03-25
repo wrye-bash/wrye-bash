@@ -1816,6 +1816,10 @@ class UIList(wx.Panel):
         self.Bind(wx.EVT_SIZE,self.OnSize)
         # Columns
         self.PopulateColumns()
+        #--Items
+        self._defaultTextBackground = wx.SystemSettings.GetColour(
+            wx.SYS_COLOUR_WINDOW)
+        self.PopulateItems()
 
     # Column properties
     @property
@@ -1849,6 +1853,80 @@ class UIList(wx.Panel):
     def getColumns(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
+
+    #--Items ----------------------------------------------
+    @staticmethod
+    def _gpath(item): return GPath(item)
+
+    def PopulateItem(self, itemDex=-1, item=None):
+        """Populate ListCtrl for specified item."""
+        insert = False
+        if item is not None:
+            fileName = item
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = self._gList.GetItemCount() # insert at the end
+                insert = True
+        else: # no way we're inserting with a None item
+            fileName = self.GetItem(itemDex)
+        fileName = self._gpath(fileName)
+        cols = self.cols
+        labels = self.getColumns(fileName)
+        for colDex in range(len(cols)):
+            col = cols[colDex]
+            if insert and colDex == 0:
+                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
+            else:
+                self._gList.SetStringItem(itemDex, colDex, labels[col])
+        self.setUI(fileName, itemDex)
+
+    def setUI(self, fileName, itemDex):
+        """Set font, status icon, background text etc."""
+
+    def PopulateItems(self):
+        """Sort items and populate entire list."""
+        self.mouseTexts.clear()
+        items = set(self.GetItems())
+        #--Update existing items.
+        index = 0
+        while index < self._gList.GetItemCount():
+            item = self.GetItem(index)
+            if item not in items: self._gList.RemoveItemAt(index)
+            else:
+                self.PopulateItem(index)
+                items.remove(item)
+                index += 1
+        #--Add remaining new items
+        for item in items: self.PopulateItem(item=item)
+        #--Sort
+        self.SortItems()
+        self.autosizeColumns()
+
+    __all = ()
+    def RefreshUI(self, **kwargs):
+        """Populate specified files or ALL files, set status bar count.
+
+        If there are any deleted (applies also to renamed) items leave files
+        parameter alone.
+        """
+        # TODO(ut) needs work: deleted, new and files->modified **kwargs
+        # parameters and get rid of ModList override(move part to PopulateItem)
+        # Refresh UI uses must be optimized - pass in ONLY the items we need
+        # refreshed - most of the time Refresh UI calls PopulateItems on ALL
+        # items - a nono. Refresh UI has 140 uses...
+        files = kwargs.pop('files', self.__all)
+        if files is self.__all:
+            self.PopulateItems()
+        else:  #--Iterable
+            for file_ in files:
+                self.PopulateItem(item=file_)
+            #--Sort
+            self.SortItems()
+            self.autosizeColumns()
+            # if it was a single item then refresh details for it:
+            if len(files) == 1: self.SelectItem(files[0])
+        self.panel.SetStatusCount()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -2157,10 +2235,6 @@ class Tank(UIList):
         self.data = data
         #--ListCtrl
         UIList.__init__(self, parent, keyPrefix, details)
-        #--Items
-        self.UpdateItems()
-        #--Hack: Default text item background color
-        self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2176,74 +2250,29 @@ class Tank(UIList):
         self.RefreshUI()
 
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def UpdateItem(self, index, item=None, newItem=False):
-        """Populate Item for specified item."""
-        if index < 0: return
-        data,listCtrl = self.data,self._gList
-        item = item or self.GetItem(index)
-        valuesForAllColumns = self.getColumns(item)
-        for iColumn,column in enumerate(self.cols):
-            value = valuesForAllColumns[column]
-            if newItem and (0 == iColumn):
-                listCtrl.InsertListCtrlItem(index, value, item)
-            else:
-                listCtrl.SetStringItem(index, iColumn, value)
-        gItem = listCtrl.GetItem(index)
-        iconKey,textKey,backKey = data.getGuiKeys(item)
-        self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
+    @staticmethod
+    def _gpath(item): return item ##: maybe in installers use GPath ??
+
+    def setUI(self, fileName, itemDex):
+        data, listCtrl = self.data, self._gList
+        gItem = listCtrl.GetItem(itemDex)
+        iconKey, textKey, backKey = data.getGuiKeys(fileName)
+        self.mouseTexts[fileName] = data.getMouseText(iconKey, textKey, backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
         else: gItem.SetTextColour(listCtrl.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
-        else: gItem.SetBackgroundColour(self.defaultTextBackground)
+        else: gItem.SetBackgroundColour(self._defaultTextBackground)
         listCtrl.SetItem(gItem)
-
-    def UpdateItems(self):
-        """Update all items."""
-        listCtrl = self._gList
-        items = set(self.data.keys())
-        index = 0
-        #--Update existing items.
-        self.mouseTexts.clear()
-        while index < listCtrl.GetItemCount():
-            item = self.GetItem(index)
-            if item not in items:
-                listCtrl.RemoveItemAt(index)
-            else:
-                self.UpdateItem(index,item)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.UpdateItem(index, item, newItem=True)
-            index += 1
-        #--Sort
-        self.SortItems()
-
-    def RefreshUI(self, files='ALL', details='SAME'):
-        """Refreshes UI for specified file."""
-        if details == 'SAME':
-            details = self.GetDetailsItem()
-        if files == 'ALL':
-            self.UpdateItems()
-        else: #--Iterable
-            for index in xrange(self._gList.GetItemCount()):
-                if self.GetItem(index) in set(files):
-                    self.UpdateItem(index,None)
-        self.RefreshDetails(details)
-        self.panel.SetStatusCount()
 
     #--Details view (if it exists)
     def GetDetailsItem(self):
         """Returns item currently being shown in details view."""
-        if self.details: return self.details.GetDetailsItem()
-        return None
+        return self.details.GetDetailsItem() if self.details else None
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
         if self.details: return self.details.RefreshDetails(item)
-        item = item or self.GetDetailsItem()
-        if item not in self.data: item = None
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
@@ -2257,7 +2286,9 @@ class Tank(UIList):
         if not items: return
         if not shellUI:
             message = _(u'Delete these items? This operation cannot be undone.')
-            message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
+            try: message += u'\n* ' + u'\n* '.join([x.s for x in items])
+            except AttributeError:
+                message += u'\n* ' + u'\n* '.join([x for x in items])
             if not askYes(self,message,_(u'Delete Items')): return False
             for item in items:
                 del self.data[item]
