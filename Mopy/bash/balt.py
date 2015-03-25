@@ -1945,6 +1945,8 @@ class UIList(wx.Panel):
     def OnLabelEdited(self,event): event.Skip()
 
     #-- Item selection --------------------------------------------------------
+    def GetItems(self): return self.data.keys()
+
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
         listCtrl = self._gList
@@ -2005,9 +2007,8 @@ class UIList(wx.Panel):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        _items = self.data.keys() if isinstance(self, Tank) else self.GetItems()
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
-        items = self._SortItems(column, reverse, items=_items)
+        items = self._SortItems(column, reverse)
         self._gList.ReorderItems(items)
         self._setColumnSortIndicator(column, oldcol, reverse)
 
@@ -2038,17 +2039,22 @@ class UIList(wx.Panel):
         return column, reverse, curColumn
 
     def _SortItems(self, col, reverse, items=None, sortSpecial=True):
-        items = items if items is not None else self.items # List has items Tank provides them (for now)
+        """Sort and return items by specified column, possibly in reverse
+        order.
+
+        If items are not specified, sort what is returned by GetItems() and
+        return that. If sortSpecial is False do not apply extra sortings."""
+        items = items if items is not None else self.GetItems()
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
-        def_key = key(self._default_sort_col)
+        defaultKey = key(self._default_sort_col)
         if col != self._default_sort_col:
             #--Default sort
-            items.sort(key=def_key)
+            items.sort(key=defaultKey)
             items.sort(key=key(col), reverse=reverse)
         else:
-            items.sort(key=def_key, reverse=reverse)
+            items.sort(key=defaultKey, reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
         return items

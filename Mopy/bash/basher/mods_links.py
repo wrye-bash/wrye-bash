@@ -109,8 +109,9 @@ class Mods_LoadList(ChoiceLink):
         class _LoListLink(ItemLink):
             def Execute(self, event):
                 """Select mods in list."""
-                selectList = [GPath(modName) for modName in self.window.items if GPath(modName) in _self.loadListsDict[self.text]]
-                errorMessage = bosh.modInfos.selectExact(selectList)
+                mods = filter(lambda m: m in _self.loadListsDict[self.text],
+                              map(GPath, self.window.GetItems()))
+                errorMessage = bosh.modInfos.selectExact(mods)
                 self.window.RefreshUI()
                 if errorMessage: self._showError(errorMessage, self.text)
         self.__class__.cls = _LoListLink
@@ -130,20 +131,23 @@ class Mods_LoadList(ChoiceLink):
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
+            def select(m):
+                if not modInfos.isSelected(m): modInfos.select(m, doSave=False)
+            mods = map(GPath, self.window.GetItems())
             # first select the bashed patch(es) and their masters
-            for bashedPatch in [GPath(modName) for modName in self.window.items if modInfos[modName].header.author in (u'BASHED PATCH',u'BASHED LISTS')]:
-                if not modInfos.isSelected(bashedPatch):
-                    modInfos.select(bashedPatch, False)
+            for mod in mods: ##: usually results in exclusion group violation
+                if self.window.isBP(mod): select(mod)
             # then activate mods that are not tagged NoMerge or Deactivate or Filter
-            for mod in [GPath(modName) for modName in self.window.items if modName not in modInfos.mergeable and u'Deactivate' not in modInfos[modName].getBashTags() and u'Filter' not in modInfos[modName].getBashTags()]:
-                if not modInfos.isSelected(mod):
-                    modInfos.select(mod, False)
+            def _deactive(modName):
+                tags = modInfos[modName].getBashTags()
+                return u'Deactivate' in tags or u'Filter' in tags
+            mods = filter(lambda m: not _deactive(m), mods)
+            mergeable = set(modInfos.mergeable)
+            for mod in mods:
+                if not mod in mergeable: select(mod)
             # then activate as many of the remaining mods as we can
-            for mod in modInfos.mergeable:
-                if u'Deactivate' in modInfos[mod].getBashTags(): continue
-                if u'Filter' in modInfos[mod].getBashTags(): continue
-                if not modInfos.isSelected(mod):
-                    modInfos.select(mod, False)
+            for mod in mods:
+                if mod in mergeable: select(mod)
             modInfos.plugins.save()
             modInfos.refreshInfoLists()
             modInfos.autoGhost()

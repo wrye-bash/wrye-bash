@@ -760,9 +760,8 @@ class Mod_MarkMergeable(EnabledLink):
 class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return (super(_Mod_BP_Link, self)._enable() and
-                bosh.modInfos[self.selected[0]].header.author in (
-                    u'BASHED PATCH', u'BASHED LISTS'))
+        return super(_Mod_BP_Link, self)._enable() and self.window.isBP(
+            self.selected[0])
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -969,8 +968,7 @@ class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
     def _decide(self, window, data):
         """Append a radio button if CBash is enabled a simple item otherwise."""
-        enable = len(data) == 1 and bosh.modInfos[data[0]].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
+        enable = len(data) == 1 and window.isBP(data[0])
         if enable and bosh.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch

@@ -359,11 +359,6 @@ class List(balt.UIList):
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
 
-    def GetItems(self):
-        """Set and return self.items."""
-        self.items = self.data.keys()
-        return self.items
-
     def PopulateItems(self):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
@@ -513,7 +508,6 @@ class MasterList(_ModsSortMixin, List):
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
-        self.items = [] #--Item numbers in display order.
         self.loadOrderNames = []
         #--Parent init
         List.__init__(self, parent, listData, keyPrefix)
@@ -528,7 +522,6 @@ class MasterList(_ModsSortMixin, List):
         self.edited = False
         self.fileInfo = fileInfo
         self.data.clear()
-        del self.items[:]
         #--Null fileInfo?
         if not fileInfo:
             self.DeleteAllItems()
@@ -537,7 +530,6 @@ class MasterList(_ModsSortMixin, List):
         for mi, masterName in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masterName,0)
             self.data[mi] = masterInfo
-            self.items.append(mi)
         self.ReList()
         self.PopulateItems()
 
@@ -560,10 +552,6 @@ class MasterList(_ModsSortMixin, List):
             return -10
         else:
             return status
-
-    #--Get Items
-    def GetItems(self):
-        return self.items
 
     def getColumns(self, mi):
         labels, masterInfo = {}, self.data[mi]
@@ -635,8 +623,7 @@ class MasterList(_ModsSortMixin, List):
     #--InitEdit
     def InitEdit(self):
         #--Pre-clean
-        for itemId in self.items:
-            masterInfo = self.data[itemId]
+        for masterInfo in self.data.values():
             #--Missing Master?
             if not masterInfo.modInfo:
                 masterName = masterInfo.name
@@ -694,7 +681,7 @@ class MasterList(_ModsSortMixin, List):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data[item].name for item in sorted(self.data.keys())]
+        return [self.data[item].name for item in sorted(self.GetItems())]
 
 #------------------------------------------------------------------------------
 class INIList(List):
@@ -1198,6 +1185,10 @@ class ModList(_ModsSortMixin, List):
         #--Refresh
         bosh.modInfos.refresh()
         self.RefreshUI()
+
+    @staticmethod
+    def isBP(modName): return bosh.modInfos[modName].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS')
 
 #------------------------------------------------------------------------------
 class _SashDetailsPanel(SashPanel):
@@ -3420,12 +3411,8 @@ class MessageList(List):
         List.__init__(self, parent, listData, keyPrefix)
 
     def GetItems(self):
-        """Set and return self.items."""
-        if self.searchResults is not None:
-            self.items = list(self.searchResults)
-        else:
-            self.items = self.data.keys()
-        return self.items
+        if self.searchResults is not None: return list(self.searchResults)
+        return self.data.keys()
 
     #--Populate Item
     def getColumns(self, fileName):
@@ -3491,8 +3478,7 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
     def _sbCount(self):
-        used = len(self.listData.keys()) if self.uiList.searchResults is None \
-            else len(self.uiList.searchResults)
+        used = len(self.uiList.GetItems())
         return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
 
     def ShowPanel(self):
