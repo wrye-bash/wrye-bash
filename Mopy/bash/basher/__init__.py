@@ -2444,32 +2444,32 @@ class InstallersList(balt.Tank):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            dialog = balt.Dialog(self,_(u'Move or Copy?'))
-            icon = staticBitmap(dialog)
-            gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-            sizer = vSizer(
-                (hSizer(
-                    (icon,0,wx.ALL,6),
-                    (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
-                    ),1,wx.EXPAND|wx.ALL,6),
-                (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                (hSizer(
-                    spacer,
-                    button(dialog,label=_(u'Move'),
-                           onClick=lambda x: dialog.EndModal(1)),
-                    (button(dialog,label=_(u'Copy'),
-                            onClick=lambda x: dialog.EndModal(2)),0,wx.LEFT,4),
-                    (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                )
-            dialog.SetSizer(sizer)
-            result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
-            if result == 1:
-                action = 'MOVE'
-            elif result == 2:
-                action = 'COPY'
-            if gCheckBox.GetValue():
-                settings['bash.installers.onDropFiles.action'] = action
+            with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
+                icon = staticBitmap(dialog)
+                gCheckBox = checkBox(dialog,
+                                     _(u"Don't show this in the future."))
+                sizer = vSizer(
+                    (hSizer(
+                        (icon,0,wx.ALL,6),
+                        (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        ),1,wx.EXPAND|wx.ALL,6),
+                    (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    (hSizer(
+                        spacer,
+                        button(dialog,label=_(u'Move'),
+                               onClick=lambda x: dialog.EndModal(1)),
+                        (button(dialog,label=_(u'Copy'),
+                                onClick=lambda x: dialog.EndModal(2)),
+                         0,wx.LEFT,4),
+                        (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    )
+                dialog.SetSizer(sizer)
+                result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
+                if result == 1: action = 'MOVE'
+                elif result == 2: action = 'COPY'
+                if gCheckBox.GetValue():
+                    settings['bash.installers.onDropFiles.action'] = action
         return action
 
     def OnDropFiles(self, x, y, filenames):

@@ -493,6 +493,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
+        dialog.Destroy()
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
@@ -551,6 +552,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
+        dialog.Destroy()
     if result in (wx.ID_OK,wx.ID_YES):
         if check:
             return 2
@@ -1155,8 +1157,6 @@ class Dialog(wx.Dialog):
         """Handle window close event.
         Remember window size, position, etc."""
         if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
-        self.Destroy() # TODO(ut): verify this is not called before I get the
-        # values I need from the dialog
         event.Skip()
 
     @classmethod
