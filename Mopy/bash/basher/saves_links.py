@@ -29,10 +29,11 @@ import StringIO
 import re
 import shutil
 import struct
-from . import Resources, BashFrame
+from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bosh, bolt, balt, bush
+from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
 from ..bolt import GPath, ArgumentError, SubProgress, deprint, BoltError
@@ -155,39 +156,35 @@ class Saves_Profiles(ChoiceLink):
     def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
     class _ProfileLink(CheckLink):
-        def _check(self):
-            return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
+        @property
+        def help(self):
+            return _(u'Set profile to %(prof)s (My Games/Saves/%(prof)s)') % {
+                               'prof': self.text}
+        @property
+        def relativePath(self): return u'Saves\\' + self.text + u'\\'
+        def _check(self): return Saves_Profiles.local == self.relativePath
         def Execute(self, event):
             """Handle selection of label."""
             arcSaves = bosh.saveInfos.localSave
-            newSaves = u'Saves\\%s\\' % (self.text,)
+            newSaves = self.relativePath
             bosh.saveInfos.setLocalSave(newSaves)
             Saves_Profiles.swapPlugins(arcSaves,newSaves)
             Saves_Profiles.swapOblivionVersion(newSaves)
             Link.Frame.SetTitle()
             self.window.details.SetFile(None)
             Link.Frame.RefreshData()
-            bosh.modInfos.autoGhost()
+            # bosh.modInfos.autoGhost() # RefreshData calls modInfos.refresh()
             BashFrame.modList.RefreshUI()
 
     cls = _ProfileLink
 
-    class _Default(CheckLink):
+    class _Default(_ProfileLink):
         text = _(u'Default')
-        help = _(u'Set profile to the default (My Games/Saves)')
-
-        def _check(self): return Saves_Profiles.local == u'Saves\\'
-
-        def Execute(self, event):
-            """Handle selection of Default save profile."""
-            arcSaves, newSaves = bosh.saveInfos.localSave, u'Saves\\'
-            bosh.saveInfos.setLocalSave(newSaves)
-            Saves_Profiles.swapPlugins(arcSaves, newSaves)
-            Saves_Profiles.swapOblivionVersion(newSaves)
-            Link.Frame.SetTitle()
-            self.window.details.SetFile(None)
-            BashFrame.modList.RefreshUI()
-            Link.Frame.RefreshData()
+        @property
+        def help(self):
+            return _(u'Set profile to the default (My Games/Saves)')
+        @property
+        def relativePath(self): return u'Saves\\'
 
     class _Edit(ItemLink):
         text = _(u"Edit Profiles...")
@@ -223,7 +220,7 @@ class Saves_Profiles(ChoiceLink):
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):
-    """Sets the load list to the save game's masters.""" # FIXME(ut): test
+    """Sets the load list to the save game's masters."""
     text = _(u'Load Masters')
     help = _(u"Set the load list to the save game's masters")
 
@@ -231,9 +228,8 @@ class Save_LoadMasters(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        BashFrame.modList.PopulateItems()
-        self.window.PopulateItems()
-        self.window.details.SetFile(fileName)
+        BashFrame.modList.RefreshUI() # will refresh saves too
+        self.window.SelectItem(fileName) # refresh details
         if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------

@@ -54,10 +54,6 @@ class Settings_BackupSettings(ItemLink):
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
 
     def Execute(self,event):
-        def OnClickAll(event):
-            dialog.EndModal(2)
-        def OnClickNone(event):
-            dialog.EndModal(1)
         def PromptConfirm(msg=None):
             msg = msg or _(u'Do you want to backup your Bash settings now?')
             return balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?'))
@@ -73,15 +69,17 @@ class Settings_BackupSettings(ItemLink):
                         (icon,0,wx.ALL,6),
                         (staticText(dialog,_(u'Do you want to backup any images?'),noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                         ),1,wx.EXPAND|wx.ALL,6),
-                    (hSizer(
-                        spacer,
-                        button(dialog,label=_(u'Backup All Images'),onClick=OnClickAll),
-                        (button(dialog,label=_(u'Backup Changed Images'),onClick=OnClickNone),0,wx.LEFT,4),
-                        (button(dialog,id=wx.ID_CANCEL,label=_(u'None')),0,wx.LEFT,4),
+                    (hSizer(spacer,
+                        button(dialog, label=_(u'Backup All Images'),
+                         onClick=lambda e: dialog.EndModal(2)),
+                        (button(dialog, label=_(u'Backup Changed Images'),
+                         onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
+                        (button(dialog, label=_(u'None'),
+                         onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     )
                 dialog.SetSizer(sizer)
-                images = dialog.ShowModal()
+                with dialog: images = dialog.ShowModal()
                 with balt.BusyCursor():
                     backup = barb.BackupSettings(Link.Frame,backup_images=images)
                     backup.Apply()
@@ -183,7 +181,8 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
                    + u'\n' +
                    _(u"('No' Replaces current permissions instead.)")
                    )
-        replace = not self._askYes(message, _(u'Merge permissions?'))
+        replace = not balt.askYes(Link.Frame, message,
+                                  _(u'Merge permissions?'))
         try:
             with textPath.open('r',encoding='utf-8-sig') as ins:
                 Dlls = {'goodDlls':{},'badDlls':{}}

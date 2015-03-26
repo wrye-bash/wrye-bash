@@ -24,7 +24,7 @@
 
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports."""
-import os
+import os as _os
 import ConfigParser
 
 language = None
@@ -35,7 +35,15 @@ def GetBashIni(iniPath=None, reload_=False): ##: needs work
     iniPath = iniPath or u'bash.ini'
     global bashIni
     if reload_ or bashIni is None:
-        if os.path.exists(iniPath):
+        if _os.path.exists(iniPath):
             bashIni = ConfigParser.ConfigParser()
             bashIni.read(iniPath)
     return bashIni
+
+class Resources: # this belongs to basher but leads to cyclic imports, so...
+    fonts = None
+    #--Icon Bundles
+    bashRed = None
+    bashBlue = None
+    bashDocBrowser = None
+    bashMonkey = None

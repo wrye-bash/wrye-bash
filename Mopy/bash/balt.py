@@ -27,9 +27,9 @@
 #..Handled by bolt, so import that.
 import bolt
 import bosh
-from bolt import GPath, deprint
-from bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    CancelError, SkipError
+from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
+    StateError, CancelError, SkipError
+from bass import Resources
 #--Python
 import cPickle
 import StringIO
@@ -220,6 +220,53 @@ class ImageList:
     def __getitem__(self,key):
         self.GetImageList()
         return self.indices[key]
+
+# Images ----------------------------------------------------------------------
+class ColorChecks(ImageList):
+    """ColorChecks ImageList. Used by several List classes."""
+    def __init__(self):
+        ImageList.__init__(self, 16, 16)
+        for state in (u'on', u'off', u'inc', u'imp'):
+            for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
+                           u'red'):
+                shortKey = status + u'.' + state
+                imageKey = u'checkbox.' + shortKey
+                file = GPath(bosh.dirs['images'].join(
+                    u'checkbox_' + status + u'_' + state + u'.png'))
+                image = images[imageKey] = Image(file, Image.typesDict['png'])
+                self.Add(image, shortKey)
+
+    def Get(self,status,on):
+        self.GetImageList()
+        if on == 3:
+            if status <= -20: shortKey = 'purple.imp'
+            elif status <= -10: shortKey = 'blue.imp'
+            elif status <= 0: shortKey = 'green.imp'
+            elif status <=10: shortKey = 'yellow.imp'
+            elif status <=20: shortKey = 'orange.imp'
+            else: shortKey = 'red.imp'
+        elif on == 2:
+            if status <= -20: shortKey = 'purple.inc'
+            elif status <= -10: shortKey = 'blue.inc'
+            elif status <= 0: shortKey = 'green.inc'
+            elif status <=10: shortKey = 'yellow.inc'
+            elif status <=20: shortKey = 'orange.inc'
+            else: shortKey = 'red.inc'
+        elif on:
+            if status <= -20: shortKey = 'purple.on'
+            elif status <= -10: shortKey = 'blue.on'
+            elif status <= 0: shortKey = 'green.on'
+            elif status <=10: shortKey = 'yellow.on'
+            elif status <=20: shortKey = 'orange.on'
+            else: shortKey = 'red.on'
+        else:
+            if status <= -20: shortKey = 'purple.off'
+            elif status <= -10: shortKey = 'blue.off'
+            elif status == 0: shortKey = 'green.off'
+            elif status <=10: shortKey = 'yellow.off'
+            elif status <=20: shortKey = 'orange.off'
+            else: shortKey = 'red.off'
+        return self.indices[shortKey]
 
 # Functions -------------------------------------------------------------------
 def fill(text,width=60):
@@ -493,6 +540,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
+        dialog.Destroy()
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
@@ -551,6 +599,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
+        dialog.Destroy()
     if result in (wx.ID_OK,wx.ID_YES):
         if check:
             return 2
@@ -1155,8 +1204,6 @@ class Dialog(wx.Dialog):
         """Handle window close event.
         Remember window size, position, etc."""
         if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
-        self.Destroy() # TODO(ut): verify this is not called before I get the
-        # values I need from the dialog
         event.Skip()
 
     @classmethod
@@ -1721,6 +1768,11 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         del self._itemId_item[itemId]
         self.DeleteItem(index)
 
+    def DeleteAll(self):
+        self._item_itemId.clear()
+        self._itemId_item.clear()
+        self.DeleteAllItems()
+
     def FindIndexOf(self, item):
         """Return index of specified item."""
         return self.FindItemData(-1, self._item_itemId[item])
@@ -1736,12 +1788,14 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 
 #------------------------------------------------------------------------------
 class UIList(wx.Panel):
-    """Tmp class to factor out common code in basher.List and balt.Tank."""
+    """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
     mainMenu = None
     itemMenu = None
     #--gList image collection
-    icons = ImageList(16,16)
+    __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
+    # yet initialized when balt is imported, so I can't use ColorChecks here
+    icons = __icons
     _shellUI = False # only True in Screens/INIList - disabled in Installers
     # due to markers not being deleted
     max_items_open = 7 # max number of items one can open without prompt
@@ -1760,11 +1814,11 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, details=None):
+    def __init__(self, parent, keyPrefix, data=None, details=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.data = data # yak, encapsulate (_data)
         self.details = details
-        # parent = left -> ThinSplitter -> Panel, consider an init argument
-        self.panel = parent.GetParent().GetParent()
+        self.panel = panel
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
@@ -1773,6 +1827,9 @@ class UIList(wx.Panel):
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
         self._colDict = {} # used in setting column sort indicator
+        #--gList image collection
+        self.__class__.icons = ColorChecks() \
+            if self.__class__.icons is self.__icons else self.__class__.icons
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
@@ -1816,6 +1873,10 @@ class UIList(wx.Panel):
         self.Bind(wx.EVT_SIZE,self.OnSize)
         # Columns
         self.PopulateColumns()
+        #--Items
+        self._defaultTextBackground = wx.SystemSettings.GetColour(
+            wx.SYS_COLOUR_WINDOW)
+        self.PopulateItems()
 
     # Column properties
     @property
@@ -1846,9 +1907,83 @@ class UIList(wx.Panel):
     #--ABSTRACT
     def OnItemSelected(self, event): raise AbstractError
 
-    def getColumns(self, item):
+    def getLabels(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
+
+    #--Items ----------------------------------------------
+    @staticmethod
+    def _gpath(item): return GPath(item)
+
+    def PopulateItem(self, itemDex=-1, item=None):
+        """Populate ListCtrl for specified item."""
+        insert = False
+        if item is not None:
+            fileName = item
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = self._gList.GetItemCount() # insert at the end
+                insert = True
+        else: # no way we're inserting with a None item
+            fileName = self.GetItem(itemDex)
+        fileName = self._gpath(fileName)
+        cols = self.cols
+        labels = self.getLabels(fileName)
+        for colDex in range(len(cols)):
+            col = cols[colDex]
+            if insert and colDex == 0:
+                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
+            else:
+                self._gList.SetStringItem(itemDex, colDex, labels[col])
+        self.setUI(fileName, itemDex)
+
+    def setUI(self, fileName, itemDex):
+        """Set font, status icon, background text etc."""
+
+    def PopulateItems(self):
+        """Sort items and populate entire list."""
+        self.mouseTexts.clear()
+        items = set(self.GetItems())
+        #--Update existing items.
+        index = 0
+        while index < self._gList.GetItemCount():
+            item = self.GetItem(index)
+            if item not in items: self._gList.RemoveItemAt(index)
+            else:
+                self.PopulateItem(index)
+                items.remove(item)
+                index += 1
+        #--Add remaining new items
+        for item in items: self.PopulateItem(item=item)
+        #--Sort
+        self.SortItems()
+        self.autosizeColumns()
+
+    __all = ()
+    def RefreshUI(self, **kwargs):
+        """Populate specified files or ALL files, set status bar count.
+
+        If there are any deleted (applies also to renamed) items leave files
+        parameter alone.
+        """
+        # TODO(ut) needs work: deleted, new and files->modified **kwargs
+        # parameters and get rid of ModList override(move part to PopulateItem)
+        # Refresh UI uses must be optimized - pass in ONLY the items we need
+        # refreshed - most of the time Refresh UI calls PopulateItems on ALL
+        # items - a nono. Refresh UI has 140 uses...
+        files = kwargs.pop('files', self.__all)
+        if files is self.__all:
+            self.PopulateItems()
+        else:  #--Iterable
+            for file_ in files:
+                self.PopulateItem(item=file_)
+            #--Sort
+            self.SortItems()
+            self.autosizeColumns()
+            # if it was a single item then refresh details for it:
+            if len(files) == 1: self.SelectItem(files[0])
+        self.panel.SetStatusCount()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1945,6 +2080,14 @@ class UIList(wx.Panel):
     def OnLabelEdited(self,event): event.Skip()
 
     #-- Item selection --------------------------------------------------------
+    def GetItems(self): return self.data.keys()
+
+    def GetSelected(self):
+        """Return list of items selected (highlighted) in the interface."""
+        listCtrl = self._gList
+        return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
     def SelectItemAtIndex(self, index, select=True,
                           _select=wx.LIST_STATE_SELECTED):
         self._gList.SetItemState(index, select * _select, _select)
@@ -1959,9 +2102,6 @@ class UIList(wx.Panel):
         """Unselect all items."""
         listCtrl = self._gList
         for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
-        ##: (ut) below is the Tank variation - profile
-        # if listCtrl.GetItemState(index,wx.LIST_STATE_SELECTED):
-        #     listCtrl.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
 
     def SelectAll(self):
         for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
@@ -1969,8 +2109,7 @@ class UIList(wx.Panel):
     def SelectLast(self):
         self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
 
-    def DeleteAllItems(self):
-        self._gList.DeleteAllItems()
+    def DeleteAll(self): self._gList.DeleteAll()
 
     def EnsureVisible(self, name):
         self._gList.EnsureVisible(self.GetIndex(name))
@@ -1999,9 +2138,8 @@ class UIList(wx.Panel):
         * 'CURRENT': Same as current order for column.
         * 'INVERT': Invert if column is same as current sort column.
         """
-        _items = self.data.keys() if isinstance(self, Tank) else self.GetItems()
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
-        items = self._SortItems(column, reverse, items=_items)
+        items = self._SortItems(column, reverse)
         self._gList.ReorderItems(items)
         self._setColumnSortIndicator(column, oldcol, reverse)
 
@@ -2032,17 +2170,22 @@ class UIList(wx.Panel):
         return column, reverse, curColumn
 
     def _SortItems(self, col, reverse, items=None, sortSpecial=True):
-        items = items if items is not None else self.items # List has items Tank provides them (for now)
+        """Sort and return items by specified column, possibly in reverse
+        order.
+
+        If items are not specified, sort what is returned by GetItems() and
+        return that. If sortSpecial is False do not apply extra sortings."""
+        items = items if items is not None else self.GetItems()
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
-        def_key = key(self._default_sort_col)
+        defaultKey = key(self._default_sort_col)
         if col != self._default_sort_col:
             #--Default sort
-            items.sort(key=def_key)
+            items.sort(key=defaultKey)
             items.sort(key=key(col), reverse=reverse)
         else:
-            items.sort(key=def_key, reverse=reverse)
+            items.sort(key=defaultKey, reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
         return items
@@ -2127,6 +2270,43 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
+    def DeleteSelected(self,shellUI=False,noRecycle=False):
+        """Deletes selected items."""
+        items = self.GetSelected()
+        if not items: return
+        if not shellUI:
+            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
+            message.extend(sorted(items))
+            with ListBoxes(self, _(u'Delete Items'), _(
+                    u'Delete these items?  This operation cannot be '
+                    u'undone.'), [message]) as dialog:
+                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
+                id_ = dialog.ids[message[0]]
+                checks = dialog.FindWindowById(id_)
+                if checks:
+                    dirJoin = self.data.dir.join
+                    for i,mod in enumerate(items):
+                        if checks.IsChecked(i):
+                            try:
+                                self.data.delete(mod)
+                                # Temporarily Track this file for BAIN, so BAIN will
+                                # update the status of its installers
+                                bosh.trackedInfos.track(dirJoin(mod))
+                            except bolt.BoltError as e:
+                                showError(self, u'%s' % e)
+        else:
+            try:
+                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
+            except AccessDeniedError:
+                pass
+            dirJoin = self.data.dir.join
+            for item in items:
+                itemPath = dirJoin(item)
+                if not itemPath.exists():
+                    bosh.trackedInfos.track(itemPath)
+        bosh.modInfos.plugins.refresh(True)
+        self.RefreshUI()
+
     #--Helpers ----------------------------------------------------------------
     @staticmethod
     def _round(siz):
@@ -2140,105 +2320,37 @@ class Tank(UIList):
     multiple columns and (optionally) column and item menus."""
     _sunkenBorder = False
 
-    def __init__(self, parent, data, keyPrefix, details=None):
-        #--Data
-        self.data = data
-        #--ListCtrl
-        UIList.__init__(self, parent, keyPrefix, details)
-        #--Items
-        self.UpdateItems()
-        #--Hack: Default text item background color
-        self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-
-    #--Drag and Drop-----------------------------------------------------------
-    def OnDropIndexes(self, indexes, newPos):
-        # See if the column is reverse sorted first
-        column = self.sort
-        reverse = self.colReverse.get(column,False)
-        if reverse:
-            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
-            if newPos < 0: newPos = 0
-        # Move the given indexes to the new position
-        self.data.moveArchives(self.GetSelected(), newPos)
-        self.data.refresh(what='N')
-        self.RefreshUI()
-
     #--Updating/Sorting/Refresh -----------------------------------------------
-    def UpdateItem(self, index, item=None, newItem=False):
-        """Populate Item for specified item."""
-        if index < 0: return
-        data,listCtrl = self.data,self._gList
-        item = item or self.GetItem(index)
-        valuesForAllColumns = self.getColumns(item)
-        for iColumn,column in enumerate(self.cols):
-            value = valuesForAllColumns[column]
-            if newItem and (0 == iColumn):
-                listCtrl.InsertListCtrlItem(index, value, item)
-            else:
-                listCtrl.SetStringItem(index, iColumn, value)
-        gItem = listCtrl.GetItem(index)
-        iconKey,textKey,backKey = data.getGuiKeys(item)
-        self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
+    @staticmethod
+    def _gpath(item): return item ##: maybe in installers use GPath ??
+
+    def getGuiKeys(self, item):
+        """Returns keys for icon and text and background colors."""
+        iconKey = textKey = backKey = None
+        return iconKey, textKey, backKey
+
+    def getMouseText(self, *args, **kwdargs): return u''
+
+    def setUI(self, fileName, itemDex):
+        gItem = self._gList.GetItem(itemDex)
+        iconKey, textKey, backKey = self.getGuiKeys(fileName)
+        self.mouseTexts[fileName] = self.getMouseText(
+            iconKey, textKey, backKey)
         if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
         if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(listCtrl.GetTextColour())
+        else: gItem.SetTextColour(self._gList.GetTextColour())
         if backKey: gItem.SetBackgroundColour(colors[backKey])
-        else: gItem.SetBackgroundColour(self.defaultTextBackground)
-        listCtrl.SetItem(gItem)
-
-    def UpdateItems(self):
-        """Update all items."""
-        listCtrl = self._gList
-        items = set(self.data.keys())
-        index = 0
-        #--Update existing items.
-        self.mouseTexts.clear()
-        while index < listCtrl.GetItemCount():
-            item = self.GetItem(index)
-            if item not in items:
-                listCtrl.RemoveItemAt(index)
-            else:
-                self.UpdateItem(index,item)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.UpdateItem(index, item, newItem=True)
-            index += 1
-        #--Sort
-        self.SortItems()
-
-    def RefreshUI(self, files='ALL', details='SAME'):
-        """Refreshes UI for specified file."""
-        if details == 'SAME':
-            details = self.GetDetailsItem()
-        if files == 'ALL':
-            self.UpdateItems()
-        else: #--Iterable
-            for index in xrange(self._gList.GetItemCount()):
-                if self.GetItem(index) in set(files):
-                    self.UpdateItem(index,None)
-        self.RefreshDetails(details)
-        self.panel.SetStatusCount()
+        else: gItem.SetBackgroundColour(self._defaultTextBackground)
+        self._gList.SetItem(gItem)
 
     #--Details view (if it exists)
     def GetDetailsItem(self):
         """Returns item currently being shown in details view."""
-        if self.details: return self.details.GetDetailsItem()
-        return None
+        return self.details.GetDetailsItem() if self.details else None
 
     def RefreshDetails(self,item=None):
         """Refreshes detail view associated with data from item."""
         if self.details: return self.details.RefreshDetails(item)
-        item = item or self.GetDetailsItem()
-        if item not in self.data: item = None
-
-    #--Selected items
-    def GetSelected(self):
-        """Return list of items selected (highlighted) in the interface."""
-        listCtrl = self._gList
-        return [self.GetItem(x) for x in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(x,wx.LIST_STATE_SELECTED)]
 
     #--Event Handlers -------------------------------------
     def OnItemSelected(self,event):
@@ -2252,7 +2364,9 @@ class Tank(UIList):
         if not items: return
         if not shellUI:
             message = _(u'Delete these items? This operation cannot be undone.')
-            message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
+            try: message += u'\n* ' + u'\n* '.join([x.s for x in items])
+            except AttributeError:
+                message += u'\n* ' + u'\n* '.join([x for x in items])
             if not askYes(self,message,_(u'Delete Items')): return False
             for item in items:
                 del self.data[item]
@@ -2580,22 +2694,6 @@ class BoolLink(CheckLink):
 
     def Execute(self,event): bosh.settings[self.key] ^= True # toggle
 
-# Tanks Links -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Tanks_Open(ItemLink):
-    """Opens data directory in explorer."""
-    text = _(u'Open...')
-
-    def _initData(self, window, data):
-        super(Tanks_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s'") % self.window.data.dir.tail
-
-    def Execute(self,event):
-        """Handle selection."""
-        dir_ = self.window.data.dir
-        dir_.makedirs()
-        dir_.start()
-
 # Tank Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in People
@@ -2638,3 +2736,119 @@ wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = wxArrowUp | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
+
+# ListBoxes -------------------------------------------------------------------
+class _CheckList_SelectAll(ItemLink):
+    """Menu item used in ListBoxes."""
+    def __init__(self,select=True):
+        super(_CheckList_SelectAll, self).__init__()
+        self.select = select
+        self.text = _(u'Select All') if select else _(u'Select None')
+
+    def Execute(self,event):
+        for i in xrange(self.window.GetCount()):
+            self.window.Check(i,self.select)
+
+class ListBoxes(Dialog):
+    """A window with 1 or more lists."""
+    ##: attributes below must go - askContinue method ?
+    ID_OK = wx.ID_OK
+    ID_CANCEL = wx.ID_CANCEL
+
+    def __init__(self,parent,title,message,lists,liststyle='check',style=0,changedlabels={},Cancel=True):
+        """lists is in this format:
+        if liststyle == 'check' or 'list'
+        [title,tooltip,item1,item2,itemn],
+        [title,tooltip,....],
+        elif liststyle == 'tree'
+        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
+        [title,tooltip,....],
+        """
+        ##: resize = True - drop resize parameter
+        super(ListBoxes, self).__init__(parent, title=title, style=style,
+                                        resize=False)
+        self.itemMenu = Links()
+        self.itemMenu.append(_CheckList_SelectAll())
+        self.itemMenu.append(_CheckList_SelectAll(False))
+        self.SetIcons(Resources.bashBlue)
+        minWidth = self.GetTextExtent(title)[0]*1.2+64
+        sizer = wx.FlexGridSizer(len(lists)+1,1)
+        self.ids = {}
+        labels = {wx.ID_CANCEL:_(u'Cancel'),wx.ID_OK:_(u'OK')}
+        labels.update(changedlabels)
+        self.SetSize(wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
+        for i,group in enumerate(lists):
+            title = group[0]
+            tip = group[1]
+            try: items = [x.s for x in group[2:]]
+            except: items = [x for x in group[2:]]
+            if len(items) == 0: continue
+            subsizer = hsbSizer((self, wx.ID_ANY, title))
+            if liststyle == 'check':
+                checks = listBox(self, choices=items, isSingle=True,
+                                      isHScroll=True, kind='checklist')
+                checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
+                checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
+                for i in xrange(len(items)):
+                    checks.Check(i,True)
+            elif liststyle == 'list':
+                checks = listBox(self, choices=items, isHScroll=True)
+            else:
+                checks = wx.TreeCtrl(self, size=(150, 200),
+                                     style=wx.TR_DEFAULT_STYLE |
+                                           wx.TR_FULL_ROW_HIGHLIGHT |
+                                           wx.TR_HIDE_ROOT)
+                root = checks.AddRoot(title)
+                for item in group[2]:
+                    child = checks.AppendItem(root,item.s)
+                    for subitem in group[2][item]:
+                        sub = checks.AppendItem(child,subitem.s)
+            self.ids[title] = checks.GetId()
+            checks.SetToolTip(tooltip(tip))
+            subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
+            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
+            sizer.AddGrowableRow(i)
+        okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
+        okButton.SetDefault()
+        buttonSizer = hSizer(spacer,
+                             (okButton,0,wx.ALIGN_RIGHT),
+                             )
+        for id,label in labels.iteritems():
+            if id in (wx.ID_OK,wx.ID_CANCEL):
+                continue
+            but = button(self,id=id,label=label)
+            but.Bind(wx.EVT_BUTTON,self.OnClick)
+            buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
+        if Cancel:
+            buttonSizer.Add(button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
+        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        sizer.AddGrowableCol(0)
+        sizer.SetSizeHints(self)
+        self.SetSizer(sizer)
+        #make sure that minimum size is at least the size of title
+        if self.GetSize()[0] < minWidth:
+            self.SetSize(wxSize(minWidth,-1))
+
+    def OnKeyUp(self,event):
+        """Char events"""
+        ##Ctrl-A - check all
+        obj = event.GetEventObject()
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+            check = not event.ShiftDown()
+            for i in xrange(len(obj.GetStrings())):
+                    obj.Check(i,check)
+        else:
+            event.Skip()
+
+    def OnContext(self,event):
+        """Context Menu"""
+        self.itemMenu.PopupMenu(event.GetEventObject(), Link.Frame,
+                                event.GetEventObject().GetSelections())
+        event.Skip()
+
+    def OnClick(self,event):
+        id_ = event.GetId()
+        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
+            self.EndModal(id_)
+        else:
+            event.Skip()

@@ -292,7 +292,7 @@ class Master_ChangeTo(EnabledLink):
         #--Save Name
         masterInfo.setName(newName)
         self.window.ReList()
-        self.window.PopulateItems()
+        self.window.RefreshUI()
         bosh.settings.getChanged('bash.mods.renames')[masterName] = newName
 
 #------------------------------------------------------------------------------
@@ -313,7 +313,7 @@ class Master_Disable(AppendableLink, EnabledLink):
         #--Save Name
         masterInfo.setName(newName)
         self.window.ReList()
-        self.window.PopulateItems()
+        self.window.RefreshUI()
 
 # Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------

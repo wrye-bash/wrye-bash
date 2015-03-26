@@ -84,7 +84,6 @@ readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
 settings = None
-installersWindow = None # TODO(ut): InstallersList singleton, shouldn't be here
 
 allTags = bush.game.allTags
 allTagsSet = set(allTags)
@@ -5806,23 +5805,10 @@ class Messages(DataDict):
         self.save()
 
 #------------------------------------------------------------------------------
-class PeopleData(PickleTankData, bolt.TankData, DataDict):
-    """Data for a People Tank."""
+class PeopleData(PickleTankData, DataDict):
+    """Data for a People UIList."""
     def __init__(self):
-        bolt.TankData.__init__(self,settings)
-        PickleTankData.__init__(self,dirs['saveBase'].join(u'People.dat'))
-        #--Default settings. Subclasses should define these.
-        self.title = _(u'People')
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        textKey = backKey = None
-        iconKey = u'karma%+d' % self.data[item][1]
-        return iconKey,textKey,backKey
+        PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
 
     #--Operations
     def loadText(self,path):
@@ -6435,7 +6421,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.se.shortName + _(u' DLL Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.se.shortName + _(u' DLL Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
@@ -6459,7 +6445,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install an asi by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install an asi by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.sd.longName + _(u' ASI Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.sd.longName + _(u' ASI Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
@@ -6483,7 +6469,7 @@ class Installer(object):
                         message += _(u' You have previously chosen to install a jar by this name but with a different size, crc and or source archive name.')
                     elif fileLower in badDlls:
                         message += _(u' You have previously chosen to NOT install a jar by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
-                    if not balt.askYes(installersWindow,message,bush.game.sp.longName + _(u' JAR Warning')):
+                    if not balt.askYes(balt.Link.Frame,message,bush.game.sp.longName + _(u' JAR Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
                         continue
@@ -7694,18 +7680,12 @@ class InstallerProject(Installer):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-class InstallersData(bolt.TankData, DataDict):
+class InstallersData(DataDict):
     """Installers tank data. This is the data source for """
-    status_color = {-20:'grey',-10:'red',0:'white',10:'orange',20:'yellow',30:'green'}
-    type_textKey = {1:'default.text',2:'installers.text.complex'}
 
     def __init__(self):
         self.dir = dirs['installers']
         self.bashDir = dirs['bainData']
-        #--Tank Stuff
-        bolt.TankData.__init__(self,settings)
-        self.transColumns = [_(u'Package'),_(u'Order'),_(u'Modified'),_(u'Size'),_(u'Files')]
-        self.title = _(u'Installers')
         #--Persistent data
         self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
@@ -7793,44 +7773,6 @@ class InstallersData(bolt.TankData, DataDict):
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
             self.converterFile.save()
             self.hasChanged = False
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        installer = self.data[item]
-        #--Text
-        if installer.type == 2 and len(installer.subNames) == 2:
-            textKey = self.type_textKey[1]
-        else:
-            textKey = self.type_textKey.get(installer.type,'installers.text.invalid')
-        #--Background
-        backKey = (installer.skipDirFiles and 'installers.bkgd.skipped') or None
-        if installer.dirty_sizeCrc:
-            backKey = 'installers.bkgd.dirty'
-        elif installer.underrides:
-            backKey = 'installers.bkgd.outOfOrder'
-        #--Icon
-        iconKey = ('off','on')[installer.isActive]+'.'+self.status_color[installer.status]
-        if installer.type < 0:
-            iconKey = 'corrupt'
-        elif isinstance(installer,InstallerProject):
-            iconKey += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
-            iconKey += '.wiz'
-        return iconKey,textKey,backKey
-
-    def getMouseText(self,iconKey,textKey,backKey):
-        """Returns mouse text to use, given the iconKey,textKey, and backKey."""
-        text = ''
-        if backKey == 'installers.bkgd.outOfOrder':
-            text += _(u'Needs Annealing due to a change in Install Order.')
-        elif backKey == 'installers.bkgd.dirty':
-            text += _(u'Needs Annealing due to a change in configuration.')
-        #--TODO: add mouse  mouse tips
-        return text
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item.s
 
     #--Dict Functions -----------------------------------------------------------
     def __delitem__(self,item):
@@ -8098,7 +8040,8 @@ class InstallersData(bolt.TankData, DataDict):
             changed |= installer.refreshStatus(self)
         return changed
 
-    def validConverterName(self,path):
+    @staticmethod
+    def validConverterName(path):
         return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
 
     def refreshConverters(self,progress=None,fullRefresh=False):

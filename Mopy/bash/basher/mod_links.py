@@ -31,12 +31,12 @@ import copy
 import os
 import wx
 from .. import bosh, bolt, balt, bush
+from ..bass import Resources
 from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
     spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
-from . import Resources
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..bosh import formatDate, formatInteger
@@ -195,10 +195,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.sort()
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
+        changed= []
         for fileName in colGroup.keys():
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
-        self.parent.PopulateItems()
+                changed.append(fileName)
+        self.parent.RefreshUI(files=changed)
         #--Done
         return newName
 
@@ -208,10 +210,12 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
+        changed= []
         for fileName in colGroup.keys():
             if colGroup[fileName] == item:
                 del colGroup[fileName]
-        self.parent.PopulateItems()
+                changed.append(fileName)
+        self.parent.RefreshUI(files=changed)
         #--Done
         return True
 
@@ -254,7 +258,7 @@ class _Mod_Labels(ChoiceLink):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
                     fileLabels[fileName] = u''
-                self.window.PopulateItems()
+                self.window.RefreshUI(files=self.selected)
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     def _initData(self, window, data):
@@ -266,7 +270,7 @@ class _Mod_Labels(ChoiceLink):
                 for fileName in self.selected: fileLabels[fileName] = self.text
                 if isinstance(_self, Mod_Groups):
                     bosh.modInfos.refresh(doInfos=False)  # needed ?
-                self.window.RefreshUI()
+                self.window.RefreshUI(files=self.selected)
         self.__class__.cls = _LabelLink
 
     @property
@@ -543,36 +547,15 @@ class Mod_CopyModInfo(ItemLink):
             # add a blank line in between mods
             if isFirst: isFirst = False
             else: text += u'\n\n'
-            fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: text += fileName.s
             else: text = _getUrl(fileName, installer, text)
-            for col in bosh.settings['bash.mods.cols']:
+            labels = self.window.getLabels(fileName)
+            for col in self.window.cols:
                 if col == 'File': continue
-                elif col == 'Rating':
-                    value = bosh.modInfos.table.getItem(fileName,'rating',u'')
-                elif col == 'Group':
-                    value = bosh.modInfos.table.getItem(fileName,'group',u'')
-                elif col == 'Installer':
-                    value = bosh.modInfos.table.getItem(fileName,'installer', u'')
-                elif col == 'Modified':
-                    value = formatDate(fileInfo.mtime)
-                elif col == 'Size':
-                    value = formatInteger(max(fileInfo.size,1024)/1024 if fileInfo.size else 0)+u' KB'
-                elif col == 'Author' and fileInfo.header:
-                    value = fileInfo.header.author
-                elif col == 'Load Order':
-                    ordered = bosh.modInfos.ordered
-                    if fileName in ordered:
-                        value = u'%02X' % list(ordered).index(fileName)
-                    else:
-                        value = u''
-                elif col == 'CRC':
-                    value = u'%08X' % fileInfo.cachedCrc()
-                elif col == 'Mod Status':
-                    value = fileInfo.txt_status()
-                text += u'\n%s: %s' % (col, value)
+                text += u'\n%s: %s' % (
+                    col, labels[col] if labels[col] else u'-')
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
@@ -756,9 +739,8 @@ class Mod_MarkMergeable(EnabledLink):
 class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return (super(_Mod_BP_Link, self)._enable() and
-                bosh.modInfos[self.selected[0]].header.author in (
-                    u'BASHED PATCH', u'BASHED LISTS'))
+        return super(_Mod_BP_Link, self)._enable() and self.window.isBP(
+            self.selected[0])
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -780,16 +762,14 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
     def Execute(self,event):
         """Handle activation event."""
-        patchDialog = None
         try: ##: Monkey patch so the modList does not refresh between dialogs
             Link.Frame.BindRefresh(bind=False)
             fileName = self._Execute()
-            if not fileName: return ##: complex, prevent settings save
+            if not fileName: return # prevent settings save
         except CancelError:
-            return
+            return # prevent settings save
         finally:
             if not Link.Frame.isPatching: Link.Frame.BindRefresh(bind=True)
-            if patchDialog: patchDialog.Destroy() ##: not sure if needed - does not fix leak - see #113
         # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
         Link.Frame.SaveSettings()
 
@@ -937,23 +917,37 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     delinquent.setdefault(mod,[]).append(master)
             previousMods.add(mod)
         if missing or delinquent:
-            warning = ListBoxes(Link.Frame,_(u'Master Errors'),
-                _(u'WARNING!')+u'\n'+_(u'The following mod(s) have master file error(s).  Please adjust your load order to rectify those problem(s) before continuing.  However you can still proceed if you want to.  Proceed?'),
-                [[_(u'Missing Master Errors'),_(u'These mods have missing masters; which will make your game unusable, and you will probably have to regenerate your patch after fixing them.  So just go fix them now.'),missing],
-                [_(u'Delinquent Master Errors'),_(u'These mods have delinquent masters which will make your game unusable and you quite possibly will have to regenerate your patch after fixing them.  So just go fix them now.'),delinquent]],
-                liststyle='tree',style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER,changedlabels={ListBoxes.ID_OK:_(u'Continue Despite Errors')})
-            if warning.ShowModal() == ListBoxes.ID_CANCEL:
-                return
-        patchDialog = PatchDialog(self.window,fileInfo,self.doCBash,importConfig)
-        patchDialog.ShowModal()
+            proceed_ = _(u'WARNING!') + u'\n' + _(
+                u'The following mod(s) have master file error(s).  Please '
+                u'adjust your load order to rectify those problem(s) before '
+                u'continuing.  However you can still proceed if you want to. '
+                u' Proceed?')
+            missingMsg = _(
+                u'These mods have missing masters; which will make your game '
+                u'unusable, and you will probably have to regenerate your '
+                u'patch after fixing them.  So just go fix them now.')
+            delinquentMsg = _(
+                u'These mods have delinquent masters which will make your '
+                u'game unusable and you quite possibly will have to '
+                u'regenerate your patch after fixing them.  So just go fix '
+                u'them now.')
+            with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
+                [_(u'Missing Master Errors'), missingMsg, missing],
+                [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
+                liststyle='tree',
+                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                changedlabels={ListBoxes.ID_OK: _(u'Continue Despite Errors')}
+            ) as warning:
+                   if warning.ShowModal() == ListBoxes.ID_CANCEL: return
+        with PatchDialog(self.window, fileInfo, self.doCBash,
+                         importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
     def _decide(self, window, data):
         """Append a radio button if CBash is enabled a simple item otherwise."""
-        enable = len(data) == 1 and bosh.modInfos[data[0]].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
+        enable = len(data) == 1 and window.isBP(data[0])
         if enable and bosh.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch
@@ -1998,7 +1992,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             )
         dialog.SetSizer(sizer)
-        questions = dialog.ShowModal()
+        with dialog: questions = dialog.ShowModal()
         if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():
             defaultPath.makedirs()
@@ -2684,7 +2678,6 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
 #------------------------------------------------------------------------------
 from ..bolt import deprint
 from ..cint import ObCollection
-from .dialogs import ListBoxes
 
 class MasterList_AddMasters(ItemLink): # CRUFT
     """Adds a master."""

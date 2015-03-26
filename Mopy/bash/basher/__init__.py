@@ -41,7 +41,6 @@ gui_patchers.py   : the gui patcher classes used by the patcher dialog
 patcher_dialog.py : the patcher dialog
 
 The layout is still fluid - there may be a links package, or a package per tab.
-Currently there is an effort to unify balt.Tank and List.
 A central global variable is balt.Link.Frame, the BashFrame singleton.
 
 Non-GUI objects and functions are provided by the bosh module. Of those, the
@@ -69,6 +68,7 @@ import wx.gizmos
 #--Localization
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
+from ..bass import Resources
 from ..bosh import formatInteger,formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path
@@ -80,7 +80,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink
+    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes
 from ..balt import button, checkBox, staticText, \
     spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
@@ -145,61 +145,6 @@ class People_Link(Link):
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
 
-# Images ----------------------------------------------------------------------
-class ColorChecks(balt.ImageList):
-    """ColorChecks ImageList. Used by several List classes."""
-    def __init__(self):
-        balt.ImageList.__init__(self,16,16)
-        for state in (u'on',u'off',u'inc',u'imp'):
-            for status in (u'purple',u'blue',u'green',u'orange',u'yellow',u'red'):
-                shortKey = status+u'.'+state
-                imageKey = u'checkbox.'+shortKey
-                file = GPath(bosh.dirs['images'].join(u'checkbox_'+status+u'_'+state+u'.png'))
-                image = images[imageKey] = Image(file,PNG)
-                self.Add(image,shortKey)
-
-    def Get(self,status,on):
-        self.GetImageList()
-        if on == 3:
-            if status <= -20: shortKey = 'purple.imp'
-            elif status <= -10: shortKey = 'blue.imp'
-            elif status <= 0: shortKey = 'green.imp'
-            elif status <=10: shortKey = 'yellow.imp'
-            elif status <=20: shortKey = 'orange.imp'
-            else: shortKey = 'red.imp'
-        elif on == 2:
-            if status <= -20: shortKey = 'purple.inc'
-            elif status <= -10: shortKey = 'blue.inc'
-            elif status <= 0: shortKey = 'green.inc'
-            elif status <=10: shortKey = 'yellow.inc'
-            elif status <=20: shortKey = 'orange.inc'
-            else: shortKey = 'red.inc'
-        elif on:
-            if status <= -20: shortKey = 'purple.on'
-            elif status <= -10: shortKey = 'blue.on'
-            elif status <= 0: shortKey = 'green.on'
-            elif status <=10: shortKey = 'yellow.on'
-            elif status <=20: shortKey = 'orange.on'
-            else: shortKey = 'red.on'
-        else:
-            if status <= -20: shortKey = 'purple.off'
-            elif status <= -10: shortKey = 'blue.off'
-            elif status == 0: shortKey = 'green.off'
-            elif status <=10: shortKey = 'yellow.off'
-            elif status <=20: shortKey = 'orange.off'
-            else: shortKey = 'red.off'
-        return self.indices[shortKey]
-
-colorChecks = ColorChecks()
-
-class Resources:
-    fonts = None
-    #--Icon Bundles
-    bashRed = None
-    bashBlue = None
-    bashDocBrowser = None
-    bashMonkey = None
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
@@ -212,7 +157,6 @@ tabInfo = {
     'People':['PeoplePanel', _(u"People"), None],
 }
 
-from .dialogs import ListBoxes # TODO(ut): cyclic import
 # Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):
@@ -318,154 +262,6 @@ class SashTankPanel(SashPanel):
         return self.detailsItem
 
 #------------------------------------------------------------------------------
-class List(balt.UIList):
-    icons = colorChecks
-
-    def __init__(self, parent, listData=None, keyPrefix='', details=None):
-        #--ListCtrl
-        #--MasterList: masterInfo = self.data[item], where item is id number
-        # rest of List subclasses provide a non None listData
-        self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, keyPrefix, details=details)
-        #--Items
-        self.PopulateItems()
-
-    #--Items ----------------------------------------------
-    def PopulateItem(self, itemDex=-1, item=None):
-        """Populate ListCtrl for specified item."""
-        mode = False
-        listCtrl = self._gList
-        if item is not None:
-            fileName = GPath(item)
-            try:
-                itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = listCtrl.GetItemCount() # insert at the end
-                mode = True
-        else: # no way we're inserting with a None item
-            fileName = GPath(self.GetItem(itemDex))
-        cols = self.cols
-        labels = self.getColumns(fileName)
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and colDex == 0:
-                listCtrl.InsertListCtrlItem(itemDex, labels[col], fileName)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(fileName, itemDex)
-
-    def setUI(self, fileName, itemDex):
-        """Set font, status icon, background text etc."""
-
-    def GetItems(self):
-        """Set and return self.items."""
-        self.items = self.data.keys()
-        return self.items
-
-    def PopulateItems(self):
-        """Sort items and populate entire list."""
-        self.mouseTexts.clear()
-        #--Reget items
-        items = set(self.GetItems())
-        listCtrl = self._gList
-        index = 0
-        #--Update existing items.
-        while index < listCtrl.GetItemCount():
-            item = self.GetItem(index)
-            if item not in items:
-                listCtrl.RemoveItemAt(index)
-            else:
-                self.PopulateItem(index)
-                items.remove(item)
-                index += 1
-        #--Add remaining new items
-        for item in items:
-            self.PopulateItem(item=item)
-        #--Sort
-        self.SortItems()
-        self.autosizeColumns()
-
-    __all = ()
-    def RefreshUI(self, files=__all, **kwargs):
-        """Populate specified files or ALL files, set status bar count."""
-        # TODO(ut) needs work:
-        ##: Currently the code uses PopulateItems and Refresh UI at random.
-        # PopulateItems must be encapsulated and all calls to it must pass
-        # through Refresh UI. Uses of the later must be optimized - pass in
-        # ONLY the items we need refreshed - most of the time Refresh UI calls
-        #  PopulateItems on ALL items - a nono. Refresh UI has 140 uses...
-        ##: the isinstance calls are evil - make sure the first is needed
-        # and try to make pop('refreshSaves', FALSE)
-        #--Populate
-        if files is self.__all:
-            self.PopulateItems()
-        else:  #--Iterable
-            if isinstance(self, ModList): ##: why is this needed ?
-                files = filter(lambda x: x in bosh.modInfos, files)
-            for file_ in files:
-                self.PopulateItem(item=file_)
-            #--Sort
-            self.SortItems()
-            self.autosizeColumns()
-            # if it was a single item then refresh details for it:
-            if len(files) == 1: self.SelectItem(files[0])
-        if isinstance(self, ModList) and kwargs.pop(
-                'refreshSaves', True) and BashFrame.saveList:
-            BashFrame.saveList.RefreshUI()
-        self.panel.SetStatusCount()
-
-    def GetSelected(self):
-        """Return list of items selected (hilighted) in the interface."""
-        #--No items?
-        if not 'items' in self.__dict__: return [] # set in GetItems()
-        selected = []
-        itemDex = -1
-        while True:
-            itemDex = self._gList.GetNextItem(itemDex,
-                wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
-            if itemDex == -1 or itemDex >= len(self.items):
-                break
-            else:
-                selected.append(self.GetItem(itemDex))
-        return selected
-
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if shellUI:
-            try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except balt.AccessDeniedError:
-                pass
-            dirJoin = self.data.dir.join
-            for item in items:
-                itemPath = dirJoin(item)
-                if not itemPath.exists():
-                    bosh.trackedInfos.track(itemPath)
-        else:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
-            with ListBoxes(self, _(u'Delete Items'), _(
-                    u'Delete these items?  This operation cannot be '
-                    u'undone.'), [message]) as dialog:
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return # (ut) not needed to refresh I guess
-                id_ = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    dirJoin = self.data.dir.join
-                    for i,mod in enumerate(items):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(dirJoin(mod))
-                            except bolt.BoltError as e:
-                                balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refresh(True)
-        self.RefreshUI()
-
 class _ModsSortMixin(object):
 
     _esmsFirstCols = balt.UIList.nonReversibleCols
@@ -494,7 +290,7 @@ class _ModsSortMixin(object):
     def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
 
 #------------------------------------------------------------------------------
-class MasterList(_ModsSortMixin, List):
+class MasterList(_ModsSortMixin, balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
     keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
@@ -522,14 +318,15 @@ class MasterList(_ModsSortMixin, List):
     def allCols(self): return ['File', 'Num', 'Current Order']
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None,
-                 keyPrefix=keyPrefix):
+                 keyPrefix=keyPrefix, panel=None):
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
-        self.items = [] #--Item numbers in display order.
         self.loadOrderNames = []
         #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+        super(MasterList, self).__init__(parent,
+                      data=listData if listData is not None else {},
+                      keyPrefix=keyPrefix, panel=panel)
         self._setEditedFn = setEditedFn
 
     def OnItemSelected(self, event): event.Skip()
@@ -541,16 +338,14 @@ class MasterList(_ModsSortMixin, List):
         self.edited = False
         self.fileInfo = fileInfo
         self.data.clear()
-        del self.items[:]
         #--Null fileInfo?
         if not fileInfo:
-            self.DeleteAllItems()
+            self.DeleteAll()
             return
         #--Fill data and populate
         for mi, masterName in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masterName,0)
             self.data[mi] = masterInfo
-            self.items.append(mi)
         self.ReList()
         self.PopulateItems()
 
@@ -574,11 +369,7 @@ class MasterList(_ModsSortMixin, List):
         else:
             return status
 
-    #--Get Items
-    def GetItems(self):
-        return self.items
-
-    def getColumns(self, mi):
+    def getLabels(self, mi):
         labels, masterInfo = {}, self.data[mi]
         masterName = masterInfo.name
         value = masterName.s
@@ -594,28 +385,8 @@ class MasterList(_ModsSortMixin, List):
         labels['Current Order'] = value
         return labels
 
-    #--Populate Item
-    def PopulateItem(self, itemDex=-1, item=None):
-        mode = False
-        listCtrl = self._gList
-        if item is not None: # inserting, GetItem will result in a wx error dialog
-            mi = item
-            try:
-                itemDex = self.GetIndex(item)
-            except KeyError:
-                itemDex = listCtrl.GetItemCount() # insert at the end
-                mode = True
-        else:
-            mi = self.GetItem(itemDex)
-        cols = self.cols
-        labels = self.getColumns(mi)
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and colDex == 0:
-                listCtrl.InsertListCtrlItem(itemDex, labels[col], mi)
-            else:
-                listCtrl.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(mi, itemDex)
+    @staticmethod
+    def _gpath(mi): return mi
 
     def setUI(self, mi, itemDex):
         listCtrl = self._gList
@@ -657,8 +428,7 @@ class MasterList(_ModsSortMixin, List):
     #--InitEdit
     def InitEdit(self):
         #--Pre-clean
-        for itemId in self.items:
-            masterInfo = self.data[itemId]
+        for masterInfo in self.data.values():
             #--Missing Master?
             if not masterInfo.modInfo:
                 masterName = masterInfo.name
@@ -701,7 +471,7 @@ class MasterList(_ModsSortMixin, List):
         newName = GPath(event.GetText())
         #--No change?
         if newName in bosh.modInfos:
-            masterInfo = self.data[self.items[itemDex]]
+            masterInfo = self.data[self.GetItem(itemDex)]
             oldName = masterInfo.name
             masterInfo.setName(newName)
             self.ReList()
@@ -716,10 +486,10 @@ class MasterList(_ModsSortMixin, List):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data[item].name for item in sorted(self.items)]
+        return [self.data[item].name for item in sorted(self.GetItems())]
 
 #------------------------------------------------------------------------------
-class INIList(List):
+class INIList(balt.UIList):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
@@ -761,11 +531,10 @@ class INIList(List):
         return tweaklist
 
     def RefreshUIValid(self):
-        files = [GPath(self.items[x]) for x in xrange(len(self.items)) if
-                 self.data[GPath(self.items[x])].status >= 0]
-        self.RefreshUI(files=files)
+        valid = filter(lambda k: self.data[k].status >= 0, self.data.keys())
+        self.RefreshUI(files=valid)
 
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
         labels['Installer'] = table.getItem(fileName, 'installer', u'')
@@ -814,7 +583,7 @@ class INIList(List):
         event.Skip()
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
-        tweak = bosh.iniInfos[self.items[hitItem]]
+        tweak = bosh.iniInfos[self.GetItem(hitItem)]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.panel
@@ -827,7 +596,7 @@ class INIList(List):
             if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
                 return
         #--No point applying a tweak that's already applied
-        file_ = tweak.dir.join(self.items[hitItem])
+        file_ = tweak.dir.join(self.GetItem(hitItem))
         self.data.ini.applyTweakFile(file_)
         self.RefreshUIValid()
         iniPanel.iniContents.RefreshIniContents()
@@ -941,7 +710,7 @@ class INILineCtrl(wx.ListCtrl):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class ModList(_ModsSortMixin, List):
+class ModList(_ModsSortMixin, balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -971,9 +740,11 @@ class ModList(_ModsSortMixin, List):
     def OnDropIndexes(self, indexes, newIndex):
         order = bosh.modInfos.plugins.LoadOrder
         # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
-        start = order.index(self.items[indexes[0]])
-        stop = order.index(self.items[indexes[-1]]) + 1
-        newPos = order.index(self.items[newIndex]) if (len(self.items) > newIndex) else order.index(self.items[-1])
+        start = order.index(self.GetItem(indexes[0]))
+        stop = order.index(self.GetItem(indexes[-1])) + 1
+        count = self._gList.GetItemCount()
+        newPos = order.index(self.GetItem(newIndex)) if (
+            count > newIndex) else order.index(self.GetItem(count - 1))
         # Dummy checks: can't move the game's master file anywhere else but position 0
         if newPos <= 0: return
         master = bosh.modInfos.masterName
@@ -992,7 +763,7 @@ class ModList(_ModsSortMixin, List):
         self.RefreshUI()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = {}, self.data[fileName]
         value = fileName.s
         if fileName == u'Oblivion.esm' and bosh.modInfos.voCurrent:
@@ -1099,12 +870,21 @@ class ModList(_ModsSortMixin, List):
         listCtrl.SetItem(item)
         self.mouseTexts[fileName] = mouseText
 
+    def RefreshUI(self, **kwargs):
+        # make sure filter() is needed - try to make pop('refreshSaves', FALSE)
+        files = kwargs.get('files', ())
+        if files : ##: why is this needed ?
+            kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
+        super(ModList, self).RefreshUI(**kwargs)
+        if kwargs.pop('refreshSaves', True) and Link.Frame.saveList:
+            Link.Frame.saveList.RefreshUI()
+
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Handle doubleclicking a mod in the Mods List."""
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        fileInfo = self.data[self.items[hitItem]]
+        fileInfo = self.data[self.GetItem(hitItem)]
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
             DocBrowser().Show()
@@ -1118,13 +898,14 @@ class ModList(_ModsSortMixin, List):
         ##Ctrl+Up and Ctrl+Down
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
             (self.sort == 'Load Order')):
-                orderKey = lambda x: self.items.index(x)
+                orderKey = lambda x: self.GetIndex(x)
                 moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
                 isReversed = (moveMod != -1)
+                count = self._gList.GetItemCount()
                 for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
-                    swapItem = self.items.index(thisFile) + moveMod
-                    if swapItem < 0 or len(self.items) - 1 < swapItem: break
-                    swapFile = self.items[swapItem]
+                    swapItemDex = self.GetIndex(thisFile) + moveMod
+                    if swapItemDex < 0 or count - 1 < swapItemDex: break
+                    swapFile = self.GetItem(swapItemDex)
                     try:
                         bosh.modInfos.swapOrder(thisFile,swapFile)
                     except bolt.BoltError as e:
@@ -1161,7 +942,7 @@ class ModList(_ModsSortMixin, List):
         (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             listCtrl.SetDnD(False)
-            self._checkUncheckMod(self.items[hitItem])
+            self._checkUncheckMod(self.GetItem(hitItem))
         else:
             listCtrl.SetDnD(True)
         #--Pass Event onward
@@ -1169,7 +950,7 @@ class ModList(_ModsSortMixin, List):
 
     def OnItemSelected(self,event):
         """Item Selected: Set mod details."""
-        modName = self.items[event.m_itemIndex]
+        modName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(modName)
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
@@ -1219,6 +1000,10 @@ class ModList(_ModsSortMixin, List):
         bosh.modInfos.refresh()
         self.RefreshUI()
 
+    @staticmethod
+    def isBP(modName): return bosh.modInfos[modName].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS')
+
 #------------------------------------------------------------------------------
 class _SashDetailsPanel(SashPanel):
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
@@ -1253,6 +1038,7 @@ class ModDetails(_SashDetailsPanel):
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
         top, bottom = self.left, self.right
+        modPanel = parent.GetParent().GetParent()
         #--Data
         self.modInfo = None
         textWidth = 200
@@ -1278,8 +1064,8 @@ class ModDetails(_SashDetailsPanel):
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            self.uilist = MasterList(
-                masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
+            self.uilist = MasterList(masterPanel, None, self.SetEdited,
+                                     keyPrefix=self.keyPrefix, panel=modPanel)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -1625,8 +1411,8 @@ class INIPanel(SashPanel):
         self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
         self.listData = bosh.iniInfos
-        BashFrame.iniList = INIList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.iniList
+        self.uiList = BashFrame.iniList = INIList(
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
@@ -1659,7 +1445,7 @@ class INIPanel(SashPanel):
         self.RefreshPanel()
 
     def OnSelectTweak(self, event):
-        tweakFile = self.uiList.items[event.GetIndex()]
+        tweakFile = self.uiList.GetItem(event.GetIndex())
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshTweakLineCtrl(tweakFile)
         event.Skip()
@@ -1854,9 +1640,9 @@ class ModPanel(SashPanel):
         left,right = self.left, self.right
         self.listData = bosh.modInfos
         self.modDetails = ModDetails(right)
-        self.uiList = BashFrame.modList = ModList(left, listData=self.listData,
-                                                  keyPrefix=self.keyPrefix,
-                                                  details=self.modDetails)
+        self.uiList = BashFrame.modList = ModList(
+            left, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.modDetails, panel=self)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
@@ -1877,7 +1663,7 @@ class ModPanel(SashPanel):
         self.modDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
-class SaveList(List):
+class SaveList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -1920,7 +1706,7 @@ class SaveList(List):
         # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo.mtime)
@@ -1958,7 +1744,7 @@ class SaveList(List):
                  % {'ess': bush.game.ess.ext})
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             if not balt.askContinue(self, msg, 'bash.saves.askDisable'): return
-            fileName = GPath(self.items[hitItem])
+            fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
             if newName != fileName: self.RefreshUI() ##: files=[fileName]
@@ -1966,7 +1752,7 @@ class SaveList(List):
         event.Skip()
 
     def OnItemSelected(self,event=None):
-        saveName = self.items[event.m_itemIndex]
+        saveName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
@@ -1977,6 +1763,7 @@ class SaveDetails(_SashDetailsPanel):
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
         top, bottom = self.left, self.right
+        savePanel = parent.GetParent().GetParent()
         #--Data
         self.saveInfo = None
         textWidth = 200
@@ -1993,8 +1780,8 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.uilist = MasterList(
-            masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
+        self.uilist = MasterList(masterPanel, None, self.SetEdited,
+                                 keyPrefix=self.keyPrefix, panel=savePanel)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -2180,12 +1967,12 @@ class SavePanel(SashPanel):
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
         self.saveDetails = SaveDetails(right)
-        self.uiList = BashFrame.saveList = SaveList(left, self.listData,
-                                                    keyPrefix=self.keyPrefix,
-                                                    details=self.saveDetails)
+        self.uiList = BashFrame.saveList = SaveList(
+            left, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.saveDetails, panel=self)
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.saveDetails.SetFile()
@@ -2233,9 +2020,13 @@ class InstallersList(balt.Tank):
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, ['Order']
+    #--GUI
+    _status_color = {-20: 'grey', -10: 'red', 0: 'white', 10: 'orange',
+                     20: 'yellow', 30: 'green'}
+    _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
-    def getColumns(self, item):
+    def getLabels(self, item):
         labels, installer = defaultdict(lambda: u''), self.data[item]
         marker = isinstance(installer, bosh.InstallerMarker)
         labels['Package'] = item.s
@@ -2245,6 +2036,40 @@ class InstallersList(balt.Tank):
         labels['Size'] = self._round(installer.size)
         labels['Files'] = formatInteger(len(installer.fileSizeCrcs))
         return labels
+
+    def getGuiKeys(self, item):
+        """Returns keys for icon and text and background colors."""
+        installer = self.data[item]
+        #--Text
+        if installer.type == 2 and len(installer.subNames) == 2:
+            textKey = self._type_textKey[1]
+        else: textKey = self._type_textKey.get(installer.type,
+                                             'installers.text.invalid')
+        #--Background
+        backKey = (
+                  installer.skipDirFiles and 'installers.bkgd.skipped') or None
+        if installer.dirty_sizeCrc: backKey = 'installers.bkgd.dirty'
+        elif installer.underrides: backKey = 'installers.bkgd.outOfOrder'
+        #--Icon
+        iconKey = ('off', 'on')[installer.isActive] + '.' + self._status_color[
+            installer.status]
+        if installer.type < 0: iconKey = 'corrupt'
+        elif isinstance(installer, bosh.InstallerProject): iconKey += '.dir'
+        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+            iconKey += '.wiz'
+        return iconKey, textKey, backKey
+
+    def getMouseText(self,iconKey,textKey,backKey):
+        """Return mouse text to use, given the iconKey, textKey and backKey."""
+        text = u''
+        #if textKey == 'installers.text.invalid': # I need a 'text.markers'
+        #    text += _(u'Marker Package. Use for grouping installers together')
+        if backKey == 'installers.bkgd.outOfOrder':
+            text += _(u'Needs Annealing due to a change in Install Order.')
+        elif backKey == 'installers.bkgd.dirty':
+            text += _(u'Needs Annealing due to a change in configuration.')
+        #--TODO: add mouse  mouse tips
+        return text
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -2379,6 +2204,19 @@ class InstallersList(balt.Tank):
                 self.RefreshUI()
             event.Veto()
 
+    #--Drag and Drop-----------------------------------------------------------
+    def OnDropIndexes(self, indexes, newPos):
+        # See if the column is reverse sorted first
+        column = self.sort
+        reverse = self.colReverse.get(column,False)
+        if reverse:
+            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            if newPos < 0: newPos = 0
+        # Move the given indexes to the new position
+        self.data.moveArchives(self.GetSelected(), newPos)
+        self.data.refresh(what='N')
+        self.RefreshUI()
+
     def _extractOmods(self, omodnames):
         failed = []
         completed = []
@@ -2444,32 +2282,32 @@ class InstallersList(balt.Tank):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            dialog = balt.Dialog(self,_(u'Move or Copy?'))
-            icon = staticBitmap(dialog)
-            gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-            sizer = vSizer(
-                (hSizer(
-                    (icon,0,wx.ALL,6),
-                    (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
-                    ),1,wx.EXPAND|wx.ALL,6),
-                (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                (hSizer(
-                    spacer,
-                    button(dialog,label=_(u'Move'),
-                           onClick=lambda x: dialog.EndModal(1)),
-                    (button(dialog,label=_(u'Copy'),
-                            onClick=lambda x: dialog.EndModal(2)),0,wx.LEFT,4),
-                    (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                )
-            dialog.SetSizer(sizer)
-            result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
-            if result == 1:
-                action = 'MOVE'
-            elif result == 2:
-                action = 'COPY'
-            if gCheckBox.GetValue():
-                settings['bash.installers.onDropFiles.action'] = action
+            with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
+                icon = staticBitmap(dialog)
+                gCheckBox = checkBox(dialog,
+                                     _(u"Don't show this in the future."))
+                sizer = vSizer(
+                    (hSizer(
+                        (icon,0,wx.ALL,6),
+                        (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        ),1,wx.EXPAND|wx.ALL,6),
+                    (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    (hSizer(
+                        spacer,
+                        button(dialog,label=_(u'Move'),
+                               onClick=lambda x: dialog.EndModal(1)),
+                        (button(dialog,label=_(u'Copy'),
+                                onClick=lambda x: dialog.EndModal(2)),
+                         0,wx.LEFT,4),
+                        (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    )
+                dialog.SetSizer(sizer)
+                result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
+                if result == 1: action = 'MOVE'
+                elif result == 2: action = 'COPY'
+                if gCheckBox.GetValue():
+                    settings['bash.installers.onDropFiles.action'] = action
         return action
 
     def OnDropFiles(self, x, y, filenames):
@@ -2623,8 +2461,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.uiList = InstallersList(left, data, self.keyPrefix, details=self)
-        bosh.installersWindow = self.uiList
+        self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
+                                     details=self, panel=self)
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -2724,7 +2562,7 @@ class InstallersPanel(SashTankPanel):
                 u"If not, you can enable it at any time by right-clicking "
                 u"the column header menu and selecting 'Enabled'.")
             settings['bash.installers.enabled'] = balt.askYes(self, message,
-                                                              self.data.title)
+                                                              _(u'Installers'))
             Link.Frame.BindRefresh(bind=True)
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
@@ -2860,10 +2698,8 @@ class InstallersPanel(SashTankPanel):
         return text
 
     def ClosePanel(self):
-        if not hasattr(self, '_firstShow'):
-            # save comments text box size ##: dunno what's this alchemy below
-            splitter = self.commentsSplitter
-            sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
+        if not hasattr(self, '_firstShow'): # save comments text box size
+            sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
         super(InstallersPanel, self).ClosePanel()
 
@@ -3114,7 +2950,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
-class ScreensList(List):
+class ScreensList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3169,7 +3005,7 @@ class ScreensList(List):
             event.Veto()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo[1]) # unused
@@ -3189,7 +3025,7 @@ class ScreensList(List):
         super(ScreensList, self).OnKeyUp(event)
 
     def OnItemSelected(self,event=None):
-        fileName = self.items[event.m_itemIndex]
+        fileName = self.GetItem(event.m_itemIndex)
         filePath = bosh.screensData.dir.join(fileName)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.panel.picture.SetBitmap(bitmap)
@@ -3205,7 +3041,8 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        self.uiList = ScreensList(left, self.listData, self.keyPrefix)
+        self.uiList = ScreensList(
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
         right.SetSizer(hSizer((self.picture,1,wx.GROW)))
@@ -3226,7 +3063,7 @@ class ScreensPanel(SashPanel):
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
-class BSAList(List):
+class BSAList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3237,7 +3074,7 @@ class BSAList(List):
                  }
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
         labels['File'] = fileName.s
         labels['Modified'] = formatDate(fileInfo.mtime)
@@ -3248,7 +3085,7 @@ class BSAList(List):
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            fileName = GPath(self.items[hitItem])
+            fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
             if newName != fileName: self.RefreshUI()
@@ -3256,7 +3093,7 @@ class BSAList(List):
         event.Skip()
 
     def OnItemSelected(self,event=None):
-        BSAName = self.items[event.m_itemIndex]
+        BSAName = self.GetItem(event.m_itemIndex)
         self.details.SetFile(BSAName)
 
 #------------------------------------------------------------------------------
@@ -3403,8 +3240,9 @@ class BSAPanel(NotebookPanel):
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
         self.BSADetails = BSADetails(self)
-        self.uilist = BSAList(self, self.listData, self.keyPrefix,
-                              details=self.BSADetails)
+        self.uilist = BSAList(
+            self, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.BSADetails, panel=self)
         #--Layout
         sizer = hSizer(
             (BSAList,1,wx.GROW),
@@ -3420,7 +3258,7 @@ class BSAPanel(NotebookPanel):
         bosh.BSAInfos.profiles.save()
 
 #------------------------------------------------------------------------------
-class MessageList(List):
+class MessageList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -3432,23 +3270,20 @@ class MessageList(List):
                   'Author': lambda self, a: self.data[a][1],
                  }
 
-    def __init__(self, parent, listData, keyPrefix):
+    def __init__(self, parent, listData, keyPrefix, panel):
         self.gText = None
         self.searchResults = None
         self.persistent_columns = {'Subject'}
         #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+        super(MessageList, self).__init__(
+            parent, data=listData, keyPrefix=keyPrefix, panel=panel)
 
     def GetItems(self):
-        """Set and return self.items."""
-        if self.searchResults is not None:
-            self.items = list(self.searchResults)
-        else:
-            self.items = self.data.keys()
-        return self.items
+        if self.searchResults is not None: return list(self.searchResults)
+        return self.data.keys()
 
     #--Populate Item
-    def getColumns(self, fileName):
+    def getLabels(self, fileName):
         labels = defaultdict(lambda: u'-')
         subject,author,date = self.data[fileName][:3]
         labels['Subject'] = subject
@@ -3456,20 +3291,8 @@ class MessageList(List):
         labels['Author'] = author
         return labels
 
-    def PopulateItem(self,itemDex,mode=0):
-        #--String name of item?
-        if not isinstance(itemDex,int):
-            item = itemDex
-            itemDex = self.items.index(itemDex)
-        else: item = self.GetItem(itemDex)
-        labels = self.getColumns(item)
-        cols = self.cols
-        for colDex in range(len(cols)):
-            col = cols[colDex]
-            if mode and (colDex == 0):
-                self._gList.InsertListCtrlItem(itemDex, labels[col], item)
-            else:
-                self._gList.SetStringItem(itemDex, colDex, labels[col])
+    @staticmethod
+    def _gpath(item): return item
 
     def OnItemSelected(self,event=None):
         keys = self.GetSelected()
@@ -3490,7 +3313,8 @@ class MessagePanel(SashPanel):
         #--Contents
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        self.uiList = MessageList(gTop, self.listData, self.keyPrefix)
+        self.uiList = MessageList(
+            gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Search ##: move to textCtrl subclass
@@ -3515,8 +3339,7 @@ class MessagePanel(SashPanel):
         wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
 
     def _sbCount(self):
-        used = len(self.uiList.items) if self.uiList.searchResults is None \
-            else len(self.uiList.searchResults)
+        used = len(self.uiList.GetItems())
         return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
 
     def ShowPanel(self):
@@ -3553,7 +3376,7 @@ class PeopleList(balt.Tank):
                   'Header': lambda self, x: self.data[x][2][:50].lower(),
                  }
 
-    def getColumns(self, item):
+    def getLabels(self, item):
         labels, itemData = {}, self.data[item]
         labels['Name'] = item
         karma = itemData[1]
@@ -3561,9 +3384,11 @@ class PeopleList(balt.Tank):
         labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
         return labels
 
-    def MouseOverItem(self, item):
-        """People's Tab: mouse over item is a noop."""
-        pass
+    def getGuiKeys(self, item):
+        """Return keys for icon and text and background colors."""
+        textKey = backKey = None
+        iconKey = u'karma%+d' % self.data[item][1]
+        return iconKey, textKey, backKey
 
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):
@@ -3576,7 +3401,8 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.uiList = PeopleList(left, data, self.keyPrefix, details=self)
+        self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
+                                 details=self, panel=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -3604,7 +3430,7 @@ class PeoplePanel(SashTankPanel):
         karma = int(self.gKarma.GetValue())
         text = self.data[self.detailsItem][2]
         self.data[self.detailsItem] = (time.time(),karma,text)
-        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
+        self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
     #--Details view (if it exists)
@@ -3614,7 +3440,7 @@ class PeoplePanel(SashTankPanel):
         if not self.detailsItem or self.detailsItem not in self.data: return
         mtime,karma,text = self.data[self.detailsItem]
         self.data[self.detailsItem] = (time.time(),karma,self.gText.GetValue().strip())
-        self.uiList.UpdateItem(self.uiList.GetIndex(self.detailsItem))
+        self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
     def RefreshDetails(self,item=None):
@@ -4046,7 +3872,6 @@ class BashFrame(wx.Frame):
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
-        self.Maximize(settings['bash.frameMax'])
         #--Application Icons
         self.SetIcons(Resources.bashRed)
         #--Status Bar
@@ -4453,6 +4278,7 @@ class BashApp(wx.App):
             splashScreen.Destroy()
         self.SetTopWindow(frame)
         frame.Show()
+        frame.Maximize(settings['bash.frameMax'])
         balt.ensureDisplayed(frame)
         return frame
 

@@ -25,129 +25,13 @@
 import string
 from types import IntType, LongType
 import wx
-from .. import balt, bosh, bolt, bush
-from ..balt import Dialog, Links, button, hSizer, ItemLink, Link, colors, \
-    roTextCtrl, vSizer, spacer, checkBox, staticText, Image, hsbSizer, bell, \
-    textCtrl, tooltip
-from . import Resources, bEnableWizard, tabInfo
+from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
+from .. import balt, bosh, bolt, bush
+from ..bass import Resources
+from ..balt import button, hSizer, Link, colors, roTextCtrl, vSizer, spacer, \
+    checkBox, staticText, Image, bell, textCtrl, tooltip
 
-class _CheckList_SelectAll(ItemLink):
-    """Menu item used in ListBoxes."""
-    def __init__(self,select=True):
-        super(_CheckList_SelectAll, self).__init__()
-        self.select = select
-        self.text = _(u'Select All') if select else _(u'Select None')
-
-    def Execute(self,event):
-        for i in xrange(self.window.GetCount()):
-            self.window.Check(i,self.select)
-
-class ListBoxes(Dialog):
-    """A window with 1 or more lists."""
-    ##: attributes below must go - askContinue method ?
-    ID_OK = wx.ID_OK
-    ID_CANCEL = wx.ID_CANCEL
-
-    def __init__(self,parent,title,message,lists,liststyle='check',style=0,changedlabels={},Cancel=True):
-        """lists is in this format:
-        if liststyle == 'check' or 'list'
-        [title,tooltip,item1,item2,itemn],
-        [title,tooltip,....],
-        elif liststyle == 'tree'
-        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
-        [title,tooltip,....],
-        """
-        ##: resize = True - drop resize parameter
-        super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=False)
-        self.itemMenu = Links()
-        self.itemMenu.append(_CheckList_SelectAll())
-        self.itemMenu.append(_CheckList_SelectAll(False))
-        self.SetIcons(Resources.bashBlue)
-        minWidth = self.GetTextExtent(title)[0]*1.2+64
-        sizer = wx.FlexGridSizer(len(lists)+1,1)
-        self.ids = {}
-        labels = {wx.ID_CANCEL:_(u'Cancel'),wx.ID_OK:_(u'OK')}
-        labels.update(changedlabels)
-        self.SetSize(balt.wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
-        for i,group in enumerate(lists):
-            title = group[0]
-            tip = group[1]
-            try: items = [x.s for x in group[2:]]
-            except: items = [x for x in group[2:]]
-            if len(items) == 0: continue
-            subsizer = hsbSizer((self, wx.ID_ANY, title))
-            if liststyle == 'check':
-                checks = balt.listBox(self, choices=items, isSingle=True,
-                                      isHScroll=True, kind='checklist')
-                checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
-                checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
-                for i in xrange(len(items)):
-                    checks.Check(i,True)
-            elif liststyle == 'list':
-                checks = balt.listBox(self, choices=items, isHScroll=True)
-            else:
-                checks = wx.TreeCtrl(self, size=(150, 200),
-                                     style=wx.TR_DEFAULT_STYLE |
-                                           wx.TR_FULL_ROW_HIGHLIGHT |
-                                           wx.TR_HIDE_ROOT)
-                root = checks.AddRoot(title)
-                for item in group[2]:
-                    child = checks.AppendItem(root,item.s)
-                    for subitem in group[2][item]:
-                        sub = checks.AppendItem(child,subitem.s)
-            self.ids[title] = checks.GetId()
-            checks.SetToolTip(balt.tooltip(tip))
-            subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
-            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
-            sizer.AddGrowableRow(i)
-        okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
-        okButton.SetDefault()
-        buttonSizer = hSizer(balt.spacer,
-                             (okButton,0,wx.ALIGN_RIGHT),
-                             )
-        for id,label in labels.iteritems():
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            but = button(self,id=id,label=label)
-            but.Bind(wx.EVT_BUTTON,self.OnClick)
-            buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        if Cancel:
-            buttonSizer.Add(button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
-        sizer.AddGrowableCol(0)
-        sizer.SetSizeHints(self)
-        self.SetSizer(sizer)
-        #make sure that minimum size is at least the size of title
-        if self.GetSize()[0] < minWidth:
-            self.SetSize(balt.wxSize(minWidth,-1))
-
-    def OnKeyUp(self,event):
-        """Char events"""
-        ##Ctrl-A - check all
-        obj = event.GetEventObject()
-        if event.CmdDown() and event.GetKeyCode() == ord('A'):
-            check = not event.ShiftDown()
-            for i in xrange(len(obj.GetStrings())):
-                    obj.Check(i,check)
-        else:
-            event.Skip()
-
-    def OnContext(self,event):
-        """Context Menu"""
-        self.itemMenu.PopupMenu(event.GetEventObject(), Link.Frame,
-                                event.GetEventObject().GetSelections())
-        event.Skip()
-
-    def OnClick(self,event):
-        id_ = event.GetId()
-        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
-            self.EndModal(id_)
-        else:
-            event.Skip()
-
-#------------------------------------------------------------------------------
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
     title = _(u'Color Configuration')
@@ -586,7 +470,6 @@ class CreateNewProject(balt.Dialog):
 
         # Move successful
         self.fullRefresh = False
-        from . import BashFrame ##: here due to cyclic import of ListBoxes...
         BashFrame.iPanel.refreshed = False
         BashFrame.iPanel.fullRefresh = self.fullRefresh
         BashFrame.iPanel.ShowPanel()

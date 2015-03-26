@@ -35,9 +35,10 @@ import StringIO
 import copy
 import re
 import webbrowser
-from . import settingDefaults, Resources, Installers_Link, BashFrame
+from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
+from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
