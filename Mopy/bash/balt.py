@@ -1768,6 +1768,11 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         del self._itemId_item[itemId]
         self.DeleteItem(index)
 
+    def DeleteAll(self):
+        self._item_itemId.clear()
+        self._itemId_item.clear()
+        self.DeleteAllItems()
+
     def FindIndexOf(self, item):
         """Return index of specified item."""
         return self.FindItemData(-1, self._item_itemId[item])
@@ -2104,8 +2109,7 @@ class UIList(wx.Panel):
     def SelectLast(self):
         self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
 
-    def DeleteAllItems(self):
-        self._gList.DeleteAllItems()
+    def DeleteAll(self): self._gList.DeleteAll()
 
     def EnsureVisible(self, name):
         self._gList.EnsureVisible(self.GetIndex(name))

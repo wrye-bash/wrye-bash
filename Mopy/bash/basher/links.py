@@ -636,10 +636,10 @@ def InitSaveLinks():
         SaveList.mainMenu.append(sortMenu)
     if bush.game.fsName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1',True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1b',True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI',True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'SI',True))
+        versionsMenu.links.append(Mods_OblivionVersion(u'1.1',setProfile=True))
+        versionsMenu.links.append(Mods_OblivionVersion(u'1.1b',setProfile=True))
+        versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI',setProfile=True))
+        versionsMenu.links.append(Mods_OblivionVersion(u'SI',setProfile=True))
         SaveList.mainMenu.append(versionsMenu)
     if True: #--Save Profiles
         subDirMenu = MenuLink(_(u"Profile"))

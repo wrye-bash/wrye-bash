@@ -392,7 +392,7 @@ class Installers_Enabled(BoolLink):
             self.window.panel.ShowPanel()
             self.window.RefreshUI()
         else:
-            self.window.DeleteAllItems() ##: crude
+            self.window.DeleteAll() ##: crude
             self.window.panel.RefreshDetails(None)
 
 class Installers_BsaRedirection(AppendableLink, BoolLink):

@@ -340,7 +340,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.data.clear()
         #--Null fileInfo?
         if not fileInfo:
-            self.DeleteAllItems()
+            self.DeleteAll()
             return
         #--Fill data and populate
         for mi, masterName in enumerate(fileInfo.header.masters):

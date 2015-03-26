@@ -156,39 +156,35 @@ class Saves_Profiles(ChoiceLink):
     def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
     class _ProfileLink(CheckLink):
-        def _check(self):
-            return Saves_Profiles.local == (u'Saves\\' + self.text + u'\\')
+        @property
+        def help(self):
+            return _(u'Set profile to %(prof)s (My Games/Saves/%(prof)s)') % {
+                               'prof': self.text}
+        @property
+        def relativePath(self): return u'Saves\\' + self.text + u'\\'
+        def _check(self): return Saves_Profiles.local == self.relativePath
         def Execute(self, event):
             """Handle selection of label."""
             arcSaves = bosh.saveInfos.localSave
-            newSaves = u'Saves\\%s\\' % (self.text,)
+            newSaves = self.relativePath
             bosh.saveInfos.setLocalSave(newSaves)
             Saves_Profiles.swapPlugins(arcSaves,newSaves)
             Saves_Profiles.swapOblivionVersion(newSaves)
             Link.Frame.SetTitle()
             self.window.details.SetFile(None)
             Link.Frame.RefreshData()
-            bosh.modInfos.autoGhost()
+            # bosh.modInfos.autoGhost() # RefreshData calls modInfos.refresh()
             BashFrame.modList.RefreshUI()
 
     cls = _ProfileLink
 
-    class _Default(CheckLink):
+    class _Default(_ProfileLink):
         text = _(u'Default')
-        help = _(u'Set profile to the default (My Games/Saves)')
-
-        def _check(self): return Saves_Profiles.local == u'Saves\\'
-
-        def Execute(self, event):
-            """Handle selection of Default save profile."""
-            arcSaves, newSaves = bosh.saveInfos.localSave, u'Saves\\'
-            bosh.saveInfos.setLocalSave(newSaves)
-            Saves_Profiles.swapPlugins(arcSaves, newSaves)
-            Saves_Profiles.swapOblivionVersion(newSaves)
-            Link.Frame.SetTitle()
-            self.window.details.SetFile(None)
-            BashFrame.modList.RefreshUI()
-            Link.Frame.RefreshData()
+        @property
+        def help(self):
+            return _(u'Set profile to the default (My Games/Saves)')
+        @property
+        def relativePath(self): return u'Saves\\'
 
     class _Edit(ItemLink):
         text = _(u"Edit Profiles...")
