@@ -976,7 +976,7 @@ FileOperationErrorMap = {
 }
 
 def _fileOperation(operation, source, target=None, allowUndo=True,
-                   noConfirm=False, renameOnCollision=False, silent=False,
+                   confirm=True, renameOnCollision=False, silent=False,
                    parent=None):
     if not source:
         return {}
@@ -997,7 +997,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         multiDestFiles = (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
         flags = (shellcon.FOF_WANTMAPPINGHANDLE| multiDestFiles)
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
-        if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flags |= shellcon.FOF_SILENT
         # null terminated strings
@@ -1023,10 +1023,10 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         # Delete
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
-            # noConfirm - ask if noConfirm is False
+            # confirm - ask if confirm is True
             # renameOnCollision - no effect, deleting files
             # silent - no real effect, since we don't show visuals when deleting this way
-            if not noConfirm:
+            if confirm:
                 message = _(u'Are you sure you want to permanently delete these %(count)d items?') % {'count':len(source)}
                 message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
                 if not askYes(parent,message,_(u'Delete Multiple Items')):
@@ -1045,7 +1045,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         # Move
         if operation == FO_MOVE:
             # allowUndo - no effect, we're not going to track file movements manually
-            # noConfirm - no real effect when moving
+            # confirm - no real effect when moving
             # renameOnCollision - if moving collision, auto rename, otherwise ask
             # silent - no real effect, since we're not showing visuals
             collisions = []
@@ -1056,20 +1056,20 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             if collisions:
                 pass
 
-def shellDelete(files, parent=None, askOk_=True, recycle=True):
+def shellDelete(files, parent=None, confirm=True, recycle=True):
     try:
         return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
-                              noConfirm=not askOk_, renameOnCollision=True,
+                              confirm=confirm, renameOnCollision=True,
                               silent=False, parent=parent)
     except CancelError:
-        if askOk_:
+        if confirm:
             return None
         raise
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):
     return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
-                          noConfirm=not askOverwrite, allowUndo=allowUndo,
+                          confirm=askOverwrite, allowUndo=allowUndo,
                           renameOnCollision=autoRename, silent=silent)
 
 def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
@@ -2272,7 +2272,7 @@ class UIList(wx.Panel):
                 if not self.__class__._shellUI:
                     self.data.delete(i, doRefresh=False, recycle=recycle)
                 else:
-                    self.data.delete(items, askOk=True, recycle=recycle)
+                    self.data.delete(items, confirm=True, recycle=recycle)
                     break
             except bolt.BoltError as e:
                 showError(self, u'%r' % e)

@@ -1836,9 +1836,9 @@ class SaveFile:
 
 #------------------------------------------------------------------------------
 def _delete(itemOrItems, **kwargs):
-    askOk = kwargs.pop('askOk', False)
+    confirm = kwargs.pop('confirm', False)
     recycle = kwargs.pop('recycle', True)
-    balt.shellDelete(itemOrItems, askOk_=askOk, recycle=recycle)
+    balt.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
@@ -4986,7 +4986,7 @@ class SaveInfos(FileInfos):
     def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self, fileName, **kwargs)
-        kwargs['askOk'] = False # ask only on save deletion
+        kwargs['confirm'] = False # ask only on save deletion
         CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):

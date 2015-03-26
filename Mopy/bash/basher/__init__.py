@@ -2255,7 +2255,7 @@ class InstallersList(balt.Tank):
                         progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self, askOk_=False,
+                        balt.shellDelete(outDir, parent=self, confirm=False,
                                          recycle=True)  # recycle
                     else: continue
                 try:
