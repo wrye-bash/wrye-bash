@@ -1905,7 +1905,10 @@ class UIList(wx.Panel):
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
     #--ABSTRACT
-    def OnItemSelected(self, event): raise AbstractError
+    def OnItemSelected(self, event):
+        modName = self.GetItem(event.m_itemIndex)
+        self._select(modName)
+    def _select(self, item): raise AbstractError
 
     def getLabels(self, item):
         """Returns text labels for item to populate list control."""
@@ -2348,14 +2351,8 @@ class Tank(UIList):
         """Returns item currently being shown in details view."""
         return self.details.GetDetailsItem() if self.details else None
 
-    def RefreshDetails(self,item=None):
-        """Refreshes detail view associated with data from item."""
+    def _select(self, item):
         if self.details: return self.details.RefreshDetails(item)
-
-    #--Event Handlers -------------------------------------
-    def OnItemSelected(self,event):
-        """Item Selected: Refresh details."""
-        self.RefreshDetails(self.GetItem(event.m_itemIndex))
 
     #--Standard data commands -------------------------------------------------
     def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):

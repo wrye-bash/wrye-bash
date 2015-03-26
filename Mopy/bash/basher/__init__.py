@@ -602,7 +602,7 @@ class INIList(balt.UIList):
         iniPanel.iniContents.RefreshIniContents()
         iniPanel.tweakContents.RefreshTweakLineCtrl(self.data[0])
 
-    def OnItemSelected(self, event): self.panel.OnSelectTweak(event)
+    def _select(self, tweakfile): self.panel.SelectTweak(tweakfile)
 
 #------------------------------------------------------------------------------
 class INITweakLineCtrl(wx.ListCtrl):
@@ -942,15 +942,17 @@ class ModList(_ModsSortMixin, balt.UIList):
         (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
             listCtrl.SetDnD(False)
-            self._checkUncheckMod(self.GetItem(hitItem))
+            modName = self.GetItem(hitItem)
+            self._checkUncheckMod(modName)
+            # select manually as OnSelectItem() will fire for the wrong
+            # index if list is sorted with selected first
+            self.SelectItem(modName, deselectOthers=True)
         else:
             listCtrl.SetDnD(True)
-        #--Pass Event onward
-        event.Skip()
+            #--Pass Event onward to OnSelectItem
+            event.Skip()
 
-    def OnItemSelected(self,event):
-        """Item Selected: Set mod details."""
-        modName = self.GetItem(event.m_itemIndex)
+    def _select(self, modName):
         self.details.SetFile(modName)
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
@@ -1444,11 +1446,9 @@ class INIPanel(SashPanel):
     def RefreshUIColors(self):
         self.RefreshPanel()
 
-    def OnSelectTweak(self, event):
-        tweakFile = self.uiList.GetItem(event.GetIndex())
+    def SelectTweak(self, tweakFile):
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshTweakLineCtrl(tweakFile)
-        event.Skip()
 
     def GetChoice(self,index=None):
         """ Return path for a given choice, or the
@@ -1751,9 +1751,7 @@ class SaveList(balt.UIList):
         #--Pass Event onward
         event.Skip()
 
-    def OnItemSelected(self,event=None):
-        saveName = self.GetItem(event.m_itemIndex)
-        self.details.SetFile(saveName)
+    def _select(self, saveName): self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
@@ -3024,8 +3022,7 @@ class ScreensList(balt.UIList):
         elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
 
-    def OnItemSelected(self,event=None):
-        fileName = self.GetItem(event.m_itemIndex)
+    def _select(self, fileName):
         filePath = bosh.screensData.dir.join(fileName)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.panel.picture.SetBitmap(bitmap)
@@ -3092,9 +3089,7 @@ class BSAList(balt.UIList):
         #--Pass Event onward
         event.Skip()
 
-    def OnItemSelected(self,event=None):
-        BSAName = self.GetItem(event.m_itemIndex)
-        self.details.SetFile(BSAName)
+    def _select(self, BSAName): self.details.SetFile(BSAName)
 
 #------------------------------------------------------------------------------
 class BSADetails(wx.Window):
