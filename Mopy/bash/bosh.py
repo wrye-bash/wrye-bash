@@ -1854,11 +1854,10 @@ class CoSaves:
         self.savePath = savePath
         self.paths = CoSaves.getPaths(savePath)
 
-    def delete(self,askOk=False,dontRecycle=False):
+    def delete(self,askOk=False,recycle=True):
         """Deletes cofiles."""
-        for path in self.paths:
-            if path.exists():
-                balt.shellDelete(path, askOk_=askOk,recycle=not dontRecycle)
+        balt.shellDelete(filter(lambda p: p.exists, self.paths), askOk_=askOk,
+                         recycle=recycle)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -3966,8 +3965,7 @@ class TrackedFileInfos(DataDict):
             fileInfo = self.factory(u'',name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack
-                self.data.pop(name, None)
-                self.corrupted.pop(name, None)
+                self.delete(name)
                 changed.add(name)
             elif not fileInfo.sameAs(data[name]):
                 errorMsg = fileInfo.getHeaderError()
@@ -3982,6 +3980,10 @@ class TrackedFileInfos(DataDict):
 
     def track(self,fileName):
         self.refreshFile(GPath(fileName))
+
+    def delete(self, name, **kwargs):
+        self.data.pop(name, None)
+        self.corrupted.pop(name, None)
 
     def clear(self):
         self.data = {}
@@ -4103,7 +4105,7 @@ class FileInfos(DataDict):
         fileInfo.madeBackup = False
 
     #--Delete
-    def delete(self,fileName,doRefresh=True,askOk=False,dontRecycle=False):
+    def delete(self, fileName, doRefresh=True, askOk=False, recycle=True):
         """Deletes member file."""
         if not isinstance(fileName,(list,set)):
             fileNames = [fileName]
@@ -4140,7 +4142,7 @@ class FileInfos(DataDict):
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
         try:
-            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk, recycle=recycle)
         finally:
             #--Table
             for filePath in tableUpdate:
@@ -4800,8 +4802,8 @@ class ModInfos(FileInfos):
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
-    def delete(self,fileName,doRefresh=True):
-        """Deletes member file."""
+    def delete(self, fileName, doRefresh=True, askOk_=True,recycle=True):
+        """Delete member file."""
         if fileName.s not in bush.game.masterFiles:
             self.unselect(fileName)
             FileInfos.delete(self,fileName,doRefresh)
@@ -5845,14 +5847,14 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName,askOk=True,dontRecycle=False):
+    def delete(self,fileName,askOk=True,recycle=True):
         """Deletes member file."""
         dirJoin = self.dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=not dontRecycle)
+        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=recycle)
         if deleted is not None:
             for file in filePath:
                 del self.data[file.tail]
@@ -7756,7 +7758,7 @@ class InstallersData(DataDict):
             self.hasChanged = False
 
     #--Dict Functions -----------------------------------------------------------
-    def delete(self,items,askOk=False,dontRecycle=False):
+    def delete(self,items,askOk=False,recycle=True):
         """Delete multiple installers. Delete entry AND archive file itself."""
         toDelete = []
         markers = []
@@ -7770,7 +7772,7 @@ class InstallersData(DataDict):
         #--Delete
         try:
             for m in markers: del self.data[m]
-            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
+            balt.shellDelete(toDelete, askOk_=askOk,recycle=recycle)
         finally:
             refresh = bool(markers)
             for item in toDelete:

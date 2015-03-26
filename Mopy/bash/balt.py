@@ -2262,7 +2262,7 @@ class UIList(wx.Panel):
 
     def DeleteItems(self, event=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
-        noRecycle = event.ShiftDown() if event is not None else False
+        recycle = True if event is None else not event.ShiftDown()
         items = self._toDelete(items)
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order)
@@ -2270,9 +2270,9 @@ class UIList(wx.Panel):
         for i in items:
             try:
                 if not self.__class__._shellUI:
-                    self.data.delete(i) ##: askOk=False,dontRecycle=noRecycle
+                    self.data.delete(i) ##: doRefresh=False, askOk=False, recycle=recycle
                 else:
-                    self.data.delete(items, askOk=True, dontRecycle=noRecycle)
+                    self.data.delete(items, askOk=True, recycle=recycle)
                     break
             except bolt.BoltError as e:
                 showError(self, u'%r' % e)
