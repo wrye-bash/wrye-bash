@@ -2756,10 +2756,8 @@ class InstallersPanel(SashTankPanel):
         return text
 
     def ClosePanel(self):
-        if not hasattr(self, '_firstShow'):
-            # save comments text box size ##: dunno what's this alchemy below
-            splitter = self.commentsSplitter
-            sashPos = splitter.GetSashPosition() - splitter.GetSize()[1]
+        if not hasattr(self, '_firstShow'): # save comments text box size
+            sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
         super(InstallersPanel, self).ClosePanel()
 
@@ -3926,7 +3924,6 @@ class BashFrame(wx.Frame):
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
-        self.Maximize(settings['bash.frameMax'])
         #--Application Icons
         self.SetIcons(Resources.bashRed)
         #--Status Bar
@@ -4333,6 +4330,7 @@ class BashApp(wx.App):
             splashScreen.Destroy()
         self.SetTopWindow(frame)
         frame.Show()
+        frame.Maximize(settings['bash.frameMax'])
         balt.ensureDisplayed(frame)
         return frame
 
