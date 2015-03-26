@@ -1760,11 +1760,11 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, details=None):
+    def __init__(self, parent, keyPrefix, data=None, details=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.data = data # yak, encapsulate (_data)
         self.details = details
-        # parent = left -> ThinSplitter -> Panel, consider an init argument
-        self.panel = parent.GetParent().GetParent()
+        self.panel = panel
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
@@ -2229,25 +2229,6 @@ class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
     multiple columns and (optionally) column and item menus."""
     _sunkenBorder = False
-
-    def __init__(self, parent, data, keyPrefix, details=None):
-        #--Data
-        self.data = data
-        #--ListCtrl
-        UIList.__init__(self, parent, keyPrefix, details)
-
-    #--Drag and Drop-----------------------------------------------------------
-    def OnDropIndexes(self, indexes, newPos):
-        # See if the column is reverse sorted first
-        column = self.sort
-        reverse = self.colReverse.get(column,False)
-        if reverse:
-            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
-            if newPos < 0: newPos = 0
-        # Move the given indexes to the new position
-        self.data.moveArchives(self.GetSelected(), newPos)
-        self.data.refresh(what='N')
-        self.RefreshUI()
 
     #--Updating/Sorting/Refresh -----------------------------------------------
     @staticmethod

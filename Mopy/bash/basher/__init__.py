@@ -321,13 +321,6 @@ class SashTankPanel(SashPanel):
 class List(balt.UIList):
     icons = colorChecks
 
-    def __init__(self, parent, listData=None, keyPrefix='', details=None):
-        #--ListCtrl
-        #--MasterList: masterInfo = self.data[item], where item is id number
-        # rest of List subclasses provide a non None listData
-        self.data = {} if listData is None else listData # TODO(ut): to UIList
-        balt.UIList.__init__(self, parent, keyPrefix, details=details)
-
     def DeleteSelected(self,shellUI=False,noRecycle=False):
         """Deletes selected items."""
         items = self.GetSelected()
@@ -421,13 +414,15 @@ class MasterList(_ModsSortMixin, List):
     def allCols(self): return ['File', 'Num', 'Current Order']
 
     def __init__(self, parent, fileInfo, setEditedFn, listData=None,
-                 keyPrefix=keyPrefix):
+                 keyPrefix=keyPrefix, panel=None):
         #--Data/Items
         self.edited = False
         self.fileInfo = fileInfo
         self.loadOrderNames = []
         #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+        super(MasterList, self).__init__(parent,
+                      data=listData if listData is not None else {},
+                      keyPrefix=keyPrefix, panel=panel)
         self._setEditedFn = setEditedFn
 
     def OnItemSelected(self, event): event.Skip()
@@ -1139,6 +1134,7 @@ class ModDetails(_SashDetailsPanel):
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
         top, bottom = self.left, self.right
+        modPanel = parent.GetParent().GetParent()
         #--Data
         self.modInfo = None
         textWidth = 200
@@ -1164,8 +1160,8 @@ class ModDetails(_SashDetailsPanel):
             masterPanel = wx.Panel(subSplitter)
             tagPanel = wx.Panel(subSplitter)
             #--Masters
-            self.uilist = MasterList(
-                masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
+            self.uilist = MasterList(masterPanel, None, self.SetEdited,
+                                     keyPrefix=self.keyPrefix, panel=modPanel)
             #--Save/Cancel
             self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
             self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
@@ -1511,8 +1507,8 @@ class INIPanel(SashPanel):
         self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
         self.listData = bosh.iniInfos
-        BashFrame.iniList = INIList(left, self.listData, self.keyPrefix)
-        self.uiList = BashFrame.iniList
+        self.uiList = BashFrame.iniList = INIList(
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
@@ -1740,9 +1736,9 @@ class ModPanel(SashPanel):
         left,right = self.left, self.right
         self.listData = bosh.modInfos
         self.modDetails = ModDetails(right)
-        self.uiList = BashFrame.modList = ModList(left, listData=self.listData,
-                                                  keyPrefix=self.keyPrefix,
-                                                  details=self.modDetails)
+        self.uiList = BashFrame.modList = ModList(
+            left, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.modDetails, panel=self)
         #--Layout
         right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
@@ -1863,6 +1859,7 @@ class SaveDetails(_SashDetailsPanel):
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
         top, bottom = self.left, self.right
+        savePanel = parent.GetParent().GetParent()
         #--Data
         self.saveInfo = None
         textWidth = 200
@@ -1879,8 +1876,8 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.uilist = MasterList(
-            masterPanel, None, self.SetEdited, keyPrefix=self.keyPrefix)
+        self.uilist = MasterList(masterPanel, None, self.SetEdited,
+                                 keyPrefix=self.keyPrefix, panel=savePanel)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -2066,12 +2063,12 @@ class SavePanel(SashPanel):
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
         self.saveDetails = SaveDetails(right)
-        self.uiList = BashFrame.saveList = SaveList(left, self.listData,
-                                                    keyPrefix=self.keyPrefix,
-                                                    details=self.saveDetails)
+        self.uiList = BashFrame.saveList = SaveList(
+            left, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.saveDetails, panel=self)
         #--Layout
         right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
-        left.SetSizer(hSizer((BashFrame.saveList, 2, wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.saveDetails.SetFile()
@@ -2264,6 +2261,19 @@ class InstallersList(balt.Tank):
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
+
+    #--Drag and Drop-----------------------------------------------------------
+    def OnDropIndexes(self, indexes, newPos):
+        # See if the column is reverse sorted first
+        column = self.sort
+        reverse = self.colReverse.get(column,False)
+        if reverse:
+            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            if newPos < 0: newPos = 0
+        # Move the given indexes to the new position
+        self.data.moveArchives(self.GetSelected(), newPos)
+        self.data.refresh(what='N')
+        self.RefreshUI()
 
     def _extractOmods(self, omodnames):
         failed = []
@@ -2509,7 +2519,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
-        self.uiList = InstallersList(left, data, self.keyPrefix, details=self)
+        self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
+                                     details=self, panel=self)
         bosh.installersWindow = self.uiList
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
@@ -3091,7 +3102,8 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
-        self.uiList = ScreensList(left, self.listData, self.keyPrefix)
+        self.uiList = ScreensList(
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
         right.SetSizer(hSizer((self.picture,1,wx.GROW)))
@@ -3289,8 +3301,9 @@ class BSAPanel(NotebookPanel):
         # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
         self.BSADetails = BSADetails(self)
-        self.uilist = BSAList(self, self.listData, self.keyPrefix,
-                              details=self.BSADetails)
+        self.uilist = BSAList(
+            self, data=self.listData, keyPrefix=self.keyPrefix,
+            details=self.BSADetails, panel=self)
         #--Layout
         sizer = hSizer(
             (BSAList,1,wx.GROW),
@@ -3318,12 +3331,13 @@ class MessageList(List):
                   'Author': lambda self, a: self.data[a][1],
                  }
 
-    def __init__(self, parent, listData, keyPrefix):
+    def __init__(self, parent, listData, keyPrefix, panel):
         self.gText = None
         self.searchResults = None
         self.persistent_columns = {'Subject'}
         #--Parent init
-        List.__init__(self, parent, listData, keyPrefix)
+        super(MessageList, self).__init__(
+            parent, data=listData, keyPrefix=keyPrefix, panel=panel)
 
     def GetItems(self):
         if self.searchResults is not None: return list(self.searchResults)
@@ -3360,7 +3374,8 @@ class MessagePanel(SashPanel):
         #--Contents
         self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
         self.listData.refresh() # FIXME(ut): move to InitData()
-        self.uiList = MessageList(gTop, self.listData, self.keyPrefix)
+        self.uiList = MessageList(
+            gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Search ##: move to textCtrl subclass
@@ -3441,7 +3456,8 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
-        self.uiList = PeopleList(left, data, self.keyPrefix, details=self)
+        self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
+                                 details=self, panel=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
