@@ -162,16 +162,6 @@ def listArchiveContents(fileName):
     return ins
 
 # Util Classes ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class CountDict(dict):
-    """Used for storing counts. Just adds an increment function."""
-    def increment(self,key,inc=1):
-        """Increment specified key by 1, after initializing to zero if necessary."""
-        if not inc: return
-        if not key in self: self[key] = 0
-        self[key] += inc
-
-#------------------------------------------------------------------------------
 class PickleDict(bolt.PickleDict):
     """Dictionary saved in a pickle file. Supports older bash pickle file formats."""
     def __init__(self,path,oldPath=None,readOnly=False):
@@ -290,7 +280,6 @@ reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U)
 reExGroup = re.compile(u'(.*?),',re.U)
-reImageExt = re.compile(ur'\.(gif|jpg|bmp|png)$',re.I|re.U)
 reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
@@ -4342,7 +4331,7 @@ class ModInfos(FileInfos):
         if not self.canSetTimes(): return
         del self.mtimesReset[:]
         try:
-            for fileName, fileInfo in sorted(self.data.iteritems(),key=lambda x: x[1].mtime):
+            for fileName, fileInfo in sorted(self.iteritems(),key=lambda x: x[1].mtime):
                 oldMTime = int(self.mtimes.get(fileName,fileInfo.mtime))
                 self.mtimes[fileName] = oldMTime
                 if fileInfo.mtime != oldMTime and oldMTime  > 0:
@@ -4460,8 +4449,7 @@ class ModInfos(FileInfos):
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
 #        print "Output of ModInfos.data"
-        for path in self.data:
-            mod = self[path]
+        for mod in self.values():
             autoTag = self.table.getItem(mod.name,'autoBashTags')
             if autoTag is None and self.table.getItem(mod.name,'bashTags') is None:
                 # A new mod, set autoBashTags to True (default)
@@ -4663,8 +4651,8 @@ class ModInfos(FileInfos):
 
     def select(self,fileName,doSave=True,modSet=None,children=None):
         """Adds file to selected."""
+        plugins = self.plugins
         try:
-            plugins = self.plugins
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
                 raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
@@ -4683,8 +4671,7 @@ class ModInfos(FileInfos):
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
         finally:
-            if doSave:
-                plugins.save()
+            if doSave: plugins.save()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
@@ -4844,7 +4831,7 @@ class ModInfos(FileInfos):
         self.plugins.refresh(True)
 
     #--Mod info/modify --------------------------------------------------------
-    def getVersion(self,fileName,asFloat=False):
+    def getVersion(self, fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
         if not fileName in self.data or not self.data[fileName].header:
             return ''
@@ -4879,12 +4866,20 @@ class ModInfos(FileInfos):
     def getOblivionVersions(self):
         """Returns tuple of Oblivion versions."""
         self.voAvailable.clear()
-        for name,info in self.data.iteritems():
+        for name,info in self.iteritems():
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.size in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.size])
         if self.masterName in self.data:
             self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
+
+    def _retry(self, old, new):
+        return balt.askYes(self,
+            _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
+            _(u'The file is in use by another process such as TES4Edit.') +
+            u'\n' + _(u'Please close the other program that is accessing %s.')
+            + u'\n\n' + _(u'Try again?') % (old.s, new.s, old.s),
+            _(u'File in use'))
 
     def setOblivionVersion(self,newVersion):
         """Swaps Oblivion.esm to to specified version."""
@@ -4910,15 +4905,7 @@ class ModInfos(FileInfos):
         try:
             basePath.moveTo(oldPath)
         except WindowsError, werr:
-            if werr.winerror != 32: raise
-            while balt.askYes(self,(_(u'Bash encountered an error when renaming %s to %s.')
-                                    + u'\n\n' +
-                                    _(u'The file is in use by another process such as TES4Edit.')
-                                    + u'\n' +
-                                    _(u'Please close the other program that is accessing %s.')
-                                    + u'\n\n' +
-                                    _(u'Try again?')) % (basePath.s,oldPath.s,basePath.s),
-                              _(u'Bash Patch - Rename Error')):
+            while werr.winerror == 32 and self._retry(basePath, oldPath):
                 try:
                     basePath.moveTo(oldPath)
                 except WindowsError, werr:
@@ -4929,15 +4916,7 @@ class ModInfos(FileInfos):
         try:
             newPath.moveTo(basePath)
         except WindowsError, werr:
-            if werr.winerror != 32: raise
-            while balt.askYes(self,(_(u'Bash encountered an error when renaming %s to %s.')
-                                    + u'\n\n' +
-                                    _(u'The file is in use by another process such as TES4Edit.')
-                                    + u'\n' +
-                                    _(u'Please close the other program that is accessing %s.')
-                                    + u'\n\n' +
-                                    _(u'Try again?')) % (basePath.s,oldPath.s,basePath.s),
-                              _(u'Bash Patch - Rename Error')):
+            while werr.winerror == 32 and self._retry(newPath, basePath):
                 try:
                     newPath.moveTo(basePath)
                 except WindowsError, werr:
@@ -5094,8 +5073,7 @@ class BSAInfos(FileInfos):
         return dirs['modsBash'].join(u'BSA Data')
 
     def resetMTimes(self):
-        for file in self.data:
-            self[file].resetMTime()
+        for bsa in self.values(): bsa.resetMTime()
 
 # Mod Config Help -------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -5628,7 +5606,7 @@ class Messages(DataDict):
         if not term: return None
         items = []
         reTerm = re.compile(term,re.I)
-        for key,(subject,author,date,text) in self.data.iteritems():
+        for key,(subject,author,date,text) in self.iteritems():
             if (reTerm.search(subject) or
                 reTerm.search(author) or
                 reTerm.search(text)
@@ -5841,7 +5819,6 @@ class PeopleData(PickleTankData, DataDict):
 
 #------------------------------------------------------------------------------
 class ScreensData(DataDict):
-    ##: shadows global
     reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
 
     def __init__(self):
@@ -6559,10 +6536,6 @@ class Installer(object):
         #--Done (return dest_src for install operation)
         return dest_src
 
-    def refreshSource(self,archive,progress=None,fullRefresh=False):
-        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
-        raise AbstractError
-
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
         self.refreshSource(archive,progress,fullRefresh)
@@ -6718,6 +6691,11 @@ class Installer(object):
         (self.status,oldStatus) = (status,self.status)
         (self.underrides,oldUnderrides) = (underrides,self.underrides)
         return self.status != oldStatus or self.underrides != oldUnderrides
+
+    #--ABSTRACT ---------------------------------------------------------------
+    def refreshSource(self,archive,progress=None,fullRefresh=False):
+        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
+        raise AbstractError
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
@@ -7955,9 +7933,9 @@ class InstallersData(DataDict):
         if settings['bash.installers.autoApplyEmbeddedBCFs'] and self.embeddedBCFsExist():
             return True
         elif settings['bash.installers.autoRefreshProjects']:
-            return installers != set(x for x,y in self.data.iteritems() if not isinstance(y,InstallerMarker) and not (isinstance(y,InstallerProject) and y.skipRefresh))
+            return installers != set(x for x,y in self.iteritems() if not isinstance(y,InstallerMarker) and not (isinstance(y,InstallerProject) and y.skipRefresh))
         else:
-            return installers != set(x for x,y in self.data.iteritems() if isinstance(y,InstallerArchive))
+            return installers != set(x for x,y in self.iteritems() if isinstance(y,InstallerArchive))
 
     def refreshConvertersNeeded(self):
         """Returns true if refreshConverters is necessary. (Point is to skip use
@@ -7991,7 +7969,7 @@ class InstallersData(DataDict):
         ordered,pending = [],[]
         orderedAppend = ordered.append
         pendingAppend = pending.append
-        for archive,installer in self.data.iteritems():
+        for archive,installer in self.iteritems():
             if installer.order >= 0:
                 orderedAppend(archive)
             else:

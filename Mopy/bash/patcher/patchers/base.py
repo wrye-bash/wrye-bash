@@ -27,7 +27,7 @@ import struct
 from operator import itemgetter
 # Internal
 from ... import bosh # for bosh.modInfos, dirs
-from ...bosh import getPatchesList, reModExt, getPatchesPath, CountDict
+from ...bosh import getPatchesList, reModExt, getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
@@ -582,3 +582,12 @@ class SpecialPatcher(object):
                     tags = bosh.modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
+
+# Util Classes ----------------------------------------------------------------
+class CountDict(dict):
+    """Used for storing counts. Just adds an increment function."""
+    def increment(self,key,inc=1):
+        """Increment specified key by 1, after initializing to zero if necessary."""
+        if not inc: return
+        if not key in self: self[key] = 0
+        self[key] += inc

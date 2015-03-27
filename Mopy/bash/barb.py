@@ -103,6 +103,7 @@ class BaseBackupSettings:
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
+
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
         game = bush.game.fsName
@@ -146,24 +147,19 @@ class BackupSettings(BaseBackupSettings):
                     self.files[tmpdir.join(name)] = path.join(name)
 
         #backup image files if told to
-        if backup_images == 1: #changed images only
+        def _isChanged(abs_path, rel_path):
+            for ver_list in images_list.values():
+                if  ver_list.get(rel_path.s, -1) == abs_path.size: return False
+            return True
+        if backup_images: # 1 is changed images only, 2 is all images
+            onlyChanged = backup_images == 1
             tmpdir = GPath(game+u'\\Mopy\\bash\\images')
             path = dirs['images']
             for name in path.list():
                 fullname = path.join(name)
-                if fullname.isfile():
-                    changed = True
-                    for ver_list in images_list:
-                        if name.s in images_list[ver_list] and images_list[ver_list][name.s] == fullname.size:
-                            changed = False
-                    if changed and not name.s.lower() == u'thumbs.db':
-                        self.files[tmpdir.join(name)] = fullname
-        elif backup_images == 2: #all images
-            tmpdir = GPath(game+u'\\Mopy\\bash\\images')
-            path = dirs['images']
-            for name in path.list():
-                if path.join(name).isfile() and not name.s.lower() == u'thumbs.db':
-                    self.files[tmpdir.join(name)] = path.join(name)
+                if fullname.isfile() and not name.s.lower() == u'thumbs.db' \
+                        and (not onlyChanged or _isChanged(fullname, name)):
+                    self.files[tmpdir.join(name)] = fullname
 
         #backup save profile settings
         savedir = GPath(u'My Games\\'+game)
@@ -177,8 +173,6 @@ class BackupSettings(BaseBackupSettings):
                 fpath = dirs['saveBase'].join(u'Saves',profile,u'Bash',u'Table'+ext)
                 if fpath.exists(): self.files[tpath] = fpath
                 if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
-            #end for
-        #end for
 
     def Apply(self):
         if not self.PromptFile(): return

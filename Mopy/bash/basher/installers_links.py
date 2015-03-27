@@ -369,7 +369,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                     apath = bosh.dirs['installers'].join(name)
                     installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
                     self.iPanel.data.hasChanged = True
-            self.iPanel.data.refresh(what='NSC')
+            self.idata.refresh(what='NSC')
             self.window.RefreshUI()
 
 class Installers_Enabled(BoolLink):

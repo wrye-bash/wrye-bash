@@ -30,7 +30,7 @@ import re
 from ... import bosh # for modInfos
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
-from ...bosh import LoadFactory, ModFile, CountDict, getPatchesList, \
+from ...bosh import LoadFactory, ModFile, getPatchesList, \
     reModExt, getPatchesPath
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
@@ -39,7 +39,7 @@ from ..base import AImportPatcher, Patcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
-from .base import ImportPatcher, CBash_ImportPatcher
+from .base import ImportPatcher, CBash_ImportPatcher, CountDict
 
 # Functions -------------------------------------------------------------------
 # Factor out common code in the patchers. Serve as a document on the patcher

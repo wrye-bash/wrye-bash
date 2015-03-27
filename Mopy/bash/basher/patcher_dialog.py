@@ -197,15 +197,8 @@ class PatchDialog(balt.Dialog):
                 try:
                     patchName.untemp()
                 except WindowsError, werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(self,(_(u'Bash encountered an error when renaming %s to %s.')
-                                            + u'\n\n' +
-                                            _(u'The file is in use by another process such as TES4Edit.')
-                                            + u'\n' +
-                                            _(u'Please close the other program that is accessing %s.')
-                                            + u'\n\n' +
-                                            _(u'Try again?')) % (patchName.temp.s, patchName.s, patchName.s),
-                                      _(u'Bash Patch - Save Error')):
+                    while werr.winerror == 32 and self._retry(patchName.temp.s,
+                                                              patchName.s):
                         try:
                             patchName.untemp()
                         except WindowsError, werr:
@@ -236,7 +229,7 @@ class PatchDialog(balt.Dialog):
                             raise
                         if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
                             continue
-                        raise CancelError
+                        raise
                     break
             #--Cleanup
             self.patchInfo.refresh()
@@ -324,6 +317,14 @@ class PatchDialog(balt.Dialog):
                 try: patchFile.Current.Close()
                 except: pass
             progress.Destroy()
+
+    def _retry(self, old, new):
+        return balt.askYes(self,
+            _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
+            _(u'The file is in use by another process such as TES4Edit.') +
+            u'\n' + _(u'Please close the other program that is accessing %s.')
+            + u'\n\n' + _(u'Try again?') % (old.s, new.s, new.s),
+             _(u'Bash Patch - Save Error'))
 
     def SaveConfig(self,event=None):
         """Save the configuration"""
