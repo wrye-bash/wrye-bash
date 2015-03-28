@@ -1726,12 +1726,10 @@ class _Mod_Import_Link(OneItemLink):
         return changed
 
     def _showLog(self, logText, title=u'', style=0, asDialog=True,
-                 fixedFont=False, icons=Resources.bashBlue, size=True,
-                 question=False):
-        return super(_Mod_Import_Link, self)._showLog(
+                 fixedFont=False, icons=Resources.bashBlue, size=True):
+        super(_Mod_Import_Link, self)._showLog(
             logText, title=title or self.__class__.progressTitle, style=style,
-            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size,
-            question=question)
+            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels

@@ -139,7 +139,6 @@ def unformatDate(str,format):
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
 oiMask = 0xFFFFFFL
-question = False
 
 #--File Singletons
 gameInis = None

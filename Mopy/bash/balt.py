@@ -781,7 +781,7 @@ def showList(parent,header,items,maxItems=0,title=u'',**kwdargs):
     return askStyled(parent,message,title,wx.OK,**kwdargs)
 
 #------------------------------------------------------------------------------
-def showLogClose(evt=None):
+def _showLogClose(evt=None):
     """Handle log message closing."""
     window = evt.GetEventObject()
     if not window.IsIconized() and not window.IsMaximized():
@@ -789,25 +789,8 @@ def showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
-def showQuestionLogCloseYes(Event,window):
-    """Handle log message closing."""
-    if window:
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
-        window.Destroy()
-    bosh.question = True
-
-def showQuestionLogCloseNo(Event,window):
-    """Handle log message closing."""
-    if window:
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
-        window.Destroy()
-    bosh.question = False
-
-def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons=None,size=True,question=False):
+def showLog(parent, logText, title=u'', style=0, asDialog=True,
+            fixedFont=False, icons=None, size=True):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -821,7 +804,7 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
         if icons: window.SetIcons(icons)
     window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,showLogClose)
+    window.Bind(wx.EVT_CLOSE,_showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
     txtCtrl = roTextCtrl(window, logText, special=True)
@@ -833,38 +816,18 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
         #fixedStyle.SetFlags(0x4|0x80)
         fixedStyle.SetFont(fixedFont)
         txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-    if question:
-        bosh.question = False
-        #--Buttons
-        gYesButton = button(window,id=wx.ID_YES)
-        gYesButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseYes(evt, temp) )
-        gYesButton.SetDefault()
-        gNoButton = button(window,id=wx.ID_NO)
-        gNoButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseNo(evt, temp) )
-        #--Layout
-        window.SetSizer(
-            vSizer(
-                (txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                hSizer((gYesButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-                    (gNoButton,0,wx.ALIGN_RIGHT|wx.ALL,4))
-                )
-            )
-    else:
-        #--Buttons
-        gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
-        gOkButton.SetDefault()
-        #--Layout
-        window.SetSizer(
-            vSizer(
-                (txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-                )
-            )
+    #--Buttons
+    gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
+    gOkButton.SetDefault()
+    #--Layout
+    window.SetSizer(
+        vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+               (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+        ))
     #--Show
     if asDialog:
         with window: window.ShowModal()
     else: window.Show()
-    return bosh.question
 
 #------------------------------------------------------------------------------
 def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
@@ -897,7 +860,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
         if icons: window.SetIcons(icons)
     window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,showLogClose)
+    window.Bind(wx.EVT_CLOSE,_showLogClose)
     #--Text
     textCtrl_ = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
     if not isinstance(logText,bolt.Path):
@@ -2467,9 +2430,9 @@ class Link(object):
                        style)
 
     def _showLog(self, logText, title=u'', style=0, asDialog=False,
-                 fixedFont=False, icons=None, size=True, question=False):
-        return showLog(self.window, logText, title, style, asDialog, fixedFont,
-                       icons, size, question)
+                 fixedFont=False, icons=None, size=True):
+        showLog(self.window, logText, title, style, asDialog, fixedFont, icons,
+                size)
 
     def _showInfo(self, message, title=_(u'Information'), **kwdargs):
         return showInfo(self.window, message, title, **kwdargs)
