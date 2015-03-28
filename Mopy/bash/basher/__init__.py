@@ -259,7 +259,7 @@ class SashTankPanel(SashPanel):
         super(SashTankPanel, self).ClosePanel()
 
     def GetDetailsItem(self):
-        return self.detailsItem
+        return self.data[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
 class _ModsSortMixin(object):

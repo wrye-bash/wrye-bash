@@ -873,7 +873,7 @@ class Installer_Espm_SelectAll(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         installer.espmNots = set()
         for i in range(len(self.window.espms)):
             self.window.gEspmList.Check(i, True)
@@ -887,7 +887,7 @@ class Installer_Espm_DeselectAll(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         espmNots = installer.espmNots = set()
         for i in range(len(self.window.espms)):
             self.window.gEspmList.Check(i, False)
@@ -903,7 +903,7 @@ class Installer_Espm_Rename(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*':
@@ -922,7 +922,7 @@ class Installer_Espm_Reset(EnabledLink):
 
     def _enable(self):
         if self.selected == -1: return False
-        self.installer = installer = self.window.data[self.window.detailsItem]
+        self.installer = installer = self.window.GetDetailsItem()
         curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*': curName = curName[1:]
@@ -942,7 +942,7 @@ class Installer_Espm_ResetAll(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         installer.resetAllEspmNames()
         self.window.refreshCurrent(installer)
 
@@ -954,8 +954,8 @@ class Installer_Espm_List(EnabledLink):
 
     def Execute(self,event):
         """Handle selection."""
-        subs = _(u'Esp/m List for %s:') % self.window.data[
-            self.window.detailsItem].archive + u'\n[spoiler]\n'
+        subs = _(u'Esp/m List for %s:') % self.window.GetDetailsItem(
+                    ).archive + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
         for index in range(espm_list.GetCount()):
             subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
@@ -977,7 +977,7 @@ class Installer_Subs_SelectAll(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, True)
             installer.subActives[index + 1] = True
@@ -989,7 +989,7 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, False)
             installer.subActives[index + 1] = False
@@ -1002,7 +1002,7 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
             check = not installer.subActives[index+1]
             self.window.gSubList.Check(index, check)
@@ -1015,7 +1015,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 
     def Execute(self,event):
         """Handle selection."""
-        installer = self.window.data[self.window.detailsItem]
+        installer = self.window.GetDetailsItem()
         subs = _(u'Sub-Packages List for %s:') % installer.archive
         subs += u'\n[spoiler]\n'
         for index in xrange(self.window.gSubList.GetCount()):

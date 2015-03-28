@@ -2321,11 +2321,6 @@ class Tank(UIList):
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         self._gList.SetItem(gItem)
 
-    #--Details view (if it exists)
-    def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
-        return self.details.GetDetailsItem() if self.details else None
-
     def _select(self, item):
         if self.details: return self.details.RefreshDetails(item)
 
