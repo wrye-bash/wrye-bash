@@ -1835,6 +1835,11 @@ class SaveFile:
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
+def _delete(itemOrItems, **kwargs):
+    askOk = kwargs.pop('askOk', False)
+    recycle = kwargs.pop('recycle', True)
+    balt.shellDelete(itemOrItems, askOk_=askOk, recycle=recycle)
+
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
     reSave  = re.compile(r'\.ess(f?)$',re.I)
@@ -1854,10 +1859,9 @@ class CoSaves:
         self.savePath = savePath
         self.paths = CoSaves.getPaths(savePath)
 
-    def delete(self,askOk=False,recycle=True):
-        """Deletes cofiles."""
-        balt.shellDelete(filter(lambda p: p.exists, self.paths), askOk_=askOk,
-                         recycle=recycle)
+    def delete(self, **kwargs): # not a DataDict subclass
+        """Delete cofiles."""
+        _delete(filter(lambda p: p.exists, self.paths), **kwargs)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -4105,12 +4109,13 @@ class FileInfos(DataDict):
         fileInfo.madeBackup = False
 
     #--Delete
-    def delete(self, fileName, doRefresh=True, askOk=False, recycle=True):
+    def delete(self, fileName, **kwargs):
         """Deletes member file."""
         if not isinstance(fileName,(list,set)):
             fileNames = [fileName]
         else:
             fileNames = fileName
+        doRefresh = kwargs.pop('doRefresh', True)
         #--Files to delete
         toDelete = []
         toDeleteAppend = toDelete.append
@@ -4142,7 +4147,7 @@ class FileInfos(DataDict):
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
         try:
-            balt.shellDelete(toDelete, askOk_=askOk, recycle=recycle)
+            _delete(toDelete, **kwargs)
         finally:
             #--Table
             for filePath in tableUpdate:
@@ -4802,11 +4807,11 @@ class ModInfos(FileInfos):
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
-    def delete(self, fileName, doRefresh=True, askOk_=True,recycle=True):
+    def delete(self, fileName, **kwargs):
         """Delete member file."""
         if fileName.s not in bush.game.masterFiles:
             self.unselect(fileName)
-            FileInfos.delete(self,fileName,doRefresh)
+            FileInfos.delete(self, fileName, **kwargs)
         else:
             raise bolt.BoltError("Cannot delete the game's master file(s).")
 
@@ -4978,10 +4983,11 @@ class SaveInfos(FileInfos):
         self._refreshLocalSave()
         return FileInfos.refresh(self)
 
-    def delete(self,fileName):
+    def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
-        FileInfos.delete(self,fileName)
-        CoSaves(self.dir,fileName).delete()
+        FileInfos.delete(self, fileName, **kwargs)
+        kwargs['askOk'] = False # ask only on save deletion
+        CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
@@ -5595,7 +5601,7 @@ class Messages(DataDict):
         self.dictFile.save()
         self.hasChanged = False
 
-    def delete(self,key):
+    def delete(self, key, **kwargs):
         """Delete entry."""
         del self.data[key]
         self.hasChanged = True
@@ -5788,7 +5794,7 @@ class PeopleData(PickleTankData, DataDict):
     def __init__(self):
         PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
 
-    def delete(self,key): ##: ripped from MesageData - move to DataDict ?
+    def delete(self, key, **kwargs): ##: ripped from MesageData - move to DataDict ?
         """Delete entry."""
         del self.data[key]
         self.hasChanged = True
@@ -5847,17 +5853,16 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName,askOk=True,recycle=True):
+    def delete(self, fileName, **kwargs):
         """Deletes member file."""
         dirJoin = self.dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=recycle)
-        if deleted is not None:
-            for file in filePath:
-                del self.data[file.tail]
+        _delete(filePath, **kwargs)
+        for item in filePath:
+            if not item.exists(): del self.data[item.tail]
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -7758,7 +7763,7 @@ class InstallersData(DataDict):
             self.hasChanged = False
 
     #--Dict Functions -----------------------------------------------------------
-    def delete(self,items,askOk=False,recycle=True):
+    def delete(self, items, **kwargs):
         """Delete multiple installers. Delete entry AND archive file itself."""
         toDelete = []
         markers = []
@@ -7772,7 +7777,7 @@ class InstallersData(DataDict):
         #--Delete
         try:
             for m in markers: del self.data[m]
-            balt.shellDelete(toDelete, askOk_=askOk,recycle=recycle)
+            _delete(toDelete, **kwargs)
         finally:
             refresh = bool(markers)
             for item in toDelete:

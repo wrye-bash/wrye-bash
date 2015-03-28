@@ -2270,13 +2270,14 @@ class UIList(wx.Panel):
         for i in items:
             try:
                 if not self.__class__._shellUI:
-                    self.data.delete(i) ##: doRefresh=False, askOk=False, recycle=recycle
+                    self.data.delete(i, doRefresh=False, recycle=recycle)
                 else:
                     self.data.delete(items, askOk=True, recycle=recycle)
                     break
             except bolt.BoltError as e:
                 showError(self, u'%r' % e)
             except (AccessDeniedError, CancelError, SkipError): pass
+        else: self.data.refresh()
         if items: self._postDeleteRefresh(items)
 
     def _toDelete(self, items):
