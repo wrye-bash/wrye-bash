@@ -539,11 +539,10 @@ class INIList(balt.UIList):
         """Filter out default tweaks from tweaks iterable."""
         return filter(lambda x: bosh.dirs['tweaks'].join(x).isfile(), tweaks)
 
-    def DeleteItems(self, event=None, items=None):
-        items = items if items is not None else self.GetSelected()
-        items = self.filterOutDefaultTweaks(items) # will refilter if coming
+    def _toDelete(self, items):
+        items = super(INIList, self)._toDelete(items)
+        return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
-        super(INIList, self).DeleteItems(event, items)
 
     def _postDeleteRefresh(self, deleted):
         deleted = filter(lambda path: not path.exists(),
@@ -3313,6 +3312,12 @@ class MessageList(balt.UIList):
         path = bosh.dirs['saveBase'].join(u'Messages.html')
         bosh.messages.writeText(path,*keys)
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
+
+    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages')):
+        message = _(u'Delete these %d message(s)? This operation cannot'
+                    u' be undone.') % len(items)
+        yes = balt.askYes(self, message, title=dialogTitle)
+        return items if yes else []
 
 #------------------------------------------------------------------------------
 class MessagePanel(SashPanel):

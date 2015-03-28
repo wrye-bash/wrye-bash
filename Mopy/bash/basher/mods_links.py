@@ -29,7 +29,7 @@ from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link, ListBoxes
+    SeparatorLink, Link
 from ..bolt import GPath
 from ..patcher.patch_files import PatchFile
 
@@ -294,8 +294,7 @@ class Mods_CleanDummyMasters(EnabledLink):
     help = _(u"Clean up after using a 'Create Dummy Masters...' command")
 
     def _enable(self):
-        for fileName in bosh.modInfos.data:
-            fileInfo = bosh.modInfos[fileName]
+        for fileInfo in bosh.modInfos.values():
             if fileInfo.header.author == u'BASHED DUMMY':
                 return True
         return False
@@ -303,28 +302,13 @@ class Mods_CleanDummyMasters(EnabledLink):
     def Execute(self,event):
         """Handle execution."""
         remove = []
-        for fileName in bosh.modInfos.data:
-            fileInfo = bosh.modInfos[fileName]
+        for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
         remove = bosh.modInfos.getOrdered(remove)
-        message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-        message.extend(remove)
-        dialog = ListBoxes(Link.Frame,_(u'Delete Dummy Masters'),
-                     _(u'Delete these items? This operation cannot be undone.'),
-                     [message])
-        if dialog.ShowModal() == ListBoxes.ID_CANCEL:
-            dialog.Destroy()
-            return
-        id = dialog.ids[u'']
-        checks = dialog.FindWindowById(id)
-        if checks:
-            for i,mod in enumerate(remove):
-                if checks.IsChecked(i):
-                    self.window.data.delete(mod)
-        dialog.Destroy()
-        Link.Frame.RefreshData()
-        self.window.RefreshUI()
+        self.window.DeleteItems(items=remove, order=False,
+                                dialogTitle=_(u'Delete Dummy Masters'))
+        # Link.Frame.RefreshData() ##: why ?
 
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):

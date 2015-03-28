@@ -2260,32 +2260,16 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
-    def DeleteItems(self, event=None, items=None):
+    def DeleteItems(self, event=None, items=None,
+                    dialogTitle=_(u'Delete Items'), order=True):
         noRecycle = event.ShiftDown() if event is not None else False
-        self.DeleteSelected(shellUI=self.__class__._shellUI,
-                            noRecycle=noRecycle, items=items)
-
-    def DeleteSelected(self, shellUI=False, noRecycle=False, items=None):
-        """Deletes selected items."""
-        items = items if items is not None else self.GetSelected()
+        items = self._toDelete(items)
+        if not self.__class__._shellUI:
+            items = self._promptDelete(items, dialogTitle, order)
         if not items: return
-        if not shellUI:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            sortedItems = sorted(items)
-            message.extend(sortedItems)
-            with ListBoxes(self, _(u'Delete Items'), _(
-                    u'Delete these items?  This operation cannot be '
-                    u'undone.'), [message]) as dialog:
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-                del items[:]
-                id_ = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    for i,mod in enumerate(sortedItems):
-                        if checks.IsChecked(i): items.append(mod)
         for i in items:
             try:
-                if not shellUI:
+                if not self.__class__._shellUI:
                     self.data.delete(i) ##: askOk=False,dontRecycle=noRecycle
                 else:
                     self.data.delete(items, askOk=True, dontRecycle=noRecycle)
@@ -2294,6 +2278,26 @@ class UIList(wx.Panel):
                 showError(self, u'%r' % e)
             except (AccessDeniedError, CancelError, SkipError): pass
         if items: self._postDeleteRefresh(items)
+
+    def _toDelete(self, items):
+        return items if items is not None else self.GetSelected()
+
+    def _promptDelete(self, items, dialogTitle, order):
+        if not items: return items
+        message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
+        if order: items.sort()
+        message.extend(items)
+        with ListBoxes(self, dialogTitle,
+                       _(u'Delete these items?  This operation cannot be '
+                         u'undone.'), [message]) as dialog:
+            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return []
+            id_ = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id_)
+            checked = []
+            if checks:
+                for i, mod in enumerate(items):
+                    if checks.IsChecked(i): checked.append(mod)
+            return checked
 
     def _postDeleteRefresh(self, deleted): self.RefreshUI()
 
