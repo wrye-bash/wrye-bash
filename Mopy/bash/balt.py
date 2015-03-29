@@ -827,7 +827,7 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
     window.Bind(wx.EVT_CLOSE,_showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    txtCtrl = roTextCtrl(window, logText, special=True)
+    txtCtrl = roTextCtrl(window, logText, special=True, autotooltip=False)
     txtCtrl.SetValue(logText)
     if fixedFont:
         fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
