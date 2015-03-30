@@ -545,7 +545,7 @@ class ModFile:
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        balt.shellMove(filePath.temp,filePath,None,False,False,False)
+        balt.shellMove(filePath.temp, filePath, parent=None)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -2758,8 +2758,7 @@ class OmodFile:
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
         progress = progress if progress else bolt.Progress()
-        extractDir = Path.tempDir(u'WryeBash_')
-        stageBaseDir = Path.tempDir(u'WryeBash_')
+        extractDir = stageBaseDir = Path.tempDir()
         stageDir = stageBaseDir.join(outDir.tail)
 
         try:
@@ -2828,7 +2827,8 @@ class OmodFile:
                 progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
             # Move files to final directory
-            balt.shellMove(stageDir,outDir.head)
+            balt.shellMove(stageDir, outDir.head, parent=None,
+                           askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
             if outDir.exists():
@@ -4092,7 +4092,7 @@ class FileInfos(DataDict):
         newPath = self.dir.join(newName)
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
-        balt.shellMove(oldPath,newPath,None,False,False,False)
+        balt.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -5899,7 +5899,7 @@ class Installer(object):
     @staticmethod
     def newTempDir():
         """Generates a new temporary directory name, sets it as the current Temp Dir."""
-        Installer._tempDir = Path.tempDir(u'WryeBash_')
+        Installer._tempDir = Path.tempDir()
         return Installer._tempDir
 
     @staticmethod
@@ -7323,7 +7323,7 @@ class InstallerArchive(Installer):
                 # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+                balt.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean up staging dir
             self.rmTempDir()
@@ -7482,7 +7482,7 @@ class InstallerProject(Installer):
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+                balt.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean out staging dir
             self.rmTempDir()
@@ -10149,13 +10149,12 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
 
 def testUAC(gameDataPath):
     print 'testing UAC'
-    tempDir = bolt.Path.tempDir(u'WryeBash_')
+    tempDir = bolt.Path.tempDir()
     tempFile = tempDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open('wb') as out:
-        pass
-    try:
-        balt.fileOperation(balt.FO_MOVE,tempFile,dest,False,False,False,True,None)
+    with tempFile.open('wb'): pass # create the file
+    try: # to move it into the Game/Data/ directory
+        balt.shellMove(tempFile, dest, askOverwrite=True, silent=True)
     except balt.AccessDeniedError:
         return True
     finally:

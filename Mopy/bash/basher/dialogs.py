@@ -438,7 +438,7 @@ class CreateNewProject(balt.Dialog):
 
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)
-        tempDir = bolt.Path.tempDir(u'WryeBash_')
+        tempDir = bolt.Path.tempDir()
         tempProject = tempDir.join(projectName)
         extrasDir = bosh.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
@@ -462,7 +462,7 @@ class CreateNewProject(balt.Dialog):
 
         # Move into the target location
         try:
-            balt.shellMove(tempProject,projectDir,self,False,False,False)
+            balt.shellMove(tempProject, projectDir, parent=self)
         except:
             pass
         finally:

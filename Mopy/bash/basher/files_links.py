@@ -135,7 +135,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         try:
-            balt.shellMove(srcFiles,destFiles,window,False,False,False)
+            balt.shellMove(srcFiles, destFiles, parent=window)
             for dest in coSavesMoves:
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):

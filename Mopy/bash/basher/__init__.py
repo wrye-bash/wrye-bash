@@ -2360,7 +2360,7 @@ class InstallersList(balt.Tank):
                         balt.shellCopy(filenames,filesTo,self,False,False,False)
                     elif action == 'MOVE':
                         #--Move the dropped files
-                        balt.shellMove(filenames,filesTo,self,False,False,False)
+                        balt.shellMove(filenames, filesTo, parent=self)
                     else:
                         return
                 except (CancelError,SkipError):
@@ -2637,7 +2637,7 @@ class InstallersPanel(SashTankPanel):
                         omodMoves = list(omodMoves)
                         omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
                         balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
-                        balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                        balt.shellMove(omodMoves, omodDests, parent=self)
                     except (CancelError,SkipError):
                         while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
                                           + u'\n\n' +
@@ -2645,7 +2645,7 @@ class InstallersPanel(SashTankPanel):
                             try:
                                 omodMoves = [x for x in omodMoves]
                                 omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
-                                balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                                balt.shellMove(omodMoves, omodDests, self)
                             except (CancelError,SkipError):
                                 continue
                             break

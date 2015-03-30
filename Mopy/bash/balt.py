@@ -950,16 +950,15 @@ def playSound(parent,sound):
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
-try:
+try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
     from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
-
 except ImportError:
     shellcon = shell = None
-    FO_DELETE = 0
     FO_MOVE = 1
     FO_COPY = 2
-    FO_RENAME = 3
+    FO_DELETE = 3
+    FO_RENAME = 4
 
 class FileOperationError(Exception):
     def __init__(self,errorCode):
@@ -974,50 +973,41 @@ class AccessDeniedError(FileOperationError):
 FileOperationErrorMap = {
     120: AccessDeniedError,
     1223: CancelError,
-    }
+}
 
-def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
+def _fileOperation(operation, source, target=None, allowUndo=True,
+                   noConfirm=False, renameOnCollision=False, silent=False,
+                   parent=None):
     if not source:
         return {}
-
     abspath = os.path.abspath
-
+    # source may be anything - see SHFILEOPSTRUCT - accepts list or item
     if isinstance(source,(bolt.Path,basestring)):
-        source = GPath(abspath(GPath(source).s))
+        source = [GPath(abspath(GPath(source).s))]
     else:
         source = [GPath(abspath(GPath(x).s)) for x in source]
-
-    target = target if target else u''
+    # target may be anything ...
+    target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
     if isinstance(target,(bolt.Path,basestring)):
-        target = GPath(abspath(GPath(target).s))
+        target = [GPath(abspath(GPath(target).s))]
     else:
         target = [GPath(abspath(GPath(x).s)) for x in target]
-
-    parent = parent.GetHandle() if parent else None
-
     if shell is not None:
-        if isinstance(source,bolt.Path):
-            source = source.s
-        else:
-            source = u'\x00'.join(x.s for x in source)
-
-        if isinstance(target,bolt.Path):
-            target = target.s
-            multiDestFiles = 0
-        else:
-            target = u'\x00'.join(x.s for x in target)
-            multiDestFiles = shellcon.FOF_MULTIDESTFILES
-
-        flags = (shellcon.FOF_WANTMAPPINGHANDLE|
-                 multiDestFiles)
+        # flags
+        multiDestFiles = (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        flags = (shellcon.FOF_WANTMAPPINGHANDLE| multiDestFiles)
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
         if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flags |= shellcon.FOF_SILENT
-
+        # null terminated strings
+        source = u'\x00'.join(x.s for x in source)
+        target = u'\x00'.join(x.s for x in target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # Do it ##: document return values
         result,nAborted,mapping = shell.SHFileOperation(
             (parent,operation,source,target,flags,None,None))
-
         if result == 0:
             if nAborted:
                 raise SkipError(nAborted if nAborted is not True else None)
@@ -1027,15 +1017,9 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             return dict(mapping)
         else:
             raise FileOperationErrorMap.get(result,FileOperationError(result))
-
     else:
         # Use custom dialogs and such
         # TODO: implement this
-        if not isinstance(source,list):
-            source = [source]
-        if not isinstance(target,list):
-            target = [target]
-
         # Delete
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
@@ -1074,17 +1058,22 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
 
 def shellDelete(files, parent=None, askOk_=True, recycle=True):
     try:
-        return fileOperation(FO_DELETE,files,None,recycle,not askOk_,True,False,parent)
+        return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
+                              noConfirm=not askOk_, renameOnCollision=True,
+                              silent=False, parent=parent)
     except CancelError:
         if askOk_:
             return None
         raise
 
-def shellMove(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_MOVE,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False, silent=False):
+    return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
+                          noConfirm=not askOverwrite, allowUndo=allowUndo,
+                          renameOnCollision=autoRename, silent=silent)
 
 def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+    return _fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
 def shellMakeDirs(dirName,parent=None):
     if not dirName:
@@ -1114,7 +1103,7 @@ def shellMakeDirs(dirName,parent=None):
                 dir.makedirs()
             except:
                 # Failed, try the UAC workaround
-                tempDir = bolt.Path.tempDir(u'WryeBash_')
+                tempDir = bolt.Path.tempDir()
                 tempDirsAppend(tempDir)
                 toMake = []
                 toMakeAppend = toMake.append
@@ -1133,7 +1122,7 @@ def shellMakeDirs(dirName,parent=None):
                 toDirsAppend(toDir)
         if fromDirs:
             # fromDirs will only get filled if dir.makedirs() failed
-            shellMove(fromDirs,toDirs,parent,False,False,False)
+            shellMove(fromDirs, toDirs, parent=parent)
     finally:
         for tempDir in tempDirs:
             tempDir.rmtree(safety=tempDir.stail)
