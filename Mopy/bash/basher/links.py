@@ -357,7 +357,7 @@ def InitInstallerLinks():
     #--File
     InstallersList.itemMenu.append(Installer_Open())
     InstallersList.itemMenu.append(Installer_Duplicate())
-    InstallersList.itemMenu.append(Installer_Delete())
+    InstallersList.itemMenu.append(balt.UIList_Delete())
     if True: #--Open At...
         openAtMenu = InstallerOpenAt_MainMenu(oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
@@ -512,7 +512,7 @@ def InitModLinks():
         fileMenu.links.append(File_Duplicate())
         fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_Delete())
+        fileMenu.links.append(balt.UIList_Delete())
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(File_Redate())
         fileMenu.links.append(File_Sort())
@@ -659,7 +659,7 @@ def InitSaveLinks():
         fileMenu.links.append(File_Duplicate())
         #fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_Delete())
+        fileMenu.links.append(balt.UIList_Delete())
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
@@ -724,7 +724,7 @@ def InitBSALinks():
         fileMenu.links.append(File_Duplicate())
         #fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(File_Delete())
+        fileMenu.links.append(balt.UIList_Delete())
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
@@ -771,7 +771,7 @@ def InitScreenLinks():
     #--ScreensList: Item Links
     ScreensList.itemMenu.append(File_Open())
     ScreensList.itemMenu.append(Screen_Rename())
-    ScreensList.itemMenu.append(File_Delete())
+    ScreensList.itemMenu.append(balt.UIList_Delete())
     ScreensList.itemMenu.append(SeparatorLink())
     if True: #--Convert
         convertMenu = MenuLink(_(u'Convert'))
@@ -803,7 +803,7 @@ def InitPeopleLinks():
     PeopleList.itemMenu.append(People_Karma())
     PeopleList.itemMenu.append(SeparatorLink())
     PeopleList.itemMenu.append(People_AddNew())
-    PeopleList.itemMenu.append(balt.Tank_Delete())
+    PeopleList.itemMenu.append(balt.UIList_Delete())
     PeopleList.itemMenu.append(People_Export())
 
 #------------------------------------------------------------------------------

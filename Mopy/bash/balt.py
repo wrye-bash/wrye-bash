@@ -2040,9 +2040,8 @@ class UIList(wx.Panel):
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
-        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            with BusyCursor(): self.DeleteSelected(
-                shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
+        elif code in wxDelete:
+            with BusyCursor(): self.DeleteItems(event=event)
         event.Skip()
 
     ##: Columns callbacks - belong to a ListCtrl mixin
@@ -2273,13 +2272,19 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
+    def DeleteItems(self, event=None, items=None):
+        noRecycle = event.ShiftDown() if event is not None else False
+        self.DeleteSelected(shellUI=self.__class__._shellUI,
+                            noRecycle=noRecycle, items=items)
+
+    def DeleteSelected(self, shellUI=False, noRecycle=False, items=None):
         """Deletes selected items."""
-        items = self.GetSelected()
+        items = items if items is not None else self.GetSelected()
         if not items: return
         if not shellUI:
             message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
+            sortedItems = sorted(items)
+            message.extend(sortedItems)
             with ListBoxes(self, _(u'Delete Items'), _(
                     u'Delete these items?  This operation cannot be '
                     u'undone.'), [message]) as dialog:
@@ -2288,7 +2293,7 @@ class UIList(wx.Panel):
                 checks = dialog.FindWindowById(id_)
                 if checks:
                     dirJoin = self.data.dir.join
-                    for i,mod in enumerate(items):
+                    for i,mod in enumerate(sortedItems):
                         if checks.IsChecked(i):
                             try:
                                 self.data.delete(mod)
@@ -2296,7 +2301,7 @@ class UIList(wx.Panel):
                                 # update the status of its installers
                                 bosh.trackedInfos.track(dirJoin(mod))
                             except bolt.BoltError as e:
-                                showError(self, u'%s' % e)
+                                showError(self, u'%r' % e)
         else:
             try:
                 self.data.delete(items,askOk=True,dontRecycle=noRecycle)
@@ -2691,16 +2696,15 @@ class BoolLink(CheckLink):
 
     def Execute(self,event): bosh.settings[self.key] ^= True # toggle
 
-# Tank Links ------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in People
-    """Deletes selected file from tank."""
+# UIList Links ----------------------------------------------------------------
+class UIList_Delete(ItemLink):
+    """Delete selected item(s) from UIList."""
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
     def Execute(self,event):
-        with BusyCursor():
-            self.window.DeleteSelected()
+        # event is a 'CommandEvent' and I can't check if shift is pressed - duh
+        with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2733,6 +2737,7 @@ wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = wxArrowUp | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
+wxDelete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
 # ListBoxes -------------------------------------------------------------------
 class _CheckList_SelectAll(ItemLink):

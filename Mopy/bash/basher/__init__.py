@@ -534,6 +534,17 @@ class INIList(balt.UIList):
         valid = filter(lambda k: self.data[k].status >= 0, self.data.keys())
         self.RefreshUI(files=valid)
 
+    @staticmethod
+    def filterOutDefaultTweaks(tweaks):
+        """Filter out default tweaks from tweaks iterable."""
+        return filter(lambda x: bosh.dirs['tweaks'].join(x).isfile(), tweaks)
+
+    def DeleteItems(self, event=None, items=None):
+        items = items if items is not None else self.GetSelected()
+        items = self.filterOutDefaultTweaks(items) # will refilter if coming
+        # from INI_Delete - expensive but I can't allow default tweaks deletion
+        super(INIList, self).DeleteItems(event, items)
+
     def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
@@ -2673,9 +2684,7 @@ class InstallersPanel(SashTankPanel):
                     data[path] = (file.size,file.crc,file.mtime)
                     refresh = True
                 else:
-                    if data.get(path,None) is not None:
-                        data.pop(path,None)
-                        refresh = True
+                    refresh = bool(data.pop(path, None))
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()

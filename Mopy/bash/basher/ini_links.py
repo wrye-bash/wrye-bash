@@ -28,8 +28,7 @@ attribute points to BashFrame.iniList singleton.
 
 from .. import bosh, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink, \
-    ListBoxes
+from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
 
 __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
            'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',
@@ -120,33 +119,20 @@ class INI_FileOpenOrCopy(OneItemLink):
                 self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class INI_Delete(EnabledLink):
+class INI_Delete(balt.UIList_Delete, EnabledLink):
     """Delete the file and all backups."""
-    text = _(u"Delete")
 
     def _initData(self, window, data):
         super(INI_Delete, self)._initData(window, data)
-        self.isFile = bosh.dirs['tweaks'].join(data[0]).isfile()
-        self.help = _(u"Delete %(filename)s.") % (
-        {'filename': data[0]}) if self.isFile else _(
-            u"Bash default tweaks can't be deleted.")
+        self.selected = self.window.filterOutDefaultTweaks(self.selected)
+        if len(self.selected) and len(data) == 1:
+            self.help = _(u"Delete %(filename)s.") % ({'filename': data[0]})
+        elif len(self.selected):
+            self.help = _(
+                u"Delete selected tweaks (default tweaks won't be deleted)")
+        else: self.help = _(u"Bash default tweaks can't be deleted")
 
-    def _enable(self): return self.isFile
-
-    def Execute(self,event):
-        message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
-        message.extend(sorted(self.selected))
-        with ListBoxes(self.window,_(u'Delete Files'),
-                     _(u'Delete these files? This operation cannot be undone.'),
-                     [message]) as dialog:
-            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-            id_ = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id_)
-            if checks:
-                for i,mod in enumerate(self.selected):
-                    if checks.IsChecked(i) and bosh.dirs['tweaks'].join(mod).isfile():
-                        self.window.data.delete(mod)
-            self.window.RefreshUI()
+    def _enable(self): return len(self.selected) > 0
 
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):
