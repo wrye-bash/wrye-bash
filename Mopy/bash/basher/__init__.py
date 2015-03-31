@@ -1382,8 +1382,8 @@ class ModDetails(_SashDetailsPanel):
                           u'leave enough room.'))
         # Tags links
         class _TagLink(CheckLink):
-            def _initData(self, window, data):
-                super(_TagLink, self)._initData(window, data)
+            def _initData(self, window, selection):
+                super(_TagLink, self)._initData(window, selection)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': mod_info.name})
             def _check(self): return self.text in mod_tags

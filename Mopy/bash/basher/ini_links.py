@@ -28,7 +28,7 @@ attribute points to BashFrame.iniList singleton.
 
 from .. import bosh, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, BoolLink, EnabledLink, OneItemLink
+from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 
 __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
            'INI_CreateNew', 'INI_ListErrors', 'INI_FileOpenOrCopy',
@@ -92,17 +92,17 @@ class INI_ListErrors(EnabledLink):
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(OneItemLink):
     """Open specified file(s) only if they aren't Bash supplied defaults."""
-    def _initData(self, window, data):
-        super(INI_FileOpenOrCopy, self)._initData(window, data)
-        if not len(data) == 1:
+    def _initData(self, window, selection):
+        super(INI_FileOpenOrCopy, self)._initData(window, selection)
+        if not len(selection) == 1:
             self.text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
-        elif bosh.dirs['tweaks'].join(data[0]).isfile():
+        elif bosh.dirs['tweaks'].join(selection[0]).isfile():
             self.text = _(u'Open...')
-            self.help = _(u"Open '%s' with the system's default program.") % data[0]
+            self.help = _(u"Open '%s' with the system's default program.") % selection[0]
         else:
             self.text = _(u'Copy...')
-            self.help = _(u"Make an editable copy of the default tweak '%s'.") % data[0]
+            self.help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
 
     def Execute(self,event):
         """Handle selection."""
@@ -122,11 +122,11 @@ class INI_FileOpenOrCopy(OneItemLink):
 class INI_Delete(balt.UIList_Delete, EnabledLink):
     """Delete the file and all backups."""
 
-    def _initData(self, window, data):
-        super(INI_Delete, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(INI_Delete, self)._initData(window, selection)
         self.selected = self.window.filterOutDefaultTweaks(self.selected)
-        if len(self.selected) and len(data) == 1:
-            self.help = _(u"Delete %(filename)s.") % ({'filename': data[0]})
+        if len(self.selected) and len(selection) == 1:
+            self.help = _(u"Delete %(filename)s.") % ({'filename': selection[0]})
         elif len(self.selected):
             self.help = _(
                 u"Delete selected tweaks (default tweaks won't be deleted)")
@@ -139,12 +139,12 @@ class INI_Apply(EnabledLink):
     """Apply an INI Tweak."""
     text = _(u'Apply')
 
-    def _initData(self, window, data):
-        super(INI_Apply, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(INI_Apply, self)._initData(window, selection)
         self.iniPanel = self.window.panel
         ini = self.iniPanel.comboBox.GetValue()
-        if len(data) == 1:
-            tweak = data[0]
+        if len(selection) == 1:
+            tweak = selection[0]
             self.help = _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
                 'tweak': tweak, 'ini': ini}
         else:
@@ -192,15 +192,15 @@ class INI_CreateNew(OneItemLink):
     but values from the target INI."""
     text = _(u'Create Tweak with current settings...')
 
-    def _initData(self, window, data):
-        Link._initData(self,window,data)
+    def _initData(self, window, selection):
+        super(INI_CreateNew, self)._initData(window, selection)
         ini = self.window.panel.comboBox.GetValue()
-        if not len(data) == 1:
+        if not len(selection) == 1:
             self.help = _(u'Please choose one Ini Tweak')
         else:
             self.help = _(
                 u"Creates a new tweak based on '%(tweak)s' but with values "
-                u"from '%(ini)s'.") % {'tweak': (data[0]), 'ini': ini}
+                u"from '%(ini)s'.") % {'tweak': (selection[0]), 'ini': ini}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               bosh.iniInfos[self.selected[0]].status >= 0

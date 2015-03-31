@@ -2399,7 +2399,7 @@ class Link(object):
         self.id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self.text = _text or self.__class__.text # menu label
 
-    def _initData(self, window, data):
+    def _initData(self, window, selection):
         """Initialize the Link instance data based on UI state when the
         menu is Popped up.
 
@@ -2408,14 +2408,14 @@ class Link(object):
         and always _call super_ when overriding.
         :param window: the element the menu is being popped from (usually a
         UIList subclass)
-        :param data: the selected items when the menu is appended or None.
+        :param selection: the selected items when the menu is appended or None.
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
         """
         # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
-        self.selected = data
+        self.selected = selection
 
     def AppendToMenu(self,menu,window,data):
         """Creates a wx menu item and appends it to :menu.

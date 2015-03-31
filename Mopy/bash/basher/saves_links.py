@@ -197,8 +197,8 @@ class Saves_Profiles(ChoiceLink):
 
     extraItems = [_Edit(), SeparatorLink(), _Default()]
 
-    def _initData(self, window, data):
-        super(Saves_Profiles, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Saves_Profiles, self)._initData(window, selection)
         Saves_Profiles.local = bosh.saveInfos.localSave
 
     @staticmethod
@@ -611,8 +611,8 @@ class Save_Move(ChoiceLink):
     @property
     def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    def _initData(self, window, data):
-        super(Save_Move, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Save_Move, self)._initData(window, selection)
         Save_Move.local = bosh.saveInfos.localSave
         _self = self
         class _Default(EnabledLink):
