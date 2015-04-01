@@ -545,6 +545,13 @@ class INIList(balt.UIList):
         # from INI_Delete - expensive but I can't allow default tweaks deletion
         super(INIList, self).DeleteItems(event, items)
 
+    def _postDeleteRefresh(self, deleted):
+        deleted = filter(lambda path: not path.exists(),
+                         map(self.data.dir.join, deleted))
+        if not deleted: return
+        for d in deleted: bosh.trackedInfos.track(d)
+        super(INIList, self)._postDeleteRefresh(deleted)
+
     def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
@@ -889,6 +896,14 @@ class ModList(_ModsSortMixin, balt.UIList):
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', True) and Link.Frame.saveList:
             Link.Frame.saveList.RefreshUI()
+
+    def _postDeleteRefresh(self, deleted):
+        deleted = filter(lambda path: not path.exists(),
+                         map(self.data.dir.join, deleted))
+        if not deleted: return
+        for d in deleted: bosh.trackedInfos.track(d)
+        bosh.modInfos.plugins.refresh(True)
+        super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2003,7 +2018,7 @@ class InstallersList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
-    # _shellUI = True # FIXME(ut): shellUI path does not grok markers
+    _shellUI = True
     _editLabels = True
     _default_sort_col = 'Package'
     _sort_keys = {
@@ -2358,13 +2373,6 @@ class InstallersList(balt.Tank):
         finally:
             Link.Frame.BindRefresh(bind=True)
 
-    def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
-        super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
-        with balt.BusyCursor():
-            # below ripped from Installer_Hide
-            self.data.refresh(what='ION')
-            self.RefreshUI()
-
     def OnChar(self,event):
         """Char event: Reorder."""
         code = event.GetKeyCode()
@@ -2676,6 +2684,8 @@ class InstallersPanel(SashTankPanel):
             data = self.data.data_sizeCrcDate
             refresh = False
             for file in changed:
+                # the Game/Data dir - will give correct relative path for both
+                # Ini tweaks and mods - those are keyed in data by rel path...
                 if file.cs.startswith(bosh.dirs['mods'].cs):
                     path = file.relpath(bosh.dirs['mods'])
                 else:
@@ -4299,7 +4309,7 @@ class BashApp(wx.App):
         progress.Update(5,_(u'Initializing ModInfos'))
         bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
         bosh.oblivionIni = bosh.gameInis[0]
-        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
+        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo) ##: tracks tweaks OR mods...
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
         progress.Update(30,_(u'Initializing SaveInfos'))

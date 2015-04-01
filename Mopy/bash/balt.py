@@ -1796,8 +1796,7 @@ class UIList(wx.Panel):
     __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
     # yet initialized when balt is imported, so I can't use ColorChecks here
     icons = __icons
-    _shellUI = False # only True in Screens/INIList - disabled in Installers
-    # due to markers not being deleted
+    _shellUI = False # only True in Screens/INIList/Installers
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -2289,31 +2288,25 @@ class UIList(wx.Panel):
                     u'Delete these items?  This operation cannot be '
                     u'undone.'), [message]) as dialog:
                 if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
+                del items[:]
                 id_ = dialog.ids[message[0]]
                 checks = dialog.FindWindowById(id_)
                 if checks:
-                    dirJoin = self.data.dir.join
                     for i,mod in enumerate(sortedItems):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(dirJoin(mod))
-                            except bolt.BoltError as e:
-                                showError(self, u'%r' % e)
-        else:
+                        if checks.IsChecked(i): items.append(mod)
+        for i in items:
             try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except AccessDeniedError:
-                pass
-            dirJoin = self.data.dir.join
-            for item in items:
-                itemPath = dirJoin(item)
-                if not itemPath.exists():
-                    bosh.trackedInfos.track(itemPath)
-        bosh.modInfos.plugins.refresh(True)
-        self.RefreshUI()
+                if not shellUI:
+                    self.data.delete(i) ##: askOk=False,dontRecycle=noRecycle
+                else:
+                    self.data.delete(items, askOk=True, dontRecycle=noRecycle)
+                    break
+            except bolt.BoltError as e:
+                showError(self, u'%r' % e)
+            except (AccessDeniedError, CancelError, SkipError): pass
+        if items: self._postDeleteRefresh(items)
+
+    def _postDeleteRefresh(self, deleted): self.RefreshUI()
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod
@@ -2358,29 +2351,6 @@ class Tank(UIList):
 
     def _select(self, item):
         if self.details: return self.details.RefreshDetails(item)
-
-    #--Standard data commands -------------------------------------------------
-    def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if not shellUI:
-            message = _(u'Delete these items? This operation cannot be undone.')
-            try: message += u'\n* ' + u'\n* '.join([x.s for x in items])
-            except AttributeError:
-                message += u'\n* ' + u'\n* '.join([x for x in items])
-            if not askYes(self,message,_(u'Delete Items')): return False
-            for item in items:
-                del self.data[item]
-        else:
-            try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except (CancelError,SkipError):
-                pass
-        if not _refresh: return  # FIXME(ut): refresh below did not work for
-        # BAIN - let's see with People tab (then delete _refresh parameter)
-        self.RefreshUI()
-        self.data.setChanged()
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -3721,7 +3721,7 @@ class ModInfo(FileInfo):
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
-        FileInfo.__init__(self,*args,**kwdargs)
+        FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
 
     def _getStatus(self):
@@ -3964,7 +3964,12 @@ class TrackedFileInfos(DataDict):
         changed = set()
         for name in data.keys():
             fileInfo = self.factory(u'',name)
-            if not fileInfo.sameAs(data[name]):
+            filePath = fileInfo.getPath()
+            if not filePath.exists(): # untrack
+                self.data.pop(name, None)
+                self.corrupted.pop(name, None)
+                changed.add(name)
+            elif not fileInfo.sameAs(data[name]):
                 errorMsg = fileInfo.getHeaderError()
                 if errorMsg:
                     self.corrupted[name] = errorMsg
@@ -3973,17 +3978,10 @@ class TrackedFileInfos(DataDict):
                     data[name] = fileInfo
                     self.corrupted.pop(name,None)
                 changed.add(name)
-            filePath = fileInfo.getPath()
-            if not filePath.exists():
-                self.untrack(name)
         return changed
 
     def track(self,fileName):
         self.refreshFile(GPath(fileName))
-
-    def untrack(self,fileName):
-        self.data.pop(fileName,None)
-        self.corrupted.pop(fileName,None)
 
     def clear(self):
         self.data = {}
@@ -5787,6 +5785,11 @@ class PeopleData(PickleTankData, DataDict):
     """Data for a People UIList."""
     def __init__(self):
         PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
+
+    def delete(self,key): ##: ripped from MesageData - move to DataDict ?
+        """Delete entry."""
+        del self.data[key]
+        self.hasChanged = True
 
     #--Operations
     def loadText(self,path):
@@ -7753,30 +7756,28 @@ class InstallersData(DataDict):
             self.hasChanged = False
 
     #--Dict Functions -----------------------------------------------------------
-    def __delitem__(self,item):
-        """Delete an installer. Delete entry AND archive file itself."""
-        if item == self.lastKey: return
-        installer = self.data[item]
-        apath = self.dir.join(item)
-        balt.shellDelete(apath, askOk_=False)
-        del self.data[item]
-
     def delete(self,items,askOk=False,dontRecycle=False):
-        """Delete multiple installers.  Delete entry AND archive file itself."""
+        """Delete multiple installers. Delete entry AND archive file itself."""
         toDelete = []
+        markers = []
         toDeleteAppend = toDelete.append
         dirJoin = self.dir.join
         selfLastKey = self.lastKey
         for item in items:
             if item == selfLastKey: continue
-            toDeleteAppend(dirJoin(item))
+            if isinstance(self[item], InstallerMarker): markers.append(item)
+            else: toDeleteAppend(dirJoin(item))
         #--Delete
         try:
+            for m in markers: del self.data[m]
             balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
         finally:
+            refresh = bool(markers)
             for item in toDelete:
                 if not item.exists():
                     del self.data[item.tail]
+                    refresh = True
+            if refresh: self.refresh(what='ION') # will "set changed" too
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
