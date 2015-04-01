@@ -2264,21 +2264,25 @@ class UIList(wx.Panel):
                     dialogTitle=_(u'Delete Items'), order=True):
         recycle = True if event is None else not event.ShiftDown()
         items = self._toDelete(items)
-        if not self.__class__._shellUI:
-            items = self._promptDelete(items, dialogTitle, order)
-        if not items: return
-        for i in items:
-            try:
-                if not self.__class__._shellUI:
-                    self.data.delete(i, doRefresh=False, recycle=recycle)
-                else:
-                    self.data.delete(items, confirm=True, recycle=recycle)
-                    break
-            except bolt.BoltError as e:
-                showError(self, u'%r' % e)
-            except (AccessDeniedError, CancelError, SkipError): pass
-        else: self.data.refresh()
-        if items: self._postDeleteRefresh(items)
+        try:
+            Link.Frame.BindRefresh(bind=False)
+            if not self.__class__._shellUI:
+                items = self._promptDelete(items, dialogTitle, order)
+            if not items: return
+            for i in items:
+                try:
+                    if not self.__class__._shellUI:
+                        self.data.delete(i, doRefresh=False, recycle=recycle)
+                    else:
+                        self.data.delete(items, confirm=True, recycle=recycle)
+                        break
+                except bolt.BoltError as e:
+                    showError(self, u'%r' % e)
+                except (AccessDeniedError, CancelError, SkipError): pass
+            else: self.data.refresh()
+            self._postDeleteRefresh(items)
+        finally:
+            Link.Frame.BindRefresh(bind=True)
 
     def _toDelete(self, items):
         return items if items is not None else self.GetSelected()
