@@ -168,20 +168,9 @@ class Messages_Archive_Import(ItemLink):
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class Message_Delete(ItemLink):
-    """Delete the file and all backups."""
-    text = _(u'Delete')
+class Message_Delete(balt.UIList_Delete):
+    """Delete messages."""
     help = _(u'Permanently delete messages')
-
-    def Execute(self,event):
-        message = _(u'Delete these %d message(s)? This operation cannot'
-                    u' be undone.') % len(self.selected)
-        if not self._askYes(message, title=_(u'Delete Messages')): return
-        #--Do it
-        for message in self.selected:
-            self.window.data.delete(message)
-        #--Refresh stuff
-        self.window.RefreshUI()
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------

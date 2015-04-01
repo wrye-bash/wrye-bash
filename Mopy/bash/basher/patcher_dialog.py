@@ -252,7 +252,7 @@ class PatchDialog(balt.Dialog):
                 #--Convert log/readme to wtxt and show log
                 bolt.WryeText.genHtml(readme,None,docsDir)
             else:
-                tempReadmeDir = Path.tempDir(u'WryeBash_').join(u'Docs')
+                tempReadmeDir = Path.tempDir().join(u'Docs')
                 tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
                 #--Write log/readme to temp dir first
                 with tempReadme.open('w',encoding='utf-8-sig') as file:
@@ -261,10 +261,12 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    balt.shellMove(tempReadmeDir,bosh.dirs['mods'],self,False,False,False)
+                    balt.shellMove(tempReadmeDir, bosh.dirs['mods'],
+                                   parent=self)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
-                    balt.shellMove([tempReadme,tempReadme.root+u'.html'],bosh.dirs['saveBase'],self,False,False,False)
+                    balt.shellMove([tempReadme, tempReadme.root + u'.html'],
+                                   bosh.dirs['saveBase'], parent=self)
                     readme = bosh.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)

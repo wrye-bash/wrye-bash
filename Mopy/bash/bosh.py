@@ -545,7 +545,7 @@ class ModFile:
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        balt.shellMove(filePath.temp,filePath,None,False,False,False)
+        balt.shellMove(filePath.temp, filePath, parent=None)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -1835,6 +1835,11 @@ class SaveFile:
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
+def _delete(itemOrItems, **kwargs):
+    confirm = kwargs.pop('confirm', False)
+    recycle = kwargs.pop('recycle', True)
+    balt.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
+
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
     reSave  = re.compile(r'\.ess(f?)$',re.I)
@@ -1854,11 +1859,9 @@ class CoSaves:
         self.savePath = savePath
         self.paths = CoSaves.getPaths(savePath)
 
-    def delete(self,askOk=False,dontRecycle=False):
-        """Deletes cofiles."""
-        for path in self.paths:
-            if path.exists():
-                balt.shellDelete(path, askOk_=askOk,recycle=not dontRecycle)
+    def delete(self, **kwargs): # not a DataDict subclass
+        """Delete cofiles."""
+        _delete(filter(lambda p: p.exists, self.paths), **kwargs)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -2758,8 +2761,7 @@ class OmodFile:
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
         progress = progress if progress else bolt.Progress()
-        extractDir = Path.tempDir(u'WryeBash_')
-        stageBaseDir = Path.tempDir(u'WryeBash_')
+        extractDir = stageBaseDir = Path.tempDir()
         stageDir = stageBaseDir.join(outDir.tail)
 
         try:
@@ -2828,7 +2830,8 @@ class OmodFile:
                 progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
             # Move files to final directory
-            balt.shellMove(stageDir,outDir.head)
+            balt.shellMove(stageDir, outDir.head, parent=None,
+                           askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
             if outDir.exists():
@@ -3721,7 +3724,7 @@ class ModInfo(FileInfo):
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
-        FileInfo.__init__(self,*args,**kwdargs)
+        FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
 
     def _getStatus(self):
@@ -3964,7 +3967,11 @@ class TrackedFileInfos(DataDict):
         changed = set()
         for name in data.keys():
             fileInfo = self.factory(u'',name)
-            if not fileInfo.sameAs(data[name]):
+            filePath = fileInfo.getPath()
+            if not filePath.exists(): # untrack
+                self.delete(name)
+                changed.add(name)
+            elif not fileInfo.sameAs(data[name]):
                 errorMsg = fileInfo.getHeaderError()
                 if errorMsg:
                     self.corrupted[name] = errorMsg
@@ -3973,17 +3980,14 @@ class TrackedFileInfos(DataDict):
                     data[name] = fileInfo
                     self.corrupted.pop(name,None)
                 changed.add(name)
-            filePath = fileInfo.getPath()
-            if not filePath.exists():
-                self.untrack(name)
         return changed
 
     def track(self,fileName):
         self.refreshFile(GPath(fileName))
 
-    def untrack(self,fileName):
-        self.data.pop(fileName,None)
-        self.corrupted.pop(fileName,None)
+    def delete(self, name, **kwargs):
+        self.data.pop(name, None)
+        self.corrupted.pop(name, None)
 
     def clear(self):
         self.data = {}
@@ -4094,7 +4098,7 @@ class FileInfos(DataDict):
         newPath = self.dir.join(newName)
         if fileInfo.isGhost: newPath += u'.ghost'
         oldPath = fileInfo.getPath()
-        balt.shellMove(oldPath,newPath,None,False,False,False)
+        balt.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -4105,12 +4109,13 @@ class FileInfos(DataDict):
         fileInfo.madeBackup = False
 
     #--Delete
-    def delete(self,fileName,doRefresh=True,askOk=False,dontRecycle=False):
+    def delete(self, fileName, **kwargs):
         """Deletes member file."""
         if not isinstance(fileName,(list,set)):
             fileNames = [fileName]
         else:
             fileNames = fileName
+        doRefresh = kwargs.pop('doRefresh', True)
         #--Files to delete
         toDelete = []
         toDeleteAppend = toDelete.append
@@ -4142,7 +4147,7 @@ class FileInfos(DataDict):
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
         try:
-            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
+            _delete(toDelete, **kwargs)
         finally:
             #--Table
             for filePath in tableUpdate:
@@ -4802,11 +4807,11 @@ class ModInfos(FileInfos):
         self.refreshInfoLists()
         if isSelected: self.select(newName)
 
-    def delete(self,fileName,doRefresh=True):
-        """Deletes member file."""
+    def delete(self, fileName, **kwargs):
+        """Delete member file."""
         if fileName.s not in bush.game.masterFiles:
             self.unselect(fileName)
-            FileInfos.delete(self,fileName,doRefresh)
+            FileInfos.delete(self, fileName, **kwargs)
         else:
             raise bolt.BoltError("Cannot delete the game's master file(s).")
 
@@ -4978,10 +4983,11 @@ class SaveInfos(FileInfos):
         self._refreshLocalSave()
         return FileInfos.refresh(self)
 
-    def delete(self,fileName):
+    def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
-        FileInfos.delete(self,fileName)
-        CoSaves(self.dir,fileName).delete()
+        FileInfos.delete(self, fileName, **kwargs)
+        kwargs['confirm'] = False # ask only on save deletion
+        CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
@@ -5595,7 +5601,7 @@ class Messages(DataDict):
         self.dictFile.save()
         self.hasChanged = False
 
-    def delete(self,key):
+    def delete(self, key, **kwargs):
         """Delete entry."""
         del self.data[key]
         self.hasChanged = True
@@ -5788,6 +5794,11 @@ class PeopleData(PickleTankData, DataDict):
     def __init__(self):
         PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
 
+    def delete(self, key, **kwargs): ##: ripped from MesageData - move to DataDict ?
+        """Delete entry."""
+        del self.data[key]
+        self.hasChanged = True
+
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
@@ -5842,17 +5853,16 @@ class ScreensData(DataDict):
         self.data = newData
         return changed
 
-    def delete(self,fileName,askOk=True,dontRecycle=False):
+    def delete(self, fileName, **kwargs):
         """Deletes member file."""
         dirJoin = self.dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        deleted = balt.shellDelete(filePath, askOk_=askOk,recycle=not dontRecycle)
-        if deleted is not None:
-            for file in filePath:
-                del self.data[file.tail]
+        _delete(filePath, **kwargs)
+        for item in filePath:
+            if not item.exists(): del self.data[item.tail]
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -5896,7 +5906,7 @@ class Installer(object):
     @staticmethod
     def newTempDir():
         """Generates a new temporary directory name, sets it as the current Temp Dir."""
-        Installer._tempDir = Path.tempDir(u'WryeBash_')
+        Installer._tempDir = Path.tempDir()
         return Installer._tempDir
 
     @staticmethod
@@ -7320,7 +7330,7 @@ class InstallerArchive(Installer):
                 # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+                balt.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean up staging dir
             self.rmTempDir()
@@ -7479,7 +7489,7 @@ class InstallerProject(Installer):
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir,destDir,progress.getParent(),False,False,False)
+                balt.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean out staging dir
             self.rmTempDir()
@@ -7753,30 +7763,28 @@ class InstallersData(DataDict):
             self.hasChanged = False
 
     #--Dict Functions -----------------------------------------------------------
-    def __delitem__(self,item):
-        """Delete an installer. Delete entry AND archive file itself."""
-        if item == self.lastKey: return
-        installer = self.data[item]
-        apath = self.dir.join(item)
-        balt.shellDelete(apath, askOk_=False)
-        del self.data[item]
-
-    def delete(self,items,askOk=False,dontRecycle=False):
-        """Delete multiple installers.  Delete entry AND archive file itself."""
+    def delete(self, items, **kwargs):
+        """Delete multiple installers. Delete entry AND archive file itself."""
         toDelete = []
+        markers = []
         toDeleteAppend = toDelete.append
         dirJoin = self.dir.join
         selfLastKey = self.lastKey
         for item in items:
             if item == selfLastKey: continue
-            toDeleteAppend(dirJoin(item))
+            if isinstance(self[item], InstallerMarker): markers.append(item)
+            else: toDeleteAppend(dirJoin(item))
         #--Delete
         try:
-            balt.shellDelete(toDelete, askOk_=askOk,recycle=not dontRecycle)
+            for m in markers: del self.data[m]
+            _delete(toDelete, **kwargs)
         finally:
+            refresh = bool(markers)
             for item in toDelete:
                 if not item.exists():
                     del self.data[item.tail]
+                    refresh = True
+            if refresh: self.refresh(what='ION') # will "set changed" too
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -10148,13 +10156,12 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
 
 def testUAC(gameDataPath):
     print 'testing UAC'
-    tempDir = bolt.Path.tempDir(u'WryeBash_')
+    tempDir = bolt.Path.tempDir()
     tempFile = tempDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open('wb') as out:
-        pass
-    try:
-        balt.fileOperation(balt.FO_MOVE,tempFile,dest,False,False,False,True,None)
+    with tempFile.open('wb'): pass # create the file
+    try: # to move it into the Game/Data/ directory
+        balt.shellMove(tempFile, dest, askOverwrite=True, silent=True)
     except balt.AccessDeniedError:
         return True
     finally:

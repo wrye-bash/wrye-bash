@@ -28,14 +28,14 @@ import time
 from .. import balt, bosh, bush, bolt
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
-    ChoiceLink, Link, OneItemLink, ListBoxes
-from ..bolt import CancelError, SkipError, GPath, BoltError
+    ChoiceLink, Link, OneItemLink
+from ..bolt import CancelError, SkipError, GPath
 from ..bosh import formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
-           'File_Duplicate', 'File_Snapshot', 'File_Delete', 'File_Hide',
-           'File_Redate', 'File_Sort', 'File_RevertToBackup',
-           'File_RevertToSnapshot', 'File_ListMasters', 'File_Open']
+           'File_Duplicate', 'File_Snapshot', 'File_Hide', 'File_Redate',
+           'File_Sort', 'File_RevertToBackup', 'File_RevertToSnapshot',
+           'File_ListMasters', 'File_Open']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -135,7 +135,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         try:
-            balt.shellMove(srcFiles,destFiles,window,False,False,False)
+            balt.shellMove(srcFiles, destFiles, parent=window)
             for dest in coSavesMoves:
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):
@@ -145,32 +145,6 @@ class Files_Unhide(ItemLink):
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class File_Delete(ItemLink):
-    """Delete the file and all backups."""
-    text = _(u'Delete')
-
-    def _initData(self, window, data):
-        super(File_Delete, self)._initData(window, data)
-        self.help = _(u"Delete %(filename)s.") % ({'filename': data[0]})
-
-    def Execute(self,event):
-        message = [u'',_(u'Uncheck files to skip deleting them if desired.')]
-        message.extend(sorted(self.selected))
-        with ListBoxes(self.window,_(u'Delete Files'),
-                     _(u'Delete these files? This operation cannot be undone.'),
-                     [message]) as dialog:
-            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-            id_ = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id_)
-            if checks:
-                for i,mod in enumerate(self.selected):
-                    if checks.IsChecked(i):
-                        try:
-                            self.window.data.delete(mod)
-                        except BoltError as e:
-                            self._showError(u'%r' % e)
-            self.window.RefreshUI()
-
 class File_Duplicate(ItemLink):
     """Create a duplicate of the file."""
 

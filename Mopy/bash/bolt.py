@@ -651,7 +651,7 @@ class Path(object):
             return dirJoin(self.tail+u'.tmp')
 
     @staticmethod
-    def tempDir(prefix=None):
+    def tempDir(prefix=u'WryeBash_'):
         try: # workaround for http://bugs.python.org/issue1681974 see there
             return GPath(tempfile.mkdtemp(prefix=prefix))
         except UnicodeDecodeError:
@@ -1236,6 +1236,9 @@ class DataDict:
         return self.data.iterkeys()
     def itervalues(self):
         return self.data.itervalues()
+
+    def delete(self, itemOrItems, **kwargs):
+        raise NotImplementedError('Only use in UIList data stores.')
 
 #------------------------------------------------------------------------------
 from collections import MutableSet

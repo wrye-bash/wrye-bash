@@ -950,16 +950,15 @@ def playSound(parent,sound):
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
-try:
+try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
     from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
-
 except ImportError:
     shellcon = shell = None
-    FO_DELETE = 0
     FO_MOVE = 1
     FO_COPY = 2
-    FO_RENAME = 3
+    FO_DELETE = 3
+    FO_RENAME = 4
 
 class FileOperationError(Exception):
     def __init__(self,errorCode):
@@ -974,50 +973,41 @@ class AccessDeniedError(FileOperationError):
 FileOperationErrorMap = {
     120: AccessDeniedError,
     1223: CancelError,
-    }
+}
 
-def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
+def _fileOperation(operation, source, target=None, allowUndo=True,
+                   confirm=True, renameOnCollision=False, silent=False,
+                   parent=None):
     if not source:
         return {}
-
     abspath = os.path.abspath
-
+    # source may be anything - see SHFILEOPSTRUCT - accepts list or item
     if isinstance(source,(bolt.Path,basestring)):
-        source = GPath(abspath(GPath(source).s))
+        source = [GPath(abspath(GPath(source).s))]
     else:
         source = [GPath(abspath(GPath(x).s)) for x in source]
-
-    target = target if target else u''
+    # target may be anything ...
+    target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
     if isinstance(target,(bolt.Path,basestring)):
-        target = GPath(abspath(GPath(target).s))
+        target = [GPath(abspath(GPath(target).s))]
     else:
         target = [GPath(abspath(GPath(x).s)) for x in target]
-
-    parent = parent.GetHandle() if parent else None
-
     if shell is not None:
-        if isinstance(source,bolt.Path):
-            source = source.s
-        else:
-            source = u'\x00'.join(x.s for x in source)
-
-        if isinstance(target,bolt.Path):
-            target = target.s
-            multiDestFiles = 0
-        else:
-            target = u'\x00'.join(x.s for x in target)
-            multiDestFiles = shellcon.FOF_MULTIDESTFILES
-
-        flags = (shellcon.FOF_WANTMAPPINGHANDLE|
-                 multiDestFiles)
+        # flags
+        multiDestFiles = (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        flags = (shellcon.FOF_WANTMAPPINGHANDLE| multiDestFiles)
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
-        if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flags |= shellcon.FOF_SILENT
-
+        # null terminated strings
+        source = u'\x00'.join(x.s for x in source)
+        target = u'\x00'.join(x.s for x in target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # Do it ##: document return values
         result,nAborted,mapping = shell.SHFileOperation(
             (parent,operation,source,target,flags,None,None))
-
         if result == 0:
             if nAborted:
                 raise SkipError(nAborted if nAborted is not True else None)
@@ -1027,22 +1017,16 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             return dict(mapping)
         else:
             raise FileOperationErrorMap.get(result,FileOperationError(result))
-
     else:
         # Use custom dialogs and such
         # TODO: implement this
-        if not isinstance(source,list):
-            source = [source]
-        if not isinstance(target,list):
-            target = [target]
-
         # Delete
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
-            # noConfirm - ask if noConfirm is False
+            # confirm - ask if confirm is True
             # renameOnCollision - no effect, deleting files
             # silent - no real effect, since we don't show visuals when deleting this way
-            if not noConfirm:
+            if confirm:
                 message = _(u'Are you sure you want to permanently delete these %(count)d items?') % {'count':len(source)}
                 message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
                 if not askYes(parent,message,_(u'Delete Multiple Items')):
@@ -1061,7 +1045,7 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
         # Move
         if operation == FO_MOVE:
             # allowUndo - no effect, we're not going to track file movements manually
-            # noConfirm - no real effect when moving
+            # confirm - no real effect when moving
             # renameOnCollision - if moving collision, auto rename, otherwise ask
             # silent - no real effect, since we're not showing visuals
             collisions = []
@@ -1072,19 +1056,24 @@ def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,re
             if collisions:
                 pass
 
-def shellDelete(files, parent=None, askOk_=True, recycle=True):
+def shellDelete(files, parent=None, confirm=True, recycle=True):
     try:
-        return fileOperation(FO_DELETE,files,None,recycle,not askOk_,True,False,parent)
+        return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
+                              confirm=confirm, renameOnCollision=True,
+                              silent=False, parent=parent)
     except CancelError:
-        if askOk_:
+        if confirm:
             return None
         raise
 
-def shellMove(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_MOVE,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False, silent=False):
+    return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
+                          confirm=askOverwrite, allowUndo=allowUndo,
+                          renameOnCollision=autoRename, silent=silent)
 
 def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+    return _fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
 
 def shellMakeDirs(dirName,parent=None):
     if not dirName:
@@ -1114,7 +1103,7 @@ def shellMakeDirs(dirName,parent=None):
                 dir.makedirs()
             except:
                 # Failed, try the UAC workaround
-                tempDir = bolt.Path.tempDir(u'WryeBash_')
+                tempDir = bolt.Path.tempDir()
                 tempDirsAppend(tempDir)
                 toMake = []
                 toMakeAppend = toMake.append
@@ -1133,7 +1122,7 @@ def shellMakeDirs(dirName,parent=None):
                 toDirsAppend(toDir)
         if fromDirs:
             # fromDirs will only get filled if dir.makedirs() failed
-            shellMove(fromDirs,toDirs,parent,False,False,False)
+            shellMove(fromDirs, toDirs, parent=parent)
     finally:
         for tempDir in tempDirs:
             tempDir.rmtree(safety=tempDir.stail)
@@ -1796,8 +1785,7 @@ class UIList(wx.Panel):
     __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
     # yet initialized when balt is imported, so I can't use ColorChecks here
     icons = __icons
-    _shellUI = False # only True in Screens/INIList - disabled in Installers
-    # due to markers not being deleted
+    _shellUI = False # only True in Screens/INIList/Installers
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -2040,9 +2028,8 @@ class UIList(wx.Panel):
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
-        elif code in (wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
-            with BusyCursor(): self.DeleteSelected(
-                shellUI=self.__class__._shellUI, noRecycle=event.ShiftDown())
+        elif code in wxDelete:
+            with BusyCursor(): self.DeleteItems(event=event)
         event.Skip()
 
     ##: Columns callbacks - belong to a ListCtrl mixin
@@ -2273,42 +2260,51 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if not shellUI:
-            message = [u'',_(u'Uncheck items to skip deleting them if desired.')]
-            message.extend(sorted(items))
-            with ListBoxes(self, _(u'Delete Items'), _(
-                    u'Delete these items?  This operation cannot be '
-                    u'undone.'), [message]) as dialog:
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL: return
-                id_ = dialog.ids[message[0]]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    dirJoin = self.data.dir.join
-                    for i,mod in enumerate(items):
-                        if checks.IsChecked(i):
-                            try:
-                                self.data.delete(mod)
-                                # Temporarily Track this file for BAIN, so BAIN will
-                                # update the status of its installers
-                                bosh.trackedInfos.track(dirJoin(mod))
-                            except bolt.BoltError as e:
-                                showError(self, u'%s' % e)
-        else:
-            try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except AccessDeniedError:
-                pass
-            dirJoin = self.data.dir.join
-            for item in items:
-                itemPath = dirJoin(item)
-                if not itemPath.exists():
-                    bosh.trackedInfos.track(itemPath)
-        bosh.modInfos.plugins.refresh(True)
-        self.RefreshUI()
+    def DeleteItems(self, event=None, items=None,
+                    dialogTitle=_(u'Delete Items'), order=True):
+        recycle = True if event is None else not event.ShiftDown()
+        items = self._toDelete(items)
+        try:
+            Link.Frame.BindRefresh(bind=False)
+            if not self.__class__._shellUI:
+                items = self._promptDelete(items, dialogTitle, order)
+            if not items: return
+            for i in items:
+                try:
+                    if not self.__class__._shellUI:
+                        self.data.delete(i, doRefresh=False, recycle=recycle)
+                    else:
+                        self.data.delete(items, confirm=True, recycle=recycle)
+                        break
+                except bolt.BoltError as e:
+                    showError(self, u'%r' % e)
+                except (AccessDeniedError, CancelError, SkipError): pass
+            else: self.data.refresh()
+            self._postDeleteRefresh(items)
+        finally:
+            Link.Frame.BindRefresh(bind=True)
+
+    def _toDelete(self, items):
+        return items if items is not None else self.GetSelected()
+
+    def _promptDelete(self, items, dialogTitle, order):
+        if not items: return items
+        message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
+        if order: items.sort()
+        message.extend(items)
+        with ListBoxes(self, dialogTitle,
+                       _(u'Delete these items?  This operation cannot be '
+                         u'undone.'), [message]) as dialog:
+            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return []
+            id_ = dialog.ids[message[0]]
+            checks = dialog.FindWindowById(id_)
+            checked = []
+            if checks:
+                for i, mod in enumerate(items):
+                    if checks.IsChecked(i): checked.append(mod)
+            return checked
+
+    def _postDeleteRefresh(self, deleted): self.RefreshUI()
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod
@@ -2353,29 +2349,6 @@ class Tank(UIList):
 
     def _select(self, item):
         if self.details: return self.details.RefreshDetails(item)
-
-    #--Standard data commands -------------------------------------------------
-    def DeleteSelected(self,shellUI=False,noRecycle=False,_refresh=True):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if not shellUI:
-            message = _(u'Delete these items? This operation cannot be undone.')
-            try: message += u'\n* ' + u'\n* '.join([x.s for x in items])
-            except AttributeError:
-                message += u'\n* ' + u'\n* '.join([x for x in items])
-            if not askYes(self,message,_(u'Delete Items')): return False
-            for item in items:
-                del self.data[item]
-        else:
-            try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except (CancelError,SkipError):
-                pass
-        if not _refresh: return  # FIXME(ut): refresh below did not work for
-        # BAIN - let's see with People tab (then delete _refresh parameter)
-        self.RefreshUI()
-        self.data.setChanged()
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2691,16 +2664,15 @@ class BoolLink(CheckLink):
 
     def Execute(self,event): bosh.settings[self.key] ^= True # toggle
 
-# Tank Links ------------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Tank_Delete(ItemLink): # was used in BAIN would not refresh - used in People
-    """Deletes selected file from tank."""
+# UIList Links ----------------------------------------------------------------
+class UIList_Delete(ItemLink):
+    """Delete selected item(s) from UIList."""
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
     def Execute(self,event):
-        with BusyCursor():
-            self.window.DeleteSelected()
+        # event is a 'CommandEvent' and I can't check if shift is pressed - duh
+        with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2733,6 +2705,7 @@ wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
 wxArrows = wxArrowUp | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
+wxDelete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
 # ListBoxes -------------------------------------------------------------------
 class _CheckList_SelectAll(ItemLink):

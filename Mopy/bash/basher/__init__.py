@@ -534,6 +534,23 @@ class INIList(balt.UIList):
         valid = filter(lambda k: self.data[k].status >= 0, self.data.keys())
         self.RefreshUI(files=valid)
 
+    @staticmethod
+    def filterOutDefaultTweaks(tweaks):
+        """Filter out default tweaks from tweaks iterable."""
+        return filter(lambda x: bosh.dirs['tweaks'].join(x).isfile(), tweaks)
+
+    def _toDelete(self, items):
+        items = super(INIList, self)._toDelete(items)
+        return self.filterOutDefaultTweaks(items) # will refilter if coming
+        # from INI_Delete - expensive but I can't allow default tweaks deletion
+
+    def _postDeleteRefresh(self, deleted):
+        deleted = filter(lambda path: not path.exists(),
+                         map(self.data.dir.join, deleted))
+        if not deleted: return
+        for d in deleted: bosh.trackedInfos.track(d)
+        super(INIList, self)._postDeleteRefresh(deleted)
+
     def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
@@ -878,6 +895,14 @@ class ModList(_ModsSortMixin, balt.UIList):
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', True) and Link.Frame.saveList:
             Link.Frame.saveList.RefreshUI()
+
+    def _postDeleteRefresh(self, deleted):
+        deleted = filter(lambda path: not path.exists(),
+                         map(self.data.dir.join, deleted))
+        if not deleted: return
+        for d in deleted: bosh.trackedInfos.track(d)
+        bosh.modInfos.plugins.refresh(True)
+        super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -1992,7 +2017,7 @@ class InstallersList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
-    # _shellUI = True # FIXME(ut): shellUI path does not grok markers
+    _shellUI = True
     _editLabels = True
     _default_sort_col = 'Package'
     _sort_keys = {
@@ -2230,7 +2255,7 @@ class InstallersList(balt.Tank):
                         progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self, askOk_=False,
+                        balt.shellDelete(outDir, parent=self, confirm=False,
                                          recycle=True)  # recycle
                     else: continue
                 try:
@@ -2334,7 +2359,7 @@ class InstallersList(balt.Tank):
                         balt.shellCopy(filenames,filesTo,self,False,False,False)
                     elif action == 'MOVE':
                         #--Move the dropped files
-                        balt.shellMove(filenames,filesTo,self,False,False,False)
+                        balt.shellMove(filenames, filesTo, parent=self)
                     else:
                         return
                 except (CancelError,SkipError):
@@ -2346,13 +2371,6 @@ class InstallersList(balt.Tank):
             self.panel.ShowPanel()
         finally:
             Link.Frame.BindRefresh(bind=True)
-
-    def DeleteSelected(self, shellUI=False, noRecycle=False, _refresh=False):
-        super(InstallersList, self).DeleteSelected(shellUI, noRecycle, _refresh)
-        with balt.BusyCursor():
-            # below ripped from Installer_Hide
-            self.data.refresh(what='ION')
-            self.RefreshUI()
 
     def OnChar(self,event):
         """Char event: Reorder."""
@@ -2618,7 +2636,7 @@ class InstallersPanel(SashTankPanel):
                         omodMoves = list(omodMoves)
                         omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
                         balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
-                        balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                        balt.shellMove(omodMoves, omodDests, parent=self)
                     except (CancelError,SkipError):
                         while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
                                           + u'\n\n' +
@@ -2626,7 +2644,7 @@ class InstallersPanel(SashTankPanel):
                             try:
                                 omodMoves = [x for x in omodMoves]
                                 omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
-                                balt.shellMove(omodMoves,omodDests,self,False,False,False)
+                                balt.shellMove(omodMoves, omodDests, self)
                             except (CancelError,SkipError):
                                 continue
                             break
@@ -2665,6 +2683,8 @@ class InstallersPanel(SashTankPanel):
             data = self.data.data_sizeCrcDate
             refresh = False
             for file in changed:
+                # the Game/Data dir - will give correct relative path for both
+                # Ini tweaks and mods - those are keyed in data by rel path...
                 if file.cs.startswith(bosh.dirs['mods'].cs):
                     path = file.relpath(bosh.dirs['mods'])
                 else:
@@ -2673,9 +2693,7 @@ class InstallersPanel(SashTankPanel):
                     data[path] = (file.size,file.crc,file.mtime)
                     refresh = True
                 else:
-                    if data.get(path,None) is not None:
-                        data.pop(path,None)
-                        refresh = True
+                    refresh = bool(data.pop(path, None))
             if refresh:
                 self.data.refreshStatus()
                 self.RefreshUIMods()
@@ -3294,6 +3312,12 @@ class MessageList(balt.UIList):
         path = bosh.dirs['saveBase'].join(u'Messages.html')
         bosh.messages.writeText(path,*keys)
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
+
+    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages')):
+        message = _(u'Delete these %d message(s)? This operation cannot'
+                    u' be undone.') % len(items)
+        yes = balt.askYes(self, message, title=dialogTitle)
+        return items if yes else []
 
 #------------------------------------------------------------------------------
 class MessagePanel(SashPanel):
@@ -4290,7 +4314,7 @@ class BashApp(wx.App):
         progress.Update(5,_(u'Initializing ModInfos'))
         bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
         bosh.oblivionIni = bosh.gameInis[0]
-        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo)
+        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo) ##: tracks tweaks OR mods...
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
         progress.Update(30,_(u'Initializing SaveInfos'))
