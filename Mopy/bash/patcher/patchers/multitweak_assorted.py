@@ -906,26 +906,19 @@ class AMultiTweakItem_Weight(AMultiTweakItem):
     @property
     def weight(self): return self.choiceValues[self.chosen][0]
 
-    def _patchLog(self,log,count,weight):
-        # TODO: maybe override _patchLog and call self.weight instead of
-        # passing it ?
+    def _patchLog(self, log, count):
+        """Will write to log for a class that has a weight field"""
         log.setHeader(self.logHeader)
-        log(self.logWeightValue % weight)
+        log(self.logWeightValue % self.weight)
         log(self.logMsg % sum(count.values()))
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem):
+class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem,
+                                  AMultiTweakItem_Weight):
 
     def buildPatchLog(self,log):
-        """Will write to log for a class that has a weight field"""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logWeightValue % self.weight)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self._patchLog(log, self.mod_count)
         self.mod_count = {}
 
 class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
@@ -979,7 +972,7 @@ class AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
                                        CBash_MultiTweakItem_Weight):
@@ -1067,7 +1060,7 @@ class AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
                                            CBash_MultiTweakItem_Weight):
@@ -1149,7 +1142,7 @@ class AssortedTweak_PotionWeightMinimum(AAssortedTweak_PotionWeightMinimum,
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,minWeight)
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_PotionWeightMinimum(
     AAssortedTweak_PotionWeightMinimum, CBash_MultiTweakItem_Weight):
@@ -1230,7 +1223,7 @@ class AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
                                       CBash_MultiTweakItem_Weight):
@@ -1303,7 +1296,7 @@ class AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,MultiTweakItem):
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
-        self._patchLog(log,count,maxWeight)
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
                                       CBash_MultiTweakItem_Weight):
