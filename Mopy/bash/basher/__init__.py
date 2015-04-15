@@ -3988,13 +3988,8 @@ class BashFrame(wx.Frame):
 
     #--Events ---------------------------------------------
     def RefreshData(self, event=None):
-        """Refreshes all data. Can be called manually, but is also triggered by window activation event."""
-        def listFiles(files):
-            text = u'\n* '
-            text += u'\n* '.join(x.s for x in files[:min(15,len(files))])
-            if len(files)>10:
-                text += '\n+ %d '%(len(files)-15) + _(u'others')
-            return text
+        """Refreshes all data. Can be called manually, but is also triggered
+        by window activation event.""" # hunt down - performance sink !
         #--Ignore deactivation events.
         if event and not event.GetActive() or self.inRefreshData: return
         #--UPDATES-----------------------------------------
@@ -4039,14 +4034,35 @@ class BashFrame(wx.Frame):
         #--Repopulate
         if popMods:
             BashFrame.modList.RefreshUI() #--Will repop saves too.
-        elif popSaves:
+        elif popSaves and self.saveList:
             BashFrame.saveList.RefreshUI()
-        if popInis:
+        if popInis and self.iniList:
             BashFrame.iniList.RefreshUI()
         #--Current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
+        # self._lostWarnings()
+        self._corruptedWarns()
+        self._corruptedGameIni()
+        self._y2038Resets()
+        self._obmmWarn()
+        self._missingDocsDir()
+        #--Merge info
+        oldMergeable = set(bosh.modInfos.mergeable)
+        scanList = bosh.modInfos.refreshMergeable()
+        difMergeable = oldMergeable ^ bosh.modInfos.mergeable
+        if scanList:
+            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
+                progress.setFull(len(scanList))
+                bosh.modInfos.rescanMergeable(scanList,progress)
+        if scanList or difMergeable:
+            BashFrame.modList.RefreshUI(files=scanList + list(difMergeable))
+        #--Done (end recursion blocker)
+        self.inRefreshData = False
+
+    def _lostWarnings(self):
+        """Restore those."""
         #--Does plugins.txt have any bad or missing files?
         ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
         #if bosh.modInfos.plugins.selectedBad:
@@ -4081,44 +4097,62 @@ class BashFrame(wx.Frame):
         #    dialog.Destroy()
         #    del bosh.modInfos.plugins.selectedExtra[:]
         #    bosh.modInfos.plugins.save()
+
+    def _corruptedWarns(self):
         #--Any new corrupted files?
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
         if not corruptMods <= self.knownCorrupted:
-            m = [_(u'Corrupted Mods'),_(u'The following mod files have corrupted headers: ')]
+            m = [_(u'Corrupted Mods'),
+                 _(u'The following mod files have corrupted headers: ')]
             m.extend(sorted(corruptMods))
             message.append(m)
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted.keys())
         if not corruptSaves <= self.knownCorrupted:
-            m = [_(u'Corrupted Saves'),_(u'The following save files have corrupted headers: ')]
+            m = [_(u'Corrupted Saves'),
+                 _(u'The following save files have corrupted headers: ')]
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.data if round(bosh.modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions])
+        invalidVersions = set([x for x in bosh.modInfos.values() if round(
+            x.header.version, 6) not in bush.game.esp.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
-            m = [_(u'Unrecognized Versions'),_(u'The following mods have unrecognized TES4 header versions: ')]
+            m = [_(u'Unrecognized Versions'),
+                 _(u'The following mods have unrecognized TES4 header '
+                   u'versions: ')]
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
         if bosh.modInfos.new_missing_strings:
-            m = [_(u'Missing String Localization files:'),_(u'This will cause CTDs if activated.')]
+            m = [_(u'Missing String Localization files:'),
+                 _(u'This will cause CTDs if activated.')]
             m.extend(sorted(bosh.modInfos.missing_strings))
             message.append(m)
             bosh.modInfos.new_missing_strings.clear()
         if message:
-            ListBoxes.Display(self, _(u'Warning: Corrupt/Unrecognized Files'),
-                      _(u'Some files have corrupted headers or TES4 header '
-                        u'versions:'), message, liststyle='list', Cancel=False)
+            ListBoxes.Display(
+              self, _(u'Warning: Corrupt/Unrecognized Files'),
+              _(u'Some files have corrupted headers or TES4 header versions:'),
+              message, liststyle='list', Cancel=False)
+
+    def _corruptedGameIni(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
             if self.oblivionIniCorrupted:
-                message = _(u'Your %s should begin with a section header (e.g. "[General]"), but does not. You should edit the file to correct this.') % bush.game.iniFiles[0]
-                balt.showWarning(self,fill(message))
+                msg = _(u'Your %s should begin with a section header '
+                        u'(e.g. "[General]"), but does not. You should edit '
+                        u'the file to correct this.') % bush.game.iniFiles[0]
+                balt.showWarning(self, fill(msg))
+
+    def _y2038Resets(self): # CRUFT python 2.5
         #--Any Y2038 Resets?
         if bolt.Path.mtimeResets:
-            message = [u'',_(u"Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date: ")]
+            message = [u'', _(
+                u"Bash cannot handle dates greater than January 19, "
+                u"2038. Accordingly, the dates for the following files have "
+                u"been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
             with ListBoxes(self, _(u'Warning: Dates Reset'), _(
                     u'Modified dates have been reset to an earlier date for  '
@@ -4126,43 +4160,38 @@ class BashFrame(wx.Frame):
                            Cancel=False) as dialog:
                 dialog.ShowModal()
             del bolt.Path.mtimeResets[:]
+
+    def _obmmWarn(self):
         #--OBMM Warning?
         if settings['bosh.modInfos.obmmWarn'] == 1:
             settings['bosh.modInfos.obmmWarn'] = 2
-            message = (_(u'Turn Lock Load Order Off?')
-                       + u'\n\n' +
-                       _(u'Lock Load Order is a feature which resets load order to a previously memorized state.  While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in OBMM.')
-                       )
-            lockTimes = not balt.askYes(self,message,_(u'Lock Load Order'))
-            bosh.modInfos.lockTimes = settings['bosh.modInfos.resetMTimes'] = lockTimes
-            if lockTimes:
-                bosh.modInfos.resetMTimes()
-            else:
-                bosh.modInfos.mtimes.clear()
-            message = _(u"Lock Load Order is now %s.  To change it in the future, right click on the main list header on the Mods tab and select 'Lock Load Order'.")
-            balt.showOk(self,message % ((_(u'off'),_(u'on'))[lockTimes],),_(u'Lock Load Order'))
+            message = _(u'Turn Lock Load Order Off?') + u'\n\n' + _(
+                u'Lock Load Order is a feature which resets load order to a '
+                u'previously memorized state.  While this feature is good '
+                u'for maintaining your load order, it will also undo any '
+                u'load order changes that you have made in OBMM.')
+            lockTimes = not balt.askYes(self, message, _(u'Lock Load Order'))
+            bosh.modInfos.lockTimes = settings[
+                'bosh.modInfos.resetMTimes'] = lockTimes
+            if lockTimes: bosh.modInfos.resetMTimes()
+            else: bosh.modInfos.mtimes.clear()
+            message = _(
+                u"Lock Load Order is now %s.  To change it in the future, "
+                u"right click on the main list header on the Mods tab and "
+                u"select 'Lock Load Order'.")
+            balt.showOk(self, message % ((_(u'off'), _(u'on'))[lockTimes],),
+                        _(u'Lock Load Order'))
+
+    def _missingDocsDir(self):
         #--Missing docs directory?
-        testFile = GPath(bosh.dirs['mopy']).join(u'Docs',u'wtxt_teal.css')
-        if not self.incompleteInstallError and not testFile.exists():
-            self.incompleteInstallError = True
-            message = (_(u'Installation appears incomplete.  Please re-unzip bash to game directory so that ALL files are installed.')
-                       + u'\n\n' +
-                       _(u'Correct installation will create %s\\Mopy and %s\\Data\\Docs directories.')
-                       % (bush.game.fsName,bush.game.fsName)
-                       )
-            balt.showWarning(self,message,_(u'Incomplete Installation'))
-        #--Merge info
-        oldMergeable = set(bosh.modInfos.mergeable)
-        scanList = bosh.modInfos.refreshMergeable()
-        difMergeable = oldMergeable ^ bosh.modInfos.mergeable
-        if scanList:
-            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
-                progress.setFull(len(scanList))
-                bosh.modInfos.rescanMergeable(scanList,progress)
-        if scanList or difMergeable:
-            BashFrame.modList.RefreshUI(files=scanList + list(difMergeable))
-        #--Done (end recursion blocker)
-        self.inRefreshData = False
+        testFile = GPath(bosh.dirs['mopy']).join(u'Docs', u'wtxt_teal.css')
+        if self.incompleteInstallError or testFile.exists(): return
+        self.incompleteInstallError = True
+        msg = _(u'Installation appears incomplete.  Please re-unzip bash '
+        u'to game directory so that ALL files are installed.') + u'\n\n' + _(
+        u'Correct installation will create %s\\Mopy and '
+        u'%s\\Data\\Docs directories.') % (bush.game.fsName, bush.game.fsName)
+        balt.showWarning(self, msg, _(u'Incomplete Installation'))
 
     def OnCloseWindow(self, event):
         """Handle Close event. Save application data."""
