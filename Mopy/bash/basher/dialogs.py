@@ -30,7 +30,8 @@ from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
 from ..balt import button, hSizer, Link, colors, roTextCtrl, vSizer, spacer, \
-    checkBox, staticText, Image, bell, textCtrl, tooltip
+    checkBox, staticText, Image, bell, textCtrl, tooltip, OkButton, \
+    CancelButton
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -63,7 +64,7 @@ class ColorDialog(balt.Dialog):
         self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
         self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
         self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
-        self.ok = button(self,id=wx.ID_OK,onClick=self.OnApplyAll) # OK applies all changes
+        self.ok = OkButton(self, onClick=self.OnApplyAll) # OK applies all changes
         self.ok.SetDefault()
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
@@ -299,7 +300,7 @@ class ImportFaceDialog(balt.Dialog):
                     (fgSizer,1),
                     (vSizer(
                         (importButton,0,wx.ALIGN_RIGHT),
-                        (button(self,id=wx.ID_CANCEL),0,wx.TOP,4),
+                        (CancelButton(self),0,wx.TOP,4),
                         )),
                     ),0,wx.EXPAND|wx.TOP,4),
                 ),0,wx.EXPAND|wx.ALL,4),
@@ -371,8 +372,8 @@ class CreateNewProject(balt.Dialog):
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
         # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
         # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = button(self, id=wx.ID_OK, onClick=self.OnClose)
-        cancelButton = button(self, id=wx.ID_CANCEL, onClick=self.OnClose)
+        okButton = OkButton(self, onClick=self.OnClose)
+        cancelButton = CancelButton(self, onClick=self.OnClose)
         # Panel Layout
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)

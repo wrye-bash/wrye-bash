@@ -29,11 +29,10 @@ import StringIO
 import collections
 import copy
 import os
-import wx
 from .. import bosh, bolt, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
-    spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
+from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, \
+    staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
@@ -934,8 +933,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree',
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                liststyle='tree', resize=True,
                 changedlabels={ListBoxes.ID_OK: _(u'Continue Despite Errors')}
             ) as warning:
                    if warning.ShowModal() == ListBoxes.ID_CANCEL: return
@@ -1983,11 +1981,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             gdeprefix,
             spacer,
             gskipcomments,
-            (hSizer(
-                spacer,
-                button(dialog,id=wx.ID_OK,onClick=OnOk),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            balt.ok_and_cancel_sizer(dialog, onOk=OnOk),
             )
         dialog.SetSizer(sizer)
         with dialog: questions = dialog.ShowModal()

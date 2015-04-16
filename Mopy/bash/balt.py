@@ -389,13 +389,32 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def button(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='button',id=defId,onClick=None,tip=None):
-    """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.Button(parent,id,label,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
-    if tip: gButton.SetToolTip(tooltip(tip))
-    return gButton
+class button(wx.Button):
+    _id = defId
+
+    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
+                 val=defVal, name='button', id=None, onClick=None, tip=None): ### TODO SETDEFAULT
+        """Creates a button, binds click function, then returns bound
+        button."""
+        wx.Button.__init__(self, parent, id or self.__class__._id, label, pos,
+                           size, style, val, name)
+        if onClick: self.Bind(wx.EVT_BUTTON,onClick)
+        if tip: self.SetToolTip(tooltip(tip))
+
+class OkButton(button): _id = wx.ID_OK
+class CancelButton(button): _id = wx.ID_CANCEL
+
+def ok_and_cancel_sizer(parent, onOk=None):
+    return (hSizer(spacer, OkButton(parent, onClick=onOk),
+                   (CancelButton(parent), 0, wx.LEFT, 4), )
+            , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
+
+class SaveButton(button): _id = wx.ID_SAVE
+class SaveAsButton(button): _id = wx.ID_SAVEAS
+class RevertButton(button): _id = wx.ID_SAVE
+class RevertToSavedButton(button): _id = wx.ID_REVERT_TO_SAVED
+class OpenButton(button): _id = wx.ID_OPEN
+class SelectAllButton(button): _id = wx.wx.ID_SELECTALL
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -530,11 +549,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
                 (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            (hSizer( #--Save/Cancel
-                spacer,
-                button(dialog,id=wx.ID_OK),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
         #--Get continue key setting and return
@@ -575,9 +590,9 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         #--Layout
         buttonSizer = hSizer(spacer)
         if wx.ID_OK in labels:
-            okButton = button(dialog,id=wx.ID_OK,label=labels[wx.ID_OK])
+            okButton = OkButton(dialog,label=labels[wx.ID_OK])
         else:
-            okButton = button(dialog,id=wx.ID_OK)
+            okButton = OkButton(dialog)
         buttonSizer.Add(okButton,0,wx.RIGHT,4)
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
@@ -589,11 +604,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
                 (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            (hSizer( #--Save/Cancel
-                spacer,
-                button(dialog,id=wx.ID_OK),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
         #--Get continue key setting and return
@@ -817,7 +828,7 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
         fixedStyle.SetFont(fixedFont)
         txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
     #--Buttons
-    gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
+    gOkButton = OkButton(window, onClick=lambda event: window.Close())
     gOkButton.SetDefault()
     #--Layout
     window.SetSizer(
@@ -877,7 +888,7 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
     gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
-    gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
+    gOkButton = OkButton(window, onClick=lambda event: window.Close())
     gOkButton.SetDefault()
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
@@ -2688,7 +2699,8 @@ class ListBoxes(Dialog):
     ID_OK = wx.ID_OK
     ID_CANCEL = wx.ID_CANCEL
 
-    def __init__(self,parent,title,message,lists,liststyle='check',style=0,changedlabels={},Cancel=True):
+    def __init__(self, parent, title, message, lists, liststyle='check',
+                 style=0, changedlabels={}, Cancel=True, resize=False):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2699,7 +2711,7 @@ class ListBoxes(Dialog):
         """
         ##: resize = True - drop resize parameter
         super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=False)
+                                        resize=resize)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
@@ -2741,7 +2753,7 @@ class ListBoxes(Dialog):
             subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
-        okButton = button(self,id=wx.ID_OK,label=labels[wx.ID_OK])
+        okButton = OkButton(self, label=labels[wx.ID_OK])
         okButton.SetDefault()
         buttonSizer = hSizer(spacer,
                              (okButton,0,wx.ALIGN_RIGHT),
@@ -2753,7 +2765,7 @@ class ListBoxes(Dialog):
             but.Bind(wx.EVT_BUTTON,self.OnClick)
             buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
         if Cancel:
-            buttonSizer.Add(button(self,id=wx.ID_CANCEL,label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
+            buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
         sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
