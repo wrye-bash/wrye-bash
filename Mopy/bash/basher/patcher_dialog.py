@@ -89,7 +89,7 @@ class PatchDialog(balt.Dialog):
         SetUAC(self.gExecute)
         self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
-        cancelButton = CancelButton(self, label=_(u'Cancel'))
+        cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
                                       isSingle=True, kind='checklist')
         self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)

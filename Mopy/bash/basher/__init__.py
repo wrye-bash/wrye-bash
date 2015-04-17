@@ -1094,8 +1094,8 @@ class ModDetails(_SashDetailsPanel):
             self.uilist = MasterList(masterPanel, None, self.SetEdited,
                                      keyPrefix=self.keyPrefix, panel=modPanel)
             #--Save/Cancel
-            self.save = SaveButton(masterPanel,label=_(u'Save'),onClick=self.DoSave,)
-            self.cancel = CancelButton(masterPanel,label=_(u'Cancel'),onClick=self.DoCancel,)
+            self.save = SaveButton(masterPanel, onClick=self.DoSave)
+            self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
             self.save.Disable()
             self.cancel.Disable()
             #--Bash tags

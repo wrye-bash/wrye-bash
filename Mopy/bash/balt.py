@@ -391,27 +391,34 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
 
 class button(wx.Button):
     _id = defId
+    label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', id=None, onClick=None, tip=None,
                  default=False):
         """Creates a button, binds click function, then returns bound
         button."""
-        wx.Button.__init__(self, parent, id or self.__class__._id, label, pos,
-                           size, style, val, name)
+        if  not label and self.__class__.label: label = self.__class__.label
+        wx.Button.__init__(self, parent, id or self.__class__._id,
+                           label, pos, size, style, val, name)
         if onClick: self.Bind(wx.EVT_BUTTON,onClick)
         if tip: self.SetToolTip(tooltip(tip))
         if default: self.SetDefault()
 
 class OkButton(button): _id = wx.ID_OK
-class CancelButton(button): _id = wx.ID_CANCEL
+class CancelButton(button):
+    _id = wx.ID_CANCEL
+    label = _(u'Cancel')
 
 def ok_and_cancel_sizer(parent, onOk=None):
     return (hSizer(spacer, OkButton(parent, onClick=onOk),
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
-class SaveButton(button): _id = wx.ID_SAVE
+class SaveButton(button):
+    _id = wx.ID_SAVE
+    label = _(u'Save')
+
 class SaveAsButton(button): _id = wx.ID_SAVEAS
 class RevertButton(button): _id = wx.ID_SAVE
 class RevertToSavedButton(button): _id = wx.ID_REVERT_TO_SAVED
