@@ -438,8 +438,8 @@ class CreateNewProject(balt.Dialog):
 
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)
-        tempDir = bolt.Path.tempDir()
-        tempProject = tempDir.join(projectName)
+        tmpDir = bolt.Path.tempDir()
+        tempProject = tmpDir.join(projectName)
         extrasDir = bosh.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
             # Copy blank esp into project
@@ -466,7 +466,7 @@ class CreateNewProject(balt.Dialog):
         except:
             pass
         finally:
-            tempDir.rmtree(tempDir.s)
+            tmpDir.rmtree(tmpDir.s)
 
         # Move successful
         self.fullRefresh = False

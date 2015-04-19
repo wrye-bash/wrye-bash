@@ -6811,12 +6811,12 @@ class InstallerConverter(object):
         #--Prepare by fully loading the BCF and clearing temp
         self.load(True)
         Installer.rmTempDir()
-        tempDir = Installer.newTempDir()
+        tmpDir = Installer.newTempDir()
         progress = progress if progress else bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         #--Extract BCF
         with self.fullPath.unicodeSafe() as tempPath:
-            command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (exe7z,tempPath,tempDir.s)
+            command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (exe7z,tempPath,tmpDir.s)
             ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
             ins = sio(ins)
             #--Error checking
@@ -6861,7 +6861,7 @@ class InstallerConverter(object):
             #--Lastly, apply the settings.
             #--That is done by the calling code, since it requires an InstallerArchive object to work on
         finally:
-            try: tempDir.rmtree(safety=tempDir.s)
+            try: tmpDir.rmtree(safety=tmpDir.s)
             except: pass
             Installer.rmTempDir()
 
@@ -6871,14 +6871,14 @@ class InstallerConverter(object):
 
     def arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
-        tempDir = Installer.getTempDir()
+        tmpDir = Installer.getTempDir()
         destDir = Installer.newTempDir()
         progress(0,_(u"Moving files..."))
         progress.setFull(1+len(self.convertedFiles))
         #--Make a copy of dupeCount
         dupes = dict(self.dupeCount.iteritems())
         destJoin = destDir.join
-        tempJoin = tempDir.join
+        tempJoin = tmpDir.join
 
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
@@ -6905,7 +6905,7 @@ class InstallerConverter(object):
                 progress(index,_(u'Moving file...')+u'\n'+destFile.stail)
                 srcFile.moveTo(destFile)
         #--Done with unpacked directory directory
-        tempDir.rmtree(safety=tempDir.s)
+        tmpDir.rmtree(safety=tmpDir.s)
 
     def build(self, srcArchives, data, destArchive, BCFArchive, blockSize, progress=None):
         """Builds and packages a BCF"""
@@ -6955,9 +6955,9 @@ class InstallerConverter(object):
                 lastStep = nextStep
                 nextStep += step
             #--Note all extracted files
-            tempDir = Installer.getTempDir()
-            for crc in tempDir.list():
-                fpath = tempDir.join(crc)
+            tmpDir = Installer.getTempDir()
+            for crc in tmpDir.list():
+                fpath = tmpDir.join(crc)
                 for root,y,files in fpath.walk():
                     for file in files:
                         file = root.join(file)
@@ -7013,13 +7013,13 @@ class InstallerConverter(object):
             Installer.getTempDir().moveTo(tempDir2)
             tempDir2.moveTo(Installer.getTempDir().join(u'BCF-Missing'))
         #--Make the temp dir in case it doesn't exist
-        tempDir = Installer.getTempDir()
-        tempDir.makedirs()
+        tmpDir = Installer.getTempDir()
+        tmpDir.makedirs()
         self.save(destInstaller)
         #--Pack the BCF
         #--BCF's need to be non-Solid since they have to have BCF.dat extracted and read from during runtime
         self.isSolid = False
-        self.pack(tempDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
+        self.pack(tmpDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
         self.isSolid = destInstaller.isSolid
 
     def pack(self,srcFolder,destArchive,outDir,progress=None):
@@ -7082,7 +7082,7 @@ class InstallerConverter(object):
         Each archive and sub-archive is extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
         if not fileNames: raise ArgumentError(u"No files to extract for %s." % srcInstaller.s)
-        tempDir = Installer.getTempDir()
+        tmpDir = Installer.getTempDir()
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
@@ -7099,7 +7099,7 @@ class InstallerConverter(object):
             apath = dirs['installers'].join(srcInstaller)
         else:
             apath = srcInstaller
-        subTempDir = tempDir.join(u"%08X" % installerCRC)
+        subTempDir = tmpDir.join(u"%08X" % installerCRC)
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
@@ -7351,15 +7351,15 @@ class InstallerArchive(Installer):
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        tempDir = self.getTempDir()
+        tmpDir = self.getTempDir()
         # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % tempDir.s
+        cmd = ur'attrib -R "%s\*" /S /D' % tmpDir.s
         ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-        tempDirJoin = tempDir.join
+        tempDirJoin = tmpDir.join
         destDirJoin = destDir.join
-        for file in files:
-            srcFull = tempDirJoin(file)
-            destFull = destDirJoin(file)
+        for file_ in files:
+            srcFull = tempDirJoin(file_)
+            destFull = destDirJoin(file_)
             if srcFull.exists():
                 srcFull.moveTo(destFull)
                 count += 1
@@ -10155,8 +10155,8 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
 
 def testUAC(gameDataPath):
     print 'testing UAC'
-    tempDir = bolt.Path.tempDir()
-    tempFile = tempDir.join(u'_tempfile.tmp')
+    tmpDir = bolt.Path.tempDir()
+    tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
@@ -10164,7 +10164,7 @@ def testUAC(gameDataPath):
     except balt.AccessDeniedError:
         return True
     finally:
-        tempDir.rmtree(safety=tempDir.stail)
+        tmpDir.rmtree(safety=tmpDir.stail)
         if dest.exists():
             try:
                 balt.shellDelete(dest,None,False,False)

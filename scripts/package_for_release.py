@@ -333,9 +333,9 @@ def PackStandaloneVersion(args, all_files):
 
 def RelocateNonRepoFiles(all_files):
     """Moves any non-repository files/directories to scripts/temp"""
-    tempDir = os.path.join(u'scripts', u'temp')
-    rm(tempDir)
-    os.makedirs(tempDir)
+    tmpDir = os.path.join(u'scripts', u'temp')
+    rm(tmpDir)
+    os.makedirs(tmpDir)
 
     non_repo = GetNonRepoFiles(all_files)
     if non_repo:
@@ -343,7 +343,7 @@ def RelocateNonRepoFiles(all_files):
     for path in non_repo:
         lprint(" ", path)
         src = os.path.join(mopy, path)
-        dst = os.path.join(tempDir, path)
+        dst = os.path.join(tmpDir, path)
         if os.path.isdir(src):
             shutil.move(src, dst)
         elif os.path.isfile(src):
@@ -367,32 +367,32 @@ def WarnNonRepoFiles(all_files):
 def RestoreNonRepoFiles():
     """Returns non-repository files scripts/temp to their proper locations"""
     failed = []
-    tempDir = os.path.join(u'scripts', u'temp')
-    if os.listdir(tempDir):
+    tmpDir = os.path.join(u'scripts', u'temp')
+    if os.listdir(tmpDir):
         lprint(" Restoring non-repository files")
-    for top, dirs, files in os.walk(tempDir):
-        for dir in dirs:
-            src = os.path.join(top, dir)
+    for top, dirs, files in os.walk(tmpDir):
+        for dir_ in dirs:
+            src = os.path.join(top, dir_)
             dst = os.path.join(mopy, src[13:])
             if not os.path.isdir(dst):
                 try:
                     os.makedirs(dst)
                 except:
                     failed.append(src)
-        for file in files:
-            src = os.path.join(top, file)
+        for file_ in files:
+            src = os.path.join(top, file_)
             dst = os.path.join(mopy, src[13:])
             try:
                 shutil.move(src, dst)
             except:
                 failed.append(src)
     if failed:
-        lprint(" Filed to restore the following moved files:")
-        for file in sorted(failed):
-            lprint(" ", file)
+        lprint(" Failed to restore the following moved files:")
+        for file_ in sorted(failed):
+            lprint(" ", file_)
     else:
         try:
-            rm(tempDir)
+            rm(tmpDir)
         except:
             pass
 
@@ -529,7 +529,7 @@ def GetGitFiles(gitDir, version):
                     # Found, no changes necessary
                     break
             else:
-                # Not found in PATH, try user supplied directory, as well as 
+                # Not found in PATH, try user supplied directory, as well as
                 # common install paths
                 pfiles = os.path.join(os.path.expandvars(u'%PROGRAMFILES%'),
                                       u'Git', u'bin')

@@ -1086,8 +1086,8 @@ def shellMakeDirs(dirName,parent=None):
                 dir.makedirs()
             except:
                 # Failed, try the UAC workaround
-                tempDir = bolt.Path.tempDir()
-                tempDirsAppend(tempDir)
+                tmpDir = bolt.Path.tempDir()
+                tempDirsAppend(tmpDir)
                 toMake = []
                 toMakeAppend = toMake.append
                 while not dir.exists() and dir != dir.head:
@@ -1098,17 +1098,17 @@ def shellMakeDirs(dirName,parent=None):
                 if not toMake:
                     continue
                 toMake.reverse()
-                base = tempDir.join(toMake[0])
+                base = tmpDir.join(toMake[0])
                 toDir = dir.join(toMake[0])
-                tempDir.join(*toMake).makedirs()
+                tmpDir.join(*toMake).makedirs()
                 fromDirsAppend(base)
                 toDirsAppend(toDir)
         if fromDirs:
             # fromDirs will only get filled if dir.makedirs() failed
             shellMove(fromDirs, toDirs, parent=parent)
     finally:
-        for tempDir in tempDirs:
-            tempDir.rmtree(safety=tempDir.stail)
+        for tmpDir in tempDirs:
+            tmpDir.rmtree(safety=tmpDir.stail)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
