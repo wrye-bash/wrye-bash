@@ -30,7 +30,8 @@ from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
 from ..balt import button, hSizer, Link, colors, roTextCtrl, vSizer, spacer, \
-    checkBox, staticText, Image, bell, textCtrl, tooltip
+    checkBox, staticText, Image, bell, textCtrl, tooltip, OkButton, \
+    CancelButton
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -63,8 +64,7 @@ class ColorDialog(balt.Dialog):
         self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
         self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
         self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
-        self.ok = button(self,id=wx.ID_OK,onClick=self.OnApplyAll) # OK applies all changes
-        self.ok.SetDefault()
+        self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
         self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
@@ -273,8 +273,8 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText  = staticText(self,u'')
         self.classText  = staticText(self,u'')
         #--Other
-        importButton = button(self,_(u'Import'),onClick=self.DoImport)
-        importButton.SetDefault()
+        importButton = button(self, label=_(u'Import'), onClick=self.DoImport,
+                              default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout
         fgSizer = wx.FlexGridSizer(3,2,2,4)
@@ -299,7 +299,7 @@ class ImportFaceDialog(balt.Dialog):
                     (fgSizer,1),
                     (vSizer(
                         (importButton,0,wx.ALIGN_RIGHT),
-                        (button(self,id=wx.ID_CANCEL),0,wx.TOP,4),
+                        (CancelButton(self),0,wx.TOP,4),
                         )),
                     ),0,wx.EXPAND|wx.TOP,4),
                 ),0,wx.EXPAND|wx.ALL,4),
@@ -371,8 +371,8 @@ class CreateNewProject(balt.Dialog):
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
         # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
         # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = button(self, id=wx.ID_OK, onClick=self.OnClose)
-        cancelButton = button(self, id=wx.ID_CANCEL, onClick=self.OnClose)
+        okButton = OkButton(self, onClick=self.OnClose)
+        cancelButton = CancelButton(self, onClick=self.OnClose)
         # Panel Layout
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
@@ -438,8 +438,8 @@ class CreateNewProject(balt.Dialog):
 
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)
-        tempDir = bolt.Path.tempDir()
-        tempProject = tempDir.join(projectName)
+        tmpDir = bolt.Path.tempDir()
+        tempProject = tmpDir.join(projectName)
         extrasDir = bosh.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
             # Copy blank esp into project
@@ -466,7 +466,7 @@ class CreateNewProject(balt.Dialog):
         except:
             pass
         finally:
-            tempDir.rmtree(tempDir.s)
+            tmpDir.rmtree(tmpDir.s)
 
         # Move successful
         self.fullRefresh = False

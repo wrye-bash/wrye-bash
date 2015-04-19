@@ -42,8 +42,8 @@ __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
 #------------------------------------------------------------------------------
 class StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
-    def _initData(self, window, data):
-        super(StatusBar_Hide, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(StatusBar_Hide, self)._initData(window, selection)
         tip = window.GetToolTip().GetTip()
         self.text = _(u"Hide '%s'") % tip
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"

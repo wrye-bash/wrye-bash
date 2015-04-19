@@ -80,9 +80,9 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes
-from ..balt import button, checkBox, staticText, \
-    spinCtrl, textCtrl
+    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
+    SaveButton, CancelButton
+from ..balt import checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
@@ -1094,8 +1094,8 @@ class ModDetails(_SashDetailsPanel):
             self.uilist = MasterList(masterPanel, None, self.SetEdited,
                                      keyPrefix=self.keyPrefix, panel=modPanel)
             #--Save/Cancel
-            self.save = button(masterPanel,label=_(u'Save'),id=wx.ID_SAVE,onClick=self.DoSave,)
-            self.cancel = button(masterPanel,label=_(u'Cancel'),id=wx.ID_CANCEL,onClick=self.DoCancel,)
+            self.save = SaveButton(masterPanel, onClick=self.DoSave)
+            self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
             self.save.Disable()
             self.cancel.Disable()
             #--Bash tags
@@ -1382,8 +1382,8 @@ class ModDetails(_SashDetailsPanel):
                           u'leave enough room.'))
         # Tags links
         class _TagLink(CheckLink):
-            def _initData(self, window, data):
-                super(_TagLink, self)._initData(window, data)
+            def _initData(self, window, selection):
+                super(_TagLink, self)._initData(window, selection)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': mod_info.name})
             def _check(self): return self.text in mod_tags
@@ -1416,9 +1416,9 @@ class INIPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = button(right,_(u'Remove'),onClick=self.OnRemove)
+        self.button = balt.button(right,_(u'Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.editButton = button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = balt.button(right,_(u'Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -1809,8 +1809,8 @@ class SaveDetails(_SashDetailsPanel):
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Save/Cancel
-        self.save = button(masterPanel,id=wx.ID_SAVE,onClick=self.DoSave)
-        self.cancel = button(masterPanel,id=wx.ID_CANCEL,onClick=self.DoCancel)
+        self.save = SaveButton(masterPanel, onClick=self.DoSave)
+        self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
         self.save.Disable()
         self.cancel.Disable()
         #--Layout
@@ -2317,12 +2317,12 @@ class InstallersList(balt.Tank):
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
                         spacer,
-                        button(dialog,label=_(u'Move'),
+                        balt.button(dialog,label=_(u'Move'),
                                onClick=lambda x: dialog.EndModal(1)),
-                        (button(dialog,label=_(u'Copy'),
+                        (balt.button(dialog,label=_(u'Copy'),
                                 onClick=lambda x: dialog.EndModal(2)),
                          0,wx.LEFT,4),
-                        (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
+                        (CancelButton(dialog),0,wx.LEFT,4),
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     )
                 dialog.SetSizer(sizer)
@@ -3132,8 +3132,8 @@ class BSADetails(wx.Window):
         self.gInfo = textCtrl(self, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Save/Cancel
-        self.save = button(self,id=wx.ID_SAVE,onClick=self.DoSave)
-        self.cancel = button(self,id=wx.ID_CANCEL,onClick=self.DoCancel)
+        self.save = SaveButton(self, onClick=self.DoSave)
+        self.cancel = CancelButton(self, onClick=self.DoCancel)
         self.save.Disable()
         self.cancel.Disable()
         #--Layout
@@ -3338,8 +3338,8 @@ class MessagePanel(SashPanel):
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Search ##: move to textCtrl subclass
         gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
-        gSearchButton = button(gBottom,_(u'Search'),onClick=self.DoSearch)
-        gClearButton = button(gBottom,_(u'Clear'),onClick=self.DoClear)
+        gSearchButton = balt.button(gBottom,_(u'Search'),onClick=self.DoSearch)
+        gClearButton = balt.button(gBottom,_(u'Clear'),onClick=self.DoClear)
         #--Events
         #--Following line should use EVT_COMMAND_TEXT_ENTER, but that seems broken.
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)

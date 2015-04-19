@@ -103,7 +103,7 @@ def getObjectIndex(fid):
 
 def getFormIndices(fid):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return (int(fid >> 24),int(fid & 0x00FFFFFFL))
+    return int(fid >> 24),int(fid & 0x00FFFFFFL)
 
 # Mod I/O Errors ---------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -241,11 +241,11 @@ class ModReader:
         """Return True if current read position is at EOF."""
         filePos = self.ins.tell()
         if endPos == -1:
-            return (filePos == self.size)
+            return filePos == self.size
         elif filePos > endPos:
             raise ModError(self.inName,u'Exceeded limit of: '+recType)
         else:
-            return (filePos == endPos)
+            return filePos == endPos
 
     #--Read/Unpack ----------------------------------------
     def read(self,size,recType='----'):
@@ -319,7 +319,7 @@ class ModReader:
         #--Match expected size?
         if expSize and expSize != size:
             raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
-        return (type,size)
+        return type,size
 
     #--Find data ------------------------------------------
     def findSubRecord(self,subType,recType='----'):
@@ -442,7 +442,7 @@ class MelBase:
         return self
 
     def getSlotsUsed(self):
-        return (self.attr,)
+        return self.attr,
 
     def parseElements(self,*elements):
         """Parses elements and returns attrs,defaults,actions,formAttrs where:
@@ -1018,7 +1018,7 @@ class MelStructs(MelStruct):
         self.attr = attr
 
     def getSlotsUsed(self):
-        return (self.attr,)
+        return self.attr,
 
     def getDefaulters(self,defaulters,base):
         """Registers self as a getDefault(attr) provider."""
@@ -1649,7 +1649,7 @@ class MreHeaderBase(MelRecord):
         """Gets next object index and increments it for next time."""
         self.changed = True
         self.nextObject += 1
-        return (self.nextObject -1)
+        return self.nextObject -1
 
     __slots__ = MelRecord.__slots__
 
@@ -1711,7 +1711,7 @@ class MreGmstBase(MelRecord):
                 bolt.deprintOn = True
                 bolt.deprint(u'Error loading %s:' % fname, traceback=True)
                 raise
-        return (GPath(cls.Master+u'.esm'),cls.Ids[self.eid])
+        return GPath(cls.Master+u'.esm'),cls.Ids[self.eid]
 
 #-------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):

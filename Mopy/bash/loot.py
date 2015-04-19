@@ -28,7 +28,6 @@
 
 from ctypes import *
 import os
-import platform
 
 try:
     # Wrye Bash specific support
@@ -204,7 +203,7 @@ def Init(path):
         details = c_char_p()
         ret = _CGetLastErrorDetails(byref(details))
         if ret != loot_ok:
-            raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % (ret))
+            raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % ret)
         return unicode(details.value,'utf8')
 
     def RegisterCallback(errorCode,callback):
@@ -373,15 +372,15 @@ def Init(path):
                              byref(userlist))
             added = set([self.tags[tagIds_added[i]] for i in xrange(numAdded.value)])
             removed = set([self.tags[tagIds_removed[i]] for i in xrange(numRemoved.value)])
-            return (added, removed, userlist.value)
+            return added, removed, userlist.value
 
         def GetDirtyMessage(self,plugin):
             clean = c_uint()
             _CGetDirtyMessage(self._DB,_enc(plugin),byref(clean))
             if clean.value == loot_needs_cleaning_yes:
-                return ('Contains dirty edits, needs cleaning.',clean.value)
+                return 'Contains dirty edits, needs cleaning.',clean.value
             else:
-                return ('',clean.value)
+                return '',clean.value
 
         def DumpMinimal(self,file,overwrite):
             _CDumpMinimal(self._DB,_enc(file),overwrite)

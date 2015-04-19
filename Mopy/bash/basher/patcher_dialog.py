@@ -32,7 +32,9 @@ from datetime import timedelta
 from . import SetUAC, BashFrame
 from .. import bosh, bolt, balt
 from ..bass import Resources
-from ..balt import button, staticText, vSizer, hSizer, spacer, Link
+from ..balt import staticText, vSizer, hSizer, spacer, Link, OkButton, \
+    SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
+    RevertToSavedButton, RevertButton
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from ..patcher import configIsCBash
@@ -83,17 +85,17 @@ class PatchDialog(balt.Dialog):
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
-        self.gExecute = button(self,id=wx.ID_OK,label=_(u'Build Patch'),onClick=self.Execute)
+        self.gExecute = OkButton(self, label=_(u'Build Patch'),onClick=self.Execute)
         SetUAC(self.gExecute)
-        self.gSelectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Select All'),onClick=self.SelectAll)
-        self.gDeselectAll = button(self,id=wx.wx.ID_SELECTALL,label=_(u'Deselect All'),onClick=self.DeselectAll)
-        cancelButton = button(self,id=wx.ID_CANCEL,label=_(u'Cancel'))
+        self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
+        self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
+        cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
                                       isSingle=True, kind='checklist')
-        self.gExportConfig = button(self,id=wx.ID_SAVEAS,label=_(u'Export'),onClick=self.ExportConfig)
-        self.gImportConfig = button(self,id=wx.ID_OPEN,label=_(u'Import'),onClick=self.ImportConfig)
-        self.gRevertConfig = button(self,id=wx.ID_REVERT_TO_SAVED,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
-        self.gRevertToDefault = button(self,id=wx.ID_REVERT,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
+        self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)
+        self.gImportConfig = OpenButton(self,label=_(u'Import'),onClick=self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
+        self.gRevertToDefault = RevertButton(self,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')

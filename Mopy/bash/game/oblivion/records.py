@@ -1729,7 +1729,7 @@ class MreRace(MelRecord):
             self._debug = False
 
         def getSlotsUsed(self):
-            return ('_loadAttrs',)
+            return '_loadAttrs',
 
         def getLoaders(self,loaders):
             """Self as loader for structure types."""

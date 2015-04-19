@@ -29,17 +29,15 @@ import StringIO
 import collections
 import copy
 import os
-import wx
 from .. import bosh, bolt, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, staticText, \
-    spacer, hSizer, button, CheckLink, EnabledLink, AppendableLink, TransLink, \
+from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, \
+    staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
-from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
 from ..patcher.patchers import base
@@ -261,8 +259,8 @@ class _Mod_Labels(ChoiceLink):
                 self.window.RefreshUI(files=self.selected)
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
-    def _initData(self, window, data):
-        super(_Mod_Labels, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(_Mod_Labels, self)._initData(window, selection)
         _self = self
         class _LabelLink(ItemLink):
             def Execute(self, event):
@@ -353,11 +351,11 @@ class Mod_Groups(_Mod_Labels):
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
 
-    def _initData(self, window, data):
-        super(Mod_Groups, self)._initData(window, data)
-        data = set(data)
+    def _initData(self, window, selection):
+        super(Mod_Groups, self)._initData(window, selection)
+        selection = set(selection)
         mod_group = bosh.modInfos.table.getColumn('group').items()
-        modGroup = set([x[1] for x in mod_group if x[0] in data])
+        modGroup = set([x[1] for x in mod_group if x[0] in selection])
         class _CheckGroup(CheckLink, self.__class__.cls):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
@@ -602,11 +600,11 @@ class _Mod_DisallowGhosting_All(ItemLink):
 
 #------------------------------------------------------------------------------
 class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
-    def _initData(self, window, data):
-        ItemLink._initData(self, window, data)
-        if len(data) == 1:
+    def _initData(self, window, selection):
+        super(Mod_Ghost, self)._initData(window, selection)
+        if len(selection) == 1:
             self.help = _(u"Ghost/Unghost selected mod.  Active mods can't be ghosted")
-            self.path = data[0]
+            self.path = selection[0]
             self.fileInfo = bosh.modInfos[self.path]
             self.isGhost = self.fileInfo.isGhost
             self.text = _(u"Ghost") if not self.isGhost else _(u"Unghost")
@@ -666,10 +664,10 @@ class Mod_AllowGhosting(TransLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
 
-                def _initData(self, window, data):
-                    super(_CheckLink, self)._initData(window, data)
+                def _initData(self, window, selection):
+                    super(_CheckLink, self)._initData(window, selection)
                     self.allowGhosting = bosh.modInfos.table.getItem(
-                        data[0], 'allowGhosting', True)
+                        selection[0], 'allowGhosting', True)
                 def _check(self): return not self.allowGhosting
                 def Execute(self, event):
                     fileName = self.selected[0]
@@ -753,8 +751,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         self.help = _(u'Rebuild the Bashed Patch (CBash)') if doCBash else _(
                     u'Rebuild the Bashed Patch')
 
-    def _initData(self, window, data):
-        super(_Mod_Patch_Update, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(_Mod_Patch_Update, self)._initData(window, selection)
         # Detect if the patch was build with Python or CBash
         config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
         thisIsCBash = configIsCBash(config)
@@ -934,8 +932,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree',
-                style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+                liststyle='tree', resize=True,
                 changedlabels={ListBoxes.ID_OK: _(u'Continue Despite Errors')}
             ) as warning:
                    if warning.ShowModal() == ListBoxes.ID_CANCEL: return
@@ -1126,10 +1123,10 @@ class Mod_SkipDirtyCheck(TransLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")
 
-                def _initData(self, window, data):
-                    super(_CheckLink, self)._initData(window, data)
+                def _initData(self, window, selection):
+                    super(_CheckLink, self)._initData(window, selection)
                     self.ignoreDirty = bosh.modInfos.table.getItem(
-                        data[0], 'ignoreDirty', False)
+                        selection[0], 'ignoreDirty', False)
                 def _check(self): return self.ignoreDirty
                 def Execute(self, event):
                     fileName = self.selected[0]
@@ -1151,8 +1148,8 @@ class Mod_ScanDirty(ItemLink):
     help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR'
              u' and ITM records')
 
-    def _initData(self, window, data):
-        super(Mod_ScanDirty, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Mod_ScanDirty, self)._initData(window, selection)
         # settings['bash.CBashEnabled'] is set once in BashApp.Init() AFTER
         # InitLinks() is called in bash.py
         self.text = _(u'Scan for Dirty Edits') if bosh.settings[
@@ -1398,9 +1395,9 @@ class Mod_AddMaster(OneItemLink):
 class Mod_CopyToEsmp(EnabledLink):
     """Create an esp(esm) copy of selected esm(esp)."""
 
-    def _initData(self, window, data):
-        super(Mod_CopyToEsmp, self)._initData(window, data)
-        fileInfo = bosh.modInfos[data[0]]
+    def _initData(self, window, selection):
+        super(Mod_CopyToEsmp, self)._initData(window, selection)
+        fileInfo = bosh.modInfos[selection[0]]
         self.isEsm = fileInfo.isEsm()
         self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
 
@@ -1503,9 +1500,9 @@ class Mod_DecompileAll(EnabledLink):
 class Mod_FlipSelf(EnabledLink):
     """Flip an esp(esm) to an esm(esp)."""
 
-    def _initData(self, window, data):
-        super(Mod_FlipSelf, self)._initData(window, data)
-        fileInfo = bosh.modInfos[data[0]]
+    def _initData(self, window, selection):
+        super(Mod_FlipSelf, self)._initData(window, selection)
+        fileInfo = bosh.modInfos[selection[0]]
         self.isEsm = fileInfo.isEsm()
         self.text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
 
@@ -1536,13 +1533,13 @@ class Mod_FlipSelf(EnabledLink):
 class Mod_FlipMasters(OneItemLink):
     """Swaps masters between esp and esm versions."""
 
-    def _initData(self, window, data):
-        super(Mod_FlipMasters, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Mod_FlipMasters, self)._initData(window, selection)
         #--FileInfo
         self.fileName = fileName = GPath(self.selected[0])
         self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
         self.text = _(u'Esmify Masters')
-        if len(data) == 1 and len(fileInfo.header.masters) > 1:
+        if len(selection) == 1 and len(fileInfo.header.masters) > 1:
             espMasters = [master for master in fileInfo.header.masters if bosh.reEspExt.search(master.s)]
             if not espMasters: return
             for masterName in espMasters:
@@ -1581,9 +1578,9 @@ class Mod_SetVersion(OneItemLink):
     text = _(u'Version 0.8')
     help = _(u'Sets version of file back to 0.8')
 
-    def _initData(self, window, data):
-        super(Mod_SetVersion, self)._initData(window, data)
-        self.fileInfo = window.data[data[0]]
+    def _initData(self, window, selection):
+        super(Mod_SetVersion, self)._initData(window, selection)
+        self.fileInfo = window.data[selection[0]]
 
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and
@@ -1726,12 +1723,10 @@ class _Mod_Import_Link(OneItemLink):
         return changed
 
     def _showLog(self, logText, title=u'', style=0, asDialog=True,
-                 fixedFont=False, icons=Resources.bashBlue, size=True,
-                 question=False):
-        return super(_Mod_Import_Link, self)._showLog(
+                 fixedFont=False, icons=Resources.bashBlue, size=True):
+        super(_Mod_Import_Link, self)._showLog(
             logText, title=title or self.__class__.progressTitle, style=style,
-            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size,
-            question=question)
+            asDialog=asDialog, fixedFont=fixedFont, icons=icons, size=size)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -1985,11 +1980,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             gdeprefix,
             spacer,
             gskipcomments,
-            (hSizer(
-                spacer,
-                button(dialog,id=wx.ID_OK,onClick=OnOk),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            balt.ok_and_cancel_sizer(dialog, onOk=OnOk),
             )
         dialog.SetSizer(sizer)
         with dialog: questions = dialog.ShowModal()

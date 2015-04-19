@@ -25,7 +25,6 @@
 """This module parses the command line that was used to start Wrye Bash."""
 
 import optparse
-import sys
 
 def parse():
     parser = optparse.OptionParser()

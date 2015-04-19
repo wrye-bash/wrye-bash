@@ -29,7 +29,8 @@ import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
 from ..balt import textCtrl, staticText, vSizer, hSizer, spacer, button, \
-    roTextCtrl, bitmapButton, bell, Link, toggleButton
+    roTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
+    CancelButton
 from ..bolt import GPath, BoltError, deprint
 
 # If comtypes is not installed, the IE ActiveX control cannot be imported
@@ -575,13 +576,12 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (button(self,id=wx.ID_SAVE,onClick=self.DoSave),0,),
-                (button(self, id=wx.ID_CANCEL, onClick=self.DoCancel), 0,
+                (SaveButton(self, onClick=self.DoSave, default=True),0,),
+                (CancelButton(self, onClick=self.DoCancel), 0,
                  wx.LEFT, 4),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done
-        self.FindWindowById(wx.ID_SAVE).SetDefault()
         self.SetSizerAndFit(sizer)
         self.SetSizer(sizer)
         self.SetSize((350,400))

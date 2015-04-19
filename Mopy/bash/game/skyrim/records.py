@@ -34,8 +34,7 @@ from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
     MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelModel, \
     null1, MelFidList, MelStructA, MreRecord, MreGmstBase, MelLString, \
-    MelCountedFidList, ModReader, MelOptStructA, MelCountedFids, \
-    MelSortedFidList
+    MelCountedFidList, MelOptStructA, MelCountedFids, MelSortedFidList
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
@@ -205,7 +204,8 @@ class MelBounds(MelStruct):
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
     def __init__(self):
-        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'), ('rank'))
+        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'),
+                              'rank')
 
 #function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
 #var

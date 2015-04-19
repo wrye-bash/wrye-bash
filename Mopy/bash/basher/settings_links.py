@@ -298,7 +298,7 @@ class Settings_Language(RadioLink):
         self.text = self.__class__.languageMap.get(self.language.lower(),
                                                     self.language)
 
-    def _initData(self, window, data):
+    def _initData(self, window, selection):
         if self.language == _bassLang():
             self.help = _(
                 "Currently using %(languagename)s as the active language.") % (

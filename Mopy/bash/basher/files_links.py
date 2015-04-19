@@ -44,8 +44,8 @@ class Files_Open(ItemLink):
     """Opens data directory in explorer."""
     text = _(u'Open...')
 
-    def _initData(self, window, data):
-        super(Files_Open, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Files_Open, self)._initData(window, selection)
         self.help = _(u"Open '%s'") % window.data.dir.tail
 
     def Execute(self,event):
@@ -148,10 +148,10 @@ class Files_Unhide(ItemLink):
 class File_Duplicate(ItemLink):
     """Create a duplicate of the file."""
 
-    def _initData(self, window, data):
-        super(File_Duplicate, self)._initData(window, data)
-        self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(data) == 1]
-        self.help = _(u"Make a copy of '%s'") % (data[0])
+    def _initData(self, window, selection):
+        super(File_Duplicate, self)._initData(window, selection)
+        self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(selection) == 1]
+        self.help = _(u"Make a copy of '%s'") % (selection[0])
 
     def Execute(self,event):
         data = self.selected
@@ -216,10 +216,10 @@ class File_Hide(ItemLink):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
     text = _(u'Hide')
 
-    def _initData(self, window, data):
-        super(File_Hide, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(File_Hide, self)._initData(window, selection)
         self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % (
-            {'filename': data[0]})
+            {'filename': selection[0]})
 
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
@@ -254,11 +254,11 @@ class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
     text = _(u"List Masters...")
 
-    def _initData(self, window, data):
-        super(File_ListMasters, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(File_ListMasters, self)._initData(window, selection)
         self.help = _(
             u"Copies list of %(filename)s's masters to the clipboard.") % (
-                        {'filename': data[0]})
+                        {'filename': selection[0]})
 
     def Execute(self,event):
         fileName = GPath(self.selected[0])
@@ -336,9 +336,9 @@ class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
     help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
 
-    def _initData(self, window, data):
-        super(File_Snapshot, self)._initData(window, data)
-        self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(data) == 1]
+    def _initData(self, window, selection):
+        super(File_Snapshot, self)._initData(window, selection)
+        self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
 
     def Execute(self,event):
         data = self.selected
@@ -420,10 +420,10 @@ class File_Open(EnabledLink):
     """Open specified file(s)."""
     text = _(u'Open...')
 
-    def _initData(self, window, data):
-        super(File_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s' with the system's default program.") % data[
-            0] if len(data) == 1 else _(u'Open the selected files.')
+    def _initData(self, window, selection):
+        super(File_Open, self)._initData(window, selection)
+        self.help = _(u"Open '%s' with the system's default program.") % selection[
+            0] if len(selection) == 1 else _(u'Open the selected files.')
 
     def _enable(self): return len(self.selected) > 0
 
@@ -432,11 +432,11 @@ class File_Open(EnabledLink):
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
 
-    def _initData(self, window, data):
-        super(File_RevertToBackup, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(File_RevertToBackup, self)._initData(window, selection)
         #--Backup Files
-        singleSelect = len(data) == 1
-        self.fileInfo = window.data[data[0]]
+        singleSelect = len(selection) == 1
+        self.fileInfo = window.data[selection[0]]
         self.backup = backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
         self.firstBackup = firstBackup = self.backup +u'f'
         #--Backup Item

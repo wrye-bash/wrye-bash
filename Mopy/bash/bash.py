@@ -175,15 +175,15 @@ def exit():
 
     # Cleanup temp installers directory
     import tempfile
-    tempDir = GPath(tempfile.tempdir)
-    for file in tempDir.list():
-        if file.cs.startswith(u'wryebash_'):
-            file = tempDir.join(file)
+    tmpDir = GPath(tempfile.tempdir)
+    for file_ in tmpDir.list():
+        if file_.cs.startswith(u'wryebash_'):
+            file_ = tmpDir.join(file_)
             try:
-                if file.isdir():
-                    file.rmtree(safety=file.stail)
+                if file_.isdir():
+                    file_.rmtree(safety=file_.stail)
                 else:
-                    file.remove()
+                    file_.remove()
             except:
                 pass
 

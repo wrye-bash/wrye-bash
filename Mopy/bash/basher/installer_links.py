@@ -158,8 +158,8 @@ class Installer_EditWizard(_InstallerLink):
     """Edit the wizard.txt associated with this project"""
     help = _(u"Edit the wizard.txt associated with this project.")
 
-    def _initData(self, window, data):
-        super(Installer_EditWizard, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Installer_EditWizard, self)._initData(window, selection)
         self.text = _(u'View Wizard...') if self.isSingleArchive() else _(
             u'Edit Wizard...')
 
@@ -383,8 +383,8 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
     text = _(u'Duplicate...')
 
-    def _initData(self,window,data):
-        super(Installer_Duplicate, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Installer_Duplicate, self)._initData(window, selection)
         self.help = _(u"Duplicate selected %(installername)s.") % (
             {'installername': self.selected[0]})
 
@@ -503,8 +503,8 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
     text = _(u'Override Skips')
     help = _(u"Allow installation of files in non-standard directories.")
 
-    def _initData(self, window, data):
-        super(Installer_OverrideSkips, self)._initData(window, data)
+    def _initData(self, window, selection):
+        super(Installer_OverrideSkips, self)._initData(window, selection)
         self.help = _(
             u"Override global file type skipping for %(installername)s.") % (
                     {'installername': self.selected[0]})
@@ -633,10 +633,10 @@ class Installer_Open(_InstallerLink):
     """Open selected file(s)."""
     text = _(u'Open...')
 
-    def _initData(self, window, data):
-        super(Installer_Open, self)._initData(window, data)
-        self.help = _(u"Open '%s'") % data[0] if len(data) == 1 else _(
-            u"Open selected files.")
+    def _initData(self, window, selection):
+        super(Installer_Open, self)._initData(window, selection)
+        self.help = _(u"Open '%s'") % selection[0] if len(selection) == 1 \
+            else _(u"Open selected files.")
         self.selected = [x for x in self.selected if
                          not isinstance(self.idata.data[x],
                                         bosh.InstallerMarker)]
