@@ -395,17 +395,14 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 
 from ...parsers import CBash_FidReplacer
 
-class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
+class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
     autoKey = {u'Formids'}
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.old = [] #--Maps old fid to new fid # TODO: unused ?
-        self.new = [] #--Maps old fid to new fid # TODO: unused ?
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}

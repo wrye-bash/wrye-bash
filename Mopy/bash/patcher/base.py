@@ -444,7 +444,7 @@ class APatchMerger(AListPatcher):
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
-    # TODO: common code - notice self.srcFiles =self.getConfigChecked() vs
+    # TODO: common code - notice self.srcFiles = self.getConfigChecked() vs
     # self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
     # plus unused vars, commented out code etc etc
     scanOrder = 15
