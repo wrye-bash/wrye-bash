@@ -486,6 +486,8 @@ class TweakPatcher(Patcher):
         tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = index
         self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
+        self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
+        self.TweakOnListCheck() # fired so this line is needed (?)
 
     def OnTweakCustomChoice(self, index):
         """Handle choice menu selection."""
@@ -527,6 +529,8 @@ class TweakPatcher(Patcher):
         else:
             menulabel = tweak.getListLabel() + u' %4.2f ' % tweak.choiceValues[index][0]
         self.gTweakList.SetString(tweakIndex, menulabel)
+        self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
+        self.TweakOnListCheck() # fired so this line is needed (?)
 
     def TweakSelectAll(self,event=None):
         """'Select All' Button was pressed, update all configChecks states."""
