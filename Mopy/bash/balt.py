@@ -393,13 +393,15 @@ class button(wx.Button):
     _id = defId
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', id=None, onClick=None, tip=None): ### TODO SETDEFAULT
+                 val=defVal, name='button', id=None, onClick=None, tip=None,
+                 default=False):
         """Creates a button, binds click function, then returns bound
         button."""
         wx.Button.__init__(self, parent, id or self.__class__._id, label, pos,
                            size, style, val, name)
         if onClick: self.Bind(wx.EVT_BUTTON,onClick)
         if tip: self.SetToolTip(tooltip(tip))
+        if default: self.SetDefault()
 
 class OkButton(button): _id = wx.ID_OK
 class CancelButton(button): _id = wx.ID_CANCEL
@@ -828,8 +830,8 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
         fixedStyle.SetFont(fixedFont)
         txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
     #--Buttons
-    gOkButton = OkButton(window, onClick=lambda event: window.Close())
-    gOkButton.SetDefault()
+    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
+                         default=True)
     #--Layout
     window.SetSizer(
         vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
@@ -888,8 +890,8 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
     gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
-    gOkButton = OkButton(window, onClick=lambda event: window.Close())
-    gOkButton.SetDefault()
+    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
+                         default=True)
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
     #--Layout
@@ -2753,8 +2755,7 @@ class ListBoxes(Dialog):
             subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
-        okButton = OkButton(self, label=labels[wx.ID_OK])
-        okButton.SetDefault()
+        okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
         buttonSizer = hSizer(spacer,
                              (okButton,0,wx.ALIGN_RIGHT),
                              )

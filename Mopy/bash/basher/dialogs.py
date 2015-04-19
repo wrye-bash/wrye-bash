@@ -64,8 +64,7 @@ class ColorDialog(balt.Dialog):
         self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
         self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
         self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
-        self.ok = OkButton(self, onClick=self.OnApplyAll) # OK applies all changes
-        self.ok.SetDefault()
+        self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
         self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
@@ -274,8 +273,8 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText  = staticText(self,u'')
         self.classText  = staticText(self,u'')
         #--Other
-        importButton = button(self,_(u'Import'),onClick=self.DoImport)
-        importButton.SetDefault()
+        importButton = button(self, label=_(u'Import'), onClick=self.DoImport,
+                              default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout
         fgSizer = wx.FlexGridSizer(3,2,2,4)

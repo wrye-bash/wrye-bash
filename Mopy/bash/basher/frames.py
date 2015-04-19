@@ -576,13 +576,12 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (SaveButton(self, onClick=self.DoSave),0,),
+                (SaveButton(self, onClick=self.DoSave, default=True),0,),
                 (CancelButton(self, onClick=self.DoCancel), 0,
                  wx.LEFT, 4),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done
-        self.FindWindowById(wx.ID_SAVE).SetDefault()
         self.SetSizerAndFit(sizer)
         self.SetSizer(sizer)
         self.SetSize((350,400))
