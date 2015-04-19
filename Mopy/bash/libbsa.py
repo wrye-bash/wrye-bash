@@ -198,7 +198,7 @@ def Init(path):
         details = c_char_p()
         ret = _Cbsa_get_error_message(byref(details))
         if ret != LIBBSA_OK:
-            raise Exception(u'An error occurred while getting the details of a libbsa error: %i' % (ret))
+            raise Exception(u'An error occurred while getting the details of a libbsa error: %i' % ret)
         return unicode(details.value,'utf8')
 
     def RegisterCallback(errorCode,callback):

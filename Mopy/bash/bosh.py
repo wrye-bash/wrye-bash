@@ -2577,7 +2577,6 @@ class OBSEIniFile(IniFile):
         if not tweakPath.exists() or not tweakPath.isfile():
             return
         reDeleted = self.reDeleted
-        reComent = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
         ini_settings = {}
@@ -2590,10 +2589,10 @@ class OBSEIniFile(IniFile):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:
                     stripped = maDeleted.group(1)
-                    settings = deleted_settings
+                    settings_ = deleted_settings
                 else:
                     stripped = line
-                    settings = ini_settings
+                    settings_ = ini_settings
                 # Check which kind of line - 'set' or 'setGS'
                 stripped = reComment.sub(u'',stripped).strip()
                 for regex,sectionKey in [(reSet,setSection),
@@ -2605,7 +2604,7 @@ class OBSEIniFile(IniFile):
                 else:
                     continue
                 # Save the setting for applying
-                section = settings.setdefault(sectionKey,{})
+                section = settings_.setdefault(sectionKey,{})
                 if line[-1] != u'\n': line += u'\r\n'
                 section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)

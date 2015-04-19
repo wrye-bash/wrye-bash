@@ -38,7 +38,6 @@ from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
-from ..bosh import formatDate, formatInteger
 from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
 from ..patcher.patchers import base

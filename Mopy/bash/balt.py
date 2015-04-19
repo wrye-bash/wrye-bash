@@ -1197,7 +1197,7 @@ class ListEditor(Dialog):
         a bunch of booleans to enable buttons but also the list of data that
         corresponds to (read is duplicated by) ListEditor._list_items.
         ListEditorData should be nested here.
-        :param kwargs: kwargs['ButtonLabel']=buttonAction
+        :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
         self._listEditorData = data #--Should be subclass of ListEditorData
@@ -1340,7 +1340,7 @@ class TabDragMixin(object):
     __slots__=('__dragX','__dragging','__justSwapped')
 
     def __init__(self):
-        self.__dragX = 0;
+        self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
         self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)

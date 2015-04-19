@@ -189,7 +189,7 @@ def Init(path):
         details = c_char_p()
         ret = _Clo_get_error_message(byref(details))
         if ret != LIBLO_OK:
-            raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % (ret))
+            raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % ret)
         return unicode(details.value,'utf8')
 
     def RegisterCallback(errorCode,callback):
@@ -520,7 +520,7 @@ def Init(path):
             return ret
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            if (self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins):
+            if self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins:
                 plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
