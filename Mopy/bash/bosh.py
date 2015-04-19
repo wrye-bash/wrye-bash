@@ -8958,7 +8958,8 @@ class PCFaces:
         if flags.name:
             postName = buff.getvalue()[buff.tell()+len(saveFile.pcName)+2:]
             buffPack('B',len(face.pcName)+1)
-            buff.write(face.pcName+'\x00')
+            buff.write(
+                _encode(face.pcName, firstEncoding=Path.sys_fs_enc) + '\x00')
             buff.write(postName)
             buff.seek(-len(postName),1)
             saveFile.pcName = face.pcName
