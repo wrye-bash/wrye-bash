@@ -279,14 +279,18 @@ class ListPatcher(Patcher):
         itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
         if itemIndex >= len(self.items): return
         self.gList.SetSelection(itemIndex)
-        self.rightClickItemIndex = itemIndex
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
-        def _OnItemChoice(event):
+        class _OnItemChoice(CheckLink):
+            def __init__(self, _text, index):
+                super(_OnItemChoice, self).__init__(_text)
+                self.index = index
+            def _check(self): return self.text in choiceSet
+            def Execute(self, event_): _onItemChoice(self.index)
+        def _onItemChoice(dex):
             """Handle choice menu selection."""
-            itemIndex = self.rightClickItemIndex
             item = self.items[itemIndex]
-            choice = self.choiceMenu[event.GetId()]
+            choice = self.choiceMenu[dex]
             choiceSet = self.configChoices[item]
             choiceSet ^= {choice}
             if choice != u'Auto':
@@ -299,10 +303,7 @@ class ListPatcher(Patcher):
             if label == u'----':
                 links.append(SeparatorLink())
             else:
-                class _OnItemChoice(CheckLink):
-                    def _check(self): return label in choiceSet
-                    def Execute(self, event): _OnItemChoice(event)
-                links.append(_OnItemChoice(index, label))
+                links.append(_OnItemChoice(label, index))
         #--Show/Destroy Menu
         links.PopupMenu(self.gList, Link.Frame, None)
 
@@ -457,8 +458,16 @@ class TweakPatcher(Patcher):
         self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
         links = Links()
+        _self = self # ugly, OnTweakCustomChoice is too big to make it local though
+        class _ValueLink(CheckLink):
+            def __init__(self, _text, index):
+                super(_ValueLink, self).__init__(_text)
+                self.index = index
+            def _check(self): return self.index == chosen
+            def Execute(self, event_): _self.OnTweakChoice(self.index)
+        class _ValueLinkCustom(_ValueLink):
+            def Execute(self, event_): _self.OnTweakCustomChoice(self.index)
         for index,label in enumerate(choiceLabels):
-            _self = self # ugly, OnTweakCustomChoice is too big to make it local though
             if label == u'----':
                 links.append(SeparatorLink())
             elif label.startswith(_(u'Custom')):
@@ -466,28 +475,21 @@ class TweakPatcher(Patcher):
                     menulabel = label + u' %s' % tweaks[tweakIndex].choiceValues[index][0]
                 else:
                     menulabel = label + u' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
-                class _ValueLink(CheckLink):
-                    def _check(self): return index == chosen
-                    def Execute(self, event): _self.OnTweakCustomChoice(event)
-                links.append(_ValueLink(index, menulabel))
+                links.append(_ValueLinkCustom(menulabel, index))
             else:
-                class _ValueLink(CheckLink):
-                    def _check(self): return index == chosen
-                    def Execute(self, event): _self.OnTweakChoice(event)
-                links.append(_ValueLink(index, label))
+                links.append(_ValueLink(label, index))
         #--Show/Destroy Menu
         links.PopupMenu(self.gTweakList, Link.Frame, None)
 
-    def OnTweakChoice(self,event):
+    def OnTweakChoice(self, index):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
-        self.tweaks[tweakIndex].chosen = event.GetId()
+        self.tweaks[tweakIndex].chosen = index
         self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
 
-    def OnTweakCustomChoice(self,event):
+    def OnTweakCustomChoice(self, index):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
-        index = event.GetId()
         tweak = self.tweaks[tweakIndex]
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
