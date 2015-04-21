@@ -903,10 +903,8 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
 
 class AMultiTweakItem_Weight(AMultiTweakItem):
 
-    def __init__(self,label,tip,key,*choices,**kwargs):
-        super(AMultiTweakItem_Weight, self).__init__(label, tip, key, *choices,
-                                                     **kwargs)
-        self.weight = self.choiceValues[self.chosen][0]
+    @property
+    def weight(self): return self.choiceValues[self.chosen][0]
 
     def _patchLog(self,log,count,weight):
         # TODO: maybe override _patchLog and call self.weight instead of
