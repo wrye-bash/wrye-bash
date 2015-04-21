@@ -279,14 +279,18 @@ class ListPatcher(Patcher):
         itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
         if itemIndex >= len(self.items): return
         self.gList.SetSelection(itemIndex)
-        self.rightClickItemIndex = itemIndex
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
-        def _OnItemChoice(event):
+        class _OnItemChoice(CheckLink):
+            def __init__(self, _text, index):
+                super(_OnItemChoice, self).__init__(_text)
+                self.index = index
+            def _check(self): return self.text in choiceSet
+            def Execute(self, event_): _onItemChoice(self.index)
+        def _onItemChoice(dex):
             """Handle choice menu selection."""
-            itemIndex = self.rightClickItemIndex
             item = self.items[itemIndex]
-            choice = self.choiceMenu[event.GetId()]
+            choice = self.choiceMenu[dex]
             choiceSet = self.configChoices[item]
             choiceSet ^= {choice}
             if choice != u'Auto':
@@ -299,10 +303,7 @@ class ListPatcher(Patcher):
             if label == u'----':
                 links.append(SeparatorLink())
             else:
-                class _OnItemChoice(CheckLink):
-                    def _check(self): return label in choiceSet
-                    def Execute(self, event): _OnItemChoice(event)
-                links.append(_OnItemChoice(index, label))
+                links.append(_OnItemChoice(label, index))
         #--Show/Destroy Menu
         links.PopupMenu(self.gList, Link.Frame, None)
 
@@ -370,6 +371,11 @@ class TweakPatcher(Patcher):
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
+    @staticmethod
+    def _label(label, value): # edit label text with value
+        formatStr = u' %s' if isinstance(value, basestring) else u' %4.2f '
+        return label + formatStr % value
+
     def SetTweaks(self):
         """Set item to specified set of items."""
         self.gTweakList.Clear()
@@ -378,10 +384,7 @@ class TweakPatcher(Patcher):
         for index,tweak in enumerate(self.tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[tweak.chosen].startswith(u'Custom'):
-                if isinstance(tweak.choiceValues[tweak.chosen][0],basestring):
-                    label += u' %s' % tweak.choiceValues[tweak.chosen][0]
-                else:
-                    label += u' %4.2f ' % tweak.choiceValues[tweak.chosen][0]
+                label = self._label(label, tweak.choiceValues[tweak.chosen][0])
             self.gTweakList.Insert(label,index)
             self.gTweakList.Check(index,tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
@@ -451,80 +454,89 @@ class TweakPatcher(Patcher):
         #--Tweaks
         tweaks = self.tweaks
         if tweakIndex >= len(tweaks): return
-        choiceLabels = tweaks[tweakIndex].choiceLabels
+        tweak = tweaks[tweakIndex]
+        choiceLabels = tweak.choiceLabels
         if len(choiceLabels) <= 1: return
-        chosen = tweaks[tweakIndex].chosen
         self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
         links = Links()
+        _self = self # ugly, OnTweakCustomChoice is too big to make it local though
+        class _ValueLink(CheckLink):
+            def __init__(self, _text, index):
+                super(_ValueLink, self).__init__(_text)
+                self.index = index
+            def _check(self): return self.index == tweak.chosen
+            def Execute(self, event_): _self.OnTweakChoice(self.index)
+        class _ValueLinkCustom(_ValueLink):
+            def Execute(self, event_): _self.OnTweakCustomChoice(self.index)
         for index,label in enumerate(choiceLabels):
-            _self = self # ugly, OnTweakCustomChoice is too big to make it local though
             if label == u'----':
                 links.append(SeparatorLink())
             elif label.startswith(_(u'Custom')):
-                if isinstance(tweaks[tweakIndex].choiceValues[index][0],basestring):
-                    menulabel = label + u' %s' % tweaks[tweakIndex].choiceValues[index][0]
-                else:
-                    menulabel = label + u' %4.2f ' % tweaks[tweakIndex].choiceValues[index][0]
-                class _ValueLink(CheckLink):
-                    def _check(self): return index == chosen
-                    def Execute(self, event): _self.OnTweakCustomChoice(event)
-                links.append(_ValueLink(index, menulabel))
+                label = self._label(label, tweak.choiceValues[index][0])
+                links.append(_ValueLinkCustom(label, index))
             else:
-                class _ValueLink(CheckLink):
-                    def _check(self): return index == chosen
-                    def Execute(self, event): _self.OnTweakChoice(event)
-                links.append(_ValueLink(index, label))
+                links.append(_ValueLink(label, index))
         #--Show/Destroy Menu
         links.PopupMenu(self.gTweakList, Link.Frame, None)
 
-    def OnTweakChoice(self,event):
+    def OnTweakChoice(self, index):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
-        self.tweaks[tweakIndex].chosen = event.GetId()
+        self.tweaks[tweakIndex].chosen = index
         self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
+        self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
+        self.TweakOnListCheck() # fired so this line is needed (?)
 
-    def OnTweakCustomChoice(self,event):
+    _msg = _(u'Enter the desired custom tweak value.') + u'\n' + _(
+        u'Due to an inability to get decimal numbers from the wxPython '
+        u'prompt please enter an extra zero after your choice if it is not '
+        u'meant to be a decimal.') + u'\n' + _(
+        u'If you are trying to enter a decimal multiply it by 10, '
+        u'for example for 0.3 enter 3 instead.')
+
+    def OnTweakCustomChoice(self, index):
         """Handle choice menu selection."""
         tweakIndex = self.rightClickTweakIndex
-        index = event.GetId()
         tweak = self.tweaks[tweakIndex]
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
             if isinstance(v,float):
-                label = (_(u'Enter the desired custom tweak value.')
-                         + u'\n' +
-                         _(u'Due to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal.')
-                         + u'\n' +
-                         _(u'If you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead.')
-                         + u'\n' + tweak.key[i])
-                new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
-                    title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                label = self._msg + u'\n' + tweak.key[i]
+                new = balt.askNumber(
+                    self.gConfigPanel, label, prompt=_(u'Value'),
+                    title=tweak.label + _(u' ~ Custom Tweak Value'),
+                    value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
                 value.append(float(new)/10)
             elif isinstance(v,int):
-                label = _(u'Enter the desired custom tweak value.')+u'\n'+tweak.key[i]
-                new = balt.askNumber(self.gConfigPanel,label,prompt=_(u'Value'),
-                    title=tweak.label+_(u' ~ Custom Tweak Value'),value=self.tweaks[tweakIndex].choiceValues[index][i],min=-10000,max=10000)
+                label = _(u'Enter the desired custom tweak value.') + u'\n' + \
+                        tweak.key[i]
+                new = balt.askNumber(
+                    self.gConfigPanel, label, prompt=_(u'Value'),
+                    title=tweak.label + _(u' ~ Custom Tweak Value'),
+                    value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
                 value.append(new)
             elif isinstance(v,basestring):
-                label = _(u'Enter the desired custom tweak text.')+u'\n'+tweak.key[i]
-                new = balt.askText(self.gConfigPanel,label,
-                    title=tweak.label+_(u' ~ Custom Tweak Text'),default=self.tweaks[tweakIndex].choiceValues[index][i])
+                label = _(u'Enter the desired custom tweak text.') + u'\n' + \
+                        tweak.key[i]
+                new = balt.askText(
+                    self.gConfigPanel, label,
+                    title=tweak.label + _(u' ~ Custom Tweak Text'),
+                    default=tweak.choiceValues[index][i])
                 if new is None: #user hit cancel
                     return
                 value.append(new)
         if not value: value = tweak.choiceValues[index]
         tweak.choiceValues[index] = tuple(value)
         tweak.chosen = index
-        if isinstance(tweak.choiceValues[index][0],basestring):
-            menulabel = tweak.getListLabel() + u' %s' % tweak.choiceValues[index][0]
-        else:
-            menulabel = tweak.getListLabel() + u' %4.2f ' % tweak.choiceValues[index][0]
-        self.gTweakList.SetString(tweakIndex, menulabel)
+        label = self._label(tweak.getListLabel(), tweak.choiceValues[index][0])
+        self.gTweakList.SetString(tweakIndex, label)
+        self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
+        self.TweakOnListCheck() # fired so this line is needed (?)
 
     def TweakSelectAll(self,event=None):
         """'Select All' Button was pressed, update all configChecks states."""
