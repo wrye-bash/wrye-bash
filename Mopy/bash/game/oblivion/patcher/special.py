@@ -350,10 +350,9 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CoblExhaustion, self).initPatchFile(patchFile, loadMods)
         self.cobl = GPath(u'Cobl Main.esm')
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles) and (
+        self.isActive = bool(self.srcs) and (
             self.cobl in loadMods and bosh.modInfos.getVersionFloat(
                 self.cobl) > 1.65)
         self.id_exhaustion = {}
@@ -377,8 +376,8 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
     def initData(self,progress):
         """Get names from source files."""
         if not self.isActive: return
-        progress.setFull(len(self.srcFiles))
-        for srcFile in self.srcFiles:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if srcPath not in patchesList: continue
@@ -547,10 +546,9 @@ class MFactMarker(_AMFactMarker,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(MFactMarker, self).initPatchFile(patchFile, loadMods)
         self.id_info = {} #--Morphable factions keyed by fid
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles) and GPath(
+        self.isActive = bool(self.srcs) and GPath(
             u"Cobl Main.esm") in bosh.modInfos.ordered
         self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
 
@@ -559,7 +557,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         if not self.isActive: return
         aliases = self.patchFile.aliases
         id_info = self.id_info
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             textPath = getPatchesPath(srcFile)
             if not textPath.exists(): continue
             with CsvReader(textPath) as ins:
@@ -650,8 +648,8 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         modsHeader = u'=== ' + _(u'Source Mods/Files')
         log.setHeader(u'= ' + self.__class__.name)
         log(modsHeader)
-        for file in self.srcFiles:
-            log(u'* ' +file.s)
+        for srcFile in self.srcs:
+            log(u'* ' +srcFile.s)
         log(u'\n=== '+_(u'Morphable Factions'))
         for mod in sorted(changed):
             log(u'* %s: %d' % (mod.s,changed[mod]))

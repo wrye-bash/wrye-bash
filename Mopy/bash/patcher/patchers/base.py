@@ -192,10 +192,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
+        super(UpdateReferences, self).initPatchFile(patchFile, loadMods)
         self.types = MreRecord.simpleTypes
         self.classes = self.types.union(
             {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
@@ -222,9 +219,9 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
     def initData(self,progress):
         """Get names from source files."""
         if not self.isActive: return
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesList = getPatchesList()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if srcPath not in patchesList: continue
             if getPatchesPath(srcFile).isfile():
@@ -382,7 +379,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 
         log.setHeader(u'= '+self.__class__.name)
         log(u'=== '+_(u'Source Mods'))
-        for mod in self.getConfigChecked():
+        for mod in self.srcs:
             log(u'* ' +mod.s)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
