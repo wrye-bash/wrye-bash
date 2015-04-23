@@ -152,9 +152,9 @@ def _initData(self,progress):
     recAttrs_class = self.recAttrs_class
     loadFactory = LoadFactory(False,*recAttrs_class.keys())
     longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-    progress.setFull(len(self.sourceMods))
+    progress.setFull(len(self.srcs))
     cachedMasters = {}
-    for index,srcMod in enumerate(self.sourceMods):
+    for index,srcMod in enumerate(self.srcs):
         temp_id_data = {}
         if srcMod not in bosh.modInfos: continue
         srcInfo = bosh.modInfos[srcMod]
@@ -287,9 +287,9 @@ class CellImporter(_ACellImporter, ImportPatcher):
         # cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'])
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
-        for srcMod in self.sourceMods:
+        for srcMod in self.srcs:
             if srcMod not in bosh.modInfos: continue
             tempCellData = {'Maps':{}}
             srcInfo = bosh.modInfos[srcMod]
@@ -531,9 +531,9 @@ class GraphicsPatcher(ImportPatcher):
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
         longTypes = self.longTypes & set(
             x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
+        for index,srcMod in enumerate(self.srcs):
             temp_id_data = {}
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
@@ -810,9 +810,9 @@ class ActorImporter(ImportPatcher):
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'],
                                         MreRecord.type_class['CREA'])
         longTypes =self.longTypes & set(x.classType for x in self.actorClasses)
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
-        for index,srcMod in enumerate(self.sourceMods):
+        for index,srcMod in enumerate(self.srcs):
             temp_id_data = {}
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
@@ -1132,10 +1132,10 @@ class NPCAIPackagePatcher(ImportPatcher):
         longTypes = self.longTypes
         loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
                                         MreRecord.type_class['NPC_'])
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
         data = self.data
-        for index,srcMod in enumerate(self.sourceMods):
+        for index,srcMod in enumerate(self.srcs):
             tempData = {}
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
@@ -1461,8 +1461,8 @@ class ImportFactions(ImportPatcher):
         """Get names from source files."""
         if not self.isActive: return
         actorFactions = ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.sourceMods))
-        for srcFile in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
@@ -1666,8 +1666,8 @@ class ImportRelations(ImportPatcher):
         """Get names from source files."""
         if not self.isActive: return
         factionRelations = FactionRelations(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.sourceMods))
-        for srcFile in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
@@ -1937,25 +1937,25 @@ class ImportInventory(ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(ImportInventory, self).initPatchFile(patchFile, loadMods)
         self.id_deltas = {}
-        self.sourceMods = [x for x in self.sourceMods if
-                           (x in bosh.modInfos and x in patchFile.allMods)]
-        self.inventOnlyMods = set(x for x in self.sourceMods if (
+        self.srcs = [x for x in self.srcs if
+                     x in bosh.modInfos and x in patchFile.allMods]
+        self.inventOnlyMods = set(x for x in self.srcs if (
             x in patchFile.mergeSet and
             {u'InventOnly', u'IIM'} & bosh.modInfos[x].getBashTags()))
-        self.isActive = bool(self.sourceMods)
+        self.isActive = bool(self.srcs)
         self.masters = set()
-        for srcMod in self.sourceMods:
+        for srcMod in self.srcs:
             self.masters |= set(bosh.modInfos[srcMod].header.masters)
-        self.allMods = self.masters | set(self.sourceMods)
+        self.allMods = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
 
     def initData(self,progress):
         """Get data from source files."""
-        if not self.isActive or not self.sourceMods: return
+        if not self.isActive or not self.srcs: return
         loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
-        progress.setFull(len(self.sourceMods))
-        for index,srcMod in enumerate(self.sourceMods):
+        progress.setFull(len(self.srcs))
+        for index,srcMod in enumerate(self.srcs):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
@@ -1990,7 +1990,7 @@ class ImportInventory(ImportPatcher):
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
         #--Source mod?
-        if modName in self.sourceMods:
+        if modName in self.srcs:
             id_entries = {}
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
@@ -2174,10 +2174,10 @@ class ImportActorsSpells(ImportPatcher):
         longTypes = self.longTypes
         loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
                                         MreRecord.type_class['NPC_'])
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
         data = self.data
-        for index,srcMod in enumerate(self.sourceMods):
+        for index,srcMod in enumerate(self.srcs):
             tempData = {}
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
@@ -2418,8 +2418,8 @@ class NamesPatcher(ImportPatcher):
         """Get names from source files."""
         if not self.isActive: return
         fullNames = FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.sourceMods))
-        for srcFile in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
@@ -2614,9 +2614,9 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         if not self.isActive: return
         faceData = self.faceData
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
-        progress.setFull(len(self.sourceMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
-        for index,faceMod in enumerate(self.sourceMods):
+        for index,faceMod in enumerate(self.srcs):
             if faceMod not in bosh.modInfos: continue
             temp_faceData = {}
             faceInfo = bosh.modInfos[faceMod]
@@ -2696,7 +2696,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile3: mapper unused !
         """Add lists from modFile."""
         modName = modFile.fileInfo.name
-        if not self.isActive or modName in self.sourceMods or 'NPC_' not in modFile.tops:
+        if not self.isActive or modName in self.srcs or 'NPC_' not in modFile.tops:
             return
         mapper = modFile.getLongMapper()
         faceData,patchNpcs = self.faceData,self.patchFile.NPC_
@@ -2826,8 +2826,8 @@ class RoadImporter(ImportPatcher):
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'],
                                         MreRecord.type_class['ROAD'])
-        progress.setFull(len(self.sourceMods))
-        for srcMod in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcMod in self.srcs:
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
@@ -3080,8 +3080,8 @@ class StatsPatcher(ImportPatcher):
         """Get stats from source files."""
         if not self.isActive: return
         itemStats = ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.sourceMods))
-        for srcFile in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if reModExt.search(srcFile.s):
@@ -3280,8 +3280,8 @@ class SpellsPatcher(ImportPatcher):
         if not self.isActive: return
         spellStats = SpellRecords(aliases=self.patchFile.aliases)
         self.attrs = spellStats.attrs
-        progress.setFull(len(self.sourceMods))
-        for srcFile in self.sourceMods:
+        progress.setFull(len(self.srcs))
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             patchesList = getPatchesList()
             if reModExt.search(srcFile.s):

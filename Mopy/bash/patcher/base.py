@@ -170,7 +170,6 @@ class AListPatcher(_Abstract_Patcher):
     def initPatchFile(self, patchFile, loadMods):
         super(AListPatcher, self).initPatchFile(patchFile, loadMods)
         self.srcs = self.getConfigChecked()
-        self.sourceMods = self.srcs # alias for importers, eventually bin it
         self.isActive = bool(self.srcs)
 
     #--Config Phase -----------------------------------------------------------
