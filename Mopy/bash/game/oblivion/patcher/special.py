@@ -540,6 +540,7 @@ class _AMFactMarker(SpecialPatcher):
             )
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
 class MFactMarker(_AMFactMarker,ListPatcher):
     autoKey = 'MFact'
@@ -645,11 +646,8 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                 relation.mod = 10
                 relations.append(relation)
             keep(record.fid)
-        modsHeader = u'=== ' + _(u'Source Mods/Files')
         log.setHeader(u'= ' + self.__class__.name)
-        log(modsHeader)
-        for srcFile in self.srcs:
-            log(u'* ' +srcFile.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Morphable Factions'))
         for mod in sorted(changed):
             log(u'* %s: %d' % (mod.s,changed[mod]))
@@ -770,9 +768,7 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
         #--Log
         mod_count = self.mod_count
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods/Files'))
-        for file in self.srcs:
-            log(u'* '+file.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Morphable Factions'))
         for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))

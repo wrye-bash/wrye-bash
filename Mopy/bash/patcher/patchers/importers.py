@@ -1448,7 +1448,7 @@ class ImportFactions(ImportPatcher):
     text = _(u"Import factions from source mods/files.")
     logMsg = _(u'Refactioned Actors')
     autoKey = u'Factions'
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1654,7 +1654,7 @@ class ImportRelations(ImportPatcher):
     text = _(u"Import relations from source mods/files.")
     autoKey = u'Relations'
     logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2404,7 +2404,7 @@ class NamesPatcher(ImportPatcher):
     autoRe = game.namesPatcherMaster
     autoKey = u'Names'
     logMsg =  u'\n=== ' + _(u'Renamed Items')
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2519,7 +2519,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     autoRe = game.namesPatcherMaster
     autoKey = {u'Names'}
     logMsg = u'\n=== ' + _(u'Renamed Items')
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3066,7 +3066,7 @@ class StatsPatcher(ImportPatcher):
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = u'Stats'
     logMsg = u'\n=== ' + _(u'Modified Stats')
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3186,7 +3186,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
     text = _(u"Import stats from any pickupable items from source mods/files.")
     autoKey = {u'Stats'}
     logMsg = u'\n=== ' + _(u'Imported Stats')
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3266,7 +3266,7 @@ class SpellsPatcher(ImportPatcher):
     text = _(u"Import stats from any spells from source mods/files.")
     autoKey = (u'Spells',u'SpellStats')
     logMsg = u'\n=== ' + _(u'Modified Stats')
-    modsHeader = u'=== ' + _(u'Source Mods/Files')
+    srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

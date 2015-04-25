@@ -1221,9 +1221,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
         #--Done
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' +mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Merged'))
         if not racesPatched:
             log(u'. ~~%s~~'%_(u'None'))
@@ -1874,12 +1872,7 @@ class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
                 mod_npcsFixed.update(tweak.mod_npcsFixed)
         #--Done
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        if not self.srcs:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for mod in self.srcs:
-                log(u'* '+mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Merged'))
 
         if not racesPatched:

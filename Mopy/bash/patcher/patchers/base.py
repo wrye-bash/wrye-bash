@@ -378,9 +378,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 keep(worldBlock.world.fid)
 
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcs:
-            log(u'* ' +mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
@@ -452,12 +450,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         mod_count_old_new = self.mod_count_old_new
 
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        if not self.srcs:
-            log(u". ~~%s~~" % _(u'None'))
-        else:
-            for srcFile in self.srcs:
-                log(u"* " +srcFile.s)
+        self._srcMods(log)
         log(u'\n')
         for mod in bosh.modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
@@ -488,9 +481,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
 
     def _patchLog(self,log,type_count):
         log.setHeader(u'= ' + self.__class__.name)
-        log(self.__class__.modsHeader)
-        for mod in self.sourceMods:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         self._plog(log,type_count)
 
     def _plog(self,log,type_count):
@@ -543,13 +534,6 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-
-    def _srcMods(self,log):
-        """Logs the Source mods for this patcher - patcher must have `srcs`
-        attribute otherwise an AttributeError will be raised."""
-        log(self.__class__.modsHeader)
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
 
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher(object):
