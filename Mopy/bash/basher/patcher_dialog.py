@@ -281,15 +281,6 @@ class PatchDialog(balt.Dialog):
                     and (bosh.modInfos.isSelected(patchName) or
                              balt.askYes(self.parent,message,patchName.s)):
                 try:
-                    if not self.doCBash: ##: is this PBash specific ? needed ?
-                        # Note to the regular WB devs: ##: 226b30b27e5b98f24ba14fc583a2048a43bb7ad8
-                        #  The bashed patch wasn't activating when it had been manually deleting. So, on
-                        #   startup, WB would create a new one, but something, somewhere (libloadorder?) wasn't
-                        #   registering this so when this: bosh.modInfos.select(patchName) executed, bash
-                        #   couldn't actually find anything to execute. This fix really belongs somewhere else
-                        #   (after the patch is recreated?), but I don't know where it goes, so I'm sticking it
-                        #   here until one of you come back or I find a better place.
-                        bosh.modInfos.plugins.refresh(True)
                     oldFiles = bosh.modInfos.ordered[:]
                     bosh.modInfos.select(patchName)
                     changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
