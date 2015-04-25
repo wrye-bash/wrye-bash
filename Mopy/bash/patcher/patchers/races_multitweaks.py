@@ -792,13 +792,12 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(RacePatcher, self).initPatchFile(patchFile, loadMods)
         self.races_data = {'EYES':[],'HAIR':[]}
         self.raceData = {} #--Race eye meshes, hair,eyes
         self.tempRaceData = {}
-        #--Restrict srcMods to active/merged mods.
-        self.srcMods = [x for x in self.getConfigChecked() if
-                        x in patchFile.allSet]
+        #--Restrict srcs to active/merged mods.
+        self.srcs = [x for x in self.srcs if x in patchFile.allSet]
         self.isActive = True #--Always enabled to support eye filtering
         self.bodyKeys = {'TailModel', 'UpperBodyPath', 'LowerBodyPath',
                          'HandPath', 'FootPath', 'TailPath'}
@@ -819,11 +818,11 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
     def initData(self,progress):
         """Get data from source files."""
-        if not self.isActive or not self.srcMods: return
+        if not self.isActive or not self.srcs: return
         loadFactory = LoadFactory(False,MreRecord.type_class['RACE'])
-        progress.setFull(len(self.srcMods))
+        progress.setFull(len(self.srcs))
         cachedMasters = {}
-        for index,srcMod in enumerate(self.srcMods):
+        for index,srcMod in enumerate(self.srcs):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
@@ -1222,9 +1221,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
 
         #--Done
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.srcMods:
-            log(u'* ' +mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Merged'))
         if not racesPatched:
             log(u'. ~~%s~~'%_(u'None'))
@@ -1799,7 +1796,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 npc.UnloadRecord()
             pstate += 1
 
-class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
+class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
@@ -1841,7 +1838,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_RacePatcher, self).initPatchFile(patchFile, loadMods)
         #This single tweak is broken into several parts to make it easier to
         # manage
         #Each part is a group of tags that are processed similarly
@@ -1875,12 +1872,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
                 mod_npcsFixed.update(tweak.mod_npcsFixed)
         #--Done
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        if not self.srcs:
-            log(u'. ~~%s~~'%_(u'None'))
-        else:
-            for mod in self.srcs:
-                log(u'* '+mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Merged'))
 
         if not racesPatched:

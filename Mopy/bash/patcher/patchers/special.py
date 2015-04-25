@@ -98,8 +98,8 @@ class ListsMerger(_AListsMerger,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcMods = set(self.getConfigChecked()) & set(loadMods)
+        super(ListsMerger, self).initPatchFile(patchFile, loadMods)
+        self.srcs = set(self.srcs) & set(loadMods)
         self.listTypes = bush.game.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
@@ -114,11 +114,11 @@ class ListsMerger(_AListsMerger,ListPatcher):
         WCMods = {GPath(u"Oblivion Warcry.esp"),
                   GPath(u"Oblivion Warcry EV.esp")}
         TIEMods = {GPath(u"TIE.esp")}
-        if GPath(u"Unofficial Oblivion Patch.esp") in self.srcMods:
-            if (OOOMods|WCMods) & self.srcMods:
+        if GPath(u"Unofficial Oblivion Patch.esp") in self.srcs:
+            if (OOOMods|WCMods) & self.srcs:
                 OverhaulCompat = True
-            elif FransMods & self.srcMods:
-                if TIEMods & self.srcMods:
+            elif FransMods & self.srcs:
+                if TIEMods & self.srcs:
                     pass
                 else:
                     OverhaulCompat = True
@@ -290,7 +290,7 @@ class ListsMerger(_AListsMerger,ListPatcher):
             for eid in sorted(cleaned,key=string.lower):
                 log(u'* '+eid)
 
-class CBash_ListsMerger(_AListsMerger,CBash_ListPatcher):
+class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     autoKey = {u'Delev', u'Relev'}
     allowUnloaded = False
     scanRequiresChecked = False
@@ -320,7 +320,7 @@ class CBash_ListsMerger(_AListsMerger,CBash_ListPatcher):
             return item
 
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ListsMerger, self).initPatchFile(patchFile, loadMods)
         self.isActive = True
         self.id_delevs = {}
         self.id_list = {}

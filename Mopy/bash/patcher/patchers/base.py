@@ -56,11 +56,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         return CBash_PatchFile
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
-        self.srcs = self.getConfigChecked()
-        self.isActive = bool(self.srcs)
-
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         if self.allowUnloaded:
@@ -197,10 +192,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.srcFiles = self.getConfigChecked()
-        self.isActive = bool(self.srcFiles)
+        super(UpdateReferences, self).initPatchFile(patchFile, loadMods)
         self.types = MreRecord.simpleTypes
         self.classes = self.types.union(
             {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
@@ -227,9 +219,9 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
     def initData(self,progress):
         """Get names from source files."""
         if not self.isActive: return
-        progress.setFull(len(self.srcFiles))
+        progress.setFull(len(self.srcs))
         patchesList = getPatchesList()
-        for srcFile in self.srcFiles:
+        for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if srcPath not in patchesList: continue
             if getPatchesPath(srcFile).isfile():
@@ -386,26 +378,20 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 keep(worldBlock.world.fid)
 
         log.setHeader(u'= '+self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        for mod in self.getConfigChecked():
-            log(u'* ' +mod.s)
+        self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 from ...parsers import CBash_FidReplacer
 
-class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
+class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
     autoKey = {u'Formids'}
-    unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods referenced by files selected in the following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_UpdateReferences, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.old = [] #--Maps old fid to new fid # TODO: unused ?
-        self.new = [] #--Maps old fid to new fid # TODO: unused ?
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}
@@ -464,12 +450,7 @@ class CBash_UpdateReferences(AUpdateReferences,CBash_ListPatcher):
         mod_count_old_new = self.mod_count_old_new
 
         log.setHeader(u'= ' +self.__class__.name)
-        log(u'=== '+_(u'Source Mods'))
-        if not self.srcs:
-            log(u". ~~%s~~" % _(u'None'))
-        else:
-            for srcFile in self.srcs:
-                log(u"* " +srcFile.s)
+        self._srcMods(log)
         log(u'\n')
         for mod in bosh.modInfos.getOrdered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
@@ -500,9 +481,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
 
     def _patchLog(self,log,type_count):
         log.setHeader(u'= ' + self.__class__.name)
-        log(self.__class__.modsHeader)
-        for mod in self.sourceMods:
-            log(u'* ' + mod.s)
+        self._srcMods(log)
         self._plog(log,type_count)
 
     def _plog(self,log,type_count):
@@ -555,13 +534,6 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
-
-    def _srcMods(self,log):
-        """Logs the Source mods for this patcher - patcher must have `srcs`
-        attribute otherwise an AttributeError will be raised."""
-        log(self.__class__.modsHeader)
-        for mod in self.srcs:
-            log(u'* ' + mod.s)
 
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher(object):

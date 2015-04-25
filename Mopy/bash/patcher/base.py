@@ -166,6 +166,23 @@ class AListPatcher(_Abstract_Patcher):
     # except DoublePatcher and UpdateReference ones
     autoKey = None
     forceAuto = True
+    # log header to be used if the ListPatcher has mods/files source files
+    srcsHeader = u'=== '+ _(u'Source Mods')
+
+    def initPatchFile(self, patchFile, loadMods):
+        super(AListPatcher, self).initPatchFile(patchFile, loadMods)
+        self.srcs = self.getConfigChecked()
+        self.isActive = bool(self.srcs)
+
+    def _srcMods(self,log):
+        """Logs the Source mods for this patcher - patcher must have `srcs`
+        attribute otherwise an AttributeError will be raised."""
+        log(self.__class__.srcsHeader)
+        if not self.srcs:
+            log(u". ~~%s~~" % _(u'None'))
+        else:
+            for srcFile in self.srcs:
+                log(u"* " +srcFile.s)
 
     #--Config Phase -----------------------------------------------------------
     def getAutoItems(self):
@@ -401,7 +418,6 @@ class AImportPatcher(AListPatcher):
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
     # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
     # ImportRelations, ImportFactions
-    modsHeader = u'=== ' + _(u'Source Mods')
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -444,9 +460,6 @@ class APatchMerger(AListPatcher):
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
-    # TODO: common code - notice self.srcFiles =self.getConfigChecked() vs
-    # self.srcs = self.getConfigChecked() in CBash_ListPatcher.initPatchFile()
-    # plus unused vars, commented out code etc etc
     scanOrder = 15
     editOrder = 15
     group = _(u'General')
