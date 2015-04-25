@@ -290,7 +290,7 @@ class ListsMerger(_AListsMerger,ListPatcher):
             for eid in sorted(cleaned,key=string.lower):
                 log(u'* '+eid)
 
-class CBash_ListsMerger(_AListsMerger,CBash_ListPatcher):
+class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     autoKey = {u'Delev', u'Relev'}
     allowUnloaded = False
     scanRequiresChecked = False
@@ -320,7 +320,7 @@ class CBash_ListsMerger(_AListsMerger,CBash_ListPatcher):
             return item
 
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ListsMerger, self).initPatchFile(patchFile, loadMods)
         self.isActive = True
         self.id_delevs = {}
         self.id_list = {}

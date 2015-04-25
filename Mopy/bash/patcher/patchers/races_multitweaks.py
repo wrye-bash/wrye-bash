@@ -1799,7 +1799,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 npc.UnloadRecord()
             pstate += 1
 
-class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
+class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
@@ -1841,7 +1841,7 @@ class CBash_RacePatcher(SpecialPatcher,CBash_DoublePatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_RacePatcher, self).initPatchFile(patchFile, loadMods)
         #This single tweak is broken into several parts to make it easier to
         # manage
         #Each part is a group of tags that are processed similarly

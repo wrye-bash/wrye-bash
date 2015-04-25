@@ -443,13 +443,13 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
-class CBash_CoblExhaustion(_ACoblExhaustion,CBash_ListPatcher):
+class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
     autoKey = {u'Exhaust'}
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_CoblExhaustion, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = (self.cobl in loadMods and
@@ -656,13 +656,13 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         for mod in sorted(changed):
             log(u'* %s: %d' % (mod.s,changed[mod]))
 
-class CBash_MFactMarker(_AMFactMarker,CBash_ListPatcher):
+class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
     autoKey = {'MFact'}
     unloadedText = u""
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_MFactMarker, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.cobl = GPath(u'Cobl Main.esm')
         self.isActive = self.cobl in loadMods and \

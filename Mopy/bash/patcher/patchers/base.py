@@ -395,8 +395,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ListPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_UpdateReferences, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
