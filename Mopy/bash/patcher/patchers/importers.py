@@ -35,7 +35,7 @@ from ...bosh import LoadFactory, ModFile, getPatchesList, \
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
-from ..base import AImportPatcher, Patcher
+from ..base import AImportPatcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords
@@ -219,8 +219,6 @@ class CellImporter(_ACellImporter, ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(CellImporter, self).initPatchFile(patchFile,loadMods)
         self.cellData = {}
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
         self.recAttrs = {
@@ -483,12 +481,10 @@ class GraphicsPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set()  # --Record classes actually provided by src
         #  mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
@@ -764,11 +760,9 @@ class ActorImporter(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ActorImporter, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
@@ -1033,12 +1027,10 @@ class KFFZPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(KFFZPatcher, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set() #--Record classes actually provided by src
         #  mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
@@ -1106,9 +1098,7 @@ class NPCAIPackagePatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
+        super(NPCAIPackagePatcher, self).initPatchFile(patchFile, loadMods)
         self.data = {}
         self.longTypes = {'CREA', 'NPC_'}
 
@@ -1376,12 +1366,10 @@ class DeathItemPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(DeathItemPatcher, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
@@ -1464,12 +1452,10 @@ class ImportFactions(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ImportFactions, self).initPatchFile(patchFile, loadMods)
         self.id_data= {} #--Factions keyed by long fid. WAS: id_factions
         self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
         # provided by src mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
 
     def initData(self,progress):
         """Get names from source files."""
@@ -1672,11 +1658,9 @@ class ImportRelations(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ImportRelations, self).initPatchFile(patchFile, loadMods)
         self.id_data = {}  #--[(otherLongid0,disp0),(...)] =
         # id_relations[mainLongid]. # WAS id_relations -renamed for _buildPatch
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
 
     def initData(self,progress):
         """Get names from source files."""
@@ -1851,12 +1835,10 @@ class ImportScripts(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ImportScripts, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set()  # --Record classes actually provided by src
         #  mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         self.longTypes = {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK',
@@ -1953,9 +1935,8 @@ class ImportInventory(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ImportInventory, self).initPatchFile(patchFile, loadMods)
         self.id_deltas = {}
-        self.sourceMods = self.getConfigChecked()
         self.sourceMods = [x for x in self.sourceMods if
                            (x in bosh.modInfos and x in patchFile.allMods)]
         self.inventOnlyMods = set(x for x in self.sourceMods if (
@@ -2183,9 +2164,7 @@ class ImportActorsSpells(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
+        super(ImportActorsSpells, self).initPatchFile(patchFile, loadMods)
         self.data = {}
         self.longTypes = {'CREA', 'NPC_'}
 
@@ -2429,13 +2408,11 @@ class NamesPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(NamesPatcher, self).initPatchFile(patchFile, loadMods)
         self.id_full = {} #--Names keyed by long fid.
         self.activeTypes = []  #--Types ('ALCH', etc.) of data actually
         # provided by src mods/files.
         self.skipTypes = [] #--Unknown types that were skipped.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
 
     def initData(self,progress):
         """Get names from source files."""
@@ -2629,10 +2606,8 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(NpcFacePatcher, self).initPatchFile(patchFile, loadMods)
         self.faceData = {}
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
 
     def initData(self,progress):
         """Get faces from TNR files."""
@@ -2842,10 +2817,7 @@ class RoadImporter(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
+        super(RoadImporter, self).initPatchFile(patchFile, loadMods)
         self.world_road = {}
 
     def initData(self,progress):
@@ -2986,12 +2958,10 @@ class SoundPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(SoundPatcher, self).initPatchFile(patchFile, loadMods)
         self.id_data = {} #--Names keyed by long fid.
         self.srcClasses = set()  #--Record classes actually provided by src
         #  mods/files.
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = len(self.sourceMods) != 0
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
@@ -3100,10 +3070,7 @@ class StatsPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
+        super(StatsPatcher, self).initPatchFile(patchFile, loadMods)
         #--To be filled by initData
         self.fid_attr_value = {} #--Stats keyed by long fid.
         self.activeTypes = [] #--Types ('ARMO', etc.) of data actually provided by src mods/files.
@@ -3303,9 +3270,7 @@ class SpellsPatcher(ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
-        self.sourceMods = self.getConfigChecked()
-        self.isActive = bool(self.sourceMods)
+        super(SpellsPatcher, self).initPatchFile(patchFile, loadMods)
         #--To be filled by initData
         self.id_stat = {} #--Stats keyed by long fid.
         self.attrs = None #set in initData

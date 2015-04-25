@@ -56,11 +56,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         return CBash_PatchFile
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile,loadMods)
-        self.srcs = self.getConfigChecked()
-        self.isActive = bool(self.srcs)
-
     def getConfigChecked(self):
         """Returns checked config items in list order."""
         if self.allowUnloaded:

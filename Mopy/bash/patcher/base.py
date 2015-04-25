@@ -167,6 +167,12 @@ class AListPatcher(_Abstract_Patcher):
     autoKey = None
     forceAuto = True
 
+    def initPatchFile(self, patchFile, loadMods):
+        super(AListPatcher, self).initPatchFile(patchFile, loadMods)
+        self.srcs = self.getConfigChecked()
+        self.sourceMods = self.srcs # alias for importers, eventually bin it
+        self.isActive = bool(self.srcs)
+
     #--Config Phase -----------------------------------------------------------
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
