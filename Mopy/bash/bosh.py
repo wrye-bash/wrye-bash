@@ -3951,52 +3951,38 @@ class BSAInfo(FileInfo):
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
     """Similar to FileInfos, but doesn't use a PickleDict to save information
-       about the tracked files at all."""
+       about the tracked files at all.
+
+       Uses absolute paths - the caller is responsible for passing them.
+       """
+    # DEPRECATED: hack introduced to track BAIN installed files AND game inis
+    dir = GPath(u'') # a mess with paths - throw ghosting in and raise
+
     def __init__(self,factory=FileInfo):
         self.factory = factory
         self.data = {}
-        self.corrupted = {}
-
-    def refreshFile(self,fileName):
-        try:
-            fileInfo = self.factory(u'',fileName)
-            fileInfo.getHeader()
-            self.data[fileName] = fileInfo
-        except FileError, error:
-            self.corrupted[fileName] = error.message
-            self.data.pop(fileName,None)
-            raise
 
     def refresh(self):
         data = self.data
         changed = set()
         for name in data.keys():
-            fileInfo = self.factory(u'',name)
+            fileInfo = self.factory(self.dir, name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack
-                self.delete(name)
+                self.data.pop(name, None)
                 changed.add(name)
             elif not fileInfo.sameAs(data[name]):
-                errorMsg = fileInfo.getHeaderError()
-                if errorMsg:
-                    self.corrupted[name] = errorMsg
-                    data.pop(name,None)
-                else:
-                    data[name] = fileInfo
-                    self.corrupted.pop(name,None)
+                data[name] = fileInfo
                 changed.add(name)
         return changed
 
-    def track(self,fileName):
-        self.refreshFile(GPath(fileName))
-
-    def delete(self, name, **kwargs):
-        self.data.pop(name, None)
-        self.corrupted.pop(name, None)
-
+    def track(self, absPath, factory=None): # cf FileInfos.refreshFile
+        factory = factory or self.factory
+        fileInfo = factory(self.dir, absPath)
+        # fileInfo.getHeader() #ModInfo: will blow if absPath doesn't exist
+        self[absPath] = fileInfo
     def clear(self):
         self.data = {}
-        self.corrupted = {}
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
