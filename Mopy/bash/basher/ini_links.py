@@ -114,7 +114,7 @@ class INI_FileOpenOrCopy(OneItemLink):
                 srcFile = bosh.iniInfos[file].dir.join(file)
                 destFile = bosh.dirs['tweaks'].join(file)
                 balt.shellMakeDirs(bosh.dirs['tweaks'],self.window)
-                balt.shellCopy(srcFile,destFile,self.window,False,False,False)
+                balt.shellCopy(srcFile, destFile, parent=self.window)
                 self.window.data.refresh()
                 self.window.RefreshUI()
 

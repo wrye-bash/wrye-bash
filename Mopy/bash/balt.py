@@ -1055,8 +1055,11 @@ def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
                           confirm=askOverwrite, allowUndo=allowUndo,
                           renameOnCollision=autoRename, silent=silent)
 
-def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return _fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False):
+    return _fileOperation(FO_COPY, filesFrom, filesTo, allowUndo=allowUndo,
+                          confirm=askOverwrite, renameOnCollision=autoRename,
+                          silent=False, parent=parent)
 
 def shellMakeDirs(dirName,parent=None):
     if not dirName:

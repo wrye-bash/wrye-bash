@@ -2671,7 +2671,7 @@ class OblivionIni(IniFile):
             source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                balt.shellCopy(source,aiBsa,askOverwrite=False)
+                balt.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
             except (balt.AccessDeniedError,bolt.CancelError,bolt.SkipError):
                 return
         sArchives = self.getSetting(section,key,u'')

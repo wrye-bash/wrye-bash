@@ -2356,7 +2356,7 @@ class InstallersList(balt.Tank):
                 try:
                     if action == 'COPY':
                         #--Copy the dropped files
-                        balt.shellCopy(filenames,filesTo,self,False,False,False)
+                        balt.shellCopy(filenames, filesTo, parent=self)
                     elif action == 'MOVE':
                         #--Move the dropped files
                         balt.shellMove(filenames, filesTo, parent=self)
