@@ -3181,9 +3181,6 @@ class MasterInfo:
 class FileInfo:
     """Abstract TES4/TES4GAME File."""
     def __init__(self,dir,name):
-        self.isGhost = (name.cs[-6:] == u'.ghost')
-        if self.isGhost:
-            name = GPath(name.s[:-6])
         self.dir = GPath(dir)
         self.name = GPath(name)
         self.bashDir = self.getFileInfos().bashDir
@@ -3205,9 +3202,7 @@ class FileInfo:
 
     def getPath(self):
         """Returns joined dir and name."""
-        path = self.dir.join(self.name)
-        if self.isGhost: path += u'.ghost'
-        return path
+        return self.dir.join(self.name)
 
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -3243,8 +3238,7 @@ class FileInfo:
             (self.size == fileInfo.size) and
             (self.mtime == fileInfo.mtime) and
             (self.ctime == fileInfo.ctime) and
-            (self.name == fileInfo.name) and
-            (self.isGhost == fileInfo.isGhost) )
+            (self.name == fileInfo.name) )
 
     def refresh(self):
         path = self.getPath()
@@ -3372,35 +3366,6 @@ class FileInfo:
         destName = root+separator+(u'.'.join(snapLast))+ext
         return destDir,destName,(root+u'*'+ext).s
 
-    def setGhost(self,isGhost):
-        """Sets file to/from ghost mode. Returns ghost status at end."""
-        normal = self.dir.join(self.name)
-        ghost = normal+u'.ghost'
-        # Refresh current status - it may have changed due to things like
-        # libloadorder automatically unghosting plugins when activating them.
-        # Libloadorder only un-ghosts automatically, so if both the normal
-        # and ghosted version exist, treat the normal as the real one.
-        if normal.exists():
-            if self.isGhost:
-                self.isGhost = False
-                self.name = normal
-        elif ghost.exists():
-            if not self.isGhost:
-                self.isGhost = True
-                self.name = ghost
-        # Current status == what we want it?
-        if isGhost == self.isGhost:
-            return isGhost
-        # Current status != what we want, so change it
-        try:
-            if not normal.editable() or not ghost.editable(): return self.isGhost
-            if isGhost: normal.moveTo(ghost)
-            else: ghost.moveTo(normal)
-            self.isGhost = isGhost
-        except:
-            pass
-        return self.isGhost
-
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
 # TODO(ut): 2 variations for reBashTags
@@ -3409,6 +3374,16 @@ reReturns = re.compile(u'\r{2,}',re.U)
 
 class ModInfo(FileInfo):
     """An esp/m file."""
+
+    def __init__(self, dir, name):
+        self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
+        if endsInGhost: name = GPath(name.s[:-6])
+        else: # refreshFile() path
+            absPath = GPath(dir).join(name)
+            self.isGhost = \
+                not absPath.exists() and (absPath + u'.ghost').exists()
+        FileInfo.__init__(self, dir, name)
+
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
         return modInfos
@@ -3575,6 +3550,49 @@ class ModInfo(FileInfo):
             header.getSize()
             header.dump(out)
         self.setmtime(mtime)
+
+    # Ghosting and ghosting related overrides ---------------------------------
+    def sameAs(self, fileInfo):
+        try:
+            return FileInfo.sameAs(self, fileInfo) and (
+                self.isGhost == fileInfo.isGhost)
+        except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
+            return False
+
+    def getPath(self):
+        """Return joined dir and name, adding .ghost if the file is ghosted."""
+        path = FileInfo.getPath(self)
+        if self.isGhost: path += u'.ghost'
+        return path
+
+    def setGhost(self,isGhost):
+        """Sets file to/from ghost mode. Returns ghost status at end."""
+        normal = self.dir.join(self.name)
+        ghost = normal+u'.ghost'
+        # Refresh current status - it may have changed due to things like
+        # libloadorder automatically unghosting plugins when activating them.
+        # Libloadorder only un-ghosts automatically, so if both the normal
+        # and ghosted version exist, treat the normal as the real one.
+        if normal.exists():
+            if self.isGhost:
+                self.isGhost = False
+                self.name = normal
+        elif ghost.exists():
+            if not self.isGhost:
+                self.isGhost = True
+                self.name = ghost
+        # Current status == what we want it?
+        if isGhost == self.isGhost:
+            return isGhost
+        # Current status != what we want, so change it
+        try:
+            if not normal.editable() or not ghost.editable(): return self.isGhost
+            if isGhost: normal.moveTo(ghost)
+            else: ghost.moveTo(normal)
+            self.isGhost = isGhost
+        except:
+            pass
+        return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
     def shiftBashTags(self):
@@ -3942,8 +3960,7 @@ class TrackedFileInfos(DataDict):
 
     def refreshFile(self,fileName):
         try:
-            fileInfo = self.factory('',fileName)
-            fileInfo.isGhost = not fileName.exists() and (fileName+u'.ghost').exists()
+            fileInfo = self.factory(u'',fileName)
             fileInfo.getHeader()
             self.data[fileName] = fileInfo
         except FileError, error:
@@ -4011,8 +4028,6 @@ class FileInfos(DataDict):
     def refreshFile(self,fileName):
         try:
             fileInfo = self.factory(self.dir,fileName)
-            path = fileInfo.getPath()
-            fileInfo.isGhost = not path.exists() and (path+u'.ghost').exists()
             fileInfo.getHeader()
             self[fileName] = fileInfo
         except FileError, error:
