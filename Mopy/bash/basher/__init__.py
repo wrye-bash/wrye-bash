@@ -2427,18 +2427,6 @@ class InstallersList(balt.Tank):
             if index != -1:
                 self._gList.EditLabel(index)
 
-    def addMarker(self):
-        try:
-            index = self.GetIndex(GPath(u'===='))
-        except KeyError: # u'====' not found in the internal dictionary
-            self.data.addMarker(u'====')
-            self.panel.RefreshUIMods()
-            index = self.GetIndex(GPath(u'===='))
-        if index != -1:
-            self.ClearSelected()
-            self.SelectItemAtIndex(index)
-            self._gList.EditLabel(index)
-
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
@@ -2453,6 +2441,37 @@ class InstallersList(balt.Tank):
         # Enter: Open selected installers
         elif code in balt.wxReturn: self.OpenSelected()
         super(InstallersList, self).OnKeyUp(event)
+
+    # Installer specific ------------------------------------------------------
+    def addMarker(self):
+        try:
+            index = self.GetIndex(GPath(u'===='))
+        except KeyError: # u'====' not found in the internal dictionary
+            self.data.addMarker(u'====')
+            self.RefreshUI() # why refresh mods/saves/inis when adding a marker
+            index = self.GetIndex(GPath(u'===='))
+        if index != -1:
+            self.ClearSelected()
+            self.SelectItemAtIndex(index)
+            self._gList.EditLabel(index)
+
+    def rescanInstallers(self, toRefresh, abort):
+        if not toRefresh: return
+        try:
+            with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
+                               abort=abort) as progress:
+                progress.setFull(len(toRefresh))
+                for index, (name, installer) in enumerate(toRefresh):
+                    progress(index,
+                             _(u'Refreshing Packages...') + u'\n' + name.s)
+                    apath = bosh.dirs['installers'].join(name)
+                    installer.refreshBasic(apath, SubProgress(progress, index,
+                                                              index + 1), True)
+                    self.data.hasChanged = True  # is it really needed ?
+        except CancelError:  # User canceled the refresh
+            if not abort: raise # I guess CancelError is raised on aborting
+        self.data.refresh(what='NSC')
+        self.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):

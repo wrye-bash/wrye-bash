@@ -359,18 +359,9 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
             self.iPanel.ShowPanel()
         # Refresh Installers
         toRefresh = set()
-        for name, installer in self.iPanel.data.iteritems():
+        for name, installer in self.idata.iteritems():
             if installer.hasBethFiles: toRefresh.add((name,installer))
-        if toRefresh:
-            with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60) as progress:
-                progress.setFull(len(toRefresh))
-                for index,(name,installer) in enumerate(toRefresh):
-                    progress(index,_(u'Refreshing Packages...')+u'\n'+name.s)
-                    apath = bosh.dirs['installers'].join(name)
-                    installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
-                    self.iPanel.data.hasChanged = True
-            self.idata.refresh(what='NSC')
-            self.window.RefreshUI()
+        self.window.rescanInstallers(toRefresh, abort=False)
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""

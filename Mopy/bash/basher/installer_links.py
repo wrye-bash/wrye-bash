@@ -364,8 +364,7 @@ class Installer_Anneal(_InstallerLink):
     text = _(u'Anneal')
     help = _(u"Anneal all packages.")
 
-    def _enable(self):
-        return len(self.filterInstallables())
+    def _enable(self): return bool(self.filterInstallables())
 
     def Execute(self,event):
         """Handle selection."""
@@ -725,21 +724,8 @@ class Installer_Refresh(_InstallerLink):
         return not len(self.selected) == 1 or self.isSingleInstallable()
 
     def Execute(self,event):
-        """Handle selection."""
-        try:
-            with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=True) as progress:
-                progress.setFull(len(self.selected))
-                for index,archive in enumerate(self.selected):
-                    progress(index,_(u'Refreshing Packages...')+u'\n'+archive.s)
-                    installer = self.idata[archive]
-                    apath = bosh.dirs['installers'].join(archive)
-                    installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
-                    self.idata.hasChanged = True
-        except CancelError:
-            # User canceled the refresh
-            pass
-        self.idata.refresh(what='NSC')
-        self.window.RefreshUI()
+        toRefresh = set((x, self.idata[x]) for x in self.selected)
+        self.window.rescanInstallers(toRefresh, abort=True)
 
 class Installer_SkipVoices(CheckLink, _InstallerLink):
     """Toggle skipVoices flag on installer."""
