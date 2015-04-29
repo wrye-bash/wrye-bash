@@ -149,23 +149,15 @@ class Installers_MonitorInstall(Installers_Link):
             group.extend(delFiles)
         dialog = ListBoxes(self.window,_(u'External Installation'),
                            _(u'The following changes were detected in the Data directory'),
-                           checklists,changedlabels={ListBoxes.ID_OK:_(u'Create Project')})
-        choice = dialog.ShowModal()
-        if choice == ListBoxes.ID_CANCEL:
+                           checklists, bOk=_(u'Create Project'))
+        if not dialog.askOkModal():
             dialog.Destroy()
             return
         include = set()
-        for (lst,key) in [(newFiles,newFilesKey),
-                           (changedFiles,changedFilesKey),
-                           (touchedFiles,touchedFilesKey),
-                           ]:
-            if lst:
-                id_ = dialog.ids[key]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    for i,file_ in enumerate(lst):
-                        if checks.IsChecked(i):
-                            include.add(file_)
+        for (lst, key) in [(newFiles, newFilesKey),
+                           (changedFiles, changedFilesKey),
+                           (touchedFiles, touchedFilesKey), ]:
+            include |= set(dialog.getChecked(key, lst))
         dialog.Destroy()
         # Create Project
         if not include:
@@ -359,18 +351,9 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
             self.iPanel.ShowPanel()
         # Refresh Installers
         toRefresh = set()
-        for name, installer in self.iPanel.data.iteritems():
+        for name, installer in self.idata.iteritems():
             if installer.hasBethFiles: toRefresh.add((name,installer))
-        if toRefresh:
-            with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60) as progress:
-                progress.setFull(len(toRefresh))
-                for index,(name,installer) in enumerate(toRefresh):
-                    progress(index,_(u'Refreshing Packages...')+u'\n'+name.s)
-                    apath = bosh.dirs['installers'].join(name)
-                    installer.refreshBasic(apath,SubProgress(progress,index,index+1),True)
-                    self.iPanel.data.hasChanged = True
-            self.idata.refresh(what='NSC')
-            self.window.RefreshUI()
+        self.window.rescanInstallers(toRefresh, abort=False)
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""

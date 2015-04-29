@@ -518,14 +518,10 @@ def vsbSizer(boxArgs,*elements):
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
     """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    dialog = wx.DirDialog(parent,message,GPath(defaultPath).s,style=wx.DD_NEW_DIR_BUTTON)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        path = GPath(dialog.GetPath())
-        dialog.Destroy()
-        return path
+    with wx.DirDialog(parent, message, GPath(defaultPath).s,
+                      style=wx.DD_NEW_DIR_BUTTON) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return GPath(dialog.GetPath())
 
 #------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
@@ -657,27 +653,17 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
 #------------------------------------------------------------------------------
 def askText(parent,message,title=u'',default=u''):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.TextEntryDialog(parent,message,title,default)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.TextEntryDialog(parent, message, title, default) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.NumberEntryDialog(parent,message,prompt,title,value,min,max)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.NumberEntryDialog(parent, message, prompt, title, value, min,
+                              max) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
 import windows
@@ -1039,7 +1025,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             if collisions:
                 pass
 
-def shellDelete(files, parent=None, confirm=True, recycle=True):
+def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
         return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
                               confirm=confirm, renameOnCollision=True,
@@ -1048,6 +1034,13 @@ def shellDelete(files, parent=None, confirm=True, recycle=True):
         if confirm:
             return None
         raise
+
+def shellDeletePass(folder, parent=None):
+    """Delete tmp dirs/files - ignore errors (but log them)."""
+    if folder.exists():
+        try: shellDelete(folder, parent=parent, confirm=False, recycle=False)
+        except:
+            deprint(u"Error deleting %s:" % folder, traceback=True)
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):
@@ -2281,14 +2274,8 @@ class UIList(wx.Panel):
         with ListBoxes(self, dialogTitle,
                        _(u'Delete these items?  This operation cannot be '
                          u'undone.'), [message]) as dialog:
-            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return []
-            id_ = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id_)
-            checked = []
-            if checks:
-                for i, mod in enumerate(items):
-                    if checks.IsChecked(i): checked.append(mod)
-            return checked
+            if not dialog.askOkModal(): return []
+            return dialog.getChecked(message[0], items)
 
     def _postDeleteRefresh(self, deleted): self.RefreshUI()
 
@@ -2707,12 +2694,10 @@ class _CheckList_SelectAll(ItemLink):
 
 class ListBoxes(Dialog):
     """A window with 1 or more lists."""
-    ##: attributes below must go - askContinue method ?
-    ID_OK = wx.ID_OK
-    ID_CANCEL = wx.ID_CANCEL
 
     def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, changedlabels={}, Cancel=True, resize=False):
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True,
+                 resize=False): # NB: message param is unused (since day 1)
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2730,39 +2715,38 @@ class ListBoxes(Dialog):
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
-        self.ids = {}
-        labels = {wx.ID_CANCEL:_(u'Cancel'),wx.ID_OK:_(u'OK')}
-        labels.update(changedlabels)
+        self._ids = {}
+        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
         for i,group in enumerate(lists):
-            title = group[0]
+            title = group[0] # also serves as key in self._ids dict
             tip = group[1]
-            try: items = [x.s for x in group[2:]]
-            except: items = [x for x in group[2:]]
-            if len(items) == 0: continue
+            try: strings = [x.s for x in group[2:]]
+            except AttributeError: strings = [x for x in group[2:]]
+            if len(strings) == 0: continue
             subsizer = hsbSizer((self, wx.ID_ANY, title))
             if liststyle == 'check':
-                checks = listBox(self, choices=items, isSingle=True,
-                                      isHScroll=True, kind='checklist')
-                checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
-                checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
-                for i in xrange(len(items)):
-                    checks.Check(i,True)
+                checksCtrl = listBox(self, choices=strings, isSingle=True,
+                                     isHScroll=True, kind='checklist')
+                checksCtrl.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
+                checksCtrl.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
+                # check all - for range and set see wx._controls.CheckListBox
+                checksCtrl.SetChecked(set(range(len(strings))))
             elif liststyle == 'list':
-                checks = listBox(self, choices=items, isHScroll=True)
+                checksCtrl = listBox(self, choices=strings, isHScroll=True)
             else:
-                checks = wx.TreeCtrl(self, size=(150, 200),
-                                     style=wx.TR_DEFAULT_STYLE |
-                                           wx.TR_FULL_ROW_HIGHLIGHT |
-                                           wx.TR_HIDE_ROOT)
-                root = checks.AddRoot(title)
-                for item in group[2]:
-                    child = checks.AppendItem(root,item.s)
-                    for subitem in group[2][item]:
-                        sub = checks.AppendItem(child,subitem.s)
-            self.ids[title] = checks.GetId()
-            checks.SetToolTip(tooltip(tip))
-            subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
+                checksCtrl = wx.TreeCtrl(self, size=(150, 200),
+                                         style=wx.TR_DEFAULT_STYLE |
+                                               wx.TR_FULL_ROW_HIGHLIGHT |
+                                               wx.TR_HIDE_ROOT)
+                root = checksCtrl.AddRoot(title)
+                for item, subitems in group[2].iteritems():
+                    child = checksCtrl.AppendItem(root,item.s)
+                    for subitem in subitems:
+                        checksCtrl.AppendItem(child,subitem.s)
+            self._ids[title] = checksCtrl.GetId()
+            checksCtrl.SetToolTip(tooltip(tip))
+            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
         okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
@@ -2775,7 +2759,7 @@ class ListBoxes(Dialog):
             but = button(self,id=id,label=label)
             but.Bind(wx.EVT_BUTTON,self.OnClick)
             buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        if Cancel:
+        if canCancel:
             buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
         sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
@@ -2808,3 +2792,24 @@ class ListBoxes(Dialog):
             self.EndModal(id_)
         else:
             event.Skip()
+
+    def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
+
+    def getChecked(self, key, items, checked=True):
+        """Return a sublist of 'items' containing (un)checked items.
+
+        The control only displays the string names of items, that is why items
+        needs to be passed in. If items is empty it will return an empty list.
+        :param key: a key for the private _ids dictionary
+        :param items: the items that correspond to the _ids[key] checksCtrl
+        :param checked: keep checked items if True (default) else unchecked
+        :rtype : list
+        :return: the items in 'items' for (un)checked checkboxes in _ids[key]
+        """
+        if not items: return []
+        select = []
+        checkList = self.FindWindowById(self._ids[key])
+        if checkList:
+            for i, mod in enumerate(items):
+                if checkList.IsChecked(i) ^ (not checked): select.append(mod)
+        return select

@@ -2255,7 +2255,7 @@ class InstallersList(balt.Tank):
                         progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self, confirm=False,
+                        balt.shellDelete(outDir, parent=self,
                                          recycle=True)  # recycle
                     else: continue
                 try:
@@ -2427,18 +2427,6 @@ class InstallersList(balt.Tank):
             if index != -1:
                 self._gList.EditLabel(index)
 
-    def addMarker(self):
-        try:
-            index = self.GetIndex(GPath(u'===='))
-        except KeyError: # u'====' not found in the internal dictionary
-            self.data.addMarker(u'====')
-            self.panel.RefreshUIMods()
-            index = self.GetIndex(GPath(u'===='))
-        if index != -1:
-            self.ClearSelected()
-            self.SelectItemAtIndex(index)
-            self._gList.EditLabel(index)
-
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
         code = event.GetKeyCode()
@@ -2453,6 +2441,37 @@ class InstallersList(balt.Tank):
         # Enter: Open selected installers
         elif code in balt.wxReturn: self.OpenSelected()
         super(InstallersList, self).OnKeyUp(event)
+
+    # Installer specific ------------------------------------------------------
+    def addMarker(self):
+        try:
+            index = self.GetIndex(GPath(u'===='))
+        except KeyError: # u'====' not found in the internal dictionary
+            self.data.addMarker(u'====')
+            self.RefreshUI() # why refresh mods/saves/inis when adding a marker
+            index = self.GetIndex(GPath(u'===='))
+        if index != -1:
+            self.ClearSelected()
+            self.SelectItemAtIndex(index)
+            self._gList.EditLabel(index)
+
+    def rescanInstallers(self, toRefresh, abort):
+        if not toRefresh: return
+        try:
+            with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
+                               abort=abort) as progress:
+                progress.setFull(len(toRefresh))
+                for index, (name, installer) in enumerate(toRefresh):
+                    progress(index,
+                             _(u'Refreshing Packages...') + u'\n' + name.s)
+                    apath = bosh.dirs['installers'].join(name)
+                    installer.refreshBasic(apath, SubProgress(progress, index,
+                                                              index + 1), True)
+                    self.data.hasChanged = True  # is it really needed ?
+        except CancelError:  # User canceled the refresh
+            if not abort: raise # I guess CancelError is raised on aborting
+        self.data.refresh(what='NSC')
+        self.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
@@ -2614,15 +2633,14 @@ class InstallersPanel(SashTankPanel):
                             data.failedOmods.add(omod.body)
                             omodMoves.add(omod)
                     # Delete extracted omods
-                    try:
-                        balt.shellDelete(omodRemoves,self,False,False)
+                    def _del(files): balt.shellDelete(files, parent=self)
+                    try: _del(omodRemoves)
                     except (CancelError,SkipError):
                         while balt.askYes(self,_(u'Bash needs Administrator Privileges to delete OMODs that have already been extracted.')
                                           + u'\n\n' +
                                           _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
                             try:
-                                omodRemoves = set(x for x in omodRemoves if x.exists())
-                                balt.shellDelete(omodRemoves,self,False,False)
+                                _del(set(x for x in omodRemoves if x.exists()))
                             except (CancelError,SkipError):
                                 continue
                             break
@@ -3115,10 +3133,6 @@ class BSADetails(wx.Window):
     def __init__(self,parent):
         """Initialize."""
         wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
-        readOnlyColour = self.GetBackgroundColour()
-        #--Singleton
-        global BSADetails
-        BSADetails = self
         #--Data
         self.BSAInfo = None
         self.edited = False
@@ -3250,7 +3264,6 @@ class BSAPanel(NotebookPanel):
 
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
-        # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
         self.BSADetails = BSADetails(self)
         self.uilist = BSAList(
@@ -4017,7 +4030,7 @@ class BashFrame(wx.Frame):
                     message.extend(sorted(bosh.modInfos.mtimesReset))
                     ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
                         u'Modified dates have been reset for some mod files.'),
-                                      [message], liststyle='list',Cancel=False)
+                        [message], liststyle='list', canCancel=False)
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Check savegames directory...
@@ -4134,7 +4147,7 @@ class BashFrame(wx.Frame):
             ListBoxes.Display(
               self, _(u'Warning: Corrupt/Unrecognized Files'),
               _(u'Some files have corrupted headers or TES4 header versions:'),
-              message, liststyle='list', Cancel=False)
+              message, liststyle='list', canCancel=False)
 
     def _corruptedGameIni(self):
         #--Corrupt Oblivion.ini
@@ -4154,11 +4167,9 @@ class BashFrame(wx.Frame):
                 u"2038. Accordingly, the dates for the following files have "
                 u"been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
-            with ListBoxes(self, _(u'Warning: Dates Reset'), _(
-                    u'Modified dates have been reset to an earlier date for  '
-                    u'these files'), [message], liststyle='list',
-                           Cancel=False) as dialog:
-                dialog.ShowModal()
+            ListBoxes.Display(self, _(u'Warning: Dates Reset'), _(
+                u'Modified dates have been reset to an earlier date for these '
+                u'files'), [message], liststyle='list', canCancel=False)
             del bolt.Path.mtimeResets[:]
 
     def _obmmWarn(self):

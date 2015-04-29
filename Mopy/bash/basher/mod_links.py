@@ -878,23 +878,14 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             dialog = ListBoxes(
                 Link.Frame, _(u"Deactivate these mods prior to patching"),
                 _(u"The following mods should be deactivated prior to building"
-                  u" the patch."),
-                checklists, changedlabels={ListBoxes.ID_CANCEL: _(u'Skip')})
-            if dialog.ShowModal() != ListBoxes.ID_CANCEL:
+                  u" the patch."), checklists, bCancel=_(u'Skip'))
+            if dialog.askOkModal():
                 deselect = set()
-                for (list_,key) in [(unfiltered,unfilteredKey),
-                                   (merge,mergeKey),
-                                   (noMerge,noMergeKey),
-                                   (deactivate,deactivateKey),
-                                   ]:
-                    if list_:
-                        id_ = dialog.ids[key]
-                        checks = dialog.FindWindowById(id_)
-                        if checks:
-                            for i,mod in enumerate(list_):
-                                if checks.IsChecked(i):
-                                    deselect.add(mod)
-                dialog.Destroy()
+                for (lst, key) in [(unfiltered, unfilteredKey),
+                                   (merge, mergeKey),
+                                   (noMerge, noMergeKey),
+                                   (deactivate, deactivateKey), ]:
+                    deselect |= set(dialog.getChecked(key, lst))
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
@@ -902,6 +893,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.save()
                         self.window.RefreshUI()
+            dialog.Destroy()
 
         previousMods = set()
         missing = {}
@@ -933,9 +925,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle='tree', resize=True,
-                changedlabels={ListBoxes.ID_OK: _(u'Continue Despite Errors')}
-            ) as warning:
-                   if warning.ShowModal() == ListBoxes.ID_CANCEL: return
+                bOk=_(u'Continue Despite Errors')) as warning:
+                   if not warning.askOkModal(): return
         with PatchDialog(self.window, fileInfo, self.doCBash,
                          importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
@@ -2723,32 +2714,23 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
             Current.load()
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()
-
             if cleaned:
                 newMasters = modFile.TES4.masters
                 removed = [GPath(x) for x in oldMasters if x not in newMasters]
                 removeKey = _(u'Masters')
-                group = [removeKey,
-                              _(u'These master files are not referenced within the mod, and can safely be removed.'),
-                              ]
+                group = [removeKey, _(
+                    u'These master files are not referenced within the mod, '
+                    u'and can safely be removed.'), ]
                 group.extend(removed)
                 checklists = [group]
-                dialog = ListBoxes(Link.Frame,_(u'Remove these masters?'),
-                                        _(u'The following master files can be safely removed.'),
-                                        checklists)
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL:
-                    dialog.Destroy()
-                    return
-                id_ = dialog.ids[removeKey]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    for i,mod in enumerate(removed):
-                        if not checks.IsChecked(i):
-                            newMasters.append(mod)
-
-                modFile.TES4.masters = newMasters
-                modFile.save()
-                dialog.Destroy()
-                deprint(u'to remove:', removed)
+                with ListBoxes(Link.Frame, _(u'Remove these masters?'), _(
+                        u'The following master files can be safely removed.'),
+                        checklists) as dialog:
+                    if not dialog.askOkModal(): return
+                    newMasters.extend(
+                        dialog.getChecked(removeKey, removed, checked=False))
+                    modFile.TES4.masters = newMasters
+                    modFile.save()
+                    deprint(u'to remove:', removed)
             else:
                 self._showOk(_(u'No Masters to clean.'), _(u'Clean Masters'))

@@ -248,8 +248,8 @@ class ListPatcher(Patcher):
 
     def OnRemove(self,event):
         """Remove button clicked."""
-        selected = self.gList.GetSelections()
-        newItems = [item for index,item in enumerate(self.configItems) if index not in selected]
+        selections = self.gList.GetSelections()
+        newItems = [item for index,item in enumerate(self.configItems) if index not in selections]
         self.SetItems(newItems)
 
     #--Choice stuff ---------------------------------------

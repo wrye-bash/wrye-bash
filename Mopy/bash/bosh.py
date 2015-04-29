@@ -36,6 +36,7 @@ import time
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
+import collections
 import copy
 import datetime
 import os
@@ -149,7 +150,6 @@ iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
 trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
-bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
@@ -2832,11 +2832,7 @@ class OmodFile:
                            askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
-            if outDir.exists():
-                try:
-                    balt.shellDelete(outDir,progress.getParent(),False,False)
-                except:
-                    pass
+            balt.shellDeletePass(outDir, parent=progress.getParent())
             raise
         finally:
             # Clean up temp directories
@@ -3344,11 +3340,6 @@ class FileInfo:
         Provided so that SaveFileInfo can override for its cofiles."""
         pass
 
-    def getStats(self):
-        """Gets file stats. Saves into self.stats."""
-        stats = self.stats = {}
-        raise AbstractError
-
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
         if not self in self.getFileInfos().data.values():
@@ -3493,7 +3484,7 @@ class ModInfo(FileInfo):
             return False
         else:
             exGroup = maExGroup.group(1)
-            return len(modInfos.exGroup_mods.get(exGroup,u'')) > 1
+            return len(modInfos.exGroup_mods[exGroup]) > 1
 
     def getBsaPath(self):
         """Returns path to plugin's BSA, if it were to exists."""
@@ -4023,11 +4014,10 @@ class FileInfos(DataDict):
             path = fileInfo.getPath()
             fileInfo.isGhost = not path.exists() and (path+u'.ghost').exists()
             fileInfo.getHeader()
-            self.data[fileName] = fileInfo
+            self[fileName] = fileInfo
         except FileError, error:
             self.corrupted[fileName] = error.message
-            if fileName in self.data:
-                del self.data[fileName]
+            self.pop(fileName, None)
             raise
 
     #--Refresh
@@ -4240,9 +4230,9 @@ class ModInfos(FileInfos):
                 msg += u' or ' + bush.game.masterFiles[-1]
                 deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
-        self.mtime_mods = {}
-        self.mtime_selected = {}
-        self.exGroup_mods = {}
+        self.mtime_mods = collections.defaultdict(list)
+        self.mtime_selected = collections.defaultdict(list)
+        self.exGroup_mods = collections.defaultdict(list)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -4372,7 +4362,7 @@ class ModInfos(FileInfos):
         for modName in selfKeys:
             modInfo = modInfos[modName]
             mtime = modInfo.mtime
-            mtime_mods.setdefault(mtime,[]).append(modName)
+            mtime_mods[mtime].append(modName)
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
@@ -4381,12 +4371,11 @@ class ModInfos(FileInfos):
         self.exGroup_mods.clear()
         for modName in self.ordered:
             mtime = modInfos[modName].mtime
-            mtime_selected.setdefault(mtime,[]).append(modName)
+            mtime_selected[mtime].append(modName)
             maExGroup = reExGroup.match(modName.s)
             if maExGroup:
                 exGroup = maExGroup.group(1)
-                mods = self.exGroup_mods.setdefault(exGroup,[])
-                mods.append(modName)
+                self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
         self.merged,self.imported = self.getSemiActive(self.ordered)
 
@@ -4759,8 +4748,7 @@ class ModInfos(FileInfos):
             return False
         else:
             mtime = self[modName].mtime
-            mods = self.mtime_mods.get(mtime,[])
-            return len(mods) > 1
+            return len(self.mtime_mods[mtime]) > 1
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
@@ -4769,8 +4757,7 @@ class ModInfos(FileInfos):
         elif not self.isSelected(modName): return False
         else:
             mtime = self[modName].mtime
-            mods = self.mtime_selected.get(mtime,tuple())
-            return len(mods) > 1
+            return len(self.mtime_selected[mtime]) > 1
 
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
@@ -4779,13 +4766,9 @@ class ModInfos(FileInfos):
             return time.time()
         else:
             haskey = self.mtime_mods.has_key
-            if reverse:
-                endTime = startTime - 1000
-                step = -1
-            else:
-                endTime = startTime + 1000
-                step = 1
-            for testTime in xrange(startTime, endTime, step): #1000 is an arbitrary limit
+            step = -1 if reverse else 1
+            endTime = startTime + step * 1000 #1000 is an arbitrary limit
+            for testTime in xrange(startTime, endTime, step):
                 if not haskey(testTime):
                     return testTime
             return defaultTime
@@ -8285,7 +8268,7 @@ class InstallersData(DataDict):
         #--Do the deletion
         if removedFiles:
             parent = progress.getParent() if progress else None
-            balt.shellDelete(removedFiles, parent, False, False)
+            balt.shellDelete(removedFiles, parent=parent)
         #--Update InstallersData
         InstallersData.updateTable(removes, u'') #will delete ini tweak entries
         for file in removes:
@@ -10165,11 +10148,7 @@ def testUAC(gameDataPath):
         return True
     finally:
         tmpDir.rmtree(safety=tmpDir.stail)
-        if dest.exists():
-            try:
-                balt.shellDelete(dest,None,False,False)
-            except:
-                pass
+        balt.shellDeletePass(dest)
     return False
 
 def initDirs(bashIni, personal, localAppData, oblivionPath):
