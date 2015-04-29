@@ -1871,12 +1871,13 @@ class UIList(wx.Panel):
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
-    #--ABSTRACT
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
         self._select(modName)
-    def _select(self, item): raise AbstractError
+    def _select(self, item):
+        if self.details: self.details.SetFile(item)
 
+    #--ABSTRACT
     def getLabels(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
@@ -1937,11 +1938,13 @@ class UIList(wx.Panel):
         If there are any deleted (applies also to renamed) items leave files
         parameter alone.
         """
-        # TODO(ut) needs work: deleted, new and files->modified **kwargs
+        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
         # parameters and get rid of ModList override(move part to PopulateItem)
         # Refresh UI uses must be optimized - pass in ONLY the items we need
         # refreshed - most of the time Refresh UI calls PopulateItems on ALL
         # items - a nono. Refresh UI has 140 uses...
+        # B) consider adding 'select' tuple parameter (ex 'detail', duh) to
+        # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
         if files is self.__all:
             self.PopulateItems()
@@ -1951,8 +1954,9 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-            # if it was a single item then refresh details for it:
-            if len(files) == 1: self.SelectItem(files[0])
+        # if it was a single item then refresh details for it:
+        if len(files) == 1: self.SelectItem(files[0])
+        elif self.details: self.details.SetFile(fileName='SAME')
         self.panel.SetStatusCount()
 
     #--Column Menu
@@ -2320,9 +2324,6 @@ class Tank(UIList):
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         self._gList.SetItem(gItem)
-
-    def _select(self, item):
-        if self.details: return self.details.RefreshDetails(item)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

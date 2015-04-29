@@ -992,7 +992,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             event.Skip()
 
     def _select(self, modName):
-        self.details.SetFile(modName)
+        super(ModList, self)._select(modName)
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
@@ -1804,8 +1804,6 @@ class SaveList(balt.UIList):
             if newName != fileName: self.RefreshUI() ##: files=[fileName]
         #--Pass Event onward
         event.Skip()
-
-    def _select(self, saveName): self.details.SetFile(saveName)
 
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
@@ -2778,16 +2776,17 @@ class InstallersPanel(SashTankPanel):
             else:
                 BashFrame.iniList.panel.RefreshPanel('TARGETS')
 
-    def RefreshDetails(self,item=None):
+    def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        if item not in self.data: item = None
+        if fileName == 'SAME': fileName = self.detailsItem
+        if fileName not in self.data: fileName = None
         self.SaveDetails() #--Save previous details
-        self.detailsItem = item
+        self.detailsItem = fileName
         del self.espms[:]
-        if item:
-            installer = self.data[item]
+        if fileName:
+            installer = self.data[fileName]
             #--Name
-            self.gPackage.SetValue(item.s)
+            self.gPackage.SetValue(fileName.s)
             #--Info Pages
             currentIndex = self.gNotebook.GetSelection()
             for index,(gPage,state) in enumerate(self.infoPages):
@@ -3143,8 +3142,6 @@ class BSAList(balt.UIList):
         #--Pass Event onward
         event.Skip()
 
-    def _select(self, BSAName): self.details.SetFile(BSAName)
-
 #------------------------------------------------------------------------------
 class BSADetails(wx.Window):
     """BSAfile details panel."""
@@ -3493,9 +3490,9 @@ class PeoplePanel(SashTankPanel):
         self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
-    def RefreshDetails(self,item=None):
+    def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        item = item or self.detailsItem
+        item = self.detailsItem if fileName == 'SAME' else fileName
         if item not in self.data: item = None
         self.SaveDetails()
         if item is None:
