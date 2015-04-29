@@ -1039,7 +1039,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             if collisions:
                 pass
 
-def shellDelete(files, parent=None, confirm=True, recycle=True):
+def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
         return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
                               confirm=confirm, renameOnCollision=True,
@@ -1048,6 +1048,13 @@ def shellDelete(files, parent=None, confirm=True, recycle=True):
         if confirm:
             return None
         raise
+
+def shellDeletePass(folder, parent=None):
+    """Delete tmp dirs/files - ignore errors (but log them)."""
+    if folder.exists():
+        try: shellDelete(folder, parent=parent, confirm=False, recycle=False)
+        except:
+            deprint(u"Error deleting %s:" % folder, traceback=True)
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):

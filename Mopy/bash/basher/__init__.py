@@ -2255,7 +2255,7 @@ class InstallersList(balt.Tank):
                         progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self, confirm=False,
+                        balt.shellDelete(outDir, parent=self,
                                          recycle=True)  # recycle
                     else: continue
                 try:
@@ -2565,6 +2565,7 @@ class InstallersPanel(SashTankPanel):
         """Update any controls using custom colors."""
         self.uiList.RefreshUI()
 
+
     def ShowPanel(self, canCancel=True):
         """Panel is shown. Update self.data."""
         # TODO(ut): refactor, self.refreshing set to True once, extract methods
@@ -2614,15 +2615,14 @@ class InstallersPanel(SashTankPanel):
                             data.failedOmods.add(omod.body)
                             omodMoves.add(omod)
                     # Delete extracted omods
-                    try:
-                        balt.shellDelete(omodRemoves,self,False,False)
+                    def _del(files): balt.shellDelete(files, parent=self)
+                    try: _del(omodRemoves)
                     except (CancelError,SkipError):
                         while balt.askYes(self,_(u'Bash needs Administrator Privileges to delete OMODs that have already been extracted.')
                                           + u'\n\n' +
                                           _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
                             try:
-                                omodRemoves = set(x for x in omodRemoves if x.exists())
-                                balt.shellDelete(omodRemoves,self,False,False)
+                                _del(set(x for x in omodRemoves if x.exists()))
                             except (CancelError,SkipError):
                                 continue
                             break

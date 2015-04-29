@@ -2832,11 +2832,7 @@ class OmodFile:
                            askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
-            if outDir.exists():
-                try:
-                    balt.shellDelete(outDir,progress.getParent(),False,False)
-                except:
-                    pass
+            balt.shellDeletePass(outDir, parent=progress.getParent())
             raise
         finally:
             # Clean up temp directories
@@ -8285,7 +8281,7 @@ class InstallersData(DataDict):
         #--Do the deletion
         if removedFiles:
             parent = progress.getParent() if progress else None
-            balt.shellDelete(removedFiles, parent, False, False)
+            balt.shellDelete(removedFiles, parent=parent)
         #--Update InstallersData
         InstallersData.updateTable(removes, u'') #will delete ini tweak entries
         for file in removes:
@@ -10165,11 +10161,7 @@ def testUAC(gameDataPath):
         return True
     finally:
         tmpDir.rmtree(safety=tmpDir.stail)
-        if dest.exists():
-            try:
-                balt.shellDelete(dest,None,False,False)
-            except:
-                pass
+        balt.shellDeletePass(dest)
     return False
 
 def initDirs(bashIni, personal, localAppData, oblivionPath):
