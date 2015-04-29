@@ -878,15 +878,14 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             dialog = ListBoxes(
                 Link.Frame, _(u"Deactivate these mods prior to patching"),
                 _(u"The following mods should be deactivated prior to building"
-                  u" the patch."),
-                checklists, changedlabels={ListBoxes.ID_CANCEL: _(u'Skip')})
-            if dialog.ShowModal() != ListBoxes.ID_CANCEL:
+                  u" the patch."), checklists, bCancel=_(u'Skip'))
+            if dialog.askOkModal():
                 deselect = set()
                 for (list_,key) in [(unfiltered,unfilteredKey),
-                                   (merge,mergeKey),
-                                   (noMerge,noMergeKey),
-                                   (deactivate,deactivateKey),
-                                   ]:
+                                    (merge,mergeKey),
+                                    (noMerge,noMergeKey),
+                                    (deactivate,deactivateKey),
+                                    ]:
                     if list_:
                         id_ = dialog.ids[key]
                         checks = dialog.FindWindowById(id_)
@@ -894,7 +893,6 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                             for i,mod in enumerate(list_):
                                 if checks.IsChecked(i):
                                     deselect.add(mod)
-                dialog.Destroy()
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
@@ -902,6 +900,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.save()
                         self.window.RefreshUI()
+            dialog.Destroy()
 
         previousMods = set()
         missing = {}
@@ -933,9 +932,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle='tree', resize=True,
-                changedlabels={ListBoxes.ID_OK: _(u'Continue Despite Errors')}
-            ) as warning:
-                   if warning.ShowModal() == ListBoxes.ID_CANCEL: return
+                bOk=_(u'Continue Despite Errors')) as warning:
+                   if not warning.askOkModal(): return
         with PatchDialog(self.window, fileInfo, self.doCBash,
                          importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
@@ -2736,7 +2734,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
                 dialog = ListBoxes(Link.Frame,_(u'Remove these masters?'),
                                         _(u'The following master files can be safely removed.'),
                                         checklists)
-                if dialog.ShowModal() == ListBoxes.ID_CANCEL:
+                if not dialog.askOkModal():
                     dialog.Destroy()
                     return
                 id_ = dialog.ids[removeKey]

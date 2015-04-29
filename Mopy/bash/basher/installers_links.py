@@ -149,9 +149,8 @@ class Installers_MonitorInstall(Installers_Link):
             group.extend(delFiles)
         dialog = ListBoxes(self.window,_(u'External Installation'),
                            _(u'The following changes were detected in the Data directory'),
-                           checklists,changedlabels={ListBoxes.ID_OK:_(u'Create Project')})
-        choice = dialog.ShowModal()
-        if choice == ListBoxes.ID_CANCEL:
+                           checklists, bOk=_(u'Create Project'))
+        if not dialog.askOkModal():
             dialog.Destroy()
             return
         include = set()

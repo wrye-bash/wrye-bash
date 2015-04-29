@@ -2274,7 +2274,7 @@ class UIList(wx.Panel):
         with ListBoxes(self, dialogTitle,
                        _(u'Delete these items?  This operation cannot be '
                          u'undone.'), [message]) as dialog:
-            if dialog.ShowModal() == ListBoxes.ID_CANCEL: return []
+            if not dialog.askOkModal(): return []
             id_ = dialog.ids[message[0]]
             checks = dialog.FindWindowById(id_)
             checked = []
@@ -2700,12 +2700,10 @@ class _CheckList_SelectAll(ItemLink):
 
 class ListBoxes(Dialog):
     """A window with 1 or more lists."""
-    ##: attributes below must go - askContinue method ?
-    ID_OK = wx.ID_OK
-    ID_CANCEL = wx.ID_CANCEL
 
     def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, changedlabels={}, Cancel=True, resize=False):
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), Cancel=True,
+                 resize=False):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2724,8 +2722,7 @@ class ListBoxes(Dialog):
         minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
         self.ids = {}
-        labels = {wx.ID_CANCEL:_(u'Cancel'),wx.ID_OK:_(u'OK')}
-        labels.update(changedlabels)
+        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
         for i,group in enumerate(lists):
             title = group[0]
@@ -2801,3 +2798,5 @@ class ListBoxes(Dialog):
             self.EndModal(id_)
         else:
             event.Skip()
+
+    def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
