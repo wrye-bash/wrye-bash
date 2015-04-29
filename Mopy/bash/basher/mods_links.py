@@ -248,8 +248,8 @@ class Mods_CreateBlank(ItemLink):
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
         newInfo = fileInfos.factory(fileInfos.dir,newName)
-        selected = self.window.GetSelected()
-        mods = selected if selected else fileInfos.data
+        windowSelected = self.window.GetSelected()
+        mods = windowSelected if windowSelected else fileInfos.data
         newTime = max(fileInfos[x].mtime for x in mods)
         newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))

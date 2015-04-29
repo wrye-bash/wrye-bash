@@ -2565,7 +2565,6 @@ class InstallersPanel(SashTankPanel):
         """Update any controls using custom colors."""
         self.uiList.RefreshUI()
 
-
     def ShowPanel(self, canCancel=True):
         """Panel is shown. Update self.data."""
         # TODO(ut): refactor, self.refreshing set to True once, extract methods
@@ -3115,10 +3114,6 @@ class BSADetails(wx.Window):
     def __init__(self,parent):
         """Initialize."""
         wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
-        readOnlyColour = self.GetBackgroundColour()
-        #--Singleton
-        global BSADetails
-        BSADetails = self
         #--Data
         self.BSAInfo = None
         self.edited = False
@@ -3250,7 +3245,6 @@ class BSAPanel(NotebookPanel):
 
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
-        # global BSAList # was not defined at module level
         self.listData = bosh.BSAInfos
         self.BSADetails = BSADetails(self)
         self.uilist = BSAList(

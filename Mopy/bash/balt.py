@@ -518,14 +518,10 @@ def vsbSizer(boxArgs,*elements):
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
     """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    dialog = wx.DirDialog(parent,message,GPath(defaultPath).s,style=wx.DD_NEW_DIR_BUTTON)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        path = GPath(dialog.GetPath())
-        dialog.Destroy()
-        return path
+    with wx.DirDialog(parent, message, GPath(defaultPath).s,
+                      style=wx.DD_NEW_DIR_BUTTON) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return GPath(dialog.GetPath())
 
 #------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
@@ -657,27 +653,17 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
 #------------------------------------------------------------------------------
 def askText(parent,message,title=u'',default=u''):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.TextEntryDialog(parent,message,title,default)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.TextEntryDialog(parent, message, title, default) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.NumberEntryDialog(parent,message,prompt,title,value,min,max)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.NumberEntryDialog(parent, message, prompt, title, value, min,
+                              max) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
 import windows

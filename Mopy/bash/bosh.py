@@ -149,7 +149,6 @@ iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
 trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
-bsaData = None #--bsaData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
@@ -3340,11 +3339,6 @@ class FileInfo:
         Provided so that SaveFileInfo can override for its cofiles."""
         pass
 
-    def getStats(self):
-        """Gets file stats. Saves into self.stats."""
-        stats = self.stats = {}
-        raise AbstractError
-
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
         if not self in self.getFileInfos().data.values():
@@ -4019,11 +4013,10 @@ class FileInfos(DataDict):
             path = fileInfo.getPath()
             fileInfo.isGhost = not path.exists() and (path+u'.ghost').exists()
             fileInfo.getHeader()
-            self.data[fileName] = fileInfo
+            self[fileName] = fileInfo
         except FileError, error:
             self.corrupted[fileName] = error.message
-            if fileName in self.data:
-                del self.data[fileName]
+            self.pop(fileName, None)
             raise
 
     #--Refresh

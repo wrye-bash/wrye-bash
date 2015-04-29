@@ -73,7 +73,7 @@ def _buildPatch(self, log, inner_loop=_inner_loop, types=None):
     provided by a patcher specific, static _inner_loop() method (except for
     KFFZPatcher, DeathItemPatcher, ImportScripts and SoundPatcher which share
     the module level _inner_loop() above).
-    Adding `types` and `modsHeader` parameters absorbed ImportRelations and
+    Adding `types` and `srcsHeader` parameters absorbed ImportRelations and
     ImportFactions.
     """
     if not self.isActive: return
@@ -125,7 +125,7 @@ def _clog(self, log,
     """Common logging pattern of CBash loggers.
 
     Used in: CBash_SoundPatcher, CBash_ImportScripts, CBash_ActorImporter,
-    CBash_GraphicsPatcher. Adding AImportPatcher.modsHeader attribute absorbed
+    CBash_GraphicsPatcher. Adding AImportPatcher.srcsHeader attribute absorbed
     CBash_NamesPatcher and CBash_StatsPatcher. Adding (tmp!) logModRecs,
     listSrcs parameters absorbs CBash_ImportFactions and CBash_ImportInventory.
     """
