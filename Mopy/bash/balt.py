@@ -2275,13 +2275,7 @@ class UIList(wx.Panel):
                        _(u'Delete these items?  This operation cannot be '
                          u'undone.'), [message]) as dialog:
             if not dialog.askOkModal(): return []
-            id_ = dialog.ids[message[0]]
-            checks = dialog.FindWindowById(id_)
-            checked = []
-            if checks:
-                for i, mod in enumerate(items):
-                    if checks.IsChecked(i): checked.append(mod)
-            return checked
+            return dialog.getChecked(message[0], items)
 
     def _postDeleteRefresh(self, deleted): self.RefreshUI()
 
@@ -2702,8 +2696,8 @@ class ListBoxes(Dialog):
     """A window with 1 or more lists."""
 
     def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), Cancel=True,
-                 resize=False):
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True,
+                 resize=False): # NB: message param is unused (since day 1)
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2721,38 +2715,38 @@ class ListBoxes(Dialog):
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0]*1.2+64
         sizer = wx.FlexGridSizer(len(lists)+1,1)
-        self.ids = {}
+        self._ids = {}
         labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
         for i,group in enumerate(lists):
-            title = group[0]
+            title = group[0] # also serves as key in self._ids dict
             tip = group[1]
-            try: items = [x.s for x in group[2:]]
-            except: items = [x for x in group[2:]]
-            if len(items) == 0: continue
+            try: strings = [x.s for x in group[2:]]
+            except AttributeError: strings = [x for x in group[2:]]
+            if len(strings) == 0: continue
             subsizer = hsbSizer((self, wx.ID_ANY, title))
             if liststyle == 'check':
-                checks = listBox(self, choices=items, isSingle=True,
-                                      isHScroll=True, kind='checklist')
-                checks.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
-                checks.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
-                for i in xrange(len(items)):
-                    checks.Check(i,True)
+                checksCtrl = listBox(self, choices=strings, isSingle=True,
+                                     isHScroll=True, kind='checklist')
+                checksCtrl.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
+                checksCtrl.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
+                # check all - for range and set see wx._controls.CheckListBox
+                checksCtrl.SetChecked(set(range(len(strings))))
             elif liststyle == 'list':
-                checks = listBox(self, choices=items, isHScroll=True)
+                checksCtrl = listBox(self, choices=strings, isHScroll=True)
             else:
-                checks = wx.TreeCtrl(self, size=(150, 200),
-                                     style=wx.TR_DEFAULT_STYLE |
-                                           wx.TR_FULL_ROW_HIGHLIGHT |
-                                           wx.TR_HIDE_ROOT)
-                root = checks.AddRoot(title)
-                for item in group[2]:
-                    child = checks.AppendItem(root,item.s)
-                    for subitem in group[2][item]:
-                        sub = checks.AppendItem(child,subitem.s)
-            self.ids[title] = checks.GetId()
-            checks.SetToolTip(tooltip(tip))
-            subsizer.Add(checks,1,wx.EXPAND|wx.ALL,2)
+                checksCtrl = wx.TreeCtrl(self, size=(150, 200),
+                                         style=wx.TR_DEFAULT_STYLE |
+                                               wx.TR_FULL_ROW_HIGHLIGHT |
+                                               wx.TR_HIDE_ROOT)
+                root = checksCtrl.AddRoot(title)
+                for item, subitems in group[2].iteritems():
+                    child = checksCtrl.AppendItem(root,item.s)
+                    for subitem in subitems:
+                        checksCtrl.AppendItem(child,subitem.s)
+            self._ids[title] = checksCtrl.GetId()
+            checksCtrl.SetToolTip(tooltip(tip))
+            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i)
         okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
@@ -2765,7 +2759,7 @@ class ListBoxes(Dialog):
             but = button(self,id=id,label=label)
             but.Bind(wx.EVT_BUTTON,self.OnClick)
             buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        if Cancel:
+        if canCancel:
             buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
         sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
         sizer.AddGrowableCol(0)
@@ -2800,3 +2794,22 @@ class ListBoxes(Dialog):
             event.Skip()
 
     def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
+
+    def getChecked(self, key, items, checked=True):
+        """Return a sublist of 'items' containing (un)checked items.
+
+        The control only displays the string names of items, that is why items
+        needs to be passed in. If items is empty it will return an empty list.
+        :param key: a key for the private _ids dictionary
+        :param items: the items that correspond to the _ids[key] checksCtrl
+        :param checked: keep checked items if True (default) else unchecked
+        :rtype : list
+        :return: the items in 'items' for (un)checked checkboxes in _ids[key]
+        """
+        if not items: return []
+        select = []
+        checkList = self.FindWindowById(self._ids[key])
+        if checkList:
+            for i, mod in enumerate(items):
+                if checkList.IsChecked(i) ^ (not checked): select.append(mod)
+        return select

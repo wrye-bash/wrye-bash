@@ -196,10 +196,14 @@ class InstallerWizard(wiz.Wizard):
 #  a couple simple things here
 #-------------------------------------------------------------
 class PageInstaller(wiz.PyWizardPage):
+
     def __init__(self, parent):
         wiz.PyWizardPage.__init__(self, parent)
         self.parent = parent
-        parent.FindWindowById(wx.ID_FORWARD).Enable(True)
+        self._enableForward(True)
+
+    def _enableForward(self, enable):
+        self.parent.FindWindowById(wx.ID_FORWARD).Enable(enable)
 
     def GetNext(self): return self.parent.dummy
     def GetPrev(self):
@@ -222,7 +226,7 @@ class PageError(PageInstaller):
         PageInstaller.__init__(self, parent)
 
         #Disable the "Finish"/"Next" button
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+        self._enableForward(False)
 
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
@@ -277,7 +281,7 @@ class PageSelect(PageInstaller):
         else:
             self.listOptions = balt.listBox(self, choices=listItems,
                                             isHScroll=True)
-            self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+            self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
                     self.listOptions.Select(index)
@@ -313,7 +317,7 @@ class PageSelect(PageInstaller):
             pass
 
     def Selection(self, index):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
+        self._enableForward(True)
         self.index = index
         self.textItem.SetValue(self.descs[index])
         # Don't want the bitmap to resize until we call self.Layout()
@@ -478,7 +482,7 @@ class PageFinish(PageInstaller):
         checkSizer.Add(checkSubSizer,0,wx.EXPAND)
         sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
 
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(bAuto)
+        self._enableForward(bAuto)
         self.parent.finishing = True
 
         sizerMain.SetSizeHints(self)
@@ -486,7 +490,7 @@ class PageFinish(PageInstaller):
         self.Layout()
 
     def OnCheckApply(self, event):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkApply.IsChecked())
+        self._enableForward(self.checkApply.IsChecked())
 
     def OnCheckInstall(self, event):
         self.parent.ret.Install = self.checkInstall.IsChecked()
@@ -590,7 +594,7 @@ class PageVersions(PageInstaller):
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
         self.checkOk = balt.checkBox(self, _(u'Install anyway.'),
                                      onCheck=self.OnCheck)
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+        self._enableForward(False)
         sizerCheck.AddStretchSpacer()
         sizerCheck.Add(self.checkOk)
         sizerCheck.AddGrowableRow(0)
@@ -604,7 +608,7 @@ class PageVersions(PageInstaller):
         self.Layout()
 
     def OnCheck(self, event):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkOk.IsChecked())
+        self._enableForward(self.checkOk.IsChecked())
 # END PageVersions -----------------------------------------------
 
 # WryeParser -----------------------------------------------------

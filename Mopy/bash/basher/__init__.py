@@ -4030,7 +4030,7 @@ class BashFrame(wx.Frame):
                     message.extend(sorted(bosh.modInfos.mtimesReset))
                     ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
                         u'Modified dates have been reset for some mod files.'),
-                                      [message], liststyle='list',Cancel=False)
+                        [message], liststyle='list', canCancel=False)
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Check savegames directory...
@@ -4147,7 +4147,7 @@ class BashFrame(wx.Frame):
             ListBoxes.Display(
               self, _(u'Warning: Corrupt/Unrecognized Files'),
               _(u'Some files have corrupted headers or TES4 header versions:'),
-              message, liststyle='list', Cancel=False)
+              message, liststyle='list', canCancel=False)
 
     def _corruptedGameIni(self):
         #--Corrupt Oblivion.ini
@@ -4167,11 +4167,9 @@ class BashFrame(wx.Frame):
                 u"2038. Accordingly, the dates for the following files have "
                 u"been reset to an earlier date: ")]
             message.extend(sorted(bolt.Path.mtimeResets))
-            with ListBoxes(self, _(u'Warning: Dates Reset'), _(
-                    u'Modified dates have been reset to an earlier date for  '
-                    u'these files'), [message], liststyle='list',
-                           Cancel=False) as dialog:
-                dialog.ShowModal()
+            ListBoxes.Display(self, _(u'Warning: Dates Reset'), _(
+                u'Modified dates have been reset to an earlier date for these '
+                u'files'), [message], liststyle='list', canCancel=False)
             del bolt.Path.mtimeResets[:]
 
     def _obmmWarn(self):

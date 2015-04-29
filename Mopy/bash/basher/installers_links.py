@@ -154,17 +154,10 @@ class Installers_MonitorInstall(Installers_Link):
             dialog.Destroy()
             return
         include = set()
-        for (lst,key) in [(newFiles,newFilesKey),
-                           (changedFiles,changedFilesKey),
-                           (touchedFiles,touchedFilesKey),
-                           ]:
-            if lst:
-                id_ = dialog.ids[key]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    for i,file_ in enumerate(lst):
-                        if checks.IsChecked(i):
-                            include.add(file_)
+        for (lst, key) in [(newFiles, newFilesKey),
+                           (changedFiles, changedFilesKey),
+                           (touchedFiles, touchedFilesKey), ]:
+            include |= set(dialog.getChecked(key, lst))
         dialog.Destroy()
         # Create Project
         if not include:

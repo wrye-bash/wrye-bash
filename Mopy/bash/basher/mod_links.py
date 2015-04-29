@@ -881,18 +881,11 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                   u" the patch."), checklists, bCancel=_(u'Skip'))
             if dialog.askOkModal():
                 deselect = set()
-                for (list_,key) in [(unfiltered,unfilteredKey),
-                                    (merge,mergeKey),
-                                    (noMerge,noMergeKey),
-                                    (deactivate,deactivateKey),
-                                    ]:
-                    if list_:
-                        id_ = dialog.ids[key]
-                        checks = dialog.FindWindowById(id_)
-                        if checks:
-                            for i,mod in enumerate(list_):
-                                if checks.IsChecked(i):
-                                    deselect.add(mod)
+                for (lst, key) in [(unfiltered, unfilteredKey),
+                                   (merge, mergeKey),
+                                   (noMerge, noMergeKey),
+                                   (deactivate, deactivateKey), ]:
+                    deselect |= set(dialog.getChecked(key, lst))
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
@@ -2721,32 +2714,23 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
             Current.load()
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()
-
             if cleaned:
                 newMasters = modFile.TES4.masters
                 removed = [GPath(x) for x in oldMasters if x not in newMasters]
                 removeKey = _(u'Masters')
-                group = [removeKey,
-                              _(u'These master files are not referenced within the mod, and can safely be removed.'),
-                              ]
+                group = [removeKey, _(
+                    u'These master files are not referenced within the mod, '
+                    u'and can safely be removed.'), ]
                 group.extend(removed)
                 checklists = [group]
-                dialog = ListBoxes(Link.Frame,_(u'Remove these masters?'),
-                                        _(u'The following master files can be safely removed.'),
-                                        checklists)
-                if not dialog.askOkModal():
-                    dialog.Destroy()
-                    return
-                id_ = dialog.ids[removeKey]
-                checks = dialog.FindWindowById(id_)
-                if checks:
-                    for i,mod in enumerate(removed):
-                        if not checks.IsChecked(i):
-                            newMasters.append(mod)
-
-                modFile.TES4.masters = newMasters
-                modFile.save()
-                dialog.Destroy()
-                deprint(u'to remove:', removed)
+                with ListBoxes(Link.Frame, _(u'Remove these masters?'), _(
+                        u'The following master files can be safely removed.'),
+                        checklists) as dialog:
+                    if not dialog.askOkModal(): return
+                    newMasters.extend(
+                        dialog.getChecked(removeKey, removed, checked=False))
+                    modFile.TES4.masters = newMasters
+                    modFile.save()
+                    deprint(u'to remove:', removed)
             else:
                 self._showOk(_(u'No Masters to clean.'), _(u'Clean Masters'))
