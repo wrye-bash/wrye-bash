@@ -171,7 +171,7 @@ class Saves_Profiles(ChoiceLink):
             Saves_Profiles.swapPlugins(arcSaves,newSaves)
             Saves_Profiles.swapOblivionVersion(newSaves)
             Link.Frame.SetTitle()
-            self.window.details.SetFile(None)
+            self.window.panel.ClearDetails()
             Link.Frame.RefreshData()
             # bosh.modInfos.autoGhost() # RefreshData calls modInfos.refresh()
             # BashFrame.modList.RefreshUI(refreshSaves=True)

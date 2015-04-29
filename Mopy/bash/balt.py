@@ -1781,10 +1781,9 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, data=None, details=None, panel=None):
+    def __init__(self, parent, keyPrefix, data=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.data = data # yak, encapsulate (_data)
-        self.details = details
         self.panel = panel
         #--Layout
         sizer = vSizer()
@@ -1874,8 +1873,7 @@ class UIList(wx.Panel):
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
         self._select(modName)
-    def _select(self, item):
-        if self.details: self.details.SetFile(item)
+    def _select(self, item): self.panel.SetDetails(item)
 
     #--ABSTRACT
     def getLabels(self, item):
@@ -1955,8 +1953,8 @@ class UIList(wx.Panel):
             self.SortItems()
             self.autosizeColumns()
         # if it was a single item then refresh details for it:
-        if len(files) == 1: self.SelectItem(files[0])
-        elif self.details: self.details.SetFile(fileName='SAME')
+        if len(files) == 1: self.panel.SetDetails(files[0])
+        else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
 
     #--Column Menu

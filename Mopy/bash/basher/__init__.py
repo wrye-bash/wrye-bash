@@ -213,7 +213,39 @@ class NotebookPanel(wx.Panel):
             table.save()
 
 #------------------------------------------------------------------------------
-class SashPanel(NotebookPanel):
+class _DetailsPanelMixin(object):
+    """Details API alpha: mixin to add detailsPanel attribute to a Panel
+
+    This is a hasty mixin. I added it to SashPanel and BSAPanel (which
+    subclasses NotebookPanel directly) so UILists can call SetDetails,
+    RefreshDetails and ClearDetails on their panels. TODO:
+     - just mix it only in classes that _do_ have a details view.
+     - drop hideous if detailsPanel is not self, due to Installers, People
+     using themselves as details (YAK!)
+    """
+    detailsPanel = None
+    def _setDetails(self, fileName):
+        if self.detailsPanel: self.detailsPanel.SetFile(
+            fileName=fileName)
+    def RefreshDetails(self): self._setDetails('SAME')
+    def ClearDetails(self): self._setDetails(None)
+    def SetDetails(self, fileName): self._setDetails(fileName)
+
+    def RefreshUIColors(self):
+        super(_DetailsPanelMixin, self).RefreshUIColors()
+        self.RefreshDetails()
+
+    def ClosePanel(self):
+        super(_DetailsPanelMixin, self).ClosePanel()
+        if self.detailsPanel and self.detailsPanel is not self:
+            self.detailsPanel.ClosePanel()
+
+    def ShowPanel(self):
+        super(_DetailsPanelMixin, self).ShowPanel()
+        if self.detailsPanel and self.detailsPanel is not self:
+            self.detailsPanel.ShowPanel()
+
+class SashPanel(_DetailsPanelMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
 
@@ -1693,28 +1725,18 @@ class ModPanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
-        self.modDetails = ModDetails(right)
+        self.detailsPanel = ModDetails(right)
         self.uiList = BashFrame.modList = ModList(
-            left, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.modDetails, panel=self)
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
-        self.modDetails.SetFile()
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(bosh.modInfos.ordered), len(bosh.modInfos.data))
-
-    def ShowPanel(self):
-        super(ModPanel, self).ShowPanel()
-        self.modDetails.ShowPanel()
-
-    def ClosePanel(self):
-        super(ModPanel, self).ClosePanel()
-        self.modDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
@@ -2011,28 +2033,21 @@ class SavePanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        self.saveDetails = SaveDetails(right)
+        self.detailsPanel = SaveDetails(right)
         self.uiList = BashFrame.saveList = SaveList(
-            left, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.saveDetails, panel=self)
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.saveDetails.SetFile()
-        self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
+        self.detailsPanel.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
-
-    def ShowPanel(self):
-        super(SavePanel, self).ShowPanel()
-        self.saveDetails.ShowPanel()
 
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
         super(SavePanel, self).ClosePanel()
-        self.saveDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
@@ -2512,8 +2527,9 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
+        self.detailsPanel = self # YAK
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
-                                     details=self, panel=self)
+                                     panel=self)
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -3272,25 +3288,25 @@ class BSADetails(wx.Window):
         """Event: Clicked cancel button."""
         self.SetFile(self.BSAInfo.name)
 
+    def ClosePanel(self): pass # for _DetailsPanelMixin.detailsPanel.ClosePanel
+
 #------------------------------------------------------------------------------
-class BSAPanel(NotebookPanel):
+class BSAPanel(_DetailsPanelMixin, NotebookPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
 
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
         self.listData = bosh.BSAInfos
-        self.BSADetails = BSADetails(self)
+        self.detailsPanel = BSADetails(self)
         self.uilist = BSAList(
-            self, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.BSADetails, panel=self)
+            self, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        sizer = hSizer(
-            (BSAList,1,wx.GROW),
-            ((4,-1),0),
-            (self.BSADetails,0,wx.EXPAND))
+        sizer = hSizer((BSAList, 1, wx.GROW),
+                       ((4, -1), 0),
+                       (self.detailsPanel, 0, wx.EXPAND))
         self.SetSizer(sizer)
-        self.BSADetails.Fit()
+        self.detailsPanel.Fit()
 
     def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
 
@@ -3448,8 +3464,9 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
+        self.detailsPanel = self # YAK
         self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
-                                 details=self, panel=self)
+                                 panel=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)

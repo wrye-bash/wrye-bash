@@ -340,7 +340,7 @@ class File_Snapshot(ItemLink):
                     newVersion = fileVersion
                 newDescription = bosh.reVersion.sub(u'\\1 '+newVersion, fileHedr.description,1)
                 fileInfo.writeDescription(newDescription)
-                self.window.details.SetFile(fileName)
+                self.window.panel.SetDetails(fileName)
             #--Copy file
             self.window.data.copy(fileName,destDir,destName)
 
@@ -376,7 +376,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
                 self.window.data.refreshFile(fileName)
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
-                self.window.details.SetFile(None)
+                self.window.panel.ClearDetails()
             self.window.RefreshUI(files=[fileName], refreshSaves=False) # don't
             # refresh saves as neither selection state nor load order change
 

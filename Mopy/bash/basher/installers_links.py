@@ -376,7 +376,7 @@ class Installers_Enabled(BoolLink):
             self.window.RefreshUI()
         else:
             self.window.DeleteAll() ##: crude
-            self.window.panel.SetFile(None)
+            self.window.panel.ClearDetails()
 
 class Installers_BsaRedirection(AppendableLink, BoolLink):
     """Toggle BSA Redirection."""
