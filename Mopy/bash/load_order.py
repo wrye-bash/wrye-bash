@@ -109,6 +109,18 @@ class LoadOrder(object):
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
     def activeIndex(self, path): return self.__mod_actIndex[path]
 
+    def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
+        return {'_activeOrdered': self._activeOrdered,
+                '_loadOrder': self.loadOrder}
+
+    def __setstate__(self, dct):
+        self.__dict__.update(dct)   # update attributes
+        self._active = frozenset(self._activeOrdered)
+        self.__mod_loIndex = dict(
+            (a, i) for i, a in enumerate(self._loadOrder))
+        self.__mod_actIndex = dict(
+            (a, i) for i, a in enumerate(self._activeOrdered))
+
 # Module level cache
 __empty = LoadOrder()
 cached_lord = __empty # must always be valid (or __empty)
