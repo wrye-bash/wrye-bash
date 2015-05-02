@@ -515,7 +515,7 @@ def InitModLinks():
         fileMenu.links.append(balt.UIList_Delete())
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(File_Redate())
-        fileMenu.links.append(File_Sort())
+        fileMenu.links.append(Mod_OrderByName())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(File_RevertToSnapshot())

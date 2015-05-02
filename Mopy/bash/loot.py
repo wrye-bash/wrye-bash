@@ -322,7 +322,7 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self.tags = {}   # BashTag map
             self._DB = loot_db()
-            print gamePath
+            # print gamePath
             _CCreateLootDb(byref(self._DB),game,_enc(gamePath))
 
         def __del__(self):

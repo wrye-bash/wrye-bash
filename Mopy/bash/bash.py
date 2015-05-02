@@ -161,7 +161,7 @@ def oneInstanceChecker():
         try:
             print msg
         except UnicodeError:
-            print msg.encode('mbcs')
+            print msg.encode(bolt.Path.sys_fs_enc)
         return False
 
     return True
@@ -368,11 +368,11 @@ def main():
             msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
             msg2 = _(u'done')
             try: print msg1
-            except UnicodeError: print msg1.encode('mbcs')
+            except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
             import belt
             bolt.WryeText.genHtml(opts.genHtml)
             try: print msg2
-            except UnicodeError: print msg2.encode('mbcs')
+            except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
             return
         global basher, balt, barb
         import basher

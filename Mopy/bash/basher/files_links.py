@@ -25,7 +25,7 @@
 from operator import attrgetter
 import re
 import time
-from .. import balt, bosh, bush, bolt
+from .. import balt, bosh, bush, bolt, load_order
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
@@ -34,8 +34,8 @@ from ..bosh import formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide', 'File_Redate',
-           'File_Sort', 'File_RevertToBackup', 'File_RevertToSnapshot',
-           'File_ListMasters', 'File_Open']
+           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
+           'File_Open']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -210,7 +210,7 @@ class File_Duplicate(ItemLink):
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
                     fileInfos.table.setItem(destName,'mtime',newTime)
-            self.window.RefreshUI()
+            self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
 
 class File_Hide(ItemLink):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
@@ -273,8 +273,7 @@ class File_Redate(AppendableLink, ItemLink):
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")
 
-    def _append(self, window):
-        return bosh.lo.LoadOrderMethod != bosh.liblo.LIBLO_METHOD_TEXTFILE
+    def _append(self, window): return not load_order.usingTxtFile()
 
     def Execute(self,event):
         #--Get current start time.
@@ -302,35 +301,7 @@ class File_Redate(AppendableLink, ItemLink):
         #--Refresh
         modInfos.refresh(doInfos=False)
         modInfos.refreshInfoLists()
-        self.window.RefreshUI()
-
-class File_Sort(EnabledLink):
-    """Sort the selected files."""
-    text = _(u'Sort')
-    help = _(u"Sort the selected files.")
-
-    def _enable(self): return len(self.selected) > 1
-
-    def Execute(self,event):
-        message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
-                   + u'\n\n' +
-                   _(u'Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
-                   )
-        if not self._askContinue(message, 'bash.sortMods.continue',
-                                 _(u'Sort Mods')): return
-        #--Get first time from first selected file.
-        modInfos = self.window.data
-        fileNames = self.selected
-        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
-        #--Do it
-        fileNames.sort(key=lambda a: a.cext)
-        for fileName in fileNames:
-            modInfos[fileName].setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        modInfos.refresh(doInfos=False)
-        modInfos.refreshInfoLists()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
@@ -368,17 +339,18 @@ class File_Snapshot(ItemLink):
                     newVersion = fileVersion
                 newDescription = bosh.reVersion.sub(u'\\1 '+newVersion, fileHedr.description,1)
                 fileInfo.writeDescription(newDescription)
-                self.window.details.SetFile(fileName)
+                self.window.panel.SetDetails(fileName)
             #--Copy file
             self.window.data.copy(fileName,destDir,destName)
 
-class File_RevertToSnapshot(OneItemLink):
+class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     """Revert to Snapshot."""
     text = _(u'Revert to Snapshot...')
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
 
+    @balt.conversation
     def Execute(self,event):
-        """Handle menu item selection."""
+        """Revert to Snapshot."""
         fileInfo = self.window.data[self.selected[0]]
         fileName = fileInfo.name
         #--Snapshot finder
@@ -397,14 +369,16 @@ class File_RevertToSnapshot(OneItemLink):
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with balt.BusyCursor():
             destPath = fileInfo.getPath()
+            current_mtime = destPath.mtime
             snapPath.copyTo(destPath)
-            fileInfo.setmtime()
+            fileInfo.setmtime(current_mtime) # do not change load order
             try:
                 self.window.data.refreshFile(fileName)
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
-                self.window.details.SetFile(None)
-            self.window.RefreshUI(files=[fileName])
+                self.window.panel.ClearDetails()
+            self.window.RefreshUI(files=[fileName], refreshSaves=False) # don't
+            # refresh saves as neither selection state nor load order change
 
 class File_Backup(ItemLink):
     """Backup file."""
@@ -437,41 +411,38 @@ class File_RevertToBackup(ChoiceLink):
         #--Backup Files
         singleSelect = len(selection) == 1
         self.fileInfo = window.data[selection[0]]
-        self.backup = backup = self.fileInfo.bashDir.join(u'Backups',self.fileInfo.name)
-        self.firstBackup = firstBackup = self.backup +u'f'
+        backup = self.fileInfo.bashDir.join(u'Backups', self.fileInfo.name)
+        firstBackup = backup + u'f'
         #--Backup Item
         _self = self
-        self._revertToFirst = False
         class _RevertBackup(EnabledLink):
             text = _(u'Revert to Backup')
             def _enable(self): return singleSelect and backup.exists()
-            def Execute(self, event): return _self.Execute(event)
+            def Execute(self, event): return _self.revert(backup)
         #--First Backup item
         class _RevertFirstBackup(EnabledLink):
             text = _(u'Revert to First Backup')
             def _enable(self): return singleSelect and firstBackup.exists()
-            def Execute(self, event):
-                _self._revertToFirst = True
-                return _self.Execute(event)
+            def Execute(self, event): return _self.revert(firstBackup)
         self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
 
-    def Execute(self,event):
+    @balt.conversation
+    def revert(self, backup):
         fileInfo = self.fileInfo
         fileName = fileInfo.name
-        #--Backup/FirstBackup?
-        backup = self.firstBackup if self._revertToFirst else self.backup
         #--Warning box
         message = _(u"Revert %s to backup dated %s?") % (fileName.s,
             formatDate(backup.mtime))
         if self._askYes(message, _(u'Revert to Backup')):
             with balt.BusyCursor():
-                dest = fileInfo.dir.join(fileName)
+                dest = fileInfo.getPath() # care for ghosts !
+                current_mtime = dest.mtime
                 backup.copyTo(dest)
-                fileInfo.setmtime()
+                fileInfo.setmtime(current_mtime) # do not change load order
                 if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
                     bosh.CoSaves(backup).copy(dest)
                 try:
                     self.window.data.refreshFile(fileName)
                 except bosh.FileError:
-                    balt.showError(self,_(u'Old file is corrupt!'))
-                self.window.RefreshUI(files=[fileName])
+                    self._showError(_(u'Old file is corrupt!'))
+                self.window.RefreshUI(files=[fileName], refreshSaves=False)

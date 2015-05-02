@@ -53,6 +53,7 @@ class Settings_BackupSettings(ItemLink):
     text =_(u'Backup Settings...')
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
 
+    @balt.conversation
     def Execute(self,event):
         def PromptConfirm(msg=None):
             msg = msg or _(u'Do you want to backup your Bash settings now?')
@@ -60,35 +61,31 @@ class Settings_BackupSettings(ItemLink):
         BashFrame.SaveSettings(Link.Frame)
         #backup = barb.BackupSettings(Link.Frame)
         try:
-            Link.Frame.BindRefresh(bind=False)
-            if PromptConfirm():
-                dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
-                icon = staticBitmap(dialog)
-                sizer = vSizer(
-                    (hSizer(
-                        (icon,0,wx.ALL,6),
+            if not PromptConfirm(): return
+            dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
+            icon = staticBitmap(dialog)
+            sizer = vSizer(
+                (hSizer((icon,0,wx.ALL,6),
                         (staticText(dialog,_(u'Do you want to backup any images?'),noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                         ),1,wx.EXPAND|wx.ALL,6),
-                    (hSizer(spacer,
+                (hSizer(spacer,
                         button(dialog, label=_(u'Backup All Images'),
-                         onClick=lambda e: dialog.EndModal(2)),
+                        onClick=lambda e: dialog.EndModal(2)),
                         (button(dialog, label=_(u'Backup Changed Images'),
-                         onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
+                        onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
                         (button(dialog, label=_(u'None'),
-                         onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
+                        onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                    )
-                dialog.SetSizer(sizer)
-                with dialog: images = dialog.ShowModal()
-                with balt.BusyCursor():
-                    backup = barb.BackupSettings(Link.Frame,backup_images=images)
-                    backup.Apply()
+                )
+            dialog.SetSizer(sizer)
+            with dialog: images = dialog.ShowModal()
+            with balt.BusyCursor():
+                backup = barb.BackupSettings(Link.Frame,backup_images=images)
+                backup.Apply()
         except StateError:
             backup.WarnFailed()
         except barb.BackupCancelled:
             pass
-        finally: Link.Frame.BindRefresh(bind=True)
-        backup = None
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):

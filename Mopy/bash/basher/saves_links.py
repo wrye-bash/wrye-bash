@@ -171,10 +171,10 @@ class Saves_Profiles(ChoiceLink):
             Saves_Profiles.swapPlugins(arcSaves,newSaves)
             Saves_Profiles.swapOblivionVersion(newSaves)
             Link.Frame.SetTitle()
-            self.window.details.SetFile(None)
+            self.window.panel.ClearDetails()
             Link.Frame.RefreshData()
             # bosh.modInfos.autoGhost() # RefreshData calls modInfos.refresh()
-            BashFrame.modList.RefreshUI()
+            # BashFrame.modList.RefreshUI(refreshSaves=True)
 
     cls = _ProfileLink
 
@@ -228,8 +228,7 @@ class Save_LoadMasters(OneItemLink):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        BashFrame.modList.RefreshUI() # will refresh saves too
-        self.window.SelectItem(fileName) # refresh details
+        BashFrame.modList.RefreshUI(refreshSaves=True) # will refresh saves too
         if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------

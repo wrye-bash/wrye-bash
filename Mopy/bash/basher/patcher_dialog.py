@@ -162,15 +162,12 @@ class PatchDialog(balt.Dialog):
         patcher.Layout()
         self.currentPatcher = patcher
 
+    @balt.conversation
     def Execute(self,event=None): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
-        Link.Frame.isPatching = True ##: hack - prevent
-        # mod_links._Mod_Patch_Update from binding activation event
-        # we really need a lock
         self.EndModalOK()
         patchFile = progress = None
         try:
-            Link.Frame.BindRefresh(bind=False)
             patchName = self.patchInfo.name
             progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
@@ -236,8 +233,7 @@ class PatchDialog(balt.Dialog):
             #--Cleanup
             self.patchInfo.refresh()
             #--Done
-            progress.Destroy()
-            Link.Frame.BindRefresh(bind=True)
+            progress.Destroy(); progress = None
             timer2 = time.clock()
             #--Readme and log
             log.setHeader(None)
@@ -276,10 +272,10 @@ class PatchDialog(balt.Dialog):
             balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
-            message = _(u'Activate %s?') % patchName.s
-            if bosh.inisettings['PromptActivateBashedPatch'] \
-                    and (bosh.modInfos.isSelected(patchName) or
-                             balt.askYes(self.parent,message,patchName.s)):
+            count, message = 0, _(u'Activate %s?') % patchName.s
+            if bosh.modInfos.isSelected(patchName) or (
+                        bosh.inisettings['PromptActivateBashedPatch'] and
+                        balt.askYes(self.parent, message, patchName.s)):
                 try:
                     oldFiles = bosh.modInfos.ordered[:]
                     bosh.modInfos.select(patchName)
@@ -287,13 +283,13 @@ class PatchDialog(balt.Dialog):
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                    bosh.modInfos[patchName].setGhost(False)
-                    bosh.modInfos.refreshInfoLists()
+                    # bosh.modInfos.refreshInfoLists() # covered in refreshFile
                 except bosh.PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patchName.s)
-                BashFrame.modList.RefreshUI(details=[patchFile])
+            bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
+            BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except bolt.FileEditError, error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
@@ -306,12 +302,10 @@ class PatchDialog(balt.Dialog):
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             raise
         finally:
-            Link.Frame.isPatching = False
-            Link.Frame.BindRefresh(bind=True)
             if self.doCBash:
                 try: patchFile.Current.Close()
                 except: pass
-            progress.Destroy()
+            if progress: progress.Destroy()
 
     def _retry(self, old, new):
         return balt.askYes(self,

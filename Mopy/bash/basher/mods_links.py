@@ -25,6 +25,7 @@
 """Menu items for the _main_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
+import re as _re
 from .. import bosh, balt
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
@@ -40,15 +41,18 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_ScanDirty']
 
 # "Load" submenu --------------------------------------------------------------
+def _getLoadListsDict():
+    loadListData = bosh.settings['bash.loadLists.data']
+    loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game.bethDataFiles
+        if x.endswith(u'.esm') # but avoid activating modding esms for oblivion
+    and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE) or x == u'oblivion.esm')]
+    return loadListData
+
 class _Mods_LoadListData(balt.ListEditorData):
     """Data capsule for load list editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.data = bosh.settings['bash.loadLists.data']
-        self.data['Bethesda ESMs'] = [
-            GPath(x) for x in bush.game.bethDataFiles
-            if x.endswith(u'.esm')
-            ]
+        self.loadListDict = _getLoadListsDict()
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -56,7 +60,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.data.keys(),key=lambda a: a.lower())
+        return sorted(self.loadListDict.keys(), key=lambda a: a.lower())
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -67,27 +71,25 @@ class _Mods_LoadListData(balt.ListEditorData):
             return False
         #--Rename
         bosh.settings.setChanged('bash.loadLists.data')
-        self.data[newName] = self.data[oldName]
-        del self.data[oldName]
+        self.loadListDict[newName] = self.loadListDict[oldName]
+        del self.loadListDict[oldName]
         return newName
 
     def remove(self,item):
         """Removes load list."""
         bosh.settings.setChanged('bash.loadLists.data')
-        del self.data[item]
+        del self.loadListDict[item]
         return True
 
 class Mods_LoadList(ChoiceLink):
     """Add load list links."""
     max_load_orders_saved = 64
 
+    def _refresh(self): self.window.RefreshUI(refreshSaves=True)
+
     def __init__(self):
         super(Mods_LoadList, self).__init__()
-        self.loadListsDict = bosh.settings['bash.loadLists.data']
-        self.loadListsDict['Bethesda ESMs'] = [
-            GPath(x) for x in bush.game.bethDataFiles
-            if x.endswith(u'.esm')
-            ] # FIXME: selects both Oblivion.esm AND Oblivion1_1.esm
+        self.loadListsDict = _getLoadListsDict()
         #--Links
         _self = self
         class _All(ItemLink):
@@ -111,20 +113,18 @@ class Mods_LoadList(ChoiceLink):
                 mods = filter(lambda m: m in _self.loadListsDict[self.text],
                               map(GPath, self.window.GetItems()))
                 errorMessage = bosh.modInfos.selectExact(mods)
-                self.window.RefreshUI()
+                _self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         self.__class__.cls = _LoListLink
 
     @property
     def _choices(self):
-        items = self.loadListsDict.keys()
-        items.sort(lambda a,b: cmp(a.lower(),b.lower()))
-        return items
+        return sorted(self.loadListsDict.keys(), key=lambda a: a.lower())
 
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoAll(self,event):
         """Select all mods."""
@@ -147,12 +147,12 @@ class Mods_LoadList(ChoiceLink):
             # then activate as many of the remaining mods as we can
             for mod in mods:
                 if mod in mergeable: select(mod)
-            modInfos.plugins.save()
+            modInfos.plugins.saveActive()
             modInfos.refreshInfoLists()
         except bosh.PluginsFullError:
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoSave(self,event):
         #--No slots left?
@@ -219,7 +219,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         Link.Frame.SetTitle()
@@ -232,8 +232,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     def Execute(self,event):
         newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
-            self.window.RefreshUI(files=[newPatchName])
-            self.window.SelectItem(newPatchName)
+            self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
+            self.window.SelectItem(newPatchName, deselectOthers=True)
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -257,8 +257,8 @@ class Mods_CreateBlank(ItemLink):
         mod_group = fileInfos.table.getColumn('group')
         mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
-        self.window.RefreshUI(files=[newName])
-        self.window.SelectItem(newName)
+        self.window.RefreshUI(files=[newName], refreshSaves=False)
+        self.window.SelectItem(newName, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
@@ -316,7 +316,8 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True))
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True),
+                              refreshSaves=False)
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):
@@ -326,7 +327,7 @@ class Mods_ScanDirty(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False)
 
 class Mods_LockTimes(CheckLink):
     """Turn on resetMTimes feature."""
@@ -341,7 +342,7 @@ class Mods_LockTimes(CheckLink):
         if not lockLO: bosh.modInfos.mtimes.clear()
         bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # CRUFT

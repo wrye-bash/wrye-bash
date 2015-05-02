@@ -37,7 +37,8 @@ import string
 import os
 import textwrap
 import time
-from functools import partial
+import threading
+from functools import partial, wraps
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -1755,6 +1756,23 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
+_depth = 0
+_lock = threading.Lock() # threading not needed (I just can't omit it)
+def conversation(func):
+    """Decorator to temporarily unbind RefreshData Link.Frame callback."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global _depth
+        try:
+            with _lock: _depth += 1 # hack: allow sequences of conversations
+            Link.Frame.BindRefresh(bind=False)
+            func(*args, **kwargs)
+        finally:
+            with _lock: # atomic
+                _depth -= 1
+                if not _depth: Link.Frame.BindRefresh(bind=True)
+    return wrapper
+
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
@@ -1781,10 +1799,9 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, data=None, details=None, panel=None):
+    def __init__(self, parent, keyPrefix, data=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.data = data # yak, encapsulate (_data)
-        self.details = details
         self.panel = panel
         #--Layout
         sizer = vSizer()
@@ -1871,12 +1888,12 @@ class UIList(wx.Panel):
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
-    #--ABSTRACT
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
         self._select(modName)
-    def _select(self, item): raise AbstractError
+    def _select(self, item): self.panel.SetDetails(item)
 
+    #--ABSTRACT
     def getLabels(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
@@ -1937,11 +1954,13 @@ class UIList(wx.Panel):
         If there are any deleted (applies also to renamed) items leave files
         parameter alone.
         """
-        # TODO(ut) needs work: deleted, new and files->modified **kwargs
+        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
         # parameters and get rid of ModList override(move part to PopulateItem)
         # Refresh UI uses must be optimized - pass in ONLY the items we need
         # refreshed - most of the time Refresh UI calls PopulateItems on ALL
         # items - a nono. Refresh UI has 140 uses...
+        # B) consider adding 'select' tuple parameter (ex 'detail', duh) to
+        # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
         if files is self.__all:
             self.PopulateItems()
@@ -1951,8 +1970,9 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-            # if it was a single item then refresh details for it:
-            if len(files) == 1: self.SelectItem(files[0])
+        # if it was a single item then refresh details for it:
+        if len(files) == 1: self.panel.SetDetails(files[0])
+        else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
 
     #--Column Menu
@@ -2055,6 +2075,12 @@ class UIList(wx.Panel):
         """Return list of items selected (highlighted) in the interface."""
         listCtrl = self._gList
         return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
+    def GetSelectedIndexes(self):
+        """Return list of indexes highlighted in the interface in display order."""
+        listCtrl = self._gList
+        return [dex for dex in xrange(listCtrl.GetItemCount())
             if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
 
     def SelectItemAtIndex(self, index, select=True,
@@ -2239,29 +2265,29 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
+    @conversation
     def DeleteItems(self, event=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
-        recycle = True if event is None else not event.ShiftDown()
+        recycle = (
+        # menu items fire 'CommandEvent' - I need a workaround to detect Shift
+            True if event is None else not event.ShiftDown())
         items = self._toDelete(items)
-        try:
-            Link.Frame.BindRefresh(bind=False)
-            if not self.__class__._shellUI:
-                items = self._promptDelete(items, dialogTitle, order)
-            if not items: return
-            for i in items:
-                try:
-                    if not self.__class__._shellUI:
-                        self.data.delete(i, doRefresh=False, recycle=recycle)
-                    else:
-                        self.data.delete(items, confirm=True, recycle=recycle)
-                        break
-                except bolt.BoltError as e:
-                    showError(self, u'%r' % e)
-                except (AccessDeniedError, CancelError, SkipError): pass
-            else: self.data.refresh()
-            self._postDeleteRefresh(items)
-        finally:
-            Link.Frame.BindRefresh(bind=True)
+        if not self.__class__._shellUI:
+            items = self._promptDelete(items, dialogTitle, order)
+        if not items: return
+        for i in items:
+            try:
+                if not self.__class__._shellUI: # non shellUI path used to
+                    # delete as many as possible, I kept this behavior
+                    self.data.delete(i, doRefresh=False, recycle=recycle)
+                else: # shellUI path tries to delete all at once
+                    self.data.delete(items, confirm=True, recycle=recycle)
+            except bolt.BoltError as e: showError(self, u'%r' % e)
+            except (AccessDeniedError, CancelError, SkipError): pass
+            finally:
+                if self.__class__._shellUI: break # could delete fail mid-way ?
+        else: self.data.refresh()
+        self._postDeleteRefresh(items)
 
     def _toDelete(self, items):
         return items if items is not None else self.GetSelected()
@@ -2277,7 +2303,7 @@ class UIList(wx.Panel):
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
 
-    def _postDeleteRefresh(self, deleted): self.RefreshUI()
+    def _postDeleteRefresh(self, deleted): self.RefreshUI(refreshSaves=True)
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod
@@ -2314,14 +2340,6 @@ class Tank(UIList):
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         self._gList.SetItem(gItem)
-
-    #--Details view (if it exists)
-    def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
-        return self.details.GetDetailsItem() if self.details else None
-
-    def _select(self, item):
-        if self.details: return self.details.RefreshDetails(item)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

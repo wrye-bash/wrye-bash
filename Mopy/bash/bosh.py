@@ -69,7 +69,6 @@ from record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
 import libbsa
-import liblo
 
 import patcher # for configIsCBash()
 
@@ -152,7 +151,7 @@ screensData = None #--ScreensData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
-lo = None #--LibloHandle singleton
+load_order = None #--can't import yet as I need bosh.dirs to be initialized
 
 def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
@@ -2944,15 +2943,10 @@ class Plugins:
             self.dir = dirs['userApp']
         self.pathPlugins = self.dir.join(u'plugins.txt')
         self.pathOrder = self.dir.join(u'loadorder.txt')
-        self.mtimePlugins = 0
-        self.sizePlugins = 0
-        self.mtimeOrder = 0
-        self.sizeOrder = 0
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
         #--Create dirs/files if necessary
         self.dir.makedirs()
-        self.cleanLoadOrderFiles()
 
     def copyTo(self,toDir):
         """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
@@ -2970,69 +2964,20 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
-    def loadActive(self, lo_with_corrected_master=None):
-        """Get list of active plugins from plugins.txt through libloadorder which cleans out bad entries."""
-        self.selected = lo.GetActivePlugins(lo_with_corrected_master=lo_with_corrected_master) # GPath list (but not sorted)
-        if self.pathPlugins.exists():
-            self.mtimePlugins = self.pathPlugins.mtime
-            self.sizePlugins = self.pathPlugins.size
-        else:
-            self.mtimePlugins = 0
-            self.sizePlugins = 0
-
-
-    def loadLoadOrder(self):
-        """Get list of all plugins from loadorder.txt through libloadorder."""
-        self.LoadOrder = lo.GetLoadOrder()
-        # game's master might be out of place (if using timestamps for load ordering) so move it up.
-        if self.LoadOrder.index(modInfos.masterName) > 0:
-            self.LoadOrder.remove(modInfos.masterName)
-            self.LoadOrder.insert(0,modInfos.masterName)
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
-            self.mtimeOrder = self.pathOrder.mtime
-            self.sizeOrder = self.pathOrder.size
-            if self.selected != modInfos.getOrdered(self.selected,False):
-                modInfos.plugins.saveLoadOrder()
-                self.selected = modInfos.getOrdered(self.selected,False)
-                deprint("Mismatched Load Order Corrected")
-
-    def save(self):
+    def saveActive(self):
         """Write data to Plugins.txt file."""
         # liblo attempts to unghost files, no need to duplicate that here.
-        lo.SetActivePlugins(modInfos.getOrdered(self.selected))
-        self.mtimePlugins = self.pathPlugins.mtime
-        self.sizePlugins = self.pathPlugins.size
+        load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
 
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        try:
-            lo.SetLoadOrder(self.LoadOrder)
-        except liblo.LibloError as e:
-            if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
-                raise bolt.BoltError(u'Cannot load plugins before masters.')
-        # Now reset the mtimes cache or LockLO feature will revert intentional changes.
-        for name in modInfos.mtimes:
-            path = modInfos[name].getPath()
-            if path.exists():
-                modInfos.mtimes[name] = modInfos[name].getPath().mtime
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
-            self.mtimeOrder = self.pathOrder.mtime
-            self.sizeOrder = self.pathOrder.size
+        load_order.SaveLoadOrder(self.LoadOrder)
 
+    def saveLoadAndActive(self):
+        self.saveLoadOrder()
+        self.saveActive()
 
-    def hasChanged(self):
-        """True if plugins.txt or loadorder.txt file has changed."""
-        if self.pathPlugins.exists() and (
-            self.mtimePlugins != self.pathPlugins.mtime or
-            self.sizePlugins != self.pathPlugins.size):
-            return True
-        if lo.LoadOrderMethod != liblo.LIBLO_METHOD_TEXTFILE:
-            return True  # Until we find a better way, Oblivion always needs True
-        return self.pathOrder.exists() and (
-                self.mtimeOrder != self.pathOrder.mtime or
-                self.sizeOrder != self.pathOrder.size)
-
-    def removeMods(self, plugins, refresh=False):
+    def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""
         # Use set to remove any duplicates
         plugins = set(plugins,)
@@ -3040,11 +2985,9 @@ class Plugins:
         self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
         self.selected  = [x for x in self.selected  if x not in plugins]
         # Refresh liblo
-        if refresh:
-            self.saveLoadOrder()
-            self.save()
+        if savePlugins: self.saveLoadAndActive()
 
-    def addMods(self, plugins, index=None, refresh=False):
+    def addMods(self, plugins, index=None, savePlugins=False):
         """Adds the specified mods to load order at the given index or at the bottom if none is given."""
         # Remove any duplicates
         plugins = set(plugins)
@@ -3057,61 +3000,14 @@ class Plugins:
                     self.LoadOrder.insert(index, plugin)
                     index += 1
         # Refresh liblo
-        if refresh:
-            self.saveLoadOrder()
-            self.save()
+        if savePlugins: self.saveLoadAndActive()
 
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
-        hasChanged = self.hasChanged()
+        hasChanged = load_order.haveLoFilesChanged()
         if hasChanged or forceRefresh:
-            self.loadLoadOrder()
-            self.loadActive(lo_with_corrected_master=self.LoadOrder)
+            self.LoadOrder, self.selected = load_order.GetLo()
         return hasChanged
-
-    def fixLoadOrder(self):
-        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files as well as impossible load orders"""
-        loadOrder = set(self.LoadOrder)
-        modFiles = set(modInfos.data.keys())
-        removedFiles = loadOrder - modFiles
-        addedFiles = modFiles - loadOrder
-        # Remove non existent plugins from load order
-        self.removeMods(removedFiles)
-        # Add new plugins to load order
-        indexFirstEsp = 0
-        while indexFirstEsp < len(self.LoadOrder) and modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
-            indexFirstEsp += 1
-        for mod in addedFiles:
-            if modInfos.data[mod].isEsm():
-                self.addMods([mod], indexFirstEsp)
-                indexFirstEsp += 1
-            else:
-                self.addMods([mod])
-        # Check to see if any esm files are loaded below an esp and reorder as neccessar
-        for mod in self.LoadOrder[indexFirstEsp:]:
-            if modInfos.data[mod].isEsm():
-                self.LoadOrder.remove(mod)
-                self.LoadOrder.insert(indexFirstEsp, mod)
-                indexFirstEsp += 1
-        # Save changes if necessary
-        if removedFiles or addedFiles:
-            self.saveLoadOrder()
-            self.save()
-
-    def cleanLoadOrderFiles(self):
-        """Cleans all files relevant to the load ordering of non existant entries"""
-        # This is primarily used to mask what is probably a bug in liblo that makes it fail if loadorder.txt contains a non existing .esm file entry.
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
-            loFiles = [x.s for x in (self.pathPlugins, self.pathOrder) if x.exists()]
-            for loFile in loFiles:
-                f = open(loFile, 'r')
-                lines = f.readlines()
-                f.close()
-                f = open(loFile, 'w')
-                for line in lines:
-                    if dirs['mods'].join(line.strip()).exists():
-                        f.write(line)
-                f.close()
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -3345,7 +3241,6 @@ class FileInfo(_AFileInfo):
         destDir = self.bashDir.join(u'Snapshots')
         destDir.makedirs()
         (root,ext) = self.name.rootExt
-        destName = root+u'-00'+ext
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
@@ -3405,26 +3300,14 @@ class ModInfo(FileInfo):
         self.header.flags1 = flags1
         self.setmtime()
 
-    def updateCrc(self):
-        """Force update of stored crc"""
-        path = self.getPath()
-        size = path.size
-        mtime = path.getmtime()
-        crc = path.crc
-        if crc != modInfos.table.getItem(self.name,'crc'):
-            modInfos.table.setItem(self.name,'crc',crc)
-            modInfos.table.setItem(self.name,'ignoreDirty',False)
-        modInfos.table.setItem(self.name,'crc_mtime',mtime)
-        modInfos.table.setItem(self.name,'crc_size',size)
-        return crc
-
-    def cachedCrc(self):
+    def cachedCrc(self, recalculate=False):
         """Stores a cached crc, for quicker execution."""
         path = self.getPath()
         size = path.size
         mtime = path.getmtime()
-        if (mtime != modInfos.table.getItem(self.name,'crc_mtime') or
-            size != modInfos.table.getItem(self.name,'crc_size')):
+        cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
+        cached_size = modInfos.table.getItem(self.name, 'crc_size')
+        if recalculate or mtime != cached_mtime or size != cached_size:
             crc = path.crc
             if crc != modInfos.table.getItem(self.name,'crc'):
                 modInfos.table.setItem(self.name,'crc',crc)
@@ -3559,7 +3442,8 @@ class ModInfo(FileInfo):
     def sameAs(self, fileInfo):
         try:
             return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost)
+                self.isGhost == fileInfo.isGhost and
+                self.isEsp() == fileInfo.isEsp()) # update for reversed mod
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 
@@ -3577,6 +3461,7 @@ class ModInfo(FileInfo):
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
+        #  TODO(ut): both should never exist simultaneously
         if normal.exists():
             if self.isGhost:
                 self.isGhost = False
@@ -3738,10 +3623,10 @@ class INIInfo(FileInfo):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
 
-    def _getStatus(self):
+    @property
+    def status(self):
         if self._status is None: self.getStatus()
         return self._status
-    status = property(_getStatus)
 
     def getFileInfos(self):
         return iniInfos
@@ -4066,8 +3951,6 @@ class FileInfos(DataDict):
             # Can run into multiple pops if one of the files is corrupted
             if name in data: data.pop(name)
         if deleted:
-            # If an .esm file was deleted we need to clean the loadorder.txt file else liblo crashes
-            modInfos.plugins.cleanLoadOrderFiles()
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(deleted):
                 del self.table[d]
@@ -4085,7 +3968,9 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
-        if fileInfo.isGhost: newPath += u'.ghost'
+        try:
+            if fileInfo.isGhost: newPath += u'.ghost'
+        except AttributeError: pass # not a mod info
         oldPath = fileInfo.getPath()
         balt.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
@@ -4267,7 +4152,7 @@ class ModInfos(FileInfos):
         if not self.lockLO: return False
         if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         #--Else
         return True
@@ -4277,21 +4162,19 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, doInfos=True):
+    def refresh(self, doInfos=True): ##: doInfos is for what ??
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
         hasChanged = doInfos and FileInfos.refresh(self)
         if hasChanged:
             self.resetMTimes()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
-        # If files have changed we might need to add/remove mods from load order
-        if hasChanged: self.plugins.fixLoadOrder()
         hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
-        self.getOblivionVersions()
+        self.setOblivionVersions()
         return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
@@ -4343,11 +4226,14 @@ class ModInfos(FileInfos):
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
 
-        Should be called when activating mods. Will run if bash.mods.autoGhost
-        is true, or if force parameter is true (in which case, if autoGhost
-        is False, it will actually unghost all ghosted mods).
+        Should be called when deactivating mods - will have an effect if
+        bash.mods.autoGhost is true, or if force parameter is true (in which
+        case, if autoGhost is False, it will actually unghost all ghosted
+        mods). If both the mod and its ghost exist, the mod is not active and
+        this method runs while autoGhost is on, the normal version will be
+        moved to the ghost.
         :param force: set to True only in Mods_AutoGhost, so if fired when
-        toggling bash.mods.autoGhost to False it will forcibly unghost all mods
+        toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)
@@ -4370,11 +4256,8 @@ class ModInfos(FileInfos):
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
         self.bashed_patches.clear()
-        selfKeys = self.keys()
-        for modName in selfKeys:
-            modInfo = modInfos[modName]
-            mtime = modInfo.mtime
-            mtime_mods[mtime].append(modName)
+        for modName, modInfo in self.iteritems():
+            mtime_mods[modInfo.mtime].append(modName)
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
@@ -4508,31 +4391,28 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
+        modsSet, allMods = set(modNames), set(self.plugins.LoadOrder)
         #--Ensure plugins that cannot be deselected stay selected
-        for path in map(GPath, bush.game.nonDeactivatableFiles):
-            if path not in modNames:
-                modNames.append(path)
+        modsSet.update(map(GPath, bush.game.nonDeactivatableFiles))
         #--Deselect/select plugins
-        missing,extra = [],[]
-        self.plugins.selected = list(modNames)
-        for modName in modNames:
-            if modName not in self.plugins.LoadOrder:
-                missing.append(modName)
-                self.plugins.selected.remove(modName)
+        missingSet = modsSet - allMods
+        toSelect = modsSet - missingSet
         #--Save
-        self.plugins.save()
+        self.plugins.selected = list(toSelect)
+        self.plugins.saveActive()
         self.refreshInfoLists()
         self.autoGhost(force=False)
         #--Done/Error Message
-        if missing or extra:
+        extra = set() ##: was never set - actually saveActive will just raise
+        if missingSet or extra:
             message = u''
-            if missing:
+            if missingSet:
                 message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-                message += u'\n* '.join(x.s for x in missing)
+                message += u'\n* '.join(x.s for x in missingSet)
             if extra:
-                if missing: message += u'\n'
+                if missingSet: message += u'\n'
                 message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-                extra = set(modNames) - set(self.plugins.LoadOrder)
+                extra = toSelect - set(self.plugins.selected)
                 message += u'\n* '.join(x.s for x in extra)
             return message
         else:
@@ -4675,7 +4555,7 @@ class ModInfos(FileInfos):
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
         finally:
-            if doSave: plugins.save()
+            if doSave: plugins.saveActive()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
@@ -4694,7 +4574,7 @@ class ModInfos(FileInfos):
                     break
         #--Save
         if doSave:
-            self.plugins.save()
+            self.plugins.saveActive()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -4756,7 +4636,7 @@ class ModInfos(FileInfos):
 
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         else:
             mtime = self[modName].mtime
@@ -4764,7 +4644,7 @@ class ModInfos(FileInfos):
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         elif not self.isSelected(modName): return False
         else:
@@ -4773,7 +4653,7 @@ class ModInfos(FileInfos):
 
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             # Doesn't matter - LO isn't determined by mtime
             return time.time()
         else:
@@ -4789,16 +4669,15 @@ class ModInfos(FileInfos):
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         isSelected = self.isSelected(oldName)
-        if isSelected: self.unselect(oldName)
+        if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
         oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.removeMods([oldName], refresh=False)
-        self.plugins.addMods([newName], index=oldIndex)
-        #self.plugins.LoadOrder.remove(oldName)
-        #self.plugins.LoadOrder.insert(oldIndex, newName)
-        self.plugins.saveLoadOrder()
+        self.plugins.removeMods([oldName], savePlugins=False)
+        self.plugins.addMods([newName], index=oldIndex, savePlugins=False)
         self.refreshInfoLists()
-        if isSelected: self.select(newName)
+        if isSelected: self.select(newName, doSave=False)
+        # Save to disc (load order and plugins.txt)
+        self.plugins.saveLoadAndActive()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
@@ -4812,21 +4691,6 @@ class ModInfos(FileInfos):
         """Moves member file to destDir."""
         self.unselect(fileName)
         FileInfos.move(self,fileName,destDir,doRefresh)
-
-    def swapOrder(self, leftName, rightName):
-        """Swaps the Load Order of two mods"""
-        order = self.plugins.LoadOrder
-        # Dummy checks
-        if leftName not in order or rightName not in order: return
-        if self.masterName in {leftName,rightName}: return
-        #--Swap
-        leftIdex = order.index(leftName)
-        rightIdex = order.index(rightName)
-        order[leftIdex] = rightName
-        order[rightIdex] = leftName
-        #--Save
-        self.plugins.saveLoadOrder()
-        self.plugins.refresh(True)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -4861,15 +4725,17 @@ class ModInfos(FileInfos):
 #        return requires
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def getOblivionVersions(self):
-        """Returns tuple of Oblivion versions."""
+    def setOblivionVersions(self):
+        """Set current (and available) master game esm(s) - oblivion only."""
         self.voAvailable.clear()
         for name,info in self.iteritems():
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.size in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.size])
-        if self.masterName in self.data:
-            self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
+        if self.masterName in self:
+            self.voCurrent = self.size_voVersion.get(
+                self[self.masterName].size, None)
+        else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):
         return balt.askYes(self,
@@ -5261,12 +5127,6 @@ class ConfigHelpers:
             raise bolt.BoltError(u'The libbsa API could not be loaded.')
         deprint(u'Using libbsa API version:', libbsa.version)
 
-        liblo.Init(dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not liblo.liblo:
-            raise bolt.BoltError(u'The libloadorder API could not be loaded.')
-        deprint(u'Using libloadorder API version:', liblo.version)
-
         loot.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not loot.LootApi:
@@ -5275,13 +5135,6 @@ class ConfigHelpers:
 
         global lootDb
         lootDb = loot.LootDb(dirs['app'].s,bush.game.fsName)
-
-        global lo
-        lo = liblo.LibloHandle(dirs['app'].s,bush.game.fsName)
-        if bush.game.fsName == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
-            lo.SetGameMaster(u'Nehrim.esm')
-        liblo.RegisterCallback(liblo.LIBLO_WARN_LO_MISMATCH,
-                              ConfigHelpers.libloLOMismatchCallback)
 
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'masterlist.yaml')
@@ -5293,16 +5146,7 @@ class ConfigHelpers:
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
-        self.refresh(True)
-
-    @staticmethod
-    def libloLOMismatchCallback():
-        """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
-        # Force a rewrite of both plugins.txt and loadorder.txt
-        # In other words, use what's in loadorder.txt to write plugins.txt
-        # TODO: Check if this actually works.
-        modInfos.plugins.loadLoadOrder()
-        modInfos.plugins.saveLoadOrder()
+        self.refresh(firstTime=True)
 
     def refresh(self,firstTime=False):
         """Reloads tag info if file dates have changed."""
@@ -7287,7 +7131,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
+        if not load_order.usingTxtFile():
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
@@ -7454,7 +7298,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
+        if not load_order.usingTxtFile():
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
@@ -8021,7 +7865,7 @@ class InstallersData(DataDict):
     def refreshStatus(self):
         """Refresh installer status."""
         changed = False
-        for installer in self.data.itervalues():
+        for installer in self.itervalues():
             changed |= installer.refreshStatus(self)
         return changed
 
@@ -8175,7 +8019,7 @@ class InstallersData(DataDict):
             self.moveArchives(archives,len(self.data))
         else:
             maxOrder = max(self[x].order for x in archives)
-            for installer in self.data.itervalues():
+            for installer in self.itervalues():
                 if installer.order > maxOrder and installer.isActive:
                     mask |= set(installer.data_sizeCrc)
         #--Install archives in turn
@@ -8292,7 +8136,7 @@ class InstallersData(DataDict):
         for file in removes:
             data_sizeCrcDatePop(file, None)
         #--Remove mods from load order
-        modInfos.plugins.removeMods(removedPlugins, True)
+        modInfos.plugins.removeMods(removedPlugins, savePlugins=True)
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
@@ -10507,6 +10351,8 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
+    global load_order
+    import load_order
     initOptions(bashIni)
     initLogFile()
     Installer.initData()

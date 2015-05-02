@@ -44,11 +44,11 @@ from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
-__all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
-           'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme', 'Mod_ListBashTags',
-           'Mod_CreateBOSSReport', 'Mod_CopyModInfo', 'Mod_AllowGhosting',
-           'Mod_Ghost', 'Mod_MarkMergeable', 'Mod_Patch_Update',
-           'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
+__all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
+           'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',
+           'Mod_ListBashTags', 'Mod_CreateBOSSReport', 'Mod_CopyModInfo',
+           'Mod_AllowGhosting', 'Mod_Ghost', 'Mod_MarkMergeable',
+           'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
            'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
            'Mod_Factions_Export', 'Mod_ActorLevels_Export',
@@ -138,7 +138,37 @@ class Mod_CreateDummyMasters(OneItemLink):
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
         Link.Frame.RefreshData()
-        self.window.RefreshUI()
+
+class Mod_OrderByName(EnabledLink):
+    """Sort the selected files."""
+    text = _(u'Sort')
+    help = _(u"Sort the selected files.")
+
+    def _enable(self): return len(self.selected) > 1
+
+    def Execute(self,event):
+        message = _(u'Reorder selected mods in alphabetical order?  The first '
+            u'file will be given the date/time of the current earliest file '
+            u'in the group, with consecutive files following at 1 minute '
+            u'increments.') + u'\n\n' + _(
+            u'Note that this operation cannot be undone.  Note also that '
+            u'some mods need to be in a specific order to work correctly, '
+            u'and this sort operation may break that order.')
+        if not self._askContinue(message, 'bash.sortMods.continue',
+                                 _(u'Sort Mods')): return
+        #--Get first time from first selected file.
+        modInfos = self.window.data
+        fileNames = self.selected
+        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
+        #--Do it
+        fileNames.sort(key=lambda a: a.cext)
+        for fileName in fileNames:
+            modInfos[fileName].setmtime(newTime)
+            newTime += 60
+        #--Refresh
+        modInfos.refresh(doInfos=False)
+        modInfos.refreshInfoLists()
+        self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -179,6 +209,9 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.sort()
         return newName
 
+    def _refresh(self, files): # editing mod labels should not affect saves
+        self.parent.RefreshUI(files=files, refreshSaves=False)
+
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
         #--Right length?
@@ -198,7 +231,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
                 changed.append(fileName)
-        self.parent.RefreshUI(files=changed)
+        self._refresh(files=changed)
         #--Done
         return newName
 
@@ -213,7 +246,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == item:
                 del colGroup[fileName]
                 changed.append(fileName)
-        self.parent.RefreshUI(files=changed)
+        self._refresh(files=changed)
         #--Done
         return True
 
@@ -231,6 +264,9 @@ class _Mod_LabelsData(balt.ListEditorData):
 class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
+
+    def _refresh(self): # editing mod labels should not affect saves
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
@@ -256,7 +292,7 @@ class _Mod_Labels(ChoiceLink):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
                     fileLabels[fileName] = u''
-                self.window.RefreshUI(files=self.selected)
+                _self._refresh()
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     def _initData(self, window, selection):
@@ -266,16 +302,11 @@ class _Mod_Labels(ChoiceLink):
             def Execute(self, event):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected: fileLabels[fileName] = self.text
-                if isinstance(_self, Mod_Groups):
-                    bosh.modInfos.refresh(doInfos=False)  # needed ?
-                self.window.RefreshUI(files=self.selected)
+                _self._refresh()
         self.__class__.cls = _LabelLink
 
     @property
-    def _choices(self):
-        items = self.labels[:]
-        items.sort(key=lambda a: a.lower())
-        return items
+    def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -332,7 +363,7 @@ class _Mod_Groups_Import(EnabledLink):
         modGroups.readFromText(textPath)
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
         self._showOk(_(u"Imported %d mod/groups (%d changed).") % (
             len(modGroups.mod_group), changed), _(u"Import Groups"))
 
@@ -566,40 +597,51 @@ class Mod_CopyModInfo(ItemLink):
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Mod_AllowGhosting_All(ItemLink):
-    text, help = _(u"Allow Ghosting"), u'Allow Ghosting for selected mods'
+class _GhostLink(ItemLink):
+    # usual case, toggle ghosting and ghost inactive if allowed after toggling
+    @staticmethod
+    def setAllow(filename): return not _GhostLink.getAllow(filename)
+    @staticmethod
+    def toGhost(filename): return _GhostLink.getAllow(filename) and \
+            filename not in bosh.modInfos.ordered # cannot ghost active mods
+    @staticmethod
+    def getAllow(filename):
+        return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
 
-    def Execute(self,event):
+    def _loop(self):
+        """Loop selected files applying allow ghosting settings and
+        (un)ghosting as needed."""
         files = []
         for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName]
-            allowGhosting = True
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = fileName not in bosh.modInfos.ordered
+            bosh.modInfos.table.setItem(fileName, 'allowGhosting',
+                                        self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
+            if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files=files)
+        return files
+
+    def Execute(self,event):
+        changed = self._loop()
+        self.window.RefreshUI(files=changed, refreshSaves=False)
+
+class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
+    text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
+    setAllow = staticmethod(lambda fname: True) # allow ghosting
+    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
 
 #------------------------------------------------------------------------------
-class _Mod_DisallowGhosting_All(ItemLink):
+class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
     text = _(u'Disallow Ghosting')
     help = _(u'Disallow Ghosting for selected mods')
-
-    def Execute(self,event):
-        files = []
-        for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName]
-            allowGhosting = False
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = False
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
-                files.append(fileName)
-        self.window.RefreshUI(files=files)
+    setAllow = staticmethod(lambda filename: False) # disallow ghosting...
+    toGhost = staticmethod(lambda filename: False) # ...so unghost if ghosted
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
+class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
+    setAllow = staticmethod(lambda fname: True) # allow ghosting
+    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
         if len(selection) == 1:
@@ -627,32 +669,13 @@ class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
             self.fileInfo.setGhost(not self.isGhost)
             files.append(self.path)
         else:
-            for fileName in self.selected:
-                fileInfo = bosh.modInfos[fileName]
-                allowGhosting = True
-                bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-                toGhost = fileName not in bosh.modInfos.ordered
-                oldGhost = fileInfo.isGhost
-                if fileInfo.setGhost(toGhost) != oldGhost:
-                    files.append(fileName)
-        self.window.RefreshUI(files=files)
+            files = self._loop()
+        self.window.RefreshUI(files=files, refreshSaves=False)
 
 #------------------------------------------------------------------------------
-class _Mod_AllowGhostingInvert_All(ItemLink):
+class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
     text = _(u'Invert Ghosting')
     help = _(u'Invert Ghosting for selected mods')
-
-    def Execute(self,event):
-        files = []
-        for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName]
-            allowGhosting = bosh.modInfos.table.getItem(fileName,'allowGhosting',True) ^ True
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
-                files.append(fileName)
-        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(TransLink):
@@ -660,24 +683,10 @@ class Mod_AllowGhosting(TransLink):
 
     def _decide(self, window, data):
         if len(data) == 1:
-            class _CheckLink(CheckLink):
+            class _CheckLink(_GhostLink, CheckLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
-
-                def _initData(self, window, selection):
-                    super(_CheckLink, self)._initData(window, selection)
-                    self.allowGhosting = bosh.modInfos.table.getItem(
-                        selection[0], 'allowGhosting', True)
-                def _check(self): return not self.allowGhosting
-                def Execute(self, event):
-                    fileName = self.selected[0]
-                    fileInfo = bosh.modInfos[fileName]
-                    allowGhosting = self.allowGhosting ^ True
-                    bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-                    toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
-                    oldGhost = fileInfo.isGhost
-                    if fileInfo.setGhost(toGhost) != oldGhost:
-                        self.window.RefreshUI(files=[fileName])
+                def _check(self): return not self.getAllow(self.selected[0])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
@@ -727,8 +736,8 @@ class Mod_MarkMergeable(EnabledLink):
             message += u'\n\n'
         if no:
             message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-        self.window.RefreshUI(files=yes)
-        self.window.RefreshUI(files=no)
+        self.window.RefreshUI(files=yes, refreshSaves=False) # was True
+        self.window.RefreshUI(files=no, refreshSaves=False) # was True
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -758,17 +767,16 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
+    @balt.conversation
     def Execute(self,event):
         """Handle activation event."""
-        try: ##: Monkey patch so the modList does not refresh between dialogs
-            Link.Frame.BindRefresh(bind=False)
+        try:
             fileName = self._Execute()
             if not fileName: return # prevent settings save
         except CancelError:
             return # prevent settings save
-        finally:
-            if not Link.Frame.isPatching: Link.Frame.BindRefresh(bind=True)
-        # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
+        # save data to disc in case of later improper shutdown leaving the
+        # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings()
 
     def _Execute(self):
@@ -816,7 +824,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-                self.window.RefreshUI()
+                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
             else:
                 PatchFile.patchTime = fileInfo.mtime
                 PatchFile.patchName = fileInfo.name
@@ -824,7 +832,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
                         bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
-                    self.window.RefreshUI()
+                    self.window.RefreshUI(refreshSaves=False) #rescan mergeable
 
         #--Check if we should be deactivating some plugins
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if
@@ -891,8 +899,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
-                        bosh.modInfos.plugins.save()
-                        self.window.RefreshUI()
+                        bosh.modInfos.plugins.saveActive()
+                        self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 
         previousMods = set()
@@ -1072,7 +1080,16 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Mod_SkipDirtyCheckAll(CheckLink):
+class _DirtyLink(ItemLink):
+    def _ignoreDirty(self, filename): raise AbstractError
+
+    def Execute(self, event):
+        for fileName in self.selected:
+            bosh.modInfos.table.setItem(fileName, 'ignoreDirty',
+                                        self._ignoreDirty(fileName))
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
+
+class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
              u"dirty mod list")
 
@@ -1085,45 +1102,33 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
 
     def _check(self):
         for fileName in self.selected:
-            if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
-                return False
+            if bosh.modInfos.table.getItem(fileName,
+                    'ignoreDirty', self.skip) != self.skip: return False
         return True
 
-    def Execute(self,event):
-        for fileName in self.selected:
-            bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
-        self.window.RefreshUI(files=self.selected)
+    def _ignoreDirty(self, filename): return self.skip
 
-class _Mod_SkipDirtyCheckInvert(ItemLink):
+class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
     text = _(u"Invert checking against LOOT's dirty mod list")
     help = _(
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
-    def Execute(self,event):
-        for fileName in self.selected:
-            ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
-            bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
-        self.window.RefreshUI(files=self.selected)
+    def _ignoreDirty(self, filename):
+        return not bosh.modInfos.table.getItem(filename, 'ignoreDirty', False)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
     def _decide(self, window, data):
         if len(data) == 1:
-            class _CheckLink(CheckLink):
+            class _CheckLink(_DirtyLink, CheckLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")
 
-                def _initData(self, window, selection):
-                    super(_CheckLink, self)._initData(window, selection)
-                    self.ignoreDirty = bosh.modInfos.table.getItem(
-                        selection[0], 'ignoreDirty', False)
-                def _check(self): return self.ignoreDirty
-                def Execute(self, event):
-                    fileName = self.selected[0]
-                    self.ignoreDirty ^= True
-                    bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
-                    self.window.RefreshUI(files=[fileName])
+                def _check(self): return bosh.modInfos.table.getItem(
+                        self.selected[0], 'ignoreDirty', False)
+                def _ignoreDirty(self, filename): return self._check() ^ True
+
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
@@ -1254,7 +1259,6 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 continue
             fileInfo = bosh.modInfos[fileName]
             #--Export
-            orphans = 0
             with balt.Progress(_(u"Remove World Orphans")) as progress:
                 loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
                 modFile = bosh.ModFile(fileInfo,loadFactory)
@@ -1380,7 +1384,7 @@ class Mod_AddMaster(OneItemLink):
         fileInfo.header.changed = True
         fileInfo.writeHeader()
         bosh.modInfos.refreshFile(fileInfo.name)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
 class Mod_CopyToEsmp(EnabledLink):
@@ -1422,7 +1426,7 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo.setType(newType)
             newInfo.setmtime(newTime)
         #--Repopulate
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
@@ -1517,51 +1521,55 @@ class Mod_FlipSelf(EnabledLink):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
-            bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI()
+            bosh.modInfos.refresh(doInfos=False) ##: why in the loop ?
+        self.window.RefreshUI(files=self.selected, refreshSaves=True) # True,
+        # see Mod_FlipMasters
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
     """Swaps masters between esp and esm versions."""
+    help = _(
+        u"Flip esp/esm bit of esp masters to convert them to/from esm state")
 
     def _initData(self, window, selection):
         super(Mod_FlipMasters, self)._initData(window, selection)
         #--FileInfo
-        self.fileName = fileName = GPath(self.selected[0])
-        self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
+        self.fileName = GPath(self.selected[0])
+        fileInfo = bosh.modInfos[self.fileName]
         self.text = _(u'Esmify Masters')
-        if len(selection) == 1 and len(fileInfo.header.masters) > 1:
-            espMasters = [master for master in fileInfo.header.masters if bosh.reEspExt.search(master.s)]
-            if not espMasters: return
-            for masterName in espMasters:
-                masterInfo = bosh.modInfos.get(GPath(masterName),None)
-                if masterInfo and masterInfo.isInvertedMod():
-                    self.text = _(u'Espify Masters')
-                    self.toEsm = False
-                    break
-            else:
-                self.toEsm = True
+        enable = len(selection) == 1 and len(fileInfo.header.masters) > 1
+        self.espMasters = [GPath(master) for master in fileInfo.header.masters
+            if bosh.reEspExt.search(master.s)] if enable else []
+        self.enable = enable and bool(self.espMasters)
+        if not self.enable: return
+        for masterName in self.espMasters:
+            masterInfo = bosh.modInfos.get(GPath(masterName),None)
+            if masterInfo and masterInfo.isInvertedMod():
+                self.text = _(u'Espify Masters')
+                self.toEsm = False
+                break
+        else:
+            self.toEsm = True
 
-    def _enable(self): return super(Mod_FlipMasters, self)._enable() and \
-                              len(self.fileInfo.header.masters) > 1
+    def _enable(self): return self.enable
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
-        fileName= self.fileName
-        fileInfo = self.fileInfo
-        updated = [fileName]
-        espMasters = [GPath(master) for master in fileInfo.header.masters
-            if bosh.reEspExt.search(master.s)]
-        for masterPath in espMasters:
+        updated = [self.fileName]
+        for masterPath in self.espMasters:
             masterInfo = bosh.modInfos.get(masterPath,None)
             if masterInfo:
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        self.window.RefreshUI(files=updated, details=fileName)
+        bosh.modInfos.refresh(doInfos=False) # esms will be moved to the top -
+        # note that modification times won't change - so mods will revert to
+        # their original position once back to esp from esm (Oblivion etc)
+        self.window.RefreshUI(files=updated, refreshSaves=True) # True as LO
+        # will change as esms will be moved to the top
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
@@ -1586,8 +1594,8 @@ class Mod_SetVersion(OneItemLink):
         self.fileInfo.header.setChanged()
         self.fileInfo.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(files=[self.fileInfo.name])
-        self.window.SelectItem(self.fileInfo.name)
+        self.window.RefreshUI(files=[self.fileInfo.name],
+                              refreshSaves=False) # version: why affect saves ?
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------
@@ -1620,7 +1628,6 @@ class Mod_Fids_Replace(OneItemLink):
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -1661,7 +1668,7 @@ class Mod_Face_Import(OneItemLink):
             image = Image.GetImage(data, height, width)
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid, fileName.s)
 
 #--Common
@@ -1786,7 +1793,6 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _NPC_Levels.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             actorLevels = self._parser()
             progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
@@ -1847,7 +1853,6 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Relations.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
             factionRelations =  self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -1910,7 +1915,6 @@ class Mod_Factions_Import(_Mod_Import_Link):
                 _(u'Source file must be a _Factions.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
             actorFactions = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2091,7 +2095,6 @@ class Mod_Stats_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a Stats.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             itemStats = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -2211,7 +2214,6 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _SigilStones.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
             sigilStones = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2288,7 +2290,6 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Spells.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
             spellRecords = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2350,7 +2351,6 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Ingredients.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
             Ingredients = self._parser()
             progress(0.1,_(u'Reading %s.') % textName.s)
@@ -2413,7 +2413,6 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         questionableEidsSet = set()
         badEidsList = []
         try:
-            changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -2550,7 +2549,6 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Map Markers')) as progress:
             MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)

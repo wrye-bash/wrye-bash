@@ -1875,18 +1875,18 @@ class tempDebugMode(object):
         global deprintOn
         deprintOn = self._old
 
+import inspect
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
 
-    if keyargs.get('trace',True):
-        import inspect
+    if keyargs.get('trace', True):
         stack = inspect.stack()
-        file,line,function = stack[1][1:4]
-
-        msg = u'%s %4d %s: ' % (GPath(file).tail.s,line,function)
+        file_, line, function = stack[1][1:4]
+        msg = u'%s %4d %s: ' % (GPath(file_).tail.s, line, function)
     else:
         msg = u''
+
     try:
         msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
     except UnicodeError:
@@ -1913,7 +1913,7 @@ def deprint(*args,**keyargs):
         print msg
     except UnicodeError:
         # Nope, it's going somewhere else
-        print msg.encode('mbcs')
+        print msg.encode(Path.sys_fs_enc)
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2065,7 +2065,7 @@ class SubProgress(Progress):
         self.state = state
 
 #------------------------------------------------------------------------------
-class ProgressFile(Progress):
+class ProgressFile(Progress): # CRUFT
     """Prints progress to file (stdout by default)."""
     def __init__(self,full=1.0,out=None):
         Progress.__init__(self,full)
