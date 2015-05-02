@@ -306,10 +306,7 @@ class _Mod_Labels(ChoiceLink):
         self.__class__.cls = _LabelLink
 
     @property
-    def _choices(self):
-        items = self.labels[:]
-        items.sort(key=lambda a: a.lower())
-        return items
+    def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
@@ -902,7 +899,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
-                        bosh.modInfos.plugins.save()
+                        bosh.modInfos.plugins.saveActive()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 
