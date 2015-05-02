@@ -1781,10 +1781,9 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, data=None, details=None, panel=None):
+    def __init__(self, parent, keyPrefix, data=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.data = data # yak, encapsulate (_data)
-        self.details = details
         self.panel = panel
         #--Layout
         sizer = vSizer()
@@ -1871,12 +1870,12 @@ class UIList(wx.Panel):
     @sort.setter
     def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
-    #--ABSTRACT
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
         self._select(modName)
-    def _select(self, item): raise AbstractError
+    def _select(self, item): self.panel.SetDetails(item)
 
+    #--ABSTRACT
     def getLabels(self, item):
         """Returns text labels for item to populate list control."""
         raise AbstractError
@@ -1937,11 +1936,13 @@ class UIList(wx.Panel):
         If there are any deleted (applies also to renamed) items leave files
         parameter alone.
         """
-        # TODO(ut) needs work: deleted, new and files->modified **kwargs
+        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
         # parameters and get rid of ModList override(move part to PopulateItem)
         # Refresh UI uses must be optimized - pass in ONLY the items we need
         # refreshed - most of the time Refresh UI calls PopulateItems on ALL
         # items - a nono. Refresh UI has 140 uses...
+        # B) consider adding 'select' tuple parameter (ex 'detail', duh) to
+        # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
         if files is self.__all:
             self.PopulateItems()
@@ -1951,8 +1952,9 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-            # if it was a single item then refresh details for it:
-            if len(files) == 1: self.SelectItem(files[0])
+        # if it was a single item then refresh details for it:
+        if len(files) == 1: self.panel.SetDetails(files[0])
+        else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
 
     #--Column Menu
@@ -2320,14 +2322,6 @@ class Tank(UIList):
         if backKey: gItem.SetBackgroundColour(colors[backKey])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         self._gList.SetItem(gItem)
-
-    #--Details view (if it exists)
-    def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
-        return self.details.GetDetailsItem() if self.details else None
-
-    def _select(self, item):
-        if self.details: return self.details.RefreshDetails(item)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

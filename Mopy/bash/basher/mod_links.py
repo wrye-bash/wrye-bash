@@ -1574,7 +1574,6 @@ class Mod_FlipMasters(OneItemLink):
         # their original position once back to esp from esm (Oblivion etc)
         self.window.RefreshUI(files=updated, refreshSaves=True) # True as LO
         # will change as esms will be moved to the top
-        self.window.SelectItem(self.fileName) # refresh details for fileName
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
@@ -1601,7 +1600,6 @@ class Mod_SetVersion(OneItemLink):
         #--Repopulate
         self.window.RefreshUI(files=[self.fileInfo.name],
                               refreshSaves=False) # version: why affect saves ?
-        self.window.SelectItem(self.fileInfo.name)
 
 #------------------------------------------------------------------------------
 # Import/Export submenus ------------------------------------------------------

@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass
 from ..bass import Resources
 from ..bosh import formatInteger,formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path
+    deprint, Path, AbstractError
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -213,7 +213,39 @@ class NotebookPanel(wx.Panel):
             table.save()
 
 #------------------------------------------------------------------------------
-class SashPanel(NotebookPanel):
+class _DetailsPanelMixin(object):
+    """Details API alpha: mixin to add detailsPanel attribute to a Panel
+
+    This is a hasty mixin. I added it to SashPanel and BSAPanel (which
+    subclasses NotebookPanel directly) so UILists can call SetDetails,
+    RefreshDetails and ClearDetails on their panels. TODO:
+     - just mix it only in classes that _do_ have a details view.
+     - drop hideous if detailsPanel is not self, due to Installers, People
+     using themselves as details (YAK!)
+    """
+    detailsPanel = None
+    def _setDetails(self, fileName):
+        if self.detailsPanel: self.detailsPanel.SetFile(
+            fileName=fileName)
+    def RefreshDetails(self): self._setDetails('SAME')
+    def ClearDetails(self): self._setDetails(None)
+    def SetDetails(self, fileName): self._setDetails(fileName)
+
+    def RefreshUIColors(self):
+        super(_DetailsPanelMixin, self).RefreshUIColors()
+        self.RefreshDetails()
+
+    def ClosePanel(self):
+        super(_DetailsPanelMixin, self).ClosePanel()
+        if self.detailsPanel and self.detailsPanel is not self:
+            self.detailsPanel.ClosePanel()
+
+    def ShowPanel(self):
+        super(_DetailsPanelMixin, self).ShowPanel()
+        if self.detailsPanel and self.detailsPanel is not self:
+            self.detailsPanel.ShowPanel()
+
+class SashPanel(_DetailsPanelMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
 
@@ -259,7 +291,7 @@ class SashTankPanel(SashPanel):
         super(SashTankPanel, self).ClosePanel()
 
     def GetDetailsItem(self):
-        return self.detailsItem
+        return self.data[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
 class _ModsSortMixin(object):
@@ -992,7 +1024,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             event.Skip()
 
     def _select(self, modName):
-        self.details.SetFile(modName)
+        super(ModList, self)._select(modName)
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
@@ -1049,6 +1081,12 @@ class ModList(_ModsSortMixin, balt.UIList):
 class _SashDetailsPanel(SashPanel):
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
+    # TMP properties to unify details panels
+    @property
+    def file_info(self): raise AbstractError
+    @property
+    def file_infos(self): return self.file_info.getFileInfos()
+
     def __init__(self, parent):
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
@@ -1072,9 +1110,25 @@ class _SashDetailsPanel(SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
+    # Details panel API
+    def SetFile(self,fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        if fileName == 'SAME':
+            if not self.file_info or \
+                            self.file_info.name not in self.file_infos:
+                fileName = None
+            else:
+                fileName = self.file_info.name
+        if not fileName: self._resetDetails()
+        return fileName
+
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
+
+    @property
+    def file_info(self): return self.modInfo
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
@@ -1153,24 +1207,17 @@ class ModDetails(_SashDetailsPanel):
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
 
+    def _resetDetails(self):
+        self.modInfo = None
+        self.fileStr = u''
+        self.authorStr = u''
+        self.modifiedStr = u''
+        self.descriptionStr = u''
+        self.versionStr = u'v0.00'
+
     def SetFile(self,fileName='SAME'):
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.modInfo or self.modInfo.name not in bosh.modInfos:
-                fileName = None
-            else:
-                fileName = self.modInfo.name
-        #--Empty?
-        if not fileName:
-            modInfo = self.modInfo = None
-            self.fileStr = u''
-            self.authorStr = u''
-            self.modifiedStr = u''
-            self.descriptionStr = u''
-            self.versionStr = u'v0.00'
-            tagsStr = u''
-        #--Valid fileName?
-        else:
+        fileName = super(ModDetails, self).SetFile(fileName)
+        if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = modInfo.name.s
@@ -1179,6 +1226,7 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
+        else: tagsStr = u''
         self.modified.SetEditable(True)
         self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
         #--Set fields
@@ -1187,7 +1235,7 @@ class ModDetails(_SashDetailsPanel):
         self.modified.SetValue(self.modifiedStr)
         self.description.SetValue(self.descriptionStr)
         self.version.SetLabel(self.versionStr)
-        self.uilist.SetFileInfo(modInfo)
+        self.uilist.SetFileInfo(self.modInfo)
         self.gTags.SetValue(tagsStr)
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
@@ -1677,28 +1725,18 @@ class ModPanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
-        self.modDetails = ModDetails(right)
+        self.detailsPanel = ModDetails(right)
         self.uiList = BashFrame.modList = ModList(
-            left, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.modDetails, panel=self)
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        right.SetSizer(hSizer((self.modDetails,1,wx.EXPAND)))
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
-        self.modDetails.SetFile()
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(bosh.modInfos.ordered), len(bosh.modInfos.data))
-
-    def ShowPanel(self):
-        super(ModPanel, self).ShowPanel()
-        self.modDetails.ShowPanel()
-
-    def ClosePanel(self):
-        super(ModPanel, self).ClosePanel()
-        self.modDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
@@ -1789,12 +1827,13 @@ class SaveList(balt.UIList):
         #--Pass Event onward
         event.Skip()
 
-    def _select(self, saveName): self.details.SetFile(saveName)
-
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
     keyPrefix = 'bash.saves.details' # used in sash/scroll position, sorting
+
+    @property
+    def file_info(self): return self.saveInfo
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
@@ -1856,27 +1895,20 @@ class SaveDetails(_SashDetailsPanel):
         notePanel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
 
+    def _resetDetails(self):
+        self.saveInfo = None
+        self.fileStr = u''
+        self.playerNameStr = u''
+        self.curCellStr = u''
+        self.playerLevel = 0
+        self.gameDays = 0
+        self.playMinutes = 0
+        self.picData = None
+        self.coSaves = u'--\n--'
+
     def SetFile(self,fileName='SAME'):
-        """Set file to be viewed."""
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.saveInfo or self.saveInfo.name not in bosh.saveInfos:
-                fileName = None
-            else:
-                fileName = self.saveInfo.name
-        #--Null fileName?
-        if not fileName:
-            saveInfo = self.saveInfo = None
-            self.fileStr = u''
-            self.playerNameStr = u''
-            self.curCellStr = u''
-            self.playerLevel = 0
-            self.gameDays = 0
-            self.playMinutes = 0
-            self.picData = None
-            self.coSaves = u'--\n--'
-        #--Valid fileName?
-        else:
+        fileName = super(SaveDetails, self).SetFile(fileName)
+        if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = saveInfo.name.s
@@ -1897,7 +1929,7 @@ class SaveDetails(_SashDetailsPanel):
                                   self.playMinutes/60,(self.playMinutes%60),
                                   self.curCellStr))
         self.gCoSaves.SetLabel(self.coSaves)
-        self.uilist.SetFileInfo(saveInfo)
+        self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
         if not self.picData:
             self.picture.SetBitmap(None)
@@ -2001,28 +2033,21 @@ class SavePanel(SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        self.saveDetails = SaveDetails(right)
+        self.detailsPanel = SaveDetails(right)
         self.uiList = BashFrame.saveList = SaveList(
-            left, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.saveDetails, panel=self)
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        right.SetSizer(hSizer((self.saveDetails,1,wx.EXPAND)))
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.saveDetails.SetFile()
-        self.saveDetails.picture.SetBackground(colors['screens.bkgd.image'])
+        self.detailsPanel.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
-
-    def ShowPanel(self):
-        super(SavePanel, self).ShowPanel()
-        self.saveDetails.ShowPanel()
 
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
         super(SavePanel, self).ClosePanel()
-        self.saveDetails.ClosePanel()
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.Tank):
@@ -2502,8 +2527,9 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         self.fullRefresh = False
         #--Contents
+        self.detailsPanel = self # YAK
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
-                                     details=self, panel=self)
+                                     panel=self)
         #--Package
         self.gPackage = roTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -2766,16 +2792,17 @@ class InstallersPanel(SashTankPanel):
             else:
                 BashFrame.iniList.panel.RefreshPanel('TARGETS')
 
-    def RefreshDetails(self,item=None):
+    def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        if item not in self.data: item = None
+        if fileName == 'SAME': fileName = self.detailsItem
+        if fileName not in self.data: fileName = None
         self.SaveDetails() #--Save previous details
-        self.detailsItem = item
+        self.detailsItem = fileName
         del self.espms[:]
-        if item:
-            installer = self.data[item]
+        if fileName:
+            installer = self.data[fileName]
             #--Name
-            self.gPackage.SetValue(item.s)
+            self.gPackage.SetValue(fileName.s)
             #--Info Pages
             currentIndex = self.gNotebook.GetSelection()
             for index,(gPage,state) in enumerate(self.infoPages):
@@ -3131,8 +3158,6 @@ class BSAList(balt.UIList):
         #--Pass Event onward
         event.Skip()
 
-    def _select(self, BSAName): self.details.SetFile(BSAName)
-
 #------------------------------------------------------------------------------
 class BSADetails(wx.Window):
     """BSAfile details panel."""
@@ -3263,25 +3288,25 @@ class BSADetails(wx.Window):
         """Event: Clicked cancel button."""
         self.SetFile(self.BSAInfo.name)
 
+    def ClosePanel(self): pass # for _DetailsPanelMixin.detailsPanel.ClosePanel
+
 #------------------------------------------------------------------------------
-class BSAPanel(NotebookPanel):
+class BSAPanel(_DetailsPanelMixin, NotebookPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
 
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
         self.listData = bosh.BSAInfos
-        self.BSADetails = BSADetails(self)
+        self.detailsPanel = BSADetails(self)
         self.uilist = BSAList(
-            self, data=self.listData, keyPrefix=self.keyPrefix,
-            details=self.BSADetails, panel=self)
+            self, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        sizer = hSizer(
-            (BSAList,1,wx.GROW),
-            ((4,-1),0),
-            (self.BSADetails,0,wx.EXPAND))
+        sizer = hSizer((BSAList, 1, wx.GROW),
+                       ((4, -1), 0),
+                       (self.detailsPanel, 0, wx.EXPAND))
         self.SetSizer(sizer)
-        self.BSADetails.Fit()
+        self.detailsPanel.Fit()
 
     def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
 
@@ -3439,8 +3464,9 @@ class PeoplePanel(SashTankPanel):
         SashTankPanel.__init__(self,data,parent)
         left,right = self.left,self.right
         #--Contents
+        self.detailsPanel = self # YAK
         self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
-                                 details=self, panel=self)
+                                 panel=self)
         self.gName = roTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -3481,9 +3507,9 @@ class PeoplePanel(SashTankPanel):
         self.uiList.PopulateItem(item=self.detailsItem)
         self.data.setChanged()
 
-    def RefreshDetails(self,item=None):
+    def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        item = item or self.detailsItem
+        item = self.detailsItem if fileName == 'SAME' else fileName
         if item not in self.data: item = None
         self.SaveDetails()
         if item is None:
