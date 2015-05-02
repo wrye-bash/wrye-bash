@@ -65,12 +65,42 @@ def _getLoFromLiblo():
         #(ut) SHOULDN'T WE SAVE THE LO HERE ? !!!!!!
     return lord
 
+def _getActiveFromLiblo(lord): # pass load order in to check for mismatch
+    acti = _liblo_handle.GetActivePlugins()
+    # __fixActive
+    # filter plugins not present in load order
+    actiFiltered = [x for x in acti if x in lord]
+    changed = acti != actiFiltered  # take note as we may need to rewrite
+    # plugins txt
+    if changed:
+        removed = set(acti) - set(actiFiltered)
+        msg = _(u'Those mods were present in plugins txt but not present in '
+                u'Data/ directory') + u': ' + u', '.join(x.s for x in removed)
+    else: msg = u''
+    # not needed for oblivion, for skyrim liblo will write plugins.txt in order
+    # STILL restore for skyrim to warn on LO change
+    if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
+        actiSorted = actiFiltered[:]
+        actiSorted.sort(key=lambda y: lord.index(y)) # all present in lord
+        if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
+            if msg: msg += u'\n'
+            msg += u'Plugins.txt order of plugins (%s) differs from current ' \
+                   u'load order (%s)' % (_pl(actiFiltered), _pl(actiSorted))
+            changed = True
+    else: actiSorted = actiFiltered
+    if changed:
+        ##: Notify user - maybe backup previous plugin txt ?
+        bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
+        SetActivePlugins(actiSorted)
+    return actiSorted
+
 def _updateCache():
     global _current_lo
     try:
         lord = _getLoFromLiblo()
-        acti = _liblo_handle.GetActivePlugins(lo_with_corrected_master=lord)
-        _current_lo = LoadOrder(lord, acti)
+        # got a valid load order - now to active...
+        actiSorted = _getActiveFromLiblo(lord)
+        _current_lo = LoadOrder(lord, actiSorted)
     except _liblo.LibloError:
         _current_lo = __empty
         raise
@@ -83,7 +113,12 @@ def GetActivePlugins(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
     return list(_current_lo.activeOrdered)
 
-def SetActivePlugins(act): _liblo_handle.SetActivePlugins(act)
+def SetActivePlugins(act):
+    _liblo_handle.SetActivePlugins(act)
+    # YAK!!!!!!!!
+    bosh.modInfos.plugins.mtimePlugins = bosh.modInfos.plugins.pathPlugins.mtime
+    bosh.modInfos.plugins.sizePlugins  = bosh.modInfos.plugins.pathPlugins .size
+
 def SetLoadOrder(lord): _liblo_handle.SetLoadOrder(lord)
 
 def libloLOMismatchCallback():
@@ -112,3 +147,10 @@ if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
 _liblo.RegisterCallback(_liblo.LIBLO_WARN_LO_MISMATCH, libloLOMismatchCallback)
 
 def usingTxtFile(): return _liblo_handle.usingTxtFile()
+
+# helper - print a list
+def _pl(aList, legend=u''):
+    try:
+        return legend + u', '.join(x.s for x in aList)
+    except AttributeError:
+        return legend + u', '.join(map(repr, aList))

@@ -462,11 +462,11 @@ def Init(path):
                 self._DB.SetPluginActive(item,True)
                 self.ReSync()
 
-        def GetActivePlugins(self, lo_with_corrected_master=None):
+        def GetActivePlugins(self):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
-            return self.GetOrdered(map(GPath, plugins[:num.value]), selfLoadOrder=lo_with_corrected_master)
+            return map(GPath, plugins[:num.value])
         def _GetActivePlugins(self):
             return self.ActivePluginsList(self.GetActivePlugins(), db=self)
         def SetActivePlugins(self,plugins):
@@ -485,15 +485,6 @@ def Init(path):
             active = c_bool()
             _Clo_get_plugin_active(self._DB,_enc(plugin),byref(active))
             return active.value
-
-        # ---------------------------------------------------------------------
-        # Utility Functions (not added by the API, pure Python)
-        # ---------------------------------------------------------------------
-        def GetOrdered(self,plugins,selfLoadOrder=None):
-            """Returns a list of the given plugins, sorted according to their
-               load order"""
-            selfLoadOrder = selfLoadOrder if selfLoadOrder else self.GetLoadOrder()
-            return [x for x in selfLoadOrder if x in plugins]
 
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())

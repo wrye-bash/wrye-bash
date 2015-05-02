@@ -2975,17 +2975,11 @@ class Plugins:
         if load_order.usingTxtFile() and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
-            if self.selected != modInfos.getOrdered(self.selected,False):
-                modInfos.plugins.saveLoadOrder()
-                self.selected = modInfos.getOrdered(self.selected,False)
-                deprint("Mismatched Load Order Corrected")
 
     def saveActive(self):
         """Write data to Plugins.txt file."""
         # liblo attempts to unghost files, no need to duplicate that here.
         load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
-        self.mtimePlugins = self.pathPlugins.mtime
-        self.sizePlugins = self.pathPlugins.size
 
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
