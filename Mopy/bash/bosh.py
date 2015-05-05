@@ -148,7 +148,6 @@ modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
 iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
-trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
@@ -3958,7 +3957,7 @@ class TrackedFileInfos(DataDict):
     # DEPRECATED: hack introduced to track BAIN installed files AND game inis
     dir = GPath(u'') # a mess with paths - throw ghosting in and raise
 
-    def __init__(self,factory=FileInfo):
+    def __init__(self, factory=_AFileInfo):
         self.factory = factory
         self.data = {}
 
@@ -3981,8 +3980,6 @@ class TrackedFileInfos(DataDict):
         fileInfo = factory(self.dir, absPath)
         # fileInfo.getHeader() #ModInfo: will blow if absPath doesn't exist
         self[absPath] = fileInfo
-    def clear(self):
-        self.data = {}
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
@@ -6262,9 +6259,9 @@ class Installer(object):
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        if trackedInfos:
+        if InstallersData.miscTrackedFiles:
             dirsModsJoin = dirs['mods'].join
-            _trackedInfosTrack = trackedInfos.track
+            _trackedInfosTrack = InstallersData.miscTrackedFiles.track
             trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
         else:
             trackedInfosTrack = lambda a: None
@@ -7665,7 +7662,9 @@ class InstallerProject(Installer):
 
 #------------------------------------------------------------------------------
 class InstallersData(DataDict):
-    """Installers tank data. This is the data source for """
+    """Installers tank data. This is the data source for the InstallersList."""
+    miscTrackedFiles = TrackedFileInfos() # hack to track changes in installed
+    # inis etc _in the Data/ dir_. Keys are absolute paths to those files
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -7685,6 +7684,10 @@ class InstallersData(DataDict):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
+
+    @staticmethod
+    def track(absPath, factory):
+        InstallersData.miscTrackedFiles.track(absPath, factory)
 
     def addMarker(self,name):
         path = GPath(name)
