@@ -3178,12 +3178,11 @@ class MasterInfo:
             return 0
 
 #------------------------------------------------------------------------------
-class FileInfo:
-    """Abstract TES4/TES4GAME File."""
+class _AFileInfo:
+    """Abstract File."""
     def __init__(self,dir,name):
         self.dir = GPath(dir)
         self.name = GPath(name)
-        self.bashDir = self.getFileInfos().bashDir
         path = self.getPath()
         if path.exists():
             self.ctime = path.ctime
@@ -3193,16 +3192,37 @@ class FileInfo:
             self.ctime = time.time()
             self.mtime = time.time()
             self.size = 0
+
+    def getPath(self):
+        """Returns joined dir and name."""
+        return self.dir.join(self.name)
+
+    def sameAs(self,fileInfo):
+        """Return true if other fileInfo refers to same file as this fileInfo."""
+        return ((self.size == fileInfo.size) and
+                (self.mtime == fileInfo.mtime) and
+                (self.ctime == fileInfo.ctime) and
+                (self.name == fileInfo.name))
+
+    def setmtime(self,mtime=0):
+        """Sets mtime. Defaults to current value (i.e. reset)."""
+        mtime = int(mtime or self.mtime)
+        path = self.getPath()
+        path.mtime = mtime
+        self.mtime = path.mtime
+
+class FileInfo(_AFileInfo):
+    """Abstract TES4/TES4GAME File."""
+
+    def __init__(self, dir, name):
+        _AFileInfo.__init__(self, dir, name)
+        self.bashDir = self.getFileInfos().bashDir
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
         self.madeBackup = False
         #--Ancillary storage
         self.extras = {}
-
-    def getPath(self):
-        """Returns joined dir and name."""
-        return self.dir.join(self.name)
 
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -3232,14 +3252,6 @@ class FileInfo:
     def isEss(self):
         return self.name.cext == bush.game.ess.ext
 
-    def sameAs(self,fileInfo):
-        """Returns true if other fileInfo refers to same file as this fileInfo."""
-        return (
-            (self.size == fileInfo.size) and
-            (self.mtime == fileInfo.mtime) and
-            (self.ctime == fileInfo.ctime) and
-            (self.name == fileInfo.name) )
-
     def refresh(self):
         path = self.getPath()
         self.ctime = path.ctime
@@ -3249,7 +3261,7 @@ class FileInfo:
 
     def getHeader(self):
         """Read header for file."""
-        raise AbstractError
+        pass
 
     def getHeaderError(self):
         """Read header for file. But detects file error and returns that."""
@@ -3291,13 +3303,6 @@ class FileInfo:
     def writeHeader(self):
         """Writes header to file, overwriting old header."""
         raise AbstractError
-
-    def setmtime(self,mtime=0):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = int(mtime or self.mtime)
-        path = self.getPath()
-        path.mtime = mtime
-        self.mtime = path.mtime
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
@@ -3742,9 +3747,6 @@ class INIInfo(FileInfo):
     def getFileInfos(self):
         return iniInfos
 
-    def getHeader(self):
-        pass
-
     def getStatus(self):
         """Returns status of the ini tweak:
         20: installed (green with check)
@@ -3941,9 +3943,6 @@ class BSAInfo(FileInfo):
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
         return bsaInfos
-
-    def getHeader(self):
-        pass
 
     def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
         mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
