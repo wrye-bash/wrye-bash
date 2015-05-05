@@ -3345,7 +3345,6 @@ class FileInfo(_AFileInfo):
         destDir = self.bashDir.join(u'Snapshots')
         destDir.makedirs()
         (root,ext) = self.name.rootExt
-        destName = root+u'-00'+ext
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
@@ -3405,26 +3404,14 @@ class ModInfo(FileInfo):
         self.header.flags1 = flags1
         self.setmtime()
 
-    def updateCrc(self):
-        """Force update of stored crc"""
-        path = self.getPath()
-        size = path.size
-        mtime = path.getmtime()
-        crc = path.crc
-        if crc != modInfos.table.getItem(self.name,'crc'):
-            modInfos.table.setItem(self.name,'crc',crc)
-            modInfos.table.setItem(self.name,'ignoreDirty',False)
-        modInfos.table.setItem(self.name,'crc_mtime',mtime)
-        modInfos.table.setItem(self.name,'crc_size',size)
-        return crc
-
-    def cachedCrc(self):
+    def cachedCrc(self, recalculate=False):
         """Stores a cached crc, for quicker execution."""
         path = self.getPath()
         size = path.size
         mtime = path.getmtime()
-        if (mtime != modInfos.table.getItem(self.name,'crc_mtime') or
-            size != modInfos.table.getItem(self.name,'crc_size')):
+        cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
+        cached_size = modInfos.table.getItem(self.name, 'crc_size')
+        if recalculate or mtime != cached_mtime or size != cached_size:
             crc = path.crc
             if crc != modInfos.table.getItem(self.name,'crc'):
                 modInfos.table.setItem(self.name,'crc',crc)
@@ -3740,10 +3727,10 @@ class INIInfo(FileInfo):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
 
-    def _getStatus(self):
+    @property
+    def status(self):
         if self._status is None: self.getStatus()
         return self._status
-    status = property(_getStatus)
 
     def getFileInfos(self):
         return iniInfos
@@ -4375,11 +4362,8 @@ class ModInfos(FileInfos):
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
         self.bashed_patches.clear()
-        selfKeys = self.keys()
-        for modName in selfKeys:
-            modInfo = modInfos[modName]
-            mtime = modInfo.mtime
-            mtime_mods[mtime].append(modName)
+        for modName, modInfo in self.iteritems():
+            mtime_mods[modInfo.mtime].append(modName)
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
@@ -8011,7 +7995,7 @@ class InstallersData(DataDict):
     def refreshStatus(self):
         """Refresh installer status."""
         changed = False
-        for installer in self.data.itervalues():
+        for installer in self.itervalues():
             changed |= installer.refreshStatus(self)
         return changed
 
@@ -8165,7 +8149,7 @@ class InstallersData(DataDict):
             self.moveArchives(archives,len(self.data))
         else:
             maxOrder = max(self[x].order for x in archives)
-            for installer in self.data.itervalues():
+            for installer in self.itervalues():
                 if installer.order > maxOrder and installer.isActive:
                     mask |= set(installer.data_sizeCrc)
         #--Install archives in turn

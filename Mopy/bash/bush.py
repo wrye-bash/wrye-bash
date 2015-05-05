@@ -79,7 +79,7 @@ def _supportedGames(useCache=True):
                     if not exePath.exists(): continue
                     _registryGames[submod.fsName.lower()] = installPath
         del module
-    # unload some modules
+    # unload some modules, _supportedGames is meant to run once
     del pkgutil
     del _game
     deprint(u'Detected the following supported games via Windows Registry:')

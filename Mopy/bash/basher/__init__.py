@@ -1364,6 +1364,10 @@ class ModDetails(_SashDetailsPanel):
         all_tags = self.allTags
         def _refreshUI(): BashFrame.modList.RefreshUI(files=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
+        def _isAuto():
+            return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
+        def _setAuto(to):
+            bosh.modInfos.table.setItem(mod_info.name, 'autoBashTags', to)
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             text = _(u'Automatic')
@@ -1372,13 +1376,8 @@ class ModDetails(_SashDetailsPanel):
             def _check(self): return is_auto
             def Execute(self, event_):
                 """Handle selection of automatic bash tags."""
-                if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
-                    # Disable autoBashTags
-                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',False)
-                else:
-                    # Enable autoBashTags
-                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',True)
-                    mod_info.reloadBashTags()
+                _setAuto(not _isAuto()) # toggle
+                if _isAuto(): mod_info.reloadBashTags()
                 _refreshUI()
         # Copy tags to mod description
         bashTagsDesc = mod_info.getBashTagsDesc()
@@ -1405,9 +1404,7 @@ class ModDetails(_SashDetailsPanel):
             def _check(self): return self.text in mod_tags
             def Execute(self, event_):
                 """Toggle bash tag from menu."""
-                if bosh.modInfos.table.getItem(mod_info.name,'autoBashTags'):
-                    # Disable autoBashTags
-                    bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',False)
+                if _isAuto(): _setAuto(False)
                 modTags = mod_tags ^ {self.text}
                 mod_info.setBashTags(modTags)
                 _refreshUI()
@@ -2266,8 +2263,7 @@ class InstallersList(balt.Tank):
                 progress(i, omod.stail)
                 outDir = bosh.dirs['installers'].join(omod.body)
                 if outDir.exists():
-                    if balt.askYes(
-                        progress.dialog, _(
+                    if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
                         balt.shellDelete(outDir, parent=self,
@@ -2369,14 +2365,12 @@ class InstallersList(balt.Tank):
                 filesTo.extend(convertersJoin(x.tail) for x in converters)
                 filenames.extend(converters)
                 try:
-                    if action == 'COPY':
-                        #--Copy the dropped files
-                        balt.shellCopy(filenames, filesTo, parent=self)
-                    elif action == 'MOVE':
+                    if action == 'MOVE':
                         #--Move the dropped files
                         balt.shellMove(filenames, filesTo, parent=self)
                     else:
-                        return
+                        #--Copy the dropped files
+                        balt.shellCopy(filenames, filesTo, parent=self)
                 except (CancelError,SkipError):
                     pass
             self.panel.frameActivated = True

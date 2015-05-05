@@ -44,11 +44,11 @@ from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
-__all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_Groups',
-           'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme', 'Mod_ListBashTags',
-           'Mod_CreateBOSSReport', 'Mod_CopyModInfo', 'Mod_AllowGhosting',
-           'Mod_Ghost', 'Mod_MarkMergeable', 'Mod_Patch_Update',
-           'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
+__all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
+           'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',
+           'Mod_ListBashTags', 'Mod_CreateBOSSReport', 'Mod_CopyModInfo',
+           'Mod_AllowGhosting', 'Mod_Ghost', 'Mod_MarkMergeable',
+           'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
            'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
            'Mod_Factions_Export', 'Mod_ActorLevels_Export',
@@ -138,6 +138,37 @@ class Mod_CreateDummyMasters(OneItemLink):
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
         Link.Frame.RefreshData()
+
+class Mod_OrderByName(EnabledLink):
+    """Sort the selected files."""
+    text = _(u'Sort')
+    help = _(u"Sort the selected files.")
+
+    def _enable(self): return len(self.selected) > 1
+
+    def Execute(self,event):
+        message = _(u'Reorder selected mods in alphabetical order?  The first '
+            u'file will be given the date/time of the current earliest file '
+            u'in the group, with consecutive files following at 1 minute '
+            u'increments.') + u'\n\n' + _(
+            u'Note that this operation cannot be undone.  Note also that '
+            u'some mods need to be in a specific order to work correctly, '
+            u'and this sort operation may break that order.')
+        if not self._askContinue(message, 'bash.sortMods.continue',
+                                 _(u'Sort Mods')): return
+        #--Get first time from first selected file.
+        modInfos = self.window.data
+        fileNames = self.selected
+        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
+        #--Do it
+        fileNames.sort(key=lambda a: a.cext)
+        for fileName in fileNames:
+            modInfos[fileName].setmtime(newTime)
+            newTime += 60
+        #--Refresh
+        modInfos.refresh(doInfos=False)
+        modInfos.refreshInfoLists()
+        self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -1232,7 +1263,6 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 continue
             fileInfo = bosh.modInfos[fileName]
             #--Export
-            orphans = 0
             with balt.Progress(_(u"Remove World Orphans")) as progress:
                 loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
                 modFile = bosh.ModFile(fileInfo,loadFactory)
@@ -1604,7 +1634,6 @@ class Mod_Fids_Replace(OneItemLink):
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u"Import Form IDs")) as progress:
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -1770,7 +1799,6 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _NPC_Levels.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import NPC Levels')) as progress:
             actorLevels = self._parser()
             progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
@@ -1831,7 +1859,6 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Relations.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Relations')) as progress:
             factionRelations =  self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -1894,7 +1921,6 @@ class Mod_Factions_Import(_Mod_Import_Link):
                 _(u'Source file must be a _Factions.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Factions')) as progress:
             actorFactions = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2075,7 +2101,6 @@ class Mod_Stats_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a Stats.csv file.'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u"Import Stats")) as progress:
             itemStats = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -2195,7 +2220,6 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _SigilStones.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Sigil Stone details')) as progress:
             sigilStones = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2272,7 +2296,6 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Spells.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Spell details')) as progress:
             spellRecords = self._parser()
             progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
@@ -2334,7 +2357,6 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
             self._showError(_(u'Source file must be a _Ingredients.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Ingredient details')) as progress:
             Ingredients = self._parser()
             progress(0.1,_(u'Reading %s.') % textName.s)
@@ -2397,7 +2419,6 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         questionableEidsSet = set()
         badEidsList = []
         try:
-            changed = None
             with balt.Progress(_(u"Import Editor Ids")) as progress:
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
@@ -2534,7 +2555,6 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
         #--Export
-        changed = None
         with balt.Progress(_(u'Import Map Markers')) as progress:
             MapMarkers = CBash_MapMarkers()
             progress(0.1,_(u'Reading')+u' '+textName.s)

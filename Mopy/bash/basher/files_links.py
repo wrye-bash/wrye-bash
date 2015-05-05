@@ -34,8 +34,8 @@ from ..bosh import formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide', 'File_Redate',
-           'File_Sort', 'File_RevertToBackup', 'File_RevertToSnapshot',
-           'File_ListMasters', 'File_Open']
+           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
+           'File_Open']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -304,34 +304,6 @@ class File_Redate(AppendableLink, ItemLink):
         modInfos.refreshInfoLists()
         self.window.RefreshUI(refreshSaves=True)
 
-class File_Sort(EnabledLink):
-    """Sort the selected files."""
-    text = _(u'Sort')
-    help = _(u"Sort the selected files.")
-
-    def _enable(self): return len(self.selected) > 1
-
-    def Execute(self,event):
-        message = (_(u'Reorder selected mods in alphabetical order?  The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments.')
-                   + u'\n\n' +
-                   _(u'Note that this operation cannot be undone.  Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order.')
-                   )
-        if not self._askContinue(message, 'bash.sortMods.continue',
-                                 _(u'Sort Mods')): return
-        #--Get first time from first selected file.
-        modInfos = self.window.data
-        fileNames = self.selected
-        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
-        #--Do it
-        fileNames.sort(key=lambda a: a.cext)
-        for fileName in fileNames:
-            modInfos[fileName].setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        modInfos.refresh(doInfos=False)
-        modInfos.refreshInfoLists()
-        self.window.RefreshUI(refreshSaves=True)
-
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
     help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
@@ -372,7 +344,7 @@ class File_Snapshot(ItemLink):
             #--Copy file
             self.window.data.copy(fileName,destDir,destName)
 
-class File_RevertToSnapshot(OneItemLink):
+class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     """Revert to Snapshot."""
     text = _(u'Revert to Snapshot...')
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
