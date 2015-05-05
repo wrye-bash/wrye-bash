@@ -149,7 +149,6 @@ class Mods_LoadList(ChoiceLink):
                 if mod in mergeable: select(mod)
             modInfos.plugins.save()
             modInfos.refreshInfoLists()
-            modInfos.autoGhost()
         except bosh.PluginsFullError:
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
@@ -317,7 +316,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI(files=bosh.modInfos.autoGhost(True))
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True))
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):

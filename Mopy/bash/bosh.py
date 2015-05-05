@@ -4289,7 +4289,7 @@ class ModInfos(FileInfos):
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
         # If files have changed we might need to add/remove mods from load order
         if hasChanged: self.plugins.fixLoadOrder()
-        hasGhosted = self.autoGhost()
+        hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
@@ -4344,14 +4344,20 @@ class ModInfos(FileInfos):
             self.mtimesReset = [u'FAILED',fileName]
 
     def autoGhost(self,force=False):
-        """Automatically inactive files to ghost."""
+        """Automatically turn inactive files to ghosts.
+
+        Should be called when activating mods. Will run if bash.mods.autoGhost
+        is true, or if force parameter is true (in which case, if autoGhost
+        is False, it will actually unghost all ghosted mods).
+        :param force: set to True only in Mods_AutoGhost, so if fired when
+        toggling bash.mods.autoGhost to False it will forcibly unghost all mods
+        """
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
             active = self.plugins.selected
             allowGhosting = self.table.getColumn('allowGhosting')
-            for mod in self.data:
-                modInfo = self.data[mod]
+            for mod, modInfo in self.iteritems():
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
@@ -4519,7 +4525,7 @@ class ModInfos(FileInfos):
         #--Save
         self.plugins.save()
         self.refreshInfoLists()
-        self.autoGhost()
+        self.autoGhost(force=False)
         #--Done/Error Message
         if missing or extra:
             message = u''
