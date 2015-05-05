@@ -4277,7 +4277,7 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, doInfos=True):
+    def refresh(self, doInfos=True): ##: doInfos is for what ??
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
         hasChanged = doInfos and FileInfos.refresh(self)
@@ -4826,7 +4826,7 @@ class ModInfos(FileInfos):
         order[rightIdex] = leftName
         #--Save
         self.plugins.saveLoadOrder()
-        self.plugins.refresh(True)
+        self.plugins.refresh(forceRefresh=True)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -5293,7 +5293,7 @@ class ConfigHelpers:
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
-        self.refresh(True)
+        self.refresh(firstTime=True)
 
     @staticmethod
     def libloLOMismatchCallback():

@@ -775,7 +775,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refresh(True)
+        bosh.modInfos.plugins.refresh(forceRefresh=True)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI()
 
@@ -901,7 +901,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                          map(self.data.dir.join, deleted))
         if not deleted: return
         for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
-        bosh.modInfos.plugins.refresh(True)
+        bosh.modInfos.plugins.refresh(forceRefresh=True)
         super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
@@ -1329,7 +1329,7 @@ class ModDetails(_SashDetailsPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refresh()
+        bosh.modInfos.plugins.refresh(forceRefresh=True) # maybe also called in modInfos.refresh !
         BashFrame.modList.RefreshUI()
 
     def DoCancel(self,event):
@@ -4009,7 +4009,7 @@ class BashFrame(wx.Frame):
         self.inRefreshData = True
         popMods = popSaves = popInis = None
         #--Config helpers
-        bosh.configHelpers.refresh()
+        bosh.configHelpers.refresh(firstTime=False)
         #--Check plugins.txt and mods directory...
         modInfosChanged = not self.booting and bosh.modInfos.refresh()
         if modInfosChanged:
