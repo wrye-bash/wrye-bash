@@ -548,7 +548,7 @@ class INIList(balt.UIList):
         deleted = filter(lambda path: not path.exists(),
                          map(self.data.dir.join, deleted))
         if not deleted: return
-        for d in deleted: bosh.trackedInfos.track(d)
+        for d in deleted: bosh.InstallersData.track(d, factory=bosh.INIInfo)
         super(INIList, self)._postDeleteRefresh(deleted)
 
     def getLabels(self, fileName):
@@ -900,7 +900,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         deleted = filter(lambda path: not path.exists(),
                          map(self.data.dir.join, deleted))
         if not deleted: return
-        for d in deleted: bosh.trackedInfos.track(d)
+        for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
         bosh.modInfos.plugins.refresh(True)
         super(ModList, self)._postDeleteRefresh(deleted)
 
@@ -1547,7 +1547,7 @@ class INIPanel(SashPanel):
             else:
                 selected = None
         if refresh:
-            self.trackedInfo.clear()
+            self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
             self.trackedInfo.track(self.GetChoice())
         self.iniContents.RefreshIniContents(refresh)
         self.tweakContents.RefreshTweakLineCtrl(selected)
@@ -2695,7 +2695,7 @@ class InstallersPanel(SashTankPanel):
                 except CancelError:
                     # User canceled the refresh
                     self.refreshing = False
-        changed = bosh.trackedInfos.refresh()
+        changed = bosh.InstallersData.miscTrackedFiles.refresh()
         if changed:
             # Some tracked files changed, update the ui
             data = self.data.data_sizeCrcDate
@@ -4354,7 +4354,6 @@ class BashApp(wx.App):
         progress.Update(5,_(u'Initializing ModInfos'))
         bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
         bosh.oblivionIni = bosh.gameInis[0]
-        bosh.trackedInfos = bosh.TrackedFileInfos(bosh.INIInfo) ##: tracks tweaks OR mods...
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
         progress.Update(30,_(u'Initializing SaveInfos'))

@@ -148,7 +148,6 @@ modInfos  = None  #--ModInfos singleton
 saveInfos = None #--SaveInfos singleton
 iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
-trackedInfos = None #--TrackedFileInfos singleton
 screensData = None #--ScreensData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
@@ -3178,15 +3177,11 @@ class MasterInfo:
             return 0
 
 #------------------------------------------------------------------------------
-class FileInfo:
-    """Abstract TES4/TES4GAME File."""
+class _AFileInfo:
+    """Abstract File."""
     def __init__(self,dir,name):
-        self.isGhost = (name.cs[-6:] == u'.ghost')
-        if self.isGhost:
-            name = GPath(name.s[:-6])
         self.dir = GPath(dir)
         self.name = GPath(name)
-        self.bashDir = self.getFileInfos().bashDir
         path = self.getPath()
         if path.exists():
             self.ctime = path.ctime
@@ -3196,18 +3191,37 @@ class FileInfo:
             self.ctime = time.time()
             self.mtime = time.time()
             self.size = 0
+
+    def getPath(self):
+        """Returns joined dir and name."""
+        return self.dir.join(self.name)
+
+    def sameAs(self,fileInfo):
+        """Return true if other fileInfo refers to same file as this fileInfo."""
+        return ((self.size == fileInfo.size) and
+                (self.mtime == fileInfo.mtime) and
+                (self.ctime == fileInfo.ctime) and
+                (self.name == fileInfo.name))
+
+    def setmtime(self,mtime=0):
+        """Sets mtime. Defaults to current value (i.e. reset)."""
+        mtime = int(mtime or self.mtime)
+        path = self.getPath()
+        path.mtime = mtime
+        self.mtime = path.mtime
+
+class FileInfo(_AFileInfo):
+    """Abstract TES4/TES4GAME File."""
+
+    def __init__(self, dir, name):
+        _AFileInfo.__init__(self, dir, name)
+        self.bashDir = self.getFileInfos().bashDir
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
         self.madeBackup = False
         #--Ancillary storage
         self.extras = {}
-
-    def getPath(self):
-        """Returns joined dir and name."""
-        path = self.dir.join(self.name)
-        if self.isGhost: path += u'.ghost'
-        return path
 
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
@@ -3237,15 +3251,6 @@ class FileInfo:
     def isEss(self):
         return self.name.cext == bush.game.ess.ext
 
-    def sameAs(self,fileInfo):
-        """Returns true if other fileInfo refers to same file as this fileInfo."""
-        return (
-            (self.size == fileInfo.size) and
-            (self.mtime == fileInfo.mtime) and
-            (self.ctime == fileInfo.ctime) and
-            (self.name == fileInfo.name) and
-            (self.isGhost == fileInfo.isGhost) )
-
     def refresh(self):
         path = self.getPath()
         self.ctime = path.ctime
@@ -3255,7 +3260,7 @@ class FileInfo:
 
     def getHeader(self):
         """Read header for file."""
-        raise AbstractError
+        pass
 
     def getHeaderError(self):
         """Read header for file. But detects file error and returns that."""
@@ -3297,13 +3302,6 @@ class FileInfo:
     def writeHeader(self):
         """Writes header to file, overwriting old header."""
         raise AbstractError
-
-    def setmtime(self,mtime=0):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = int(mtime or self.mtime)
-        path = self.getPath()
-        path.mtime = mtime
-        self.mtime = path.mtime
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
@@ -3372,35 +3370,6 @@ class FileInfo:
         destName = root+separator+(u'.'.join(snapLast))+ext
         return destDir,destName,(root+u'*'+ext).s
 
-    def setGhost(self,isGhost):
-        """Sets file to/from ghost mode. Returns ghost status at end."""
-        normal = self.dir.join(self.name)
-        ghost = normal+u'.ghost'
-        # Refresh current status - it may have changed due to things like
-        # libloadorder automatically unghosting plugins when activating them.
-        # Libloadorder only un-ghosts automatically, so if both the normal
-        # and ghosted version exist, treat the normal as the real one.
-        if normal.exists():
-            if self.isGhost:
-                self.isGhost = False
-                self.name = normal
-        elif ghost.exists():
-            if not self.isGhost:
-                self.isGhost = True
-                self.name = ghost
-        # Current status == what we want it?
-        if isGhost == self.isGhost:
-            return isGhost
-        # Current status != what we want, so change it
-        try:
-            if not normal.editable() or not ghost.editable(): return self.isGhost
-            if isGhost: normal.moveTo(ghost)
-            else: ghost.moveTo(normal)
-            self.isGhost = isGhost
-        except:
-            pass
-        return self.isGhost
-
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
 # TODO(ut): 2 variations for reBashTags
@@ -3409,6 +3378,16 @@ reReturns = re.compile(u'\r{2,}',re.U)
 
 class ModInfo(FileInfo):
     """An esp/m file."""
+
+    def __init__(self, dir, name):
+        self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
+        if endsInGhost: name = GPath(name.s[:-6])
+        else: # refreshFile() path
+            absPath = GPath(dir).join(name)
+            self.isGhost = \
+                not absPath.exists() and (absPath + u'.ghost').exists()
+        FileInfo.__init__(self, dir, name)
+
     def getFileInfos(self):
         """Returns modInfos or saveInfos depending on fileInfo type."""
         return modInfos
@@ -3576,6 +3555,49 @@ class ModInfo(FileInfo):
             header.dump(out)
         self.setmtime(mtime)
 
+    # Ghosting and ghosting related overrides ---------------------------------
+    def sameAs(self, fileInfo):
+        try:
+            return FileInfo.sameAs(self, fileInfo) and (
+                self.isGhost == fileInfo.isGhost)
+        except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
+            return False
+
+    def getPath(self):
+        """Return joined dir and name, adding .ghost if the file is ghosted."""
+        path = FileInfo.getPath(self)
+        if self.isGhost: path += u'.ghost'
+        return path
+
+    def setGhost(self,isGhost):
+        """Sets file to/from ghost mode. Returns ghost status at end."""
+        normal = self.dir.join(self.name)
+        ghost = normal+u'.ghost'
+        # Refresh current status - it may have changed due to things like
+        # libloadorder automatically unghosting plugins when activating them.
+        # Libloadorder only un-ghosts automatically, so if both the normal
+        # and ghosted version exist, treat the normal as the real one.
+        if normal.exists():
+            if self.isGhost:
+                self.isGhost = False
+                self.name = normal
+        elif ghost.exists():
+            if not self.isGhost:
+                self.isGhost = True
+                self.name = ghost
+        # Current status == what we want it?
+        if isGhost == self.isGhost:
+            return isGhost
+        # Current status != what we want, so change it
+        try:
+            if not normal.editable() or not ghost.editable(): return self.isGhost
+            if isGhost: normal.moveTo(ghost)
+            else: ghost.moveTo(normal)
+            self.isGhost = isGhost
+        except:
+            pass
+        return self.isGhost
+
     #--Bash Tags --------------------------------------------------------------
     def shiftBashTags(self):
         """Shifts bash keys from bottom to top."""
@@ -3723,9 +3745,6 @@ class INIInfo(FileInfo):
 
     def getFileInfos(self):
         return iniInfos
-
-    def getHeader(self):
-        pass
 
     def getStatus(self):
         """Returns status of the ini tweak:
@@ -3924,9 +3943,6 @@ class BSAInfo(FileInfo):
         """Returns modInfos or saveInfos depending on fileInfo type."""
         return bsaInfos
 
-    def getHeader(self):
-        pass
-
     def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
         mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
         self.setmtime(mtime)
@@ -3934,53 +3950,36 @@ class BSAInfo(FileInfo):
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
     """Similar to FileInfos, but doesn't use a PickleDict to save information
-       about the tracked files at all."""
-    def __init__(self,factory=FileInfo):
+       about the tracked files at all.
+
+       Uses absolute paths - the caller is responsible for passing them.
+       """
+    # DEPRECATED: hack introduced to track BAIN installed files AND game inis
+    dir = GPath(u'') # a mess with paths - throw ghosting in and raise
+
+    def __init__(self, factory=_AFileInfo):
         self.factory = factory
         self.data = {}
-        self.corrupted = {}
-
-    def refreshFile(self,fileName):
-        try:
-            fileInfo = self.factory('',fileName)
-            fileInfo.isGhost = not fileName.exists() and (fileName+u'.ghost').exists()
-            fileInfo.getHeader()
-            self.data[fileName] = fileInfo
-        except FileError, error:
-            self.corrupted[fileName] = error.message
-            self.data.pop(fileName,None)
-            raise
 
     def refresh(self):
         data = self.data
         changed = set()
         for name in data.keys():
-            fileInfo = self.factory(u'',name)
+            fileInfo = self.factory(self.dir, name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack
-                self.delete(name)
+                self.data.pop(name, None)
                 changed.add(name)
             elif not fileInfo.sameAs(data[name]):
-                errorMsg = fileInfo.getHeaderError()
-                if errorMsg:
-                    self.corrupted[name] = errorMsg
-                    data.pop(name,None)
-                else:
-                    data[name] = fileInfo
-                    self.corrupted.pop(name,None)
+                data[name] = fileInfo
                 changed.add(name)
         return changed
 
-    def track(self,fileName):
-        self.refreshFile(GPath(fileName))
-
-    def delete(self, name, **kwargs):
-        self.data.pop(name, None)
-        self.corrupted.pop(name, None)
-
-    def clear(self):
-        self.data = {}
-        self.corrupted = {}
+    def track(self, absPath, factory=None): # cf FileInfos.refreshFile
+        factory = factory or self.factory
+        fileInfo = factory(self.dir, absPath)
+        # fileInfo.getHeader() #ModInfo: will blow if absPath doesn't exist
+        self[absPath] = fileInfo
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
@@ -4011,8 +4010,6 @@ class FileInfos(DataDict):
     def refreshFile(self,fileName):
         try:
             fileInfo = self.factory(self.dir,fileName)
-            path = fileInfo.getPath()
-            fileInfo.isGhost = not path.exists() and (path+u'.ghost').exists()
             fileInfo.getHeader()
             self[fileName] = fileInfo
         except FileError, error:
@@ -4021,6 +4018,19 @@ class FileInfos(DataDict):
             raise
 
     #--Refresh
+    def _names(self): # performance intensive - dirdef stuff needs rethinking
+        if self.dirdef:
+            # Default items
+            names = {x for x in self.dirdef.list() if
+                     self.dirdef.join(x).isfile() and self.rightFileType(x)}
+        else:
+            names = set()
+        if self.dir.exists():
+            # Normal folder items
+            names |= {x for x in self.dir.list() if
+                      self.dir.join(x).isfile() and self.rightFileType(x)}
+        return list(names)
+
     def refresh(self):
         """Refresh from file directory."""
         data = self.data
@@ -4028,16 +4038,7 @@ class FileInfos(DataDict):
         newNames = set()
         added = set()
         updated = set()
-        if self.dirdef:
-            # Default items
-            names = {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
-        else:
-            names = set()
-        if self.dir.exists():
-            # Normal folder items
-            names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
-        names = list(names)
-        names.sort(key=lambda x: x.cext == u'.ghost') ##: Modinfos specific !!!@!
+        names = self._names()
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -4271,6 +4272,11 @@ class ModInfos(FileInfos):
         #--Else
         return True
 
+    def _names(self):
+        names = FileInfos._names(self)
+        names.sort(key=lambda x: x.cext == u'.ghost')
+        return names
+
     def refresh(self, doInfos=True):
         """Update file data for additions, removals and date changes."""
         self.canSetTimes()
@@ -4280,7 +4286,7 @@ class ModInfos(FileInfos):
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
         # If files have changed we might need to add/remove mods from load order
         if hasChanged: self.plugins.fixLoadOrder()
-        hasGhosted = self.autoGhost()
+        hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
@@ -4335,14 +4341,20 @@ class ModInfos(FileInfos):
             self.mtimesReset = [u'FAILED',fileName]
 
     def autoGhost(self,force=False):
-        """Automatically inactive files to ghost."""
+        """Automatically turn inactive files to ghosts.
+
+        Should be called when activating mods. Will run if bash.mods.autoGhost
+        is true, or if force parameter is true (in which case, if autoGhost
+        is False, it will actually unghost all ghosted mods).
+        :param force: set to True only in Mods_AutoGhost, so if fired when
+        toggling bash.mods.autoGhost to False it will forcibly unghost all mods
+        """
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
             active = self.plugins.selected
             allowGhosting = self.table.getColumn('allowGhosting')
-            for mod in self.data:
-                modInfo = self.data[mod]
+            for mod, modInfo in self.iteritems():
                 modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
@@ -4510,7 +4522,7 @@ class ModInfos(FileInfos):
         #--Save
         self.plugins.save()
         self.refreshInfoLists()
-        self.autoGhost()
+        self.autoGhost(force=False)
         #--Done/Error Message
         if missing or extra:
             message = u''
@@ -6247,9 +6259,9 @@ class Installer(object):
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        if trackedInfos:
+        if InstallersData.miscTrackedFiles:
             dirsModsJoin = dirs['mods'].join
-            _trackedInfosTrack = trackedInfos.track
+            _trackedInfosTrack = InstallersData.miscTrackedFiles.track
             trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
         else:
             trackedInfosTrack = lambda a: None
@@ -7650,7 +7662,9 @@ class InstallerProject(Installer):
 
 #------------------------------------------------------------------------------
 class InstallersData(DataDict):
-    """Installers tank data. This is the data source for """
+    """Installers tank data. This is the data source for the InstallersList."""
+    miscTrackedFiles = TrackedFileInfos() # hack to track changes in installed
+    # inis etc _in the Data/ dir_. Keys are absolute paths to those files
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -7670,6 +7684,10 @@ class InstallersData(DataDict):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
+
+    @staticmethod
+    def track(absPath, factory):
+        InstallersData.miscTrackedFiles.track(absPath, factory)
 
     def addMarker(self,name):
         path = GPath(name)
