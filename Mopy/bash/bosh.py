@@ -4021,6 +4021,19 @@ class FileInfos(DataDict):
             raise
 
     #--Refresh
+    def _names(self): # performance intensive - dirdef stuff needs rethinking
+        if self.dirdef:
+            # Default items
+            names = {x for x in self.dirdef.list() if
+                     self.dirdef.join(x).isfile() and self.rightFileType(x)}
+        else:
+            names = set()
+        if self.dir.exists():
+            # Normal folder items
+            names |= {x for x in self.dir.list() if
+                      self.dir.join(x).isfile() and self.rightFileType(x)}
+        return list(names)
+
     def refresh(self):
         """Refresh from file directory."""
         data = self.data
@@ -4028,16 +4041,7 @@ class FileInfos(DataDict):
         newNames = set()
         added = set()
         updated = set()
-        if self.dirdef:
-            # Default items
-            names = {x for x in self.dirdef.list() if self.dirdef.join(x).isfile() and self.rightFileType(x)}
-        else:
-            names = set()
-        if self.dir.exists():
-            # Normal folder items
-            names |= {x for x in self.dir.list() if self.dir.join(x).isfile() and self.rightFileType(x)}
-        names = list(names)
-        names.sort(key=lambda x: x.cext == u'.ghost') ##: Modinfos specific !!!@!
+        names = self._names()
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
@@ -4270,6 +4274,11 @@ class ModInfos(FileInfos):
             return False
         #--Else
         return True
+
+    def _names(self):
+        names = FileInfos._names(self)
+        names.sort(key=lambda x: x.cext == u'.ghost')
+        return names
 
     def refresh(self, doInfos=True):
         """Update file data for additions, removals and date changes."""
