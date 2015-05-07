@@ -293,7 +293,7 @@ class PatchDialog(balt.Dialog):
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patchName.s)
-                BashFrame.modList.RefreshUI(details=[patchFile])
+                BashFrame.modList.RefreshUI(refreshSaves=True)
         except bolt.FileEditError, error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
