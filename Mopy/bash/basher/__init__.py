@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass
 from ..bass import Resources
 from ..bosh import formatInteger,formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path
+    deprint, Path, AbstractError
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -1049,6 +1049,12 @@ class ModList(_ModsSortMixin, balt.UIList):
 class _SashDetailsPanel(SashPanel):
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
+    # TMP properties to unify details panels
+    @property
+    def file_info(self): raise AbstractError
+    @property
+    def file_infos(self): return self.file_info.getFileInfos()
+
     def __init__(self, parent):
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
@@ -1072,9 +1078,25 @@ class _SashDetailsPanel(SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
+    # Details panel API
+    def SetFile(self,fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        if fileName == 'SAME':
+            if not self.file_info or \
+                            self.file_info.name not in self.file_infos:
+                fileName = None
+            else:
+                fileName = self.file_info.name
+        if not fileName: self._resetDetails()
+        return fileName
+
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
+
+    @property
+    def file_info(self): return self.modInfo
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
@@ -1153,24 +1175,17 @@ class ModDetails(_SashDetailsPanel):
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
 
+    def _resetDetails(self):
+        self.modInfo = None
+        self.fileStr = u''
+        self.authorStr = u''
+        self.modifiedStr = u''
+        self.descriptionStr = u''
+        self.versionStr = u'v0.00'
+
     def SetFile(self,fileName='SAME'):
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.modInfo or self.modInfo.name not in bosh.modInfos:
-                fileName = None
-            else:
-                fileName = self.modInfo.name
-        #--Empty?
-        if not fileName:
-            modInfo = self.modInfo = None
-            self.fileStr = u''
-            self.authorStr = u''
-            self.modifiedStr = u''
-            self.descriptionStr = u''
-            self.versionStr = u'v0.00'
-            tagsStr = u''
-        #--Valid fileName?
-        else:
+        fileName = super(ModDetails, self).SetFile(fileName)
+        if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = modInfo.name.s
@@ -1179,6 +1194,7 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
+        else: tagsStr = u''
         self.modified.SetEditable(True)
         self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
         #--Set fields
@@ -1187,7 +1203,7 @@ class ModDetails(_SashDetailsPanel):
         self.modified.SetValue(self.modifiedStr)
         self.description.SetValue(self.descriptionStr)
         self.version.SetLabel(self.versionStr)
-        self.uilist.SetFileInfo(modInfo)
+        self.uilist.SetFileInfo(self.modInfo)
         self.gTags.SetValue(tagsStr)
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
             self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
@@ -1796,6 +1812,9 @@ class SaveDetails(_SashDetailsPanel):
     """Savefile details panel."""
     keyPrefix = 'bash.saves.details' # used in sash/scroll position, sorting
 
+    @property
+    def file_info(self): return self.saveInfo
+
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
         top, bottom = self.left, self.right
@@ -1856,27 +1875,20 @@ class SaveDetails(_SashDetailsPanel):
         notePanel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
 
+    def _resetDetails(self):
+        self.saveInfo = None
+        self.fileStr = u''
+        self.playerNameStr = u''
+        self.curCellStr = u''
+        self.playerLevel = 0
+        self.gameDays = 0
+        self.playMinutes = 0
+        self.picData = None
+        self.coSaves = u'--\n--'
+
     def SetFile(self,fileName='SAME'):
-        """Set file to be viewed."""
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.saveInfo or self.saveInfo.name not in bosh.saveInfos:
-                fileName = None
-            else:
-                fileName = self.saveInfo.name
-        #--Null fileName?
-        if not fileName:
-            saveInfo = self.saveInfo = None
-            self.fileStr = u''
-            self.playerNameStr = u''
-            self.curCellStr = u''
-            self.playerLevel = 0
-            self.gameDays = 0
-            self.playMinutes = 0
-            self.picData = None
-            self.coSaves = u'--\n--'
-        #--Valid fileName?
-        else:
+        fileName = super(SaveDetails, self).SetFile(fileName)
+        if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = saveInfo.name.s
@@ -1897,7 +1909,7 @@ class SaveDetails(_SashDetailsPanel):
                                   self.playMinutes/60,(self.playMinutes%60),
                                   self.curCellStr))
         self.gCoSaves.SetLabel(self.coSaves)
-        self.uilist.SetFileInfo(saveInfo)
+        self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
         if not self.picData:
             self.picture.SetBitmap(None)
