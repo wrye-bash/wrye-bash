@@ -777,7 +777,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             balt.showError(self, u'%s' % e)
         bosh.modInfos.plugins.refresh(forceRefresh=True)
         bosh.modInfos.refreshInfoLists()
-        self.RefreshUI()
+        self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
     def getLabels(self, fileName):
@@ -1025,7 +1025,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                     return
         #--Refresh
         bosh.modInfos.refresh()
-        self.RefreshUI()
+        self.RefreshUI(refreshSaves=True)
 
     @staticmethod
     def isBP(modName): return bosh.modInfos[modName].header.author in (
@@ -2219,7 +2219,7 @@ class InstallersList(balt.Tank):
             #--Refresh UI
             if refreshNeeded:
                 self.data.refresh(what='I')
-                BashFrame.modList.RefreshUI()
+                BashFrame.modList.RefreshUI(refreshSaves=True)
                 if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
                     # and never initialized
@@ -4046,7 +4046,7 @@ class BashFrame(wx.Frame):
                     bosh.bsaInfos.resetMTimes()
         #--Repopulate
         if popMods:
-            BashFrame.modList.RefreshUI() #--Will repop saves too.
+            BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
         elif popSaves and self.saveList:
             BashFrame.saveList.RefreshUI()
         if popInis and self.iniList:

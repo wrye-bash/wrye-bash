@@ -138,7 +138,6 @@ class Mod_CreateDummyMasters(OneItemLink):
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
         Link.Frame.RefreshData()
-        self.window.RefreshUI()
 
 # Group/Rating submenus -------------------------------------------------------
 #--Common ---------------------------------------------------------------------
@@ -1517,8 +1516,9 @@ class Mod_FlipSelf(EnabledLink):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
             #--Repopulate
-            bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI()
+            bosh.modInfos.refresh(doInfos=False) ##: why in the loop ?
+        self.window.RefreshUI(files=self.selected, refreshSaves=True) # True,
+        # see Mod_FlipMasters
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):

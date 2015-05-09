@@ -81,6 +81,8 @@ class Mods_LoadList(ChoiceLink):
     """Add load list links."""
     max_load_orders_saved = 64
 
+    def _refresh(self): self.window.RefreshUI(refreshSaves=True)
+
     def __init__(self):
         super(Mods_LoadList, self).__init__()
         self.loadListsDict = bosh.settings['bash.loadLists.data']
@@ -111,7 +113,7 @@ class Mods_LoadList(ChoiceLink):
                 mods = filter(lambda m: m in _self.loadListsDict[self.text],
                               map(GPath, self.window.GetItems()))
                 errorMessage = bosh.modInfos.selectExact(mods)
-                self.window.RefreshUI()
+                _self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         self.__class__.cls = _LoListLink
 
@@ -124,7 +126,7 @@ class Mods_LoadList(ChoiceLink):
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoAll(self,event):
         """Select all mods."""
@@ -152,7 +154,7 @@ class Mods_LoadList(ChoiceLink):
         except bosh.PluginsFullError:
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoSave(self,event):
         #--No slots left?
@@ -219,7 +221,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         Link.Frame.SetTitle()
@@ -341,7 +343,7 @@ class Mods_LockTimes(CheckLink):
         if not lockLO: bosh.modInfos.mtimes.clear()
         bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # CRUFT

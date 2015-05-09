@@ -2277,7 +2277,7 @@ class UIList(wx.Panel):
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
 
-    def _postDeleteRefresh(self, deleted): self.RefreshUI()
+    def _postDeleteRefresh(self, deleted): self.RefreshUI(refreshSaves=True)
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod

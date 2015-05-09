@@ -302,7 +302,7 @@ class File_Redate(AppendableLink, ItemLink):
         #--Refresh
         modInfos.refresh(doInfos=False)
         modInfos.refreshInfoLists()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 class File_Sort(EnabledLink):
     """Sort the selected files."""
@@ -330,7 +330,7 @@ class File_Sort(EnabledLink):
         #--Refresh
         modInfos.refresh(doInfos=False)
         modInfos.refreshInfoLists()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
