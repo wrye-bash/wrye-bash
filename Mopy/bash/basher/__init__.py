@@ -1289,7 +1289,7 @@ class ModDetails(_SashDetailsPanel):
             self.SetFile(self.modInfo.name)
             bosh.modInfos.refresh(doInfos=False)
             bosh.modInfos.refreshInfoLists()
-            BashFrame.modList.RefreshUI()
+            BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
             return
         #--Backup
         modInfo.makeBackup()
@@ -1330,7 +1330,7 @@ class ModDetails(_SashDetailsPanel):
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
         bosh.modInfos.plugins.refresh(forceRefresh=True) # maybe also called in modInfos.refresh !
-        BashFrame.modList.RefreshUI()
+        BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     def DoCancel(self,event):
         if self.modInfo:
@@ -2753,7 +2753,7 @@ class InstallersPanel(SashTankPanel):
         self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            BashFrame.modList.RefreshUI()
+            BashFrame.modList.RefreshUI(refreshSaves=True)  # True ?
         if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
                 BashFrame.iniList.panel.RefreshPanel('ALL')

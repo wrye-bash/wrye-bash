@@ -891,7 +891,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.save()
-                        self.window.RefreshUI()
+                        self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 
         previousMods = set()
@@ -1379,7 +1379,7 @@ class Mod_AddMaster(OneItemLink):
         fileInfo.header.changed = True
         fileInfo.writeHeader()
         bosh.modInfos.refreshFile(fileInfo.name)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
 class Mod_CopyToEsmp(EnabledLink):
@@ -1421,7 +1421,7 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo.setType(newType)
             newInfo.setmtime(newTime)
         #--Repopulate
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
