@@ -235,7 +235,7 @@ class Mods_CreateBlankBashedPatch(ItemLink):
         newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
             self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
-            self.window.SelectItem(newPatchName)
+            self.window.SelectItem(newPatchName, deselectOthers=True)
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -260,7 +260,7 @@ class Mods_CreateBlank(ItemLink):
         mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
         self.window.RefreshUI(files=[newName], refreshSaves=False)
-        self.window.SelectItem(newName)
+        self.window.SelectItem(newName, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):

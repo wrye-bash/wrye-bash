@@ -229,7 +229,6 @@ class Save_LoadMasters(OneItemLink):
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
         BashFrame.modList.RefreshUI(refreshSaves=True) # will refresh saves too
-        self.window.SelectItem(fileName) # refresh details
         if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------
