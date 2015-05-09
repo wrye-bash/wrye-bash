@@ -577,8 +577,17 @@
         <tr><td colspan="2">Add Master...<td>Add a master to the list of masters for the selected plugin. <b>Warning:</b> For advanced mod authors only. You should only use this if you know exactly what you're doing.
         <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
         <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
-        <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file extensions, but by a bit in the file. This command toggles that bit so that .esp files behave as .esm files and vice versa. It is useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise. Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise savegames will get confused, possibly causing bugs and corruption.
-        <tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does, but toggles a plugin's masters rather than the plugin itself.
+        <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file
+            extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
+            useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
+            Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. NB: the file extension won't change
+            and this is used by Bash so do not mess with it. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise
+            savegames will get confused, possibly causing bugs and corruption. To toggle the masters back use the same command on the plugin which
+            should now be named Espify Self.
+        <tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does,
+            but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
+            since the modification time won't change they will revert back to their original positions for modification time based load orders.
+            Be sure to backup your load order for Skyrim.
         <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set. <b>Warning:</b> It is possible that this may cause data loss.
 </table>
 

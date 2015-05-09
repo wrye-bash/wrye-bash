@@ -3559,7 +3559,8 @@ class ModInfo(FileInfo):
     def sameAs(self, fileInfo):
         try:
             return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost)
+                self.isGhost == fileInfo.isGhost and
+                self.isEsp() == fileInfo.isEsp()) # update for reversed mod
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 

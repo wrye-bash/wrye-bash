@@ -1523,45 +1523,49 @@ class Mod_FlipSelf(EnabledLink):
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
     """Swaps masters between esp and esm versions."""
+    help = _(
+        u"Flip esp/esm bit of esp masters to convert them to/from esm state")
 
     def _initData(self, window, selection):
         super(Mod_FlipMasters, self)._initData(window, selection)
         #--FileInfo
-        self.fileName = fileName = GPath(self.selected[0])
-        self.fileInfo = fileInfo = bosh.modInfos[fileName] # window.data == bosh.modInfos
+        self.fileName = GPath(self.selected[0])
+        fileInfo = bosh.modInfos[self.fileName]
         self.text = _(u'Esmify Masters')
-        if len(selection) == 1 and len(fileInfo.header.masters) > 1:
-            espMasters = [master for master in fileInfo.header.masters if bosh.reEspExt.search(master.s)]
-            if not espMasters: return
-            for masterName in espMasters:
-                masterInfo = bosh.modInfos.get(GPath(masterName),None)
-                if masterInfo and masterInfo.isInvertedMod():
-                    self.text = _(u'Espify Masters')
-                    self.toEsm = False
-                    break
-            else:
-                self.toEsm = True
+        enable = len(selection) == 1 and len(fileInfo.header.masters) > 1
+        self.espMasters = [GPath(master) for master in fileInfo.header.masters
+            if bosh.reEspExt.search(master.s)] if enable else []
+        self.enable = enable and bool(self.espMasters)
+        if not self.enable: return
+        for masterName in self.espMasters:
+            masterInfo = bosh.modInfos.get(GPath(masterName),None)
+            if masterInfo and masterInfo.isInvertedMod():
+                self.text = _(u'Espify Masters')
+                self.toEsm = False
+                break
+        else:
+            self.toEsm = True
 
-    def _enable(self): return super(Mod_FlipMasters, self)._enable() and \
-                              len(self.fileInfo.header.masters) > 1
+    def _enable(self): return self.enable
 
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
-        fileName= self.fileName
-        fileInfo = self.fileInfo
-        updated = [fileName]
-        espMasters = [GPath(master) for master in fileInfo.header.masters
-            if bosh.reEspExt.search(master.s)]
-        for masterPath in espMasters:
+        updated = [self.fileName]
+        for masterPath in self.espMasters:
             masterInfo = bosh.modInfos.get(masterPath,None)
             if masterInfo:
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        self.window.RefreshUI(files=updated, details=fileName)
+        bosh.modInfos.refresh(doInfos=False) # esms will be moved to the top -
+        # note that modification times won't change - so mods will revert to
+        # their original position once back to esp from esm (Oblivion etc)
+        self.window.RefreshUI(files=updated, refreshSaves=True) # True as LO
+        # will change as esms will be moved to the top
+        self.window.SelectItem(self.fileName) # refresh details for fileName
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
