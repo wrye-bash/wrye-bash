@@ -178,6 +178,9 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.data.sort()
         return newName
 
+    def _refresh(self, files): # editing mod labels should not affect saves
+        self.parent.RefreshUI(files=files, refreshSaves=False)
+
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
         #--Right length?
@@ -197,7 +200,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
                 changed.append(fileName)
-        self.parent.RefreshUI(files=changed)
+        self._refresh(files=changed)
         #--Done
         return newName
 
@@ -212,7 +215,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == item:
                 del colGroup[fileName]
                 changed.append(fileName)
-        self.parent.RefreshUI(files=changed)
+        self._refresh(files=changed)
         #--Done
         return True
 
@@ -230,6 +233,9 @@ class _Mod_LabelsData(balt.ListEditorData):
 class _Mod_Labels(ChoiceLink):
     """Add mod label links."""
     extraButtons = {} # extra actions for the edit dialog
+
+    def _refresh(self): # editing mod labels should not affect saves
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
@@ -255,7 +261,7 @@ class _Mod_Labels(ChoiceLink):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
                     fileLabels[fileName] = u''
-                self.window.RefreshUI(files=self.selected)
+                _self._refresh()
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     def _initData(self, window, selection):
@@ -265,9 +271,7 @@ class _Mod_Labels(ChoiceLink):
             def Execute(self, event):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected: fileLabels[fileName] = self.text
-                if isinstance(_self, Mod_Groups):
-                    bosh.modInfos.refresh(doInfos=False)  # needed ?
-                self.window.RefreshUI(files=self.selected)
+                _self._refresh()
         self.__class__.cls = _LabelLink
 
     @property
@@ -331,7 +335,7 @@ class _Mod_Groups_Import(EnabledLink):
         modGroups.readFromText(textPath)
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
         self._showOk(_(u"Imported %d mod/groups (%d changed).") % (
             len(modGroups.mod_group), changed), _(u"Import Groups"))
 
@@ -726,8 +730,8 @@ class Mod_MarkMergeable(EnabledLink):
             message += u'\n\n'
         if no:
             message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-        self.window.RefreshUI(files=yes)
-        self.window.RefreshUI(files=no)
+        self.window.RefreshUI(files=yes, refreshSaves=False) # was True
+        self.window.RefreshUI(files=no, refreshSaves=False) # was True
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -815,7 +819,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 CBash_PatchFile.patchName = fileInfo.name
                 nullProgress = bolt.Progress()
                 bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-                self.window.RefreshUI()
+                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
             else:
                 PatchFile.patchTime = fileInfo.mtime
                 PatchFile.patchName = fileInfo.name
@@ -823,7 +827,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
                         bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
-                    self.window.RefreshUI()
+                    self.window.RefreshUI(refreshSaves=False) #rescan mergeable
 
         #--Check if we should be deactivating some plugins
         ActivePriortoPatch = [x for x in bosh.modInfos.ordered if
@@ -1590,7 +1594,8 @@ class Mod_SetVersion(OneItemLink):
         self.fileInfo.header.setChanged()
         self.fileInfo.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(files=[self.fileInfo.name])
+        self.window.RefreshUI(files=[self.fileInfo.name],
+                              refreshSaves=False) # version: why affect saves ?
         self.window.SelectItem(self.fileInfo.name)
 
 #------------------------------------------------------------------------------
@@ -1665,7 +1670,7 @@ class Mod_Face_Import(OneItemLink):
             image = Image.GetImage(data, height, width)
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid, fileName.s)
 
 #--Common

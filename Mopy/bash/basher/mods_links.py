@@ -234,7 +234,7 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     def Execute(self,event):
         newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
-            self.window.RefreshUI(files=[newPatchName])
+            self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
             self.window.SelectItem(newPatchName)
 
 class Mods_CreateBlank(ItemLink):
@@ -259,7 +259,7 @@ class Mods_CreateBlank(ItemLink):
         mod_group = fileInfos.table.getColumn('group')
         mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
-        self.window.RefreshUI(files=[newName])
+        self.window.RefreshUI(files=[newName], refreshSaves=False)
         self.window.SelectItem(newName)
 
 #------------------------------------------------------------------------------
@@ -318,7 +318,8 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True))
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True),
+                              refreshSaves=False)
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):
@@ -328,7 +329,7 @@ class Mods_ScanDirty(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False)
 
 class Mods_LockTimes(CheckLink):
     """Turn on resetMTimes feature."""

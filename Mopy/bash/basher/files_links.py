@@ -210,7 +210,7 @@ class File_Duplicate(ItemLink):
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
                     fileInfos.table.setItem(destName,'mtime',newTime)
-            self.window.RefreshUI()
+            self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
 
 class File_Hide(ItemLink):
     """Hide the file. (Move it to Bash/Hidden directory.)"""

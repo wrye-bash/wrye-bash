@@ -1348,6 +1348,8 @@ class ModDetails(_SashDetailsPanel):
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
         all_tags = self.allTags
+        def _refreshUI(): BashFrame.modList.RefreshUI(files=[mod_info.name],
+                refreshSaves=False) # why refresh saves when updating tags (?)
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             text = _(u'Automatic')
@@ -1363,7 +1365,7 @@ class ModDetails(_SashDetailsPanel):
                     # Enable autoBashTags
                     bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',True)
                     mod_info.reloadBashTags()
-                BashFrame.modList.RefreshUI(files=[mod_info.name])
+                _refreshUI()
         # Copy tags to mod description
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
@@ -1372,7 +1374,7 @@ class ModDetails(_SashDetailsPanel):
             def Execute(self, event_):
                 """Copy manually assigned bash tags into the mod description"""
                 if mod_info.setBashTagsDesc(mod_info.getBashTags()):
-                    BashFrame.modList.RefreshUI(files=[mod_info.name])
+                    _refreshUI()
                 else:
                     thinSplitterWin = self.window.GetParent().GetParent(
                         ).GetParent().GetParent()
@@ -1394,7 +1396,7 @@ class ModDetails(_SashDetailsPanel):
                     bosh.modInfos.table.setItem(mod_info.name,'autoBashTags',False)
                 modTags = mod_tags ^ {self.text}
                 mod_info.setBashTags(modTags)
-                BashFrame.modList.RefreshUI(files=[mod_info.name])
+                _refreshUI()
         # Menu
         class _TagLinks(ChoiceLink):
             cls = _TagLink
@@ -1673,7 +1675,7 @@ class ModPanel(SashPanel):
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.uiList.RefreshUI()
+        self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
         self.modDetails.SetFile()
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
@@ -2364,9 +2366,6 @@ class InstallersList(balt.Tank):
                         return
                 except (CancelError,SkipError):
                     pass
-                BashFrame.modList.RefreshUI()
-                if BashFrame.iniList:
-                    BashFrame.iniList.RefreshUI()
             self.panel.frameActivated = True
             self.panel.ShowPanel()
         finally:
@@ -4070,7 +4069,8 @@ class BashFrame(wx.Frame):
                 progress.setFull(len(scanList))
                 bosh.modInfos.rescanMergeable(scanList,progress)
         if scanList or difMergeable:
-            BashFrame.modList.RefreshUI(files=scanList + list(difMergeable))
+            BashFrame.modList.RefreshUI(files=scanList + list(difMergeable),
+                                        refreshSaves=False) # was True
         #--Done (end recursion blocker)
         self.inRefreshData = False
 
