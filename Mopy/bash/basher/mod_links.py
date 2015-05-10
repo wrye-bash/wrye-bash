@@ -569,40 +569,51 @@ class Mod_CopyModInfo(ItemLink):
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Mod_AllowGhosting_All(ItemLink):
-    text, help = _(u"Allow Ghosting"), u'Allow Ghosting for selected mods'
+class _GhostLink(ItemLink):
+    # usual case, toggle ghosting and ghost inactive if allowed after toggling
+    @staticmethod
+    def setAllow(filename): return not _GhostLink.getAllow(filename)
+    @staticmethod
+    def toGhost(filename): return _GhostLink.getAllow(filename) and \
+            filename not in bosh.modInfos.ordered # cannot ghost active mods
+    @staticmethod
+    def getAllow(filename):
+        return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
 
-    def Execute(self,event):
+    def _loop(self):
+        """Loop selected files applying allow ghosting settings and
+        (un)ghosting as needed."""
         files = []
         for fileName in self.selected:
             fileInfo = bosh.modInfos[fileName]
-            allowGhosting = True
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = fileName not in bosh.modInfos.ordered
+            bosh.modInfos.table.setItem(fileName, 'allowGhosting',
+                                        self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
+            if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
                 files.append(fileName)
-        self.window.RefreshUI(files=files)
+        return files
+
+    def Execute(self,event):
+        changed = self._loop()
+        self.window.RefreshUI(files=changed, refreshSaves=False)
+
+class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
+    text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
+    setAllow = staticmethod(lambda fname: True) # allow ghosting
+    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
 
 #------------------------------------------------------------------------------
-class _Mod_DisallowGhosting_All(ItemLink):
+class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
     text = _(u'Disallow Ghosting')
     help = _(u'Disallow Ghosting for selected mods')
-
-    def Execute(self,event):
-        files = []
-        for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName]
-            allowGhosting = False
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = False
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
-                files.append(fileName)
-        self.window.RefreshUI(files=files)
+    setAllow = staticmethod(lambda filename: False) # disallow ghosting...
+    toGhost = staticmethod(lambda filename: False) # ...so unghost if ghosted
 
 #------------------------------------------------------------------------------
-class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
+class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
+    setAllow = staticmethod(lambda fname: True) # allow ghosting
+    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
         if len(selection) == 1:
@@ -630,32 +641,13 @@ class Mod_Ghost(EnabledLink): ##: consider an unghost all Link
             self.fileInfo.setGhost(not self.isGhost)
             files.append(self.path)
         else:
-            for fileName in self.selected:
-                fileInfo = bosh.modInfos[fileName]
-                allowGhosting = True
-                bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-                toGhost = fileName not in bosh.modInfos.ordered
-                oldGhost = fileInfo.isGhost
-                if fileInfo.setGhost(toGhost) != oldGhost:
-                    files.append(fileName)
-        self.window.RefreshUI(files=files)
+            files = self._loop()
+        self.window.RefreshUI(files=files, refreshSaves=False)
 
 #------------------------------------------------------------------------------
-class _Mod_AllowGhostingInvert_All(ItemLink):
+class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
     text = _(u'Invert Ghosting')
     help = _(u'Invert Ghosting for selected mods')
-
-    def Execute(self,event):
-        files = []
-        for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName]
-            allowGhosting = bosh.modInfos.table.getItem(fileName,'allowGhosting',True) ^ True
-            bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-            toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
-            oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(toGhost) != oldGhost:
-                files.append(fileName)
-        self.window.RefreshUI(files=files)
 
 #------------------------------------------------------------------------------
 class Mod_AllowGhosting(TransLink):
@@ -663,24 +655,10 @@ class Mod_AllowGhosting(TransLink):
 
     def _decide(self, window, data):
         if len(data) == 1:
-            class _CheckLink(CheckLink):
+            class _CheckLink(_GhostLink, CheckLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
-
-                def _initData(self, window, selection):
-                    super(_CheckLink, self)._initData(window, selection)
-                    self.allowGhosting = bosh.modInfos.table.getItem(
-                        selection[0], 'allowGhosting', True)
-                def _check(self): return not self.allowGhosting
-                def Execute(self, event):
-                    fileName = self.selected[0]
-                    fileInfo = bosh.modInfos[fileName]
-                    allowGhosting = self.allowGhosting ^ True
-                    bosh.modInfos.table.setItem(fileName,'allowGhosting',allowGhosting)
-                    toGhost = allowGhosting and fileName not in bosh.modInfos.ordered
-                    oldGhost = fileInfo.isGhost
-                    if fileInfo.setGhost(toGhost) != oldGhost:
-                        self.window.RefreshUI(files=[fileName])
+                def _check(self): return not self.getAllow(self.selected[0])
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Ghosting"))
@@ -1075,7 +1053,16 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _Mod_SkipDirtyCheckAll(CheckLink):
+class _DirtyLink(ItemLink):
+    def _ignoreDirty(self, filename): raise AbstractError
+
+    def Execute(self, event):
+        for fileName in self.selected:
+            bosh.modInfos.table.setItem(fileName, 'ignoreDirty',
+                                        self._ignoreDirty(fileName))
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
+
+class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
              u"dirty mod list")
 
@@ -1088,45 +1075,33 @@ class _Mod_SkipDirtyCheckAll(CheckLink):
 
     def _check(self):
         for fileName in self.selected:
-            if bosh.modInfos.table.getItem(fileName,'ignoreDirty',self.skip) != self.skip:
-                return False
+            if bosh.modInfos.table.getItem(fileName,
+                    'ignoreDirty', self.skip) != self.skip: return False
         return True
 
-    def Execute(self,event):
-        for fileName in self.selected:
-            bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.skip)
-        self.window.RefreshUI(files=self.selected)
+    def _ignoreDirty(self, filename): return self.skip
 
-class _Mod_SkipDirtyCheckInvert(ItemLink):
+class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
     text = _(u"Invert checking against LOOT's dirty mod list")
     help = _(
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
-    def Execute(self,event):
-        for fileName in self.selected:
-            ignoreDirty = bosh.modInfos.table.getItem(fileName,'ignoreDirty',False) ^ True
-            bosh.modInfos.table.setItem(fileName,'ignoreDirty',ignoreDirty)
-        self.window.RefreshUI(files=self.selected)
+    def _ignoreDirty(self, filename):
+        return not bosh.modInfos.table.getItem(filename, 'ignoreDirty', False)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
     def _decide(self, window, data):
         if len(data) == 1:
-            class _CheckLink(CheckLink):
+            class _CheckLink(_DirtyLink, CheckLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")
 
-                def _initData(self, window, selection):
-                    super(_CheckLink, self)._initData(window, selection)
-                    self.ignoreDirty = bosh.modInfos.table.getItem(
-                        selection[0], 'ignoreDirty', False)
-                def _check(self): return self.ignoreDirty
-                def Execute(self, event):
-                    fileName = self.selected[0]
-                    self.ignoreDirty ^= True
-                    bosh.modInfos.table.setItem(fileName,'ignoreDirty',self.ignoreDirty)
-                    self.window.RefreshUI(files=[fileName])
+                def _check(self): return bosh.modInfos.table.getItem(
+                        self.selected[0], 'ignoreDirty', False)
+                def _ignoreDirty(self, filename): return self._check() ^ True
+
             return _CheckLink()
         else:
             subMenu = balt.MenuLink(_(u"Dirty edit scanning"))
