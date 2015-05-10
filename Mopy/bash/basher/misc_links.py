@@ -330,8 +330,7 @@ class _Column(CheckLink, EnabledLink):
             self.window.cols.extend([x for x in self.window.allCols if
                                      x in cols or x == self.colName])
         self.window.PopulateColumns()
-        # editing columns in modList should not refresh the saves tab
-        self.window.RefreshUI(refreshSaves=False)
+        self.window.RefreshUI()
 
 class ColumnsMenu(ChoiceLink, MenuLink):
     """Customize visible columns."""

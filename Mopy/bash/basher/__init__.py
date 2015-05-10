@@ -888,13 +888,13 @@ class ModList(_ModsSortMixin, balt.UIList):
         self.mouseTexts[fileName] = mouseText
 
     def RefreshUI(self, **kwargs):
-        # make sure filter() is needed - try to make pop('refreshSaves', FALSE)
+        """Refresh UI for modList - always specify refreshSaves explicitly."""
+        # make sure filter() is needed
         files = kwargs.get('files', ())
         if files : ##: why is this needed ?
             kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
         super(ModList, self).RefreshUI(**kwargs)
-        if kwargs.pop('refreshSaves', True) and Link.Frame.saveList:
-            Link.Frame.saveList.RefreshUI()
+        if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
 
     def _postDeleteRefresh(self, deleted):
         deleted = filter(lambda path: not path.exists(),
@@ -1970,10 +1970,9 @@ class SaveDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-            BashFrame.saveList.RefreshUI()
+            BashFrame.saveListRefresh()
         else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
-            BashFrame.saveList.RefreshUI()
-
+            BashFrame.saveListRefresh()
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
@@ -4046,8 +4045,8 @@ class BashFrame(wx.Frame):
         #--Repopulate
         if popMods:
             BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
-        elif popSaves and self.saveList:
-            BashFrame.saveList.RefreshUI()
+        elif popSaves:
+            BashFrame.saveListRefresh()
         if popInis and self.iniList:
             BashFrame.iniList.RefreshUI()
         #--Current notebook panel
@@ -4266,6 +4265,10 @@ class BashFrame(wx.Frame):
                 path = backupDir.join(name)
                 if name.root not in goodRoots and path.isfile():
                     path.remove()
+
+    @staticmethod
+    def saveListRefresh():
+        if BashFrame.saveList: BashFrame.saveList.RefreshUI()
 
 #------------------------------------------------------------------------------
 def GetBashVersion():
