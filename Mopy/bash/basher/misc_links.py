@@ -186,7 +186,7 @@ class People_AddNew(ItemLink, People_Link):
         if name in self.pdata: return self._showInfo(
             name + _(u" already exists."), title=self.dialogTitle)
         self.pdata[name] = (time.time(),0,u'')
-        self.window.RefreshUI(details=name) ##: select it !
+        self.window.RefreshUI(files=[name])
         self.window.EnsureVisible(name)
         self.pdata.setChanged()
 

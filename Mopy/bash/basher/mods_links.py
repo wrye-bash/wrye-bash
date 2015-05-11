@@ -81,6 +81,8 @@ class Mods_LoadList(ChoiceLink):
     """Add load list links."""
     max_load_orders_saved = 64
 
+    def _refresh(self): self.window.RefreshUI(refreshSaves=True)
+
     def __init__(self):
         super(Mods_LoadList, self).__init__()
         self.loadListsDict = bosh.settings['bash.loadLists.data']
@@ -111,7 +113,7 @@ class Mods_LoadList(ChoiceLink):
                 mods = filter(lambda m: m in _self.loadListsDict[self.text],
                               map(GPath, self.window.GetItems()))
                 errorMessage = bosh.modInfos.selectExact(mods)
-                self.window.RefreshUI()
+                _self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         self.__class__.cls = _LoListLink
 
@@ -124,7 +126,7 @@ class Mods_LoadList(ChoiceLink):
     def DoNone(self,event):
         """Unselect all mods."""
         bosh.modInfos.selectExact([])
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoAll(self,event):
         """Select all mods."""
@@ -152,7 +154,7 @@ class Mods_LoadList(ChoiceLink):
         except bosh.PluginsFullError:
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
-        self.window.RefreshUI()
+        self._refresh()
 
     def DoSave(self,event):
         #--No slots left?
@@ -219,7 +221,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
         bosh.modInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
         Link.Frame.SetTitle()
@@ -232,7 +234,7 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     def Execute(self,event):
         newPatchName = PatchFile.generateNextBashedPatch(self.window)
         if newPatchName is not None:
-            self.window.RefreshUI(files=[newPatchName])
+            self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
             self.window.SelectItem(newPatchName)
 
 class Mods_CreateBlank(ItemLink):
@@ -257,7 +259,7 @@ class Mods_CreateBlank(ItemLink):
         mod_group = fileInfos.table.getColumn('group')
         mod_group[newName] = mod_group.get(newName,u'')
         bosh.modInfos.refresh()
-        self.window.RefreshUI(files=[newName])
+        self.window.RefreshUI(files=[newName], refreshSaves=False)
         self.window.SelectItem(newName)
 
 #------------------------------------------------------------------------------
@@ -316,7 +318,8 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True))
+        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True),
+                              refreshSaves=False)
 
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):
@@ -326,7 +329,7 @@ class Mods_ScanDirty(BoolLink):
 
     def Execute(self,event):
         BoolLink.Execute(self,event)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=False)
 
 class Mods_LockTimes(CheckLink):
     """Turn on resetMTimes feature."""
@@ -341,7 +344,7 @@ class Mods_LockTimes(CheckLink):
         if not lockLO: bosh.modInfos.mtimes.clear()
         bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI()
+        self.window.RefreshUI(refreshSaves=True)
 
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # CRUFT
