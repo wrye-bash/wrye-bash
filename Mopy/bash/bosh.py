@@ -3578,6 +3578,7 @@ class ModInfo(FileInfo):
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
+        #  TODO(ut): both should never exist simultaneously
         if normal.exists():
             if self.isGhost:
                 self.isGhost = False
@@ -4344,11 +4345,14 @@ class ModInfos(FileInfos):
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
 
-        Should be called when activating mods. Will run if bash.mods.autoGhost
-        is true, or if force parameter is true (in which case, if autoGhost
-        is False, it will actually unghost all ghosted mods).
+        Should be called when deactivating mods - will have an effect if
+        bash.mods.autoGhost is true, or if force parameter is true (in which
+        case, if autoGhost is False, it will actually unghost all ghosted
+        mods). If both the mod and its ghost exist, the mod is not active and
+        this method runs while autoGhost is on, the normal version will be
+        moved to the ghost.
         :param force: set to True only in Mods_AutoGhost, so if fired when
-        toggling bash.mods.autoGhost to False it will forcibly unghost all mods
+        toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)

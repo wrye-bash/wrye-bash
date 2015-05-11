@@ -874,9 +874,9 @@ class ModList(_ModsSortMixin, balt.UIList):
             mouseText += _(u"Has same time as another (unloaded) mod.  ")
         elif fileInfo.isGhost:
             item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
-            mouseText += _(u"File is ghosted.  ")
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
+        if fileInfo.isGhost: mouseText += _(u"File is ghosted.  ")
         if settings['bash.mods.scanDirty']:
             message = fileInfo.getDirtyMessage()
             mouseText += message[1]
