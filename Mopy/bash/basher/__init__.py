@@ -754,28 +754,41 @@ class ModList(_ModsSortMixin, balt.UIList):
     _sunkenBorder = False
 
     #-- Drag and Drop-----------------------------------------------------
-    def OnDropIndexes(self, indexes, newIndex):
+    def _dropIndexes(self, indexes, newIndex): # needs work, blurred
+        """Drop contiguous indexes in newIndex"""
+        if newIndex < 0: return False # from OnChar() & moving master esm up
+        # Calculating indexes through order.index() so corrupt mods (which
+        # don't show in the ModList) don't break Drag n Drop ##: (ut) this
+        # comment seems obsolete - corrupted plugins do not appear in LO either
         order = bosh.modInfos.plugins.LoadOrder
-        # Calculating indexes through order.index() so corrupt mods (which don't show in the ModList) don't break Drag n Drop
-        start = order.index(self.GetItem(indexes[0]))
-        stop = order.index(self.GetItem(indexes[-1])) + 1
         count = self._gList.GetItemCount()
         newPos = order.index(self.GetItem(newIndex)) if (
             count > newIndex) else order.index(self.GetItem(count - 1))
-        # Dummy checks: can't move the game's master file anywhere else but position 0
-        if newPos <= 0: return
+        if newPos <= 0: return False
+        start = order.index(self.GetItem(indexes[0]))
+        stop = order.index(self.GetItem(indexes[-1])) + 1 # excluded
+        # Can't move the game's master file anywhere else but position 0
         master = bosh.modInfos.masterName
-        if master in order[start:stop]: return
+        if master in order[start:stop]: return False
         # List of names to move removed and then reinserted at new position
         toMove = order[start:stop]
         del order[start:stop]
         order[newPos:newPos] = toMove
+        return True
+
+    def OnDropIndexes(self, indexes, newIndex):
+        if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
+
+    def _refreshOnDrop(self):
         #--Save and Refresh
         try:
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
         bosh.modInfos.plugins.refresh(forceRefresh=True)
+        # FIXME(ut): hack below - used to fix things like mtimes conflicts not
+        # updated - must call modInfos.refresh, wait till latter's fixed though
+        bosh.FileInfos.refresh(bosh.modInfos)
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
@@ -918,27 +931,28 @@ class ModList(_ModsSortMixin, balt.UIList):
         Link.Frame.docBrowser.SetMod(fileInfo.name)
         Link.Frame.docBrowser.Raise()
 
-    def OnChar(self,event):
-        """Char event: Reorder, Check/Uncheck."""
-        ##Ctrl+Up and Ctrl+Down
+    def OnChar(self,event): ##: conversation
+        """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
-            (self.sort == 'Load Order')):
-                orderKey = lambda x: self.GetIndex(x)
+            (self.sort in self._dndColumns)):
+                # Calculate continuous chunks of indexes
+                chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
+                previous = -1
+                for dex in indexes:
+                    if previous != -1 and previous + 1 != dex:
+                        chunk += 1
+                        chunks.append([])
+                    previous = dex
+                    chunks[chunk].append(dex)
                 moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
-                isReversed = (moveMod != -1)
-                count = self._gList.GetItemCount()
-                for thisFile in sorted(self.GetSelected(),key=orderKey,reverse=isReversed):
-                    swapItemDex = self.GetIndex(thisFile) + moveMod
-                    if swapItemDex < 0 or count - 1 < swapItemDex: break
-                    swapFile = self.GetItem(swapItemDex)
-                    try:
-                        bosh.modInfos.swapOrder(thisFile,swapFile)
-                    except bolt.BoltError as e:
-                        balt.showError(self, u'%s' % e)
-                    bosh.modInfos.refreshInfoLists()
-                    self.RefreshUI(refreshSaves=False) # FIXME(ut): Populates the WHOLE Modlist again and again !
-                self.RefreshUI(files=[],refreshSaves=True)
-        event.Skip()
+                moved = False
+                for chunk in chunks:
+                    newIndex = chunk[0] + moveMod
+                    if chunk[-1] + moveMod == self._gList.GetItemCount():
+                        continue # trying to move last plugin past the list
+                    moved |= self._dropIndexes(chunk, newIndex)
+                if moved: self._refreshOnDrop() ##: conversation
+        else: event.Skip() # correctly update the highlight around selected mod
 
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""

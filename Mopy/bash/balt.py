@@ -2057,6 +2057,12 @@ class UIList(wx.Panel):
         return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
             if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
 
+    def GetSelectedIndexes(self):
+        """Return list of indexes highlighted in the interface in display order."""
+        listCtrl = self._gList
+        return [dex for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
     def SelectItemAtIndex(self, index, select=True,
                           _select=wx.LIST_STATE_SELECTED):
         self._gList.SetItemState(index, select * _select, _select)

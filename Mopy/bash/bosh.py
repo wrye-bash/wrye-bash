@@ -4818,21 +4818,6 @@ class ModInfos(FileInfos):
         self.unselect(fileName)
         FileInfos.move(self,fileName,destDir,doRefresh)
 
-    def swapOrder(self, leftName, rightName):
-        """Swaps the Load Order of two mods"""
-        order = self.plugins.LoadOrder
-        # Dummy checks
-        if leftName not in order or rightName not in order: return
-        if self.masterName in {leftName,rightName}: return
-        #--Swap
-        leftIdex = order.index(leftName)
-        rightIdex = order.index(rightName)
-        order[leftIdex] = rightName
-        order[rightIdex] = leftName
-        #--Save
-        self.plugins.saveLoadOrder()
-        self.plugins.refresh(forceRefresh=True)
-
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
