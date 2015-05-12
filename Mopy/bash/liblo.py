@@ -382,20 +382,6 @@ def Init(path):
                 assert super_count in {0, 1} # for #100
                 return super_count
         for k, v in _verboten.iteritems(): setattr(_lo_list, k, v.r)
-
-        class LoadOrderList(_lo_list):
-            """list-like object for manipulating load order"""
-
-            # list method overrides
-            def insert(self,i,x):
-                # Change Load Order of single plugin
-                self._DB.SetPluginLoadOrder(x, i)
-            def index(self,x):
-                # Get Load Order of single plugin
-                return self._DB.GetPluginLoadOrder(x)
-        _verboten = dict((v, _raise(v)) for v in {'append', '__isub__',
-            '__delitem__', '__iadd__', 'extend', 'remove'})
-        for k, v in _verboten.iteritems(): setattr(LoadOrderList, k, v.r)
         del _verboten # we don't want this in globals()
 
         def GetLoadOrder(self):
@@ -403,14 +389,11 @@ def Init(path):
             num = c_size_t()
             _Clo_get_load_order(self._DB, byref(plugins), byref(num))
             return map(GPath, plugins[:num.value])
-        def _GetLoadOrder(self):
-            return self.LoadOrderList(self.GetLoadOrder(), db=self)
         def SetLoadOrder(self, plugins):
             plugins = [_enc(x) for x in plugins]
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_load_order(self._DB, plugins, num)
-        LoadOrder = property(_GetLoadOrder,SetLoadOrder)
 
         def GetPluginLoadOrder(self, plugin):
             plugin = _enc(plugin)
@@ -520,7 +503,7 @@ def Init(path):
         def GetOrdered(self,plugins,selfLoadOrder=None):
             """Returns a list of the given plugins, sorted according to their
                load order"""
-            selfLoadOrder = selfLoadOrder if selfLoadOrder else self.LoadOrder
+            selfLoadOrder = selfLoadOrder if selfLoadOrder else self.GetLoadOrder()
             return [x for x in selfLoadOrder if x in plugins]
 
     # Put the locally defined functions, classes, etc into the module global namespace
