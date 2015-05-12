@@ -3023,7 +3023,7 @@ class Plugins:
         self.saveLoadOrder()
         self.saveActive()
 
-    def removeMods(self, plugins, refresh=False):
+    def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""
         # Use set to remove any duplicates
         plugins = set(plugins,)
@@ -3031,9 +3031,9 @@ class Plugins:
         self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
         self.selected  = [x for x in self.selected  if x not in plugins]
         # Refresh liblo
-        if refresh: self.saveLoadAndActive()
+        if savePlugins: self.saveLoadAndActive()
 
-    def addMods(self, plugins, index=None, refresh=False):
+    def addMods(self, plugins, index=None, savePlugins=False):
         """Adds the specified mods to load order at the given index or at the bottom if none is given."""
         # Remove any duplicates
         plugins = set(plugins)
@@ -3046,7 +3046,7 @@ class Plugins:
                     self.LoadOrder.insert(index, plugin)
                     index += 1
         # Refresh liblo
-        if refresh: self.saveLoadAndActive()
+        if savePlugins: self.saveLoadAndActive()
 
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
@@ -3070,7 +3070,7 @@ class Plugins:
         removedFiles = loadOrder - modFiles
         addedFiles = modFiles - loadOrder
         # Remove non existent plugins from load order
-        self.removeMods(removedFiles)
+        self.removeMods(removedFiles, savePlugins=False)
         # Add new plugins to load order
         indexFirstEsp = 0
         while indexFirstEsp < len(self.LoadOrder) and modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
@@ -4049,7 +4049,9 @@ class FileInfos(DataDict):
         fileInfo = self[oldName]
         #--File system
         newPath = self.dir.join(newName)
-        if fileInfo.isGhost: newPath += u'.ghost'
+        try:
+            if fileInfo.isGhost: newPath += u'.ghost'
+        except AttributeError: pass # not a mod info
         oldPath = fileInfo.getPath()
         balt.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
@@ -4753,16 +4755,15 @@ class ModInfos(FileInfos):
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         isSelected = self.isSelected(oldName)
-        if isSelected: self.unselect(oldName)
+        if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
         oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.removeMods([oldName], refresh=False)
-        self.plugins.addMods([newName], index=oldIndex)
-        #self.plugins.LoadOrder.remove(oldName)
-        #self.plugins.LoadOrder.insert(oldIndex, newName)
-        self.plugins.saveLoadOrder()
+        self.plugins.removeMods([oldName], savePlugins=False)
+        self.plugins.addMods([newName], index=oldIndex, savePlugins=False)
         self.refreshInfoLists()
-        if isSelected: self.select(newName)
+        if isSelected: self.select(newName, doSave=False)
+        # Save to disc (load order and plugins.txt)
+        self.plugins.saveLoadAndActive()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
@@ -8219,7 +8220,7 @@ class InstallersData(DataDict):
         for file in removes:
             data_sizeCrcDatePop(file, None)
         #--Remove mods from load order
-        modInfos.plugins.removeMods(removedPlugins, True)
+        modInfos.plugins.removeMods(removedPlugins, savePlugins=True)
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
