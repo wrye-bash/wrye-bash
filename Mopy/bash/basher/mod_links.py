@@ -902,7 +902,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.refreshInfoLists()
-                        bosh.modInfos.plugins.save()
+                        bosh.modInfos.plugins.saveActive()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 

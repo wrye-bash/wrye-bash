@@ -149,7 +149,7 @@ class Mods_LoadList(ChoiceLink):
             # then activate as many of the remaining mods as we can
             for mod in mods:
                 if mod in mergeable: select(mod)
-            modInfos.plugins.save()
+            modInfos.plugins.saveActive()
             modInfos.refreshInfoLists()
         except bosh.PluginsFullError:
             self._showError(_(u"Mod list is full, so some mods were skipped"),

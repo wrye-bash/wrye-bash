@@ -2969,17 +2969,6 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
-    def loadActive(self, lo_with_corrected_master=None):
-        """Get list of active plugins from plugins.txt through libloadorder which cleans out bad entries."""
-        self.selected = load_order.GetActivePlugins(cachedLO=lo_with_corrected_master) # GPath list (but not sorted)
-        if self.pathPlugins.exists():
-            self.mtimePlugins = self.pathPlugins.mtime
-            self.sizePlugins = self.pathPlugins.size
-        else:
-            self.mtimePlugins = 0
-            self.sizePlugins = 0
-
-
     def loadLoadOrder(self):
         """Get list of all plugins from loadorder.txt through libloadorder."""
         self.LoadOrder = load_order.GetLo()
@@ -2995,7 +2984,7 @@ class Plugins:
                 self.selected = modInfos.getOrdered(self.selected,False)
                 deprint("Mismatched Load Order Corrected")
 
-    def save(self):
+    def saveActive(self):
         """Write data to Plugins.txt file."""
         # liblo attempts to unghost files, no need to duplicate that here.
         load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
@@ -3018,7 +3007,6 @@ class Plugins:
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
 
-
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
         if self.pathPlugins.exists() and (
@@ -3031,6 +3019,10 @@ class Plugins:
                 self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
 
+    def saveLoadAndActive(self):
+        self.saveLoadOrder()
+        self.saveActive()
+
     def removeMods(self, plugins, refresh=False):
         """Removes the specified mods from the load order."""
         # Use set to remove any duplicates
@@ -3039,9 +3031,7 @@ class Plugins:
         self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
         self.selected  = [x for x in self.selected  if x not in plugins]
         # Refresh liblo
-        if refresh:
-            self.saveLoadOrder()
-            self.save()
+        if refresh: self.saveLoadAndActive()
 
     def addMods(self, plugins, index=None, refresh=False):
         """Adds the specified mods to load order at the given index or at the bottom if none is given."""
@@ -3056,16 +3046,21 @@ class Plugins:
                     self.LoadOrder.insert(index, plugin)
                     index += 1
         # Refresh liblo
-        if refresh:
-            self.saveLoadOrder()
-            self.save()
+        if refresh: self.saveLoadAndActive()
 
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = self.hasChanged()
         if hasChanged or forceRefresh:
             self.loadLoadOrder()
-            self.loadActive(lo_with_corrected_master=self.LoadOrder)
+            # inlined loadActive() - only used here !!!
+            self.selected = load_order.GetActivePlugins(cachedLO=self.LoadOrder) # GPath list (but not sorted)
+            if self.pathPlugins.exists():
+                self.mtimePlugins = self.pathPlugins.mtime
+                self.sizePlugins = self.pathPlugins.size
+            else:
+                self.mtimePlugins = 0
+                self.sizePlugins = 0
         return hasChanged
 
     def fixLoadOrder(self):
@@ -3093,9 +3088,7 @@ class Plugins:
                 self.LoadOrder.insert(indexFirstEsp, mod)
                 indexFirstEsp += 1
         # Save changes if necessary
-        if removedFiles or addedFiles:
-            self.saveLoadOrder()
-            self.save()
+        if removedFiles or addedFiles: self.saveLoadAndActive()
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4491,7 +4484,7 @@ class ModInfos(FileInfos):
                 missing.append(modName)
                 self.plugins.selected.remove(modName)
         #--Save
-        self.plugins.save()
+        self.plugins.saveActive()
         self.refreshInfoLists()
         self.autoGhost(force=False)
         #--Done/Error Message
@@ -4646,7 +4639,7 @@ class ModInfos(FileInfos):
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
         finally:
-            if doSave: plugins.save()
+            if doSave: plugins.saveActive()
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
@@ -4665,7 +4658,7 @@ class ModInfos(FileInfos):
                     break
         #--Save
         if doSave:
-            self.plugins.save()
+            self.plugins.saveActive()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
