@@ -4257,7 +4257,7 @@ class ModInfos(FileInfos):
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
-        self.getOblivionVersions()
+        self.setOblivionVersions()
         return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
@@ -4474,31 +4474,28 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
+        modsSet, allMods = set(modNames), set(self.plugins.LoadOrder)
         #--Ensure plugins that cannot be deselected stay selected
-        for path in map(GPath, bush.game.nonDeactivatableFiles):
-            if path not in modNames:
-                modNames.append(path)
+        modsSet.update(map(GPath, bush.game.nonDeactivatableFiles))
         #--Deselect/select plugins
-        missing,extra = [],[]
-        self.plugins.selected = list(modNames)
-        for modName in modNames:
-            if modName not in self.plugins.LoadOrder:
-                missing.append(modName)
-                self.plugins.selected.remove(modName)
+        missingSet = modsSet - allMods
+        toSelect = modsSet - missingSet
         #--Save
+        self.plugins.selected = list(toSelect)
         self.plugins.saveActive()
         self.refreshInfoLists()
         self.autoGhost(force=False)
         #--Done/Error Message
-        if missing or extra:
+        extra = set() ##: was never set - actually saveActive will just raise
+        if missingSet or extra:
             message = u''
-            if missing:
+            if missingSet:
                 message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-                message += u'\n* '.join(x.s for x in missing)
+                message += u'\n* '.join(x.s for x in missingSet)
             if extra:
-                if missing: message += u'\n'
+                if missingSet: message += u'\n'
                 message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-                extra = set(modNames) - set(self.plugins.LoadOrder)
+                extra = toSelect - set(self.plugins.selected)
                 message += u'\n* '.join(x.s for x in extra)
             return message
         else:
@@ -4811,15 +4808,17 @@ class ModInfos(FileInfos):
 #        return requires
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def getOblivionVersions(self):
-        """Returns tuple of Oblivion versions."""
+    def setOblivionVersions(self):
+        """Set current (and available) master game esm(s) - oblivion only."""
         self.voAvailable.clear()
         for name,info in self.iteritems():
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.size in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.size])
-        if self.masterName in self.data:
-            self.voCurrent = self.size_voVersion.get(self.data[self.masterName].size,None)
+        if self.masterName in self:
+            self.voCurrent = self.size_voVersion.get(
+                self[self.masterName].size, None)
+        else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):
         return balt.askYes(self,

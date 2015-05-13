@@ -306,10 +306,7 @@ class _Mod_Labels(ChoiceLink):
         self.__class__.cls = _LabelLink
 
     @property
-    def _choices(self):
-        items = self.labels[:]
-        items.sort(key=lambda a: a.lower())
-        return items
+    def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):
