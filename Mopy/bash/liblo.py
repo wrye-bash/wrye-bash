@@ -211,20 +211,20 @@ def Init(path):
     class LibloError(Exception):
         def __init__(self,value):
             self.code = value
-            msg = 'UNKNOWN(%i)' % value
-            for code in errors:
-                if errors[code] == value:
-                    msg = code
+            for errorName, errorCode in errors.iteritems():
+                if errorCode == value:
+                    msg = errorName
                     break
+            else: msg = 'UNKNOWN(%i)' % value
             msg += ':'
             try:
                 msg += GetLastErrorDetails()
             except Exception as e:
-                msg += '%s' % e
+                msg += 'GetLastErrorDetails FAILED (%s)' % e
             self.msg = msg
             Exception.__init__(self,msg)
 
-        def __repr__(self): return '<LibloError: %s>' % self.msg
+        def __repr__(self): return '<LibloError: %r>' % self.msg
         def __str__(self): return 'LibloError: %s' % self.msg
 
     def LibloErrorCheck(result):
@@ -335,7 +335,7 @@ def Init(path):
             except LibloError as err:
                 if err.args[0].startswith("LIBLO_WARN_LO_MISMATCH"):
                     # If there is a Mismatch between loadorder.txt and plugns.txt finish initialization
-                    # and fix the missmatch at a later time
+                    # and fix the mismatch at a later time
                     pass
                 else:
                     raise err
@@ -489,17 +489,6 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
-        def FilterActive(self,plugins,active=True):
-            """Given a list of plugins, returns the subset of that list,
-               consisting of:
-                - only active plugins if 'active' is True
-                - only inactive plugins if 'active' is False"""
-            return [x for x in plugins if self.IsPluginActive(x) ^ (not active)]
-
-        def DeactivatePlugins(self,plugins):
-            for plugin in plugins:
-                self.SetPluginActive(plugin,False)
-
         def GetOrdered(self,plugins,selfLoadOrder=None):
             """Returns a list of the given plugins, sorted according to their
                load order"""
