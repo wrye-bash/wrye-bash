@@ -29,6 +29,7 @@ class Path: pass
 def GPath(x): return u'' if x is None else unicode(x, 'utf8')
 """
 
+from collections import defaultdict
 from ctypes import *
 import os
 from bolt import Path, GPath
@@ -53,10 +54,15 @@ class LibloVersionError(Exception):
 # API alpha - what is currently used in bash:
 LIBLO_ERROR_INVALID_ARGS = None
 LIBLO_WARN_LO_MISMATCH = None
-LIBLO_OK = None
 LibloError = None
 LibloHandle = None
-RegisterCallback = None
+# ErrorCallbacks - use SPARINGLY if at all
+_pass = lambda: None
+_ErrorCallbacks = defaultdict(lambda : _pass)
+def RegisterCallback(errorCode,callback):
+    """DEPRECATED: Setup callback functions for whenever specific error codes
+       are encountered."""
+    _ErrorCallbacks[errorCode] = callback
 
 # TMP helper
 class _raise(object):
@@ -107,6 +113,9 @@ def Init(path):
     c_char_p_p_p = POINTER(c_char_p_p)
     c_size_t_p = POINTER(c_size_t)
 
+    # helpers
+    def _uint(name): return c_uint.in_dll(liblo, name).value
+
     def list_of_strings(strings):
         lst = (c_char_p * len(strings))()
         lst = cast(lst,c_char_p_p)
@@ -140,10 +149,10 @@ def Init(path):
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    LIBLO_GAME_TES4 = c_uint.in_dll(liblo,'LIBLO_GAME_TES4').value
-    LIBLO_GAME_TES5 = c_uint.in_dll(liblo,'LIBLO_GAME_TES5').value
-    LIBLO_GAME_FO3 = c_uint.in_dll(liblo,'LIBLO_GAME_FO3').value
-    LIBLO_GAME_FNV = c_uint.in_dll(liblo,'LIBLO_GAME_FNV').value
+    LIBLO_GAME_TES4 = _uint('LIBLO_GAME_TES4')
+    LIBLO_GAME_TES5 = _uint('LIBLO_GAME_TES5')
+    LIBLO_GAME_FO3 = _uint('LIBLO_GAME_FO3')
+    LIBLO_GAME_FNV = _uint('LIBLO_GAME_FNV')
     games = {
         'Oblivion':LIBLO_GAME_TES4,
         LIBLO_GAME_TES4:LIBLO_GAME_TES4,
@@ -158,33 +167,32 @@ def Init(path):
     # =========================================================================
     # API Constants - Load Order Method
     # =========================================================================
-    LIBLO_METHOD_TIMESTAMP = c_uint.in_dll(liblo,'LIBLO_METHOD_TIMESTAMP').value
-    LIBLO_METHOD_TEXTFILE = c_uint.in_dll(liblo,'LIBLO_METHOD_TEXTFILE').value
+    LIBLO_METHOD_TIMESTAMP = _uint('LIBLO_METHOD_TIMESTAMP')
+    LIBLO_METHOD_TEXTFILE = _uint('LIBLO_METHOD_TEXTFILE')
 
     # =========================================================================
     # API Constants - Return codes
     # =========================================================================
-    errors = {}
-    ErrorCallbacks = {}
-    for name in ['OK',
-                 'WARN_BAD_FILENAME',
-                 'WARN_LO_MISMATCH',
-                 'ERROR_FILE_READ_FAIL',
-                 'ERROR_FILE_WRITE_FAIL',
-                 'ERROR_FILE_RENAME_FAIL',
-                 'ERROR_FILE_PARSE_FAIL',
-                 'ERROR_FILE_NOT_UTF8',
-                 'ERROR_FILE_NOT_FOUND',
-                 'ERROR_TIMESTAMP_READ_FAIL',
-                 'ERROR_TIMESTAMP_WRITE_FAIL',
-                 'ERROR_NO_MEM',
-                 'ERROR_INVALID_ARGS',
-                 ]:
-        name = 'LIBLO_'+name
-        errors[name] = c_uint.in_dll(liblo,name).value
-        ErrorCallbacks[errors[name]] = None
-    LIBLO_RETURN_MAX = c_uint.in_dll(liblo,'LIBLO_RETURN_MAX').value
-    globals().update(errors)
+    LIBLO_OK = _uint('LIBLO_OK')
+    LIBLO_WARN_BAD_FILENAME = _uint('LIBLO_WARN_BAD_FILENAME')
+    LIBLO_ERROR_FILE_READ_FAIL = _uint('LIBLO_ERROR_FILE_READ_FAIL')
+    LIBLO_ERROR_FILE_WRITE_FAIL = _uint('LIBLO_ERROR_FILE_WRITE_FAIL')
+    LIBLO_ERROR_FILE_RENAME_FAIL = _uint('LIBLO_ERROR_FILE_RENAME_FAIL')
+    LIBLO_ERROR_FILE_PARSE_FAIL = _uint('LIBLO_ERROR_FILE_PARSE_FAIL')
+    LIBLO_ERROR_FILE_NOT_UTF8 = _uint('LIBLO_ERROR_FILE_NOT_UTF8')
+    LIBLO_ERROR_FILE_NOT_FOUND = _uint('LIBLO_ERROR_FILE_NOT_FOUND')
+    LIBLO_ERROR_TIMESTAMP_READ_FAIL = _uint('LIBLO_ERROR_TIMESTAMP_READ_FAIL')
+    LIBLO_ERROR_NO_MEM = _uint('LIBLO_ERROR_NO_MEM')
+    LIBLO_ERROR_TIMESTAMP_WRITE_FAIL = _uint(
+        'LIBLO_ERROR_TIMESTAMP_WRITE_FAIL')
+    global LIBLO_WARN_LO_MISMATCH, LIBLO_ERROR_INVALID_ARGS
+    LIBLO_WARN_LO_MISMATCH = _uint('LIBLO_WARN_LO_MISMATCH')
+    LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
+    errors = {'LIBLO_WARN_LO_MISMATCH': LIBLO_WARN_LO_MISMATCH,
+              'LIBLO_ERROR_INVALID_ARGS': LIBLO_ERROR_INVALID_ARGS}
+    errors.update((name, value) for name, value in locals().iteritems() if
+                  name.startswith('LIBLO_'))
+    LIBLO_RETURN_MAX = _uint('LIBLO_RETURN_MAX')
 
     # =========================================================================
     # API Functions - Error Handling
@@ -199,11 +207,6 @@ def Init(path):
         if ret != LIBLO_OK:
             raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % ret)
         return unicode(details.value,'utf8')
-
-    def RegisterCallback(errorCode,callback):
-        """Used to setup callback functions for whenever specific error codes
-           are encountered"""
-        ErrorCallbacks[errorCode] = callback
 
     class LibloError(Exception):
         def __init__(self,value):
@@ -225,8 +228,8 @@ def Init(path):
         def __str__(self): return 'LibloError: %s' % self.msg
 
     def LibloErrorCheck(result):
-        callback = ErrorCallbacks.get(result,None)
-        if callback: callback()
+        callback = _ErrorCallbacks[result]
+        if callback is not _pass : callback()
         if result == LIBLO_OK: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
