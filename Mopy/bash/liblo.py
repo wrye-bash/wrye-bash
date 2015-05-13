@@ -21,23 +21,17 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Thin python wrapper around libloadorder.
 
+To use outside of Bash replace the Bash imports below with:
 
-"""Python wrapper around libloadorder"""
-
+class Path: pass
+def GPath(x): return u'' if x is None else unicode(x, 'utf8')
+"""
 
 from ctypes import *
 import os
-import platform
-
-try:
-    # Wrye Bash specific support
-    import bolt
-    from bolt import Path, GPath
-except:
-    class Path:
-        pass
-    def GPath(x): return x
+from bolt import Path, GPath
 
 liblo = None
 version = None
@@ -56,6 +50,22 @@ class LibloVersionError(Exception):
        compatible with liblo.py"""
     pass
 
+# API alpha - what is currently used in bash:
+LIBLO_METHOD_TEXTFILE = None
+LIBLO_METHOD_TIMESTAMP = None
+LIBLO_ERROR_INVALID_ARGS = None
+LIBLO_WARN_LO_MISMATCH = None
+LIBLO_OK = None
+LibloError = None
+LibloHandle = None
+RegisterCallback = None
+
+# TMP helper
+class _raise(object):
+    def __init__(self, oper): self.oper = oper
+    def r(self, *args, **kwargs):
+        raise Exception('Unsupported Operation: ' + self.oper)
+
 def Init(path):
     """Called automatically by importing liblo.  Can also be called manually
        by the user to reload libloadorder, pointing to a different path to the dll.
@@ -69,7 +79,8 @@ def Init(path):
             path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
-
+    ##: global LIBLO_METHOD_TEXTFILE, LIBLO_ERROR_INVALID_ARGS, \
+    #     LIBLO_WARN_LO_MISMATCH, LIBLO_OK, LibloError, LibloHandle
     # First unload any libloadorder dll previously loaded
     del liblo
     liblo = None
@@ -106,7 +117,6 @@ def Init(path):
         return lst
 
     # utility unicode functions
-    def _uni(x): return u'' if x is None else unicode(x,'utf8')
     def _enc(x): return (x.encode('utf8') if isinstance(x,unicode)
                          else x.s.encode('utf8') if isinstance(x,Path)
                          else x)
@@ -127,7 +137,7 @@ def Init(path):
         try:
             liblo.lo_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
-            raise LibbsaVersionError('liblo.py is not compatible with the specified libloadorder DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
+            raise LibloVersionError('liblo.py is not compatible with the specified libloadorder DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
 
     # =========================================================================
     # API Constants - Games
@@ -351,62 +361,47 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Load Order management
         # ---------------------------------------------------------------------
-        class LoadOrderList(list):
+        # Block the following 'list' functions, since they don't make sense
+        # for use with libloadorder
+        _verboten = dict((v, _raise(v)) for v in {'__setitem__', '__imul__',
+            '__idiv__', '__itruediv__', '__ifloordiv__', '__imod__',
+            '__ipow__', '__ilshift__', '__irshift__', '__iand__', '__ixor__',
+            '__ior__', 'pop', 'sort', 'reverse'})
+        class _lo_list(list): # DEPRECATED  helper class
+            def __init__(self, *args, **kwargs):
+                self._DB = kwargs.pop('db') # LibloHandle python class
+                super(LibloHandle._lo_list, self).__init__(*args, **kwargs)
+
+            def count(self,x):
+                # 1 if the plugin is in the Load Order, 0 otherwise
+                # (plugins can't be in the load order multiple times)
+                super_count = super(LibloHandle._lo_list, self).count(x)
+                assert super_count in {0, 1} # for #100
+                return super_count
+        for k, v in _verboten.iteritems(): setattr(_lo_list, k, v.r)
+
+        class LoadOrderList(_lo_list):
             """list-like object for manipulating load order"""
-            def SetHandle(self,db):
-                self._DB = db # LibloHandle python class.
 
-            # Block the following 'list' functions, since they don't make sense
-            # for use with libloadorder and Load Order
-            ## LoadOrder[i] = x
-            def __setitem__(self,key,value): raise Exception('LibloHandle.LoadOrder does not support item setting')
-            ## del LoadOrder[i]
-            def __delitem__(self,key): raise Exception('LibloHandle.LoadOrder does not support item deletion')
-            ## LoadOrder += [s,3,5]
-            ##  and other compound assignment operators
-            def __iadd__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __isub__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __imul__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __idiv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __itruediv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ifloordiv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __imod__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ipow__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ilshift__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __irshift__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __iand__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ixor__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ior__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            ## LoadOrder.append('ahalal')
-            def append(self,item): raise Exception('LibloHandle.LoadOrder does not support append.')
-            ## LoadOrder.extend(['kkjjhk','kjhaskjd'])
-            def extend(self,items): raise Exception('LibloHandle.LoadOrder does not support extend.')
-            def remove(self,item): raise Exception('LibloHandle.LoadOrder does not support remove.')
-            def pop(self,item): raise Exception('LibloHandle.LoadOrder does not support pop.')
-            def sort(self,*args,**kwdargs): raise Exception('LibloHandle.LoadOrder does not support sort.')
-            def reverse(self,*args,**kwdargs): raise Exception('LibloHandle.LoadOrder does not support reverse.')
-
-            # Override the following with custom functions
+            # list method overrides
             def insert(self,i,x):
                 # Change Load Order of single plugin
                 self._DB.SetPluginLoadOrder(x, i)
             def index(self,x):
                 # Get Load Order of single plugin
                 return self._DB.GetPluginLoadOrder(x)
-            def count(self,x):
-                # 1 if the plugin is in the Load Order, 0 otherwise
-                # (plugins can't be in the load order multiple times)
-                return 1 if x in self else 0
+        _verboten = dict((v, _raise(v)) for v in {'append', '__isub__',
+            '__delitem__', '__iadd__', 'extend', 'remove'})
+        for k, v in _verboten.iteritems(): setattr(LoadOrderList, k, v.r)
+        del _verboten # we don't want this in globals()
 
         def GetLoadOrder(self):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_load_order(self._DB, byref(plugins), byref(num))
-            return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
+            return map(GPath, plugins[:num.value])
         def _GetLoadOrder(self):
-            ret = self.LoadOrderList(self.GetLoadOrder())
-            ret.SetHandle(self)
-            return ret
+            return self.LoadOrderList(self.GetLoadOrder(), db=self)
         def SetLoadOrder(self, plugins):
             plugins = [_enc(x) for x in plugins]
             num = len(plugins)
@@ -427,43 +422,19 @@ def Init(path):
         def GetIndexedPlugin(self, index):
             plugin = c_char_p()
             _Clo_get_indexed_plugin(self._DB,index,byref(plugin))
-            return GPath(_uni(plugin.value))
+            return GPath(plugin.value)
 
         # ---------------------------------------------------------------------
         # Active plugin management
         # ---------------------------------------------------------------------
-        class ActivePluginsList(list):
-            """list-like object for modiying which plugins are active.
+        class ActivePluginsList(_lo_list): # should be a set !
+            """list-like object for modifying which plugins are active.
                Currently, you cannot change the Load Order through this
                object, perhaps in the future."""
-            def SetHandle(self,db):
-                self._DB = db
 
             def ReSync(self):
                 """Resync's contents with libloadorder"""
                 list.__setslice__(self,0,len(self),self._DB.ActivePlugins)
-
-            # Block the following 'list' functions, since they don't make sense
-            # for use with libloadorder and Active Plugins
-            ## ActivePlugins[i] = x
-            def __setitem__(self,key,value): raise Exception('LibloHandle.ActivePlugins does not support item setting')
-            ## LoadOrder *= 3
-            ##  and other compound assignment operators
-            def __imul__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __idiv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __itruediv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ifloordiv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __imod__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ipow__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ilshift__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __irshift__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __iand__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ixor__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ior__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def pop(self,item): raise Exception('LibloHandle.ActivePlugins does not support pop.')
-            def sort(self,*args,**kwdargs): raise Exception('LibloHandle.ActivePlugins does not support sort.')
-            def reverse(self,*args,**kwdargs): raise Exception('LibloHandle.ActivePlugins does not support reverse.')
-
 
             ## del ActivePlugins[i]
             def __delitem__(self,key):
@@ -505,19 +476,13 @@ def Init(path):
                 self._DB.SetPluginActive(item,True)
                 self.ReSync()
 
-            ## ActivePlugins.count('test.esp')
-            def count(self,item):
-                return 1 if item in self else 0
-
         def GetActivePlugins(self, lo_with_corrected_master=None):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
-            return self.GetOrdered([GPath(_uni(plugins[i])) for i in xrange(num.value)], selfLoadOrder=lo_with_corrected_master)
+            return self.GetOrdered(map(GPath, plugins[:num.value]), selfLoadOrder=lo_with_corrected_master)
         def _GetActivePlugins(self):
-            ret = self.ActivePluginsList(self.GetActivePlugins())
-            ret.SetHandle(self)
-            return ret
+            return self.ActivePluginsList(self.GetActivePlugins(), db=self)
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
             if self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins:
@@ -543,14 +508,14 @@ def Init(path):
                consisting of:
                 - only active plugins if 'active' is True
                 - only inactive plugins if 'active' is False"""
-            return [x for x in plugins if self.IsPluginActive(x)]
+            return [x for x in plugins if self.IsPluginActive(x) ^ (not active)]
 
         def DeactivatePlugins(self,plugins):
             for plugin in plugins:
                 self.SetPluginActive(plugin,False)
 
         def GetOrdered(self,plugins,selfLoadOrder=None):
-            """Returns a list of the given plugins, sorted accoring to their
+            """Returns a list of the given plugins, sorted according to their
                load order"""
             selfLoadOrder = selfLoadOrder if selfLoadOrder else self.LoadOrder
             return [x for x in selfLoadOrder if x in plugins]
