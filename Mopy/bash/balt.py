@@ -37,7 +37,7 @@ import string
 import os
 import textwrap
 import time
-from functools import partial
+from functools import partial, wraps
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -1755,6 +1755,17 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
+def conversation(func):
+    """Decorator to temporarily unbind RefreshData Link.Frame callback."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            Link.Frame.BindRefresh(bind=False)
+            func(*args, **kwargs)
+        finally:
+            Link.Frame.BindRefresh(bind=True)
+    return wrapper
+
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
     # optional menus
@@ -2247,29 +2258,29 @@ class UIList(wx.Panel):
             index = self._gList.FindItem(0, selected[0].s)
             if index != -1: self._gList.EditLabel(index)
 
+    @conversation
     def DeleteItems(self, event=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
-        recycle = True if event is None else not event.ShiftDown()
+        recycle = (
+        # menu items fire 'CommandEvent' - I need a workaround to detect Shift
+            True if event is None else not event.ShiftDown())
         items = self._toDelete(items)
-        try:
-            Link.Frame.BindRefresh(bind=False)
-            if not self.__class__._shellUI:
-                items = self._promptDelete(items, dialogTitle, order)
-            if not items: return
-            for i in items:
-                try:
-                    if not self.__class__._shellUI:
-                        self.data.delete(i, doRefresh=False, recycle=recycle)
-                    else:
-                        self.data.delete(items, confirm=True, recycle=recycle)
-                        break
-                except bolt.BoltError as e:
-                    showError(self, u'%r' % e)
-                except (AccessDeniedError, CancelError, SkipError): pass
-            else: self.data.refresh()
-            self._postDeleteRefresh(items)
-        finally:
-            Link.Frame.BindRefresh(bind=True)
+        if not self.__class__._shellUI:
+            items = self._promptDelete(items, dialogTitle, order)
+        if not items: return
+        for i in items:
+            try:
+                if not self.__class__._shellUI: # non shellUI path used to
+                    # delete as many as possible, I kept this behavior
+                    self.data.delete(i, doRefresh=False, recycle=recycle)
+                else: # shellUI path tries to delete all at once
+                    self.data.delete(items, confirm=True, recycle=recycle)
+            except bolt.BoltError as e: showError(self, u'%r' % e)
+            except (AccessDeniedError, CancelError, SkipError): pass
+            finally:
+                if self.__class__._shellUI: break # could delete fail mid-way ?
+        else: self.data.refresh()
+        self._postDeleteRefresh(items)
 
     def _toDelete(self, items):
         return items if items is not None else self.GetSelected()

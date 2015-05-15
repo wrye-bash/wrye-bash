@@ -349,8 +349,9 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     text = _(u'Revert to Snapshot...')
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
 
-    def Execute(self,event): ##: conversation
-        """Handle menu item selection."""
+    @balt.conversation
+    def Execute(self,event):
+        """Revert to Snapshot."""
         fileInfo = self.window.data[self.selected[0]]
         fileName = fileInfo.name
         #--Snapshot finder
@@ -426,7 +427,8 @@ class File_RevertToBackup(ChoiceLink):
             def Execute(self, event): return _self.revert(firstBackup)
         self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
 
-    def revert(self, backup): ##: conversation
+    @balt.conversation
+    def revert(self, backup):
         fileInfo = self.fileInfo
         fileName = fileInfo.name
         #--Warning box

@@ -811,6 +811,7 @@ class ModList(_ModsSortMixin, balt.UIList):
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
 
+    @balt.conversation
     def _refreshOnDrop(self):
         #--Save and Refresh
         try:
@@ -963,7 +964,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         Link.Frame.docBrowser.SetMod(fileInfo.name)
         Link.Frame.docBrowser.Raise()
 
-    def OnChar(self,event): ##: conversation
+    def OnChar(self,event):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
             (self.sort in self._dndColumns)):
@@ -983,7 +984,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                     if chunk[-1] + moveMod == self._gList.GetItemCount():
                         continue # trying to move last plugin past the list
                     moved |= self._dropIndexes(chunk, newIndex)
-                if moved: self._refreshOnDrop() ##: conversation
+                if moved: self._refreshOnDrop()
         else: event.Skip() # correctly update the highlight around selected mod
 
     def OnKeyUp(self,event):
@@ -2369,6 +2370,7 @@ class InstallersList(balt.Tank):
                     settings['bash.installers.onDropFiles.action'] = action
         return action
 
+    @balt.conversation
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if
@@ -2376,32 +2378,28 @@ class InstallersList(balt.Tank):
         converters = [x for x in filenames if self.data.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
                      or x.cext in bosh.readExts and x not in converters]
-        try:
-            Link.Frame.BindRefresh(bind=False)
-            if len(omodnames) > 0: self._extractOmods(omodnames)
-            if not filenames and not converters:
-                return
-            action = self._askCopyOrMove(filenames)
-            if action not in ['COPY','MOVE']: return
-            with balt.BusyCursor():
-                installersJoin = bosh.dirs['installers'].join
-                convertersJoin = bosh.dirs['converters'].join
-                filesTo = [installersJoin(x.tail) for x in filenames]
-                filesTo.extend(convertersJoin(x.tail) for x in converters)
-                filenames.extend(converters)
-                try:
-                    if action == 'MOVE':
-                        #--Move the dropped files
-                        balt.shellMove(filenames, filesTo, parent=self)
-                    else:
-                        #--Copy the dropped files
-                        balt.shellCopy(filenames, filesTo, parent=self)
-                except (CancelError,SkipError):
-                    pass
-            self.panel.frameActivated = True
-            self.panel.ShowPanel()
-        finally:
-            Link.Frame.BindRefresh(bind=True)
+        if len(omodnames) > 0: self._extractOmods(omodnames)
+        if not filenames and not converters:
+            return
+        action = self._askCopyOrMove(filenames)
+        if action not in ['COPY','MOVE']: return
+        with balt.BusyCursor():
+            installersJoin = bosh.dirs['installers'].join
+            convertersJoin = bosh.dirs['converters'].join
+            filesTo = [installersJoin(x.tail) for x in filenames]
+            filesTo.extend(convertersJoin(x.tail) for x in converters)
+            filenames.extend(converters)
+            try:
+                if action == 'MOVE':
+                    #--Move the dropped files
+                    balt.shellMove(filenames, filesTo, parent=self)
+                else:
+                    #--Copy the dropped files
+                    balt.shellCopy(filenames, filesTo, parent=self)
+            except (CancelError,SkipError):
+                pass
+        self.panel.frameActivated = True
+        self.panel.ShowPanel()
 
     def OnChar(self,event):
         """Char event: Reorder."""

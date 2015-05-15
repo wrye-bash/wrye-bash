@@ -236,8 +236,7 @@ class PatchDialog(balt.Dialog):
             #--Cleanup
             self.patchInfo.refresh()
             #--Done
-            progress.Destroy()
-            Link.Frame.BindRefresh(bind=True)
+            progress.Destroy(); progress = None
             timer2 = time.clock()
             #--Readme and log
             log.setHeader(None)
@@ -276,10 +275,10 @@ class PatchDialog(balt.Dialog):
             balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
-            message = _(u'Activate %s?') % patchName.s
-            if bosh.inisettings['PromptActivateBashedPatch'] \
-                    and (bosh.modInfos.isSelected(patchName) or
-                             balt.askYes(self.parent,message,patchName.s)):
+            count, message = 0, _(u'Activate %s?') % patchName.s
+            if bosh.modInfos.isSelected(patchName) or (
+                        bosh.inisettings['PromptActivateBashedPatch'] and
+                        balt.askYes(self.parent, message, patchName.s)):
                 try:
                     oldFiles = bosh.modInfos.ordered[:]
                     bosh.modInfos.select(patchName)
@@ -287,13 +286,13 @@ class PatchDialog(balt.Dialog):
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                    bosh.modInfos[patchName].setGhost(False)
-                    bosh.modInfos.refreshInfoLists()
+                    # bosh.modInfos.refreshInfoLists() # covered in refreshFile
                 except bosh.PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patchName.s)
-                BashFrame.modList.RefreshUI(refreshSaves=True)
+            bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
+            BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except bolt.FileEditError, error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
@@ -311,7 +310,7 @@ class PatchDialog(balt.Dialog):
             if self.doCBash:
                 try: patchFile.Current.Close()
                 except: pass
-            progress.Destroy()
+            if progress: progress.Destroy()
 
     def _retry(self, old, new):
         return balt.askYes(self,
