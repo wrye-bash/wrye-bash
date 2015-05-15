@@ -2972,10 +2972,6 @@ class Plugins:
     def loadLoadOrder(self):
         """Get list of all plugins from loadorder.txt through libloadorder."""
         self.LoadOrder = load_order.GetLo()
-        # game's master might be out of place (if using timestamps for load ordering) so move it up.
-        if self.LoadOrder.index(modInfos.masterName) > 0:
-            self.LoadOrder.remove(modInfos.masterName)
-            self.LoadOrder.insert(0,modInfos.masterName)
         if load_order.usingTxtFile() and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
@@ -3054,7 +3050,7 @@ class Plugins:
         if hasChanged or forceRefresh:
             self.loadLoadOrder()
             # inlined loadActive() - only used here !!!
-            self.selected = load_order.GetActivePlugins(cachedLO=self.LoadOrder) # GPath list (but not sorted)
+            self.selected = load_order.GetActivePlugins(cached=True) # GPath list sorted as in self.LoadOrder just updated
             if self.pathPlugins.exists():
                 self.mtimePlugins = self.pathPlugins.mtime
                 self.sizePlugins = self.pathPlugins.size

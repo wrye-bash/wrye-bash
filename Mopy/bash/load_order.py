@@ -35,24 +35,53 @@ class LoadOrder(object):
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
         self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
+        # sugar, client could readily compute this - API: maybe drop:
+        self._activeOrdered = tuple(
+            sorted(active, key=lambda x: self.__mod_loIndex[x]))
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
     @property
     def active(self): return self._active  # test if none
+    @property # sugar
+    def activeOrdered(self): return self._activeOrdered
 
 # Module level cache
 __empty = LoadOrder()
-_current_lo = __empty
+_current_lo = __empty # must always be valid (or __empty)
 
-def GetLo(cached=True):
-    return _liblo_handle.GetLoadOrder()
+# liblo calls - they include fixup code (which may or may not be needed/working)
+def _getLoFromLiblo():
+    lord = _liblo_handle.GetLoadOrder()
+    #(ut) below ripped from bosh.Plugins - STILL needed with liblo 6.0?
+    # game's master might be out of place (if using timestamps for load
+    # ordering or a manually edited loadorder.txt) so move it up
+    masterDex = lord.index(bosh.modInfos.masterName)
+    masterName = bosh.modInfos.masterName
+    if masterDex > 0:
+        bolt.deprint(u'%s in %d position' % (masterName, masterDex))
+        lord.remove(masterName)
+        lord.insert(0, masterName)
+        #(ut) SHOULDN'T WE SAVE THE LO HERE ? !!!!!!
+    return lord
+
+def _updateCache():
     global _current_lo
-    if cached and _current_lo is not __empty: return _current_lo
-    # _lo.
+    try:
+        lord = _getLoFromLiblo()
+        acti = _liblo_handle.GetActivePlugins(lo_with_corrected_master=lord)
+        _current_lo = LoadOrder(lord, acti)
+    except _liblo.LibloError:
+        _current_lo = __empty
+        raise
 
-def GetActivePlugins(cachedLO=None):
-    return _liblo_handle.GetActivePlugins(lo_with_corrected_master=cachedLO)
+def GetLo(cached=False):
+    if not cached or _current_lo is __empty: _updateCache()
+    return list(_current_lo.loadOrder)
+
+def GetActivePlugins(cached=False):
+    if not cached or _current_lo is __empty: _updateCache()
+    return list(_current_lo.activeOrdered)
 
 def SetActivePlugins(act): _liblo_handle.SetActivePlugins(act)
 def SetLoadOrder(lord): _liblo_handle.SetLoadOrder(lord)
