@@ -55,12 +55,6 @@ LIBLO_ERROR_INVALID_ARGS = None
 LibloError = None
 LibloHandle = None
 
-# TMP helper
-class _raise(object):
-    def __init__(self, oper): self.oper = oper
-    def r(self, *args, **kwargs):
-        raise Exception('Unsupported Operation: ' + self.oper)
-
 def Init(path):
     """Called automatically by importing liblo.  Can also be called manually
        by the user to reload libloadorder, pointing to a different path to the dll.
@@ -286,7 +280,6 @@ def Init(path):
     # =========================================================================
     # API Functions - Active Plugins
     # =========================================================================
-
     ## unsigned int lo_get_active_plugins(lo_game_handle gh, char *** const plugins, size_t * const numPlugins);
     _Clo_get_active_plugins = liblo.lo_get_active_plugins
     _Clo_get_active_plugins.restype = LibloErrorCheck
@@ -335,7 +328,6 @@ def Init(path):
             """Should be made private !"""
             return self._LOMethod == LIBLO_METHOD_TEXTFILE
 
-
         def SetGameMaster(self, plugin):
             _Clo_set_game_master(self._DB,_enc(plugin))
 
@@ -351,26 +343,6 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Load Order management
         # ---------------------------------------------------------------------
-        # Block the following 'list' functions, since they don't make sense
-        # for use with libloadorder
-        _verboten = dict((v, _raise(v)) for v in {'__setitem__', '__imul__',
-            '__idiv__', '__itruediv__', '__ifloordiv__', '__imod__',
-            '__ipow__', '__ilshift__', '__irshift__', '__iand__', '__ixor__',
-            '__ior__', 'pop', 'sort', 'reverse'})
-        class _lo_list(list): # DEPRECATED  helper class
-            def __init__(self, *args, **kwargs):
-                self._DB = kwargs.pop('db') # LibloHandle python class
-                super(LibloHandle._lo_list, self).__init__(*args, **kwargs)
-
-            def count(self,x):
-                # 1 if the plugin is in the Load Order, 0 otherwise
-                # (plugins can't be in the load order multiple times)
-                super_count = super(LibloHandle._lo_list, self).count(x)
-                assert super_count in {0, 1} # for #100
-                return super_count
-        for k, v in _verboten.iteritems(): setattr(_lo_list, k, v.r)
-        del _verboten # we don't want this in globals()
-
         def GetLoadOrder(self):
             plugins = c_char_p_p()
             num = c_size_t()
@@ -400,62 +372,11 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Active plugin management
         # ---------------------------------------------------------------------
-        class ActivePluginsList(_lo_list): # should be a set !
-            """list-like object for modifying which plugins are active.
-               Currently, you cannot change the Load Order through this
-               object, perhaps in the future."""
-
-            def ReSync(self):
-                """Resync's contents with libloadorder"""
-                list.__setslice__(self,0,len(self),self._DB.ActivePlugins)
-
-            ## del ActivePlugins[i]
-            def __delitem__(self,key):
-                # Deactivate the plugin
-                self._DB.SetPluginActive(self[key],False)
-                self.ReSync()
-
-            ## ActivePlugins += ['test.esp','another.esp']
-            def __iadd__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-                return self
-            ## ActivePlugins -= ['test.esp','another.esp']
-            def __isub__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,False)
-                self.ReSync()
-                return self
-
-            ## ActivePlugins.append('test.esp')
-            def append(self,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
-            ## ActivePlugins.extend(['test.esp','another.esp'])
-            def extend(self,items):
-                for plugin in items:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-
-            ## ActivePlugins.remove('test.esp')
-            def remove(self,item):
-                self._DB.SetPluginActive(item,False)
-                self.ReSync()
-
-            ## ActivePlugins.insert('test.esp')
-            def insert(self,index,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
         def GetActivePlugins(self):
             plugins = c_char_p_p()
             num = c_size_t()
             _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
             return map(GPath, plugins[:num.value])
-        def _GetActivePlugins(self):
-            return self.ActivePluginsList(self.GetActivePlugins(), db=self)
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
             if self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins:
@@ -463,7 +384,6 @@ def Init(path):
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_active_plugins(self._DB, plugins, num)
-        ActivePlugins = property(_GetActivePlugins,SetActivePlugins)
 
         def SetPluginActive(self,plugin,active=True):
             _Clo_set_plugin_active(self._DB,_enc(plugin),active)
