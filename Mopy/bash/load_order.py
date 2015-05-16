@@ -168,7 +168,7 @@ def _updateCache():
         # got a valid load order - now to active...
         actiSorted = _getActiveFromLiblo(lord)
         _current_lo = LoadOrder(lord, actiSorted)
-    except _liblo.LibloError:
+    except _liblo_error:
         _current_lo = __empty
         raise
 
@@ -195,13 +195,13 @@ def haveLoFilesChanged():
             sizeOrder  != _loadorder_txt_path.size)
 
 #----------------------------------------------------------------------REFACTOR
-_liblo.Init(bosh.dirs['compiled'].s)
+_liblo_handle, _liblo_error = _liblo.Init(bosh.dirs['compiled'].s)
 # That didn't work - Wrye Bash isn't installed correctly
 if not _liblo.liblo:
     raise bolt.BoltError(u'The libloadorder API could not be loaded.')
 bolt.deprint(u'Using libloadorder API version:', _liblo.version)
 
-_liblo_handle = _liblo.LibloHandle(bosh.dirs['app'].s,bush.game.fsName)
+_liblo_handle = _liblo_handle(bosh.dirs['app'].s,bush.game.fsName)
 if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
         u'Nehrim.esm').isfile():
     _liblo_handle.SetGameMaster(u'Nehrim.esm')

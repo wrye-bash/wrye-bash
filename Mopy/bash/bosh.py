@@ -69,7 +69,6 @@ from record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
 import loot
 import libbsa
-import liblo
 
 import patcher # for configIsCBash()
 
@@ -2972,11 +2971,7 @@ class Plugins:
 
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        try:
-            load_order.SaveLoadOrder(self.LoadOrder)
-        except liblo.LibloError as e:
-            if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
-                raise bolt.BoltError(u'Cannot load plugins before masters.')
+        load_order.SaveLoadOrder(self.LoadOrder)
 
     def saveLoadAndActive(self):
         self.saveLoadOrder()

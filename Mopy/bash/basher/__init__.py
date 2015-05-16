@@ -1046,12 +1046,8 @@ class ModList(_ModsSortMixin, balt.UIList):
                         changed = [x.s for x in changed]
                         removed += changed
                         balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
-                except bosh.liblo.LibloError as e:
-                    if e.msg == 'LIBLO_ERROR_INVALID_ARGS:Plugins may not be sorted before the game\'s master file.':
-                        msg = _(u'Plugins may not be sorted before the game\'s master file.')
-                    else:
-                        msg = e.msg
-                    balt.showError(self, u'%s' % msg)
+                except Exception as e:
+                    balt.showError(self, u'%s' % e)
             #--Select?
             else:
                 ## For now, allow selecting unicode named files, for testing

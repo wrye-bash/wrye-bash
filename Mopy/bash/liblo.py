@@ -31,7 +31,7 @@ def GPath(x): return u'' if x is None else unicode(x, 'utf8')
 
 from ctypes import *
 import os
-from bolt import Path, GPath
+from bolt import Path, GPath, BoltError
 
 liblo = None
 version = None
@@ -50,11 +50,6 @@ class LibloVersionError(Exception):
        compatible with liblo.py"""
     pass
 
-# API alpha - what is currently used in bash:
-LIBLO_ERROR_INVALID_ARGS = None
-LibloError = None
-LibloHandle = None
-
 def Init(path):
     """Called automatically by importing liblo.  Can also be called manually
        by the user to reload libloadorder, pointing to a different path to the dll.
@@ -68,13 +63,12 @@ def Init(path):
             path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
-    ##: global LIBLO_ERROR_INVALID_ARGS, LibloError, LibloHandle
     # First unload any libloadorder dll previously loaded
     del liblo
     liblo = None
 
     if not os.path.exists(path):
-        return
+        return None, None
 
     try:
         # CDLL doesn't play with unicode path strings nicely on windows :(
@@ -170,10 +164,8 @@ def Init(path):
     LIBLO_ERROR_TIMESTAMP_WRITE_FAIL = _uint(
         'LIBLO_ERROR_TIMESTAMP_WRITE_FAIL')
     LIBLO_WARN_LO_MISMATCH = _uint('LIBLO_WARN_LO_MISMATCH')
-    global LIBLO_ERROR_INVALID_ARGS
     LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
-    errors = {'LIBLO_ERROR_INVALID_ARGS': LIBLO_ERROR_INVALID_ARGS}
-    errors.update((name, value) for name, value in locals().iteritems() if
+    errors = dict((name, value) for name, value in locals().iteritems() if
                   name.startswith('LIBLO_'))
     LIBLO_RETURN_MAX = _uint('LIBLO_RETURN_MAX')
 
@@ -352,7 +344,11 @@ def Init(path):
             plugins = [_enc(x) for x in plugins]
             num = len(plugins)
             plugins = list_of_strings(plugins)
-            _Clo_set_load_order(self._DB, plugins, num)
+            try:
+                _Clo_set_load_order(self._DB, plugins, num)
+            except LibloError as ex: # TMP - no business logic here !
+                if ex.code == liblo.LIBLO_ERROR_INVALID_ARGS:
+                    raise BoltError(u'Cannot load plugins before masters.')
 
         def GetPluginLoadOrder(self, plugin):
             plugin = _enc(plugin)
@@ -393,13 +389,13 @@ def Init(path):
             _Clo_get_plugin_active(self._DB,_enc(plugin),byref(active))
             return active.value
 
-    # Put the locally defined functions, classes, etc into the module global namespace
-    globals().update(locals())
+    # shadowing, must move LibloHandle, LibloError to module scope
+    return LibloHandle, LibloError # return the public API
 
 # Initialize libloadorder, assuming that loadorder32.dll and loadorder64.dll are in the same directory
 # Call Init again with the path to these dll's if this assumption is incorrect.
 # liblo will be None if this is the case.
 try:
-    Init(os.getcwdu())
+    LibloHandle, LibloError = Init(os.getcwdu())
 except LibloVersionError:
-    pass
+    LibloHandle, LibloError = None, None
