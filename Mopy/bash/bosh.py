@@ -2965,10 +2965,6 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
-    def loadLoadOrder(self):
-        """Get list of all plugins from loadorder.txt through libloadorder."""
-        self.LoadOrder, self.selected = load_order.GetLo()
-
     def saveActive(self):
         """Write data to Plugins.txt file."""
         # liblo attempts to unghost files, no need to duplicate that here.

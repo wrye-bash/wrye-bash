@@ -29,7 +29,6 @@ class Path: pass
 def GPath(x): return u'' if x is None else unicode(x, 'utf8')
 """
 
-from collections import defaultdict
 from ctypes import *
 import os
 from bolt import Path, GPath
@@ -53,16 +52,8 @@ class LibloVersionError(Exception):
 
 # API alpha - what is currently used in bash:
 LIBLO_ERROR_INVALID_ARGS = None
-LIBLO_WARN_LO_MISMATCH = None
 LibloError = None
 LibloHandle = None
-# ErrorCallbacks - use SPARINGLY if at all
-_pass = lambda: None
-_ErrorCallbacks = defaultdict(lambda : _pass)
-def RegisterCallback(errorCode,callback):
-    """DEPRECATED: Setup callback functions for whenever specific error codes
-       are encountered."""
-    _ErrorCallbacks[errorCode] = callback
 
 # TMP helper
 class _raise(object):
@@ -83,8 +74,7 @@ def Init(path):
             path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
-    ##: global LIBLO_ERROR_INVALID_ARGS, \
-    #     LIBLO_WARN_LO_MISMATCH,  LibloError, LibloHandle
+    ##: global LIBLO_ERROR_INVALID_ARGS, LibloError, LibloHandle
     # First unload any libloadorder dll previously loaded
     del liblo
     liblo = None
@@ -185,11 +175,10 @@ def Init(path):
     LIBLO_ERROR_NO_MEM = _uint('LIBLO_ERROR_NO_MEM')
     LIBLO_ERROR_TIMESTAMP_WRITE_FAIL = _uint(
         'LIBLO_ERROR_TIMESTAMP_WRITE_FAIL')
-    global LIBLO_WARN_LO_MISMATCH, LIBLO_ERROR_INVALID_ARGS
     LIBLO_WARN_LO_MISMATCH = _uint('LIBLO_WARN_LO_MISMATCH')
+    global LIBLO_ERROR_INVALID_ARGS
     LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
-    errors = {'LIBLO_WARN_LO_MISMATCH': LIBLO_WARN_LO_MISMATCH,
-              'LIBLO_ERROR_INVALID_ARGS': LIBLO_ERROR_INVALID_ARGS}
+    errors = {'LIBLO_ERROR_INVALID_ARGS': LIBLO_ERROR_INVALID_ARGS}
     errors.update((name, value) for name, value in locals().iteritems() if
                   name.startswith('LIBLO_'))
     LIBLO_RETURN_MAX = _uint('LIBLO_RETURN_MAX')
@@ -228,8 +217,6 @@ def Init(path):
         def __str__(self): return 'LibloError: %s' % self.msg
 
     def LibloErrorCheck(result):
-        callback = _ErrorCallbacks[result]
-        if callback is not _pass : callback()
         if result == LIBLO_OK: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()

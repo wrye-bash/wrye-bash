@@ -194,15 +194,6 @@ def haveLoFilesChanged():
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)
 
-def libloLOMismatchCallback():
-    """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
-    # Force a rewrite of both plugins.txt and loadorder.txt
-    # In other words, use what's in loadorder.txt to write plugins.txt
-    # TODO: Check if this actually works. # FIXME !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    # plugins is modInfos private + this is a hack + ...
-    bosh.modInfos.plugins.loadLoadOrder()
-    bosh.modInfos.plugins.saveLoadOrder()
-
 #----------------------------------------------------------------------REFACTOR
 _liblo.Init(bosh.dirs['compiled'].s)
 # That didn't work - Wrye Bash isn't installed correctly
@@ -214,10 +205,6 @@ _liblo_handle = _liblo.LibloHandle(bosh.dirs['app'].s,bush.game.fsName)
 if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
         u'Nehrim.esm').isfile():
     _liblo_handle.SetGameMaster(u'Nehrim.esm')
-#---------------------------------------------------------------NO CALLBACKS!!!
-# This warning can only occur when using libloadorder with a game that uses
-# the textfile-based load order system
-_liblo.RegisterCallback(_liblo.LIBLO_WARN_LO_MISMATCH, libloLOMismatchCallback)
 
 if bosh.dirs['saveBase'] == bosh.dirs['app']:
 #--If using the game directory as rather than the appdata dir.
