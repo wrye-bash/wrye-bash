@@ -790,8 +790,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         """Drop contiguous indexes in newIndex"""
         if newIndex < 0: return False # from OnChar() & moving master esm up
         # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop ##: (ut) this
-        # comment seems obsolete - corrupted plugins do not appear in LO either
+        # don't show in the ModList) don't break Drag n Drop
         order = bosh.modInfos.plugins.LoadOrder
         count = self._gList.GetItemCount()
         newPos = order.index(self.GetItem(newIndex)) if (

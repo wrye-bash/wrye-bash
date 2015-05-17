@@ -2984,18 +2984,10 @@ class Plugins:
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
         try:
-            load_order.SetLoadOrder(self.LoadOrder)
+            load_order.SaveLoadOrder(self.LoadOrder)
         except liblo.LibloError as e:
             if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
-        # Now reset the mtimes cache or LockLO feature will revert intentional changes.
-        for name in modInfos.mtimes:
-            path = modInfos[name].getPath()
-            if path.exists():
-                modInfos.mtimes[name] = modInfos[name].getPath().mtime
-        if load_order.usingTxtFile() and self.pathOrder.exists():
-            self.mtimeOrder = self.pathOrder.mtime
-            self.sizeOrder = self.pathOrder.size
 
     def hasChanged(self):
         """True if plugins.txt or loadorder.txt file has changed."""
@@ -3052,33 +3044,6 @@ class Plugins:
                 self.mtimePlugins = 0
                 self.sizePlugins = 0
         return hasChanged
-
-    def fixLoadOrder(self):
-        """Fix inconsistencies between plugins.txt, loadorder.txt and actually installed mod files as well as impossible load orders"""
-        loadOrder = set(self.LoadOrder)
-        modFiles = set(modInfos.data.keys())
-        removedFiles = loadOrder - modFiles
-        addedFiles = modFiles - loadOrder
-        # Remove non existent plugins from load order
-        self.removeMods(removedFiles, savePlugins=False)
-        # Add new plugins to load order
-        indexFirstEsp = 0
-        while indexFirstEsp < len(self.LoadOrder) and modInfos[self.LoadOrder[indexFirstEsp]].isEsm():
-            indexFirstEsp += 1
-        for mod in addedFiles:
-            if modInfos.data[mod].isEsm():
-                self.addMods([mod], indexFirstEsp)
-                indexFirstEsp += 1
-            else:
-                self.addMods([mod])
-        # Check to see if any esm files are loaded below an esp and reorder as neccessar
-        for mod in self.LoadOrder[indexFirstEsp:]:
-            if modInfos.data[mod].isEsm():
-                self.LoadOrder.remove(mod)
-                self.LoadOrder.insert(indexFirstEsp, mod)
-                indexFirstEsp += 1
-        # Save changes if necessary
-        if removedFiles or addedFiles: self.saveLoadAndActive()
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4240,8 +4205,6 @@ class ModInfos(FileInfos):
         if hasChanged:
             self.resetMTimes()
         hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
-        # If files have changed we might need to add/remove mods from load order
-        if hasChanged: self.plugins.fixLoadOrder()
         hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
