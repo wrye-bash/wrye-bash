@@ -37,6 +37,7 @@ import string
 import os
 import textwrap
 import time
+import threading
 from functools import partial, wraps
 #--wx
 import wx
@@ -1755,15 +1756,21 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
+_depth = 0
+_lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
     """Decorator to temporarily unbind RefreshData Link.Frame callback."""
     @wraps(func)
     def wrapper(*args, **kwargs):
+        global _depth
         try:
+            with _lock: _depth += 1 # hack: allow sequences of conversations
             Link.Frame.BindRefresh(bind=False)
             func(*args, **kwargs)
         finally:
-            Link.Frame.BindRefresh(bind=True)
+            with _lock: # atomic
+                _depth -= 1
+                if not _depth: Link.Frame.BindRefresh(bind=True)
     return wrapper
 
 class UIList(wx.Panel):

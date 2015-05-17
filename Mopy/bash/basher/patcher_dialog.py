@@ -162,15 +162,12 @@ class PatchDialog(balt.Dialog):
         patcher.Layout()
         self.currentPatcher = patcher
 
+    @balt.conversation
     def Execute(self,event=None): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
-        Link.Frame.isPatching = True ##: hack - prevent
-        # mod_links._Mod_Patch_Update from binding activation event
-        # we really need a lock
         self.EndModalOK()
         patchFile = progress = None
         try:
-            Link.Frame.BindRefresh(bind=False)
             patchName = self.patchInfo.name
             progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
@@ -305,8 +302,6 @@ class PatchDialog(balt.Dialog):
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             raise
         finally:
-            Link.Frame.isPatching = False
-            Link.Frame.BindRefresh(bind=True)
             if self.doCBash:
                 try: patchFile.Current.Close()
                 except: pass

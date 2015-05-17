@@ -770,17 +770,16 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
+    @balt.conversation
     def Execute(self,event):
         """Handle activation event."""
-        try: ##: Monkey patch so the modList does not refresh between dialogs
-            Link.Frame.BindRefresh(bind=False)
+        try:
             fileName = self._Execute()
             if not fileName: return # prevent settings save
         except CancelError:
             return # prevent settings save
-        finally:
-            if not Link.Frame.isPatching: Link.Frame.BindRefresh(bind=True)
-        # save data to disc in case of later improper shutdown leaving the user guessing as to what options they built the patch with
+        # save data to disc in case of later improper shutdown leaving the
+        # user guessing as to what options they built the patch with
         Link.Frame.SaveSettings()
 
     def _Execute(self):

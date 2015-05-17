@@ -3945,7 +3945,6 @@ class BashFrame(wx.Frame):
         self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
-        self.isPatching = False #HACK Prevent refreshes between patcher dialogs
         self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
