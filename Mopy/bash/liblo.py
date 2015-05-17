@@ -256,18 +256,18 @@ def Init(path):
     _Clo_set_load_order = liblo.lo_set_load_order
     _Clo_set_load_order.restype = LibloErrorCheck
     _Clo_set_load_order.argtypes = [lo_game_handle, c_char_p_p, c_size_t]
-    ## unsigned int lo_get_plugin_position(lo_game_handle gh, const char * const plugin, size_t * const index);
-    _Clo_get_plugin_position = liblo.lo_get_plugin_position
-    _Clo_get_plugin_position.restype = LibloErrorCheck
-    _Clo_get_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t_p]
-    ## unsigned int lo_set_plugin_position(lo_game_handle gh, const char * const plugin, size_t index);
-    _Clo_set_plugin_position = liblo.lo_set_plugin_position
-    _Clo_set_plugin_position.restype = LibloErrorCheck
-    _Clo_set_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t]
-    ## unsigned int lo_get_indexed_plugin(lo_game_handle gh, const size_t index, char ** const plugin);
-    _Clo_get_indexed_plugin = liblo.lo_get_indexed_plugin
-    _Clo_get_indexed_plugin.restype = LibloErrorCheck
-    _Clo_get_indexed_plugin.argtypes = [lo_game_handle, c_size_t, c_char_p_p]
+    # ## unsigned int lo_get_plugin_position(lo_game_handle gh, const char * const plugin, size_t * const index);
+    # _Clo_get_plugin_position = liblo.lo_get_plugin_position
+    # _Clo_get_plugin_position.restype = LibloErrorCheck
+    # _Clo_get_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t_p]
+    # ## unsigned int lo_set_plugin_position(lo_game_handle gh, const char * const plugin, size_t index);
+    # _Clo_set_plugin_position = liblo.lo_set_plugin_position
+    # _Clo_set_plugin_position.restype = LibloErrorCheck
+    # _Clo_set_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t]
+    # ## unsigned int lo_get_indexed_plugin(lo_game_handle gh, const size_t index, char ** const plugin);
+    # _Clo_get_indexed_plugin = liblo.lo_get_indexed_plugin
+    # _Clo_get_indexed_plugin.restype = LibloErrorCheck
+    # _Clo_get_indexed_plugin.argtypes = [lo_game_handle, c_size_t, c_char_p_p]
 
     # =========================================================================
     # API Functions - Active Plugins
@@ -280,14 +280,14 @@ def Init(path):
     _Clo_set_active_plugins = liblo.lo_set_active_plugins
     _Clo_set_active_plugins.restype = LibloErrorCheck
     _Clo_set_active_plugins.argtypes = [lo_game_handle, c_char_p_p, c_size_t]
-    ## unsigned int lo_set_plugin_active(lo_game_handle gh, const char * const plugin, const bool active);
-    _Clo_set_plugin_active = liblo.lo_set_plugin_active
-    _Clo_set_plugin_active.restype = LibloErrorCheck
-    _Clo_set_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool]
-    ## unsigned int lo_get_plugin_active(lo_game_handle gh, const char * const plugin, bool * const result);
-    _Clo_get_plugin_active = liblo.lo_get_plugin_active
-    _Clo_get_plugin_active.restype = LibloErrorCheck
-    _Clo_get_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool_p]
+    # ## unsigned int lo_set_plugin_active(lo_game_handle gh, const char * const plugin, const bool active);
+    # _Clo_set_plugin_active = liblo.lo_set_plugin_active
+    # _Clo_set_plugin_active.restype = LibloErrorCheck
+    # _Clo_set_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool]
+    # ## unsigned int lo_get_plugin_active(lo_game_handle gh, const char * const plugin, bool * const result);
+    # _Clo_get_plugin_active = liblo.lo_get_plugin_active
+    # _Clo_get_plugin_active.restype = LibloErrorCheck
+    # _Clo_get_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool_p]
 
     # =========================================================================
     # Class Wrapper
@@ -350,21 +350,6 @@ def Init(path):
                 if ex.code == liblo.LIBLO_ERROR_INVALID_ARGS:
                     raise BoltError(u'Cannot load plugins before masters.')
 
-        def GetPluginLoadOrder(self, plugin):
-            plugin = _enc(plugin)
-            index = c_size_t()
-            _Clo_get_plugin_position(self._DB,plugin,byref(index))
-            return index.value
-
-        def SetPluginLoadOrder(self, plugin, index):
-            plugin = _enc(plugin)
-            _Clo_set_plugin_position(self._DB,plugin,index)
-
-        def GetIndexedPlugin(self, index):
-            plugin = c_char_p()
-            _Clo_get_indexed_plugin(self._DB,index,byref(plugin))
-            return GPath(plugin.value)
-
         # ---------------------------------------------------------------------
         # Active plugin management
         # ---------------------------------------------------------------------
@@ -380,14 +365,6 @@ def Init(path):
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_active_plugins(self._DB, plugins, num)
-
-        def SetPluginActive(self,plugin,active=True):
-            _Clo_set_plugin_active(self._DB,_enc(plugin),active)
-
-        def IsPluginActive(self,plugin):
-            active = c_bool()
-            _Clo_get_plugin_active(self._DB,_enc(plugin),byref(active))
-            return active.value
 
     # shadowing, must move LibloHandle, LibloError to module scope
     return LibloHandle, LibloError # return the public API
