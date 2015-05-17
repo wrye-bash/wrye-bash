@@ -151,10 +151,7 @@ def SaveLoadOrder(lord):
     It 'checks the validity' of lord passed and will raise if invalid."""
     _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
     _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
-    # YAK!!!!!!!!
-    if _liblo_handle.usingTxtFile() and bosh.modInfos.plugins.pathOrder.exists():
-        bosh.modInfos.plugins.mtimeOrder = bosh.modInfos.plugins.pathOrder.mtime
-        bosh.modInfos.plugins.sizeOrder = bosh.modInfos.plugins.pathOrder.size
+    _setLoTxtModTime()
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
@@ -177,17 +174,25 @@ def _updateCache():
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
-    return list(_current_lo.loadOrder)
-
-def GetActivePlugins(cached=False):
-    if not cached or _current_lo is __empty: _updateCache()
-    return list(_current_lo.activeOrdered)
+    # below is tmp - must finally become return _current_load_order
+    return list(_current_lo.loadOrder), list(_current_lo.activeOrdered)
 
 def SetActivePlugins(act):
     _liblo_handle.SetActivePlugins(act)
-    # YAK!!!!!!!!
-    bosh.modInfos.plugins.mtimePlugins = bosh.modInfos.plugins.pathPlugins.mtime
-    bosh.modInfos.plugins.sizePlugins  = bosh.modInfos.plugins.pathPlugins .size
+    _setPluginsTxtModTime()
+
+def usingTxtFile(): return _liblo_handle.usingTxtFile()
+
+def haveLoFilesChanged():
+    """True if plugins.txt or loadorder.txt file has changed."""
+    if _plugins_txt_path.exists() and (mtimePlugins != _plugins_txt_path.mtime
+                                    or sizePlugins  != _plugins_txt_path.size):
+        return True
+    if not usingTxtFile():
+        return True  # Until we find a better way, Oblivion always needs True #FIXME !!!!!!!!!!
+    return _loadorder_txt_path.exists() and (
+            mtimeOrder != _loadorder_txt_path.mtime or
+            sizeOrder  != _loadorder_txt_path.size)
 
 def libloLOMismatchCallback():
     """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
@@ -214,7 +219,30 @@ if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
 # the textfile-based load order system
 _liblo.RegisterCallback(_liblo.LIBLO_WARN_LO_MISMATCH, libloLOMismatchCallback)
 
-def usingTxtFile(): return _liblo_handle.usingTxtFile()
+if bosh.dirs['saveBase'] == bosh.dirs['app']:
+#--If using the game directory as rather than the appdata dir.
+    _dir = bosh.dirs['app']
+else:
+    _dir = bosh.dirs['userApp']
+_plugins_txt_path = _dir.join(u'plugins.txt')
+_loadorder_txt_path = _dir.join(u'loadorder.txt')
+mtimePlugins = 0
+sizePlugins = 0
+mtimeOrder = 0
+sizeOrder = 0
+
+def _setLoTxtModTime():
+    if usingTxtFile() and _loadorder_txt_path.exists():
+        global mtimeOrder, sizeOrder
+        mtimeOrder, sizeOrder = _loadorder_txt_path.mtime, \
+                                _loadorder_txt_path.size
+
+def _setPluginsTxtModTime():
+    global mtimePlugins, sizePlugins
+    if  _plugins_txt_path.exists():
+        mtimePlugins, sizePlugins = _plugins_txt_path.mtime, \
+                                    _plugins_txt_path.size
+    else: mtimePlugins, sizePlugins = 0, 0
 
 # helper - print a list
 def _pl(aList, legend=u''):

@@ -2944,10 +2944,6 @@ class Plugins:
             self.dir = dirs['userApp']
         self.pathPlugins = self.dir.join(u'plugins.txt')
         self.pathOrder = self.dir.join(u'loadorder.txt')
-        self.mtimePlugins = 0
-        self.sizePlugins = 0
-        self.mtimeOrder = 0
-        self.sizeOrder = 0
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
         #--Create dirs/files if necessary
@@ -2971,10 +2967,7 @@ class Plugins:
 
     def loadLoadOrder(self):
         """Get list of all plugins from loadorder.txt through libloadorder."""
-        self.LoadOrder = load_order.GetLo()
-        if load_order.usingTxtFile() and self.pathOrder.exists():
-            self.mtimeOrder = self.pathOrder.mtime
-            self.sizeOrder = self.pathOrder.size
+        self.LoadOrder, self.selected = load_order.GetLo()
 
     def saveActive(self):
         """Write data to Plugins.txt file."""
@@ -2988,18 +2981,6 @@ class Plugins:
         except liblo.LibloError as e:
             if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
-
-    def hasChanged(self):
-        """True if plugins.txt or loadorder.txt file has changed."""
-        if self.pathPlugins.exists() and (
-            self.mtimePlugins != self.pathPlugins.mtime or
-            self.sizePlugins != self.pathPlugins.size):
-            return True
-        if not load_order.usingTxtFile():
-            return True  # Until we find a better way, Oblivion always needs True #FIXME !!!!!!!!!!
-        return self.pathOrder.exists() and (
-                self.mtimeOrder != self.pathOrder.mtime or
-                self.sizeOrder != self.pathOrder.size)
 
     def saveLoadAndActive(self):
         self.saveLoadOrder()
@@ -3032,17 +3013,9 @@ class Plugins:
 
     def refresh(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
-        hasChanged = self.hasChanged()
+        hasChanged = load_order.haveLoFilesChanged()
         if hasChanged or forceRefresh:
-            self.loadLoadOrder()
-            # inlined loadActive() - only used here !!!
-            self.selected = load_order.GetActivePlugins(cached=True) # GPath list sorted as in self.LoadOrder just updated
-            if self.pathPlugins.exists():
-                self.mtimePlugins = self.pathPlugins.mtime
-                self.sizePlugins = self.pathPlugins.size
-            else:
-                self.mtimePlugins = 0
-                self.sizePlugins = 0
+            self.LoadOrder, self.selected = load_order.GetLo()
         return hasChanged
 
 #------------------------------------------------------------------------------
