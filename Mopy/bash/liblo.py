@@ -51,8 +51,6 @@ class LibloVersionError(Exception):
     pass
 
 # API alpha - what is currently used in bash:
-LIBLO_METHOD_TEXTFILE = None
-LIBLO_METHOD_TIMESTAMP = None
 LIBLO_ERROR_INVALID_ARGS = None
 LIBLO_WARN_LO_MISMATCH = None
 LIBLO_OK = None
@@ -79,8 +77,8 @@ def Init(path):
             path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
-    ##: global LIBLO_METHOD_TEXTFILE, LIBLO_ERROR_INVALID_ARGS, \
-    #     LIBLO_WARN_LO_MISMATCH, LIBLO_OK, LibloError, LibloHandle
+    ##: global LIBLO_ERROR_INVALID_ARGS, \
+    #     LIBLO_WARN_LO_MISMATCH,  LibloError, LibloHandle
     # First unload any libloadorder dll previously loaded
     del liblo
     liblo = None
@@ -343,8 +341,10 @@ def Init(path):
             _Clo_get_load_order_method(self._DB,byref(method))
             self._LOMethod = method.value
 
-        @property
-        def LoadOrderMethod(self): return self._LOMethod
+        def usingTxtFile(self):
+            """Should be made private !"""
+            return self._LOMethod == LIBLO_METHOD_TEXTFILE
+
 
         def SetGameMaster(self, plugin):
             _Clo_set_game_master(self._DB,_enc(plugin))

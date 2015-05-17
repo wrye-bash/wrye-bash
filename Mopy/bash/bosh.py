@@ -152,7 +152,7 @@ screensData = None #--ScreensData singleton
 messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
-lo = None #--LibloHandle singleton
+load_order = None #--can't import yet as I need bosh.dirs to be initialized
 
 def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
@@ -2971,7 +2971,7 @@ class Plugins:
 
     def loadActive(self, lo_with_corrected_master=None):
         """Get list of active plugins from plugins.txt through libloadorder which cleans out bad entries."""
-        self.selected = lo.GetActivePlugins(lo_with_corrected_master=lo_with_corrected_master) # GPath list (but not sorted)
+        self.selected = load_order.GetActivePlugins(cachedLO=lo_with_corrected_master) # GPath list (but not sorted)
         if self.pathPlugins.exists():
             self.mtimePlugins = self.pathPlugins.mtime
             self.sizePlugins = self.pathPlugins.size
@@ -2982,12 +2982,12 @@ class Plugins:
 
     def loadLoadOrder(self):
         """Get list of all plugins from loadorder.txt through libloadorder."""
-        self.LoadOrder = lo.GetLoadOrder()
+        self.LoadOrder = load_order.GetLo()
         # game's master might be out of place (if using timestamps for load ordering) so move it up.
         if self.LoadOrder.index(modInfos.masterName) > 0:
             self.LoadOrder.remove(modInfos.masterName)
             self.LoadOrder.insert(0,modInfos.masterName)
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
+        if load_order.usingTxtFile() and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
             if self.selected != modInfos.getOrdered(self.selected,False):
@@ -2998,14 +2998,14 @@ class Plugins:
     def save(self):
         """Write data to Plugins.txt file."""
         # liblo attempts to unghost files, no need to duplicate that here.
-        lo.SetActivePlugins(modInfos.getOrdered(self.selected))
+        load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
         self.mtimePlugins = self.pathPlugins.mtime
         self.sizePlugins = self.pathPlugins.size
 
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
         try:
-            lo.SetLoadOrder(self.LoadOrder)
+            load_order.SetLoadOrder(self.LoadOrder)
         except liblo.LibloError as e:
             if e.code == liblo.LIBLO_ERROR_INVALID_ARGS:
                 raise bolt.BoltError(u'Cannot load plugins before masters.')
@@ -3014,7 +3014,7 @@ class Plugins:
             path = modInfos[name].getPath()
             if path.exists():
                 modInfos.mtimes[name] = modInfos[name].getPath().mtime
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE and self.pathOrder.exists():
+        if load_order.usingTxtFile() and self.pathOrder.exists():
             self.mtimeOrder = self.pathOrder.mtime
             self.sizeOrder = self.pathOrder.size
 
@@ -3025,8 +3025,8 @@ class Plugins:
             self.mtimePlugins != self.pathPlugins.mtime or
             self.sizePlugins != self.pathPlugins.size):
             return True
-        if lo.LoadOrderMethod != liblo.LIBLO_METHOD_TEXTFILE:
-            return True  # Until we find a better way, Oblivion always needs True
+        if not load_order.usingTxtFile():
+            return True  # Until we find a better way, Oblivion always needs True #FIXME !!!!!!!!!!
         return self.pathOrder.exists() and (
                 self.mtimeOrder != self.pathOrder.mtime or
                 self.sizeOrder != self.pathOrder.size)
@@ -4238,7 +4238,7 @@ class ModInfos(FileInfos):
         if not self.lockLO: return False
         if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         #--Else
         return True
@@ -4727,7 +4727,7 @@ class ModInfos(FileInfos):
 
     def hasTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         else:
             mtime = self[modName].mtime
@@ -4735,7 +4735,7 @@ class ModInfos(FileInfos):
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             return False
         elif not self.isSelected(modName): return False
         else:
@@ -4744,7 +4744,7 @@ class ModInfos(FileInfos):
 
     def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TEXTFILE:
+        if load_order.usingTxtFile():
             # Doesn't matter - LO isn't determined by mtime
             return time.time()
         else:
@@ -5217,12 +5217,6 @@ class ConfigHelpers:
             raise bolt.BoltError(u'The libbsa API could not be loaded.')
         deprint(u'Using libbsa API version:', libbsa.version)
 
-        liblo.Init(dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not liblo.liblo:
-            raise bolt.BoltError(u'The libloadorder API could not be loaded.')
-        deprint(u'Using libloadorder API version:', liblo.version)
-
         loot.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not loot.LootApi:
@@ -5231,13 +5225,6 @@ class ConfigHelpers:
 
         global lootDb
         lootDb = loot.LootDb(dirs['app'].s,bush.game.fsName)
-
-        global lo
-        lo = liblo.LibloHandle(dirs['app'].s,bush.game.fsName)
-        if bush.game.fsName == u'Oblivion' and dirs['mods'].join(u'Nehrim.esm').isfile():
-            lo.SetGameMaster(u'Nehrim.esm')
-        liblo.RegisterCallback(liblo.LIBLO_WARN_LO_MISMATCH,
-                              ConfigHelpers.libloLOMismatchCallback)
 
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'masterlist.yaml')
@@ -5250,15 +5237,6 @@ class ConfigHelpers:
         self.name_ruleSet = {}
         #--Refresh
         self.refresh(firstTime=True)
-
-    @staticmethod
-    def libloLOMismatchCallback():
-        """Called whenever a mismatched loadorder.txt and plugins.txt is found"""
-        # Force a rewrite of both plugins.txt and loadorder.txt
-        # In other words, use what's in loadorder.txt to write plugins.txt
-        # TODO: Check if this actually works.
-        modInfos.plugins.loadLoadOrder()
-        modInfos.plugins.saveLoadOrder()
 
     def refresh(self,firstTime=False):
         """Reloads tag info if file dates have changed."""
@@ -7243,7 +7221,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
+        if not load_order.usingTxtFile():
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
@@ -7410,7 +7388,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        if lo.LoadOrderMethod == liblo.LIBLO_METHOD_TIMESTAMP:
+        if not load_order.usingTxtFile():
             mtimes = set()
             mtimesAdd = mtimes.add
             def timestamps(x):
@@ -10463,6 +10441,8 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
+    global load_order
+    import load_order
     initOptions(bashIni)
     initLogFile()
     Installer.initData()
