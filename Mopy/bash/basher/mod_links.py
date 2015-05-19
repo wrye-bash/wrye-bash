@@ -604,7 +604,7 @@ class _GhostLink(ItemLink):
     def setAllow(filename): return not _GhostLink.getAllow(filename)
     @staticmethod
     def toGhost(filename): return _GhostLink.getAllow(filename) and \
-            filename not in bosh.modInfos.ordered # cannot ghost active mods
+        not bosh.modInfos.isActiveCached(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
         return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
@@ -629,7 +629,7 @@ class _GhostLink(ItemLink):
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
@@ -641,7 +641,7 @@ class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
 #------------------------------------------------------------------------------
 class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
 
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
@@ -658,7 +658,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     def _enable(self):
         # only enable ghosting for one item if not active
         if len(self.selected) == 1 and not self.isGhost:
-            return self.path not in bosh.modInfos.ordered
+            return not bosh.modInfos.isActiveCached(self.path)
         return True
 
     def Execute(self,event):
@@ -912,7 +912,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         for mod in bosh.modInfos.ordered:
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
-                if master not in bosh.modInfos.ordered:
+                if not bosh.modInfos.isActiveCached(master):
                     missing.setdefault(mod,[]).append(master)
                 elif master not in previousMods:
                     delinquent.setdefault(mod,[]).append(master)

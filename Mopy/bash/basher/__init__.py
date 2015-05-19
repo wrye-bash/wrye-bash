@@ -410,7 +410,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             if voCurrent: value += u' ['+voCurrent+u']'
         labels['File'] = value
         labels['Num'] = u'%02X' % mi
-        if masterName in bosh.modInfos.ordered:
+        if bosh.modInfos.isActiveCached(masterName):
             value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
         else:
             value = u''
@@ -449,7 +449,8 @@ class MasterList(_ModsSortMixin, balt.UIList):
         listCtrl.SetItem(item)
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
+        oninc = bosh.modInfos.isActiveCached(masterName) or (
+            masterName in bosh.modInfos.merged and 2)
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
 
     #--Relist
@@ -851,7 +852,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
-            1 if fileName in bosh.modInfos.ordered
+            1 if bosh.modInfos.isActiveCached(fileName)
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
@@ -895,7 +896,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         if fileName in bosh.modInfos.bad_names:
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileName in bosh.modInfos.missing_strings:
-            if fileName in bosh.modInfos.ordered:
+            if bosh.modInfos.isActiveCached(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])

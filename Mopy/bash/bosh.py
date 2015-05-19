@@ -3343,7 +3343,7 @@ class ModInfo(FileInfo):
         return crc
 
     def txt_status(self):
-        if self.name in modInfos.ordered: return _(u'Active')
+        if modInfos.isActiveCached(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
         elif self.name in modInfos.imported: return _(u'Imported')
         else: return _(u'Non-Active')
@@ -4219,7 +4219,7 @@ class ModInfos(FileInfos):
         activeBad = self.activeBad = set()
         for fileName in self.data:
             if self.isBadFileName(fileName.s):
-                if fileName in self.ordered:
+                if self.isActiveCached(fileName):
                     ## For now, we'll leave them active, until
                     ## we finish testing what the game will support
                     #self.unselect(fileName)
@@ -8348,7 +8348,7 @@ class InstallersData(DataDict):
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
 #            print("Ordered: {}".format(modInfos.ordered))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if x.root + ".esp" in modInfos.ordered]
+            activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
 #                print("BSA Paths: {}".format(bsas))
@@ -8367,7 +8367,7 @@ class InstallersData(DataDict):
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if x.root + ".esp" in modInfos.ordered])
+                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
