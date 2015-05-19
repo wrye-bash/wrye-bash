@@ -3366,7 +3366,7 @@ class ModInfo(FileInfo):
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
-        if not (modInfos.isSelected(self.name) and maExGroup):
+        if not (modInfos.isActiveCached(self.name) and maExGroup):
             return False
         else:
             exGroup = maExGroup.group(1)
@@ -4165,6 +4165,11 @@ class ModInfos(FileInfos):
     @lockLO.setter
     def lockLO(self, val): settings['bosh.modInfos.resetMTimes'] = val
 
+    #--Load Order utility methods - be sure cache is valid when using them-----
+    def isActiveCached(self, mod):
+        """Return true if the mod is in the current active mods cache."""
+        return mod in self.plugins.lord.active
+
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
@@ -4266,10 +4271,10 @@ class ModInfos(FileInfos):
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            active = self.plugins.selected
             allowGhosting = self.table.getColumn('allowGhosting')
             for mod, modInfo in self.iteritems():
-                modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
+                modGhost = toGhost and not self.isActiveCached(mod) \
+                           and allowGhosting.get(mod, True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
                 if newGhost != oldGhost:
@@ -4568,10 +4573,6 @@ class ModInfos(FileInfos):
         finally:
             self.refreshInfoLists()
 
-    def isSelected(self,modFile):
-        """True if modFile is selected (active)."""
-        return modFile in self.ordered
-
     def select(self,fileName,doSave=True,modSet=None,children=None):
         """Adds file to selected."""
         plugins = self.plugins
@@ -4603,9 +4604,9 @@ class ModInfos(FileInfos):
             self.plugins.selected.remove(fileName)
         else: return
         #--Unselect children
-        for selFile in self.plugins.selected[:]:
+        for selFile in self.plugins.selected[:]: # we recursively manipulate it
             #--Already unselected or missing?
-            if not self.isSelected(selFile) or selFile not in self.data:
+            if not selFile in self.plugins.selected or selFile not in self.data:
                 continue
             #--One of selFile's masters?
             for master in self[selFile].header.masters:
@@ -4685,7 +4686,7 @@ class ModInfos(FileInfos):
         """True if there is another mod with the same mtime."""
         if load_order.usingTxtFile():
             return False
-        elif not self.isSelected(modName): return False
+        elif not self.isActiveCached(modName): return False
         else:
             mtime = self[modName].mtime
             return len(self.mtime_selected[mtime]) > 1
@@ -4727,7 +4728,7 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        isSelected = self.isSelected(oldName)
+        isSelected = self.isActiveCached(oldName)
         if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
         oldIndex = self.plugins.LoadOrder.index(oldName)
@@ -9800,7 +9801,7 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if master not in modInfos:
                     if not verbose: return False
                     missingMasters.append(master.s)
-                elif not modInfos.isSelected(master):
+                elif not modInfos.isActiveCached(master):
                     if not verbose: return False
                     nonActiveMasters.append(master.s)
         #--masters not present in mod list?

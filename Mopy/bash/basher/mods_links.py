@@ -130,12 +130,13 @@ class Mods_LoadList(ChoiceLink):
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
-            def select(m):
-                if not modInfos.isSelected(m): modInfos.select(m, doSave=False)
+            def _select(m):
+                if not modInfos.isActiveCached(m):
+                    modInfos.select(m, doSave=False)
             mods = map(GPath, self.window.GetItems())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
-                if self.window.isBP(mod): select(mod)
+                if self.window.isBP(mod): _select(mod)
             # then activate mods that are not tagged NoMerge or Deactivate or Filter
             def _deactive(modName):
                 tags = modInfos[modName].getBashTags()
@@ -143,10 +144,10 @@ class Mods_LoadList(ChoiceLink):
             mods = filter(lambda m: not _deactive(m), mods)
             mergeable = set(modInfos.mergeable)
             for mod in mods:
-                if not mod in mergeable: select(mod)
+                if not mod in mergeable: _select(mod)
             # then activate as many of the remaining mods as we can
             for mod in mods:
-                if mod in mergeable: select(mod)
+                if mod in mergeable: _select(mod)
             modInfos.plugins.saveActive()
             modInfos.refreshInfoLists()
         except bosh.PluginsFullError:

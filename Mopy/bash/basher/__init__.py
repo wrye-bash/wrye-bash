@@ -432,7 +432,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             item.SetTextColour(colors['default.text'])
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
-            if bosh.modInfos.isSelected(masterName):
+            if bosh.modInfos.isActiveCached(masterName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -900,7 +900,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileInfo.hasBadMasterNames():
-            if bosh.modInfos.isSelected(fileName):
+            if bosh.modInfos.isActiveCached(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -993,7 +993,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not self.data.isSelected(GPath(item))]
+                          not self.data.isActiveCached(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._checkUncheckMod(*selected)
@@ -1037,7 +1037,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             oldFiles = bosh.modInfos.ordered[:]
             fileName = GPath(item)
             #--Unselect?
-            if self.data.isSelected(fileName):
+            if self.data.isActiveCached(fileName):
                 try:
                     self.data.unselect(fileName)
                     changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)

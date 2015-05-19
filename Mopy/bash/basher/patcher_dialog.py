@@ -273,7 +273,7 @@ class PatchDialog(balt.Dialog):
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patchName.s
-            if bosh.modInfos.isSelected(patchName) or (
+            if bosh.modInfos.isActiveCached(patchName) or (
                         bosh.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
