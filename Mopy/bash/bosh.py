@@ -4119,9 +4119,8 @@ class ModInfos(FileInfos):
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        #--Selection state (ordered, merged, imported)
+        #--Selection state (merged, imported)
         self.plugins = Plugins()
-        self.ordered = tuple() # active mods in load order
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -4288,9 +4287,8 @@ class ModInfos(FileInfos):
         return changed
 
     def refreshInfoLists(self):
-        """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
-        #--Ordered
-        self.ordered = self.getOrdered(self.plugins.selected)
+        """Refreshes various mod info lists (mtime_mods, mtime_selected,
+        exGroup_mods, imported, exported)."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -4303,7 +4301,7 @@ class ModInfos(FileInfos):
         mtime_selected = self.mtime_selected
         mtime_selected.clear()
         self.exGroup_mods.clear()
-        for modName in self.ordered:
+        for modName in self.activeCached:
             mtime = modInfos[modName].mtime
             mtime_selected[mtime].append(modName)
             maExGroup = reExGroup.match(modName.s)
@@ -4311,7 +4309,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(self.ordered)
+        self.merged,self.imported = self.getSemiActive(self.activeCached)
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -4740,10 +4738,10 @@ class ModInfos(FileInfos):
         oldIndex = self.plugins.LoadOrder.index(oldName)
         self.plugins.removeMods([oldName], savePlugins=False)
         self.plugins.addMods([newName], index=oldIndex, savePlugins=False)
-        self.refreshInfoLists()
         if isSelected: self.select(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.plugins.saveLoadAndActive()
+        self.refreshInfoLists()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""

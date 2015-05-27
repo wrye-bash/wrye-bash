@@ -283,7 +283,6 @@ class PatchDialog(balt.Dialog):
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                    # bosh.modInfos.refreshInfoLists() # covered in refreshFile
                 except bosh.PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')

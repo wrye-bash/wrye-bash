@@ -838,8 +838,8 @@ class ModList(_ModsSortMixin, balt.UIList):
         labels['Modified'] = formatDate(fileInfo.getPath().mtime)
         labels['Size'] = self._round(fileInfo.size)
         labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
-        order = bosh.modInfos.ordered
-        value = u'%02X' % order.index(fileName) if fileName in order else u''
+        value = u'%02X' % bosh.modInfos.activeCached.index(fileName) \
+            if bosh.modInfos.isActiveCached(fileName) else u''
         labels['Load Order'] = value
         labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
         labels['Mod Status'] = fileInfo.txt_status()
@@ -1732,7 +1732,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(bosh.modInfos.ordered), len(bosh.modInfos.data))
+        len(bosh.modInfos.activeCached), len(bosh.modInfos.data))
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):

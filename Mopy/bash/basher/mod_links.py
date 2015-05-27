@@ -902,8 +902,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     with balt.BusyCursor():
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
-                        bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.saveActive()
+                        bosh.modInfos.refreshInfoLists()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 
