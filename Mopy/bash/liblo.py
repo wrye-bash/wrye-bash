@@ -328,10 +328,6 @@ def Init(path):
                 _Clo_destroy_handle(self._DB)
                 self._DB = None
 
-        # 'with' statement
-        def __enter__(self): return self
-        def __exit__(self,exc_type,exc_value,traceback): self.__del__()
-
         # ---------------------------------------------------------------------
         # Load Order management
         # ---------------------------------------------------------------------

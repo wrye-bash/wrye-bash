@@ -3099,7 +3099,7 @@ class ScreensPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left,self.right
         #--Contents
-        self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
+        self.listData = bosh.screensData = bosh.ScreensData()
         self.uiList = ScreensList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
@@ -3367,8 +3367,7 @@ class MessagePanel(SashPanel):
         SashPanel.__init__(self, parent, isVertical=False)
         gTop,gBottom = self.left,self.right
         #--Contents
-        self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
-        self.listData.refresh() # FIXME(ut): move to InitData()
+        self.listData = bosh.messages = bosh.Messages()
         self.uiList = MessageList(
             gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
@@ -3556,6 +3555,7 @@ class Tab_Link(AppendableLink, CheckLink, EnabledLink):
                     # the 'Installers' tab.  Change to the
                     # 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
+            # TODO(ut): we should call ClosePanel and make sure there are no leaks
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
@@ -3945,7 +3945,6 @@ class BashFrame(wx.Frame):
         self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
-        bosh.bsaInfos = bosh.BSAInfos() # TODO(ut): move to InitData()
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
@@ -4390,6 +4389,9 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
+        # bsaInfos is used in BashFrame __init__() and RefreshData() methods
+        bosh.bsaInfos = bosh.BSAInfos()
+        # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:

@@ -1761,17 +1761,17 @@ _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
     """Decorator to temporarily unbind RefreshData Link.Frame callback."""
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def _conversation_wrapper(*args, **kwargs):
         global _depth
         try:
             with _lock: _depth += 1 # hack: allow sequences of conversations
             Link.Frame.BindRefresh(bind=False)
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         finally:
             with _lock: # atomic
                 _depth -= 1
                 if not _depth: Link.Frame.BindRefresh(bind=True)
-    return wrapper
+    return _conversation_wrapper
 
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""

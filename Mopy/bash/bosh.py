@@ -879,7 +879,7 @@ class PluggyFile:
             self.version, = unpack('I',4)
             #--Reject versions earlier than 1.02
             if self.version < 0x01020000:
-                raise FileError(self.name,u'Unsupported file verson: %I' % self.version)
+                raise FileError(self.name,u'Unsupported file version: %X' % self.version)
             #--Plugins
             self.plugins = []
             type, = unpack('=B',1)
@@ -3833,7 +3833,7 @@ class TrackedFileInfos(DataDict):
        Uses absolute paths - the caller is responsible for passing them.
        """
     # DEPRECATED: hack introduced to track BAIN installed files AND game inis
-    dir = GPath(u'') # a mess with paths - throw ghosting in and raise
+    dir = GPath(u'') # a mess with paths
 
     def __init__(self, factory=_AFileInfo):
         self.factory = factory
@@ -4571,8 +4571,7 @@ class ModInfos(FileInfos):
                     self.unselect(selFile,False)
                     break
         #--Save
-        if doSave:
-            self.plugins.saveActive()
+        if doSave: self.plugins.saveActive()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -4920,15 +4919,14 @@ class SaveInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
-    """SaveInfo collection. Represents save directory and related info."""
-    #--Init
+    """BSAInfo collection. Represents bsa files in game's Data directory."""
+
     def __init__(self):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
-        """Bool: File is a mod."""
         return reBSAExt.search(fileName.s)
 
     def getBashDir(self):
@@ -8084,7 +8082,6 @@ class InstallersData(DataDict):
     def removeFiles(self, removes, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
-        data = self.data
         data_sizeCrcDatePop = self.data_sizeCrcDate.pop
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
@@ -9707,7 +9704,9 @@ def isPBashMergeable(modInfo,verbose=True):
                 newblocks.append(type)
                 break
     if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
-    dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' if GPath(modInfo.name.s) in curModInfo.header.masters]
+    dependent = [name.s for name, info in modInfos.iteritems()
+                 if info.header.author != u'BASHED PATCH'
+                 if modInfo.name in info.header.masters]
     if dependent:
         if not verbose: return False
         reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
@@ -9783,7 +9782,9 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if newblocks:
                     if not verbose: return False
                     reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
+        dependent = [name.s for name, info in modInfos.iteritems()
+            if info.header.author != u'BASHED PATCH' and
+            modInfo.name in info.header.masters and name not in modInfos.mergeable]
         if dependent:
             if not verbose: return False
             reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
