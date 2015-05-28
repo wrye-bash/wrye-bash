@@ -3127,18 +3127,12 @@ class FileInfo(_AFileInfo):
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return reModExt.search(self.name.s)
-    def isEsp(self):
-        if not self.isMod(): return False
-        if self.header:
-            return int(self.header.flags1) & 1 == 0
-        else:
-            return reEspExt.search(self.name.s)
     def isEsm(self):
         if not self.isMod(): return False
         if self.header:
             return int(self.header.flags1) & 1 == 1
         else:
-            return reEsmExt.search(self.name.s) and False
+            return bool(reEsmExt.search(self.name.s)) and False
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
@@ -3442,8 +3436,7 @@ class ModInfo(FileInfo):
     def sameAs(self, fileInfo):
         try:
             return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost and
-                self.isEsp() == fileInfo.isEsp()) # update for reversed mod
+                self.isGhost == fileInfo.isGhost)
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 

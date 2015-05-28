@@ -1508,6 +1508,7 @@ class Mod_FlipSelf(EnabledLink):
                 return False
         return True
 
+    @balt.conversation
     def Execute(self,event):
         message = (_(u'WARNING! For advanced modders only!')
                    + u'\n\n' +
@@ -1520,10 +1521,10 @@ class Mod_FlipSelf(EnabledLink):
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
-            #--Repopulate
-            bosh.modInfos.refresh(doInfos=False) ##: why in the loop ?
-        self.window.RefreshUI(files=self.selected, refreshSaves=True) # True,
-        # see Mod_FlipMasters
+        with balt.BusyCursor():
+            bosh.modInfos.plugins.refresh(forceRefresh=True)
+            # refreshSaves=True, see Mod_FlipMasters
+            self.window.RefreshUI(files=self.selected, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
@@ -1553,6 +1554,7 @@ class Mod_FlipMasters(OneItemLink):
 
     def _enable(self): return self.enable
 
+    @balt.conversation
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
@@ -1565,11 +1567,12 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        bosh.modInfos.refresh(doInfos=False) # esms will be moved to the top -
-        # note that modification times won't change - so mods will revert to
-        # their original position once back to esp from esm (Oblivion etc)
-        self.window.RefreshUI(files=updated, refreshSaves=True) # True as LO
-        # will change as esms will be moved to the top
+        with balt.BusyCursor():
+            bosh.modInfos.plugins.refresh(forceRefresh=True) # esms will be
+            # moved to the top - note that modification times won't change - so
+            # mods will revert to their original position once back to esp from
+            # esm (Oblivion etc) - refresh saves due to probable LO change
+            self.window.RefreshUI(files=updated, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
