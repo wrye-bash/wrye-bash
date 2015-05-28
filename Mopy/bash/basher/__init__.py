@@ -1380,7 +1380,6 @@ class ModDetails(_SashDetailsPanel):
             modInfo.setmtime(newTimeInt)
         #--Done
         try:
-            #bosh.modInfos.refresh()
             bosh.modInfos.refreshFile(fileName)
             self.SetFile(fileName)
         except bosh.FileError:
@@ -2252,7 +2251,7 @@ class InstallersList(balt.Tank):
                 numStr = u'0'*(numLen-len(numStr))+numStr
             #--Refresh UI
             if refreshNeeded:
-                self.data.refresh(what='I')
+                self.data.irefresh(what='I')
                 BashFrame.modList.RefreshUI(refreshSaves=True)
                 if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
@@ -2271,7 +2270,7 @@ class InstallersList(balt.Tank):
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
-        self.data.refresh(what='N')
+        self.data.irefresh(what='N')
         self.RefreshUI()
 
     def _extractOmods(self, omodnames):
@@ -2324,7 +2323,7 @@ class InstallersList(balt.Tank):
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
-            self.data.refresh(what='I')
+            self.data.irefresh(what='I')
             self.RefreshUI()
             progress.Destroy()
 
@@ -2414,7 +2413,7 @@ class InstallersList(balt.Tank):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.refresh(what='IN')
+            self.data.irefresh(what='IN')
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self._gList.EnsureVisible(visibleIndex)
@@ -2495,7 +2494,7 @@ class InstallersList(balt.Tank):
                     self.data.hasChanged = True  # is it really needed ?
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
-        self.data.refresh(what='NSC')
+        self.data.irefresh(what='NSC')
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -2699,7 +2698,7 @@ class InstallersPanel(SashTankPanel):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = ('DISC','IC')[self.refreshed]
-                    if data.refresh(progress,what,self.fullRefresh):
+                    if data.irefresh(progress,what,self.fullRefresh):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
@@ -2713,7 +2712,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = True
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
-                    if data.refresh(progress,'C',self.fullRefresh):
+                    if data.irefresh(progress,'C',self.fullRefresh):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False

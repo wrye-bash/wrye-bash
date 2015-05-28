@@ -682,8 +682,8 @@ class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
 class Mod_AllowGhosting(TransLink):
     """Toggles Ghostability."""
 
-    def _decide(self, window, data):
-        if len(data) == 1:
+    def _decide(self, window, selection):
+        if len(selection) == 1:
             class _CheckLink(_GhostLink, CheckLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
@@ -944,9 +944,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
-    def _decide(self, window, data):
-        """Append a radio button if CBash is enabled a simple item otherwise."""
-        enable = len(data) == 1 and window.isBP(data[0])
+    def _decide(self, window, selection):
+        """Return a radio button if CBash is enabled a simple item
+        otherwise."""
+        enable = len(selection) == 1 and window.isBP(selection[0])
         if enable and bosh.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch
@@ -1122,8 +1123,8 @@ class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
-    def _decide(self, window, data):
-        if len(data) == 1:
+    def _decide(self, window, selection):
+        if len(selection) == 1:
             class _CheckLink(_DirtyLink, CheckLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")

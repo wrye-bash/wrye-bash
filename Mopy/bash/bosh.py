@@ -7544,13 +7544,15 @@ class InstallersData(DataDict):
     def addMarker(self,name):
         path = GPath(name)
         self[path] = InstallerMarker(path)
-        self.refresh(what='OS')
+        self.irefresh(what='OS')
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
         self.hasChanged = hasChanged
 
-    def refresh(self,progress=None,what='DIONSC',fullRefresh=False):
+    def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
+
+    def irefresh(self,progress=None,what='DIONSC',fullRefresh=False):
         """Refresh info."""
         progress = progress or bolt.Progress()
         #--MakeDirs
@@ -7635,7 +7637,7 @@ class InstallersData(DataDict):
                 if not item.exists():
                     del self.data[item.tail]
                     refresh = True
-            if refresh: self.refresh(what='ION') # will "set changed" too
+            if refresh: self.irefresh(what='ION') # will "set changed" too
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -7761,7 +7763,7 @@ class InstallersData(DataDict):
                 # loop
                 iArchive.hasBCF = False
             bcfFile.remove()
-        self.refresh(what='I')
+        self.irefresh(what='I')
         return True
 
     def refreshInstallersNeeded(self):

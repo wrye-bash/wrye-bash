@@ -150,7 +150,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             if iArchive.order == -1:
                 self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
-            self.idata.refresh(what='I')
+            self.idata.irefresh(what='I')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -276,7 +276,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     with balt.Progress(_(u'Annealing...'), u'\n'+u' '*60) as progress:
                         self.idata.anneal(self.selected, progress)
                 finally:
-                    self.idata.refresh(what='NS')
+                    self.idata.irefresh(what='NS')
                     self.iPanel.RefreshUIMods()
             else:
                 #Install, if it's not installed
@@ -284,7 +284,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                         self.idata.install(self.selected, progress)
                 finally:
-                    self.idata.refresh(what='N')
+                    self.idata.irefresh(what='N')
                     self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
         #Build any ini tweaks
@@ -374,7 +374,7 @@ class Installer_Anneal(_InstallerLink):
         except (CancelError,SkipError):
             pass
         finally:
-            self.idata.refresh(what='NS')
+            self.idata.irefresh(what='NS')
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
@@ -422,7 +422,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         #--Duplicate
         with balt.BusyCursor():
             self.idata.copy(curName,newName)
-            self.idata.refresh(what='N')
+            self.idata.irefresh(what='N')
             self.window.RefreshUI()
 
 class Installer_Hide(_InstallerLink):
@@ -453,7 +453,7 @@ class Installer_Hide(_InstallerLink):
             with balt.BusyCursor():
                 file = bosh.dirs['installers'].join(curName)
                 file.moveTo(newName)
-        self.idata.refresh(what='ION')
+        self.idata.irefresh(what='ION')
         self.window.RefreshUI()
 
 class Installer_Rename(_InstallerLink):
@@ -494,7 +494,7 @@ class Installer_HasExtraData(CheckLink, _InstallerLink):
         installer.hasExtraData ^= True
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
-        self.idata.refresh(what='N')
+        self.idata.irefresh(what='N')
         self.window.RefreshUI()
 
 class Installer_OverrideSkips(CheckLink, _InstallerLink):
@@ -519,7 +519,7 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
         installer.overrideSkips ^= True
         installer.refreshDataSizeCrc()
         installer.refreshStatus(self.idata)
-        self.idata.refresh(what='N')
+        self.idata.irefresh(what='N')
         self.window.RefreshUI()
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
@@ -543,7 +543,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
                 installer.refreshDataSizeCrc()
                 installer.refreshBasic(file)
                 installer.refreshStatus(self.idata)
-                self.idata.refresh(what='N')
+                self.idata.irefresh(what='N')
                 self.window.RefreshUI()
 
 class Installer_Install(_InstallerLink):
@@ -578,7 +578,7 @@ class Installer_Install(_InstallerLink):
                                 [u' * %s\n' % x.stail for (x, y) in tweaks])
                         self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
-            self.idata.refresh(what='N')
+            self.idata.irefresh(what='N')
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
@@ -625,7 +625,7 @@ class Installer_Move(_InstallerLink):
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata.data)
         self.idata.moveArchives(self.selected,newPos)
-        self.idata.refresh(what='N')
+        self.idata.irefresh(what='N')
         self.window.RefreshUI()
 
 class Installer_Open(_InstallerLink):
@@ -741,7 +741,7 @@ class Installer_SkipVoices(CheckLink, _InstallerLink):
         installer = self.idata[self.selected[0]]
         installer.skipVoices ^= True
         installer.refreshDataSizeCrc()
-        self.idata.refresh(what='NS')
+        self.idata.irefresh(what='NS')
         self.window.RefreshUI()
 
 class Installer_Uninstall(_InstallerLink):
@@ -759,7 +759,7 @@ class Installer_Uninstall(_InstallerLink):
         except (CancelError,SkipError):
             pass
         finally:
-            self.idata.refresh(what='NS')
+            self.idata.irefresh(what='NS')
             bosh.modInfos.plugins.saveLoadOrder()
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
@@ -859,7 +859,7 @@ class Installer_CopyConflicts(_InstallerLink):
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
                         data.moveArchives([project],srcInstaller.order + 1)
-                    data.refresh(what='I') # InstallersData.refresh()
+                    data.irefresh(what='I')
                     self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1072,7 +1072,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
                 if iProject.order == -1:
                     self.idata.moveArchives([project],installer.order+1)
-                self.idata.refresh(what='NS')
+                self.idata.irefresh(what='NS')
                 self.window.RefreshUI()
                 #pProject.start()
             else:
@@ -1092,7 +1092,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
                     if iProject.order == -1:
                         self.idata.moveArchives([project],installer.order+1)
-                self.idata.refresh(what='NS')
+                self.idata.irefresh(what='NS')
                 self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1139,7 +1139,7 @@ class InstallerProject_Sync(_InstallerLink):
             pProject = bosh.dirs['installers'].join(project)
             installer.refreshed = False
             installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
-            self.idata.refresh(what='NS')
+            self.idata.irefresh(what='NS')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1269,7 +1269,7 @@ class InstallerConverter_Apply(_InstallerLink):
             if iArchive.order == -1:
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
-            self.idata.refresh(what='I')
+            self.idata.irefresh(what='I')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1307,7 +1307,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
             if iArchive.order == -1:
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)
-            self.idata.refresh(what='I')
+            self.idata.irefresh(what='I')
             self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):
@@ -1372,7 +1372,7 @@ class InstallerConverter_Create(_InstallerLink):
             #--Add the converter to Bash
             self.idata.addConverter(converter)
             #--Refresh UI
-            self.idata.refresh(what='C')
+            self.idata.irefresh(what='C')
             #--Generate log
             log = LogFile(StringIO.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')
