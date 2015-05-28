@@ -53,7 +53,7 @@ _current_lo = __empty # must always be valid (or __empty)
 # liblo calls - they include fixup code (which may or may not be needed/working)
 def _getLoFromLiblo():
     lord = _liblo_handle.GetLoadOrder()
-    if _current_lo.loadOrder != lord: __fixLoadOrder(lord) # current always valid
+    __fixLoadOrder(lord)
     return lord
 
 def __fixLoadOrder(lord):
@@ -93,7 +93,7 @@ def __fixLoadOrder(lord):
         indexFirstEsp += 1
     for mod in addedFiles:
         if bosh.modInfos.data[mod].isEsm():
-            lord.insert(mod, indexFirstEsp)
+            lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
         else:
             lord.append(mod)
@@ -106,6 +106,8 @@ def __fixLoadOrder(lord):
             reordered = True
     # Save changes if necessary
     if removedFiles or addedFiles or reordered:
+        if removedFiles or reordered: # must fix the active too
+            __fixActive(_current_lo.activeOrdered, lord)
         bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)' % (
             str(_pl(addedFiles) or u'None'), str(_pl(removedFiles) or u'None'),
             u'No' if not reordered else _pl(oldLord, u'from:\n') +
@@ -114,30 +116,29 @@ def __fixLoadOrder(lord):
         return True # changes, saved
     return False # no changes, not saved
 
-def _getActiveFromLiblo(lord): # pass load order in to check for mismatch
+def _getActiveFromLiblo(lord): # pass a VALID load order in
     acti = _liblo_handle.GetActivePlugins()
-    # __fixActive
+    acti = __fixActive(acti, lord)
+    return acti
+
+def __fixActive(acti, lord):
     # filter plugins not present in load order
-    actiFiltered = [x for x in acti if x in lord]
-    changed = acti != actiFiltered  # take note as we may need to rewrite
-    # plugins txt
-    if changed:
-        removed = set(acti) - set(actiFiltered)
+    actiFiltered = [x for x in acti if x in lord] # preserve acti order
+    removed = set(acti) - set(actiFiltered)
+    if removed: # take note as we may need to rewrite plugins txt
         msg = _(u'Those mods were present in plugins txt but not present in '
-                u'Data/ directory') + u': ' + u', '.join(x.s for x in removed)
+                u'Data/ directory') + u': ' + _pl(removed) + u'\n'
     else: msg = u''
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
     # STILL restore for skyrim to warn on LO change
     if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
         actiSorted = actiFiltered[:]
-        actiSorted.sort(key=lambda y: lord.index(y)) # all present in lord
+        actiSorted.sort(key=lord.index) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
-            if msg: msg += u'\n'
             msg += u'Plugins.txt order of plugins (%s) differs from current ' \
                    u'load order (%s)' % (_pl(actiFiltered), _pl(actiSorted))
-            changed = True
-    else: actiSorted = actiFiltered
-    if changed:
+    else: actiSorted = sorted(actiFiltered, key=lord.index)
+    if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
         SetActivePlugins(actiSorted)
