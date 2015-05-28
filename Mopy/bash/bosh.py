@@ -349,7 +349,7 @@ class MasterSet(set):
 
     def getOrdered(self):
         """Returns masters in proper load order."""
-        return list(modInfos.getOrdered(list(self)))
+        return list(modInfos.getOrdered(self))
 
 #------------------------------------------------------------------------------
 class LoadFactory:

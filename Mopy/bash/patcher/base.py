@@ -348,6 +348,13 @@ class AMultiTweakItem(object):
         #--Log
         self.logHeader = u'=== '+ label
 
+    def _patchLog(self, log, count):
+        """Log - must define self.logMsg in subclasses"""
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+
     #--Config Phase -----------------------------------------------------------
     # Methods present in _Abstract_Patcher too
     def getConfig(self,configs):

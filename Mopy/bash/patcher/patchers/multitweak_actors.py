@@ -473,10 +473,7 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'==='+_(u'No Bloody Creatures'))
-        log(self.logMsg % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,
                                     CBash_MultiTweakItem):

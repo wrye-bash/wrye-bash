@@ -91,13 +91,6 @@ class MultiTweakItem(AMultiTweakItem):
         """Edits patch file as desired. Should write to log."""
         pass ##: raise AbstractError ?
 
-    def _patchLog(self, log, count):
-        #--Log - must define self.logMsg in subclasses
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
-
 class CBash_MultiTweakItem(AMultiTweakItem):
     # extra CBash_MultiTweakItem class variables
     iiMode = False
@@ -122,12 +115,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
 
     def buildPatchLog(self,log):
         """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self._patchLog(log, self.mod_count)
         self.mod_count = {}
 
 class MultiTweaker(AMultiTweaker,Patcher):
@@ -495,6 +483,11 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         for type_,count in sorted(type_count.iteritems()):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
                           % {'type': type_, 'count': count})
+
+    def _plog1(self,log,mod_count): # common logging variation
+        log(self.__class__.logMsg % sum(mod_count.values()))
+        for mod in bosh.modInfos.getOrdered(mod_count):
+            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True

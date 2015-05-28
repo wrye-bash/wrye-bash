@@ -33,7 +33,18 @@ from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
-class PatchFile(ModFile):
+class _PFile:
+# hasty mixin to absorb setMods - also compare buildPatch and buildPatchLog
+    def setMods(self,loadMods=None,mergeMods=None):
+        """Sets mod lists and sets."""
+        if loadMods is not None: self.loadMods = loadMods
+        if mergeMods is not None: self.mergeMods = mergeMods
+        self.loadSet = set(self.loadMods)
+        self.mergeSet = set(self.mergeMods)
+        self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
+        self.allSet = set(self.allMods)
+
+class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
 
     @staticmethod
@@ -82,15 +93,6 @@ class PatchFile(ModFile):
         self.setMods(loadMods, [])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
-
-    def setMods(self,loadMods=None,mergeMods=None):
-        """Sets mod lists and sets."""
-        if loadMods is not None: self.loadMods = loadMods
-        if mergeMods is not None: self.mergeMods = mergeMods
-        self.loadSet = set(self.loadMods)
-        self.mergeSet = set(self.mergeMods)
-        self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
-        self.allSet = set(self.allMods)
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -315,7 +317,7 @@ class PatchFile(ModFile):
                                  _(u'Records Changed') + u': %d' % numRecords
                                  )
 
-class CBash_PatchFile(ObModFile):
+class CBash_PatchFile(_PFile, ObModFile):
     """Defines and executes patcher configuration."""
 
     #--Instance
@@ -348,15 +350,6 @@ class CBash_PatchFile(ObModFile):
         self.setMods(loadMods,[])
         for patcher in self.patchers:
             patcher.initPatchFile(self,loadMods)
-
-    def setMods(self,loadMods=None,mergeMods=None):
-        """Sets mod lists and sets."""
-        if loadMods is not None: self.loadMods = loadMods
-        if mergeMods is not None: self.mergeMods = mergeMods
-        self.loadSet = set(self.loadMods)
-        self.mergeSet = set(self.mergeMods)
-        self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
-        self.allSet = set(self.allMods)
 
     def initData(self,progress):
         """Gives each patcher a chance to get its source data."""
