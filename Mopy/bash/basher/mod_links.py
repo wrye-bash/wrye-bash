@@ -771,8 +771,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def Execute(self,event):
         """Handle activation event."""
         try:
-            fileName = self._Execute()
-            if not fileName: return # prevent settings save
+            if not self._Execute(): return # prevent settings save
         except CancelError:
             return # prevent settings save
         # save data to disc in case of later improper shutdown leaving the
@@ -1355,12 +1354,16 @@ class Mod_AddMaster(OneItemLink):
     text = _(u'Add Master...')
 
     def Execute(self,event):
-        message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
+        message = _(u"WARNING! For advanced modders only! Adds specified "
+                    u"master to list of masters, thus ceding ownership of "
+                    u"new content of this mod to the new master. Useful for "
+                    u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        wildcard = _(u'%s Masters')%bush.game.displayName+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = _(u'%s Masters') % bush.game.displayName + \
+                   u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = self._askOpenMulti(
                             title=_(u'Add master:'), defaultDir=fileInfo.dir,
                             wildcard=wildcard)

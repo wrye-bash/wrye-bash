@@ -123,15 +123,15 @@ def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
     return _unicode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
 
-def unformatDate(str,format):
+def unformatDate(date, formatStr):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale."""
     try:
-        return time.strptime(str,'%c')
+        return time.strptime(date, '%c')
     except ValueError:
-        if format == '%c' and u'Japanese' in locale.getlocale()[0]:
-            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
-            return time.strptime(str,'%c')
+        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
+            date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
+            return time.strptime(date, '%c')
         else:
             raise
 
@@ -4086,7 +4086,6 @@ class ModInfos(FileInfos):
     def __init__(self):
         FileInfos.__init__(self,dirs['mods'],ModInfo)
         #--MTime resetting
-        self.lockLO = settings['bosh.modInfos.resetMTimes'] # Lock Load Order (previously Lock Times
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
@@ -4131,22 +4130,28 @@ class ModInfos(FileInfos):
         self.voCurrent = None
         self.voAvailable = set()
 
+    @property
+    def lockLO(self): return settings['bosh.modInfos.resetMTimes']
+    @lockLO.setter
+    def lockLO(self, val): settings['bosh.modInfos.resetMTimes'] = val
+
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
 
     #--Refresh-----------------------------------------------------------------
+    def _OBMMWarn(self):
+        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn', 0)
+        if self.lockLO and obmmWarn == 0 and dirs['app'].join(
+                u'obmm').exists(): settings['bosh.modInfos.obmmWarn'] = 1
+        return settings['bosh.modInfos.obmmWarn'] == 1 # must warn
+
     def canSetTimes(self):
         """Returns a boolean indicating if mtime setting is allowed."""
-        self.lockLO = settings['bosh.modInfos.resetMTimes']
-        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn',0)
-        if self.lockLO and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
-            settings['bosh.modInfos.obmmWarn'] = 1
+        if self._OBMMWarn(): return False
         if not self.lockLO: return False
-        if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
-        if load_order.usingTxtFile():
-            return False
+        if load_order.usingTxtFile(): return False
         #--Else
         return True
 
@@ -7810,8 +7815,8 @@ class InstallersData(DataDict):
         """Refresh installer status."""
         changed = False
         data = self.data
-        ordered,pending = [],[]
-        orderedAppend = ordered.append
+        inOrder, pending = [], []
+        orderedAppend = inOrder.append
         pendingAppend = pending.append
         for archive,installer in self.iteritems():
             if installer.order >= 0:
@@ -7819,15 +7824,15 @@ class InstallersData(DataDict):
             else:
                 pendingAppend(archive)
         pending.sort()
-        ordered.sort()
-        ordered.sort(key=lambda x: data[x].order)
-        if self.lastKey in ordered:
-            index = ordered.index(self.lastKey)
-            ordered[index:index] = pending
+        inOrder.sort()
+        inOrder.sort(key=lambda x: data[x].order)
+        if self.lastKey in inOrder:
+            index = inOrder.index(self.lastKey)
+            inOrder[index:index] = pending
         else:
-            ordered += pending
+            inOrder += pending
         order = 0
-        for archive in ordered:
+        for archive in inOrder:
             if data[archive].order != order:
                 data[archive].order = order
                 changed = True

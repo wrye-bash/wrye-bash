@@ -848,13 +848,11 @@ class Save_UpdateNPCLevels(EnabledLink):
     def _enable(self): return bool(self.selected and bosh.modInfos.ordered)
 
     def Execute(self,event):
-        debug = True
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
         if not self._askContinue(message, 'bash.updateNpcLevels.continue',
                                  _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
-            offsetFlag = 0x80
             npc_info = {}
             loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'])
             ordered = list(bosh.modInfos.ordered)
@@ -889,7 +887,6 @@ class Save_UpdateNPCLevels(EnabledLink):
                 releveledCount = 0
                 #--Loop over change records
                 for recNum in xrange(len(records)):
-                    releveled = False
                     (recId,recType,recFlags,version,data) = records[recNum]
                     orderedRecId = mapToOrdered(recId,None)
                     if recType != 35 or recId == 7 or orderedRecId not in npc_info: continue

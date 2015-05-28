@@ -4207,8 +4207,7 @@ class BashFrame(wx.Frame):
                 u'for maintaining your load order, it will also undo any '
                 u'load order changes that you have made in OBMM.')
             lockTimes = not balt.askYes(self, message, _(u'Lock Load Order'))
-            bosh.modInfos.lockTimes = settings[
-                'bosh.modInfos.resetMTimes'] = lockTimes
+            bosh.modInfos.lockLO = lockTimes
             if lockTimes: bosh.modInfos.resetMTimes()
             else: bosh.modInfos.mtimes.clear()
             message = _(
@@ -4263,8 +4262,8 @@ class BashFrame(wx.Frame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos.data.keys())
-        modNames.update(bosh.modInfos.table.data.keys())
+        modNames = set(bosh.modInfos.keys())
+        modNames.update(bosh.modInfos.table.keys())
         renames = bosh.settings.getChanged('bash.mods.renames')
         for key,value in renames.items():
             if value not in modNames:
@@ -4284,7 +4283,7 @@ class BashFrame(wx.Frame):
             settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = set(path.root for path in fileInfos.data.keys())
+            goodRoots = set(path.root for path in fileInfos.keys())
             backupDir = fileInfos.bashDir.join(u'Backups')
             if not backupDir.isdir(): continue
             for name in backupDir.list():

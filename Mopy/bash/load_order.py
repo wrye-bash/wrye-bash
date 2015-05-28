@@ -97,14 +97,14 @@ def __fixLoadOrder(lord):
     # Add new plugins to load order
     indexFirstEsp = _indexFirstEsp(lord)
     for mod in addedFiles:
-        if bosh.modInfos.data[mod].isEsm():
+        if bosh.modInfos[mod].isEsm():
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
         else:
             lord.append(mod)
     # Check to see if any esm files are loaded below an esp and reorder as necessary
     for mod in lord[indexFirstEsp:]: # SEEMS NOT NEEDED, liblo does this
-        if bosh.modInfos.data[mod].isEsm():
+        if bosh.modInfos[mod].isEsm():
             lord.remove(mod)
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1

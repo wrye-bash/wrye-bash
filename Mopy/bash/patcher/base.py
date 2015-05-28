@@ -194,7 +194,7 @@ class AListPatcher(_Abstract_Patcher):
             autoKey = {autoKey}
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.values():
             if autoRe.match(modInfo.name.s) or (
                 autoKey & modInfo.getBashTags()):
                 if bush.fullLoadOrder[modInfo.name] > \
@@ -440,7 +440,7 @@ class APatchMerger(AListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        for modInfo in bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.values():
             if modInfo.name in bosh.modInfos.mergeable and u'NoMerge' not in \
                     modInfo.getBashTags() and \
                             bush.fullLoadOrder[modInfo.name] < \

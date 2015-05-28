@@ -340,7 +340,7 @@ class Mods_LockTimes(CheckLink):
     def Execute(self,event):
         lockLO = not bosh.modInfos.lockLO
         if not lockLO: bosh.modInfos.mtimes.clear()
-        bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
+        bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
         self.window.RefreshUI(refreshSaves=True)
 

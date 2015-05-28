@@ -1750,9 +1750,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         """Return item for specified list index."""
         return self._itemId_item[self.GetItemData(index)]
 
-    def ReorderItems(self, ordered):
-        """Reorder the list control displayed items to match ordered."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(ordered))
+    def ReorderDisplayed(self, inorder):
+        """Reorder the list control displayed items to match inorder."""
+        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
         self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
@@ -2135,7 +2135,7 @@ class UIList(wx.Panel):
         """
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
         items = self._SortItems(column, reverse)
-        self._gList.ReorderItems(items)
+        self._gList.ReorderDisplayed(items)
         self._setColumnSortIndicator(column, oldcol, reverse)
 
     def _GetSortSettings(self, column, reverse):
@@ -2175,12 +2175,10 @@ class UIList(wx.Panel):
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
         defaultKey = key(self._default_sort_col)
-        if col != self._default_sort_col:
-            #--Default sort
-            items.sort(key=defaultKey)
-            items.sort(key=key(col), reverse=reverse)
-        else:
-            items.sort(key=defaultKey, reverse=reverse)
+        defSort = col == self._default_sort_col
+        # always apply default sort
+        items.sort(key=defaultKey, reverse=defSort and reverse)
+        if not defSort: items.sort(key=key(col), reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
         return items
@@ -2572,6 +2570,7 @@ class ChoiceLink(Link):
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
+    # No state
 
     def _decide(self, window, data):
         """Return a Link subclass instance to call AppendToMenu on."""

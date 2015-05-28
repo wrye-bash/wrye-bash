@@ -782,7 +782,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
-        for modInfo in bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.values():
             if autoRe.match(modInfo.name.s) or (
                         autoKey & set(modInfo.getBashTags())):
                 if bush.fullLoadOrder[modInfo.name] > \
@@ -1728,11 +1728,9 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                         if currentEyes != oldEyes:
                             racesSorted.add(race.eid)
                             raceChanged = True
-                        defaultEyes[recordId] = [x for x in
-                                                 bush.defaultEyes.get(
-                                                     recordId, []) if
-                                                 x in currentEyes] or \
-                                                currentEyes
+                        defaultEyes[recordId] = [
+                            x for x in bush.defaultEyes.get(recordId, [])
+                            if x in currentEyes] or currentEyes
                         defaultMaleHair[recordId] = [x for x in currentHairs if
                                                      x in maleHairs]
                         defaultFemaleHair[recordId] = [x for x in currentHairs
