@@ -7599,7 +7599,7 @@ class InstallersData(DataDict):
         if changed: self.hasChanged = True
         return changed
 
-    def updateDictFile(self):
+    def updateDictFile(self): # CRUFT pickle
         """Updates self.data to use new classes."""
         if self.dictFile.vdata.get('version',0): return
         #--Update to version 1
@@ -8099,10 +8099,9 @@ class InstallersData(DataDict):
         self.refreshStatus()
         return tweaksCreated
 
-    def removeFiles(self, removes, progress=None):
+    def _removeFiles(self, removes, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
-        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -8113,16 +8112,16 @@ class InstallersData(DataDict):
         removedPlugins = set()
         removedPluginsAdd = removedPlugins.add
         #--Construct list of files to delete
-        for file in removes:
-            path = modsDirJoin(file)
+        for file_ in removes:
+            path = modsDirJoin(file_)
             if path.exists():
                 removedFilesAdd(path)
             ghostPath = path + u'.ghost'
             if ghostPath.exists():
                 removedFilesAdd(ghostPath)
-            if reModExtSearch(file.s):
-                removedPluginsAdd(file)
-                removedPluginsAdd(file + u'.ghost')
+            if reModExtSearch(file_.s):
+                removedPluginsAdd(file_)
+                removedPluginsAdd(file_ + u'.ghost')
             emptyDirsAdd(path.head)
         #--Now determine which directories will be empty
         allRemoves = set(removedFiles)
@@ -8148,10 +8147,21 @@ class InstallersData(DataDict):
             balt.shellDelete(removedFiles, parent=parent)
         #--Update InstallersData
         InstallersData.updateTable(removes, u'') #will delete ini tweak entries
-        for file in removes:
-            data_sizeCrcDatePop(file, None)
+        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
+        for file_ in removes:
+            data_sizeCrcDatePop(file_, None)
         #--Remove mods from load order
         modInfos.plugins.removeMods(removedPlugins, savePlugins=True)
+
+    def _filter(self, archive, installer, removes, restores):
+        files = set(installer.data_sizeCrc)
+        myRestores = (removes & files) - set(restores)
+        for file in myRestores:
+            if installer.data_sizeCrc[file] != \
+                    self.data_sizeCrcDate.get(file,(0, 0, 0))[:2]:
+                restores[file] = archive
+            removes.discard(file)
+        return files
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
@@ -8182,32 +8192,32 @@ class InstallersData(DataDict):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                files = set(installer.data_sizeCrc)
-                myRestores = (removes & files) - set(restores)
-                for file in myRestores:
-                    if installer.data_sizeCrc[file] != data_sizeCrcDate.get(file,(0,0,0))[:2]:
-                        restores[file] = archive
-                    removes.discard(file)
-                masked |= files
+                masked |= self._filter(archive, installer, removes, restores)
         #--Remove files, update InstallersData, update load order
-        self.removeFiles(removes, progress)
+        self._removeFiles(removes, progress)
         #--De-activate
         for archive in unArchives:
             data[archive].isActive = False
         #--Restore files
-        restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
-        if settings['bash.installers.autoAnneal'] and restoreArchives:
+        if settings['bash.installers.autoAnneal']:
+            self._restoreFiles(restores, progress)
+        #--Done
+        self.refreshStatus()
+
+    def _restoreFiles(self, restores, progress):
+        getArchiveOrder = lambda x: self[x].order
+        restoreArchives = sorted(set(restores.itervalues()),
+                                 key=getArchiveOrder, reverse=True)
+        if restoreArchives:
             progress.setFull(len(restoreArchives))
             for index,archive in enumerate(restoreArchives):
                 progress(index,archive.s)
-                installer = data[archive]
+                installer = self[archive]
                 destFiles = set(x for x,y in restores.iteritems() if y == archive)
                 if destFiles:
-                    installer.install(archive,destFiles,data_sizeCrcDate,
+                    installer.install(archive, destFiles, self.data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
                     InstallersData.updateTable(destFiles, archive.s)
-        #--Done
-        self.refreshStatus()
 
     def anneal(self,anPackages=None,progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
@@ -8216,7 +8226,6 @@ class InstallersData(DataDict):
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
         data = self.data
-        data_sizeCrcDate = self.data_sizeCrcDate
         anPackages = set(anPackages or data)
         getArchiveOrder =  lambda x: data[x].order
         #--Get remove/refresh files from anPackages
@@ -8235,26 +8244,11 @@ class InstallersData(DataDict):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                files = set(installer.data_sizeCrc)
-                myRestores = (removes & files) - set(restores)
-                for file in myRestores:
-                    if installer.data_sizeCrc[file] != data_sizeCrcDate.get(file,(0,0,0))[:2]:
-                        restores[file] = package
-                    removes.discard(file)
+                self._filter(package, installer, removes, restores)
         #--Remove files, update InstallersData, update load order
-        self.removeFiles(removes, progress)
+        self._removeFiles(removes, progress)
         #--Restore files
-        restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
-        if restoreArchives:
-            progress.setFull(len(restoreArchives))
-            for index,package in enumerate(restoreArchives):
-                progress(index,package.s)
-                installer = data[package]
-                destFiles = set(x for x,y in restores.iteritems() if y == package)
-                if destFiles:
-                    installer.install(package,destFiles,data_sizeCrcDate,
-                        SubProgress(progress,index,index+1))
-                    InstallersData.updateTable(destFiles, package.s)
+        self._restoreFiles(restores, progress)
 
     def clean(self,progress):
         data = self.data
