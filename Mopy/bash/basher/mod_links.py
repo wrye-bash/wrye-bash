@@ -795,7 +795,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        if not bosh.modInfos.ordered:
+        if not bosh.modInfos.activeCached:
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
                 _(u'Load some mods and try again.'),
@@ -838,7 +838,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     self.window.RefreshUI(refreshSaves=False) #rescan mergeable
 
         #--Check if we should be deactivating some plugins
-        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if
+        ActivePriortoPatch = [x for x in bosh.modInfos.activeCached if
                               bosh.modInfos[x].mtime < fileInfo.mtime]
         unfiltered = [x for x in ActivePriortoPatch if
                       u'Filter' in bosh.modInfos[x].getBashTags()]
@@ -909,7 +909,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         previousMods = set()
         missing = {}
         delinquent = {}
-        for mod in bosh.modInfos.ordered:
+        for mod in bosh.modInfos.activeCached:
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
                 if not bosh.modInfos.isActiveCached(master):

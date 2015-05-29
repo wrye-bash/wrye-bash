@@ -315,9 +315,8 @@ class _ModsSortMixin(object):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            active = bosh.modInfos.ordered
-            items.sort(key=lambda x: x not in set(
-                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+            items.sort(key=lambda x: x not in set(bosh.modInfos.activeCached
+                ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
     def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
 
@@ -336,9 +335,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
                  }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            active = bosh.modInfos.ordered
             items.sort(key=lambda x: self.data[x].name not in set(
-                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+                bosh.modInfos.activeCached) | bosh.modInfos.imported
+                                            | bosh.modInfos.merged)
     _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
 
@@ -390,7 +389,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             return status
         fileOrderIndex = mi
         loadOrderIndex = self.loadOrderNames.index(masterName)
-        ordered = bosh.modInfos.ordered
+        ordered = bosh.modInfos.activeCached
         if fileOrderIndex != loadOrderIndex:
             return 20
         elif status > 0:
@@ -411,7 +410,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         labels['File'] = value
         labels['Num'] = u'%02X' % mi
         if bosh.modInfos.isActiveCached(masterName):
-            value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
+            value = u'%02X' % (bosh.modInfos.activeCached.index(masterName),)
         else:
             value = u''
         labels['Current Order'] = value

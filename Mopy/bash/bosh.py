@@ -3816,12 +3816,12 @@ class SaveInfo(FileInfo):
         status = FileInfo.getStatus(self)
         masterOrder = self.masterOrder
         #--File size?
-        if status > 0 or len(masterOrder) > len(modInfos.ordered):
+        if status > 0 or len(masterOrder) > len(modInfos.activeCached):
             return status
         #--Current ordering?
-        if masterOrder != modInfos.ordered[:len(masterOrder)]:
+        if masterOrder != modInfos.activeCached[:len(masterOrder)]:
             return status
-        elif masterOrder == modInfos.ordered:
+        elif masterOrder == modInfos.activeCached:
             return -20
         else:
             return -10
@@ -4171,7 +4171,9 @@ class ModInfos(FileInfos):
         return mod in self.plugins.lord.active
     @property
     def activeCached(self):
-        """Return the current active mods in load order as a tuple."""
+        """Return the currently cached active mods in load order as a tuple.
+        :rtype : tuple
+        """
         return self.plugins.lord.activeOrdered
 
     def getBashDir(self):
@@ -4486,7 +4488,7 @@ class ModInfos(FileInfos):
                 merged,imported = self.getSemiActive(present)
             else:
                 log.setHeader(head+_(u'Active Mod Files:'))
-                masters = set(self.ordered)
+                masters = set(self.activeCached)
                 merged,imported = self.merged,self.imported
             allMods = masters | merged | imported
             allMods = self.getOrdered([x for x in allMods if x in self])
@@ -5289,7 +5291,7 @@ class ConfigHelpers:
     def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showCRC=False,showVersion=True,showWarn=True,scanDirty=None):
         """Checks currently loaded mods against ruleset.
            scanDirty should be the instance of ModChecker, to scan."""
-        active = set(modInfos.ordered)
+        active = set(modInfos.activeCached)
         merged = modInfos.merged
         imported = modInfos.imported
         activeMerged = active | merged
@@ -5382,7 +5384,7 @@ class ConfigHelpers:
             else:
                 log.setHeader(warning+_(u'Missing/Delinquent Masters'))
                 previousMods = set()
-                for mod in modInfos.ordered:
+                for mod in modInfos.activeCached:
                     loggedMod = False
                     for master in modInfos[mod].header.masters:
                         if master not in active:
@@ -8344,14 +8346,14 @@ class InstallersData(DataDict):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getArchiveOrder =  lambda x: data[x].order
-        getBSAOrder = lambda x: list(modInfos.ordered).index(x[1].root + ".esp")
+        getArchiveOrder = lambda a: self[a].order
+        getBSAOrder = lambda b: modInfos.activeCached.index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
             # Create list of active BSA files in srcInstaller
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
-#            print("Ordered: {}".format(modInfos.ordered))
+#            print("Ordered: {}".format(modInfos.activeCached))
             activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]

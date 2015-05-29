@@ -87,7 +87,7 @@ class PatchFile(_PFile, ModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        loadMods = [name for name in bosh.modInfos.ordered if bush.fullLoadOrder[name] < bush.fullLoadOrder[PatchFile.patchName]]
+        loadMods = [name for name in bosh.modInfos.activeCached if bush.fullLoadOrder[name] < bush.fullLoadOrder[PatchFile.patchName]]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods, [])
@@ -344,7 +344,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.races_vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
         self.races_data = {'EYES':[],'HAIR':[]}
         #--Mods
-        loadMods = [name for name in bosh.modInfos.ordered if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]]
+        loadMods = [name for name in bosh.modInfos.activeCached if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods,[])

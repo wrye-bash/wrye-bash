@@ -103,7 +103,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self, event): _self.DoEdit(event)
         class _SaveLink(EnabledLink):
             text = _(u'Save List...')
-            def _enable(self): return bool(bosh.modInfos.ordered)
+            def _enable(self): return bool(bosh.modInfos.activeCached)
             def Execute(self, event): _self.DoSave(event)
         self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
@@ -168,7 +168,7 @@ class Mods_LoadList(ChoiceLink):
         if len(newItem) > 64:
             message = _(u'Load list name must be between 1 and 64 characters long.')
             return self._showError(message)
-        self.loadListsDict[newItem] = bosh.modInfos.ordered[:]
+        self.loadListsDict[newItem] = list(bosh.modInfos.activeCached)
         bosh.settings.setChanged('bash.loadLists.data')
 
     def DoEdit(self,event):
