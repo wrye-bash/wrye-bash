@@ -360,8 +360,6 @@ def Init(path):
             return map(GPath, plugins[:num.value])
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            if self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins:
-                plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_active_plugins(self._DB, plugins, num)

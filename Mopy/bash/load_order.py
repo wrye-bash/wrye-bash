@@ -56,6 +56,13 @@ def _getLoFromLiblo():
     __fixLoadOrder(lord)
     return lord
 
+def _indexFirstEsp(lord):
+    indexFirstEsp = 0
+    while indexFirstEsp < len(lord) and bosh.modInfos[
+        lord[indexFirstEsp]].isEsm():
+        indexFirstEsp += 1
+    return indexFirstEsp
+
 def __fixLoadOrder(lord):
     """HACK: Fix inconsistencies between given loadorder and actually installed
     mod files as well as impossible load orders - save the fixed order via
@@ -88,9 +95,7 @@ def __fixLoadOrder(lord):
     # Remove non existent plugins from load order
     lord[:] = [x for x in lord if x not in removedFiles]
     # Add new plugins to load order
-    indexFirstEsp = 0
-    while indexFirstEsp < len(lord) and bosh.modInfos[lord[indexFirstEsp]].isEsm():
-        indexFirstEsp += 1
+    indexFirstEsp = _indexFirstEsp(lord)
     for mod in addedFiles:
         if bosh.modInfos.data[mod].isEsm():
             lord.insert(indexFirstEsp, mod)
@@ -129,6 +134,17 @@ def __fixActive(acti, lord):
         msg = _(u'Those mods were present in plugins txt but not present in '
                 u'Data/ directory') + u': ' + _pl(removed) + u'\n'
     else: msg = u''
+    # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,
+    # Update.esm] on empty plugins.txt) - Keep it cause eventually (when liblo
+    # is made to return actual contents of plugins.txt at all times) I may
+    # need to correct this here
+    addUpdateEsm = False
+    if bush.game.fsName == 'Skyrim':
+        updateEsm = bolt.GPath(u'Update.esm')
+        if updateEsm in lord and not updateEsm in acti:
+            msg += _(u'Update.esm not present in plugins.txt while present in '
+                     u'Data folder') + u'\n'
+            addUpdateEsm = True
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
     # STILL restore for skyrim to warn on LO change
     if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
@@ -138,6 +154,8 @@ def __fixActive(acti, lord):
             msg += u'Plugins.txt order of plugins (%s) differs from current ' \
                    u'load order (%s)' % (_pl(actiFiltered), _pl(actiSorted))
     else: actiSorted = sorted(actiFiltered, key=lord.index)
+    if addUpdateEsm: # insert after the last master (as does liblo)
+        actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
     if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
