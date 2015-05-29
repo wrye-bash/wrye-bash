@@ -4023,6 +4023,7 @@ class BashFrame(wx.Frame):
         self.statusBar.SetStatusText(infoTxt, 1)
 
     #--Events ---------------------------------------------
+    @balt.conversation
     def RefreshData(self, event=None):
         """Refreshes all data. Can be called manually, but is also triggered
         by window activation event.""" # hunt down - performance sink !
@@ -4230,6 +4231,7 @@ class BashFrame(wx.Frame):
     def OnCloseWindow(self, event):
         """Handle Close event. Save application data."""
         try:
+            self.BindRefresh(bind=False)
             self.SaveSettings()
         except: ##: this has swallowed exceptions since forever
                 deprint(_(u'An error occurred while trying to save settings:'),

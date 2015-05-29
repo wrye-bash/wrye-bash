@@ -146,6 +146,7 @@ class Mod_OrderByName(EnabledLink):
 
     def _enable(self): return len(self.selected) > 1
 
+    @balt.conversation
     def Execute(self,event):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '

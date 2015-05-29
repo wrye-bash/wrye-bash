@@ -2025,7 +2025,13 @@ class UIList(wx.Panel):
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
+        if event.CmdDown() and code == ord('A'): # Ctrl+A
+            try:
+                self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                self.panel.ClearDetails() #omit this to leave displayed details
+                self.SelectAll()
+            finally:
+                self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)

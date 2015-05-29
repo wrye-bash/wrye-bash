@@ -153,6 +153,7 @@ class File_Duplicate(ItemLink):
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(selection) == 1]
         self.help = _(u"Make a copy of '%s'") % (selection[0])
 
+    @balt.conversation
     def Execute(self,event):
         data = self.selected
         for item in data:
@@ -221,6 +222,7 @@ class File_Hide(ItemLink):
         self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % (
             {'filename': selection[0]})
 
+    @balt.conversation
     def Execute(self,event):
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
@@ -275,6 +277,7 @@ class File_Redate(AppendableLink, ItemLink):
 
     def _append(self, window): return not load_order.usingTxtFile()
 
+    @balt.conversation
     def Execute(self,event):
         #--Get current start time.
         modInfos = self.window.data

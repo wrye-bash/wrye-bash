@@ -4560,6 +4560,7 @@ class ModInfos(FileInfos):
         #--Unselect self
         if fileName in self.plugins.selected:
             self.plugins.selected.remove(fileName)
+        else: return
         #--Unselect children
         for selFile in self.plugins.selected[:]:
             #--Already unselected or missing?
