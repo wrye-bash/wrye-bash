@@ -4515,6 +4515,17 @@ class ModInfos(FileInfos):
         tagList += u'[/xml][/spoiler]'
         return tagList
 
+    @staticmethod
+    def askResourcesOk(fileInfo, parent, title, bsaAndVoice, bsa, voice):
+        if not fileInfo.isMod(): return True
+        hasBsa, hasVoices = fileInfo.hasResources()
+        if (hasBsa, hasVoices) == (False,False): return True
+        mPath, name = fileInfo.name, fileInfo.name.s
+        if hasBsa and hasVoices: msg = bsaAndVoice % (mPath.sroot, name, name)
+        elif hasBsa: msg = bsa % (mPath.sroot, name)
+        else: msg = voice % name # hasVoices
+        return balt.askWarning(parent, msg, title + name)
+
     #--Mod Specific ----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""

@@ -1313,6 +1313,23 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = descriptionStr
             self.SetEdited()
 
+    bsaAndVoice = _(u'This mod has an associated archive (%s.bsa) and an '
+        u'associated voice directory (Sound\\Voices\\%s), which will become '
+        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that the '
+        u'BSA archive may also contain a voice directory (Sound\\Voices\\%s), '
+        u'which would remain detached even if the archive name is adjusted.')
+    bsa = _(u'This mod has an associated archive (%s.bsa), which will become '
+        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
+        u'BSA archive may contain a voice directory (Sound\\Voices\\%s), which'
+        u' would remain detached even if the archive file name is adjusted.')
+    voice = _(u'This mod has an associated voice directory (Sound\\Voice\\%s),'
+        u' which will become detached when the mod is renamed.')
+
+    def _askResourcesOk(self, fileInfo):
+        return bosh.modInfos.askResourcesOk(fileInfo, parent=self,
+            title=_(u'Rename '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
+            voice=self.voice)
+
     def DoSave(self,event):
         modInfo = self.modInfo
         #--Change Tests
@@ -1322,23 +1339,7 @@ class ModDetails(_SashDetailsPanel):
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
         #--Warn on rename if file has BSA and/or dialog
-        hasBsa, hasVoices = modInfo.hasResources()
-        if changeName and (hasBsa or hasVoices):
-            modName = modInfo.name.s
-            if hasBsa and hasVoices:
-                message = (_(u'This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.')
-                           + u'\n\n' +
-                           _(u'Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.')
-                           ) % (modName[:-4],modName,modName)
-            elif hasBsa:
-                message = (_(u'This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed.')
-                           + u'\n\n' +
-                           _(u'Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.')
-                           ) % (modName[:-4],modName)
-            else: #hasVoices
-                message = _(u'This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed.') % modName
-            if not balt.askOk(self,message):
-                return
+        if changeName and not self._askResourcesOk(modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')

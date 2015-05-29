@@ -153,6 +153,25 @@ class File_Duplicate(ItemLink):
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(selection) == 1]
         self.help = _(u"Make a copy of '%s'") % (selection[0])
 
+    bsaAndVoice = _(u"This mod has an associated archive (%s.bsa) and an "
+        u"associated voice directory (Sound\\Voices\\%s), which will not be "
+        u"attached to the duplicate mod.") + u'\n\n' + _(u'Note that the BSA '
+        u'archive may also contain a voice directory (Sound\\Voices\\%s), '
+        u'which would remain detached even if a duplicate archive were also '
+        u'created.')
+    bsa = _(u'This mod has an associated archive (%s.bsa), which will not be '
+        u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
+        u'archive may contain a voice directory (Sound\\Voices\\%s), which '
+        u'would remain detached even if a duplicate archive were also created.'
+    )
+    voice = _(u'This mod has an associated voice directory (Sound\\Voice\\%s),'
+        u' which will not be attached to the duplicate mod.')
+
+    def _askResourcesOk(self, fileInfo):
+        return bosh.modInfos.askResourcesOk(fileInfo, parent=self.window,
+            title=_(u'Duplicate '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
+            voice=self.voice)
+
     @balt.conversation
     def Execute(self,event):
         data = self.selected
@@ -162,23 +181,7 @@ class File_Duplicate(ItemLink):
             fileInfo = fileInfos[fileName]
             #--Mod with resources?
             #--Warn on rename if file has bsa and/or dialog
-            if fileInfo.isMod() and tuple(fileInfo.hasResources()) != (False,False):
-                hasBsa, hasVoices = fileInfo.hasResources()
-                modName = fileInfo.name
-                if hasBsa and hasVoices:
-                    message = (_(u"This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod.")
-                               + u'\n\n' +
-                               _(u'Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
-                               ) % (modName.sroot,modName.s,modName.s)
-                elif hasBsa:
-                    message = (_(u'This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod.')
-                               + u'\n\n' +
-                               _(u'Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created.')
-                               ) % (modName.sroot,modName.s)
-                else: #hasVoices
-                    message = _(u'This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod.') % modName.s
-                if not self._askWarning(
-                        message, _(u'Duplicate ') + fileName.s): continue
+            if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
             (root,ext) = fileName.rootExt
             if ext.lower() == u'.bak': ext = bush.game.ess.ext
