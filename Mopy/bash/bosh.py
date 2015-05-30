@@ -1981,7 +1981,8 @@ class BsaFile:
         with aiPath.open('w'):
             write(aiText)
 
-    def resetMTimes(self):
+    @staticmethod
+    def resetOblivionBSAMTimes():
         """Reset dates of bsa files to 'correct' values."""
         #--Fix the data of a few archive files
         bsaTimes = (
@@ -2012,7 +2013,7 @@ class BsaFile:
                         ios.pack('Q',trueHash)
                         resetCount += 1
         #--Done
-        self.resetMTimes()
+        self.resetOblivionBSAMTimes()
         self.updateAIText()
         return resetCount
 
@@ -2063,7 +2064,7 @@ class BsaFile:
                         intxt.append(fullPath)
                     trueHashes.add(trueHash)
         #--Save/Cleanup
-        self.resetMTimes()
+        self.resetOblivionBSAMTimes()
         self.updateAIText(intxt)
         #--Done
         return reset,inval,intxt
@@ -3003,7 +3004,7 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
-    def refresh(self,forceRefresh=False):
+    def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = load_order.haveLoFilesChanged()
         if hasChanged or forceRefresh:
@@ -3840,7 +3841,7 @@ class TrackedFileInfos(DataDict):
         self.factory = factory
         self.data = {}
 
-    def refresh(self):
+    def refreshTracked(self):
         data = self.data
         changed = set()
         for name in data.keys():
@@ -3864,7 +3865,7 @@ class TrackedFileInfos(DataDict):
 class FileInfos(DataDict):
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
-        self.data = {} # populated in refresh()
+        self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
         self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
@@ -4167,7 +4168,7 @@ class ModInfos(FileInfos):
         hasChanged = doInfos and FileInfos.refresh(self)
         if hasChanged:
             self.resetMTimes()
-        hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
+        hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
         hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
@@ -4946,7 +4947,7 @@ class BSAInfos(FileInfos):
         """Return directory to save info."""
         return dirs['modsBash'].join(u'BSA Data')
 
-    def resetMTimes(self):
+    def resetBSAMTimes(self):
         for bsa in self.values(): bsa.resetMTime()
 
 # Mod Config Help -------------------------------------------------------------

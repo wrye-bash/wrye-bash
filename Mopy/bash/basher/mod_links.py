@@ -1530,7 +1530,7 @@ class Mod_FlipSelf(EnabledLink):
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
         with balt.BusyCursor():
-            bosh.modInfos.plugins.refresh(forceRefresh=True)
+            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
             # refreshSaves=True, see Mod_FlipMasters
             self.window.RefreshUI(files=self.selected, refreshSaves=True)
 
@@ -1576,10 +1576,10 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.writeHeader()
                 updated.append(masterPath)
         with balt.BusyCursor():
-            bosh.modInfos.plugins.refresh(forceRefresh=True) # esms will be
-            # moved to the top - note that modification times won't change - so
-            # mods will revert to their original position once back to esp from
-            # esm (Oblivion etc) - refresh saves due to probable LO change
+            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # esms
+            # will be moved to the top - note that modification times won't
+            # change - so mods will revert to their original position once back
+            # to esp from esm (Oblivion etc). Refresh saves due to esms move
             self.window.RefreshUI(files=updated, refreshSaves=True)
 
 #------------------------------------------------------------------------------
@@ -1587,6 +1587,10 @@ class Mod_SetVersion(OneItemLink):
     """Sets version of file back to 0.8."""
     text = _(u'Version 0.8')
     help = _(u'Sets version of file back to 0.8')
+    message = _(u"WARNING! For advanced modders only! This feature allows you "
+        u"to edit newer official mods in the TES Construction Set by resetting"
+        u" the internal file version number back to 0.8. While this will make "
+        u"the mod editable, it may also break the mod in some way.")
 
     def _initData(self, window, selection):
         super(Mod_SetVersion, self)._initData(window, selection)
@@ -1597,8 +1601,7 @@ class Mod_SetVersion(OneItemLink):
                 int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
-        message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
-        if not self._askContinue(message, 'bash.setModVersion.continue',
+        if not self._askContinue(self.message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
         self.fileInfo.makeBackup()
         self.fileInfo.header.version = 0.8
@@ -1618,13 +1621,15 @@ class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
     text = _(u'Form IDs...')
     help = _(u'Replace fids according to text file')
+    message = _(u"For advanced modders only! Systematically replaces one set "
+        u"of Form Ids with another in npcs, creatures, containers and leveled "
+        u"lists according to a Replacers.csv file.")
 
     @staticmethod
     def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
 
     def Execute(self,event):
-        message = _(u"For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file.")
-        if not self._askContinue(message, 'bash.formIds.replace.continue',
+        if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]

@@ -330,7 +330,7 @@ class Mods_ScanDirty(BoolLink):
         self.window.RefreshUI(refreshSaves=False)
 
 class Mods_LockTimes(CheckLink):
-    """Turn on resetMTimes feature."""
+    """Turn on Lock Load Order feature."""
     text = _(u'Lock Load Order')
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")

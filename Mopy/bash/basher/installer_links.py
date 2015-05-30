@@ -269,23 +269,16 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         self.iPanel.refreshCurrent(installer)
         #Install if necessary
         if ret.Install:
-            #If it's currently installed, anneal
-            if self.idata[self.selected[0]].isActive:
-                #Anneal
-                try:
-                    with balt.Progress(_(u'Annealing...'), u'\n'+u' '*60) as progress:
-                        self.idata.anneal(self.selected, progress)
-                finally:
-                    self.idata.irefresh(what='NS')
-                    self.iPanel.RefreshUIMods()
-            else:
-                #Install, if it's not installed
-                try:
-                    with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
-                        self.idata.install(self.selected, progress)
-                finally:
-                    self.idata.irefresh(what='N')
-                    self.iPanel.RefreshUIMods()
+            if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
+                title, what, doIt = _(u'Annealing...'), 'NS', self.idata.anneal
+            else: #Install, if it's not installed
+                title, what, doIt = _(u'Installing...'), 'N',self.idata.install
+            try:
+                with balt.Progress(title, u'\n'+u' '*60) as progress:
+                    doIt(self.selected, progress)
+            finally:
+                self.idata.irefresh(what=what)
+                self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply

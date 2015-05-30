@@ -251,7 +251,7 @@ class File_Hide(ItemLink):
                     % fileName.s)
                 if not self._askYes(message, _(u'Hide Files')): continue
             #--Do it
-            self.window.data.move(fileName,destDir,False)
+            self.window.data.move(fileName, destDir, doRefresh=False)
         #--Refresh stuff
         Link.Frame.RefreshData()
 

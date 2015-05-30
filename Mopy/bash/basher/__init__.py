@@ -817,7 +817,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refresh(forceRefresh=True)
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
         # FIXME(ut): hack below - used to fix things like mtimes conflicts not
         # updated - must call modInfos.refresh, wait till latter's fixed though
         bosh.FileInfos.refresh(bosh.modInfos)
@@ -946,7 +946,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                          map(self.data.dir.join, deleted))
         if not deleted: return
         for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
-        bosh.modInfos.plugins.refresh(forceRefresh=True)
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
         super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
@@ -1387,7 +1387,7 @@ class ModDetails(_SashDetailsPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refresh(forceRefresh=True) # maybe also called in modInfos.refresh !
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # maybe also called in modInfos.refresh !
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     def DoCancel(self,event):
@@ -1549,7 +1549,7 @@ class INIPanel(SashPanel):
             return self.sortKeys[index]
 
     def ShowPanel(self):
-        changed = self.trackedInfo.refresh()
+        changed = self.trackedInfo.refreshTracked()
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshPanel()
@@ -2720,7 +2720,7 @@ class InstallersPanel(SashTankPanel):
                 except CancelError:
                     # User canceled the refresh
                     self.refreshing = False
-        changed = bosh.InstallersData.miscTrackedFiles.refresh()
+        changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
             data = self.data.data_sizeCrcDate
@@ -4067,7 +4067,7 @@ class BashFrame(wx.Frame):
         if bush.game.fsName != 'Skyrim':
             if bosh.inisettings['ResetBSATimestamps']:
                 if bosh.bsaInfos.refresh():
-                    bosh.bsaInfos.resetMTimes()
+                    bosh.bsaInfos.resetBSAMTimes()
         #--Repopulate
         if popMods:
             BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
