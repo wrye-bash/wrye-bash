@@ -4033,7 +4033,7 @@ class BashFrame(wx.Frame):
         self.inRefreshData = True
         popMods = popSaves = popInis = None
         #--Config helpers
-        bosh.configHelpers.refresh(firstTime=False)
+        bosh.configHelpers.refreshBashTags()
         #--Check plugins.txt and mods directory...
         modInfosChanged = not self.booting and bosh.modInfos.refresh()
         if modInfosChanged:

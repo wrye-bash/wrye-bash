@@ -43,6 +43,7 @@ import os
 import re
 import string
 import struct
+import sys
 from types import NoneType, FloatType, IntType, LongType, BooleanType, \
     StringType, UnicodeType, ListType, DictType, TupleType
 from operator import attrgetter
@@ -5149,20 +5150,22 @@ class ConfigHelpers:
         self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
+        self.tagList = dirs['defaultPatches'].join(u'taglist.yaml')
+        self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
-        self.refresh(firstTime=True)
+        self.refreshBashTags()
 
-    def refresh(self,firstTime=False):
+    def refreshBashTags(self):
         """Reloads tag info if file dates have changed."""
-        path,userpath,mtime,utime = (self.lootMasterPath, self.lootUserPath, self.lootMasterTime, self.lootUserTime)
+        path, userpath = self.lootMasterPath, self.lootUserPath
         #--Masterlist is present, use it
         if path.exists():
-            if (path.mtime != mtime or
-                (userpath.exists() and userpath.mtime != utime)):
+            if (path.mtime != self.lootMasterTime or
+                (userpath.exists() and userpath.mtime != self.lootUserTime)):
                 self.tagCache = {}
                 try:
                     if userpath.exists():
@@ -5172,20 +5175,23 @@ class ConfigHelpers:
                     else:
                         lootDb.Load(path.s)
                         self.lootMasterTime = path.mtime
-                    return
+                    return # we are done
                 except loot.LootError:
-                    deprint(u'An error occurred while using the LOOT API:',traceback=True)
-            if not firstTime: return
-        #--No masterlist, use the taglist
-        taglist = dirs['defaultPatches'].join(u'taglist.yaml')
-        if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.fsName+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
+                    deprint(u'An error occurred while using the LOOT API:',
+                            traceback=True)
+        #--No masterlist or an error occured while reading it, use the taglist
+        if not self.tagList.exists():
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
+                u'\\taglist.yaml could not be found.  Please ensure Wrye '
+                u'Bash is installed correctly.')
+        if self.tagList.mtime == self.tagListModTime: return
+        self.tagListModTime = self.tagList.mtime
         try:
             self.tagCache = {}
-            lootDb.Load(taglist.s)
-        except loot.LootError:
-            deprint(u'An error occurred while parsing taglist.yaml with the LOOT API.', traceback=True)
-            raise bolt.BoltError(u'An error occurred while parsing taglist.yaml with the LOOT API.')
+            lootDb.Load(self.tagList.s)
+        except loot.LootError as e:
+            raise bolt.BoltError, (u'An error occurred while parsing '
+            u'taglist.yaml with the LOOT API: ' + str(e)), sys.exc_info()[2]
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""

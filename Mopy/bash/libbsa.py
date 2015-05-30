@@ -21,23 +21,16 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Thin python wrapper around libbsa.
 
-
-"""Python wrapper around libbsa"""
-
-
+To use outside of Bash replace the Bash imports below with:
+class Path: pass
+def GPath(x): return u'' if x is None else unicode(x, 'utf8')
+"""
 from ctypes import *
 import os
 import platform
-
-try:
-    # Wrye Bash specific support
-    import bolt
-    from bolt import Path, GPath
-except:
-    class Path:
-        pass
-    def GPath(x): return x
+from bolt import Path, GPath
 
 libbsa = None
 version = None
@@ -112,7 +105,6 @@ def Init(path):
         return lst
 
     # utility unicode functions
-    def _uni(x): return u'' if x is None else unicode(x,'utf8')
     def _enc(x): return (x.encode('utf8') if isinstance(x,unicode)
                          else x.s.encode('utf8') if isinstance(x,Path)
                          else x)
@@ -199,7 +191,7 @@ def Init(path):
         ret = _Cbsa_get_error_message(byref(details))
         if ret != LIBBSA_OK:
             raise Exception(u'An error occurred while getting the details of a libbsa error: %i' % ret)
-        return unicode(details.value,'utf8')
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     def RegisterCallback(errorCode,callback):
         """Used to setup callback functions for whenever specific error codes
@@ -320,7 +312,7 @@ def Init(path):
             assets = c_char_p_p()
             num = c_size_t()
             _Cbsa_get_assets(self._handle, _enc(contentPath), byref(assets), byref(num))
-            return [GPath(_uni(assets[i])) for i in xrange(num.value)]
+            return map(GPath, assets[:num.value])
 
         def IsAssetInBSA(self, assetPath):
             result = c_bool()
@@ -339,7 +331,7 @@ def Init(path):
             assets = c_char_p_p()
             num = c_size_t()
             _Cbsa_extract_assets(self._handle, _enc(contentPath), _enc(destPath), byref(assets), byref(num), True)
-            return [GPath(_uni(assets[i])) for i in xrange(num.value)]
+            return map(GPath, assets[:num.value])
 
         def ExtractAsset(self, assetPath, destPath):
             _Cbsa_extract_asset(self._handle, _enc(assetPath), _enc(destPath), True)

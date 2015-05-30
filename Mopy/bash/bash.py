@@ -503,7 +503,7 @@ def _showErrorInGui(e):
                 print '  An error occurred while trying to display the' \
                       ' second error.'
             print 'The following is the error that could not be displayed:'
-    raise e
+    raise e, None, sys.exc_info()[2]
 
 def _showErrorInAnyGui(msg):
     if hasattr(sys, 'frozen'):

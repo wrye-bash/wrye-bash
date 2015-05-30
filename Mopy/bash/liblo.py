@@ -181,7 +181,7 @@ def Init(path):
         ret = _Clo_get_error_message(byref(details))
         if ret != LIBLO_OK:
             raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % ret)
-        return unicode(details.value,'utf8')
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     class LibloError(Exception):
         def __init__(self,value):
