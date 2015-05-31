@@ -28,6 +28,7 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
+from functools import wraps
 import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
@@ -2933,6 +2934,28 @@ class PluginsFullError(BoltError):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
+def _cache(lord_func):
+    """Decorator to make sure I sync Plugins cache with load_order cache
+    whenever I change (or attempt to change) the latter.
+
+    All this syncing is error prone. WIP !
+    """
+    @wraps(lord_func)
+    def _plugins_cache_wrapper(*args, **kwargs):
+        e = None
+        try:
+            return lord_func(*args, **kwargs)
+        except:
+            e = sys.exc_info()
+            raise
+        finally:
+            try:
+                args[0].LoadOrder, args[0].selected = list(
+                    args[0].lord.loadOrder), list(args[0].lord.activeOrdered)
+            except AttributeError: # lord is None, exception thrown in init
+                raise e[0], e[1], e[2]
+    return _plugins_cache_wrapper
+
 class Plugins:
     """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
        else should access it directly.  Since migrating to libloadorder, this
@@ -2945,8 +2968,10 @@ class Plugins:
             self.dir = dirs['userApp']
         self.pathPlugins = self.dir.join(u'plugins.txt')
         self.pathOrder = self.dir.join(u'loadorder.txt')
+        # Plugins cache, manipulated by code which changes load order/active
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
+        self.lord = None    # WIP: valid LoadOrder object, must be kept in sync with load_order._current_load_order
         #--Create dirs/files if necessary
         self.dir.makedirs()
 
@@ -2966,14 +2991,17 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
+    @_cache
     def saveActive(self):
-        """Write data to Plugins.txt file."""
+        """Write data to Plugins.txt file. Always call AFTER setting the load order."""
         # liblo attempts to unghost files, no need to duplicate that here.
-        load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
+        #(ut) liblo DID NOT unghost - see: e64d55bdd1b37607141aba241709dc7c61f3bad9 - is it supposed to ?
+        self.lord = load_order.SetActivePlugins(self.lord.lorder(self.selected), self.lord.loadOrder)
 
+    @_cache
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        load_order.SaveLoadOrder(self.LoadOrder)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder)
 
     def saveLoadAndActive(self):
         self.saveLoadOrder()
@@ -3004,11 +3032,11 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
+    @_cache
     def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = load_order.haveLoFilesChanged()
-        if hasChanged or forceRefresh:
-            self.LoadOrder, self.selected = load_order.GetLo()
+        if forceRefresh or hasChanged: self.lord = load_order.GetLo()
         return hasChanged
 
 #------------------------------------------------------------------------------

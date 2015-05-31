@@ -21,6 +21,21 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Wrapper around liblo.py
+
+Notes:
+- _current_lo is meant to eventually become a cache exported to the rest of
+Bash. Must be valid at all times. Should be updated on tabbing out and back
+in to Bash and on setting lo/active from inside Bash.
+- active mods must always be manipulated having a valid load order at hand:
+ - all active mods must be present and have a load order and
+ - especially for skyrim the relative order of entries in plugin.txt must be
+ the same as their relative load order in loadorder.txt
+
+Currently investigating what the liblo calls return to me and monkey
+patching that (see __fix methods).
+Double underscores and dirty comments are no accident - ALPHA
+"""
 import bolt
 import bush
 import liblo as _liblo
@@ -32,19 +47,24 @@ class LoadOrder(object):
     __none = frozenset()
 
     def __init__(self, loadOrder=__empty, active=__none):
+        if set(active) - set(loadOrder):
+            raise bolt.BoltError('Setting active with no load order')
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
         self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
-        # sugar, client could readily compute this - API: maybe drop:
+        # would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
-            sorted(active, key=lambda x: self.__mod_loIndex[x]))
+            sorted(active, key=self.__mod_loIndex.__getitem__))
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
     @property
     def active(self): return self._active  # test if none
-    @property # sugar
+    @property # sugar - API: maybe drop:
     def activeOrdered(self): return self._activeOrdered
+
+    def lorder(self, paths): # API: sort in place ? see usages
+        return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
 
 # Module level cache
 __empty = LoadOrder()
@@ -159,7 +179,7 @@ def __fixActive(acti, lord):
     if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
-        SetActivePlugins(actiSorted)
+        SetActivePlugins(actiSorted, lord)
     return actiSorted
 
 def SaveLoadOrder(lord):
@@ -171,6 +191,8 @@ def SaveLoadOrder(lord):
     _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
     _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
     _setLoTxtModTime()
+    _updateCache(lord=lord, actiSorted=_current_lo.active)
+    return _current_lo
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
@@ -180,25 +202,31 @@ def _reset_mtimes_cache():
         path = bosh.modInfos[name].getPath()
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
-def _updateCache():
+def _updateCache(lord=None, actiSorted=None):
     global _current_lo
     try:
-        lord = _getLoFromLiblo()
+        if lord is None:
+            lord = _getLoFromLiblo()
+            _setLoTxtModTime()
         # got a valid load order - now to active...
-        actiSorted = _getActiveFromLiblo(lord)
+        if actiSorted is None:
+            actiSorted = _getActiveFromLiblo(lord)
+            _setPluginsTxtModTime()
         _current_lo = LoadOrder(lord, actiSorted)
-    except _liblo_error:
+    except Exception:
+        bolt.deprint('Error updating load_order cache from liblo', traceback=True)
         _current_lo = __empty
         raise
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
-    # below is tmp - must finally become return _current_load_order
-    return list(_current_lo.loadOrder), list(_current_lo.activeOrdered)
+    return _current_lo
 
-def SetActivePlugins(act):
+def SetActivePlugins(act, lord): # we need a valid load order to set active
     _liblo_handle.SetActivePlugins(act)
     _setPluginsTxtModTime()
+    _updateCache(lord=lord, actiSorted=act)
+    return _current_lo
 
 def usingTxtFile(): return _liblo_handle.usingTxtFile()
 
