@@ -137,7 +137,7 @@ def __fixLoadOrder(lord):
             str(_pl(addedFiles) or u'None'), str(_pl(removedFiles) or u'None'),
             u'No' if not reordered else _pl(oldLord, u'from:\n') +
                                         _pl(lord, u'\nto:\n')))
-        SaveLoadOrder(lord)
+        SaveLoadOrder(lord, _fixed=True)
         return True # changes, saved
     return False # no changes, not saved
 
@@ -179,15 +179,16 @@ def __fixActive(acti, lord):
     if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
-        SetActivePlugins(actiSorted, lord)
+        SetActivePlugins(actiSorted, lord, _fixed=True)
     return actiSorted
 
-def SaveLoadOrder(lord):
+def SaveLoadOrder(lord, _fixed=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method (in liblo 4.0 at
     least) - check lo_set_load_order - to reorder it as loadorder.txt.
     It 'checks the validity' of lord passed and will raise if invalid."""
+    if not _fixed: __fixLoadOrder(lord)
     _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
     _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
     _setLoTxtModTime()
@@ -214,7 +215,7 @@ def _updateCache(lord=None, actiSorted=None):
             _setPluginsTxtModTime()
         _current_lo = LoadOrder(lord, actiSorted)
     except Exception:
-        bolt.deprint('Error updating load_order cache from liblo', traceback=True)
+        bolt.deprint('Error updating load_order cache from liblo')
         _current_lo = __empty
         raise
 
@@ -222,7 +223,8 @@ def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
     return _current_lo
 
-def SetActivePlugins(act, lord): # we need a valid load order to set active
+def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to set active
+    if not _fixed: act = __fixActive(act, lord)
     _liblo_handle.SetActivePlugins(act)
     _setPluginsTxtModTime()
     _updateCache(lord=lord, actiSorted=act)
