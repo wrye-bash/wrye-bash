@@ -4676,6 +4676,21 @@ class ModInfos(FileInfos):
                     return testTime
             return defaultTime
 
+    def timestamp(self):
+        """Hack to install mods last in load order (done by liblo when txt
+        method used, when mod times method is used be sure we get the latest
+        mod time). The mod times stuff must be moved to load_order.py."""
+        if not load_order.usingTxtFile():
+            maxi = [max(x.mtime for x in self.values())]
+            def timestamps(x):
+                if reModExt.search(x.s):
+                    x.mtime = maxi[-1]
+                    maxi[-1] += 60 # space at one minute intervals
+        else:
+            # noinspection PyUnusedLocal
+            def timestamps(x): pass
+        return timestamps
+
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
@@ -7146,19 +7161,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        if not load_order.usingTxtFile():
-            mtimes = set()
-            mtimesAdd = mtimes.add
-            def timestamps(x):
-                if reModExt.search(x.s):
-                    newTime = x.mtime
-                    while newTime in mtimes:
-                        newTime += 1
-                    x.mtime = newTime
-                    mtimesAdd(newTime)
-        else:
-            def timestamps(x):
-                pass
+        timestamps = modInfos.timestamp()
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
@@ -7313,19 +7316,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        if not load_order.usingTxtFile():
-            mtimes = set()
-            mtimesAdd = mtimes.add
-            def timestamps(x):
-                if reModExt.search(x.s):
-                    newTime = x.mtime
-                    while newTime in mtimes:
-                        newTime += 1
-                    x.mtime = newTime
-                    mtimesAdd(newTime)
-        else:
-            def timestamps(*args):
-                pass
+        timestamps = modInfos.timestamp()
         count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
