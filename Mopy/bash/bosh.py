@@ -4719,6 +4719,9 @@ class ModInfos(FileInfos):
             def timestamps(x): pass
         return timestamps
 
+    @staticmethod # this belongs to load_order.py !
+    def usingTextFile(): return load_order.usingTxtFile()
+
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""

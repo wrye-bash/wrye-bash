@@ -25,7 +25,7 @@
 from operator import attrgetter
 import re
 import time
-from .. import balt, bosh, bush, bolt, load_order
+from .. import balt, bosh, bush, bolt
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
@@ -278,7 +278,7 @@ class File_Redate(AppendableLink, ItemLink):
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")
 
-    def _append(self, window): return not load_order.usingTxtFile()
+    def _append(self, window): return not bosh.modInfos.usingTxtFile()
 
     @balt.conversation
     def Execute(self,event):
