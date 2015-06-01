@@ -278,7 +278,7 @@ class PatchDialog(balt.Dialog):
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
                     oldFiles = bosh.modInfos.ordered[:]
-                    bosh.modInfos.select(patchName)
+                    bosh.modInfos.select(patchName, doSave=True)
                     changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(

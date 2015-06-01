@@ -483,8 +483,8 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 class Path(object):
-    """A file path. May be just a directory, filename or full path."""
-    """Paths are immutable objects that represent file directory paths."""
+    """Paths are immutable objects that represent file directory paths.
+     May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
@@ -1020,7 +1020,8 @@ class Path(object):
                 except:
                     pass
 
-    #--Hash/Compare
+    #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
+    # directly compare to strings
     def __hash__(self):
         return hash(self._cs)
     def __cmp__(self, other):

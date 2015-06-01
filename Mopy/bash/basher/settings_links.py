@@ -256,7 +256,7 @@ class Settings_StatusBar_ShowVersions(CheckLink):
 #------------------------------------------------------------------------------
 class Settings_Languages(TransLink):
     """Menu for available Languages."""
-    def _decide(self, window, data):
+    def _decide(self, window, selection):
         languages = []
         for file in bosh.dirs['l10n'].list():
             if file.cext == u'.txt' and file.csbody[-3:] != u'new':
@@ -377,7 +377,7 @@ class Settings_Game(RadioLink):
 class Settings_UnHideButtons(TransLink):
     """Menu to unhide a StatusBar button."""
 
-    def _decide(self, window, data):
+    def _decide(self, window, selection):
         hide = bosh.settings['bash.statusbar.hide']
         hidden = []
         for link in BashStatusBar.buttons:

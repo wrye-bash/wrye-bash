@@ -1750,9 +1750,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         """Return item for specified list index."""
         return self._itemId_item[self.GetItemData(index)]
 
-    def ReorderItems(self, ordered):
-        """Reorder the list control displayed items to match ordered."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(ordered))
+    def ReorderDisplayed(self, inorder):
+        """Reorder the list control displayed items to match inorder."""
+        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
         self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
 
 #------------------------------------------------------------------------------
@@ -1761,17 +1761,17 @@ _lock = threading.Lock() # threading not needed (I just can't omit it)
 def conversation(func):
     """Decorator to temporarily unbind RefreshData Link.Frame callback."""
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def _conversation_wrapper(*args, **kwargs):
         global _depth
         try:
             with _lock: _depth += 1 # hack: allow sequences of conversations
             Link.Frame.BindRefresh(bind=False)
-            func(*args, **kwargs)
+            return func(*args, **kwargs)
         finally:
             with _lock: # atomic
                 _depth -= 1
                 if not _depth: Link.Frame.BindRefresh(bind=True)
-    return wrapper
+    return _conversation_wrapper
 
 class UIList(wx.Panel):
     """Offspring of basher.List and balt.Tank, ate its parents."""
@@ -2025,7 +2025,13 @@ class UIList(wx.Panel):
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
-        if event.CmdDown() and code == ord('A'): self.SelectAll() # Ctrl+A
+        if event.CmdDown() and code == ord('A'): # Ctrl+A
+            try:
+                self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                self.panel.ClearDetails() #omit this to leave displayed details
+                self.SelectAll()
+            finally:
+                self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)
@@ -2135,7 +2141,7 @@ class UIList(wx.Panel):
         """
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
         items = self._SortItems(column, reverse)
-        self._gList.ReorderItems(items)
+        self._gList.ReorderDisplayed(items)
         self._setColumnSortIndicator(column, oldcol, reverse)
 
     def _GetSortSettings(self, column, reverse):
@@ -2175,12 +2181,10 @@ class UIList(wx.Panel):
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
         defaultKey = key(self._default_sort_col)
-        if col != self._default_sort_col:
-            #--Default sort
-            items.sort(key=defaultKey)
-            items.sort(key=key(col), reverse=reverse)
-        else:
-            items.sort(key=defaultKey, reverse=reverse)
+        defSort = col == self._default_sort_col
+        # always apply default sort
+        items.sort(key=defaultKey, reverse=defSort and reverse)
+        if not defSort: items.sort(key=key(col), reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
         return items
@@ -2408,12 +2412,12 @@ class Link(object):
         self.window = window
         self.selected = selection
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         """Creates a wx menu item and appends it to :menu.
 
         Link implementation calls _initData and returns None.
         """
-        self._initData(window, data)
+        self._initData(window, selection)
 
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
@@ -2495,10 +2499,10 @@ class ItemLink(Link):
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
     help = None
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         """Append self as menu item and set callbacks to be executed when
         selected."""
-        super(ItemLink, self).AppendToMenu(menu, window, data)
+        super(ItemLink, self).AppendToMenu(menu, window, selection)
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
         menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
@@ -2531,16 +2535,17 @@ class MenuLink(Link):
 
     def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
-        super(MenuLink, self).AppendToMenu(menu, window, data)
+        super(MenuLink, self).AppendToMenu(menu, window, selection)
         wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         menu.AppendMenu(self.id, self.text, subMenu)
         if not self._enable():
             menu.Enable(self.id, False)
         else: # do not append sub links unless submenu enabled
-            for link in self.links: link.AppendToMenu(subMenu,window,data)
+            for link in self.links: link.AppendToMenu(subMenu, window,
+                                                      selection)
         return subMenu
 
     @staticmethod
@@ -2559,31 +2564,33 @@ class ChoiceLink(Link):
     @property
     def _choices(self): return []
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         """Append Link items."""
-        submenu = super(ChoiceLink, self).AppendToMenu(menu, window, data)
+        submenu = super(ChoiceLink, self).AppendToMenu(menu, window, selection)
         if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
             menu = submenu
         for link in self.extraItems:
-            link.AppendToMenu(menu, window, data)
+            link.AppendToMenu(menu, window, selection)
         for link in self._range():
-            link.AppendToMenu(menu, window, data)
+            link.AppendToMenu(menu, window, selection)
         # returns None
 
 class TransLink(Link):
     """Transcendental link, can't quite make up its mind."""
+    # No state
 
-    def _decide(self, window, data):
+    def _decide(self, window, selection):
         """Return a Link subclass instance to call AppendToMenu on."""
         raise AbstractError
 
-    def AppendToMenu(self,menu,window,data):
-        return self._decide(window, data).AppendToMenu(menu, window, data)
+    def AppendToMenu(self, menu, window, selection):
+        return self._decide(window, selection).AppendToMenu(menu, window,
+                                                            selection)
 
 class SeparatorLink(Link):
     """Link that acts as a separator item in menus."""
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         """Add separator to menu."""
         menu.AppendSeparator()
 
@@ -2600,9 +2607,10 @@ class AppendableLink(Link):
         """"Override as needed to append or not the menu item."""
         raise AbstractError
 
-    def AppendToMenu(self,menu,window,data):
+    def AppendToMenu(self, menu, window, selection):
         if not self._append(window): return
-        return super(AppendableLink, self).AppendToMenu(menu, window, data)
+        return super(AppendableLink, self).AppendToMenu(menu, window,
+                                                        selection)
 
 # ItemLink subclasses ---------------------------------------------------------
 class EnabledLink(ItemLink):
@@ -2618,8 +2626,9 @@ class EnabledLink(ItemLink):
         by default)."""
         return True
 
-    def AppendToMenu(self, menu, window, data):
-        menuItem = super(EnabledLink, self).AppendToMenu(menu, window, data)
+    def AppendToMenu(self, menu, window, selection):
+        menuItem = super(EnabledLink, self).AppendToMenu(menu, window,
+                                                         selection)
         menuItem.Enable(self._enable())
         return menuItem
 
@@ -2636,8 +2645,8 @@ class CheckLink(ItemLink):
 
     def _check(self): raise AbstractError
 
-    def AppendToMenu(self,menu,window,data):
-        menuItem = super(CheckLink, self).AppendToMenu(menu, window, data)
+    def AppendToMenu(self, menu, window, selection):
+        menuItem = super(CheckLink, self).AppendToMenu(menu, window, selection)
         menuItem.Check(self._check())
         return menuItem
 

@@ -345,6 +345,12 @@ class _ACoblExhaustion(SpecialPatcher):
                           u' active.'))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
 
+    def _pLog(self, log, count):
+        log.setHeader(u'= ' + self.__class__.name)
+        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+
 class CoblExhaustion(_ACoblExhaustion,ListPatcher):
     autoKey = u'Exhaust'
 
@@ -437,10 +443,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
             srcMod = record.fid[0]
             count[srcMod] = count.get(srcMod,0) + 1
         #--Log
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Powers Tweaked') + u': %d' % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._pLog(log, count)
 
 class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
     autoKey = {u'Exhaust'}
@@ -523,11 +526,7 @@ class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= '+self.__class__.name)
-        log(u'* '+_(u'Powers Tweaked') + u': %d' % (sum(mod_count.values()),))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self._pLog(log, self.mod_count)
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
@@ -541,6 +540,13 @@ class _AMFactMarker(SpecialPatcher):
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+
+    def _pLog(self, log, changed):
+        log.setHeader(u'= ' + self.__class__.name)
+        self._srcMods(log)
+        log(u'\n=== ' + _(u'Morphable Factions'))
+        for mod in bosh.modInfos.getOrdered(changed):
+            log(u'* %s: %d' % (mod.s, changed[mod]))
 
 class MFactMarker(_AMFactMarker,ListPatcher):
     autoKey = 'MFact'
@@ -646,11 +652,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                 relation.mod = 10
                 relations.append(relation)
             keep(record.fid)
-        log.setHeader(u'= ' + self.__class__.name)
-        self._srcMods(log)
-        log(u'\n=== '+_(u'Morphable Factions'))
-        for mod in sorted(changed):
-            log(u'* %s: %d' % (mod.s,changed[mod]))
+        self._pLog(log, changed)
 
 class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
     autoKey = {'MFact'}
@@ -766,12 +768,7 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        mod_count = self.mod_count
-        log.setHeader(u'= '+self.__class__.name)
-        self._srcMods(log)
-        log(u'\n=== '+_(u'Morphable Factions'))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'* %s: %d' % (srcMod.s,mod_count[srcMod]))
+        self._pLog(log, self.mod_count)
         self.mod_count = {}
 
 #------------------------------------------------------------------------------

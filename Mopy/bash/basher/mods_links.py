@@ -330,7 +330,7 @@ class Mods_ScanDirty(BoolLink):
         self.window.RefreshUI(refreshSaves=False)
 
 class Mods_LockTimes(CheckLink):
-    """Turn on resetMTimes feature."""
+    """Turn on Lock Load Order feature."""
     text = _(u'Lock Load Order')
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
@@ -340,7 +340,7 @@ class Mods_LockTimes(CheckLink):
     def Execute(self,event):
         lockLO = not bosh.modInfos.lockLO
         if not lockLO: bosh.modInfos.mtimes.clear()
-        bosh.settings['bosh.modInfos.resetMTimes'] = bosh.modInfos.lockLO = lockLO
+        bosh.modInfos.lockLO = lockLO
         bosh.modInfos.refresh(doInfos=False)
         self.window.RefreshUI(refreshSaves=True)
 

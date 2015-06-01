@@ -218,7 +218,7 @@ class Installers_AnnealAll(Installers_Link):
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
                 self.idata.anneal(progress=progress)
         finally:
-            self.idata.refresh(what='NS')
+            self.idata.irefresh(what='NS')
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
@@ -234,7 +234,7 @@ class Installers_UninstallAllPackages(Installers_Link):
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(unArchives='ALL',progress=progress)
         finally:
-            self.idata.refresh(what='NS')
+            self.idata.irefresh(what='NS')
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
@@ -283,7 +283,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
                                    u'\n' + u' ' * 65) as progress:
                     self.idata.clean(progress=progress)
             finally:
-                self.idata.refresh(what='NS')
+                self.idata.irefresh(what='NS')
                 self.iPanel.RefreshUIMods()
                 Link.Frame.RefreshData()
 
@@ -455,7 +455,7 @@ class Installers_Skip(Installers_Link, BoolLink):
             for index,dataItem in enumerate(self.idata.iteritems()):
                 progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
                 dataItem[1].refreshDataSizeCrc()
-        self.idata.refresh(what='NS')
+        self.idata.irefresh(what='NS')
         self.window.RefreshUI()
 
 class Installers_SkipScreenshots(Installers_Skip):

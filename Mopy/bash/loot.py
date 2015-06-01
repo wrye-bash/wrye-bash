@@ -21,22 +21,14 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Thin python wrapper around LOOT's API library.
 
-
-"""Python wrapper around LOOT's API library."""
-
-
+To use outside of Bash replace the Bash import below with:
+class Path: pass
+"""
 from ctypes import *
 import os
-
-try:
-    # Wrye Bash specific support
-    import bolt
-    from bolt import Path, GPath
-except:
-    class Path:
-        pass
-    def GPath(x): return x
+from bolt import Path
 
 LootApi = None
 version = None
@@ -204,7 +196,7 @@ def Init(path):
         ret = _CGetLastErrorDetails(byref(details))
         if ret != loot_ok:
             raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % ret)
-        return unicode(details.value,'utf8')
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     def RegisterCallback(errorCode,callback):
         """Used to setup callback functions for whenever specific error codes

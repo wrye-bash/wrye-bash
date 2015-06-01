@@ -28,6 +28,7 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
+from functools import wraps
 import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
@@ -43,6 +44,7 @@ import os
 import re
 import string
 import struct
+import sys
 from types import NoneType, FloatType, IntType, LongType, BooleanType, \
     StringType, UnicodeType, ListType, DictType, TupleType
 from operator import attrgetter
@@ -123,15 +125,15 @@ def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
     return _unicode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
 
-def unformatDate(str,format):
+def unformatDate(date, formatStr):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale."""
     try:
-        return time.strptime(str,'%c')
+        return time.strptime(date, '%c')
     except ValueError:
-        if format == '%c' and u'Japanese' in locale.getlocale()[0]:
-            str = re.sub(u'^([0-9]{4})/([1-9])',r'\1/0\2',str,flags=re.U)
-            return time.strptime(str,'%c')
+        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
+            date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
+            return time.strptime(date, '%c')
         else:
             raise
 
@@ -349,7 +351,7 @@ class MasterSet(set):
 
     def getOrdered(self):
         """Returns masters in proper load order."""
-        return list(modInfos.getOrdered(list(self)))
+        return list(modInfos.getOrdered(self))
 
 #------------------------------------------------------------------------------
 class LoadFactory:
@@ -879,7 +881,7 @@ class PluggyFile:
             self.version, = unpack('I',4)
             #--Reject versions earlier than 1.02
             if self.version < 0x01020000:
-                raise FileError(self.name,u'Unsupported file verson: %I' % self.version)
+                raise FileError(self.name,u'Unsupported file version: %X' % self.version)
             #--Plugins
             self.plugins = []
             type, = unpack('=B',1)
@@ -1980,7 +1982,8 @@ class BsaFile:
         with aiPath.open('w'):
             write(aiText)
 
-    def resetMTimes(self):
+    @staticmethod
+    def resetOblivionBSAMTimes():
         """Reset dates of bsa files to 'correct' values."""
         #--Fix the data of a few archive files
         bsaTimes = (
@@ -2011,7 +2014,7 @@ class BsaFile:
                         ios.pack('Q',trueHash)
                         resetCount += 1
         #--Done
-        self.resetMTimes()
+        self.resetOblivionBSAMTimes()
         self.updateAIText()
         return resetCount
 
@@ -2062,7 +2065,7 @@ class BsaFile:
                         intxt.append(fullPath)
                     trueHashes.add(trueHash)
         #--Save/Cleanup
-        self.resetMTimes()
+        self.resetOblivionBSAMTimes()
         self.updateAIText(intxt)
         #--Done
         return reset,inval,intxt
@@ -2931,6 +2934,28 @@ class PluginsFullError(BoltError):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
+def _cache(lord_func):
+    """Decorator to make sure I sync Plugins cache with load_order cache
+    whenever I change (or attempt to change) the latter.
+
+    All this syncing is error prone. WIP !
+    """
+    @wraps(lord_func)
+    def _plugins_cache_wrapper(*args, **kwargs):
+        e = None
+        try:
+            return lord_func(*args, **kwargs)
+        except:
+            e = sys.exc_info()
+            raise
+        finally:
+            try:
+                args[0].LoadOrder, args[0].selected = list(
+                    args[0].lord.loadOrder), list(args[0].lord.activeOrdered)
+            except AttributeError: # lord is None, exception thrown in init
+                raise e[0], e[1], e[2]
+    return _plugins_cache_wrapper
+
 class Plugins:
     """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
        else should access it directly.  Since migrating to libloadorder, this
@@ -2943,8 +2968,10 @@ class Plugins:
             self.dir = dirs['userApp']
         self.pathPlugins = self.dir.join(u'plugins.txt')
         self.pathOrder = self.dir.join(u'loadorder.txt')
+        # Plugins cache, manipulated by code which changes load order/active
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
+        self.lord = None    # WIP: valid LoadOrder object, must be kept in sync with load_order._current_load_order
         #--Create dirs/files if necessary
         self.dir.makedirs()
 
@@ -2964,14 +2991,17 @@ class Plugins:
         if move.exists():
             move.copyTo(self.pathOrder)
 
+    @_cache
     def saveActive(self):
-        """Write data to Plugins.txt file."""
+        """Write data to Plugins.txt file. Always call AFTER setting the load order."""
         # liblo attempts to unghost files, no need to duplicate that here.
-        load_order.SetActivePlugins(modInfos.getOrdered(self.selected))
+        #(ut) liblo DID NOT unghost - see: e64d55bdd1b37607141aba241709dc7c61f3bad9 - is it supposed to ?
+        self.lord = load_order.SetActivePlugins(self.lord.lorder(self.selected), self.lord.loadOrder)
 
+    @_cache
     def saveLoadOrder(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        load_order.SaveLoadOrder(self.LoadOrder)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder)
 
     def saveLoadAndActive(self):
         self.saveLoadOrder()
@@ -3002,11 +3032,11 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
-    def refresh(self,forceRefresh=False):
+    @_cache
+    def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         hasChanged = load_order.haveLoFilesChanged()
-        if hasChanged or forceRefresh:
-            self.LoadOrder, self.selected = load_order.GetLo()
+        if forceRefresh or hasChanged: self.lord = load_order.GetLo()
         return hasChanged
 
 #------------------------------------------------------------------------------
@@ -3127,18 +3157,12 @@ class FileInfo(_AFileInfo):
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return reModExt.search(self.name.s)
-    def isEsp(self):
-        if not self.isMod(): return False
-        if self.header:
-            return int(self.header.flags1) & 1 == 0
-        else:
-            return reEspExt.search(self.name.s)
     def isEsm(self):
         if not self.isMod(): return False
         if self.header:
             return int(self.header.flags1) & 1 == 1
         else:
-            return reEsmExt.search(self.name.s) and False
+            return bool(reEsmExt.search(self.name.s)) and False
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
@@ -3442,8 +3466,7 @@ class ModInfo(FileInfo):
     def sameAs(self, fileInfo):
         try:
             return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost and
-                self.isEsp() == fileInfo.isEsp()) # update for reversed mod
+                self.isGhost == fileInfo.isGhost)
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 
@@ -3840,13 +3863,13 @@ class TrackedFileInfos(DataDict):
        Uses absolute paths - the caller is responsible for passing them.
        """
     # DEPRECATED: hack introduced to track BAIN installed files AND game inis
-    dir = GPath(u'') # a mess with paths - throw ghosting in and raise
+    dir = GPath(u'') # a mess with paths
 
     def __init__(self, factory=_AFileInfo):
         self.factory = factory
         self.data = {}
 
-    def refresh(self):
+    def refreshTracked(self):
         data = self.data
         changed = set()
         for name in data.keys():
@@ -3870,7 +3893,7 @@ class TrackedFileInfos(DataDict):
 class FileInfos(DataDict):
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
-        self.data = {} # populated in refresh()
+        self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
         self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
@@ -4093,7 +4116,6 @@ class ModInfos(FileInfos):
     def __init__(self):
         FileInfos.__init__(self,dirs['mods'],ModInfo)
         #--MTime resetting
-        self.lockLO = settings['bosh.modInfos.resetMTimes'] # Lock Load Order (previously Lock Times
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
@@ -4138,22 +4160,28 @@ class ModInfos(FileInfos):
         self.voCurrent = None
         self.voAvailable = set()
 
+    @property
+    def lockLO(self): return settings['bosh.modInfos.resetMTimes']
+    @lockLO.setter
+    def lockLO(self, val): settings['bosh.modInfos.resetMTimes'] = val
+
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
 
     #--Refresh-----------------------------------------------------------------
+    def _OBMMWarn(self):
+        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn', 0)
+        if self.lockLO and obmmWarn == 0 and dirs['app'].join(
+                u'obmm').exists(): settings['bosh.modInfos.obmmWarn'] = 1
+        return settings['bosh.modInfos.obmmWarn'] == 1 # must warn
+
     def canSetTimes(self):
         """Returns a boolean indicating if mtime setting is allowed."""
-        self.lockLO = settings['bosh.modInfos.resetMTimes']
-        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn',0)
-        if self.lockLO and obmmWarn == 0 and dirs['app'].join(u'obmm').exists():
-            settings['bosh.modInfos.obmmWarn'] = 1
+        if self._OBMMWarn(): return False
         if not self.lockLO: return False
-        if settings['bosh.modInfos.obmmWarn'] == 1: return False
         if settings.dictFile.readOnly: return False
-        if load_order.usingTxtFile():
-            return False
+        if load_order.usingTxtFile(): return False
         #--Else
         return True
 
@@ -4168,7 +4196,7 @@ class ModInfos(FileInfos):
         hasChanged = doInfos and FileInfos.refresh(self)
         if hasChanged:
             self.resetMTimes()
-        hasChanged += self.plugins.refresh(forceRefresh=hasChanged)
+        hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
         hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
         self.reloadBashTags()
@@ -4517,6 +4545,17 @@ class ModInfos(FileInfos):
         tagList += u'[/xml][/spoiler]'
         return tagList
 
+    @staticmethod
+    def askResourcesOk(fileInfo, parent, title, bsaAndVoice, bsa, voice):
+        if not fileInfo.isMod(): return True
+        hasBsa, hasVoices = fileInfo.hasResources()
+        if (hasBsa, hasVoices) == (False,False): return True
+        mPath, name = fileInfo.name, fileInfo.name.s
+        if hasBsa and hasVoices: msg = bsaAndVoice % (mPath.sroot, name, name)
+        elif hasBsa: msg = bsa % (mPath.sroot, name)
+        else: msg = voice % name # hasVoices
+        return balt.askWarning(parent, msg, title + name)
+
     #--Mod Specific ----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""
@@ -4562,6 +4601,7 @@ class ModInfos(FileInfos):
         #--Unselect self
         if fileName in self.plugins.selected:
             self.plugins.selected.remove(fileName)
+        else: return
         #--Unselect children
         for selFile in self.plugins.selected[:]:
             #--Already unselected or missing?
@@ -4573,8 +4613,7 @@ class ModInfos(FileInfos):
                     self.unselect(selFile,False)
                     break
         #--Save
-        if doSave:
-            self.plugins.saveActive()
+        if doSave: self.plugins.saveActive()
 
     def isBadFileName(self,modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -4664,6 +4703,24 @@ class ModInfos(FileInfos):
                 if not haskey(testTime):
                     return testTime
             return defaultTime
+
+    def timestamp(self):
+        """Hack to install mods last in load order (done by liblo when txt
+        method used, when mod times method is used be sure we get the latest
+        mod time). The mod times stuff must be moved to load_order.py."""
+        if not load_order.usingTxtFile():
+            maxi = [max(x.mtime for x in self.values())]
+            def timestamps(x):
+                if reModExt.search(x.s):
+                    x.mtime = maxi[-1]
+                    maxi[-1] += 60 # space at one minute intervals
+        else:
+            # noinspection PyUnusedLocal
+            def timestamps(x): pass
+        return timestamps
+
+    @staticmethod # this belongs to load_order.py !
+    def usingTextFile(): return load_order.usingTxtFile()
 
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
@@ -4922,22 +4979,21 @@ class SaveInfos(FileInfos):
 
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
-    """SaveInfo collection. Represents save directory and related info."""
-    #--Init
+    """BSAInfo collection. Represents bsa files in game's Data directory."""
+
     def __init__(self):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
 
     #--Right File Type (Used by Refresh)
     def rightFileType(self,fileName):
-        """Bool: File is a mod."""
         return reBSAExt.search(fileName.s)
 
     def getBashDir(self):
         """Return directory to save info."""
         return dirs['modsBash'].join(u'BSA Data')
 
-    def resetMTimes(self):
+    def resetBSAMTimes(self):
         for bsa in self.values(): bsa.resetMTime()
 
 # Mod Config Help -------------------------------------------------------------
@@ -5141,20 +5197,22 @@ class ConfigHelpers:
         self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
+        self.tagList = dirs['defaultPatches'].join(u'taglist.yaml')
+        self.tagListModTime = None
         #--Bash Tags
         self.tagCache = {}
         #--Mod Rules
         self.name_ruleSet = {}
         #--Refresh
-        self.refresh(firstTime=True)
+        self.refreshBashTags()
 
-    def refresh(self,firstTime=False):
+    def refreshBashTags(self):
         """Reloads tag info if file dates have changed."""
-        path,userpath,mtime,utime = (self.lootMasterPath, self.lootUserPath, self.lootMasterTime, self.lootUserTime)
+        path, userpath = self.lootMasterPath, self.lootUserPath
         #--Masterlist is present, use it
         if path.exists():
-            if (path.mtime != mtime or
-                (userpath.exists() and userpath.mtime != utime)):
+            if (path.mtime != self.lootMasterTime or
+                (userpath.exists() and userpath.mtime != self.lootUserTime)):
                 self.tagCache = {}
                 try:
                     if userpath.exists():
@@ -5164,20 +5222,23 @@ class ConfigHelpers:
                     else:
                         lootDb.Load(path.s)
                         self.lootMasterTime = path.mtime
-                    return
+                    return # we are done
                 except loot.LootError:
-                    deprint(u'An error occurred while using the LOOT API:',traceback=True)
-            if not firstTime: return
-        #--No masterlist, use the taglist
-        taglist = dirs['defaultPatches'].join(u'taglist.yaml')
-        if not taglist.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\'+bush.game.fsName+u'\\taglist.yaml could not be found.  Please ensure Wrye Bash is installed correctly.')
+                    deprint(u'An error occurred while using the LOOT API:',
+                            traceback=True)
+        #--No masterlist or an error occured while reading it, use the taglist
+        if not self.tagList.exists():
+            raise bolt.BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
+                u'\\taglist.yaml could not be found.  Please ensure Wrye '
+                u'Bash is installed correctly.')
+        if self.tagList.mtime == self.tagListModTime: return
+        self.tagListModTime = self.tagList.mtime
         try:
             self.tagCache = {}
-            lootDb.Load(taglist.s)
-        except loot.LootError:
-            deprint(u'An error occurred while parsing taglist.yaml with the LOOT API.', traceback=True)
-            raise bolt.BoltError(u'An error occurred while parsing taglist.yaml with the LOOT API.')
+            lootDb.Load(self.tagList.s)
+        except loot.LootError as e:
+            raise bolt.BoltError, (u'An error occurred while parsing '
+            u'taglist.yaml with the LOOT API: ' + str(e)), sys.exc_info()[2]
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
@@ -7131,19 +7192,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        if not load_order.usingTxtFile():
-            mtimes = set()
-            mtimesAdd = mtimes.add
-            def timestamps(x):
-                if reModExt.search(x.s):
-                    newTime = x.mtime
-                    while newTime in mtimes:
-                        newTime += 1
-                    x.mtime = newTime
-                    mtimesAdd(newTime)
-        else:
-            def timestamps(x):
-                pass
+        timestamps = modInfos.timestamp()
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
@@ -7298,19 +7347,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        if not load_order.usingTxtFile():
-            mtimes = set()
-            mtimesAdd = mtimes.add
-            def timestamps(x):
-                if reModExt.search(x.s):
-                    newTime = x.mtime
-                    while newTime in mtimes:
-                        newTime += 1
-                    x.mtime = newTime
-                    mtimesAdd(newTime)
-        else:
-            def timestamps(*args):
-                pass
+        timestamps = modInfos.timestamp()
         count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
@@ -7536,13 +7573,15 @@ class InstallersData(DataDict):
     def addMarker(self,name):
         path = GPath(name)
         self[path] = InstallerMarker(path)
-        self.refresh(what='OS')
+        self.irefresh(what='OS')
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
         self.hasChanged = hasChanged
 
-    def refresh(self,progress=None,what='DIONSC',fullRefresh=False):
+    def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
+
+    def irefresh(self,progress=None,what='DIONSC',fullRefresh=False):
         """Refresh info."""
         progress = progress or bolt.Progress()
         #--MakeDirs
@@ -7583,7 +7622,7 @@ class InstallersData(DataDict):
         if changed: self.hasChanged = True
         return changed
 
-    def updateDictFile(self):
+    def updateDictFile(self): # CRUFT pickle
         """Updates self.data to use new classes."""
         if self.dictFile.vdata.get('version',0): return
         #--Update to version 1
@@ -7627,7 +7666,7 @@ class InstallersData(DataDict):
                 if not item.exists():
                     del self.data[item.tail]
                     refresh = True
-            if refresh: self.refresh(what='ION') # will "set changed" too
+            if refresh: self.irefresh(what='ION') # will "set changed" too
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -7753,7 +7792,7 @@ class InstallersData(DataDict):
                 # loop
                 iArchive.hasBCF = False
             bcfFile.remove()
-        self.refresh(what='I')
+        self.irefresh(what='I')
         return True
 
     def refreshInstallersNeeded(self):
@@ -7817,8 +7856,8 @@ class InstallersData(DataDict):
         """Refresh installer status."""
         changed = False
         data = self.data
-        ordered,pending = [],[]
-        orderedAppend = ordered.append
+        inOrder, pending = [], []
+        orderedAppend = inOrder.append
         pendingAppend = pending.append
         for archive,installer in self.iteritems():
             if installer.order >= 0:
@@ -7826,15 +7865,15 @@ class InstallersData(DataDict):
             else:
                 pendingAppend(archive)
         pending.sort()
-        ordered.sort()
-        ordered.sort(key=lambda x: data[x].order)
-        if self.lastKey in ordered:
-            index = ordered.index(self.lastKey)
-            ordered[index:index] = pending
+        inOrder.sort()
+        inOrder.sort(key=lambda x: data[x].order)
+        if self.lastKey in inOrder:
+            index = inOrder.index(self.lastKey)
+            inOrder[index:index] = pending
         else:
-            ordered += pending
+            inOrder += pending
         order = 0
-        for archive in ordered:
+        for archive in inOrder:
             if data[archive].order != order:
                 data[archive].order = order
                 changed = True
@@ -8083,11 +8122,9 @@ class InstallersData(DataDict):
         self.refreshStatus()
         return tweaksCreated
 
-    def removeFiles(self, removes, progress=None):
+    def _removeFiles(self, removes, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
-        data = self.data
-        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -8098,16 +8135,16 @@ class InstallersData(DataDict):
         removedPlugins = set()
         removedPluginsAdd = removedPlugins.add
         #--Construct list of files to delete
-        for file in removes:
-            path = modsDirJoin(file)
+        for file_ in removes:
+            path = modsDirJoin(file_)
             if path.exists():
                 removedFilesAdd(path)
             ghostPath = path + u'.ghost'
             if ghostPath.exists():
                 removedFilesAdd(ghostPath)
-            if reModExtSearch(file.s):
-                removedPluginsAdd(file)
-                removedPluginsAdd(file + u'.ghost')
+            if reModExtSearch(file_.s):
+                removedPluginsAdd(file_)
+                removedPluginsAdd(file_ + u'.ghost')
             emptyDirsAdd(path.head)
         #--Now determine which directories will be empty
         allRemoves = set(removedFiles)
@@ -8133,10 +8170,21 @@ class InstallersData(DataDict):
             balt.shellDelete(removedFiles, parent=parent)
         #--Update InstallersData
         InstallersData.updateTable(removes, u'') #will delete ini tweak entries
-        for file in removes:
-            data_sizeCrcDatePop(file, None)
+        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
+        for file_ in removes:
+            data_sizeCrcDatePop(file_, None)
         #--Remove mods from load order
         modInfos.plugins.removeMods(removedPlugins, savePlugins=True)
+
+    def _filter(self, archive, installer, removes, restores):
+        files = set(installer.data_sizeCrc)
+        myRestores = (removes & files) - set(restores)
+        for file in myRestores:
+            if installer.data_sizeCrc[file] != \
+                    self.data_sizeCrcDate.get(file,(0, 0, 0))[:2]:
+                restores[file] = archive
+            removes.discard(file)
+        return files
 
     def uninstall(self,unArchives,progress=None):
         """Uninstall selected archives."""
@@ -8167,32 +8215,32 @@ class InstallersData(DataDict):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                files = set(installer.data_sizeCrc)
-                myRestores = (removes & files) - set(restores)
-                for file in myRestores:
-                    if installer.data_sizeCrc[file] != data_sizeCrcDate.get(file,(0,0,0))[:2]:
-                        restores[file] = archive
-                    removes.discard(file)
-                masked |= files
+                masked |= self._filter(archive, installer, removes, restores)
         #--Remove files, update InstallersData, update load order
-        self.removeFiles(removes, progress)
+        self._removeFiles(removes, progress)
         #--De-activate
         for archive in unArchives:
             data[archive].isActive = False
         #--Restore files
-        restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
-        if settings['bash.installers.autoAnneal'] and restoreArchives:
+        if settings['bash.installers.autoAnneal']:
+            self._restoreFiles(restores, progress)
+        #--Done
+        self.refreshStatus()
+
+    def _restoreFiles(self, restores, progress):
+        getArchiveOrder = lambda x: self[x].order
+        restoreArchives = sorted(set(restores.itervalues()),
+                                 key=getArchiveOrder, reverse=True)
+        if restoreArchives:
             progress.setFull(len(restoreArchives))
             for index,archive in enumerate(restoreArchives):
                 progress(index,archive.s)
-                installer = data[archive]
+                installer = self[archive]
                 destFiles = set(x for x,y in restores.iteritems() if y == archive)
                 if destFiles:
-                    installer.install(archive,destFiles,data_sizeCrcDate,
+                    installer.install(archive, destFiles, self.data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
                     InstallersData.updateTable(destFiles, archive.s)
-        #--Done
-        self.refreshStatus()
 
     def anneal(self,anPackages=None,progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
@@ -8201,7 +8249,6 @@ class InstallersData(DataDict):
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
         data = self.data
-        data_sizeCrcDate = self.data_sizeCrcDate
         anPackages = set(anPackages or data)
         getArchiveOrder =  lambda x: data[x].order
         #--Get remove/refresh files from anPackages
@@ -8220,26 +8267,11 @@ class InstallersData(DataDict):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                files = set(installer.data_sizeCrc)
-                myRestores = (removes & files) - set(restores)
-                for file in myRestores:
-                    if installer.data_sizeCrc[file] != data_sizeCrcDate.get(file,(0,0,0))[:2]:
-                        restores[file] = package
-                    removes.discard(file)
+                self._filter(package, installer, removes, restores)
         #--Remove files, update InstallersData, update load order
-        self.removeFiles(removes, progress)
+        self._removeFiles(removes, progress)
         #--Restore files
-        restoreArchives = sorted(set(restores.itervalues()),key=getArchiveOrder,reverse=True)
-        if restoreArchives:
-            progress.setFull(len(restoreArchives))
-            for index,package in enumerate(restoreArchives):
-                progress(index,package.s)
-                installer = data[package]
-                destFiles = set(x for x,y in restores.iteritems() if y == package)
-                if destFiles:
-                    installer.install(package,destFiles,data_sizeCrcDate,
-                        SubProgress(progress,index,index+1))
-                    InstallersData.updateTable(destFiles, package.s)
+        self._restoreFiles(restores, progress)
 
     def clean(self,progress):
         data = self.data
@@ -9709,7 +9741,9 @@ def isPBashMergeable(modInfo,verbose=True):
                 newblocks.append(type)
                 break
     if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
-    dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' if GPath(modInfo.name.s) in curModInfo.header.masters]
+    dependent = [name.s for name, info in modInfos.iteritems()
+                 if info.header.author != u'BASHED PATCH'
+                 if modInfo.name in info.header.masters]
     if dependent:
         if not verbose: return False
         reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
@@ -9785,7 +9819,9 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if newblocks:
                     if not verbose: return False
                     reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
-        dependent = [curModInfo.name.s for curModInfo in modInfos.data.values() if curModInfo.header.author != u'BASHED PATCH' and modInfo.name.s in curModInfo.header.masters and curModInfo.name not in modInfos.mergeable]
+        dependent = [name.s for name, info in modInfos.iteritems()
+            if info.header.author != u'BASHED PATCH' and
+            modInfo.name in info.header.masters and name not in modInfos.mergeable]
         if dependent:
             if not verbose: return False
             reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))

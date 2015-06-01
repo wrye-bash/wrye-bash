@@ -404,7 +404,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
                 keep(worldBlock.world.fid)
         self._patchLog(log, count)
 
-    def _plog(self,log,count): # type 1?
+    def _plog(self,log,count): # type 1 but for logMsg % sum(count.values())...
         log(self.__class__.logMsg)
         for srcMod in bosh.modInfos.getOrdered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
@@ -1260,10 +1260,7 @@ class NPCAIPackagePatcher(ImportPatcher):
                     mod_count[mod] = mod_count.get(mod,0) + 1
         self._patchLog(log,mod_count)
 
-    def _plog(self,log,mod_count): # type 1
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in bosh.modInfos.getOrdered(mod_count):
-            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+    def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
     """Merges changes to the AI Packages of Actors."""
@@ -2049,10 +2046,7 @@ class ImportInventory(ImportPatcher):
                     mod_count[mod] = mod_count.get(mod,0) + 1
         self._patchLog(log,mod_count)
 
-    def _plog(self,log,mod_count): # type 1
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in bosh.modInfos.getOrdered(mod_count):
-            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+    def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 class CBash_ImportInventory(CBash_ImportPatcher):
     """Merge changes to actor inventories."""
@@ -2323,10 +2317,7 @@ class ImportActorsSpells(ImportPatcher):
                     mod_count[mod] = mod_count.get(mod,0) + 1
         self._patchLog(log,mod_count)
 
-    def _plog(self,log,mod_count): # type 1
-        log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in bosh.modInfos.getOrdered(mod_count):
-            log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+    def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 class CBash_ImportActorsSpells(CBash_ImportPatcher):
     """Merges changes to the spells lists of Actors."""

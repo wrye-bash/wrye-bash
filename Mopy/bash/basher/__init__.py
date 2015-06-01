@@ -817,7 +817,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refresh(forceRefresh=True)
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
         # FIXME(ut): hack below - used to fix things like mtimes conflicts not
         # updated - must call modInfos.refresh, wait till latter's fixed though
         bosh.FileInfos.refresh(bosh.modInfos)
@@ -946,7 +946,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                          map(self.data.dir.join, deleted))
         if not deleted: return
         for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
-        bosh.modInfos.plugins.refresh(forceRefresh=True)
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
         super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
@@ -1313,6 +1313,23 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = descriptionStr
             self.SetEdited()
 
+    bsaAndVoice = _(u'This mod has an associated archive (%s.bsa) and an '
+        u'associated voice directory (Sound\\Voices\\%s), which will become '
+        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that the '
+        u'BSA archive may also contain a voice directory (Sound\\Voices\\%s), '
+        u'which would remain detached even if the archive name is adjusted.')
+    bsa = _(u'This mod has an associated archive (%s.bsa), which will become '
+        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
+        u'BSA archive may contain a voice directory (Sound\\Voices\\%s), which'
+        u' would remain detached even if the archive file name is adjusted.')
+    voice = _(u'This mod has an associated voice directory (Sound\\Voice\\%s),'
+        u' which will become detached when the mod is renamed.')
+
+    def _askResourcesOk(self, fileInfo):
+        return bosh.modInfos.askResourcesOk(fileInfo, parent=self,
+            title=_(u'Rename '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
+            voice=self.voice)
+
     def DoSave(self,event):
         modInfo = self.modInfo
         #--Change Tests
@@ -1322,23 +1339,7 @@ class ModDetails(_SashDetailsPanel):
                       self.descriptionStr != modInfo.header.description)
         changeMasters = self.uilist.edited
         #--Warn on rename if file has BSA and/or dialog
-        hasBsa, hasVoices = modInfo.hasResources()
-        if changeName and (hasBsa or hasVoices):
-            modName = modInfo.name.s
-            if hasBsa and hasVoices:
-                message = (_(u'This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed.')
-                           + u'\n\n' +
-                           _(u'Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted.')
-                           ) % (modName[:-4],modName,modName)
-            elif hasBsa:
-                message = (_(u'This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed.')
-                           + u'\n\n' +
-                           _(u'Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted.')
-                           ) % (modName[:-4],modName)
-            else: #hasVoices
-                message = _(u'This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed.') % modName
-            if not balt.askOk(self,message):
-                return
+        if changeName and not self._askResourcesOk(modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
             newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')
@@ -1379,7 +1380,6 @@ class ModDetails(_SashDetailsPanel):
             modInfo.setmtime(newTimeInt)
         #--Done
         try:
-            #bosh.modInfos.refresh()
             bosh.modInfos.refreshFile(fileName)
             self.SetFile(fileName)
         except bosh.FileError:
@@ -1387,7 +1387,7 @@ class ModDetails(_SashDetailsPanel):
             self.SetFile(None)
         if bosh.modInfos.refresh(doInfos=False):
             bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refresh(forceRefresh=True) # maybe also called in modInfos.refresh !
+        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # maybe also called in modInfos.refresh !
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     def DoCancel(self,event):
@@ -1549,7 +1549,7 @@ class INIPanel(SashPanel):
             return self.sortKeys[index]
 
     def ShowPanel(self):
-        changed = self.trackedInfo.refresh()
+        changed = self.trackedInfo.refreshTracked()
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.GetChoice() in changed:
             self.RefreshPanel()
@@ -2251,7 +2251,7 @@ class InstallersList(balt.Tank):
                 numStr = u'0'*(numLen-len(numStr))+numStr
             #--Refresh UI
             if refreshNeeded:
-                self.data.refresh(what='I')
+                self.data.irefresh(what='I')
                 BashFrame.modList.RefreshUI(refreshSaves=True)
                 if BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at startup,
@@ -2270,7 +2270,7 @@ class InstallersList(balt.Tank):
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data.moveArchives(self.GetSelected(), newPos)
-        self.data.refresh(what='N')
+        self.data.irefresh(what='N')
         self.RefreshUI()
 
     def _extractOmods(self, omodnames):
@@ -2323,7 +2323,7 @@ class InstallersList(balt.Tank):
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
-            self.data.refresh(what='I')
+            self.data.irefresh(what='I')
             self.RefreshUI()
             progress.Destroy()
 
@@ -2413,7 +2413,7 @@ class InstallersList(balt.Tank):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.refresh(what='IN')
+            self.data.irefresh(what='IN')
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self._gList.EnsureVisible(visibleIndex)
@@ -2494,7 +2494,7 @@ class InstallersList(balt.Tank):
                     self.data.hasChanged = True  # is it really needed ?
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
-        self.data.refresh(what='NSC')
+        self.data.irefresh(what='NSC')
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -2698,7 +2698,7 @@ class InstallersPanel(SashTankPanel):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = ('DISC','IC')[self.refreshed]
-                    if data.refresh(progress,what,self.fullRefresh):
+                    if data.irefresh(progress,what,self.fullRefresh):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
@@ -2712,7 +2712,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = True
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
-                    if data.refresh(progress,'C',self.fullRefresh):
+                    if data.irefresh(progress,'C',self.fullRefresh):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
@@ -2720,7 +2720,7 @@ class InstallersPanel(SashTankPanel):
                 except CancelError:
                     # User canceled the refresh
                     self.refreshing = False
-        changed = bosh.InstallersData.miscTrackedFiles.refresh()
+        changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
             data = self.data.data_sizeCrcDate
@@ -3099,7 +3099,7 @@ class ScreensPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left,self.right
         #--Contents
-        self.listData = bosh.screensData = bosh.ScreensData()  # TODO(ut): move to InitData()
+        self.listData = bosh.screensData = bosh.ScreensData()
         self.uiList = ScreensList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
@@ -3367,8 +3367,7 @@ class MessagePanel(SashPanel):
         SashPanel.__init__(self, parent, isVertical=False)
         gTop,gBottom = self.left,self.right
         #--Contents
-        self.listData = bosh.messages = bosh.Messages() # TODO(ut): move to InitData()
-        self.listData.refresh() # FIXME(ut): move to InitData()
+        self.listData = bosh.messages = bosh.Messages()
         self.uiList = MessageList(
             gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
@@ -3556,6 +3555,7 @@ class Tab_Link(AppendableLink, CheckLink, EnabledLink):
                     # the 'Installers' tab.  Change to the
                     # 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
+            # TODO(ut): we should call ClosePanel and make sure there are no leaks
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
@@ -3945,7 +3945,6 @@ class BashFrame(wx.Frame):
         self.knownInvalidVerions = set()
         self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
-        bosh.bsaInfos = bosh.BSAInfos() # TODO(ut): move to InitData()
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
@@ -4024,6 +4023,7 @@ class BashFrame(wx.Frame):
         self.statusBar.SetStatusText(infoTxt, 1)
 
     #--Events ---------------------------------------------
+    @balt.conversation
     def RefreshData(self, event=None):
         """Refreshes all data. Can be called manually, but is also triggered
         by window activation event.""" # hunt down - performance sink !
@@ -4033,7 +4033,7 @@ class BashFrame(wx.Frame):
         self.inRefreshData = True
         popMods = popSaves = popInis = None
         #--Config helpers
-        bosh.configHelpers.refresh(firstTime=False)
+        bosh.configHelpers.refreshBashTags()
         #--Check plugins.txt and mods directory...
         modInfosChanged = not self.booting and bosh.modInfos.refresh()
         if modInfosChanged:
@@ -4067,7 +4067,7 @@ class BashFrame(wx.Frame):
         if bush.game.fsName != 'Skyrim':
             if bosh.inisettings['ResetBSATimestamps']:
                 if bosh.bsaInfos.refresh():
-                    bosh.bsaInfos.resetMTimes()
+                    bosh.bsaInfos.resetBSAMTimes()
         #--Repopulate
         if popMods:
             BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
@@ -4207,8 +4207,7 @@ class BashFrame(wx.Frame):
                 u'for maintaining your load order, it will also undo any '
                 u'load order changes that you have made in OBMM.')
             lockTimes = not balt.askYes(self, message, _(u'Lock Load Order'))
-            bosh.modInfos.lockTimes = settings[
-                'bosh.modInfos.resetMTimes'] = lockTimes
+            bosh.modInfos.lockLO = lockTimes
             if lockTimes: bosh.modInfos.resetMTimes()
             else: bosh.modInfos.mtimes.clear()
             message = _(
@@ -4232,6 +4231,7 @@ class BashFrame(wx.Frame):
     def OnCloseWindow(self, event):
         """Handle Close event. Save application data."""
         try:
+            self.BindRefresh(bind=False)
             self.SaveSettings()
         except: ##: this has swallowed exceptions since forever
                 deprint(_(u'An error occurred while trying to save settings:'),
@@ -4263,8 +4263,8 @@ class BashFrame(wx.Frame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos.data.keys())
-        modNames.update(bosh.modInfos.table.data.keys())
+        modNames = set(bosh.modInfos.keys())
+        modNames.update(bosh.modInfos.table.keys())
         renames = bosh.settings.getChanged('bash.mods.renames')
         for key,value in renames.items():
             if value not in modNames:
@@ -4284,7 +4284,7 @@ class BashFrame(wx.Frame):
             settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = set(path.root for path in fileInfos.data.keys())
+            goodRoots = set(path.root for path in fileInfos.keys())
             backupDir = fileInfos.bashDir.join(u'Backups')
             if not backupDir.isdir(): continue
             for name in backupDir.list():
@@ -4391,6 +4391,9 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
+        # bsaInfos is used in BashFrame __init__() and RefreshData() methods
+        bosh.bsaInfos = bosh.BSAInfos()
+        # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:

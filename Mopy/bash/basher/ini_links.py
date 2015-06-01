@@ -115,7 +115,7 @@ class INI_FileOpenOrCopy(OneItemLink):
                 destFile = bosh.dirs['tweaks'].join(file)
                 balt.shellMakeDirs(bosh.dirs['tweaks'],self.window)
                 balt.shellCopy(srcFile, destFile, parent=self.window)
-                self.window.data.refresh()
+                bosh.iniInfos.refresh()
                 self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ class INI_CreateNew(OneItemLink):
         if not path: return
         bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
-        self.window.data.refresh()
+        bosh.iniInfos.refresh()
         oldTarget = self.window.data.ini
         target = bosh.BestIniFile(path)
         settings,deleted = target.getSettings()

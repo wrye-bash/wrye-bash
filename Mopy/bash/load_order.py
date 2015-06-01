@@ -21,6 +21,21 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Wrapper around liblo.py
+
+Notes:
+- _current_lo is meant to eventually become a cache exported to the rest of
+Bash. Must be valid at all times. Should be updated on tabbing out and back
+in to Bash and on setting lo/active from inside Bash.
+- active mods must always be manipulated having a valid load order at hand:
+ - all active mods must be present and have a load order and
+ - especially for skyrim the relative order of entries in plugin.txt must be
+ the same as their relative load order in loadorder.txt
+
+Currently investigating what the liblo calls return to me and monkey
+patching that (see __fix methods).
+Double underscores and dirty comments are no accident - ALPHA
+"""
 import bolt
 import bush
 import liblo as _liblo
@@ -32,19 +47,24 @@ class LoadOrder(object):
     __none = frozenset()
 
     def __init__(self, loadOrder=__empty, active=__none):
+        if set(active) - set(loadOrder):
+            raise bolt.BoltError('Setting active with no load order')
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
         self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
-        # sugar, client could readily compute this - API: maybe drop:
+        # would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
-            sorted(active, key=lambda x: self.__mod_loIndex[x]))
+            sorted(active, key=self.__mod_loIndex.__getitem__))
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
     @property
     def active(self): return self._active  # test if none
-    @property # sugar
+    @property # sugar - API: maybe drop:
     def activeOrdered(self): return self._activeOrdered
+
+    def lorder(self, paths): # API: sort in place ? see usages
+        return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
 
 # Module level cache
 __empty = LoadOrder()
@@ -53,8 +73,15 @@ _current_lo = __empty # must always be valid (or __empty)
 # liblo calls - they include fixup code (which may or may not be needed/working)
 def _getLoFromLiblo():
     lord = _liblo_handle.GetLoadOrder()
-    if _current_lo.loadOrder != lord: __fixLoadOrder(lord) # current always valid
+    __fixLoadOrder(lord)
     return lord
+
+def _indexFirstEsp(lord):
+    indexFirstEsp = 0
+    while indexFirstEsp < len(lord) and bosh.modInfos[
+        lord[indexFirstEsp]].isEsm():
+        indexFirstEsp += 1
+    return indexFirstEsp
 
 def __fixLoadOrder(lord):
     """HACK: Fix inconsistencies between given loadorder and actually installed
@@ -88,70 +115,85 @@ def __fixLoadOrder(lord):
     # Remove non existent plugins from load order
     lord[:] = [x for x in lord if x not in removedFiles]
     # Add new plugins to load order
-    indexFirstEsp = 0
-    while indexFirstEsp < len(lord) and bosh.modInfos[lord[indexFirstEsp]].isEsm():
-        indexFirstEsp += 1
+    indexFirstEsp = _indexFirstEsp(lord)
     for mod in addedFiles:
-        if bosh.modInfos.data[mod].isEsm():
-            lord.insert(mod, indexFirstEsp)
+        if bosh.modInfos[mod].isEsm():
+            lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
         else:
             lord.append(mod)
     # Check to see if any esm files are loaded below an esp and reorder as necessary
     for mod in lord[indexFirstEsp:]: # SEEMS NOT NEEDED, liblo does this
-        if bosh.modInfos.data[mod].isEsm():
+        if bosh.modInfos[mod].isEsm():
             lord.remove(mod)
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
             reordered = True
     # Save changes if necessary
     if removedFiles or addedFiles or reordered:
+        if removedFiles or reordered: # must fix the active too
+            __fixActive(_current_lo.activeOrdered, lord)
         bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)' % (
             str(_pl(addedFiles) or u'None'), str(_pl(removedFiles) or u'None'),
             u'No' if not reordered else _pl(oldLord, u'from:\n') +
                                         _pl(lord, u'\nto:\n')))
-        SaveLoadOrder(lord)
+        SaveLoadOrder(lord, _fixed=True)
         return True # changes, saved
     return False # no changes, not saved
 
-def _getActiveFromLiblo(lord): # pass load order in to check for mismatch
+def _getActiveFromLiblo(lord): # pass a VALID load order in
     acti = _liblo_handle.GetActivePlugins()
-    # __fixActive
+    acti = __fixActive(acti, lord)
+    return acti
+
+def __fixActive(acti, lord):
     # filter plugins not present in load order
-    actiFiltered = [x for x in acti if x in lord]
-    changed = acti != actiFiltered  # take note as we may need to rewrite
-    # plugins txt
-    if changed:
-        removed = set(acti) - set(actiFiltered)
+    actiFiltered = [x for x in acti if x in lord] # preserve acti order
+    removed = set(acti) - set(actiFiltered)
+    if removed: # take note as we may need to rewrite plugins txt
         msg = _(u'Those mods were present in plugins txt but not present in '
-                u'Data/ directory') + u': ' + u', '.join(x.s for x in removed)
+                u'Data/ directory') + u': ' + _pl(removed) + u'\n'
     else: msg = u''
+    # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,
+    # Update.esm] on empty plugins.txt) - Keep it cause eventually (when liblo
+    # is made to return actual contents of plugins.txt at all times) I may
+    # need to correct this here
+    addUpdateEsm = False
+    if bush.game.fsName == 'Skyrim':
+        updateEsm = bolt.GPath(u'Update.esm')
+        if updateEsm in lord and not updateEsm in acti:
+            msg += _(u'Update.esm not present in plugins.txt while present in '
+                     u'Data folder') + u'\n'
+            addUpdateEsm = True
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
     # STILL restore for skyrim to warn on LO change
     if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
         actiSorted = actiFiltered[:]
-        actiSorted.sort(key=lambda y: lord.index(y)) # all present in lord
+        actiSorted.sort(key=lord.index) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
-            if msg: msg += u'\n'
             msg += u'Plugins.txt order of plugins (%s) differs from current ' \
                    u'load order (%s)' % (_pl(actiFiltered), _pl(actiSorted))
-            changed = True
-    else: actiSorted = actiFiltered
-    if changed:
+    else: actiSorted = sorted(actiFiltered, key=lord.index)
+    if addUpdateEsm: # insert after the last master (as does liblo)
+        actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
+    if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
-        SetActivePlugins(actiSorted)
+        SetActivePlugins(actiSorted, lord, _fixed=True)
     return actiSorted
 
-def SaveLoadOrder(lord):
+def SaveLoadOrder(lord, _fixed=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method (in liblo 4.0 at
     least) - check lo_set_load_order - to reorder it as loadorder.txt.
     It 'checks the validity' of lord passed and will raise if invalid."""
+    if not _fixed: __fixLoadOrder(lord)
     _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
     _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
     _setLoTxtModTime()
+    _updateCache(lord=lord, actiSorted=_current_lo.active)
+    return _current_lo
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
@@ -161,25 +203,32 @@ def _reset_mtimes_cache():
         path = bosh.modInfos[name].getPath()
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
-def _updateCache():
+def _updateCache(lord=None, actiSorted=None):
     global _current_lo
     try:
-        lord = _getLoFromLiblo()
+        if lord is None:
+            lord = _getLoFromLiblo()
+            _setLoTxtModTime()
         # got a valid load order - now to active...
-        actiSorted = _getActiveFromLiblo(lord)
+        if actiSorted is None:
+            actiSorted = _getActiveFromLiblo(lord)
+            _setPluginsTxtModTime()
         _current_lo = LoadOrder(lord, actiSorted)
-    except _liblo_error:
+    except Exception:
+        bolt.deprint('Error updating load_order cache from liblo')
         _current_lo = __empty
         raise
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
-    # below is tmp - must finally become return _current_load_order
-    return list(_current_lo.loadOrder), list(_current_lo.activeOrdered)
+    return _current_lo
 
-def SetActivePlugins(act):
+def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to set active
+    if not _fixed: act = __fixActive(act, lord)
     _liblo_handle.SetActivePlugins(act)
     _setPluginsTxtModTime()
+    _updateCache(lord=lord, actiSorted=act)
+    return _current_lo
 
 def usingTxtFile(): return _liblo_handle.usingTxtFile()
 

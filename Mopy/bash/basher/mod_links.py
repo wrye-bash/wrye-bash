@@ -146,6 +146,7 @@ class Mod_OrderByName(EnabledLink):
 
     def _enable(self): return len(self.selected) > 1
 
+    @balt.conversation
     def Execute(self,event):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '
@@ -681,8 +682,8 @@ class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
 class Mod_AllowGhosting(TransLink):
     """Toggles Ghostability."""
 
-    def _decide(self, window, data):
-        if len(data) == 1:
+    def _decide(self, window, selection):
+        if len(selection) == 1:
             class _CheckLink(_GhostLink, CheckLink):
                 text = _(u"Disallow Ghosting")
                 help = _(u"Toggle Ghostability")
@@ -706,38 +707,41 @@ class Mod_MarkMergeable(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
+    @balt.conversation
     def Execute(self,event):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
-        for fileName in map(GPath,self.selected):
-            if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
-            fileInfo = bosh.modInfos[fileName]
-            if self.doCBash:
-                if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
-                    reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
+        with balt.BusyCursor():
+            for fileName in map(GPath,self.selected):
+                if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
+                fileInfo = bosh.modInfos[fileName]
+                if self.doCBash:
+                    if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
+                        reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
+                    else:
+                        reason = bosh.isCBashMergeable(fileInfo,True)
                 else:
-                    reason = bosh.isCBashMergeable(fileInfo,True)
-            else:
-                reason = bosh.isPBashMergeable(fileInfo,True)
+                    reason = bosh.isPBashMergeable(fileInfo,True)
 
-            if reason == True:
-                mod_mergeInfo[fileName] = (fileInfo.size,True)
-                yes.append(fileName)
-            else:
-                if (u'\n.    '+_(u"Has 'NoMerge' tag.")) in reason:
+                if reason == True:
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
+                    yes.append(fileName)
                 else:
-                    mod_mergeInfo[fileName] = (fileInfo.size,False)
-                no.append(u"%s:%s" % (fileName.s,reason))
-        message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
-        if yes:
-            message += u'=== '+_(u'Mergeable')+u'\n* '+u'\n\n* '.join(x.s for x in yes)
-        if yes and no:
-            message += u'\n\n'
-        if no:
-            message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-        self.window.RefreshUI(files=yes, refreshSaves=False) # was True
-        self.window.RefreshUI(files=no, refreshSaves=False) # was True
+                    if (u'\n.    '+_(u"Has 'NoMerge' tag.")) in reason:
+                        mod_mergeInfo[fileName] = (fileInfo.size,True)
+                    else:
+                        mod_mergeInfo[fileName] = (fileInfo.size,False)
+                    no.append(u"%s:%s" % (fileName.s,reason))
+            message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
+            if yes:
+                message += u'=== ' + _(
+                    u'Mergeable') + u'\n* ' + u'\n\n* '.join(x.s for x in yes)
+            if yes and no:
+                message += u'\n\n'
+            if no:
+                message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
+            self.window.RefreshUI(files=yes, refreshSaves=False) # was True
+            self.window.RefreshUI(files=no, refreshSaves=False) # was True
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -771,8 +775,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def Execute(self,event):
         """Handle activation event."""
         try:
-            fileName = self._Execute()
-            if not fileName: return # prevent settings save
+            if not self._Execute(): return # prevent settings save
         except CancelError:
             return # prevent settings save
         # save data to disc in case of later improper shutdown leaving the
@@ -941,9 +944,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
-    def _decide(self, window, data):
-        """Append a radio button if CBash is enabled a simple item otherwise."""
-        enable = len(data) == 1 and window.isBP(data[0])
+    def _decide(self, window, selection):
+        """Return a radio button if CBash is enabled a simple item
+        otherwise."""
+        enable = len(selection) == 1 and window.isBP(selection[0])
         if enable and bosh.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch
@@ -1119,8 +1123,8 @@ class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
 
-    def _decide(self, window, data):
-        if len(data) == 1:
+    def _decide(self, window, selection):
+        if len(selection) == 1:
             class _CheckLink(_DirtyLink, CheckLink):
                 text = _(u"Don't check against LOOT's dirty mod list")
                 help = _(u"Toggles scanning for dirty mods on a per-mod basis")
@@ -1355,12 +1359,16 @@ class Mod_AddMaster(OneItemLink):
     text = _(u'Add Master...')
 
     def Execute(self,event):
-        message = _(u"WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs.")
+        message = _(u"WARNING! For advanced modders only! Adds specified "
+                    u"master to list of masters, thus ceding ownership of "
+                    u"new content of this mod to the new master. Useful for "
+                    u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        wildcard = _(u'%s Masters')%bush.game.displayName+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = _(u'%s Masters') % bush.game.displayName + \
+                   u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = self._askOpenMulti(
                             title=_(u'Add master:'), defaultDir=fileInfo.dir,
                             wildcard=wildcard)
@@ -1508,6 +1516,7 @@ class Mod_FlipSelf(EnabledLink):
                 return False
         return True
 
+    @balt.conversation
     def Execute(self,event):
         message = (_(u'WARNING! For advanced modders only!')
                    + u'\n\n' +
@@ -1520,10 +1529,10 @@ class Mod_FlipSelf(EnabledLink):
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
-            #--Repopulate
-            bosh.modInfos.refresh(doInfos=False) ##: why in the loop ?
-        self.window.RefreshUI(files=self.selected, refreshSaves=True) # True,
-        # see Mod_FlipMasters
+        with balt.BusyCursor():
+            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
+            # refreshSaves=True, see Mod_FlipMasters
+            self.window.RefreshUI(files=self.selected, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
@@ -1553,6 +1562,7 @@ class Mod_FlipMasters(OneItemLink):
 
     def _enable(self): return self.enable
 
+    @balt.conversation
     def Execute(self,event):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
@@ -1565,17 +1575,22 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        bosh.modInfos.refresh(doInfos=False) # esms will be moved to the top -
-        # note that modification times won't change - so mods will revert to
-        # their original position once back to esp from esm (Oblivion etc)
-        self.window.RefreshUI(files=updated, refreshSaves=True) # True as LO
-        # will change as esms will be moved to the top
+        with balt.BusyCursor():
+            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # esms
+            # will be moved to the top - note that modification times won't
+            # change - so mods will revert to their original position once back
+            # to esp from esm (Oblivion etc). Refresh saves due to esms move
+            self.window.RefreshUI(files=updated, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
     """Sets version of file back to 0.8."""
     text = _(u'Version 0.8')
     help = _(u'Sets version of file back to 0.8')
+    message = _(u"WARNING! For advanced modders only! This feature allows you "
+        u"to edit newer official mods in the TES Construction Set by resetting"
+        u" the internal file version number back to 0.8. While this will make "
+        u"the mod editable, it may also break the mod in some way.")
 
     def _initData(self, window, selection):
         super(Mod_SetVersion, self)._initData(window, selection)
@@ -1586,8 +1601,7 @@ class Mod_SetVersion(OneItemLink):
                 int(10 * self.fileInfo.header.version) != 8)
 
     def Execute(self,event):
-        message = _(u"WARNING! For advanced modders only! This feature allows you to edit newer official mods in the TES Construction Set by resetting the internal file version number back to 0.8. While this will make the mod editable, it may also break the mod in some way.")
-        if not self._askContinue(message, 'bash.setModVersion.continue',
+        if not self._askContinue(self.message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
         self.fileInfo.makeBackup()
         self.fileInfo.header.version = 0.8
@@ -1607,13 +1621,15 @@ class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
     text = _(u'Form IDs...')
     help = _(u'Replace fids according to text file')
+    message = _(u"For advanced modders only! Systematically replaces one set "
+        u"of Form Ids with another in npcs, creatures, containers and leveled "
+        u"lists according to a Replacers.csv file.")
 
     @staticmethod
     def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
 
     def Execute(self,event):
-        message = _(u"For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file.")
-        if not self._askContinue(message, 'bash.formIds.replace.continue',
+        if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]

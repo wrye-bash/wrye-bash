@@ -194,7 +194,7 @@ class AListPatcher(_Abstract_Patcher):
             autoKey = {autoKey}
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        for modInfo in bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.values():
             if autoRe.match(modInfo.name.s) or (
                 autoKey & modInfo.getBashTags()):
                 if bush.fullLoadOrder[modInfo.name] > \
@@ -348,6 +348,13 @@ class AMultiTweakItem(object):
         #--Log
         self.logHeader = u'=== '+ label
 
+    def _patchLog(self, log, count):
+        """Log - must define self.logMsg in subclasses"""
+        log.setHeader(self.logHeader)
+        log(self.logMsg % sum(count.values()))
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+
     #--Config Phase -----------------------------------------------------------
     # Methods present in _Abstract_Patcher too
     def getConfig(self,configs):
@@ -440,7 +447,7 @@ class APatchMerger(AListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        for modInfo in bosh.modInfos.data.values():
+        for modInfo in bosh.modInfos.values():
             if modInfo.name in bosh.modInfos.mergeable and u'NoMerge' not in \
                     modInfo.getBashTags() and \
                             bush.fullLoadOrder[modInfo.name] < \

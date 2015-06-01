@@ -181,7 +181,7 @@ def Init(path):
         ret = _Clo_get_error_message(byref(details))
         if ret != LIBLO_OK:
             raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % ret)
-        return unicode(details.value,'utf8')
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     class LibloError(Exception):
         def __init__(self,value):
@@ -328,10 +328,6 @@ def Init(path):
                 _Clo_destroy_handle(self._DB)
                 self._DB = None
 
-        # 'with' statement
-        def __enter__(self): return self
-        def __exit__(self,exc_type,exc_value,traceback): self.__del__()
-
         # ---------------------------------------------------------------------
         # Load Order management
         # ---------------------------------------------------------------------
@@ -360,8 +356,6 @@ def Init(path):
             return map(GPath, plugins[:num.value])
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            if self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins:
-                plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
             _Clo_set_active_plugins(self._DB, plugins, num)

@@ -750,6 +750,11 @@ class AAssortedTweak_FogFix(AMultiTweakItem):
             )
         self.defaultEnabled = True
 
+    def _patchLog(self, log, count):
+        log.setHeader(self.logHeader)
+        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
+
 class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -782,10 +787,7 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
                     keep(cell.fid)
                     count.setdefault(cell.fid[0],0)
                     count[cell.fid[0]] += 1
-        #--Log
-        log.setHeader(self.logHeader)
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
+        self._patchLog(log, count)
 
 class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
     name = _(u'Nvidia Fog Fix')
@@ -810,15 +812,6 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
                 mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        #--Log
-        mod_count = self.mod_count
-        log.setHeader(self.logHeader)
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
-            log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class AAssortedTweak_NoLightFlicker(AMultiTweakItem):
@@ -915,11 +908,7 @@ class AMultiTweakItem_Weight(AMultiTweakItem):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem,
-                                  AMultiTweakItem_Weight):
-
-    def buildPatchLog(self,log):
-        self._patchLog(log, self.mod_count)
-        self.mod_count = {}
+                                  AMultiTweakItem_Weight): pass
 
 class AAssortedTweak_PotionWeight(AMultiTweakItem_Weight):
     """Reweighs standard potions down to 0.1."""

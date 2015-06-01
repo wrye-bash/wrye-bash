@@ -103,7 +103,7 @@ class Screen_ConvertTo(EnabledLink):
                     if not result: continue
                     srcPath.remove()
         finally:
-            self.window.data.refresh()
+            bosh.screensData.refresh()
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
