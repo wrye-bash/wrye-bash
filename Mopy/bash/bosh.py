@@ -4704,19 +4704,21 @@ class ModInfos(FileInfos):
                     return testTime
             return defaultTime
 
+    __max_time = -1
     def timestamp(self):
         """Hack to install mods last in load order (done by liblo when txt
-        method used, when mod times method is used be sure we get the latest
+        method used, when mod times method is used make sure we get the latest
         mod time). The mod times stuff must be moved to load_order.py."""
         if not load_order.usingTxtFile():
-            maxi = [max(x.mtime for x in self.values())]
-            def timestamps(x):
-                if reModExt.search(x.s):
-                    x.mtime = maxi[-1]
+            maxi = max([x.mtime for x in self.values()] + [self.__max_time])
+            maxi = [maxi + 60]
+            def timestamps(p):
+                if reModExt.search(p.s):
+                    self.__max_time = p.mtime = maxi[-1]
                     maxi[-1] += 60 # space at one minute intervals
         else:
             # noinspection PyUnusedLocal
-            def timestamps(x): pass
+            def timestamps(p): pass
         return timestamps
 
     @staticmethod # this belongs to load_order.py !
