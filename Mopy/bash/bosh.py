@@ -4720,7 +4720,7 @@ class ModInfos(FileInfos):
         return timestamps
 
     @staticmethod # this belongs to load_order.py !
-    def usingTextFile(): return load_order.usingTxtFile()
+    def usingTxtFile(): return load_order.usingTxtFile()
 
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
