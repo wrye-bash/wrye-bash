@@ -28,9 +28,20 @@ import re
 import struct
 from .constants import *
 from ... import brec
-from .records import MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, \
-    MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreCobj, MreGmst, MreLvli, \
-    MreLvln, MreLvsp, MreMisc, MreHeader
+from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
+    MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, MreLvsp, MreEnch, \
+    MreProj, MreDlbr, MreRfct, MreMisc, MreActi, MreEqup, MreCpth, MreDoor, \
+    MreAnio, MreHazd, MreIdlm, MreEczn, MreIdle, MreLtex, MreQust, MreMstt, \
+    MreNpc, MreFlst, MreIpds, MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, \
+    MreLvli, MreSpel, MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, \
+    MreGras, MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
+    MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, MreKeym, \
+    MreTxst, MreHdpt, MreHeader, MreAlch, MreBook, MreSpgd, MreSndr, MreImgs, \
+    MreScrl, MreMust, MreFstp, MreFsts, MreMgef, MreLgtm, MreMusc, MreClas, \
+    MreLctn, MreTact, MreBptd, MreDobj, MreLscr, MreDlvw, MreTree, MreWatr, \
+    MreFlor, MreEyes, MreWeap, MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, \
+    MreLcrt, MreStat, MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, \
+    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft
 from ...brec import MreGlob, BaseRecordHeader, ModError
 
 #--Name of the game to use in UI.
@@ -343,13 +354,19 @@ ignoreDataDirs = {
 }
 
 #--Tags supported by this game
-allTags = sorted((u'Relev', u'Delev', u'Filter', u'NoMerge', u'Deactivate',
-                  u'Names', u'Stats'))
+allTags = sorted((
+    u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace', u'C.Light',
+    u'C.Location', u'C.SkyLighting', u'C.Music', u'C.Name', u'C.Owner',
+    u'C.RecordFlags', u'C.Regions', u'C.Water', u'Deactivate', u'Delev',
+    u'Filter', u'Graphics', u'Invent', u'NoMerge', u'Relev', u'Sound',
+    u'Stats', u'Names',
+    ))
 
 #--Gui patcher classes available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
-    u'NamesPatcher', u'StatsPatcher'
+    u'AliasesPatcher', u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
+    u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
+    u'StatsPatcher', u'NamesPatcher',
     )
 
 #--CBash Gui patcher classes available when building a Bashed Patch
@@ -552,10 +569,24 @@ class RecordHeader(BaseRecordHeader):
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
-    )
+    # MreAchr, MreDial, MreInfo,
+    # MreFact,
+    MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
+    MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreCams,
+    MreClas, MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty,
+    MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
+    MreEnch, MreEqup, MreExpl, MreEyes, MreFlor, MreFlst, MreFstp, MreFsts,
+    MreFurn, MreGlob, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm,
+    MreImad, MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
+    MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp,
+    MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc,
+    MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
+    MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr,
+    MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
+    MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr,
+    ####### for debug
+    MreQust,
+)
 
 #--Extra read classes: these record types will always be loaded, even if
 # patchers don't need them directly (for example, MGEF for magic effects info)
@@ -574,13 +605,25 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAact, MreActi, MreAddn, MreAmmo, MreAnio, MreAppa, MreArma, MreArmo,
-        MreArto, MreAspc, MreAstp, MreCobj, MreGlob, MreGmst, MreLvli, MreLvln,
-        MreLvsp, MreMisc,
-        MreHeader,
-        ))
+        MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch, MreAmmo,
+        MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif,
+        MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
+        MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor,
+        MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact,
+        MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGlob, MreGmst, MreGras,
+        MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct,
+        MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh, MreLscr,
+        MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef,
+        MreMisc, MreMovt, MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj,
+        MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
+        MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd,
+        MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
+        MreWthr, MreCell, MreWrld,  # MreNavm, MreNavi
+        ####### for debug
+        MreQust, MreHeader,
+    ))
 
     #--Simple records
     brec.MreRecord.simpleTypes = (
-        set(brec.MreRecord.type_class) - {'TES4',})
-
+        set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
+                                          'INFO', 'WRLD', })
