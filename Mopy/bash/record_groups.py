@@ -29,6 +29,7 @@ from operator import itemgetter
 from brec import ModReader
 from bolt import sio, struct_pack, struct_unpack
 import bosh # for modInfos
+import bush # for fallout3/nv fsName
 from exception import AbstractError, ArgumentError, ModError
 
 # Tes3 Group/Top Types --------------------------------------------------------
@@ -817,6 +818,8 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
+        isFallout = bush.game.fsName.lower() in (u'fallout3', u'falloutnv')
+        cells = {}
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
@@ -844,6 +847,7 @@ class MobWorld(MobCells):
                                                hex(cell.fid),cell.eid))
                         self.worldCellBlock = cellBlock
                 cell = recClass(header,ins,True)
+                if isFallout: cells[cell.fid] = cell
                 if block:
                     if insTell() > endBlockPos or insTell() > endSubblockPos:
                         raise ModError(self.inName,
@@ -863,6 +867,7 @@ class MobWorld(MobCells):
                     # subblock = (subblock[1],subblock[0]) # unused var
                     endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
+                    if isFallout: cell = cells.get(groupFid,None)
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
@@ -1019,18 +1024,22 @@ class MobWorlds(MobBase):
         insSeek = ins.seek
         selfLoadFactory = self.loadFactory
         worldBlocksAppend = worldBlocks.append
+        isFallout = bush.game.fsName.lower() in (u'fallout3', u'falloutnv')
+        worlds = {}
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
             recType = header.recType
             if recType == expType:
                 world = recWrldClass(header,ins,True)
+                if isFallout: worlds[world.fid] = world
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
                     raise ModError(ins.inName,
                                    u'Unexpected subgroup %d in CELL group.'
                                    % groupType)
+                if isFallout: world = worlds.get(groupFid,None)
                 if not world:
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD
                     # group.' % groupType)
