@@ -390,17 +390,17 @@ class MelDecalData(MelStruct):
 
     DecalDataFlags = Flags(0L,Flags.getNames(
             (0, 'parallax'),
-            (0, 'alphaBlending'),
-            (0, 'alphaTesting'),
-            (0, 'noSubtextures'),
+            (1, 'alphaBlending'),
+            (2, 'alphaTesting'),
+            (3, 'noSubtextures'),
         ))
 
     def __init__(self,attr='decals'):
         """Initialize elements."""
         MelStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
                   'maxHeight','depth','shininess','parallaxScale',
-                  'passes',(MelDecalData.DecalDataFlags,'flags',0L),'unknown',
-                  'red','green','blue','unknown',
+                  'parallaxPasses',(MelDecalData.DecalDataFlags,'flags',0L),('unknownDecal1',null2),
+                  'redDecal','greenDecal','blueDecal',('unknownDecal2',null1),
             )
 
 #------------------------------------------------------------------------------
