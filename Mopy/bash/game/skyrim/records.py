@@ -3792,22 +3792,26 @@ class MreLctn(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
-class MelLgtmData(MelStruct):
-    def __init__(self,type='DALC'):
-        MelStruct.__init__(self,type,'=4B4B4B4B4B4B4Bf',
-            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
-            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
-            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
-            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
-            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
-            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
-            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
-            'fresnelPower' # Fresnel Power
-        )
-
 class MreLgtm(MelRecord):
     """Lgtm Item"""
     classType = 'LGTM'
+
+    class MelLgtmDalc(MelStruct):
+        """Handle older truncated DALC for LGTM subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 32:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 24:
+                unpacked = ins.unpack('=4B4B4B4B4B4B',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,32,size,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -3817,16 +3821,23 @@ class MreLgtm(MelRecord):
             'redLigh','greenLigh','blueLigh','unknownLigh',
             'redDirect','greenDirect','blueDirect','unknownDirect',
             'redFog','greenFog','blueFog','unknownFog',
-            'fogNear','fogFar',
-            'dirRotXY','dirRotZ',
+            'fogNear','fogFar','dirRotXY','dirRotZ',
             'directionalFade','fogClipDist','fogPower',
-            'unknown1'
+            ('unknownData',null4+null4+null4+null4+null4+null4+null4+null4),
             'redFogFar','greenFogFar','blueFogFar','unknownFogFar',
-            'fogMax',
-            'lightFaceStart','lightFadeEnd',
-            'unknown2',),
-        # 32 Bytes
-        MelLgtmData(),
+            'fogMax','lightFaceStart','lightFadeEnd',
+            ('unknownData2',null4),
+            ),
+        MelLgtmDalc('DALC','=4B4B4B4B4B4B4Bf',
+            'redXplus','greenXplus','blueXplus','unknownXplus', # 'X+'
+            'redXminus','greenXminus','blueXminus','unknownXminus', # 'X-'
+            'redYplus','greenYplus','blueYplus','unknownYplus', # 'Y+'
+            'redYminus','greenYminus','blueYminus','unknownYminus', # 'Y-'
+            'redZplus','greenZplus','blueZplus','unknownZplus', # 'Z+'
+            'redZminus','greenZminus','blueZminus','unknownZminus', # 'Z-'
+            'redSpec','greenSpec','blueSpec','unknownSpec', # Specular Color Values
+            'fresnelPower', # Fresnel Power
+            ),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
