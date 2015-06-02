@@ -644,7 +644,7 @@ class MelString16(MelString):
     """Represents a mod record string element."""
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
-        strLen = ins.unpack('H',2,readId)
+        strLen, = ins.unpack('H',2,readId)
         value = ins.readString(strLen,readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',record.__getattribute__(self.attr)
@@ -679,7 +679,7 @@ class MelString32(MelString):
     """Represents a mod record string element."""
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
-        strLen = ins.unpack('I',4,readId)
+        strLen, = ins.unpack('I',4,readId)
         value = ins.readString(strLen,readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',record.__getattribute__(self.attr)
