@@ -3635,26 +3635,26 @@ class MreIpctData(MelStruct):
     def __init__(self,type='DATA'):
         MelStruct.__init__(self,type,'fI2fI2B2s','effectDuration','effectOrientation',
                   'angleThreshold','placementRadius','soundLevel',
-                  (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unknown',),
+                  (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unkIpct1',),
 
     def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        if size == 16:
-            # 16 Bytes for legacy data post Skyrim 1.5 DATA is always 24 bytes
-            # fI2f + I2B2s
-            unpacked = ins.unpack('=fI2f',size,readId) + (0,0,0,0,)
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if action: value = action(value)
-                setter(attr,value)
-            if self._debug:
-                print u' ',zip(self.attrs,unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ',unpacked
-        elif size != 24:
-            raise ModSizeError(ins.inName,readId,24,size,True)
-        else:
+        """Handle older truncated DATA for IPCT subrecord."""
+        if size == 24:
             MelStruct.loadData(self,record,ins,type,size,readId)
+            return
+        elif size == 16:
+            unpacked = ins.unpack('=fI2f',size,readId) #  + (0,0,0,0,)
+        else:
+            raise ModSizeError(record.inName,readId,24,size,True)
+        unpacked += self.defaults[len(unpacked):]
+        setter = record.__setattr__
+        for attr,value,action in zip(self.attrs,unpacked,self.actions):
+            if callable(action): value = action(value)
+            setter(attr,value)
+        if self._debug:
+            print u' ',zip(self.attrs,unpacked)
+            if len(unpacked) != len(self.attrs):
+                print u' ',unpacked
 
 class MreIpct(MelRecord):
     """Impact record."""
