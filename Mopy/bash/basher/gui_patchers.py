@@ -750,6 +750,9 @@ class ListsMerger(special.ListsMerger, _ListPatcherPanel):
 class CBash_ListsMerger(special.CBash_ListsMerger, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
 
+class FidListsMerger(special.FidListsMerger, _ListPatcherPanel):
+    listLabel = _("Override Deflst Tags")
+
 class ContentsChecker(special.ContentsChecker, _PatcherPanel): pass
 class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass
 
