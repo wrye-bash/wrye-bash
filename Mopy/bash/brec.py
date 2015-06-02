@@ -205,7 +205,7 @@ class ModReader:
     def setStringTable(self,table={}):
         if table is None:
             self.hasStrings = False
-            self.table = {}
+            self.strings = {}
         else:
             self.hasStrings = True
             self.strings = table
@@ -1234,7 +1234,7 @@ class MelSet:
         if _debug: print u'\n>>>> %08X' % record.fid
         insAtEnd = ins.atEnd
         insSubHeader = ins.unpackSubHeader
-##        fullLoad = self.full0.loadData
+        # fullLoad = self.full0.loadData
         while not insAtEnd(endPos,recType):
             (Type,size) = insSubHeader(recType)
             if _debug: print type,size
@@ -1455,6 +1455,8 @@ class MreRecord(object):
                 self.data = ins.read(self.size,type)
             if not self.__class__ == MreRecord:
                 with self.getReader() as reader:
+                    # Check This
+                    if ins.hasStrings: reader.setStringTable(ins.strings)
                     self.loadData(reader,reader.size)
         #--Discard raw data?
         if unpack == 2:
