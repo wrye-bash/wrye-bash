@@ -127,7 +127,7 @@ if skyrimMlist:
 if fallout3Mlist:
     # Convert Fallout 3 masterlist.
     print u'Getting masterlist from %s' % fallout3Mlist
-    taglistDir = u'../Mopy/Bash Patches/Fallout 3/taglist.yaml'
+    taglistDir = u'../Mopy/Bash Patches/Fallout3/taglist.yaml'
     if os.path.exists(fallout3Mlist):
         lootDb = loot.LootDb(fallout3Dir,loot.loot_game_fo3)
         lootDb.PlainLoad(fallout3Mlist)
@@ -139,7 +139,7 @@ if fallout3Mlist:
 if falloutNVMlist:
     # Convert Fallout New Vegas masterlist.
     print u'Getting masterlist from %s' % falloutNVMlist
-    taglistDir = u'../Mopy/Bash Patches/Fallout New Vegas/taglist.yaml'
+    taglistDir = u'../Mopy/Bash Patches/FalloutNV/taglist.yaml'
     if os.path.exists(falloutNVMlist):
         lootDb = loot.LootDb(falloutNVDir,loot.loot_game_fonv)
         lootDb.PlainLoad(falloutNVMlist)
