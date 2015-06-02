@@ -713,6 +713,8 @@ class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
 
 class DestructiblePatcher(importers.DestructiblePatcher, _ListPatcherPanel): pass
 
+class WeaponModsPatcher(importers.WeaponModsPatcher, _ListPatcherPanel): pass
+
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
                       _TweakPatcherPanel): pass
