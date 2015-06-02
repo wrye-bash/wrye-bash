@@ -1,0 +1,8502 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2011-12-18 18:26+Alaskan Standard Time\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf8\n"
+"Content-Transfer-Encoding: utf8\n"
+"Generated-By: pygettext.py 1.5\n"
+
+#: bash\bash\bolt.py:739
+msgid "Argument is out of allowed ranged of values"
+msgstr "引数が範囲外の値を参照しています"
+
+#: bash\bash\bolt.py:745
+msgid "Object is in a bad state"
+msgstr "オブジェクトは異常な状態になっています"
+
+#: bash\bash\bolt.py:751
+msgid "Section is not coded yet"
+msgstr "このセクションはまだコーディングされていません"
+
+#: bash\bash\bolt.py:757
+msgid "Action aborted by user"
+msgstr "アクションはユーザによって中断しました"
+
+#: bash\bash\bolt.py:762
+msgid "Action skipped by user"
+msgstr "アクションはユーザによってスキップされました"
+
+#: bash\bash\bolt.py:769
+msgid "Access is denied"
+msgstr "アクセスが拒否されました"
+
+#: bash\bash\bolt.py:1045
+msgid "Unable to determine size of %s - probably a unicode error"
+msgstr "%sのサイズが測定できません. おそらくUnicodeエラーです"
+
+#: bash\bash\bolt.py:1053
+msgid "Unable to determine atime of %s - probably a unicode error"
+msgstr "%sのatimeが測定できません. おそらくUnicodeエラーです"
+
+#: bash\bash\bolt.py:1081
+msgid "Unable to determine modified time of %s - probably a unicode error"
+msgstr "%sの更新日時が測定できません. おそらくUnicodeエラーです"
+
+#: bash\bash\bolt.py:1097
+msgid "Unable to set modified time of %s - probably a unicode error"
+msgstr "%sの更新日時を設定できません. おそらくUnicodeエラーです"
+
+#: bash\bash\bolt.py:1127
+msgid "Unable to get crc of %s - probably a unicode error"
+msgstr "%sのCRCを取得できません. おそらくUnicodeエラーです"
+
+#: bash\bash\bolt.py:1236
+msgid "cannot be moved because it does not exist"
+msgstr "存在しないため移動できません"
+
+#: bash\bash\bolt.py:1958
+msgid "String too long to convert"
+msgstr "文字列が長すぎます"
+
+#: bash\bash\balt.py:125
+msgid "Missing resource file: %s"
+msgstr "ソースファイルがありません: %s"
+
+#: bash\bash\balt.py:222
+msgid "index = -1, name = %s, value = %s"
+msgstr ""
+
+#: bash\bash\balt.py:380
+msgid "Choose a directory"
+msgstr "ディレクトリを選択"
+
+#: bash\bash\balt.py:392
+msgid "Warning"
+msgstr "警告"
+
+#: bash\bash\balt.py:401
+msgid "Don't show this in the future"
+msgstr "今後、この画面を表示させない"
+
+#: bash\bash\balt.py:428
+msgid "Don't show this for rest of operation"
+msgstr "この作業の間はこの画面を表示させない"
+
+#: bash\bash\balt.py:530
+msgid "Error"
+msgstr "エラー"
+
+#: bash\bash\balt.py:538
+msgid "Information"
+msgstr "インフォメーション"
+
+#: bash\bash\balt.py:549
+msgid ""
+"(And %d others.)"
+msgstr ""
+"(上記+%d個のプラグイン)"
+
+#: bash\bash\balt.py:720
+msgid "Invalid sound file %s"
+msgstr "ソースファイルが不適切です: %s"
+
+#: bash\bash\balt.py:840
+msgid "Action"
+msgstr "アクション"
+
+#: bash\bash\balt.py:841
+msgid "Add"
+msgstr "追加"
+
+#: bash\bash\balt.py:842
+msgid "Edit"
+msgstr "編集"
+
+#: bash\bash\balt.py:843
+msgid "Rename"
+msgstr "リネーム"
+
+#: bash\bash\balt.py:844
+msgid "Remove"
+msgstr "削除"
+
+#: bash\bash\balt.py:845
+msgid "Save"
+msgstr "保存"
+
+#: bash\bash\balt.py:846
+msgid "Cancel"
+msgstr "キャンセル"
+
+#: bash\bash\balt.py:916
+msgid "Rename to"
+msgstr "リネームするファイル名を決めてください"
+
+#: bash\bash\balt.py:920
+msgid "Name must be unique"
+msgstr "ユニークなファイル名をつけてください"
+
+#: bash\bash\balt.py:1040
+msgid "Progress"
+msgstr "進行"
+
+#: bash\bash\balt.py:1072
+msgid "Dialog already destroyed"
+msgstr "ダイアログは既に破棄されています"
+
+#: bash\bash\balt.py:1649
+msgid "Delete Items"
+msgstr "削除します"
+
+#: bash\bash\balt.py:1774
+msgid "Open"
+msgstr "このディレクトリを開く"
+
+#: bash\bash\balt.py:1774
+msgid "Open '%s'"
+msgstr "%sを開く"
+
+#: bash\bash\balt.py:1789
+msgid "Delete"
+msgstr "削除"
+
+#: bash\bash\balt.py:1805
+msgid "Open selected files"
+msgstr "選択したファイルを開く"
+
+#: bash\bash\balt.py:1823
+msgid "Duplicate"
+msgstr "複製"
+
+#: bash\bash\balt.py:1832
+msgid "Duplicate as"
+msgstr "名前をつけて複製"
+
+#: bash\bash\balt.py:1836
+msgid "Files cannot be duplicated to themselves!"
+msgstr "複製元と同じファイル名にすることはできません！"
+
+#: bash\bash\bush.py:259
+msgid "Top (Type)"
+msgstr ""
+
+#: bash\bash\bush.py:260
+msgid "World Children"
+msgstr ""
+
+#: bash\bash\bush.py:261
+msgid "Int Cell Block"
+msgstr ""
+
+#: bash\bash\bush.py:262
+msgid "Int Cell Sub-Block"
+msgstr ""
+
+#: bash\bash\bush.py:263
+msgid "Ext Cell Block"
+msgstr ""
+
+#: bash\bash\bush.py:264
+msgid "Ext Cell Sub-Block"
+msgstr ""
+
+#: bash\bash\bush.py:265
+msgid "Cell Children"
+msgstr ""
+
+#: bash\bash\bush.py:266
+msgid "Topic Children"
+msgstr ""
+
+#: bash\bash\bush.py:267
+msgid "Cell Persistent Childen"
+msgstr ""
+
+#: bash\bash\bush.py:268
+msgid "Cell Temporary Children"
+msgstr ""
+
+#: bash\bash\bush.py:269
+msgid "Cell Visible Distant Children"
+msgstr ""
+
+#: bash\bash\bush.py:317
+msgid "Caucasian"
+msgstr ""
+
+#: bash\bash\bush.py:318
+msgid "Hispanic"
+msgstr ""
+
+#: bash\bash\bush.py:319
+msgid "Asian"
+msgstr ""
+
+#: bash\bash\bush.py:320
+msgid "Ghoul"
+msgstr ""
+
+#: bash\bash\bush.py:321
+msgid "AfricanAmerican"
+msgstr ""
+
+#: bash\bash\bush.py:322
+msgid "AfricanAmerican Child"
+msgstr ""
+
+#: bash\bash\bush.py:323
+msgid "AfricanAmerican Old"
+msgstr ""
+
+#: bash\bash\bush.py:324
+msgid "Asian Child"
+msgstr ""
+
+#: bash\bash\bush.py:325
+msgid "Asian Old"
+msgstr ""
+
+#: bash\bash\bush.py:326
+msgid "Caucasian Child"
+msgstr ""
+
+#: bash\bash\bush.py:327
+msgid "Caucasian Old"
+msgstr ""
+
+#: bash\bash\bush.py:328
+msgid "Hispanic Child"
+msgstr ""
+
+#: bash\bash\bush.py:329
+msgid "Hispanic Old"
+msgstr ""
+
+#: bash\bash\bush.py:330
+msgid "Caucasian Raider"
+msgstr ""
+
+#: bash\bash\bush.py:331
+msgid "Hispanic Raider"
+msgstr ""
+
+#: bash\bash\bush.py:332
+msgid "Asian Raider"
+msgstr ""
+
+#: bash\bash\bush.py:333
+msgid "AfricanAmerican Raider"
+msgstr ""
+
+#: bash\bash\bush.py:334
+msgid "Hispanic Old Aged"
+msgstr ""
+
+#: bash\bash\bush.py:335
+msgid "Asian Old Aged"
+msgstr ""
+
+#: bash\bash\bush.py:336
+msgid "AfricanAmerican Old Aged"
+msgstr ""
+
+#: bash\bash\bush.py:337
+msgid "Caucasian Old Aged"
+msgstr ""
+
+#: bash\bash\bush.py:695
+msgid "Big gun"
+msgstr ""
+
+#: bash\bash\bush.py:696
+msgid "Energy"
+msgstr ""
+
+#: bash\bash\bush.py:697
+msgid "Small gun"
+msgstr ""
+
+#: bash\bash\bush.py:698
+msgid "Melee"
+msgstr ""
+
+#: bash\bash\bush.py:699
+msgid "Unarmed"
+msgstr ""
+
+#: bash\bash\bush.py:700
+msgid "Thrown"
+msgstr ""
+
+#: bash\bash\bush.py:701
+msgid "Mine"
+msgstr ""
+
+#: bash\bash\bush.py:705
+msgid "Absorb Attribute"
+msgstr ""
+
+#: bash\bash\bush.py:706
+msgid "Absorb Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:707
+msgid "Absorb Health"
+msgstr ""
+
+#: bash\bash\bush.py:708
+msgid "Absorb Skill"
+msgstr ""
+
+#: bash\bash\bush.py:709
+msgid "Absorb Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:710
+msgid "Bound Armor Extra 01"
+msgstr ""
+
+#: bash\bash\bush.py:711
+msgid "Bound Armor Extra 02"
+msgstr ""
+
+#: bash\bash\bush.py:712
+msgid "Bound Armor Extra 03"
+msgstr ""
+
+#: bash\bash\bush.py:713
+msgid "Bound Armor Extra 04"
+msgstr ""
+
+#: bash\bash\bush.py:714
+msgid "Bound Armor Extra 05"
+msgstr ""
+
+#: bash\bash\bush.py:715
+msgid "Bound Armor Extra 06"
+msgstr ""
+
+#: bash\bash\bush.py:716
+msgid "Bound Armor Extra 07"
+msgstr ""
+
+#: bash\bash\bush.py:717
+msgid "Bound Armor Extra 08"
+msgstr ""
+
+#: bash\bash\bush.py:718
+msgid "Bound Armor Extra 09"
+msgstr ""
+
+#: bash\bash\bush.py:719
+msgid "Bound Armor Extra 10"
+msgstr ""
+
+#: bash\bash\bush.py:720
+msgid "Bound Boots"
+msgstr ""
+
+#: bash\bash\bush.py:721
+msgid "Bound Cuirass"
+msgstr ""
+
+#: bash\bash\bush.py:722
+msgid "Bound Gauntlets"
+msgstr ""
+
+#: bash\bash\bush.py:723
+msgid "Bound Greaves"
+msgstr ""
+
+#: bash\bash\bush.py:724
+msgid "Bound Helmet"
+msgstr ""
+
+#: bash\bash\bush.py:725
+msgid "Bound Shield"
+msgstr ""
+
+#: bash\bash\bush.py:726
+msgid "Burden"
+msgstr ""
+
+#: bash\bash\bush.py:727
+msgid "Bound Order Weapon 1"
+msgstr ""
+
+#: bash\bash\bush.py:728
+msgid "Bound Order Weapon 2"
+msgstr ""
+
+#: bash\bash\bush.py:729
+msgid "Bound Order Weapon 3"
+msgstr ""
+
+#: bash\bash\bush.py:730
+msgid "Bound Order Weapon 4"
+msgstr ""
+
+#: bash\bash\bush.py:731
+msgid "Bound Order Weapon 5"
+msgstr ""
+
+#: bash\bash\bush.py:732
+msgid "Bound Order Weapon 6"
+msgstr ""
+
+#: bash\bash\bush.py:733
+msgid "Summon Staff of Sheogorath"
+msgstr ""
+
+#: bash\bash\bush.py:734
+msgid "Bound Priest Dagger"
+msgstr ""
+
+#: bash\bash\bush.py:735
+msgid "Bound Weapon Extra 09"
+msgstr ""
+
+#: bash\bash\bush.py:736
+msgid "Bound Weapon Extra 10"
+msgstr ""
+
+#: bash\bash\bush.py:737
+msgid "Bound Axe"
+msgstr ""
+
+#: bash\bash\bush.py:738
+msgid "Bound Bow"
+msgstr ""
+
+#: bash\bash\bush.py:739
+msgid "Bound Dagger"
+msgstr ""
+
+#: bash\bash\bush.py:740
+msgid "Bound Mace"
+msgstr ""
+
+#: bash\bash\bush.py:741
+msgid "Bound Sword"
+msgstr ""
+
+#: bash\bash\bush.py:742
+msgid "Calm"
+msgstr ""
+
+#: bash\bash\bush.py:743
+msgid "Chameleon"
+msgstr ""
+
+#: bash\bash\bush.py:744
+msgid "Charm"
+msgstr ""
+
+#: bash\bash\bush.py:745
+msgid "Command Creature"
+msgstr ""
+
+#: bash\bash\bush.py:746
+msgid "Command Humanoid"
+msgstr ""
+
+#: bash\bash\bush.py:747
+msgid "Cure Disease"
+msgstr ""
+
+#: bash\bash\bush.py:748
+msgid "Cure Paralysis"
+msgstr ""
+
+#: bash\bash\bush.py:749
+msgid "Cure Poison"
+msgstr ""
+
+#: bash\bash\bush.py:750
+msgid "DO NOT USE - Darkness"
+msgstr ""
+
+#: bash\bash\bush.py:751
+msgid "Demoralize"
+msgstr ""
+
+#: bash\bash\bush.py:752
+msgid "Damage Attribute"
+msgstr ""
+
+#: bash\bash\bush.py:753
+msgid "Damage Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:754
+msgid "Damage Health"
+msgstr ""
+
+#: bash\bash\bush.py:755
+msgid "Damage Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:756
+msgid "Disintegrate Armor"
+msgstr ""
+
+#: bash\bash\bush.py:757
+msgid "Disease Info"
+msgstr ""
+
+#: bash\bash\bush.py:758
+msgid "Disintegrate Weapon"
+msgstr ""
+
+#: bash\bash\bush.py:759
+msgid "Drain Attribute"
+msgstr ""
+
+#: bash\bash\bush.py:760
+msgid "Drain Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:761
+msgid "Drain Health"
+msgstr ""
+
+#: bash\bash\bush.py:762
+msgid "Drain Skill"
+msgstr ""
+
+#: bash\bash\bush.py:763
+msgid "Drain Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:764
+msgid "Dispel"
+msgstr ""
+
+#: bash\bash\bush.py:765
+msgid "Detect Life"
+msgstr ""
+
+#: bash\bash\bush.py:766
+msgid "Mehrunes Dagon"
+msgstr ""
+
+#: bash\bash\bush.py:767
+msgid "Fire Damage"
+msgstr ""
+
+#: bash\bash\bush.py:768
+msgid "Fire Shield"
+msgstr ""
+
+#: bash\bash\bush.py:769
+msgid "Fortify Attribute"
+msgstr ""
+
+#: bash\bash\bush.py:770
+msgid "Fortify Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:771
+msgid "Fortify Health"
+msgstr ""
+
+#: bash\bash\bush.py:772
+msgid "Fortify Magicka Multiplier"
+msgstr ""
+
+#: bash\bash\bush.py:773
+msgid "Fortify Skill"
+msgstr ""
+
+#: bash\bash\bush.py:774
+msgid "Fortify Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:775
+msgid "Frost Damage"
+msgstr ""
+
+#: bash\bash\bush.py:776
+msgid "Frenzy"
+msgstr ""
+
+#: bash\bash\bush.py:777
+msgid "Frost Shield"
+msgstr ""
+
+#: bash\bash\bush.py:778
+msgid "Feather"
+msgstr ""
+
+#: bash\bash\bush.py:779
+msgid "Invisibility"
+msgstr ""
+
+#: bash\bash\bush.py:780
+msgid "Light"
+msgstr ""
+
+#: bash\bash\bush.py:781
+msgid "Shock Shield"
+msgstr ""
+
+#: bash\bash\bush.py:782
+msgid "DO NOT USE - Lock"
+msgstr ""
+
+#: bash\bash\bush.py:783
+msgid "Summon Mythic Dawn Helm"
+msgstr ""
+
+#: bash\bash\bush.py:784
+msgid "Summon Mythic Dawn Armor"
+msgstr ""
+
+#: bash\bash\bush.py:785
+msgid "Night-Eye"
+msgstr ""
+
+#: bash\bash\bush.py:787
+msgid "Paralyze"
+msgstr ""
+
+#: bash\bash\bush.py:788
+msgid "Poison Info"
+msgstr ""
+
+#: bash\bash\bush.py:789
+msgid "Rally"
+msgstr ""
+
+#: bash\bash\bush.py:790
+msgid "Reanimate"
+msgstr ""
+
+#: bash\bash\bush.py:791
+msgid "Restore Attribute"
+msgstr ""
+
+#: bash\bash\bush.py:792
+msgid "Reflect Damage"
+msgstr ""
+
+#: bash\bash\bush.py:793
+msgid "Restore Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:794
+msgid "Restore Health"
+msgstr ""
+
+#: bash\bash\bush.py:795
+msgid "Restore Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:796
+msgid "Reflect Spell"
+msgstr ""
+
+#: bash\bash\bush.py:797
+msgid "Resist Disease"
+msgstr ""
+
+#: bash\bash\bush.py:798
+msgid "Resist Fire"
+msgstr ""
+
+#: bash\bash\bush.py:799
+msgid "Resist Frost"
+msgstr ""
+
+#: bash\bash\bush.py:800
+msgid "Resist Magic"
+msgstr ""
+
+#: bash\bash\bush.py:801
+msgid "Resist Normal Weapons"
+msgstr ""
+
+#: bash\bash\bush.py:802
+msgid "Resist Paralysis"
+msgstr ""
+
+#: bash\bash\bush.py:803
+msgid "Resist Poison"
+msgstr ""
+
+#: bash\bash\bush.py:804
+msgid "Resist Shock"
+msgstr ""
+
+#: bash\bash\bush.py:805
+msgid "Resist Water Damage"
+msgstr ""
+
+#: bash\bash\bush.py:806
+msgid "Spell Absorption"
+msgstr ""
+
+#: bash\bash\bush.py:807
+msgid "Script Effect"
+msgstr ""
+
+#: bash\bash\bush.py:808
+msgid "Shock Damage"
+msgstr ""
+
+#: bash\bash\bush.py:809
+msgid "Shield"
+msgstr ""
+
+#: bash\bash\bush.py:810
+msgid "Silence"
+msgstr ""
+
+#: bash\bash\bush.py:811
+msgid "Stunted Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:812
+msgid "Soul Trap"
+msgstr ""
+
+#: bash\bash\bush.py:813
+msgid "Sun Damage"
+msgstr ""
+
+#: bash\bash\bush.py:814
+msgid "Telekinesis"
+msgstr ""
+
+#: bash\bash\bush.py:815
+msgid "Turn Undead"
+msgstr ""
+
+#: bash\bash\bush.py:816
+msgid "Vampirism"
+msgstr ""
+
+#: bash\bash\bush.py:817
+msgid "Water Breathing"
+msgstr ""
+
+#: bash\bash\bush.py:818
+msgid "Water Walking"
+msgstr ""
+
+#: bash\bash\bush.py:819
+msgid "Weakness to Disease"
+msgstr ""
+
+#: bash\bash\bush.py:820
+msgid "Weakness to Fire"
+msgstr ""
+
+#: bash\bash\bush.py:821
+msgid "Weakness to Frost"
+msgstr ""
+
+#: bash\bash\bush.py:822
+msgid "Weakness to Magic"
+msgstr ""
+
+#: bash\bash\bush.py:823
+msgid "Weakness to Normal Weapons"
+msgstr ""
+
+#: bash\bash\bush.py:824
+msgid "Weakness to Poison"
+msgstr ""
+
+#: bash\bash\bush.py:825
+msgid "Weakness to Shock"
+msgstr ""
+
+#: bash\bash\bush.py:826
+msgid "Summon Rufio\'s Ghost"
+msgstr ""
+
+#: bash\bash\bush.py:827
+msgid "Summon Ancestor Guardian"
+msgstr ""
+
+#: bash\bash\bush.py:828
+msgid "Summon Spiderling"
+msgstr ""
+
+#: bash\bash\bush.py:829
+msgid "Summon Flesh Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:830
+msgid "Summon Bear"
+msgstr ""
+
+#: bash\bash\bush.py:831
+msgid "Summon Gluttonous Hunger"
+msgstr ""
+
+#: bash\bash\bush.py:832
+msgid "Summon Ravenous Hunger"
+msgstr ""
+
+#: bash\bash\bush.py:833
+msgid "Summon Voracious Hunger"
+msgstr ""
+
+#: bash\bash\bush.py:834
+msgid "Summon Dark Seducer"
+msgstr ""
+
+#: bash\bash\bush.py:835
+msgid "Summon Golden Saint"
+msgstr ""
+
+#: bash\bash\bush.py:836
+msgid "Wabba Summon"
+msgstr ""
+
+#: bash\bash\bush.py:837
+msgid "Summon Decrepit Shambles"
+msgstr ""
+
+#: bash\bash\bush.py:838
+msgid "Summon Shambles"
+msgstr ""
+
+#: bash\bash\bush.py:839
+msgid "Summon Replete Shambles"
+msgstr ""
+
+#: bash\bash\bush.py:840
+msgid "Summon Hunger"
+msgstr ""
+
+#: bash\bash\bush.py:841
+msgid "Summon Mangled Flesh Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:842
+msgid "Summon Torn Flesh Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:843
+msgid "Summon Stitched Flesh Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:844
+msgid "Summon Sewn Flesh Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:845
+msgid "Extra Summon 20"
+msgstr ""
+
+#: bash\bash\bush.py:846
+msgid "Summon Clannfear"
+msgstr ""
+
+#: bash\bash\bush.py:847
+msgid "Summon Daedroth"
+msgstr ""
+
+#: bash\bash\bush.py:848
+msgid "Summon Dremora"
+msgstr ""
+
+#: bash\bash\bush.py:849
+msgid "Summon Dremora Lord"
+msgstr ""
+
+#: bash\bash\bush.py:850
+msgid "Summon Flame Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:851
+msgid "Summon Frost Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:852
+msgid "Summon Ghost"
+msgstr ""
+
+#: bash\bash\bush.py:853
+msgid "Summon Headless Zombie"
+msgstr ""
+
+#: bash\bash\bush.py:854
+msgid "Summon Lich"
+msgstr ""
+
+#: bash\bash\bush.py:855
+msgid "Summon Scamp"
+msgstr ""
+
+#: bash\bash\bush.py:856
+msgid "Summon Skeleton Guardian"
+msgstr ""
+
+#: bash\bash\bush.py:857
+msgid "Summon Skeleton Champion"
+msgstr ""
+
+#: bash\bash\bush.py:858
+msgid "Summon Skeleton"
+msgstr ""
+
+#: bash\bash\bush.py:859
+msgid "Summon Skeleton Hero"
+msgstr ""
+
+#: bash\bash\bush.py:860
+msgid "Summon Spider Daedra"
+msgstr ""
+
+#: bash\bash\bush.py:861
+msgid "Summon Storm Atronach"
+msgstr ""
+
+#: bash\bash\bush.py:862
+msgid "Summon Faded Wraith"
+msgstr ""
+
+#: bash\bash\bush.py:863
+msgid "Summon Gloom Wraith"
+msgstr ""
+
+#: bash\bash\bush.py:864
+msgid "Summon Xivilai"
+msgstr ""
+
+#: bash\bash\bush.py:865
+msgid "Summon Zombie"
+msgstr ""
+
+#: bash\bash\bush.py:930
+msgid "Strength"
+msgstr ""
+
+#: bash\bash\bush.py:931
+msgid "Intelligence"
+msgstr ""
+
+#: bash\bash\bush.py:932
+msgid "Willpower"
+msgstr ""
+
+#: bash\bash\bush.py:933
+msgid "Agility"
+msgstr ""
+
+#: bash\bash\bush.py:934
+msgid "Speed"
+msgstr ""
+
+#: bash\bash\bush.py:935
+msgid "Endurance"
+msgstr ""
+
+#: bash\bash\bush.py:936
+msgid "Personality"
+msgstr ""
+
+#: bash\bash\bush.py:937
+msgid "Luck"
+msgstr ""
+
+#: bash\bash\bush.py:938
+msgid "Health"
+msgstr ""
+
+#: bash\bash\bush.py:939
+msgid "Magicka"
+msgstr ""
+
+#: bash\bash\bush.py:941
+msgid "Fatigue"
+msgstr ""
+
+#: bash\bash\bush.py:942
+msgid "Encumbrance"
+msgstr ""
+
+#: bash\bash\bush.py:943
+msgid "Armorer"
+msgstr ""
+
+#: bash\bash\bush.py:944
+msgid "Athletics"
+msgstr ""
+
+#: bash\bash\bush.py:945
+msgid "Blade"
+msgstr ""
+
+#: bash\bash\bush.py:946
+msgid "Block"
+msgstr ""
+
+#: bash\bash\bush.py:947
+msgid "Blunt"
+msgstr ""
+
+#: bash\bash\bush.py:948
+msgid "Hand To Hand"
+msgstr ""
+
+#: bash\bash\bush.py:949
+msgid "Heavy Armor"
+msgstr ""
+
+#: bash\bash\bush.py:950
+msgid "Alchemy"
+msgstr ""
+
+#: bash\bash\bush.py:952
+msgid "Alteration"
+msgstr ""
+
+#: bash\bash\bush.py:953
+msgid "Conjuration"
+msgstr ""
+
+#: bash\bash\bush.py:954
+msgid "Destruction"
+msgstr ""
+
+#: bash\bash\bush.py:955
+msgid "Illusion"
+msgstr ""
+
+#: bash\bash\bush.py:956
+msgid "Mysticism"
+msgstr ""
+
+#: bash\bash\bush.py:957
+msgid "Restoration"
+msgstr ""
+
+#: bash\bash\bush.py:958
+msgid "Acrobatics"
+msgstr ""
+
+#: bash\bash\bush.py:959
+msgid "Light Armor"
+msgstr ""
+
+#: bash\bash\bush.py:960
+msgid "Marksman"
+msgstr ""
+
+#: bash\bash\bush.py:961
+msgid "Mercantile"
+msgstr ""
+
+#: bash\bash\bush.py:963
+msgid "Security"
+msgstr ""
+
+#: bash\bash\bush.py:964
+msgid "Sneak"
+msgstr ""
+
+#: bash\bash\bush.py:965
+msgid "Speechcraft"
+msgstr ""
+
+#: bash\bash\bush.py:1046
+msgid "Faction"
+msgstr ""
+
+#: bash\bash\bush.py:1047
+msgid "Apparatus"
+msgstr ""
+
+#: bash\bash\bush.py:1048
+msgid "Armor"
+msgstr ""
+
+#: bash\bash\bush.py:1049
+msgid "Book"
+msgstr ""
+
+#: bash\bash\bush.py:1050
+msgid "Clothing"
+msgstr ""
+
+#: bash\bash\bush.py:1051
+msgid "Ingredient"
+msgstr ""
+
+#: bash\bash\bush.py:1053
+msgid "Misc. Item"
+msgstr ""
+
+#: bash\bash\bush.py:1054
+msgid "Weapon"
+msgstr ""
+
+#: bash\bash\bush.py:1055
+msgid "NPC"
+msgstr ""
+
+#: bash\bash\bush.py:1056
+msgid "Creature"
+msgstr ""
+
+#: bash\bash\bush.py:1057
+msgid "Key"
+msgstr ""
+
+#: bash\bash\bush.py:1058
+msgid "Potion"
+msgstr ""
+
+#: bash\bash\bush.py:1059
+msgid "Cell"
+msgstr ""
+
+#: bash\bash\bush.py:1060
+msgid "Object Ref"
+msgstr "Object Reference"
+
+#: bash\bash\bush.py:1061
+msgid "NPC Ref"
+msgstr "NPC Reference"
+
+#: bash\bash\bush.py:1062
+msgid "Creature Ref"
+msgstr "Creature Reference"
+
+#: bash\bash\bush.py:1063
+msgid "Dialog Entry"
+msgstr ""
+
+#: bash\bash\bush.py:1064
+msgid "Quest"
+msgstr ""
+
+#: bash\bash\bush.py:1065
+msgid "AI Package"
+msgstr ""
+
+#: bash\bash\bush.py:1070
+msgid "Alchemical Ingredients I"
+msgstr ""
+
+#: bash\bash\bush.py:1071
+msgid "Alchemical Ingredients II"
+msgstr ""
+
+#: bash\bash\bush.py:1072
+msgid "Alchemical Ingredients III"
+msgstr ""
+
+#: bash\bash\bush.py:1073
+msgid "Alchemical Ingredients IV"
+msgstr ""
+
+#: bash\bash\bush.py:1076
+msgid "Alchemical Effects I"
+msgstr ""
+
+#: bash\bash\bush.py:1077
+msgid "Alchemical Effects II"
+msgstr ""
+
+#: bash\bash\bush.py:1078
+msgid "Alchemical Effects III"
+msgstr ""
+
+#: bash\bash\bush.py:1079
+msgid "Alchemical Effects IV"
+msgstr ""
+
+#: bash\bash\bosh.py:180
+msgid "Unknown File"
+msgstr "未知のファイル"
+
+#: bash\bash\bosh.py:186
+msgid "Unable to edit file %s"
+msgstr "%sを編集できません"
+
+#: bash\bash\bosh.py:449
+msgid "%s: Attempted to read before (%d) beginning of file/buffer"
+msgstr ""
+
+#: bash\bash\bosh.py:452
+msgid "%s: Attempted to read past (%d) end (%d) of file/buffer"
+msgstr ""
+
+#: bash\bash\bosh.py:465
+msgid "%s: Expected size == %d, but got: %d"
+msgstr "%s: サイズ == %dであるはずが、%dでした"
+
+#: bash\bash\bosh.py:467
+msgid "%s: Expected size <= %d, but got: %d"
+msgstr "%s: サイズ <= %dであるはずが、%dでした"
+
+#: bash\bash\bosh.py:475
+msgid "Extraneous subrecord (%s) in %s record"
+msgstr "関係のないサブレコード%sが%sレコード内に存在します"
+
+#: bash\bash\bosh.py:519
+msgid "Exceeded limit of"
+msgstr "制限を越えています"
+
+#: bash\bash\bosh.py:555
+msgid "Bad header type"
+msgstr "不正なヘッダタイプです"
+
+#: bash\bash\bosh.py:568
+msgid "Bad Top GRUP type"
+msgstr "不正なGRUPタイプです"
+
+#: bash\bash\bosh.py:583
+msgid "%s: Expected %s subrecord, but found %s instead"
+msgstr "%s: %sサブレコードが存在するはずですが、%sが発見されました"
+
+#: bash\bash\bosh.py:1262
+msgid "Unexpected subrecord"
+msgstr "予期しないサブレコードです"
+
+#: bash\bash\bosh.py:1272
+msgid "Unknown condition function: %d"
+msgstr "未知の条件ファンクションです: %d"
+
+#: bash\bash\bosh.py:1587
+msgid "Fids not in long format"
+msgstr "FormIDがLongフォーマットではありません"
+
+#: bash\bash\bosh.py:1703
+msgid "Data changed"
+msgstr "データが変更されています"
+
+#: bash\bash\bosh.py:1704
+msgid "Data undefined"
+msgstr "データが定義されていません"
+
+#: bash\bash\bosh.py:1788
+msgid "Mis-sized compressed data. Expected %d, got %d"
+msgstr "サイズのおかしい圧縮データです. %dのはずが%dでした"
+
+#: bash\bash\bosh.py:1862
+msgid "Packing Error: %s %s: Fids in long format"
+msgstr "パッキングエラー: %s %s: FormIDがLongフォーマットではありません"
+
+#: bash\bash\bosh.py:2154
+msgid "(Attribute|Skill)"
+msgstr ""
+
+#: bash\bash\bosh.py:2725
+msgid "Unexpected size encountered for CSTD subrecord"
+msgstr "予期しないサイズがCSTDサブレコードで確認されました"
+
+#: bash\bash\bosh.py:2788
+msgid "Unexpected %s record in %s group"
+msgstr "予期しない%sレコードが%sグループに存在します"
+
+#: bash\bash\bosh.py:3250
+msgid "Unexpected size encountered for LIGH:DATA subrecord"
+msgstr "予期しないサイズがLIGH:DATAサブレコードで確認されました"
+
+#: bash\bash\bosh.py:3380
+msgid "Unexpected size encountered for MGEF:DATA subrecord"
+msgstr "予期しないサイズがMGEF:DATAサブレコードで確認されました"
+
+#: bash\bash\bosh.py:4099
+msgid "Unexpected size encountered for REFR:XLOC subrecord"
+msgstr "予期しないサイズがREFR:XLOCサブレコードで確認されました"
+
+#: bash\bash\bosh.py:4516
+msgid "Unexpected size encountered for WATR subrecord"
+msgstr "予期しないサイズがWATRサブレコードで確認されました"
+
+#: bash\bash\bosh.py:4884
+msgid "Unexpected type: %d"
+msgstr ""
+
+#: bash\bash\bosh.py:5639
+msgid "No valid mapping for mod index 0x%02X"
+msgstr "不適切なマッピングがMODインデックスで確認されました: 0x%02X"
+
+#: bash\bash\bosh.py:6783
+msgid "Invalid top group type"
+msgstr "Top Groupタイプが不適切です"
+
+#: bash\bash\bosh.py:6803
+msgid "Improperly grouped file"
+msgstr "適切なグルーピングがされていません"
+
+#: bash\bash\bosh.py:6864
+msgid "Insufficient data to write file"
+msgstr "ファイル書き込みに不適当なデータです"
+
+#: bash\bash\bosh.py:7426
+msgid "File header is corrupted"
+msgstr "ヘッダ情報が壊れています"
+
+#: bash\bash\bosh.py:7433
+msgid "File does not exist"
+msgstr "ファイルが存在しません"
+
+#: bash\bash\bosh.py:7583
+msgid "Reading Header"
+msgstr "ヘッダ読み込み中"
+
+#: bash\bash\bosh.py:7622
+msgid "Reading created"
+msgstr "生成データを読み込み中"
+
+#: bash\bash\bosh.py:7634
+msgid "Reading records"
+msgstr "レコード読み込み中"
+
+#: bash\bash\bosh.py:7640
+msgid "Reading fids, worldids"
+msgstr "Form ID、World IDを読み込み中"
+
+#: bash\bash\bosh.py:7656
+msgid "Finished reading"
+msgstr "読み込み完了"
+
+#: bash\bash\bosh.py:7671
+msgid "Writing Header"
+msgstr "ヘッダを書き込み中"
+
+#: bash\bash\bosh.py:7697
+msgid "Writing created"
+msgstr "生成データを書き込み中"
+
+#: bash\bash\bosh.py:7705
+msgid "Writing records"
+msgstr "レコードを書き込み中"
+
+#: bash\bash\bosh.py:7713
+msgid "Writing fids, worldids"
+msgstr "Form ID、World IDを書き込み中"
+
+#: bash\bash\bosh.py:7724
+msgid "Writing complete"
+msgstr "書き込み完了"
+
+#: bash\bash\bosh.py:7827
+msgid "Missing Master"
+msgstr "欠落しているマスター"
+
+#: bash\bash\bosh.py:7830
+msgid "Abomb Counter"
+msgstr "遅延バグリミット"
+
+#: bash\bash\bosh.py:7831
+msgid "Integer:\t0x%08X"
+msgstr ""
+
+#: bash\bash\bosh.py:7832
+msgid "Float:\t%.2f"
+msgstr ""
+
+#: bash\bash\bosh.py:7834
+msgid "Fbomb Counter"
+msgstr "Form IDリミット"
+
+#: bash\bash\bosh.py:7835
+msgid "Next in-game object: %08X"
+msgstr "次のゲーム内オブジェクトID: %08X"
+
+#: bash\bash\bosh.py:7838
+msgid "Created Items"
+msgstr "ゲーム内生成アイテム"
+
+#: bash\bash\bosh.py:7839
+msgid "Records"
+msgstr "レコード"
+
+#: bash\bash\bosh.py:7840
+msgid "Fids"
+msgstr "Form ID"
+
+#: bash\bash\bosh.py:7907
+msgid "LostChanges"
+msgstr ""
+
+#: bash\bash\bosh.py:7913
+msgid "Unknown"
+msgstr "不明"
+
+#: bash\bash\bosh.py:7918
+msgid "New ObjectRef Bases"
+msgstr ""
+
+#: bash\bash\bosh.py:7922
+msgid "Count IRef     BaseId"
+msgstr ""
+
+#: bash\bash\bosh.py:7937
+msgid "Header"
+msgstr "ヘッダ"
+
+#: bash\bash\bosh.py:7939
+msgid "Format version:  %08X"
+msgstr ""
+
+#: bash\bash\bosh.py:7940
+msgid "FOSE version:    %u.%u"
+msgstr ""
+
+#: bash\bash\bosh.py:7941
+msgid "Fallout version: %08X"
+msgstr ""
+
+#: bash\bash\bosh.py:7945
+msgid "Plugin opcode=%08X chunkNum=%u"
+msgstr ""
+
+#: bash\bash\bosh.py:7947
+msgid "Type  Ver   Size"
+msgstr ""
+
+#: bash\bash\bosh.py:7964
+msgid "Mod :  %02X (%s)"
+msgstr ""
+
+#: bash\bash\bosh.py:7965
+msgid "ID  :  %u"
+msgstr ""
+
+#: bash\bash\bosh.py:7966
+msgid "Data:  %s"
+msgstr ""
+
+#: bash\bash\bosh.py:7971
+msgid "Mod :  %02X (Save File)"
+msgstr ""
+
+#: bash\bash\bosh.py:7977
+msgid "Type:  Array"
+msgstr ""
+
+#: bash\bash\bosh.py:7979
+msgid "Type:  Map"
+msgstr ""
+
+#: bash\bash\bosh.py:7981
+msgid "Type:  StringMap"
+msgstr ""
+
+#: bash\bash\bosh.py:7983
+msgid "Type:  Unknown"
+msgstr ""
+
+#: bash\bash\bosh.py:7991
+msgid "%02X (Save File)"
+msgstr ""
+
+#: bash\bash\bosh.py:7995
+msgid "Size:  %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8024
+msgid "Pluggy ESPs"
+msgstr ""
+
+#: bash\bash\bosh.py:8025
+msgid "EID   ID    Name"
+msgstr ""
+
+#: bash\bash\bosh.py:8038
+msgid "Pluggy String"
+msgstr ""
+
+#: bash\bash\bosh.py:8041
+msgid "StrID : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8042
+msgid "ModID : %02X %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8043
+msgid "Flags : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8044
+msgid "Data  : %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8047
+msgid "Pluggy Array"
+msgstr ""
+
+#: bash\bash\bosh.py:8049
+msgid "ArrID : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8052
+msgid "Size  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8067
+msgid "Pluggy Name"
+msgstr ""
+
+#: bash\bash\bosh.py:8074
+msgid "RefID : %08X"
+msgstr ""
+
+#: bash\bash\bosh.py:8075
+msgid "Name  : %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8078
+msgid "Pluggy ScreenSize"
+msgstr ""
+
+#: bash\bash\bosh.py:8082
+msgid "Width  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8083
+msgid "Height : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8086
+msgid "Pluggy HudS"
+msgstr ""
+
+#: bash\bash\bosh.py:8091
+msgid "HudSID : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8092
+msgid "ModID  : %02X %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8093
+msgid "Flags  : %02X"
+msgstr ""
+
+#: bash\bash\bosh.py:8094
+msgid "RootID : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8095
+msgid "Show   : %02X"
+msgstr ""
+
+#: bash\bash\bosh.py:8096
+msgid "Pos    : %f,%f"
+msgstr ""
+
+#: bash\bash\bosh.py:8097
+msgid "Depth  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8098
+msgid "Scale  : %f,%f"
+msgstr ""
+
+#: bash\bash\bosh.py:8099
+msgid "Alpha  : %02X"
+msgstr ""
+
+#: bash\bash\bosh.py:8100
+msgid "Align  : %02X"
+msgstr ""
+
+#: bash\bash\bosh.py:8101
+msgid "AutoSc : %02X"
+msgstr ""
+
+#: bash\bash\bosh.py:8102
+msgid "File   : %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8105
+msgid "Pluggy HudT"
+msgstr ""
+
+#: bash\bash\bosh.py:8114
+msgid "HudTID : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8126
+msgid "Format : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8127
+msgid "FName  : %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8128
+msgid "FHght  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8129
+msgid "FWdth  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8130
+msgid "FWeigh : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8131
+msgid "FItal  : %u"
+msgstr ""
+
+#: bash\bash\bosh.py:8132
+msgid "FRGB   : %u,%u,%u"
+msgstr ""
+
+#: bash\bash\bosh.py:8133
+msgid "FText  : %s"
+msgstr ""
+
+#: bash\bash\bosh.py:8143
+msgid "Scanning created objects"
+msgstr "生成オブジェクトをスキャン中"
+
+#: bash\bash\bosh.py:8160
+msgid "Scanning change records"
+msgstr "変更のあったレコードをスキャン中"
+
+#: bash\bash\bosh.py:8183
+msgid "full"
+msgstr ""
+
+#: bash\bash\bosh.py:8374
+msgid "Backing up BSA file. This will take a while"
+msgstr "BSAをバックアップ中. この作業は時間がかかる可能性があります"
+
+#: bash\bash\bosh.py:9003
+msgid "%s"
+"Extracting..."
+"%s"
+msgstr "%s"
+"抽出中..."
+"%s"
+
+#: bash\bash\bosh.py:9140
+msgid "Load list is full"
+msgstr "ロードリストが一杯です"
+
+#: bash\bash\bosh.py:9443
+msgid "Can't get snapshot parameters for file outside main directory"
+msgstr "メインディレクトリ外のファイルにスナップショットパラメータは取得できません"
+
+#: bash\bash\bosh.py:9656
+msgid "Expected TES4, but got"
+msgstr "TES4であるべきところで以下のものが出現しました"
+
+#: bash\bash\bosh.py:9661
+msgid "Struct.error"
+msgstr ""
+
+#: bash\bash\bosh.py:10119
+msgid "Getting sizes"
+msgstr "サイズ取得中"
+
+#: bash\bash\bosh.py:10278
+msgid "Missing master file; Neither Fallout3.esm exists in an unghosted state in %s - presuming that Fallout3.esm is the correct masterfile"
+msgstr ""
+
+#: bash\bash\bosh.py:10291
+msgid "288769595"
+msgstr ""
+
+#: bash\bash\bosh.py:10292
+msgid "288771181"
+msgstr ""
+
+#: bash\bash\bosh.py:10293
+msgid "288771262"
+msgstr ""
+
+#: bash\bash\bosh.py:10516
+msgid ""
+".    Has 'NoMerge' tag"
+msgstr ""
+".    NoMergeタグがつけられています"
+
+#: bash\bash\bosh.py:10567
+msgid "Balo group header"
+msgstr "Baloグループヘッダ"
+
+#: bash\bash\bosh.py:10743
+msgid "Some mods were unavailable and were skipped:"
+"*"
+msgstr "利用不可能なMODが存在したため、スキップされました: "
+"*"
+
+#: bash\bash\bosh.py:10747
+msgid "Mod list is full, so some mods were skipped:"
+""
+msgstr "MODリストが一杯です. スキップされるMODが存在します: "
+""
+
+#: bash\bash\bosh.py:10760
+msgid "----> MISSING MASTER"
+msgstr ""
+
+#: bash\bash\bosh.py:10760
+msgid "* __Missing Master:__"
+msgstr ""
+
+#: bash\bash\bosh.py:10761
+msgid "----> Delinquent MASTER"
+msgstr ""
+
+#: bash\bash\bosh.py:10761
+msgid "* __Delinquent Master:__"
+msgstr ""
+
+#: bash\bash\bosh.py:10766
+msgid "Missing Masters for"
+msgstr "欠落しているマスター"
+
+#: bash\bash\bosh.py:10769
+msgid "Masters for"
+msgstr "マスター"
+
+#: bash\bash\bosh.py:10775
+msgid "Active Mod Files"
+msgstr "アクティブなMOD"
+
+#: bash\bash\bosh.py:10802
+msgid "%s  %s  [Version %s] [CRC: %08X]"
+msgstr ""
+
+#: bash\bash\bosh.py:10870
+msgid "Circular Masters"
+msgstr "ループしているマスター"
+
+#: bash\bash\bosh.py:11004
+msgid "Can't match current main ESM to known version"
+msgstr "現在のメインesmが既知のバージョンと一致しません"
+
+#: bash\bash\bosh.py:11007
+msgid "Can't swap: %s already exists"
+msgstr "スワップできません: %sは既に存在しています"
+
+#: bash\bash\bosh.py:11010
+msgid "Can't swap: %s doesn't exist"
+msgstr "スワップできません: %sは存在しません"
+
+#: bash\bash\bosh.py:11021
+msgid "Bash encountered an error when renaming %s to %s."
+""
+"The file is in use by another process such as TES4Edit."
+"Please close the other program that is accessing %s."
+""
+"Try again?"
+msgstr "%sを%sにリネーム中にエラーが発生しました."
+""
+"本ファイルはTES4Editなどの別プロセスが使用しています."
+"%sを使用している別プロセスを閉じてください."
+""
+"再試行しますか？"
+
+#: bash\bash\bosh.py:11021
+msgid "Bash Patch - Rename Error"
+msgstr "Bash Patch - リネームエラー"
+
+#: bash\bash\bosh.py:11348
+msgid "ONLYONE does not support %s operators"
+msgstr ""
+
+#: bash\bash\bosh.py:11536
+msgid "<font color=red>WARNING:</font>"
+msgstr "<font color=red>警告: </font>"
+
+#: bash\bash\bosh.py:11539
+msgid "Check Mods"
+msgstr ""
+
+#: bash\bash\bosh.py:11540
+msgid "This is a report on your currently active/merged mods"
+msgstr "現在アクティブあるいはマージされているMODについてのレポートです"
+
+#: bash\bash\bosh.py:11560
+msgid "Scanning for Dirty Edits"
+msgstr "好ましくない編集をスキャン中"
+
+#: bash\bash\bosh.py:11581
+msgid "Mergeable"
+msgstr "マージ可能なMOD"
+
+#: bash\bash\bosh.py:11582
+msgid "Following mods are active, but could be merged into the bashed patch"
+msgstr "以下のMODはActiveになっていますがBashed Patchにマージ可能です"
+
+#: bash\bash\bosh.py:11586
+msgid "NoMerge Tagged Mods"
+msgstr "NoMergeタグがつけられたMOD"
+
+#: bash\bash\bosh.py:11587
+msgid "Following mods are tagged NoMerge and should be deactivated and imported into the bashed patch but are currently active"
+msgstr "以下のMODはNoMergeタグがつけられており、DeactivateしてBashed Patchにインポートすることが推奨されますが現在Activeになっています"
+
+#: bash\bash\bosh.py:11591
+msgid "Deactivate Tagged Mods"
+msgstr "DeactiveタグがつけられたMOD"
+
+#: bash\bash\bosh.py:11592
+msgid "Following mods are tagged Deactivate and should be deactivated and imported into the bashed patch but are currently active"
+msgstr "以下のMODはDeactivateタグがつけられており、DeactivateしてBashed Patchにインポートすることが推奨されますが現在Activeになっています"
+
+#: bash\bash\bosh.py:11596
+msgid "MustBeActiveIfImported Tagged Mods"
+msgstr "MustBeActiveIfImportedタグがつけられたMOD"
+
+#: bash\bash\bosh.py:11597
+msgid "Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported"
+msgstr "以下のMODが有効に動作するためにはActiveにした上でBashed Patchにインポートされている必要がありますが、現在インポートしかされていません"
+
+#: bash\bash\bosh.py:11601
+msgid "Mods that need cleaning with FO3Edit"
+msgstr ""
+
+#: bash\bash\bosh.py:11602
+msgid "Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with FO3Edit.  Visit the [[!http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information"
+msgstr ""
+
+#: bash\bash\bosh.py:11606
+msgid "Mods with special cleaning instructions"
+msgstr "特殊なクリーニング手順が存在するMOD"
+
+#: bash\bash\bosh.py:11607
+msgid "Following mods have special instructions for cleaning with FO3Edit"
+msgstr ""
+
+#: bash\bash\bosh.py:11611
+msgid "Mods with non standard TES4 versions"
+msgstr "一般的でないTES4バージョンを有するMOD"
+
+#: bash\bash\bosh.py:11612
+msgid "Following mods have a TES4 version that isn't recognized as one of the standard versions (0.85 and 0.94).  It is untested what effect this can have on the game, but presumably Fallout 3 will refuse to load anything above 0.94"
+msgstr "以下のMODは一般的なTES4バージョン(0.85 および 0.94)のいずれにも該当しないバージョンを有しています. ゲームにどのような影響を及ぼすかは不明ですが、0.94より大きい数値のものはFallout3がロードを拒否する可能性があります"
+
+#: bash\bash\bosh.py:11619
+msgid "Missing/Delinquent Masters"
+msgstr "欠落あるいは品行方正でないマスター"
+
+#: bash\bash\bosh.py:11625
+msgid "MISSING"
+msgstr ""
+
+#: bash\bash\bosh.py:11627
+msgid "DELINQUENT"
+msgstr ""
+
+#: bash\bash\bosh.py:11648
+msgid "Only one of these should be active/merged"
+msgstr "これらのうち、一つだけアクティブにするかマージしてください"
+
+#: bash\bash\bosh.py:11656
+msgid "NOTES"
+msgstr ""
+
+#: bash\bash\bosh.py:11659
+msgid "CONFIGURATION"
+msgstr ""
+
+#: bash\bash\bosh.py:11669
+msgid "SUGGESTIONS"
+msgstr ""
+
+#: bash\bash\bosh.py:11676
+msgid "* __%s__ -- %s"
+msgstr ""
+
+#: bash\bash\bosh.py:11889
+msgid "Sent %s <b>%s</b> on %s</div>"
+msgstr ""
+
+#: bash\bash\bosh.py:11947
+msgid "ModBase"
+msgstr ""
+
+#: bash\bash\bosh.py:11995
+msgid "People"
+msgstr "人物"
+
+#: bash\bash\bosh.py:12188
+msgid "%s: Pre-Scanning"
+msgstr "%s: プレスキャン中"
+
+#: bash\bash\bosh.py:12200
+msgid "%s: Pre-Scanning..."
+"%s"
+msgstr "%s: プレスキャン中..."
+"%s"
+
+#: bash\bash\bosh.py:12221
+msgid "%s: Scanning"
+msgstr "%s: スキャン中"
+
+#: bash\bash\bosh.py:12259
+msgid "%s"
+"Calculating CRCs..."
+""
+msgstr "%s: CRCを計算中..."
+""
+
+#: bash\bash\bosh.py:12262
+msgid "%s"
+"Calculating CRCs..."
+"%s"
+msgstr "%s: CRCを計算中..."
+"%s"
+
+#: bash\bash\bosh.py:12270
+msgid "Failed to calculate crc for %s - please report this and or try the unicode build of Wrye Bash"
+msgstr "%sのCRC計算に失敗しました. フォーラムに報告するか、Unicode版Wrye Bashを利用してみてください"
+
+#: bash\bash\bosh.py:12534
+msgid "This installer (%s) has an FOSE plugin DLL."
+"The file is %s"
+"Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate."
+"Are you sure you want to install this?"
+msgstr ""
+
+#: bash\bash\bosh.py:12536
+msgid "You have previously chosen to install a dll by this name but with a different size, crc and or source archive name"
+msgstr "同じファイル名で異なるファイルサイズ、CRCあるいはアーカイブ名を有するDLLをインストールしたことがあります"
+
+#: bash\bash\bosh.py:12538
+msgid "You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes"
+msgstr "同じファイル名で異なるファイルサイズ、CRCあるいはアーカイブ名を有するDLLをインストールしなかったことがあります. インストールする前にご確認ください"
+
+#: bash\bash\bosh.py:12539
+msgid "FOSE DLL Warning"
+msgstr ""
+
+#: bash\bash\bosh.py:12798
+msgid ""
+"Loading %s:"
+"BCF doesn't exist"
+msgstr ""
+"%sをロード中:"
+"BCFが存在しません"
+
+#: bash\bash\bosh.py:12804
+msgid ""
+"Loading %s:"
+"BCF extraction failed"
+msgstr ""
+"%sをロード中:"
+"BCF展開に失敗しました"
+
+#: bash\bash\bosh.py:12822
+msgid "Error creating BCF.dat:"
+"Error Code: %s"
+msgstr "BCF.dat生成エラー:"
+"エラーコード: %s"
+
+#: bash\bash\bosh.py:12838
+msgid "%s"
+"Extracting files"
+msgstr "%s"
+"ファイルを展開中"
+
+#: bash\bash\bosh.py:12852
+msgid "%s: Extraction failed:"
+"%s"
+msgstr "%s: 展開に失敗しました:"
+"%s"
+
+#: bash\bash\bosh.py:12860
+msgid ""
+"Extracting files"
+msgstr ""
+"ファイルを展開中"
+
+#: bash\bash\bosh.py:12877
+msgid "Moving files"
+msgstr "ファイルを移動中"
+
+#: bash\bash\bosh.py:12895
+msgid "%s: Missing source file:"
+"%s"
+msgstr "%s: ソースファイルがありません:"
+"%s"
+
+#: bash\bash\bosh.py:12897
+msgid "%s: Unable to determine file destination for:"
+"%s"
+msgstr "%s: 指定先ファイルが確認できません:"
+"%s"
+
+#: bash\bash\bosh.py:12902
+msgid "Copying file..."
+"%s"
+msgstr "ファイルをコピー中..."
+"%s"
+
+#: bash\bash\bosh.py:12906
+msgid "Moving file..."
+"%s"
+msgstr "ファイルを移動中..."
+"%s"
+
+#: bash\bash\bosh.py:12996
+msgid "%s"
+"Mapping files"
+msgstr "%s"
+"ファイルをマッピング中"
+
+#: bash\bash\bosh.py:13001
+msgid "%s"
+"Mapping files..."
+"%s"
+msgstr "%s"
+"ファイルをマッピング中..."
+"%s"
+
+#: bash\bash\bosh.py:13049
+msgid "%s"
+"Compressing files"
+msgstr "%s"
+"ファイルを圧縮中"
+
+#: bash\bash\bosh.py:13065
+msgid ""
+"Compressing files..."
+"%s"
+msgstr ""
+"ファイルを圧縮中..."
+"%s"
+
+#: bash\bash\bosh.py:13070
+msgid "%s: Compression failed:"
+"%s"
+msgstr "%s: 圧縮に失敗しました:"
+"%s"
+
+#: bash\bash\bosh.py:13080
+msgid "No files to extract for %s"
+msgstr "%sに抽出できるファイルがありません"
+
+#: bash\bash\bosh.py:13087
+msgid "Error creating file list for 7z:"
+"Error Code: %s"
+msgstr "7zのファイルリスト生成エラー:"
+"エラーコード: %s"
+
+#: bash\bash\bosh.py:13120
+msgid "%s"
+"Extracting files..."
+"%s"
+msgstr "%s"
+"ファイルを抽出中..."
+"%s"
+
+#: bash\bash\bosh.py:13287
+msgid "%s: Extraction failed"
+"%s"
+msgstr "%s: 抽出に失敗しました"
+"%s"
+
+#: bash\bash\bosh.py:13304
+msgid ""
+"Moving files"
+msgstr ""
+"ファイルを移動中"
+
+#: bash\bash\bosh.py:13370
+msgid "Package Structure"
+msgstr "パッケージ構造"
+
+#: bash\bash\bosh.py:13687
+msgid "Package"
+msgstr "パッケージ"
+
+#: bash\bash\bosh.py:13687
+msgid "Order"
+msgstr "優先順位"
+
+#: bash\bash\bosh.py:13687
+msgid "Modified"
+msgstr "タイムスタンプ"
+
+#: bash\bash\bosh.py:13687
+msgid "Size"
+msgstr "サイズ"
+
+#: bash\bash\bosh.py:13687
+msgid "Files"
+msgstr "ファイル数"
+
+#: bash\bash\bosh.py:13688
+msgid "Installers"
+msgstr "インストーラ"
+
+#: bash\bash\bosh.py:13728
+msgid "Loading Data"
+msgstr "データを読み込み中"
+
+#: bash\bash\bosh.py:13939
+msgid "Scanning Packages"
+msgstr "パッケージをスキャン中"
+
+#: bash\bash\bosh.py:13942
+msgid "Scanning Packages..."
+""
+msgstr "パッケージをスキャン中..."
+""
+
+#: bash\bash\bosh.py:14104
+msgid "Scanning Converters"
+msgstr "コンバータをスキャン中"
+
+#: bash\bash\bosh.py:14107
+msgid "Scanning Converter..."
+""
+msgstr "コンバータをスキャン中..."
+""
+
+#: bash\bash\bosh.py:14423
+msgid "Lower"
+msgstr "優先順位が本アーカイブより「低」であるアーカイブとの競合"
+
+#: bash\bash\bosh.py:14423
+msgid "Higher"
+msgstr "優先順位が本アーカイブより「高」であるアーカイブとの競合"
+
+#: bash\bash\bosh.py:14435
+msgid "No Underrides. Mod is not completely un-installed"
+msgstr "上書きされるべきファイルはありません. MODは完全にアンインストールされていません"
+
+#: bash\bash\bosh.py:14442
+msgid "Bain Packages"
+msgstr "BAINパッケージ"
+
+#: bash\bash\bosh.py:14564
+msgid "Type"
+msgstr "タイプ"
+
+#: bash\bash\bosh.py:14564
+msgid "Actor Eid"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Actor Mod"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Actor Object"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Faction Eid"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Faction Mod"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Faction Object"
+msgstr ""
+
+#: bash\bash\bosh.py:14564
+msgid "Rank"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Source Mod"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Offset"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "CalcMin"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "CalcMax"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Old IsPCLevelOffset"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Old Offset"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Old CalcMin"
+msgstr ""
+
+#: bash\bash\bosh.py:14793
+msgid "Old CalcMax"
+msgstr ""
+
+#: bash\bash\bosh.py:15011
+msgid "Script"
+msgstr ""
+
+#: bash\bash\bosh.py:15057
+msgid "Mod Name"
+msgstr ""
+
+#: bash\bash\bosh.py:15057
+msgid "ObjectIndex"
+msgstr ""
+
+#: bash\bash\bosh.py:15057
+msgid "Editor Id"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Main Eid"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Main Mod"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Main Object"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Other Eid"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Other Mod"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Other Object"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "Disp"
+msgstr ""
+
+#: bash\bash\bosh.py:15306
+msgid "GroupCombatReaction"
+msgstr ""
+
+#: bash\bash\bosh.py:15671
+msgid "Name"
+msgstr "名前"
+
+#: bash\bash\bosh.py:15671
+msgid "Short Name"
+msgstr ""
+
+#: bash\bash\bosh.py:16477
+msgid "Weight"
+msgstr ""
+
+#: bash\bash\bosh.py:16477
+msgid "Value"
+msgstr "値"
+
+#: bash\bash\bosh.py:16481
+msgid "Clip Rounds"
+msgstr ""
+
+#: bash\bash\bosh.py:16485
+msgid "AR"
+msgstr ""
+
+#: bash\bash\bosh.py:16505
+msgid "Duration"
+msgstr ""
+
+#: bash\bash\bosh.py:16513
+msgid "Damage"
+msgstr ""
+
+#: bash\bash\bosh.py:16513
+msgid "Clip Size"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Animation Multiplier"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Reach"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Ammo Use"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Min Spread"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Spread"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Sight Fov"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Base VATS To-Hit Chance"
+msgstr ""
+
+#: bash\bash\bosh.py:16514
+msgid "Projectile Count"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Min Range"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Max Range"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Animation Attack Multiplier"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Fire Rate"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Override - Action Point"
+msgstr ""
+
+#: bash\bash\bosh.py:16515
+msgid "Rumble - Left Motor Strength"
+msgstr ""
+
+#: bash\bash\bosh.py:16516
+msgid "rRmble - Right Motor Strength"
+msgstr ""
+
+#: bash\bash\bosh.py:16516
+msgid "Rumble - Duration"
+msgstr ""
+
+#: bash\bash\bosh.py:16516
+msgid "Override - Damage To Weapon Mult"
+msgstr ""
+
+#: bash\bash\bosh.py:16516
+msgid "Attack Shots/Sec"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Reload Time"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Jam Time"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Aim Arc"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Ramble - Wavelangth"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Limb Dmg Mult"
+msgstr ""
+
+#: bash\bash\bosh.py:16517
+msgid "Sight Usage"
+msgstr ""
+
+#: bash\bash\bosh.py:16518
+msgid "Semi-Automatic Fire Delay Min"
+msgstr ""
+
+#: bash\bash\bosh.py:16518
+msgid "Semi-Automatic Fire Delay Max"
+msgstr ""
+
+#: bash\bash\bosh.py:16519
+msgid "Critical Damage"
+msgstr ""
+
+#: bash\bash\bosh.py:16519
+msgid "Crit % Mult"
+msgstr ""
+
+#: bash\bash\bosh.py:17112
+msgid "Large Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17112
+msgid "Small Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17112
+msgid "Model"
+msgstr ""
+
+#: bash\bash\bosh.py:17121
+msgid "Male Large Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17121
+msgid "Male Small Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17121
+msgid "Female Large Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17121
+msgid "Female Small Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17122
+msgid "Male Model Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17122
+msgid "Female Model Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17122
+msgid "Male World Model Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17122
+msgid "Female World Model Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17136
+msgid "Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17159
+msgid "Shell Casing Model"
+msgstr ""
+
+#: bash\bash\bosh.py:17159
+msgid "Scope Model"
+msgstr ""
+
+#: bash\bash\bosh.py:17159
+msgid "World Model"
+msgstr ""
+
+#: bash\bash\bosh.py:17186
+msgid "modPath"
+msgstr ""
+
+#: bash\bash\bosh.py:17186
+msgid "IsFood"
+msgstr ""
+
+#: bash\bash\bosh.py:17186
+msgid "IsNoAutoCalc"
+msgstr ""
+
+#: bash\bash\bosh.py:17186
+msgid "Effects"
+msgstr ""
+
+#: bash\bash\bosh.py:17190
+msgid "Enchant Points"
+msgstr ""
+
+#: bash\bash\bosh.py:17190
+msgid "Enchantment"
+msgstr ""
+
+#: bash\bash\bosh.py:17190
+msgid "Normal Weapon"
+msgstr ""
+
+#: bash\bash\bosh.py:17194
+msgid "Quantity"
+msgstr ""
+
+#: bash\bash\bosh.py:17199
+msgid "Male Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17199
+msgid "Female Icon Path"
+msgstr ""
+
+#: bash\bash\bosh.py:17204
+msgid "EPoints"
+msgstr ""
+
+#: bash\bash\bosh.py:17217
+msgid "Icon"
+msgstr ""
+
+#: bash\bash\bosh.py:17217
+msgid "MODB"
+msgstr ""
+
+#: bash\bash\bosh.py:17217
+msgid "MODT_P"
+msgstr ""
+
+#: bash\bash\bosh.py:17230
+msgid "Uses"
+msgstr ""
+
+#: bash\bash\bosh.py:17522
+msgid "Export Scripts"
+msgstr "スクリプトをエクスポート"
+
+#: bash\bash\bosh.py:17528
+msgid "Reading scripts in %s"
+msgstr "%sのスクリプトを読み込み中"
+
+#: bash\bash\bosh.py:17568
+msgid "Import Scripts"
+msgstr ""
+
+#: bash\bash\bosh.py:17576
+msgid "Skipping file %s"
+msgstr "%sをスキップしています"
+
+#: bash\bash\bosh.py:17578
+msgid "Reading file %s"
+msgstr "%sを読み込み中"
+
+#: bash\bash\bosh.py:17609
+msgid "Exporting script %s"
+msgstr "%sをエクスポート中"
+
+#: bash\bash\bosh.py:17620
+msgid "Exported %d scripts from %s:"
+""
+msgstr "%d個のスクリプトを%sからエクスポートしました: "
+""
+
+#: bash\bash\bosh.py:17943
+msgid "Cost"
+msgstr ""
+
+#: bash\bash\bosh.py:17943
+msgid "Level Type"
+msgstr ""
+
+#: bash\bash\bosh.py:17943
+msgid "Spell Type"
+msgstr ""
+
+#: bash\bash\bosh.py:17946
+msgid "Manual Cost"
+msgstr ""
+
+#: bash\bash\bosh.py:17946
+msgid "Start Spell"
+msgstr ""
+
+#: bash\bash\bosh.py:17946
+msgid "Immune To Silence"
+msgstr ""
+
+#: bash\bash\bosh.py:17946
+msgid "Area Effect Ignores LOS"
+msgstr ""
+
+#: bash\bash\bosh.py:17947
+msgid "Script Always Applies"
+msgstr ""
+
+#: bash\bash\bosh.py:17947
+msgid "Disallow Absorb and Reflect"
+msgstr ""
+
+#: bash\bash\bosh.py:17947
+msgid "Touch Explodes Without Target"
+msgstr ""
+
+#: bash\bash\bosh.py:17948
+msgid "Effect"
+msgstr ""
+
+#: bash\bash\bosh.py:17948
+msgid "Magnitude"
+msgstr ""
+
+#: bash\bash\bosh.py:17948
+msgid "Area"
+msgstr ""
+
+#: bash\bash\bosh.py:17948
+msgid "Range"
+msgstr ""
+
+#: bash\bash\bosh.py:17948
+msgid "Actor Value"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE Mod Name"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE ObjectIndex"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE school"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE visual"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE Is Hostile"
+msgstr ""
+
+#: bash\bash\bosh.py:17949
+msgid "SE Name"
+msgstr ""
+
+#: bash\bash\bosh.py:17950
+msgid "Additional Effects (Same format)"
+msgstr ""
+
+#: bash\bash\bosh.py:18332
+msgid "Model Path"
+msgstr ""
+
+#: bash\bash\bosh.py:18332
+msgid "Bound Radius"
+msgstr ""
+
+#: bash\bash\bosh.py:18333
+msgid "Script Mod Name"
+msgstr ""
+
+#: bash\bash\bosh.py:18333
+msgid "Script ObjectIndex"
+msgstr ""
+
+#: bash\bash\bosh.py:18544
+msgid "Scanning"
+msgstr "スキャン中"
+
+#: bash\bash\bosh.py:18611
+msgid "Mod"
+msgstr "MOD"
+
+#: bash\bash\bosh.py:18611
+msgid "Group"
+msgstr "グループ"
+
+#: bash\bash\bosh.py:18661
+msgid "Failed to find pcName in PC ACHR record"
+msgstr "PC ACHRレコードにpcNameを発見できませんでした"
+
+#: bash\bash\bosh.py:19030
+msgid "Face dump from save game"
+msgstr "セーブから顔データをダンプしました"
+
+#: bash\bash\bosh.py:19232
+msgid "Loading"
+msgstr "ロード中"
+
+#: bash\bash\bosh.py:19345
+msgid "Cleaning"
+msgstr "クリーニング中"
+
+#: bash\bash\bosh.py:19378
+msgid "Bash encountered an error when saving %s."
+""
+"The file is in use by another process such as TES4Edit."
+"Please close the other program that is accessing %s."
+""
+"Try again?"
+msgstr "%sセーブ中にエラーが発生しました."
+""
+"本ファイルはTES4Editなどの別プロセスが使用しています."
+"%sを使用している別プロセスを閉じてください."
+""
+"再試行しますか？"
+
+#: bash\bash\bosh.py:19378
+msgid "%s - Save Error"
+msgstr "%s - セーブエラー"
+
+#: bash\bash\bosh.py:19631
+msgid ""
+".    Is esm"
+msgstr ""
+".    これはesmファイルです"
+
+#: bash\bash\bosh.py:19635
+msgid ""
+".    Is Bashed Patch"
+msgstr ""
+".    これはBashed Patchです"
+
+#: bash\bash\bosh.py:19642
+msgid ""
+".    Has BSA archive"
+msgstr ""
+".    このファイルにはBSAアーカイブが関連付けられています"
+
+#: bash\bash\bosh.py:19659
+msgid ""
+".    Unsupported types"
+msgstr ""
+".    このファイルはマージにおいてサポートされていないレコードを含んでいます"
+
+#: bash\bash\bosh.py:19663
+msgid ""
+".    Empty mod"
+msgstr ""
+".    これは空白MODです"
+
+#: bash\bash\bosh.py:19673
+msgid ""
+".    New record(s) in block(s)"
+msgstr ""
+".    このファイルは以下のブロックに新規レコードが存在します"
+
+#: bash\bash\bosh.py:19677
+msgid ""
+".    Is a master of mod(s)"
+msgstr ""
+".    このMODは一つ以上のMODからマスター指定されています"
+
+#: bash\bash\bosh.py:19727
+msgid "Preparing"
+"%s"
+msgstr "準備中"
+"%s"
+
+#: bash\bash\bosh.py:19729
+msgid "Patchers prepared"
+msgstr "パッチの準備が完了しました"
+
+#: bash\bash\bosh.py:19733
+msgid "Processing"
+msgstr "処理中"
+
+#: bash\bash\bosh.py:19764
+msgid "%s"
+"Loading"
+msgstr "%s"
+"ロード中"
+
+#: bash\bash\bosh.py:19785
+msgid "%s"
+"Merging"
+msgstr "%s"
+"マージ中"
+
+#: bash\bash\bosh.py:19788
+msgid "%s"
+"Scanning"
+msgstr "%s"
+"スキャン中"
+
+#: bash\bash\bosh.py:19792
+msgid "%s"
+"%s"
+msgstr ""
+
+#: bash\bash\bosh.py:19799
+msgid "MERGE/SCAN ERROR"
+msgstr "マージ/スキャンエラー"
+
+#: bash\bash\bosh.py:19801
+msgid "Load mods scanned"
+msgstr ""
+
+#: bash\bash\bosh.py:19818
+msgid "Merge unsupported for type"
+msgstr "マージをサポートしていないタイプ"
+
+#: bash\bash\bosh.py:19854
+msgid "Overview"
+msgstr ""
+
+#: bash\bash\bosh.py:19855
+msgid "Date/Time"
+msgstr "日/時"
+
+#: bash\bash\bosh.py:19857
+msgid "* Elapsed Time"
+msgstr "* 所要時間"
+
+#: bash\bash\bosh.py:19859
+msgid "Skipped Imports"
+msgstr "スキップされたインポート項目"
+
+#: bash\bash\bosh.py:19860
+msgid "The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)"
+msgstr "以下のインポートパッチは、インポートするレコードに欠落あるいはアクティブでないMODを参照しています. 特定の意図がないのであれば以下に列挙されたインポートパッチをDeactivateするか、欠落しているMODをActivateしてください"
+
+#: bash\bash\bosh.py:19866
+msgid "Unfiltered Mods"
+msgstr "フィルタリングされなかったMOD"
+
+#: bash\bash\bosh.py:19870
+msgid "Load Error Mods"
+msgstr "読み込みエラーの発生したMOD"
+
+#: bash\bash\bosh.py:19874
+msgid "World Orphans"
+msgstr "「World Orphan」のあるもの"
+
+#: bash\bash\bosh.py:19878
+msgid "Compiled All"
+msgstr "「Compile All」されているもの"
+
+#: bash\bash\bosh.py:19881
+msgid "Active Mods"
+msgstr "ロードされているMOD"
+
+#: bash\bash\bosh.py:19889
+msgid "%s  [Version %s]"
+msgstr ""
+
+#: bash\bash\bosh.py:19895
+msgid "Mod Aliases"
+msgstr ""
+
+#: bash\bash\bosh.py:19902
+msgid "Completing"
+"%s"
+msgstr ""
+
+#: bash\bash\bosh.py:19905
+msgid "Completing"
+"Trimming records"
+msgstr ""
+
+#: bash\bash\bosh.py:19908
+msgid "Completing"
+"Converting fids"
+msgstr ""
+
+#: bash\bash\bosh.py:19915
+msgid "Updated: %s"
+""
+"Records Changed: %d"
+msgstr ""
+
+#: bash\bash\bosh.py:19984
+msgid ""
+".    Masters missing: "
+"    *"
+msgstr ""
+".    マスター欠落: "
+"    *"
+
+#: bash\bash\bosh.py:19987
+msgid ""
+".    Masters not active: "
+"    *"
+msgstr ""
+".    マスターがアクティブではありません: "
+"    *"
+
+#: bash\bash\bosh.py:20002
+msgid ""
+".    Is a master of non-mergeable mod(s)"
+msgstr ""
+".    マージ可能ではないMODのマスターです"
+
+#: bash\bash\bosh.py:20282
+msgid "Patching..."
+"%s::%s"
+msgstr "パッチ適用中..."
+"%s::%s"
+
+#: bash\bash\bosh.py:20332
+msgid "Final Patching..."
+"%s::%s"
+msgstr "最終パッチ適用中..."
+"%s::%s"
+
+#: bash\bash\bosh.py:20347
+msgid "Patchers applied"
+msgstr "パッチが適用されました"
+
+#: bash\bash\bosh.py:20571
+msgid "+('|'.join(autoKey))+r"
+msgstr ""
+
+#: bash\bash\bosh.py:20632
+msgid ""
+""
+"Any non-active, non-merged mods in the following list will be IGNORED"
+msgstr ""
+""
+"アクティブではなくかつマージもされていないMODは無視されます"
+
+#: bash\bash\bosh.py:20832
+msgid "Tweakers"
+msgstr ""
+
+#: bash\bash\bosh.py:20891
+msgid "General"
+msgstr "概要"
+
+#: bash\bash\bosh.py:20892
+msgid "Alias Mod Names"
+msgstr ""
+
+#: bash\bash\bosh.py:20893
+msgid "Specify mod aliases for reading CSV source files"
+msgstr "CSVを読み込むにあたりMODの別名を指定することができます"
+
+#: bash\bash\bosh.py:20940
+msgid "Merge Patches"
+msgstr ""
+
+#: bash\bash\bosh.py:20941
+msgid "Merge patch mods into Bashed Patch"
+msgstr "Bashed Patchにマージ可能なMODをマージします"
+
+#: bash\bash\bosh.py:20996
+msgid "Replace Form IDs"
+msgstr ""
+
+#: bash\bash\bosh.py:20997
+msgid "Imports Form Id replacers from csv files into the Bashed Patch"
+msgstr "CSVからForm ID書き換え情報をインポートします"
+
+#: bash\bash\bosh.py:21197
+msgid "Source Mods"
+msgstr "読み込み元MOD"
+
+#: bash\bash\bosh.py:21200
+msgid ""
+"=== Records Patched"
+msgstr ""
+"=== 以下のレコードにパッチを適用しました"
+
+#: bash\bash\bosh.py:21314
+msgid "Importers"
+msgstr ""
+
+#: bash\bash\bosh.py:21574
+msgid "Import Cells"
+msgstr ""
+
+#: bash\bash\bosh.py:21575
+msgid "Import cells (climate, lighting, and water) from source mods"
+msgstr "Cell情報(Climate、Lighting、Waterの情報)をインポートします"
+
+#: bash\bash\bosh.py:21767
+msgid ""
+"=== Cells/Worlds Patched"
+msgstr ""
+"=== Cell/Worldにパッチを適用しました"
+
+#: bash\bash\bosh.py:21857
+msgid "Import Graphics"
+msgstr ""
+
+#: bash\bash\bosh.py:21858
+msgid "Import graphics (models, icons, etc.) from source mods"
+msgstr "グラフィック情報(メッシュ、アイコンなど)をインポートします"
+
+#: bash\bash\bosh.py:22050
+msgid ""
+"=== Modified Records"
+msgstr ""
+"=== レコードを修正しました"
+
+#: bash\bash\bosh.py:22189
+msgid "Import Actors"
+msgstr ""
+
+#: bash\bash\bosh.py:22190
+msgid "Import Actor components from source mods"
+msgstr "Actor情報をインポートします"
+
+#: bash\bash\bosh.py:22479
+msgid "Import Actors: Animations"
+msgstr ""
+
+#: bash\bash\bosh.py:22480
+msgid "Import Actor animations from source mods"
+msgstr "ActorのAnimationをインポートします"
+
+#: bash\bash\bosh.py:22671
+msgid "Import Actors: AIPackages"
+msgstr ""
+
+#: bash\bash\bosh.py:22672
+msgid "Import Actor AIPackage links from source mods"
+msgstr "ActorのAI Packageをインポートします"
+
+#: bash\bash\bosh.py:22855
+msgid ""
+"=== AI Package Lists Changed: %d"
+msgstr ""
+"=== AI Packageリストを変更しました: %d"
+
+#: bash\bash\bosh.py:22974
+msgid "Import Actors: Death Items"
+msgstr ""
+
+#: bash\bash\bosh.py:22975
+msgid "Import Actor death items from source mods"
+msgstr "ActorのDeath Itemsをインポートします"
+
+#: bash\bash\bosh.py:23169
+msgid "Import Factions"
+msgstr ""
+
+#: bash\bash\bosh.py:23170
+msgid "Import factions from source mods/files"
+msgstr "Faction情報をインポートします"
+
+#: bash\bash\bosh.py:23273
+msgid "Source Mods/Files"
+msgstr "読み込み元MODもしくはCSVファイル"
+
+#: bash\bash\bosh.py:23276
+msgid ""
+"=== Refactioned Actors"
+msgstr ""
+"=== ActorのFaction情報を再設定しました"
+
+#: bash\bash\bosh.py:23392
+msgid "Import Relations"
+msgstr ""
+
+#: bash\bash\bosh.py:23393
+msgid "Import relations from source mods/files"
+msgstr "Relations(好感度補正)をCSVファイルからインポートします"
+
+#: bash\bash\bosh.py:23496
+msgid ""
+"=== Modified Factions: %d"
+msgstr ""
+"=== Faction情報を修正しました: %d"
+
+#: bash\bash\bosh.py:23593
+msgid "Import Scripts on containers, plants, misc, weapons etc. from source mods"
+msgstr "Container、Plant、Misc、WeaponなどのScript情報をインポートします"
+
+#: bash\bash\bosh.py:23791
+msgid "Import Script Contents"
+msgstr ""
+
+#: bash\bash\bosh.py:23792
+msgid "Import the actual contents of scripts scripts"
+msgstr "Scriptの中身をインポートします"
+
+#: bash\bash\bosh.py:23941
+msgid "Import Inventory"
+msgstr ""
+
+#: bash\bash\bosh.py:23942
+msgid "Merges changes to NPC, creature and container inventories"
+msgstr "ActorやContainerのInventory情報をマージします"
+
+#: bash\bash\bosh.py:24064
+msgid ""
+"=== Inventories Changed: %d"
+msgstr ""
+"=== Inventoryを変更しました: %d"
+
+#: bash\bash\bosh.py:24182
+msgid "Import Actors: Spells"
+msgstr ""
+
+#: bash\bash\bosh.py:24183
+msgid "Merges changes to NPC and creature spell lists"
+msgstr "Actorに対するSpell Listの変更をマージします"
+
+#: bash\bash\bosh.py:24355
+msgid ""
+"=== Spell Lists Changed: %d"
+msgstr ""
+"=== Spell Listを変更しました: %d"
+
+#: bash\bash\bosh.py:24446
+msgid "Import Names"
+msgstr ""
+
+#: bash\bash\bosh.py:24447
+msgid "Import names from source mods/files"
+msgstr "アイテム、Actorその他の名称情報をインポートします"
+
+#: bash\bash\bosh.py:24549
+msgid ""
+"=== Renamed Items"
+msgstr ""
+"=== アイテムをリネームしました"
+
+#: bash\bash\bosh.py:24651
+msgid "Import NPC Faces"
+msgstr ""
+
+#: bash\bash\bosh.py:24652
+msgid "Import NPC face/eyes/hair from source mods. For use with Project Beauty, FaceMe and similar mods"
+msgstr ""
+
+#: bash\bash\bosh.py:24768
+msgid ""
+"=== Faces Patched: %d"
+msgstr ""
+"=== 顔データにパッチを適用しました: %d"
+
+#: bash\bash\bosh.py:24889
+msgid "Import Roads"
+msgstr ""
+
+#: bash\bash\bosh.py:24890
+msgid "Import roads from source mods"
+msgstr "Road情報をインポートします"
+
+#: bash\bash\bosh.py:24962
+msgid ""
+"=== Worlds Patched"
+msgstr ""
+"=== パッチが適用されたWorld"
+
+#: bash\bash\bosh.py:25059
+msgid "Import Sounds"
+msgstr ""
+
+#: bash\bash\bosh.py:25060
+msgid "Import sounds (from Magic Effects, Containers, Activators, Lights, Weathers and Doors) from source mods"
+msgstr "オブジェクトに設定されたSound情報をインポートします"
+
+#: bash\bash\bosh.py:25294
+msgid "Import Stats"
+msgstr ""
+
+#: bash\bash\bosh.py:25295
+msgid "Import stats from any pickupable items from source mods/files"
+msgstr "拾得可能なアイテムの情報(価格など)をインポートします"
+
+#: bash\bash\bosh.py:25395
+msgid ""
+"=== Modified Stats"
+msgstr ""
+"=== アイテム情報を修正しました"
+
+#: bash\bash\bosh.py:25398
+msgid "Ingestibles"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Ammo"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Armor Addon"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Ingr"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Misc"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Weapons"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Lights"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Keys"
+msgstr ""
+
+#: bash\bash\bosh.py:25398
+msgid "Books"
+msgstr ""
+
+#: bash\bash\bosh.py:25503
+msgid "Import Spell Stats"
+msgstr ""
+
+#: bash\bash\bosh.py:25504
+msgid "Import stats from any spells from source mods/files"
+msgstr "Spellの内容情報をインポートします"
+
+#: bash\bash\bosh.py:25597
+msgid "Spells"
+msgstr ""
+
+#: bash\bash\bosh.py:25691
+msgid "Import Destructible"
+msgstr ""
+
+#: bash\bash\bosh.py:25692
+msgid "Merges changes to destructible records."
+""
+"Will have to use if Destruction Environment mod is installed and active"
+msgstr ""
+
+#: bash\bash\bosh.py:26298
+msgid "All Armor Playable"
+msgstr ""
+
+#: bash\bash\bosh.py:26299
+msgid "Sets all armor to be playable"
+msgstr "全てのArmorにPlayable属性をつけ、プレイヤーが使用できるようにする"
+
+#: bash\bash\bosh.py:26341
+msgid "Playable Armor"
+msgstr ""
+
+#: bash\bash\bosh.py:26342
+msgid "* Armor pieces set as playable: %d"
+msgstr "* ArmorをPlayableに設定しました: %d"
+
+#: bash\bash\bosh.py:26572
+msgid "Nvidia Fog Fix"
+msgstr "nVidia Fog Fix"
+
+#: bash\bash\bosh.py:26573
+msgid "Fix fog related Nvidia black screen problems"
+msgstr "nVidiaのブラックスクリーンバグに関連するCellのFog Nearを修正"
+
+#: bash\bash\bosh.py:26659
+msgid "No Light Flicker"
+msgstr ""
+
+#: bash\bash\bosh.py:26660
+msgid "Remove flickering from lights. For use on low-end machines"
+msgstr "Lightオブジェクトから「揺らめき」を取り除きます. ローエンドマシン向けの項目です"
+
+#: bash\bash\bosh.py:26701
+msgid "* Lights unflickered: %d"
+msgstr "* 光源「揺らめき」を取り除きました: %d"
+
+#: bash\bash\bosh.py:27501
+msgid "Disable Wind"
+msgstr ""
+
+#: bash\bash\bosh.py:27502
+msgid "Disables the wind on all weathers"
+msgstr "全てのWeatherからWind設定を無効にします"
+
+#: bash\bash\bosh.py:27504
+msgid "Disable"
+msgstr "無効にする"
+
+#: bash\bash\bosh.py:27540
+msgid "* Winds Disabled: %d"
+msgstr "* Wind設定を取り除きました: %d"
+
+#: bash\bash\bosh.py:28029
+msgid "Set Sound Attenuation Levels"
+msgstr ""
+
+#: bash\bash\bosh.py:28030
+msgid "The sound attenution levels will be set to tweak%*current level, thereby increasing (or decreasing) the sound volume"
+msgstr "サウンドのボリュームを、espで設定された値の何%%にするか、そのパーセントを設定します"
+
+#: bash\bash\bosh.py:28032
+msgid "0%"
+msgstr ""
+
+#: bash\bash\bosh.py:28033
+msgid "5%"
+msgstr ""
+
+#: bash\bash\bosh.py:28034
+msgid "10%"
+msgstr ""
+
+#: bash\bash\bosh.py:28035
+msgid "20%"
+msgstr ""
+
+#: bash\bash\bosh.py:28036
+msgid "50%"
+msgstr ""
+
+#: bash\bash\bosh.py:28037
+msgid "80%"
+msgstr ""
+
+#: bash\bash\bosh.py:28038
+msgid "Custom"
+msgstr "カスタム"
+
+#: bash\bash\bosh.py:28074
+msgid "* Sounds Modified: %d"
+msgstr "* サウンド設定を修正しました: %d"
+
+#: bash\bash\bosh.py:28317
+msgid "No Light Fade Value Fix"
+msgstr ""
+
+#: bash\bash\bosh.py:28318
+msgid "Sets Light's Fade values to default of 1.0 if not set"
+msgstr "フェードが設定されていない光源に1.0を設定します"
+
+#: bash\bash\bosh.py:28354
+msgid "* Lights with fade values added: %d"
+msgstr "* 光源にフェード設定を追加しました: %d"
+
+#: bash\bash\bosh.py:28404
+msgid "All Guns Use Ironsight Animation"
+msgstr ""
+
+#: bash\bash\bosh.py:28405
+msgid "Remove\"Don\'t use 1st person IS animatio\" flag from all guns"
+msgstr ""
+
+#: bash\bash\bosh.py:28441
+msgid "Use Ironsight Animation"
+msgstr ""
+
+#: bash\bash\bosh.py:28442
+msgid "* Guns set to use ironsight: %d"
+msgstr ""
+
+#: bash\bash\bosh.py:28451
+msgid "Tweak Assorted"
+msgstr ""
+
+#: bash\bash\bosh.py:28452
+msgid "Tweak various records in miscellaneous ways"
+msgstr "種々のレコードを書き換えます"
+
+#: bash\bash\bosh.py:28596
+msgid "Globals"
+msgstr ""
+
+#: bash\bash\bosh.py:28597
+msgid "Set globals to various values"
+msgstr "種々の値を設定できます"
+
+#: bash\bash\bosh.py:28599
+msgid "Timescale"
+msgstr ""
+
+#: bash\bash\bosh.py:28600
+msgid "Timescale will be set to"
+msgstr "Timescale(現実の時間経過×n倍)を設定します"
+
+#: bash\bash\bosh.py:28602
+msgid "1"
+msgstr ""
+
+#: bash\bash\bosh.py:28603
+msgid "8"
+msgstr ""
+
+#: bash\bash\bosh.py:28604
+msgid "10"
+msgstr ""
+
+#: bash\bash\bosh.py:28605
+msgid "12"
+msgstr ""
+
+#: bash\bash\bosh.py:28606
+msgid "18"
+msgstr ""
+
+#: bash\bash\bosh.py:28607
+msgid "24"
+msgstr ""
+
+#: bash\bash\bosh.py:28608
+msgid "[30]"
+msgstr ""
+
+#: bash\bash\bosh.py:28609
+msgid "40"
+msgstr ""
+
+#: bash\bash\bosh.py:29100
+msgid "Finishing GMST Tweaks"
+msgstr "GMST書き換えを完了中"
+
+#: bash\bash\bosh.py:29109
+msgid "Tweak Settings: Unable to create GMST!"
+msgstr "Tweak Settings: GMSTを生成できません！"
+
+#: bash\bash\bosh.py:29134
+msgid "Tweak Settings"
+msgstr ""
+
+#: bash\bash\bosh.py:29135
+msgid "Tweak game settings"
+msgstr "Gamesettingを設定します"
+
+#: bash\bash\bosh.py:29137
+msgid "Camera: Chase Distance"
+msgstr ""
+
+#: bash\bash\bosh.py:29138
+msgid "Distance camera can be moved away from PC using mouse wheel"
+msgstr "マウスホイールを使用した時、カメラがプレイヤーから離れる距離を設定します"
+
+#: bash\bash\bosh.py:29140
+msgid "x 1.5"
+msgstr ""
+
+#: bash\bash\bosh.py:29141
+msgid "x 2"
+msgstr ""
+
+#: bash\bash\bosh.py:29142
+msgid "x 3"
+msgstr ""
+
+#: bash\bash\bosh.py:29143
+msgid "x 5"
+msgstr ""
+
+#: bash\bash\bosh.py:29144
+msgid "x 10"
+msgstr ""
+
+#: bash\bash\bosh.py:29147
+msgid "Compass: POI Recognition"
+msgstr ""
+
+#: bash\bash\bosh.py:29148
+msgid "Distance at which POI markers begin to show on compass"
+msgstr "地図マークがコンパスに表示され始める距離を設定します"
+
+#: bash\bash\bosh.py:29150
+msgid "x 0.05"
+msgstr ""
+
+#: bash\bash\bosh.py:29151
+msgid "x 0.25"
+msgstr ""
+
+#: bash\bash\bosh.py:29152
+msgid "x 0.50"
+msgstr ""
+
+#: bash\bash\bosh.py:29153
+msgid "x 0.75"
+msgstr ""
+
+#: bash\bash\bosh.py:29154
+msgid "Custom (base 1200)"
+msgstr ""
+
+#: bash\bash\bosh.py:29156
+msgid "Essential NPC Unconsciousness"
+msgstr ""
+
+#: bash\bash\bosh.py:29157
+msgid "Time which essential NPCs stay unconscious"
+msgstr "EssentialなNPCの気絶状態が続く時間を設定します"
+
+#: bash\bash\bosh.py:29159
+msgid "[10 Seconds]"
+msgstr "[10秒]"
+
+#: bash\bash\bosh.py:29160
+msgid "20 Seconds"
+msgstr "20秒"
+
+#: bash\bash\bosh.py:29161
+msgid "30 Seconds"
+msgstr "30秒"
+
+#: bash\bash\bosh.py:29162
+msgid "1 Minute"
+msgstr "1分"
+
+#: bash\bash\bosh.py:29163
+msgid "1 1/2 Minutes"
+msgstr "1.5分"
+
+#: bash\bash\bosh.py:29164
+msgid "2 Minutes"
+msgstr "2分"
+
+#: bash\bash\bosh.py:29165
+msgid "3 Minutes"
+msgstr "3分"
+
+#: bash\bash\bosh.py:29166
+msgid "5 Minutes"
+msgstr "5分"
+
+#: bash\bash\bosh.py:29167
+msgid "Custom (in seconds)"
+msgstr "カスタム(秒)"
+
+#: bash\bash\bosh.py:29169
+msgid "Jump Higher"
+msgstr ""
+
+#: bash\bash\bosh.py:29170
+msgid "Height player can jump to"
+msgstr ""
+
+#: bash\bash\bosh.py:29172
+msgid "x 1.1"
+msgstr ""
+
+#: bash\bash\bosh.py:29173
+msgid "x 1.2"
+msgstr ""
+
+#: bash\bash\bosh.py:29174
+msgid "x 1.4"
+msgstr ""
+
+#: bash\bash\bosh.py:29175
+msgid "x 1.6"
+msgstr ""
+
+#: bash\bash\bosh.py:29176
+msgid "x 1.8"
+msgstr ""
+
+#: bash\bash\bosh.py:29177
+msgid "x 2.0"
+msgstr ""
+
+#: bash\bash\bosh.py:29178
+msgid "x 3.0"
+msgstr ""
+
+#: bash\bash\bosh.py:29181
+msgid "Camera: PC Death Time"
+msgstr ""
+
+#: bash\bash\bosh.py:29182
+msgid "Time after player's death before reload menu appears"
+msgstr "プレイヤー死後、リロード画面が出現するまでの時間を設定します"
+
+#: bash\bash\bosh.py:29184
+msgid "15 Seconds"
+msgstr "15秒"
+
+#: bash\bash\bosh.py:29187
+msgid "5 Minute"
+msgstr "5分"
+
+#: bash\bash\bosh.py:29188
+msgid "Unlimited"
+msgstr "無制限"
+
+#: bash\bash\bosh.py:29191
+msgid "Cell Respawn Time"
+msgstr ""
+
+#: bash\bash\bosh.py:29192
+msgid "Time before unvisited cell respawns. But longer times increase save sizes"
+msgstr "訪れずにいるCellがRespawnするまでの時間. あまり長く設定すると、セーブが肥大化します"
+
+#: bash\bash\bosh.py:29194
+msgid "1 Day"
+msgstr "1日"
+
+#: bash\bash\bosh.py:29195
+msgid "[3 Days]"
+msgstr "[3日]"
+
+#: bash\bash\bosh.py:29196
+msgid "5 Days"
+msgstr "5日"
+
+#: bash\bash\bosh.py:29197
+msgid "10 Days"
+msgstr "10日"
+
+#: bash\bash\bosh.py:29198
+msgid "20 Days"
+msgstr "20日"
+
+#: bash\bash\bosh.py:29199
+msgid "1 Month"
+msgstr "1ヶ月"
+
+#: bash\bash\bosh.py:29200
+msgid "6 Months"
+msgstr "6ヶ月"
+
+#: bash\bash\bosh.py:29201
+msgid "1 Year"
+msgstr "1年"
+
+#: bash\bash\bosh.py:29202
+msgid "Custom (in hours)"
+msgstr "カスタム(x時間)"
+
+#: bash\bash\bosh.py:29204
+msgid "Cost Multiplier: Repair"
+msgstr ""
+
+#: bash\bash\bosh.py:29205
+msgid "Cost factor for repairing items"
+msgstr "アイテム修理代金算出に使用されるファクターを設定します"
+
+#: bash\bash\bosh.py:29216
+msgid "Combat: Max Actors"
+msgstr ""
+
+#: bash\bash\bosh.py:29217
+msgid "Maximum number of actors that can actively be in combat with the player"
+msgstr "プレイヤーと積極的に戦闘になるActorの上限人数を設定します"
+
+#: bash\bash\bosh.py:29228
+msgid "AI: Max Active Actors"
+msgstr ""
+
+#: bash\bash\bosh.py:29229
+msgid "Maximum actors whose AI can be active. Must be higher than Combat: Max Actors"
+msgstr "AIが同時に活動する人数の上限です. Combat: Max Actors設定より大きな値でなくてはいけません"
+
+#: bash\bash\bosh.py:29235
+msgid "MMM Default: 40"
+msgstr ""
+
+#: bash\bash\bosh.py:29241
+msgid "Companions: Max Number"
+msgstr ""
+
+#: bash\bash\bosh.py:29242
+msgid "Maximum number of actors following the player"
+msgstr "プレイヤーにFollowできる最大人数を設定します"
+
+#: bash\bash\bosh.py:29251
+msgid "AI: Max Dead Actors"
+msgstr ""
+
+#: bash\bash\bosh.py:29252
+msgid "Maximum number of dead actors allowed before they're removed"
+msgstr "一度に残留しつづけられる死体数の上限を設定します"
+
+#: bash\bash\bosh.py:29255
+msgid "[x 1]"
+msgstr ""
+
+#: bash\bash\bosh.py:29258
+msgid "x 2.5"
+msgstr ""
+
+#: bash\bash\bosh.py:29260
+msgid "x 3.5"
+msgstr ""
+
+#: bash\bash\bosh.py:29261
+msgid "x 4"
+msgstr ""
+
+#: bash\bash\bosh.py:29264
+msgid "Inventory Quantity Prompt"
+msgstr ""
+
+#: bash\bash\bosh.py:29265
+msgid "Number of items in a stack at which point Fallout prompts for a quantity"
+msgstr ""
+
+#: bash\bash\bosh.py:29272
+msgid "No Prompt"
+msgstr ""
+
+#: bash\bash\bosh.py:29275
+msgid "Gore: Combat Dismember Part Chance"
+msgstr ""
+
+#: bash\bash\bosh.py:29276
+msgid "The chance that body parts will be dismembered"
+msgstr ""
+
+#: bash\bash\bosh.py:29285
+msgid "Gore: Combat Explode Part Chance"
+msgstr ""
+
+#: bash\bash\bosh.py:29286
+msgid "The chance that body parts will be explode"
+msgstr ""
+
+#: bash\bash\bosh.py:29295
+msgid "Leveled Item Max level difference"
+msgstr ""
+
+#: bash\bash\bosh.py:29296
+msgid "Maximum difference to player level for leveled items"
+msgstr "Leveled Itemの中からアイテムが出現するレベル幅(プレイヤーレベルとの差)を指定します"
+
+#: bash\bash\bosh.py:29306
+msgid "Movement Base Speed"
+msgstr ""
+
+#: bash\bash\bosh.py:29307
+msgid "Base Movement speed"
+msgstr ""
+
+#: bash\bash\bosh.py:29313
+msgid "Movement Sneak Multiplier"
+msgstr ""
+
+#: bash\bash\bosh.py:29314
+msgid "Movement speed is multiplied by this when the actor is sneaking"
+msgstr ""
+
+#: bash\bash\bosh.py:29320
+msgid "Combat: Player Damage Multiplier in VATS"
+msgstr ""
+
+#: bash\bash\bosh.py:29321
+msgid "Multiplier of damage that player receives in VATS"
+msgstr ""
+
+#: bash\bash\bosh.py:29323
+msgid "0.10"
+msgstr ""
+
+#: bash\bash\bosh.py:29324
+msgid "0.25"
+msgstr ""
+
+#: bash\bash\bosh.py:29325
+msgid "0.50"
+msgstr ""
+
+#: bash\bash\bosh.py:29326
+msgid "[0.75]"
+msgstr ""
+
+#: bash\bash\bosh.py:29327
+msgid "1.00"
+msgstr ""
+
+#: bash\bash\bosh.py:29330
+msgid "Combat: Auto Aim Fix"
+msgstr ""
+
+#: bash\bash\bosh.py:29331
+msgid "Increase Auto Aim settings to a level at which Snipers can benefit from them"
+msgstr ""
+
+#: bash\bash\bosh.py:29333
+msgid "Harder"
+msgstr ""
+
+#: bash\bash\bosh.py:29335
+msgid "PipBoy Light Keypress-Delay"
+msgstr ""
+
+#: bash\bash\bosh.py:29336
+msgid "Seconds of delay until the PipBoy Light switches on"
+msgstr ""
+
+#: bash\bash\bosh.py:29338
+msgid "0.3"
+msgstr ""
+
+#: bash\bash\bosh.py:29339
+msgid "0.4"
+msgstr ""
+
+#: bash\bash\bosh.py:29340
+msgid "0.5"
+msgstr ""
+
+#: bash\bash\bosh.py:29341
+msgid "0.6"
+msgstr ""
+
+#: bash\bash\bosh.py:29342
+msgid "0.7"
+msgstr ""
+
+#: bash\bash\bosh.py:29343
+msgid "[0.8]"
+msgstr ""
+
+#: bash\bash\bosh.py:29344
+msgid "1.0"
+msgstr ""
+
+#: bash\bash\bosh.py:29347
+msgid "VATS Playback Delay"
+msgstr ""
+
+#: bash\bash\bosh.py:29348
+msgid "Seconds of delay after the VATS Camera finished playback"
+msgstr ""
+
+#: bash\bash\bosh.py:29350
+msgid "0.01"
+msgstr ""
+
+#: bash\bash\bosh.py:29351
+msgid "0.05"
+msgstr ""
+
+#: bash\bash\bosh.py:29353
+msgid "[0.17]"
+msgstr ""
+
+#: bash\bash\bosh.py:29357
+msgid "NPC-Death XP Threshold (Followers)"
+msgstr ""
+
+#: bash\bash\bosh.py:29358
+msgid "Percentage of total damage you have to inflict in order to get XP"
+msgstr ""
+
+#: bash\bash\bosh.py:29361
+msgid "25%"
+msgstr ""
+
+#: bash\bash\bosh.py:29362
+msgid "[40%]"
+msgstr ""
+
+#: bash\bash\bosh.py:29364
+msgid "75%"
+msgstr ""
+
+#: bash\bash\bosh.py:29367
+msgid "Hacking: Maximum Number of words"
+msgstr ""
+
+#: bash\bash\bosh.py:29368
+msgid "The maximum number of words appearing in the terminal hacking mini-game"
+msgstr ""
+
+#: bash\bash\bosh.py:29371
+msgid "4"
+msgstr ""
+
+#: bash\bash\bosh.py:29374
+msgid "16"
+msgstr ""
+
+#: bash\bash\bosh.py:29375
+msgid "[20]"
+msgstr ""
+
+#: bash\bash\bosh.py:29378
+msgid "Shell Camera Distance"
+msgstr ""
+
+#: bash\bash\bosh.py:29379
+msgid "Maximum distance at which gun arisings (shell case, particle, decal) show from camera"
+msgstr ""
+
+#: bash\bash\bosh.py:29388
+msgid "Shell Litter Time"
+msgstr ""
+
+#: bash\bash\bosh.py:29389
+msgid "Time before shell cases fade away from cells"
+msgstr ""
+
+#: bash\bash\bosh.py:29399
+msgid "Shell Litter Count"
+msgstr ""
+
+#: bash\bash\bosh.py:29400
+msgid "Maximum number of debris (shell case, etc) allowed in cell"
+msgstr ""
+
+#: bash\bash\bosh.py:29402
+msgid "[50]"
+msgstr ""
+
+#: bash\bash\bosh.py:29403
+msgid "100"
+msgstr ""
+
+#: bash\bash\bosh.py:29404
+msgid "500"
+msgstr ""
+
+#: bash\bash\bosh.py:29405
+msgid "1000"
+msgstr ""
+
+#: bash\bash\bosh.py:29406
+msgid "3000"
+msgstr ""
+
+#: bash\bash\bosh.py:29409
+msgid "Terminal Speed Adjustment"
+msgstr ""
+
+#: bash\bash\bosh.py:29410
+msgid "The display speed at the time of terminal hacking"
+msgstr ""
+
+#: bash\bash\bosh.py:29414
+msgid "[x 6]"
+msgstr ""
+
+#: bash\bash\bosh.py:29417
+msgid "Drag: Max Moveable Weight"
+msgstr ""
+
+#: bash\bash\bosh.py:29418
+msgid "Maximum weight to be able move things with the drag key"
+msgstr "Grabキーで動かすことのできる重さの最大値を設定します"
+
+#: bash\bash\bosh.py:29420
+msgid "1500"
+msgstr ""
+
+#: bash\bash\bosh.py:29421
+msgid "[Default (150)]"
+msgstr ""
+
+#: bash\bash\bosh.py:29767
+msgid "Body Part Codes"
+msgstr ""
+
+#: bash\bash\bosh.py:29768
+msgid "Sets body part codes used by Armor/Clothes name tweaks. H: Head, A: Armor, etc"
+msgstr ""
+
+#: bash\bash\bosh.py:29864
+msgid "* %s: %d"
+msgstr ""
+
+#: bash\bash\bosh.py:29925
+msgid "Label ingestibles to sort by type. C: Chems, F: Food, S: Stimpack, A: Alcohol"
+msgstr ""
+
+#: bash\bash\bosh.py:29927
+msgid "F Radroach Meat"
+msgstr ""
+
+#: bash\bash\bosh.py:29928
+msgid "F. Radroach Meat"
+msgstr ""
+
+#: bash\bash\bosh.py:29929
+msgid "F - Radroach Meat"
+msgstr ""
+
+#: bash\bash\bosh.py:29930
+msgid "(F) Radroach Meat"
+msgstr ""
+
+#: bash\bash\bosh.py:30378
+msgid "Label ammo and weapons to sort by type and damage"
+msgstr "Ammo(矢)とWeaponが種類とダメージでソートされるよう接頭辞をつける"
+
+#: bash\bash\bosh.py:30380
+msgid "S BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30381
+msgid "S. BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30382
+msgid "S - BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30383
+msgid "(S) BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30385
+msgid "S10 BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30386
+msgid "S10. BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30387
+msgid "S10 - BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30388
+msgid "(S10) BB Gun"
+msgstr ""
+
+#: bash\bash\bosh.py:30828
+msgid "Sort Inventory"
+msgstr ""
+
+#: bash\bash\bosh.py:30829
+msgid "Sort item by category in barter and container screens"
+msgstr ""
+
+#: bash\bash\bosh.py:30832
+msgid "Chem>Ammo>Weapon>Armor>Food>Misc"
+msgstr ""
+
+#: bash\bash\bosh.py:30833
+msgid "Ammo>Chem>Weapon>Armor>Food>Misc"
+msgstr ""
+
+#: bash\bash\bosh.py:30894
+msgid "Append Ammo Weight"
+msgstr ""
+
+#: bash\bash\bosh.py:30895
+msgid "Append ammo weight of FWE to tail of the ammo name"
+msgstr ""
+
+#: bash\bash\bosh.py:30897
+msgid "BB (WG 0.01)"
+msgstr ""
+
+#: bash\bash\bosh.py:30898
+msgid "BB (0.01)"
+msgstr ""
+
+#: bash\bash\bosh.py:30960
+msgid "Tweak Names"
+msgstr ""
+
+#: bash\bash\bosh.py:30961
+msgid "Tweak object names in various ways such as lore friendlyness or show type/quality"
+msgstr "様々な法則(Lore-Friendlyや質・種別の明記)でアイテム名を書き換えます"
+
+#: bash\bash\bosh.py:30963
+msgid "Armor/Clothes"
+msgstr ""
+
+#: bash\bash\bosh.py:30963
+msgid "Rename armor to sort by type"
+msgstr "Armorを種別でソートできるようリネームする"
+
+#: bash\bash\bosh.py:30964
+msgid "A Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30965
+msgid "A. Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30966
+msgid "A - Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30967
+msgid "(A) Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30969
+msgid "A01 Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30970
+msgid "A01. Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30971
+msgid "A01 - Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:30972
+msgid "(A01) Naughty Nightwear"
+msgstr ""
+
+#: bash\bash\bosh.py:31076
+msgid "Title"
+msgstr ""
+
+#: bash\bash\bosh.py:31077
+msgid "Description"
+msgstr "説明"
+
+#: bash\bash\bosh.py:32354
+msgid "Special"
+msgstr ""
+
+#: bash\bash\bosh.py:32820
+msgid "Leveled Lists"
+msgstr ""
+
+#: bash\bash\bosh.py:32821
+msgid "Merges changes to leveled lists from ACTIVE/MERGED MODS ONLY."
+""
+"Advanced users may override Relev/Delev tags for any mod (active or inactive) using the list below"
+msgstr "アクティブあるいはマージされているMODのLeveled Listをマージします."
+""
+"熟練したユーザは以下のリストを上手に活用し、Relev/Delevタグの設定を 上書きしてBashed Patchに反映させることができます"
+
+#: bash\bash\bosh.py:32822
+msgid "Merges changes to leveled lists from all active mods"
+msgstr "アクティブなMODのLeveled List変更をマージします"
+
+#: bash\bash\bosh.py:32998
+msgid "Delevelers/Relevelers"
+msgstr "Leveled ListをDelev/Relevしました"
+
+#: bash\bash\bosh.py:33002
+msgid "Item"
+msgstr ""
+
+#: bash\bash\bosh.py:33002
+msgid "Spell"
+msgstr ""
+
+#: bash\bash\bosh.py:33003
+msgid "Merged %s Lists"
+msgstr "マージされた%s List"
+
+#: bash\bash\bosh.py:33044
+msgid "Empty %s Sublists"
+msgstr "Emptyなサブ%s List"
+
+#: bash\bash\bosh.py:33047
+msgid "Empty %s Sublists Removed"
+msgstr "削除されたEmptyなサブ%s List"
+
+#: bash\bash\bosh.py:33315
+msgid "FormID Lists"
+msgstr ""
+
+#: bash\bash\bosh.py:33316
+msgid "Merges changes to formid lists from ACTIVE/MERGED MODS ONLY."
+""
+"Advanced users may override Deflst tags for any mod (active or inactive) using the list below"
+msgstr ""
+
+#: bash\bash\bosh.py:33317
+msgid "Merges changes to formid lists from all active mods"
+msgstr ""
+
+#: bash\bash\bosh.py:33438
+msgid "Deflsters"
+msgstr ""
+
+#: bash\bash\bosh.py:33442
+msgid "FormID"
+msgstr ""
+
+#: bash\bash\bosh.py:33890
+msgid "Race Records"
+msgstr ""
+
+#: bash\bash\bosh.py:33891
+msgid "Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED mods. Any non-active, non-merged mods in the following list will be IGNORED."
+""
+"Even if none of the below mods are checked, this will sort hairs and eyes and attempt to remove googly eyes from all active mods. It will also randomly assign hairs and eyes to npcs that are otherwise missing them"
+msgstr "種族、目、髪型、体型、声などをアクティブあるいはマージされたMODから マージします. アクティブではなくマージもされていないMODは以下の リストに表示されません."
+""
+"リストのMODに一つもチェックを入れなかったとしても、髪型や目をソート してグロ目を除去します. またこの機能では、髪型や目が明示的に 設定されていないNPCに対して、ビルドの度にランダムに割り当てます"
+
+#: bash\bash\bosh.py:33892
+msgid "Merge race eyes, hair, body, voice from mods"
+msgstr "種族、目、髪型、体型、声などをアクティブなMODからマージします"
+
+#: bash\bash\bosh.py:33948
+msgid "WARNING mod %s has both R.AddSpells and R.ChangeSpells tags - only one of those tags should be on a mod at one time"
+msgstr "警告、%sにはR.AddSpellsとR.ChangeSpellsのタグが両方とも設定されています. 一つのMODに対し、これらのタグはどちらか一つだけが設定されているべきです"
+
+#: bash\bash\bosh.py:34066
+msgid "No right and/or no left eye recorded in race %s, from mod %s"
+msgstr "%s種族(%s)に対し右目あるいは左目のメッシュ（もしくは両方）が設定されていません"
+
+#: bash\bash\bosh.py:34101
+msgid "Very odd race %s found - no female right eye assigned"
+msgstr ""
+
+#: bash\bash\bosh.py:34107
+msgid "Very odd race %s found - no female left eye assigned"
+msgstr ""
+
+#: bash\bash\bosh.py:34113
+msgid "Very odd race %s found - no male right eye assigned"
+msgstr ""
+
+#: bash\bash\bosh.py:34119
+msgid "Very odd race %s found - no male left eye assigned"
+msgstr ""
+
+#: bash\bash\bosh.py:34267
+msgid ""
+"=== Merged"
+msgstr ""
+"=== マージされたもの"
+
+#: bash\bash\bosh.py:34269
+msgid "~~None~~"
+msgstr ""
+
+#: bash\bash\bosh.py:34273
+msgid ""
+"=== Eyes/Hair Sorted"
+msgstr ""
+"=== ソートされたEyeとHair"
+
+#: bash\bash\bosh.py:34279
+msgid ""
+"=== Eye Meshes Filtered"
+msgstr ""
+"=== フィルタリングされたEyeのメッシュ"
+
+#: bash\bash\bosh.py:34283
+msgid "In order to prevent 'googly eyes', incompatible eyes have been removed from the following races"
+msgstr "「グロ目」を回避するため、互換性を持たないEyeは以下の種族から除去されました"
+
+#: bash\bash\bosh.py:34287
+msgid ""
+"=== Eyes/Hair Assigned for NPCs"
+msgstr ""
+"=== EyeとHairが設定されていなかったため割り当てたNPC"
+
+#: bash\bash\bosh.py:35027
+msgid "Contents Checker"
+msgstr ""
+
+#: bash\bash\bosh.py:35028
+msgid "Checks contents of leveled lists, inventories and containers for correct types"
+msgstr "Leveled List、Inventory、Containerの中身が適切であるかチェックします"
+
+#: bash\bash\bosh.py:35242
+msgid "Can't find user directories in windows registry."
+">> See \"If Bash Won't Start\" in bash docs for help"
+msgstr "レジストリにユーザーディレクトリを発見できません."
+">> \"If Bash Won't Start\"をご覧ください"
+
+#: bash\bash\bosh.py:35342
+msgid "Install Error"
+"Failed to find Fallout3.exe in %s."
+"Note that the Mopy folder should be in the same folder as Fallout3.exe"
+msgstr ""
+
+#: bash\bash\bosh.py:35350
+msgid "Folder path specified on command line (-p)"
+msgstr "特定のディレクトリパスがコマンドライン-pで指定されました"
+
+#: bash\bash\bosh.py:35353
+msgid "Folder path specified in bash.ini (%s)"
+msgstr "特定のディレクトリパスがbash.ini(%s)で指定されました"
+
+#: bash\bash\bosh.py:35356
+msgid "Folder path extracted from win32com.shell"
+msgstr "特定のディレクトリパスがwin32com.shellで展開されました"
+
+#: bash\bash\bosh.py:35365
+msgid "Personal folder does not exist."
+"Personal folder: %s"
+"Additional info:"
+"%s"
+msgstr "個人フォルダが存在しません."
+"個人フォルダ: %s"
+"Additional info:"
+"%s"
+
+#: bash\bash\bosh.py:35374
+msgid "Folder path specified on command line (-l)"
+msgstr "特定のディレクトリパスがコマンドライン-lで指定されました"
+
+#: bash\bash\bosh.py:35377
+msgid "Folder path specified  in bash.ini (%s)"
+msgstr "特定のディレクトリパスがbash.ini(%s)で指定されました"
+
+#: bash\bash\bosh.py:35389
+msgid "Local AppData folder does not exist."
+"Local AppData folder: %s"
+"Additional info:"
+"%s"
+msgstr ""
+
+#: bash\bash\bosh.py:35485
+msgid "Wrye Bash cannot access the following paths"
+msgstr ""
+
+#: bash\bash\bosh.py:35487
+msgid "See:\"Wrye Bash.html, Installation - Windows Vista/\" for information on how to solve this problem"
+msgstr ""
+
+#: bash\bash\bosh.py:35506
+msgid "Launch"
+msgstr ""
+
+#: bash\bash\bosh.py:35509
+msgid "Error initializing links"
+msgstr ""
+
+#: bash\bash\bosh.py:35662
+msgid "-option(s)"
+msgstr ""
+
+#: bash\bash\bosh.py:35662
+msgid "tooltip text"
+msgstr ""
+
+#: bash\bash\bosh.py:35662
+msgid "default"
+msgstr ""
+
+#: bash\bash\bosh.py:35679
+msgid "%s Wrye Bash ini file read, Keep Log level: %d, initialized.\r"
+""
+msgstr ""
+
+#: bash\bash\bosh.py:35701
+msgid "Error reading the Bash Settings database (the error is: '%s"
+msgstr ""
+
+#: bash\bash\bosh.py:35701
+msgid "Settings Load Error"
+msgstr ""
+
+#: bash\bash\bosh.py:35709
+msgid "Error reading the BackupBash Settings database (the error is: '%s"
+msgstr ""
+
+#: bash\bash\bosh.py:35718
+msgid "Do you want to delete the corrupted settings and load Wrye Bash without your saved UI settings?. (Otherwise Wrye Bash wo't start up)"
+msgstr ""
+
+#: bash\bash\bosh.py:35730
+msgid "Compiled"
+msgstr ""
+
+#: bash\bash\bash.py:152
+msgid "Error Attempting to Restart Wrye Bash!"
+msgstr ""
+
+#: bash\bash\bash.py:153
+msgid "cmd line"
+msgstr ""
+
+#: bash\bash\basher.py:91
+msgid "Error initializing installer wizards"
+msgstr ""
+
+#: bash\bash\basher.py:160
+msgid "Activation Status"
+msgstr ""
+
+#: bash\bash\basher.py:161
+msgid "Author"
+msgstr "作者"
+
+#: bash\bash\basher.py:163
+msgid "CRC"
+msgstr ""
+
+#: bash\bash\basher.py:164
+msgid "Current LO"
+msgstr ""
+
+#: bash\bash\basher.py:165
+msgid "Date"
+msgstr "日付"
+
+#: bash\bash\basher.py:166
+msgid "Day"
+msgstr "日"
+
+#: bash\bash\basher.py:167
+msgid "File"
+msgstr "ファイル"
+
+#: bash\bash\basher.py:171
+msgid "Installer"
+msgstr "インストーラ"
+
+#: bash\bash\basher.py:172
+msgid "Karma"
+msgstr "仲良し度"
+
+#: bash\bash\basher.py:173
+msgid "Load Order"
+msgstr "ロード順"
+
+#: bash\bash\basher.py:176
+msgid "MI"
+msgstr ""
+
+#: bash\bash\basher.py:179
+msgid "Hours"
+msgstr "プレイ時間"
+
+#: bash\bash\basher.py:180
+msgid "Player"
+msgstr "プレイヤー名"
+
+#: bash\bash\basher.py:181
+msgid "Rating"
+msgstr "レーティング"
+
+#: bash\bash\basher.py:183
+msgid "Save Order"
+msgstr "セーブオーダー"
+
+#: bash\bash\basher.py:185
+msgid "Status"
+msgstr "ステータス"
+
+#: bash\bash\basher.py:186
+msgid "Subject"
+msgstr "題名"
+
+#: bash\bash\basher.py:813
+msgid "${count} Children deactivated"
+msgstr "このesp/esmをマスターとして参照している${count}個のファイルをDeactivateしました"
+
+#: bash\bash\basher.py:813
+msgid "%s"
+msgstr ""
+
+#: bash\bash\basher.py:822
+msgid "${count} Masters activated"
+msgstr "このesp/esmからマスターに指定されている${count}個のファイルをActivateしました"
+
+#: bash\bash\basher.py:1101
+msgid "Unrecognized sort key"
+msgstr "認識できないソートキーです"
+
+#: bash\bash\basher.py:1157
+msgid "Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving"
+msgstr "マスターリストを編集・更新しますか？アップデートすると、自動的にリネームされるファイルが存在する場合があります. セーブする前に変更点を確認してください"
+
+#: bash\bash\basher.py:1158
+msgid "Update Masters"
+msgstr "マスターをアップデート"
+
+#: bash\bash\basher.py:1180
+msgid "File\"%\" does not exist"
+msgstr "ファイル%sは存在しません"
+
+#: bash\bash\basher.py:1276
+msgid "Tweak is currently applied"
+msgstr "このTweakは現在適用されています"
+
+#: bash\bash\basher.py:1281
+msgid "Some settings are applied.  Some are overwritten by another tweak from the same installer"
+msgstr "いくつかの設定が適用され、同じインストーラ由来のいくつかの設定が他のTweakに上書きされています"
+
+#: bash\bash\basher.py:1286
+msgid "Some settings are changed"
+msgstr "設定が変更されました"
+
+#: bash\bash\basher.py:1290
+msgid "Tweak is invalid"
+msgstr "Tweakは無効です"
+
+#: bash\bash\basher.py:1476
+msgid "Auto-ordered files cannot be manually moved"
+msgstr "自動的にソートされたファイルを手動で動かすことはできません"
+
+#: bash\bash\basher.py:1602
+msgid "Master file"
+msgstr "マスターファイルです"
+
+#: bash\bash\basher.py:1606
+msgid "Technically mergeable but has NoMerge tag"
+msgstr "技術的にはマージ可能ですが、NoMergeタグがついています"
+
+#: bash\bash\basher.py:1610
+msgid "Merged into Bashed Patch"
+msgstr "Bashed Patchにマージされています"
+
+#: bash\bash\basher.py:1612
+msgid "Can be merged into Bashed Patch"
+msgstr "Bashed Patchにマージ可能です"
+
+#: bash\bash\basher.py:1616
+msgid "One or more masters are missing"
+msgstr "1つ以上のマスターファイルが存在しません"
+
+#: bash\bash\basher.py:1617
+msgid "Masters have been re-ordered"
+msgstr "ロードリストに読み込まれています"
+
+#: bash\bash\basher.py:1618
+msgid "Active in load list"
+msgstr "Bashed Patchにマージされています"
+
+#: bash\bash\basher.py:1619
+msgid "Imported into Bashed Patch"
+msgstr "Bashed Patchにインポートされています"
+
+#: bash\bash\basher.py:1635
+msgid "WARNING: Has same load order as another mod"
+msgstr "警告: タイムスタンプが重複するファイルが存在します"
+
+#: bash\bash\basher.py:1638
+msgid "Mod should be imported and deactivated"
+msgstr "インポートされ、かつDeactivateされているべきMODです"
+
+#: bash\bash\basher.py:1641
+msgid "WARNING: Exclusion group is overloaded"
+msgstr "警告: 除外グループがオーバーロードしました"
+
+#: bash\bash\basher.py:1644
+msgid "Has same time as another (unloaded) mod"
+msgstr "タイムスタンプが重複する非アクティブなファイルが存在します"
+
+#: bash\bash\basher.py:1647
+msgid "Group header"
+msgstr "グループヘッダ"
+
+#: bash\bash\basher.py:1650
+msgid "File is ghosted"
+msgstr "Ghost化されています"
+
+#: bash\bash\basher.py:1868
+msgid "Masters"
+msgstr "マスターリスト"
+
+#: bash\bash\basher.py:1875
+msgid "Bash Tags"
+msgstr "タグ"
+
+#: bash\bash\basher.py:1956
+msgid "Incorrect file extension"
+msgstr "拡張子が不適切です"
+
+#: bash\bash\basher.py:1960
+msgid "File %s already exists"
+msgstr "ファイル%sは既に存在しています"
+
+#: bash\bash\basher.py:1982
+msgid "Unrecognized date"
+msgstr "日付が認識できませんでした"
+
+#: bash\bash\basher.py:1986
+msgid "Bash cannot handle files dates greater than January 19, 2038.)"
+msgstr "2038年1月19日より未来の日付はBashで扱うことができません)"
+
+#: bash\bash\basher.py:2015
+msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will become detached when the mod is renamed."
+""
+"Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive name is adjusted"
+msgstr "このMODはアーカイブ%s.bsa及び音声ディレクトリSound\\Voices\\%sに関連づけられており、MODがリネームされてしまうとこの関連づけが切り離されてしまいます."
+""
+"BSAアーカイブにも音声ディレクトリSound\\Voices\\%sが含まれている可能性はありますが、BSAのファイル名を追従させても音声ファイルの関連づけは切り離されてしまいます"
+
+#: bash\bash\basher.py:2017
+msgid "This mod has an associated archive (%s.bsa), which will become detached when the mod is renamed."
+""
+"Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if the archive file name is adjusted"
+msgstr "このMODはアーカイブ%s.bsaに関連づけられており、MODがリネームされてしまうとこの関連づけが切り離されてしまいます."
+""
+"BSAアーカイブにも音声ディレクトリSound\\Voices\\%sが含まれている可能性はありますが、BSAのファイル名を追従させても音声ファイルの関連づけは切り離されてしまいます"
+
+#: bash\bash\basher.py:2019
+msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will become detached when the mod is renamed"
+msgstr "このMODは音声ディレクトリSound\\Voices\\%sに関連づけられており、MODがリネームされてしまうとこの関連づけが切り離されてしまいます"
+
+#: bash\bash\basher.py:2060
+msgid "File corrupted on save!"
+msgstr "保存時にファイルが破損しました！"
+
+#: bash\bash\basher.py:2079
+msgid "Automatic"
+msgstr "自動判定"
+
+#: bash\bash\basher.py:2082
+msgid "Copy to Description"
+msgstr "説明部分に転記する"
+
+#: bash\bash\basher.py:2250
+msgid "Browse"
+msgstr ""
+
+#: bash\bash\basher.py:2282
+msgid "Tweaks: %d/%d"
+msgstr "オン: %d/全: %d"
+
+#: bash\bash\basher.py:2353
+msgid "Mods: %d/%d"
+msgstr "オン: %d/全: %d"
+
+#: bash\bash\basher.py:2642
+msgid "%s"
+"Level %d, Play Time %s"
+"%s"
+msgstr ""
+
+#: bash\bash\basher.py:2663
+msgid "Notes"
+msgstr "メモ"
+
+#: bash\bash\basher.py:2759
+msgid "Saves: %d"
+msgstr "セーブ: %d"
+
+#: bash\bash\basher.py:2891
+msgid "Bad extension or file root"
+msgstr "拡張子かrootが変です"
+
+#: bash\bash\basher.py:2947
+msgid "Extracting OMODs"
+msgstr "OMODを解凍中"
+
+#: bash\bash\basher.py:2954
+msgid "The project '%s' already exitsts.  Overwrite with '%s'?"
+msgstr "プロジェクト%sは既に存在します. %sで上書きしますか？"
+
+#: bash\bash\basher.py:2990
+msgid "The following OMOds were unpacked:"
+"%s"
+""
+""
+msgstr "以下のOMODが解凍されました: "
+"%s"
+""
+""
+
+#: bash\bash\basher.py:2993
+msgid "The following OMODs were skipped:"
+"%s"
+""
+""
+msgstr "以下のOMODがスキップされました: "
+"%s"
+""
+""
+
+#: bash\bash\basher.py:2995
+msgid "The following OMODs failed to extract:"
+"%s"
+msgstr "以下のOMODが解凍できませんでした: "
+"%s"
+""
+""
+
+#: bash\bash\basher.py:2996
+msgid "OMOD Extraction Canceled"
+msgstr "OMOD解凍がキャンセルされました"
+
+#: bash\bash\basher.py:3000
+msgid "The following OMODs failed to extract.  This could be a file IO error, or an unsupported OMOD format:"
+""
+""
+msgstr "以下のOMODの解凍に失敗しました. ファイルIDエラーか、サポートされていないOMODフォーマットだった可能性があります: "
+""
+""
+
+#: bash\bash\basher.py:3001
+msgid "OMOD Extraction Complete"
+msgstr "OMOD解凍が完了しました"
+
+#: bash\bash\basher.py:3011
+msgid "You have dragged the following files into Wrye Bash:"
+""
+msgstr "以下のファイルがWrye Bash上にドラッグ＆ドロップされました: "
+""
+
+#: bash\bash\basher.py:3015
+msgid "What would you like to do with them?"
+msgstr "このファイルをどうしますか？"
+
+#: bash\bash\basher.py:3017
+msgid "Move or Copy?"
+msgstr "移動しますか？コピーしますか？"
+
+#: bash\bash\basher.py:3185
+msgid "Matched"
+msgstr "一致ファイル"
+
+#: bash\bash\basher.py:3186
+msgid "Missing"
+msgstr "不足ファイル"
+
+#: bash\bash\basher.py:3187
+msgid "Mismatched"
+msgstr "不一致ファイル"
+
+#: bash\bash\basher.py:3188
+msgid "Conflicts"
+msgstr "競合ファイル"
+
+#: bash\bash\basher.py:3189
+msgid "Underridden"
+msgstr "上書きされるべきファイル"
+
+#: bash\bash\basher.py:3190
+msgid "Dirty"
+msgstr "好ましくないファイル"
+
+#: bash\bash\basher.py:3191
+msgid "Skipped"
+msgstr "スキップされるファイル"
+
+#: bash\bash\basher.py:3201
+msgid "Sub-Packages"
+msgstr "サブパッケージ"
+
+#: bash\bash\basher.py:3207
+msgid "Esp/m Filter"
+msgstr "フィルタリング"
+
+#: bash\bash\basher.py:3214
+msgid "Comments"
+msgstr "コメント"
+
+#: bash\bash\basher.py:3257
+msgid "Do you want to enable Installers If you do, Bash will first need to initialize some data. If you have many mods installed, this can take on the order of five minutes."
+""
+"If you prefer to not enable Installers at this time, you can always enable it later from the column header context menu"
+msgstr "インストーラタブを有効にしますか？有効にすると、Wrye Bashはまずデータを初期化します. たくさんのMODが導入されている環境では5分程度時間がかかる場合があります."
+""
+"今はインストーラタブを有効にしない場合、カラムヘッダのコンテキストメニュー(右クリック)から有効にすることができます"
+
+#: bash\bash\basher.py:3267
+msgid "Refreshing Installers"
+msgstr "インストーラを再スキャン中"
+
+#: bash\bash\basher.py:3288
+msgid "Refreshing Converters"
+msgstr "コンバータを再スキャン中"
+
+#: bash\bash\basher.py:3318
+msgid "Packages: %d/%d"
+msgstr "オン: %d/全: %d"
+
+#: bash\bash\basher.py:3401
+msgid "[None]"
+msgstr "[なし]"
+
+#: bash\bash\basher.py:3427
+msgid "Overview"
+""
+msgstr "概略"
+""
+
+#: bash\bash\basher.py:3430
+msgid "Project"
+msgstr "プロジェクト"
+
+#: bash\bash\basher.py:3432
+msgid "Marker"
+msgstr "マーカー"
+
+#: bash\bash\basher.py:3434
+msgid "Archive"
+msgstr "アーカイブ"
+
+#: bash\bash\basher.py:3436
+msgid "Unrecognized"
+msgstr "認識できませんでした"
+
+#: bash\bash\basher.py:3439
+msgid "Structure: N/A"
+""
+msgstr "構造: なし"
+""
+
+#: bash\bash\basher.py:3441
+msgid "Structure: Simple"
+""
+msgstr "構造: 単一ディレクトリ"
+""
+
+#: bash\bash\basher.py:3444
+msgid "Structure: Complex/Simple"
+""
+msgstr "構造: 単一ディレクトリがサブ階層にある"
+""
+
+#: bash\bash\basher.py:3446
+msgid "Structure: Complex"
+""
+msgstr "構造: サブ階層がある"
+""
+
+#: bash\bash\basher.py:3448
+msgid "Structure: Corrupt/Incomplete"
+""
+msgstr "構造: 破損あるいは不完全な状態"
+""
+
+#: bash\bash\basher.py:3450
+msgid "Structure: Unrecognized"
+""
+msgstr "構造: 認識できませんでした"
+""
+
+#: bash\bash\basher.py:3455
+msgid "Size: %s KB"
+""
+msgstr "サイズ: %s KB"
+""
+
+#: bash\bash\basher.py:3457
+msgid "Size: N/A"
+""
+msgstr "サイズ: ---"
+""
+
+#: bash\bash\basher.py:3461
+msgid "Solid, Block Size: %d MB"
+msgstr "7zソリッド圧縮、ブロックサイズ: %dMB"
+
+#: bash\bash\basher.py:3463
+msgid "Solid, Block Size: Unknown"
+msgstr "7zソリッド圧縮、ブロックサイズ: 不明"
+
+#: bash\bash\basher.py:3465
+msgid "Solid, Block Size: 7z Default"
+msgstr "7zソリッド圧縮、ブロックサイズ: デフォルト"
+
+#: bash\bash\basher.py:3467
+msgid "Non-solid"
+msgstr "非ソリッド圧縮(7z以外の圧縮形式)"
+
+#: bash\bash\basher.py:3468
+msgid "Size: %s KB (%s)"
+""
+msgstr "サイズ: %sKB (%s)"
+""
+
+#: bash\bash\basher.py:3470
+msgid "Size: Unrecognized"
+""
+msgstr "サイズ: 認識できませんでした"
+""
+
+#: bash\bash\basher.py:3471
+msgid "Modified: %s"
+""
+msgstr "タイムスタンプ: %s"
+""
+
+#: bash\bash\basher.py:3473
+msgid "Data CRC: %08X"
+""
+msgstr "アーカイブ内の累積CRC: %08X"
+""
+
+#: bash\bash\basher.py:3475
+msgid "Files: %s"
+""
+msgstr "ファイル数: %s"
+""
+
+#: bash\bash\basher.py:3477
+msgid "Configured: %s (%s KB)"
+""
+msgstr "設定済みファイル: %s個(%sKB)"
+""
+
+#: bash\bash\basher.py:3480
+msgid "Matched: %s"
+""
+msgstr "一致ファイル: %s個"
+""
+
+#: bash\bash\basher.py:3482
+msgid "Missing: %s"
+""
+msgstr "不足ファイル: %s個"
+""
+
+#: bash\bash\basher.py:3484
+msgid "Conflicts: %s"
+""
+msgstr "競合ファイル: %s個"
+""
+
+#: bash\bash\basher.py:3489
+msgid "Configured Files"
+msgstr "設定済みファイル一覧"
+
+#: bash\bash\basher.py:3505
+msgid "Skipped (Extension)"
+msgstr "スキップ(拡張機能)"
+
+#: bash\bash\basher.py:3506
+msgid "Skipped (Dir)"
+msgstr "スキップ(ディレクトリ)"
+
+#: bash\bash\basher.py:3690
+msgid "Automatically update Textures BSA after adding/removing a replacer"
+msgstr ""
+
+#: bash\bash\basher.py:3692
+msgid "Update"
+msgstr "更新"
+
+#: bash\bash\basher.py:3693
+msgid "Enable replacement textures by updating Textures archive"
+msgstr ""
+
+#: bash\bash\basher.py:3694
+msgid "Restore"
+msgstr ""
+
+#: bash\bash\basher.py:3695
+msgid "Restore Textures archive to its original state"
+msgstr ""
+
+#: bash\bash\basher.py:3697
+msgid "Textures BSA"
+msgstr ""
+
+#: bash\bash\basher.py:3712
+msgid "Reps: %d/%d"
+msgstr ""
+
+#: bash\bash\basher.py:3732
+msgid "BSA editing disabled becase FOMM or BSAPatch is in use"
+msgstr ""
+
+#: bash\bash\basher.py:3738
+msgid "Edit Textures BSA?"
+""
+"This command directly edits the Fallout - Textures.bsa file. If the file becomes corrupted (very unlikely), you will need to reinstall Fallout3 or restore it from another source"
+msgstr ""
+
+#: bash\bash\basher.py:3758
+msgid "BSA Hashes reset: %d"
+"BSA Hashes Invalidated: %d."
+"AIText entries: %d"
+msgstr ""
+
+#: bash\bash\basher.py:3768
+msgid "BSA Hashes reset: %d"
+msgstr ""
+
+#: bash\bash\basher.py:3980
+msgid "Screens: %d"
+msgstr "スクリーンショット: %d"
+
+#: bash\bash\basher.py:4308
+msgid "BSAs: %d"
+msgstr "BSA: %d"
+
+#: bash\bash\basher.py:4467
+msgid "Search"
+msgstr "検索"
+
+#: bash\bash\basher.py:4468
+msgid "Clear"
+msgstr "クリア"
+
+#: bash\bash\basher.py:4493
+msgid "PMs: %d/%d"
+msgstr "現在: %d/全: %d"
+
+#: bash\bash\basher.py:4600
+msgid "People: %d"
+msgstr "人物: %d"
+
+#: bash\bash\basher.py:4677
+msgid "Version"
+msgstr "バージョン"
+
+#: bash\bash\basher.py:4679
+msgid "Tags"
+msgstr "タグ"
+
+#: bash\bash\basher.py:4687
+msgid "Abstract"
+msgstr "摘要"
+
+#: bash\bash\basher.py:4694
+msgid "ModBase: %d"
+msgstr ""
+
+#: bash\bash\basher.py:4733
+msgid "Replacers"
+msgstr "リプレイス"
+
+#: bash\bash\basher.py:4734
+msgid "Mods"
+msgstr "MOD"
+
+#: bash\bash\basher.py:4737
+msgid "Saves"
+msgstr "セーブデータ"
+
+#: bash\bash\basher.py:4738
+msgid "INI Edits"
+msgstr "INI編集"
+
+#: bash\bash\basher.py:4739
+msgid "Screenshots"
+msgstr "スクリーンショット"
+
+#: bash\bash\basher.py:4742
+msgid "PM Archive"
+msgstr "プライベートメッセージ"
+
+#: bash\bash\basher.py:4745
+msgid "PM Archive panel disabled due to Import Error (most likely comtypes)"
+msgstr "インポートエラーが生じただめPM Archiveタブは無効になりました(comtypeなど)"
+
+#: bash\bash\basher.py:4839
+msgid "Wrye Flash in %s Mode"
+msgstr ""
+
+#: bash\bash\basher.py:4844
+msgid "Warning you appear to be using a non-unicode version of wxPython (%s) but have set Wrye Bash to unicode mode, this may cause problems, it is reccomended you use a unicode version of wPython instead"
+msgstr "Unicode版ではないwxPython(%s)を使用していますが、Wrye BashはUnicodeモードです. 問題が生じる場合があるので、Unicode版のwxPythonの使用を推奨します"
+
+#: bash\bash\basher.py:4858
+msgid "Default"
+msgstr ""
+
+#: bash\bash\basher.py:4875
+msgid ""
+"+ %d others"
+msgstr ""
+
+#: bash\bash\basher.py:4890
+msgid "It appears that the current user doesn't have permissions for some or all of the files in Fallout 3\\Data."
+"Specifically had permission denied to change the time on:"
+"%s"
+msgstr "現在のユーザはいくつかの、あるいは全てのファイルに対するアクセス権がないようです. Fallout 3\\Data"
+"中でもタイムスタンプ変更が拒否されました: "
+"%s"
+
+#: bash\bash\basher.py:4892
+msgid "Modified dates have been reset for some mod files"
+msgstr "いくつかのMODファイルで変更されたタイムスタンプを復帰しました"
+
+#: bash\bash\basher.py:4899
+msgid "Some mods have been auto-grouped"
+msgstr "いくつかのMODが自動でグループに分類されました"
+
+#: bash\bash\basher.py:4929
+msgid "Missing files have been removed from load list"
+msgstr "ロードリストから以下のファイルが欠落しました"
+
+#: bash\bash\basher.py:4936
+msgid "Load list is overloaded. Some files have been de-activated"
+msgstr "ロードしすぎです. いくつかのファイルがDeactivateされました"
+
+#: bash\bash\basher.py:4945
+msgid "The following mod files have corrupted headers"
+msgstr "以下のMODファイルはヘッダ情報が破損しています"
+
+#: bash\bash\basher.py:4951
+msgid "The following save files have corrupted headers"
+msgstr "以下のセーブデータはヘッダ情報が破損しています"
+
+#: bash\bash\basher.py:4957
+msgid "The following mods have unrecognized TES4 header versions"
+msgstr ""
+
+#: bash\bash\basher.py:4965
+msgid "Your FALLOUT.INI should begin with a section header (e.g.\"[General]"
+msgstr ""
+
+#: bash\bash\basher.py:4969
+msgid "Bash cannot handle dates greater than January 19, 2038. Accordingly, the dates for the following files have been reset to an earlier date"
+msgstr "2038/01/19より未来のタイムスタンプは扱えません. このため、以下のファイルは旧タイムスタンプにリセットされました"
+
+#: bash\bash\basher.py:4976
+msgid "Turn Lock Times Off?"
+""
+"Lock Times a feature which resets load order to a previously memorized state. While this feature is good for maintaining your load order, it will also undo any load order changes that you have made in FOMM"
+msgstr ""
+
+#: bash\bash\basher.py:4977
+msgid "Lock Times"
+msgstr "タイムスタンプを固定"
+
+#: bash\bash\basher.py:4983
+msgid "Lock Times is now %s. To change it in the future, right click on the main list header on the Mods tab and select 'Lock Times'"
+msgstr "タイムスタンプ固定は現在%sです. 変更したい場合、MODタブ内リストのカラムヘッダを右クリックして切り替えてください"
+
+#: bash\bash\basher.py:4984
+msgid "off"
+msgstr "オフ"
+
+#: bash\bash\basher.py:4984
+msgid "on"
+msgstr "オン"
+
+#: bash\bash\basher.py:4989
+msgid "Installation appears incomplete. Please re-unzip bash to Fallout3 directory so that ALL files are installed."
+""
+"Correct installation will create Fallout 3\\Mopy, Fallout 3\\Data\\Docs and Fallout 3\\Data\\INI Tweaks directories"
+msgstr ""
+
+#: bash\bash\basher.py:4990
+msgid "Incomplete Installation"
+msgstr "インストールが不完全です"
+
+#: bash\bash\basher.py:4996
+msgid "Mark Mergeable"
+msgstr "マージ判定"
+
+#: bash\bash\basher.py:5063
+msgid "Doc Browser"
+msgstr "ドキュメントブラウザ"
+
+#: bash\bash\basher.py:5075
+msgid "Set Doc"
+msgstr "ドキュメントを設定する"
+
+#: bash\bash\basher.py:5077
+msgid "Forget Doc"
+msgstr "ドキュメントを外す"
+
+#: bash\bash\basher.py:5079
+msgid "Rename Doc"
+msgstr "ドキュメントをリネームする"
+
+#: bash\bash\basher.py:5081
+msgid "Edit Doc"
+msgstr "ドキュメントを編集"
+
+#: bash\bash\basher.py:5083
+msgid "Open Doc"
+msgstr "ドキュメントを開く"
+
+#: bash\bash\basher.py:5083
+msgid "Open doc in external editor"
+msgstr "ドキュメントを外部エディタで開く"
+
+#: bash\bash\basher.py:5192
+msgid "Select doc for %s"
+msgstr "%sのドキュメントを選択"
+
+#: bash\bash\basher.py:5207
+msgid "Rename file to"
+msgstr "リネームするファイル名を決めてください"
+
+#: bash\bash\basher.py:5226
+msgid "Filename not defined"
+msgstr "ファイル名が定義されていません"
+
+#: bash\bash\basher.py:5265
+msgid "My Readme Template.txt"
+msgstr ""
+
+#: bash\bash\basher.py:5266
+msgid "Bash Readme Template.txt"
+msgstr ""
+
+#: bash\bash\basher.py:5345
+msgid "Mod Checker"
+msgstr "MODチェッカ"
+
+#: bash\bash\basher.py:5362
+msgid "Mod List"
+msgstr "MOD一覧"
+
+#: bash\bash\basher.py:5363
+msgid "Rule Sets"
+msgstr "ルールセット"
+
+#: bash\bash\basher.py:5365
+msgid "Configuration"
+msgstr "設定"
+
+#: bash\bash\basher.py:5366
+msgid "Suggestions"
+msgstr "改善情報"
+
+#: bash\bash\basher.py:5368
+msgid "Scan for Dirty Edits"
+msgstr "好ましくない編集をスキャン"
+
+#: bash\bash\basher.py:5370
+msgid "Scan for UDR's"
+msgstr "UDRをスキャンします"
+
+#: bash\bash\basher.py:5371
+msgid "Copy Text"
+msgstr "クリップボードへコピー"
+
+#: bash\bash\basher.py:5482
+msgid "Initializing Data"
+msgstr "データ初期化中"
+
+#: bash\bash\basher.py:5485
+msgid "Initializing Version"
+msgstr "バージョン情報を初期化中"
+
+#: bash\bash\basher.py:5488
+msgid "Initializing Windows"
+msgstr "ウィンドウを初期化中"
+
+#: bash\bash\basher.py:5512
+msgid "Initializing ModInfos"
+msgstr "MOD情報を初期化中"
+
+#: bash\bash\basher.py:5519
+msgid "Initializing SaveInfos"
+msgstr "セーブデータ情報を初期化中"
+
+#: bash\bash\basher.py:5522
+msgid "Initializing IniInfos"
+msgstr "INI情報を初期化中"
+
+#: bash\bash\basher.py:5534
+msgid "Generating Blank Bashed Patch"
+msgstr "新規Bashed Patchを生成中"
+
+#: bash\bash\basher.py:5600
+msgid "Race"
+msgstr "種族"
+
+#: bash\bash\basher.py:5601
+msgid "Gender"
+msgstr "性別"
+
+#: bash\bash\basher.py:5602
+msgid "Stats"
+msgstr "ステータス"
+
+#: bash\bash\basher.py:5603
+msgid "Class"
+msgstr "クラス"
+
+#: bash\bash\basher.py:5617
+msgid "Import"
+msgstr "インポート"
+
+#: bash\bash\basher.py:5688
+msgid "Face imported"
+msgstr "顔データをインポートしました"
+
+#: bash\bash\basher.py:5740
+msgid "Build Patch"
+msgstr "パッチをビルドする"
+
+#: bash\bash\basher.py:5741
+msgid "Revert To Saved"
+msgstr "直近ビルド時の設定に戻す"
+
+#: bash\bash\basher.py:5742
+msgid "Select All"
+msgstr "全てを選択"
+
+#: bash\bash\basher.py:5743
+msgid "Deselect All"
+msgstr "全ての選択を外す"
+
+#: bash\bash\basher.py:5744
+msgid "Export Patch Configuration"
+msgstr "パッチ設定を保存する"
+
+#: bash\bash\basher.py:5745
+msgid "Import Patch Configuration"
+msgstr "パッチ設定をインポート"
+
+#: bash\bash\basher.py:5836
+msgid ""
+"Saving"
+msgstr ""
+"セーブ中"
+
+#: bash\bash\basher.py:5841
+msgid "Bash encountered an error when saving %s."
+""
+"The file is in use by another process such as FO3Edit."
+"Please close the other program that is accessing %s."
+""
+"Try again?"
+msgstr ""
+
+#: bash\bash\basher.py:5841
+msgid "Bash Patch - Save Error"
+msgstr "Bash Patch - セーブエラー"
+
+#: bash\bash\basher.py:5872
+msgid "Activate %s?"
+msgstr "%sをActivateしますか？"
+
+#: bash\bash\basher.py:5879
+msgid "Masters Activated"
+msgstr "マスターファイルをActivateしました"
+
+#: bash\bash\basher.py:5886
+msgid "File Edit Error"
+msgstr "ファイル編集エラー"
+
+#: bash\bash\basher.py:5988
+msgid "_Configuration.dat"
+msgstr ""
+
+#: bash\bash\basher.py:5992
+msgid "Export Bashed Patch configuration to"
+msgstr "Bashed Patch設定をエクスポートします"
+
+#: bash\bash\basher.py:6008
+msgid "Import Bashed Patch configuration from"
+msgstr "Bashed Patch設定をインポートします"
+
+#: bash\bash\basher.py:6039
+msgid "item %s not in saved configs"
+msgstr ""
+
+#: bash\bash\basher.py:6376
+msgid "Fallout3 Mod Files"
+msgstr ""
+
+#: bash\bash\basher.py:6378
+msgid "Get"
+msgstr ""
+
+#: bash\bash\basher.py:6455
+msgid "Tweaks"
+msgstr ""
+
+#: bash\bash\basher.py:6602
+msgid "Enter the desired custom tweak value."
+"Due to an inability to get decimal numbers from the wxPython prompt please enter an extra zero after your choice if it is not meant to be a decimal."
+"If you are trying to enter a decimal multiply it by 10, for example for 0.3 enter 3 instead."
+"%s"
+msgstr "手動で設定する値を入力してください."
+"wxPythonの入力プロンプトでは小数を受け取ることができないため、小数になって欲しくないのであれば数字末尾にゼロ一つを付け足してください."
+"小数を入力したい場合はあらかじめ10倍した数値を入力し、例えば0.3を入力したい場合は10倍の3を入力してください."
+"%s"
+
+#: bash\bash\basher.py:6603
+msgid "%s ~ Custom Tweak Value"
+msgstr ""
+
+#: bash\bash\basher.py:6608
+msgid "Enter the desired custom tweak value."
+"%s"
+msgstr "手動で設定する値を入力してください"
+"%s"
+
+#: bash\bash\basher.py:6614
+msgid "Enter the desired custom tweak text."
+"%s"
+msgstr "手動で設定するテキストを入力してください"
+"%s"
+
+#: bash\bash\basher.py:6615
+msgid "%s ~ Custom Tweak Text"
+msgstr ""
+
+#: bash\bash\basher.py:6630
+msgid "Mergeable Mods"
+msgstr "マージ可能なMOD一覧"
+
+#: bash\bash\basher.py:6671
+msgid "Race Mods"
+msgstr ""
+
+#: bash\bash\basher.py:6726
+msgid "Override Delev/Relev Tags"
+msgstr ""
+
+#: bash\bash\basher.py:6731
+msgid "Override Deflst Tags"
+msgstr ""
+
+#: bash\bash\basher.py:6945
+msgid "Sort by %s"
+msgstr "%sでソート"
+
+#: bash\bash\basher.py:6964
+msgid "Unhide"
+msgstr "隔離ファイルを戻す"
+
+#: bash\bash\basher.py:6964
+msgid "Unhides hidden %ss"
+msgstr "隔離した%sを戻す"
+
+#: bash\bash\basher.py:6980
+msgid "Unhide files"
+msgstr "隔離したファイルをDataディレクトリに戻す"
+
+#: bash\bash\basher.py:6995
+msgid "You can't unhide files from this directory"
+msgstr "このディレクトリから「隔離から戻す」ことはできません"
+
+#: bash\bash\basher.py:7007
+msgid "File skipped: %s. File is already present"
+msgstr "スキップしました: %s. ファイルは既に存在します"
+
+#: bash\bash\basher.py:7028
+msgid "Delete Files"
+msgstr "ファイルを削除します"
+
+#: bash\bash\basher.py:7042
+msgid "Make a copy of '%s'"
+msgstr "%sの複製を作成します"
+
+#: bash\bash\basher.py:7057
+msgid "This mod has an associated archive (%s.bsa) and an associated voice directory (Sound\\Voices\\%s), which will not be attached to the duplicate mod."
+""
+"Note that the BSA archive may also contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
+msgstr "このMODはアーカイブ%s.bsa及び音声ディレクトリSound\\Voices\\%sに関連づけられており、複製したMODとは関連づけられていません."
+""
+"BSAアーカイブにも音声ディレクトリSound\\Voices\\%sが含まれている可能性はありますが、BSAを複製しても音声ファイルの関連づけは関連づけられません"
+
+#: bash\bash\basher.py:7059
+msgid "This mod has an associated archive (%s.bsa), which will not be attached to the duplicate mod."
+""
+"Note that this BSA archive may contain a voice directory (Sound\\Voices\\%s), which would remain detached even if a duplicate archive were also created"
+msgstr "このMODはアーカイブ%s.bsaに関連づけられており、複製したMODとは関連づけられていません."
+""
+"BSAアーカイブにも音声ディレクトリSound\\Voices\\%sが含まれている可能性はありますが、BSAを複製しても音声ファイルの関連づけは関連づけられません"
+
+#: bash\bash\basher.py:7061
+msgid "This mod has an associated voice directory (Sound\\Voice\\%s), which will not be attached to the duplicate mod"
+msgstr "このMODは音声ディレクトリSound\\Voices\\%sに関連づけられており、複製したMODとは関連づけられていません"
+
+#: bash\bash\basher.py:7103
+msgid "Hide"
+msgstr "隔離"
+
+#: bash\bash\basher.py:7108
+msgid "Hide Files"
+msgstr "ファイルを隔離する"
+
+#: bash\bash\basher.py:7126
+msgid "A file named %s already exists in the hidden files directory. Overwrite it?"
+msgstr "%sという名前のファイルは隔離ディレクトリ(Bash Mod Data\Hidden)に既に存在します. 上書きしますか？"
+
+#: bash\bash\basher.py:7139
+msgid "List Masters"
+msgstr "マスター一覧を表示"
+
+#: bash\bash\basher.py:7157
+msgid "Redate"
+msgstr "タイムスタンプを書き換える"
+
+#: bash\bash\basher.py:7166
+msgid "Redate selected mods starting at"
+msgstr "MODのタイムスタンプを書き換えます"
+
+#: bash\bash\basher.py:7167
+msgid "Redate Mods"
+msgstr "タイムスタンプを書き換えます"
+
+#: bash\bash\basher.py:7176
+msgid "Bash cannot handle dates greater than January 19, 2038.)"
+msgstr "2038/01/19より未来のタイムスタンプは扱えません"
+
+#: bash\bash\basher.py:7194
+msgid "Sort"
+msgstr "ソート"
+
+#: bash\bash\basher.py:7199
+msgid "Reorder selected mods in alphabetical order? The first file will be given the date/time of the current earliest file in the group, with consecutive files following at 1 minute increments."
+""
+"Note that this operation cannot be undone. Note also that some mods need to be in a specific order to work correctly, and this sort operation may break that order"
+msgstr "選択したMODをアルファベット順にソートしますか？最初のファイルにはグループ内で一番若いタイムスタンプが与えられ、残るファイルが1分ずつ加えたタイムスタンプを与えられます."
+""
+"この作業はアンドゥできません. また、特定の順でロードしないと正常に動作しないMODも存在するため、この作業によってロードオーダーが不適切なものになる可能性があります"
+
+#: bash\bash\basher.py:7200
+msgid "Sort Mods"
+msgstr "MODをソートします"
+
+#: bash\bash\basher.py:7227
+msgid "Snapshot"
+msgstr "スナップショット"
+
+#: bash\bash\basher.py:7239
+msgid "Save snapshot as"
+msgstr "ファイル名をつけてスナップショットを保存"
+
+#: bash\bash\basher.py:7267
+msgid "Revert to Snapshot"
+msgstr "スナップショットに戻す"
+
+#: bash\bash\basher.py:7281
+msgid "Revert %s to snapshot"
+msgstr "%sをスナップショットに戻す"
+
+#: bash\bash\basher.py:7286
+msgid "Revert %s to snapshot %s dated %s?"
+msgstr "%sをスナップショット%s(日付: %s)に戻しますか？"
+
+#: bash\bash\basher.py:7296
+msgid "Snapshot file is corrupt!"
+msgstr "スナップショットは破損しています！"
+
+#: bash\bash\basher.py:7305
+msgid "Backup"
+msgstr "バックアップ"
+
+#: bash\bash\basher.py:7324
+msgid "Revert to Backup"
+msgstr "バックアップに戻す"
+
+#: bash\bash\basher.py:7330
+msgid "Revert to First Backup"
+msgstr "最初のバックアップに戻す"
+
+#: bash\bash\basher.py:7344
+msgid "Revert %s to backup dated %s?"
+msgstr "%sをバックアップ%sに戻しますか？"
+
+#: bash\bash\basher.py:7356
+msgid "Old file is corrupt!"
+msgstr "古いファイルは破損しています！"
+
+#: bash\bash\basher.py:7365
+msgid "Open '%s' with the system's default program"
+msgstr "%sをOSデフォルトのソフトで開く"
+
+#: bash\bash\basher.py:7367
+msgid "Open the selected files"
+msgstr "選択したファイルを開く"
+
+#: bash\bash\basher.py:7389
+msgid "Show/Hide '%s' column"
+msgstr "「%s」カラムを表示/非表示にする"
+
+#: bash\bash\basher.py:7417
+msgid "Columns"
+msgstr "カラム"
+
+#: bash\bash\basher.py:7427
+msgid "Add Marker"
+msgstr "マーカーを追加"
+
+#: bash\bash\basher.py:7427
+msgid "Adds a Marker, a special type of package useful for seperating and labeling your packages"
+msgstr "特殊パッケージであることを示すマーカーを追加します. あなたのパッケージをその他から切り離したりラベル付けするのに有用です"
+
+#: bash\bash\basher.py:7448
+msgid "Anneal All"
+msgstr "全てのファイルを補完"
+
+#: bash\bash\basher.py:7448
+msgid "This will install any missing files (for active installers) and correct all install order and reconfiguration errors"
+msgstr "アクティブなインストーラを対象にあらゆる不足ファイルをインストールし、インストールオーダーを修復し、エラーを再構成します"
+
+#: bash\bash\basher.py:7453
+msgid "Annealing"
+msgstr "ファイルを補完中"
+
+#: bash\bash\basher.py:7467
+msgid "Uninstall All Packages"
+msgstr "全てのパッケージをアンインストール"
+
+#: bash\bash\basher.py:7467
+msgid "This will uninstall all packages"
+msgstr "全てのパッケージをアンインストールします"
+
+#: bash\bash\basher.py:7472
+msgid "Uninstalling"
+msgstr "アンインストール中"
+
+#: bash\bash\basher.py:7487
+msgid "This will remove all mod files that are not linked to an active installer out of the Data folder"
+msgstr "データフォルダーからアクティブなインストーラに関連づけられていない全てのファイルを取り除きます。"
+
+#: bash\bash\basher.py:7491
+msgid "Clean Data"
+msgstr "データのクリーニング"
+
+#: bash\bash\basher.py:7496
+msgid "Clean Data directory?"
+msgstr "データディレクトリのクリーニングを行いますか?"
+
+#: bash\bash\basher.py:7496
+msgid "This includes files that were installed manually or by another program.  Files will be moved to the\"%\" directory instead of being deleted so you can retrieve them later if necessary"
+msgstr "手動もしくは他のプログラムによってインストールされたファイル�\"%\"ディレクトリに移動します。必要な場合はそちらからファイルを書き戻して下さい。"
+
+#: bash\bash\basher.py:7500
+msgid "Cleaning Data Files"
+msgstr "データファイルをクリーニング中"
+
+#: bash\bash\basher.py:7513
+msgid "Auto-Anneal"
+msgstr "自動的にファイルを補完"
+
+#: bash\bash\basher.py:7515
+msgid "Enable/Disable automatic annealing of packages"
+msgstr "パッケージの自動ファイル補完する"
+
+#: bash\bash\basher.py:7522
+msgid "Auto-Anneal/Install Wizards"
+msgstr "ウィザード完了後、自動補完及びインストールを行う"
+
+#: bash\bash\basher.py:7524
+msgid "Enable/Disable automatic installing or anneal (as applicable) of packages after running its wizard"
+msgstr "ウィザードが完了した後、自動的にインストール及び(可能であれば)補完を行う"
+
+#: bash\bash\basher.py:7532
+msgid "Wizard Icon Overlay"
+msgstr "ウィザードに魔法の杖マークをつける"
+
+#: bash\bash\basher.py:7534
+msgid "Enable/Disable the magic wand icon overlay for packages with Wizards"
+msgstr "ウィザード形式のパッケージである場合、魔法の杖マークをアイコン上にオーバーレイする"
+
+#: bash\bash\basher.py:7546
+msgid "Auto-Refresh Projects"
+msgstr "プロジェクトを自動で再スキャン"
+
+#: bash\bash\basher.py:7554
+msgid "Auto-Refresh Bethsoft Content"
+msgstr "Vanillaのbsa、esp、esmを自動で再スキャン"
+
+#: bash\bash\basher.py:7560
+msgid "Enable refreshing Bethsoft Content?  This will cause data refreshing to take much longer if the timestamps on Bethsoft BSA's, ESP's, or ESM's change"
+msgstr "Bethesdaファイルの再スキャンを有効にしますか？タイムスタンプに変更があった場合、スキャン時間が大幅に伸びる可能性があります"
+
+#: bash\bash\basher.py:7568
+msgid "Enabled"
+msgstr "有効化"
+
+#: bash\bash\basher.py:7570
+msgid "Enable/Disable the Installers tab"
+msgstr "インストーラタブを表示する"
+
+#: bash\bash\basher.py:7576
+msgid "Do you want to enable Installers? If you do, Bash will first need to initialize some data. If there are many new mods to process, then this may take on the order of five minutes"
+msgstr "インストーラタブを有効にしますか？有効にすると、Wrye Bashはまずデータを初期化します. たくさんのMODが導入されている環境では5分程度時間がかかる場合があります"
+
+#: bash\bash\basher.py:7593
+msgid "BSA Redirection"
+msgstr "BSAリダイレクト"
+
+#: bash\bash\basher.py:7613
+msgid "Show Inactive Conflicts"
+msgstr "非アクティブパッケージとの競合を表示"
+
+#: bash\bash\basher.py:7626
+msgid "Show Lower Conflicts"
+msgstr "優先下位との競合を表示"
+
+#: bash\bash\basher.py:7638
+msgid "Avoid at Startup"
+msgstr "スタートアップ時にスキャンしない"
+
+#: bash\bash\basher.py:7640
+msgid "Toggles Wrye Bash to avoid the Installers tab on startup, avoiding unnecessary data scanning"
+msgstr ""
+
+#: bash\bash\basher.py:7653
+msgid "Refresh Data"
+msgstr "データを再スキャン"
+
+#: bash\bash\basher.py:7653
+msgid "Full Refresh"
+msgstr "全てを再スキャン(CRC再計算込み)"
+
+#: bash\bash\basher.py:7655
+msgid "Perform a full refresh of all data files, recalculating all CRCs.  This can take 5-15 minutes"
+msgstr "全てのデータファイルを再スキャンし、全てのCRCを計算し直します. 5～15分ほどかかる場合があります"
+
+#: bash\bash\basher.py:7657
+msgid "Rescan the Data directory and all project directories"
+msgstr "データディレクトリと全てのプロジェクトディレクトリを再スキャンします"
+
+#: bash\bash\basher.py:7664
+msgid "Refresh ALL data from scratch? This may take five to ten minutes (or more) depending on the number of mods you have installed"
+msgstr "全てのデータを最初から再スキャンしますか？インストールしているMODの数によっては、5～10分以上かかる場合があります"
+
+#: bash\bash\basher.py:7674
+msgid "Clean Data Directory"
+msgstr "空のサブフォルダを削除"
+
+#: bash\bash\basher.py:7682
+msgid "Show Replacers Tab"
+msgstr "リプレイスタブを表示"
+
+#: bash\bash\basher.py:7684
+msgid "Show/Hide the Replacers tab"
+msgstr "リプレイスタブ表示する"
+
+#: bash\bash\basher.py:7689
+msgid "This option will take effect when Bash is restarted. Note that if any files are present in Data\\Replacers, then the Replacers tab will be shown regardless of this setting"
+msgstr "Wrye Bash再起動時から有効になります. Data\\Replacersに何らかのファイルがあった場合、設定に関わらずリプレイスタブは表示されます"
+
+#: bash\bash\basher.py:7706
+msgid "Skip Screenshots"
+msgstr "スクリーンショットを除外"
+
+#: bash\bash\basher.py:7714
+msgid "Skip Images"
+msgstr "画像ファイルを除外"
+
+#: bash\bash\basher.py:7722
+msgid "Skip Docs"
+msgstr "ドキュメントを除外"
+
+#: bash\bash\basher.py:7730
+msgid "Skip DistantLOD"
+msgstr "DistantLODを除外"
+
+#: bash\bash\basher.py:7738
+msgid "Skip LOD Meshes"
+msgstr "LOD Meshを除外"
+
+#: bash\bash\basher.py:7746
+msgid "Skip LOD Textures"
+msgstr "LOD Textureを除外"
+
+#: bash\bash\basher.py:7754
+msgid "Skip LOD Normals"
+msgstr "LOD Normalを除外"
+
+#: bash\bash\basher.py:7762
+msgid "Skip FOSE Plugins"
+msgstr ""
+
+#: bash\bash\basher.py:7777
+msgid "Sort by Active"
+msgstr "アクティブなものからソート"
+
+#: bash\bash\basher.py:7779
+msgid "If selected, active installers will be sorted to the top of the list"
+msgstr "アクティブなパッケージが先頭にソートされます"
+
+#: bash\bash\basher.py:7790
+msgid "Projects First"
+msgstr "プロジェクト優先"
+
+#: bash\bash\basher.py:7792
+msgid "If selected, projects will be sorted to the top of the list"
+msgstr "プロジェクトが先頭にソートされます"
+
+#: bash\bash\basher.py:7803
+msgid "Sort by Structure"
+msgstr "構造でソート"
+
+#: bash\bash\basher.py:7817
+msgid "Export list of allowed/disallowed FOSE plugin dlls"
+msgstr "許可・非許可のFOSE Plugin DLLリストをエクスポート"
+
+#: bash\bash\basher.py:7824
+msgid "Export list of allowed/disallowed FOSE plugin dlls to"
+msgstr "許可・非許可のFOSE Plugin DLLリストをエクスポートします"
+
+#: bash\bash\basher.py:7824
+msgid "FOSE dll permissions.txt"
+msgstr ""
+
+#: bash\bash\basher.py:7849
+msgid "Import list of allowed/disallowed FOSE plugin dlls"
+msgstr "許可・非許可のFOSE Plugin DLLリストをインポート"
+
+#: bash\bash\basher.py:7856
+msgid "Import list of allowed/disallowed FOSE plugin dlls from"
+msgstr "許可・非許可のFOSE Plugin DLLリストをインポートします"
+
+#: bash\bash\basher.py:7859
+msgid "Merge permissions from file with current dll permissions?"
+"('No' Replaces current permissions instead.)"
+msgstr ""
+
+#: bash\bash\basher.py:7860
+msgid "Merge permissions?"
+msgstr ""
+
+#: bash\bash\basher.py:7948
+msgid "View Wizard"
+msgstr "ウィザードをテキストエディタで閲覧する"
+
+#: bash\bash\basher.py:7950
+msgid "Edit Wizard"
+msgstr "ウィザードを編集"
+
+#: bash\bash\basher.py:7987
+msgid "Wizard"
+msgstr "ウィザードを開く"
+
+#: bash\bash\basher.py:7989
+msgid "Auto Wizard"
+msgstr "全てデフォルトの選択でウィザードを設定"
+
+#: bash\bash\basher.py:8069
+msgid "Installing"
+msgstr "インストール中"
+
+#: bash\bash\basher.py:8101
+msgid "Apply an ini tweak to Fallout.ini?"
+""
+"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!"
+msgstr "Ini設定をFallout.iniに適用しますか？"
+""
+"警告: 不適切な設定はCTDの原因となったり、コンピュータを破損する恐れがあります！"
+
+#: bash\bash\basher.py:8102
+msgid "INI Tweaks"
+msgstr ""
+
+#: bash\bash\basher.py:8118
+msgid "The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package"
+msgstr ""
+
+#: bash\bash\basher.py:8128
+msgid "Anneal"
+msgstr "ファイルを補完する"
+
+#: bash\bash\basher.py:8163
+msgid "Copy (%d)"
+msgstr "コピー(%d)"
+
+#: bash\bash\basher.py:8165
+msgid "Duplicate %s to"
+msgstr "%sを複製"
+
+#: bash\bash\basher.py:8172
+msgid "%s is not a valid name"
+msgstr "%sは有効な名前ではありません"
+
+#: bash\bash\basher.py:8175
+msgid "%s already exists"
+msgstr "%sは既に存在しています"
+
+#: bash\bash\basher.py:8179
+msgid "%s does not have correct extension (%s)"
+msgstr "%sは有効な拡張子を持っていません(%s)"
+
+#: bash\bash\basher.py:8256
+msgid "Has Extra Directories"
+msgstr "Wrye Bashサポート外のディレクトリがある"
+
+#: bash\bash\basher.py:8280
+msgid "Override Skips"
+msgstr "メインの除外設定を無視"
+
+#: bash\bash\basher.py:8303
+msgid "Don't Refresh"
+msgstr "プロジェクトのみ再スキャンの時はスキャンしない"
+
+#: bash\bash\basher.py:8329
+msgid "Install"
+msgstr "インストール"
+
+#: bash\bash\basher.py:8329
+msgid "Install Last"
+msgstr "インストールし、パッケージ最後尾に移動"
+
+#: bash\bash\basher.py:8329
+msgid "Install Missing"
+msgstr "不足ファイルのみインストール"
+
+#: bash\bash\basher.py:8362
+msgid "List Packages"
+msgstr "パッケージ一覧を表示する"
+
+#: bash\bash\basher.py:8362
+msgid "Displays a list of all packages.  Also copies that list to the clipboard.  Useful for posting your package order on forums"
+msgstr "パッケージリストを表示します. クリップボードにもコピーされます. フォーラムなどにロードオーダーを投稿する時に便利です"
+
+#: bash\bash\basher.py:8367
+msgid "Only show Installed Packages?"
+"(Else shows all packages)"
+msgstr "インストール済みパッケージのみを表示しますか？また、表示されるリストは一般的フォーラムのネタバレ防止タグ[spoiler]で囲われています."
+""
+"はい: インストール済みパッケージのみ"
+"いいえ: 全てのパッケージ"
+
+#: bash\bash\basher.py:8368
+msgid "Only Show Installed?"
+msgstr "インストール済みのパッケージだけを表示しますか？"
+
+#: bash\bash\basher.py:8374
+msgid "BAIN Packages"
+msgstr "BAINパッケージ"
+
+#: bash\bash\basher.py:8380
+msgid "List Structure"
+msgstr "構造を表示"
+
+#: bash\bash\basher.py:8403
+msgid "Move To"
+msgstr "移動"
+
+#: bash\bash\basher.py:8409
+msgid "Move selected archives to what position?"
+"Enter position number."
+"Last: -1; First of Last: -2; Semi-Last: -3"
+msgstr "選択したアーカイブをどこに移動しますか？"
+"位置の数値を入力してください."
+"最後尾: -1、「Last」の次: -2、「Last」の前: -3"
+
+#: bash\bash\basher.py:8414
+msgid "Position must be an integer"
+msgstr "数値は整数で入力してください"
+
+#: bash\bash\basher.py:8458
+msgid "Fallout 3 Nexus"
+msgstr ""
+
+#: bash\bash\basher.py:8465
+msgid "Attempt to open this as a mod at Fallout 3 Nexus? This assumes that the trailing digits in the package's name are actually the id number of the mod at Fallout 3 Nexus. If this assumption is wrong, you'll just get a random mod page (or error notice) at Fallout 3 Nexus"
+msgstr ""
+
+#: bash\bash\basher.py:8466
+msgid "Open at Fallout 3 Nexus"
+msgstr ""
+
+#: bash\bash\basher.py:8475
+msgid "Google"
+msgstr "Googleで検索"
+
+#: bash\bash\basher.py:8482
+msgid "Open a search for this on Google?"
+msgstr "Googleで検索しますか？"
+
+#: bash\bash\basher.py:8483
+msgid "Open a search"
+msgstr "検索エンジンで検索"
+
+#: bash\bash\basher.py:8522
+msgid "Refresh"
+msgstr "再スキャン"
+
+#: bash\bash\basher.py:8528
+msgid "Refreshing Packages"
+msgstr "パッケージを再スキャン中"
+
+#: bash\bash\basher.py:8532
+msgid "Refreshing Packages..."
+""
+msgstr "パッケージを再スキャン中..."
+""
+
+#: bash\bash\basher.py:8551
+msgid "Skip Voices"
+msgstr "音声を除外"
+
+#: bash\bash\basher.py:8573
+msgid "Uninstall"
+msgstr "アンインストール"
+
+#: bash\bash\basher.py:8595
+msgid "Copy Conflicts to Project"
+msgstr "競合しているファイルをプロジェクトに複製"
+
+#: bash\bash\basher.py:8606
+msgid "Copying Conflicts"
+msgstr "競合しているファイルをプロジェクトに複製中"
+
+#: bash\bash\basher.py:8635
+msgid "%s"
+"Copying files..."
+"%s"
+msgstr "%s"
+"ファイルをコピー中..."
+"%s"
+
+#: bash\bash\basher.py:8722
+msgid "Enter new name (without the extension)"
+msgstr ""
+
+#: bash\bash\basher.py:8723
+msgid "Rename Esp/m"
+msgstr "esp、esmをリネーム"
+
+#: bash\bash\basher.py:8733
+msgid "Reset Name"
+msgstr ""
+
+#: bash\bash\basher.py:8757
+msgid "Reset All Names"
+msgstr ""
+
+#: bash\bash\basher.py:8772
+msgid "List Esp/ms"
+msgstr ""
+
+#: bash\bash\basher.py:8779
+msgid "Esp/m List for\"%\":"
+"[spoiler]"
+msgstr ""
+
+#: bash\bash\basher.py:8786
+msgid "Esp/m List"
+msgstr ""
+
+#: bash\bash\basher.py:8828
+msgid "Toggle Selection"
+msgstr ""
+
+#: bash\bash\basher.py:8846
+msgid "List Sub-packages"
+msgstr ""
+
+#: bash\bash\basher.py:8853
+msgid "Sub-Packages List for\"%\":"
+"[spoiler]"
+msgstr ""
+
+#: bash\bash\basher.py:8860
+msgid "Sub-Package List"
+msgstr ""
+
+#: bash\bash\basher.py:8869
+msgid "Unpack to Project(s)"
+msgstr "プロジェクトに解凍する"
+
+#: bash\bash\basher.py:8878
+msgid "Unpack %s to Project"
+msgstr "%sをプロジェクトに解凍します"
+
+#: bash\bash\basher.py:8885
+msgid "%s is not a valid project name"
+msgstr "%sは有効なプロジェクト名ではありません"
+
+#: bash\bash\basher.py:8888
+msgid "%s is a file"
+msgstr "%sはファイルです"
+
+#: bash\bash\basher.py:8891
+msgid "%s already exists. Overwrite it?"
+msgstr "%sは既に存在します. 上書きしますか？"
+
+#: bash\bash\basher.py:8894
+msgid "Unpacking to Project"
+msgstr "プロジェクトに解凍中"
+
+#: bash\bash\basher.py:8937
+msgid "Fomod Config"
+msgstr ""
+
+#: bash\bash\basher.py:8962
+msgid "Website"
+msgstr "ウェブサイト"
+
+#: bash\bash\basher.py:8964
+msgid "Email"
+msgstr "メールアドレス"
+
+#: bash\bash\basher.py:9006
+msgid "Fomod Info"
+msgstr ""
+
+#: bash\bash\basher.py:9021
+msgid "Sync from Data"
+msgstr "Dataディレクトリのファイルに同期する"
+
+#: bash\bash\basher.py:9036
+msgid "Update %s according to data directory?"
+"Files to delete: %d"
+"Files to update: %d"
+msgstr "Dataディレクトリに従って%sをアップデートしますか？"
+"削除ファイル: %d"
+"アップデートファイル: %d"
+
+#: bash\bash\basher.py:9041
+msgid "Updating files"
+msgstr "ファイルをアップデートしています"
+
+#: bash\bash\basher.py:9054
+msgid "Sync and Pack"
+msgstr "同期とパッケージ"
+
+#: bash\bash\basher.py:9068
+msgid "Pack to Archive"
+msgstr "アーカイブに圧縮する"
+
+#: bash\bash\basher.py:9078
+msgid "Pack %s to Archive"
+msgstr "%sをアーカイブに圧縮します"
+
+#: bash\bash\basher.py:9085
+msgid "%s is not a valid archive name"
+msgstr "%sは有効なアーカイブ名ではりません"
+
+#: bash\bash\basher.py:9088
+msgid "%s is a directory"
+msgstr "%sはディレクトリです"
+
+#: bash\bash\basher.py:9091
+msgid "The %s extension is unsupported. Using %s instead"
+msgstr "拡張子%sはサポートされていません. 代わりに%sを使用します"
+
+#: bash\bash\basher.py:9101
+msgid "Use solid compression for %s?"
+msgstr "%sの圧縮にソリッド圧縮を使用しますか？"
+
+#: bash\bash\basher.py:9103
+msgid "Use what maximum size for each solid block?"
+"Enter '0' to use 7z's default size"
+msgstr "ソリッドブロックの最大サイズを設定してください."
+"「0」を入力すると7zのデフォルトサイズを使用します"
+
+#: bash\bash\basher.py:9105
+msgid "Packing to Archive"
+msgstr "アーカイブに圧縮中"
+
+#: bash\bash\basher.py:9128
+msgid "Package for Release"
+msgstr "配布用パッケージ"
+
+#: bash\bash\basher.py:9195
+msgid "Apply BCF"
+msgstr "BCFを適用"
+
+#: bash\bash\basher.py:9203
+msgid "Using:"
+"*"
+msgstr ""
+
+#: bash\bash\basher.py:9219
+msgid "Converting to Archive"
+msgstr "アーカイブに変換"
+
+#: bash\bash\basher.py:9280
+msgid "Create BCF"
+msgstr "BCFを生成"
+
+#: bash\bash\basher.py:9281
+msgid "Create"
+msgstr "生成"
+
+#: bash\bash\basher.py:9288
+msgid "Select the BAIN\'ed Archive"
+msgstr "BAIN化アーカイブを選択してください"
+
+#: bash\bash\basher.py:9296
+msgid "%s must be in the Bash Installers directory"
+msgstr "%sはBash Installersディレクトリに存在しなくてはいけません"
+
+#: bash\bash\basher.py:9298
+msgid "-bcf"
+msgstr ""
+
+#: bash\bash\basher.py:9299
+msgid "-BCF"
+msgstr ""
+
+#: bash\bash\basher.py:9301
+msgid "Convert"
+msgstr "コンバート"
+
+#: bash\bash\basher.py:9303
+msgid ""
+""
+"To:"
+"* (%08X) - %s"
+msgstr ""
+
+#: bash\bash\basher.py:9316
+msgid "BCF's only support %s. The %s extension will be discarded"
+msgstr ""
+
+#: bash\bash\basher.py:9327
+msgid "Creating %s"
+msgstr ""
+
+#: bash\bash\basher.py:9340
+msgid "Name: %s"
+msgstr ""
+
+#: bash\bash\basher.py:9341
+msgid "Size: %s KB"
+msgstr ""
+
+#: bash\bash\basher.py:9342
+msgid "Remapped: %s file"
+msgstr ""
+
+#: bash\bash\basher.py:9342
+msgid "s"
+msgstr ""
+
+#: bash\bash\basher.py:9343
+msgid "Requires: %s file"
+msgstr ""
+
+#: bash\bash\basher.py:9345
+msgid "Options"
+msgstr "オプション"
+
+#: bash\bash\basher.py:9346
+msgid "*  Skip Voices   = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9347
+msgid "*  Solid Archive = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9350
+msgid "*  Solid Block Size = %d"
+msgstr ""
+
+#: bash\bash\basher.py:9352
+msgid "*  Solid Block Size = 7z default"
+msgstr ""
+
+#: bash\bash\basher.py:9353
+msgid "*  Has Comments  = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9354
+msgid "*  Has Extra Directories = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9355
+msgid "*  Has Esps Unselected   = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9356
+msgid "*  Has Packages Selected = %s"
+msgstr ""
+
+#: bash\bash\basher.py:9357
+msgid "Contains: %s file"
+msgstr ""
+
+#: bash\bash\basher.py:9362
+msgid "BCF Information"
+msgstr ""
+
+#: bash\bash\basher.py:9411
+msgid "Name must be between 1 and 64 characters long"
+msgstr ""
+
+#: bash\bash\basher.py:9441
+msgid "None"
+msgstr "なし"
+
+#: bash\bash\basher.py:9442
+msgid "Save List"
+msgstr "ロードリストを保存"
+
+#: bash\bash\basher.py:9443
+msgid "Edit Lists"
+msgstr "ロードリストを編集"
+
+#: bash\bash\basher.py:9473
+msgid "All load list slots are full. Please delete an existing load list before adding another"
+msgstr "ロードリスト用スロットが一杯です. 既存のロードリストを削除してから新規作成してください"
+
+#: bash\bash\basher.py:9476
+msgid "Save current load list as"
+msgstr "現在のロードリストに名前をつけて保存"
+
+#: bash\bash\basher.py:9479
+msgid "Load list name must be between 1 and 64 characters long"
+msgstr "ロードリストの名称は1～64文字でなくてはいけません"
+
+#: bash\bash\basher.py:9486
+msgid "Load Lists"
+msgstr "ロードリスト"
+
+#: bash\bash\basher.py:9494
+msgid "Valid Tweaks First"
+msgstr "有効な設定からソート"
+
+#: bash\bash\basher.py:9496
+msgid "Valid tweak files will be shown first"
+msgstr "有効な設定ファイルが先頭にソートされます"
+
+#: bash\bash\basher.py:9508
+msgid "List Errors"
+msgstr "エラー一覧"
+
+#: bash\bash\basher.py:9508
+msgid "Lists any errors in the tweak file causing it to be invalid"
+msgstr ""
+
+#: bash\bash\basher.py:9527
+msgid "INI Tweak Errors"
+msgstr "INI Tweak エラー"
+
+#: bash\bash\basher.py:9535
+msgid "Apply"
+msgstr "適用する"
+
+#: bash\bash\basher.py:9535
+msgid "Applies '%s' to '%s'"
+msgstr ""
+
+#: bash\bash\basher.py:9574
+msgid "Copy to new Tweak"
+msgstr "新しいTweakにコピーする"
+
+#: bash\bash\basher.py:9574
+msgid "Creates a new tweak based on '%s' but with values from '%s'"
+msgstr ""
+
+#: bash\bash\basher.py:9582
+msgid "INI Tweak File (*.ini)|*.ini"
+msgstr ""
+
+#: bash\bash\basher.py:9605
+msgid "Sort masters by type"
+msgstr ""
+
+#: bash\bash\basher.py:9622
+msgid "Selection"
+msgstr "アクティブなもののみソート"
+
+#: bash\bash\basher.py:9634
+msgid "Check mods against BOSS's dirty mod list"
+msgstr "BOSSのDirty Modリストでチェックする"
+
+#: bash\bash\basher.py:9646
+msgid "Auto-Ghost"
+msgstr "非アクティブなファイルを自動でGhost化"
+
+#: bash\bash\basher.py:9659
+msgid "Auto Group"
+msgstr "自動でグループに追加"
+
+#: bash\bash\basher.py:9672
+msgid "Debug Mode"
+msgstr "デバッグモード"
+
+#: bash\bash\basher.py:9677
+msgid "Debug Printing: Off"
+msgstr "デバッグ出力をオフにしました"
+
+#: bash\bash\basher.py:9679
+msgid "Debug Printing: On"
+msgstr "デバッグ出力をオンにしました"
+
+#: bash\bash\basher.py:9685
+msgid "Full Balo"
+msgstr ""
+
+#: bash\bash\basher.py:9691
+msgid "Activate Full Balo?"
+""
+"Full Balo segregates mods by groups, and then autosorts mods within those groups by alphabetical order. Full Balo is still in development and may have some rough edges"
+msgstr "Full Baloを有効にしますか？"
+""
+"Full BaloはMODをグループごとに分離し、グループ内でアルファベット順にソートする機能です. Full Baloはまだ開発段階の機能であり、いささか荒削りです"
+
+#: bash\bash\basher.py:9692
+msgid "Balo Groups"
+msgstr "Baloグループ"
+
+#: bash\bash\basher.py:9707
+msgid "Dump Translator"
+msgstr "翻訳用ファイルをダンプ"
+
+#: bash\bash\basher.py:9711
+msgid "Generate Bash program translator file?"
+""
+"This function is for translating Bash itself (NOT mods) into non-English languages. For more info, see Internationalization section of Bash readme"
+msgstr "Wrye Bashの翻訳用ファイルを生成しますか？"
+""
+"この機能は(MODではなく)WryeBash自体を英語以外の言語に翻訳するためのものです. 詳しくはドキュメントのInternationalizationセクションをご覧ください"
+
+#: bash\bash\basher.py:9742
+msgid "%d translation keys written to Mopy\\Data\\%s"
+msgstr "%d 個の翻訳テキストをMopy\\Data\\%sに出力しました"
+
+#: bash\bash\basher.py:9750
+msgid "List Mods"
+msgstr "アクティブなMOD一覧を表示する"
+
+#: bash\bash\basher.py:9766
+msgid "List Bash Tags"
+msgstr "タグを表示する"
+
+#: bash\bash\basher.py:9822
+msgid "FO3Edit Expert"
+msgstr "FO3Edit起動時に「確認画面スキップ」引数を渡す"
+
+#: bash\bash\basher.py:9830
+msgid "BOSS Disable Lock Times"
+msgstr "BOSS起動時はタイムスタンプ固定をオフにする"
+
+#: bash\bash\basher.py:9832
+msgid "If selected, will temporarilly disable Bash's Lock Times when running BOSS through Bash"
+msgstr "選択すると、BOSS実行時にBashのLock Times機構を一時的に無効にします"
+
+#: bash\bash\basher.py:9840
+msgid "Always Update BOSS Masterlist prior to running BOSS"
+msgstr "BOSS起動時にまずMasterlistを更新する"
+
+#: bash\bash\basher.py:9842
+msgid "If selected, will tell BOSS to update the masterlist before sorting the mods"
+msgstr "選択すると、BOSSはModのソート前にMasterlistを更新します"
+
+#: bash\bash\basher.py:9857
+msgid "Backup Settings"
+msgstr "設定をバックアップ"
+
+#: bash\bash\basher.py:9866
+msgid "Do you want to backup your Bash settings now?"
+msgstr "現在のWrye Bash設定をバックアップしますか？"
+
+#: bash\bash\basher.py:9867
+msgid "Backup Bash Settings?"
+msgstr "Wrye Bash設定をバックアップしますか？"
+
+#: bash\bash\basher.py:9873
+msgid "Backup Images?"
+msgstr "イメージをバックアップしますか？"
+
+#: bash\bash\basher.py:9878
+msgid "Do you want to backup any images?"
+msgstr "全てのイメージをバックアップしますか？"
+
+#: bash\bash\basher.py:9902
+msgid "Restore Settings"
+msgstr "設定を復帰"
+
+#: bash\bash\basher.py:9909
+msgid "Do you want to restore saved images as well as settings?"
+msgstr "保存してあるイメージを復帰させますか？"
+
+#: bash\bash\basher.py:9921
+msgid "Save Settings"
+msgstr "設定を保存"
+
+#: bash\bash\basher.py:9933
+msgid "Update Archive Invalidator"
+msgstr "ArchiveInvalidation.txtを更新"
+
+#: bash\bash\basher.py:9937
+msgid "Update ArchiveInvalidation.txt? This updates the file that forces the game engine to recognize replaced textures. Note that this feature is experimental and most probably somewhat incomplete. You may prefer to use another program to do AI.txt file updating"
+msgstr "ArchiveInvalidation.txtを更新しますか？更新することにより、ゲームエンジンにリプレイスしたTextureを強制的に認識させます. 実験段階の機能であり、多少不完全です. 別のプログラムからAI.txtを更新した方がいいかもしれません"
+
+#: bash\bash\basher.py:9938
+msgid "ArchiveInvalidation.txt"
+msgstr ""
+
+#: bash\bash\basher.py:9949
+msgid "NPC Levels"
+msgstr "NPCのレベル"
+
+#: bash\bash\basher.py:9954
+msgid "This command will export the level info for NPCs whose level is offset with respect to the PC. The exported file can be edited with most spreadsheet programs and then reimported."
+""
+"See the Bash help file for more info"
+msgstr "このコマンドでは、PCのレベルに比例して掛かるNPCのレベル補正情報をエクスポートします. エクスポートしたファイルはスプレッドシートを扱うソフトウェアで編集し、再度インポートすることが可能です."
+""
+"詳しくはヘルプファイルをご覧ください"
+
+#: bash\bash\basher.py:9955
+msgid "Export NPC Levels"
+msgstr "NPCレベルをエクスポート"
+
+#: bash\bash\basher.py:9959
+msgid "_NPC_Levels.csv"
+msgstr ""
+
+#: bash\bash\basher.py:9963
+msgid "Export NPC levels to"
+msgstr "NPCレベルをCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:9967
+msgid "Export Factions"
+msgstr "Factionをエクスポート"
+
+#: bash\bash\basher.py:9976
+msgid "Reading %s"
+msgstr "%sを読み込み中"
+
+#: bash\bash\basher.py:9978
+msgid "Exporting to %s"
+msgstr "%sにエクスポートしています"
+
+#: bash\bash\basher.py:9980
+msgid "Done"
+msgstr "完了しました"
+
+#: bash\bash\basher.py:9992
+msgid "This command will import NPC level info from a previously exported file."
+""
+"See the Bash help file for more info"
+msgstr "このコマンドは以前エクスポートしたファイルからNPCレベル情報をインポートします."
+""
+"詳しくはヘルプファイルをご覧ください"
+
+#: bash\bash\basher.py:9993
+msgid "Import NPC Levels"
+msgstr "NPCレベルをインポート"
+
+#: bash\bash\basher.py:10000
+msgid "Import NPC levels from"
+msgstr "NPCレベルをCSVファイルからインポートします"
+
+#: bash\bash\basher.py:10007
+msgid "Source file must be a _NPC_Levels.csv file"
+msgstr "インポート元のデータはxxx_NPC_Levels.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:10018
+msgid "Applying to %s"
+msgstr "%sに適用中"
+
+#: bash\bash\basher.py:10023
+msgid "No relevant NPC levels to import"
+msgstr "インポートできるNPCレベル情報がありません"
+
+#: bash\bash\basher.py:10033
+msgid "Add Master"
+msgstr "マスターを追加"
+
+#: bash\bash\basher.py:10038
+msgid "WARNING! For advanced modders only! Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master. Useful for splitting mods into esm/esp pairs"
+msgstr "警告！熟練Modderのみご利用ください！特定のマスターファイルをマスターリストに追加します. このMODの新規コンテンツ所有権は新たなマスターに移譲されることになります. MODをesmとespのペアに分割する際に有用です"
+
+#: bash\bash\basher.py:10043
+msgid "Fallout3 Masters"
+msgstr ""
+
+#: bash\bash\basher.py:10044
+msgid "Add master"
+msgstr "追加するマスターファイルを選択してください"
+
+#: bash\bash\basher.py:10049
+msgid "File must be selected from Fallout3 Data Files directory"
+msgstr ""
+
+#: bash\bash\basher.py:10051
+msgid "%s is already a master!"
+msgstr "%sは既にマスターに入っています！"
+
+#: bash\bash\basher.py:10084
+msgid "Move Up"
+msgstr "上に移動"
+
+#: bash\bash\basher.py:10085
+msgid "Move Down"
+msgstr "下に移動"
+
+#: bash\bash\basher.py:10096
+msgid "Offsets"
+msgstr ""
+
+#: bash\bash\basher.py:10123
+msgid "Group name must be letters, spaces, underscores only!"
+msgstr "グループ名は英数字、半角スペース、アンダースコアのみで構成されていなければいけません！"
+
+#: bash\bash\basher.py:10126
+msgid "group %s already exists"
+msgstr "グループ%sは既に存在します"
+
+#: bash\bash\basher.py:10129
+msgid "Group names must be less than forty characters"
+msgstr "グループ名は40文字未満でなければいけません"
+
+#: bash\bash\basher.py:10182
+msgid "Add Balo Group"
+msgstr "Baloグループを追加"
+
+#: bash\bash\basher.py:10187
+msgid "Name of new group (spaces and letters only)"
+msgstr "新規グループ名(半角スペースと英数字のみ)"
+
+#: bash\bash\basher.py:10211
+msgid "Rename Balo Group"
+msgstr "Baloグループをリネーム"
+
+#: bash\bash\basher.py:10216
+msgid "Rename %s to (spaces, letters and underscores only)"
+msgstr ""
+
+#: bash\bash\basher.py:10329
+msgid "Allow Ghosting"
+msgstr "Ghost化させる"
+
+#: bash\bash\basher.py:10349
+msgid "Create BOSS Report"
+msgstr "BOSSレポートを生成"
+
+#: bash\bash\basher.py:10364
+msgid "Dirty Edits"
+msgstr "好ましくない編集"
+
+#: bash\bash\basher.py:10413
+msgid "BOSS Report"
+msgstr ""
+
+#: bash\bash\basher.py:10438
+msgid "Disallow Ghosting"
+msgstr "Ghost化させない"
+
+#: bash\bash\basher.py:10457
+msgid "Invert Ghosting"
+msgstr "Ghost化状態を逆転させる"
+
+#: bash\bash\basher.py:10479
+msgid "Don't Ghost"
+msgstr "Ghost化させない"
+
+#: bash\bash\basher.py:10509
+msgid "Don't check against BOSS's dirty mod list"
+msgstr "BOSSのDirty Modリストでチェックしない"
+
+#: bash\bash\basher.py:10511
+msgid "Check against BOSS's dirty mod list"
+msgstr "BOSSのDirty Modリストでチェックする"
+
+#: bash\bash\basher.py:10524
+msgid "Invert checking against BOSS's dirty mod list"
+msgstr "BOSSのDirty Modリストでのチェックを逆転する"
+
+#: bash\bash\basher.py:10547
+msgid "Dirty edit scanning"
+msgstr "好ましくない編集のスキャン"
+
+#: bash\bash\basher.py:10569
+msgid "Apply Nvidia fog fix. This modify fog values in interior cells to avoid the Nvidia black screen bug"
+msgstr "nVidiaのFog Nearを修正します. これを適用すると、nVidia GPUで発生するブラックスクリーンバグを回避するため、Interior CellのFog Nearの値が設定し直されます"
+
+#: bash\bash\basher.py:10578
+msgid "Scanning %s"
+msgstr "スキャン中 %s"
+
+#: bash\bash\basher.py:10586
+msgid "Cells Fixed:"
+""
+msgstr "Cellを修正しました:"
+""
+
+#: bash\bash\basher.py:10589
+msgid "No changes required"
+msgstr "変更の必要はありませんでした"
+
+#: bash\bash\basher.py:10597
+msgid "New Mod"
+msgstr "espを新規作成"
+
+#: bash\bash\basher.py:10627
+msgid "Relations"
+msgstr "好感度補正"
+
+#: bash\bash\basher.py:10634
+msgid "_Relations.csv"
+msgstr ""
+
+#: bash\bash\basher.py:10638
+msgid "Export faction relations to"
+msgstr "Faction間の好感度補正をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:10642
+msgid "Export Relations"
+msgstr "Faction間の好感度補正をエクスポート"
+
+#: bash\bash\basher.py:10667
+msgid "This command will import faction relation info from a previously exported file."
+""
+"See the Bash help file for more info"
+msgstr "このコマンドは以前エクスポートしたファイルからFaction間の好感度補正をインポートします."
+""
+"詳しくはヘルプファイルをご覧ください"
+
+#: bash\bash\basher.py:10675
+msgid "Import faction relations from"
+msgstr "Faction間の好感度補正をCSVファイルからインポートします"
+
+#: bash\bash\basher.py:10682
+msgid "Source file must be a _Relations.csv file"
+msgstr "インポート元のデータはxxx_Relations.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:10698
+msgid "No relevant faction relations to import"
+msgstr "インポートできるFaction間の好感度補正情報がありません"
+
+#: bash\bash\basher.py:10708
+msgid "Factions"
+msgstr "所属Faction"
+
+#: bash\bash\basher.py:10715
+msgid "_Factions.csv"
+msgstr ""
+
+#: bash\bash\basher.py:10719
+msgid "Export factions to"
+msgstr "所属FactionをCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:10748
+msgid "This command will import faction ranks from a previously exported file."
+""
+"See the Bash help file for more info"
+msgstr "このコマンドは以前エクスポートしたファイルから所属Factionをインポートします."
+""
+"詳しくはヘルプファイルをご覧ください"
+
+#: bash\bash\basher.py:10756
+msgid "Import Factions from"
+msgstr "所属FactionをCSVファイルからインポートします"
+
+#: bash\bash\basher.py:10763
+msgid "Source file must be a _Factions.csv file"
+msgstr "インポート元のデータはxxx_Factions.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:10779
+msgid "No relevant faction ranks to import"
+msgstr "インポートできる所属Faction情報がありません"
+
+#: bash\bash\basher.py:10790
+msgid "Mark Levelers"
+msgstr ""
+
+#: bash\bash\basher.py:10795
+msgid "Obsolete. Mods are now automatically tagged when possible"
+msgstr ""
+
+#: bash\bash\basher.py:10808
+msgid "Mark Mergeable (CBash)"
+msgstr "マージ判定(CBash)"
+
+#: bash\bash\basher.py:10834
+msgid "Mergeability"
+msgstr ""
+
+#: bash\bash\basher.py:10836
+msgid "Mergeable"
+"*"
+msgstr "マージ可能なファイル"
+"*"
+
+#: bash\bash\basher.py:10840
+msgid "Not Mergeable"
+"*"
+msgstr "マージ可能ではないファイル"
+"*"
+
+#: bash\bash\basher.py:10853
+msgid "Copy to Esm"
+msgstr "esmにして複製"
+
+#: bash\bash\basher.py:10853
+msgid "Copy to Esp"
+msgstr "espにして複製"
+
+#: bash\bash\basher.py:10871
+msgid "Replace existing %s?"
+msgstr ""
+
+#: bash\bash\basher.py:10892
+msgid "Face"
+msgstr "顔データ"
+
+#: bash\bash\basher.py:10899
+msgid "Fallout3 Files"
+msgstr ""
+
+#: bash\bash\basher.py:10921
+msgid "Imported face to: %s"
+msgstr ""
+
+#: bash\bash\basher.py:10928
+msgid "Esmify Masters"
+msgstr "マスターをesmとして認識させる"
+
+#: bash\bash\basher.py:10940
+msgid "Espify Masters"
+msgstr "マスターをespとして認識させる"
+
+#: bash\bash\basher.py:10948
+msgid "WARNING! For advanced modders only! Flips esp/esm bit of esp masters to convert them to/from esm state. Useful for building/analyzing esp mastered mods"
+msgstr "警告！上級Modder向け機能です！"
+""
+"このespがマスター指定しているespにおけるesp/esm判定を切り替えます. espをマスター指定しているespの構築/分析に利用できます"
+
+#: bash\bash\basher.py:10971
+msgid "Esmify Self"
+msgstr "esmとして認識させる"
+
+#: bash\bash\basher.py:10971
+msgid "Espify Self"
+msgstr "espとして認識させる"
+
+#: bash\bash\basher.py:10981
+msgid "WARNING! For advanced modders only!"
+""
+"This command flips an internal bit in the mod, converting an esp to an esm and vice versa. Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod"
+msgstr "警告！上級Modder向け機能です！"
+""
+"このespにおけるesp/esm判定を切り替えます. 切り替えるのはファイルの扱いを決定するビットのみで、拡張子はそのままとなります"
+
+#: bash\bash\basher.py:10982
+msgid "Flip to Esm"
+msgstr "esmとして認識させる"
+
+#: bash\bash\basher.py:11129
+msgid "Edit Groups"
+msgstr "グループ情報を編集"
+
+#: bash\bash\basher.py:11130
+msgid "Groups"
+msgstr "グループ"
+
+#: bash\bash\basher.py:11131
+msgid "Add group"
+msgstr "グループを追加"
+
+#: bash\bash\basher.py:11158
+msgid "Export groups to"
+msgstr "グループ情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:11166
+msgid "Exported %d mod/groups"
+msgstr ""
+
+#: bash\bash\basher.py:11167
+msgid "Export Groups"
+msgstr "グループ情報をエクスポート"
+
+#: bash\bash\basher.py:11180
+msgid "Import groups from a text file. Any mods that are moved into new auto-sorted groups will be immediately reordered"
+msgstr "テキストファイルからグループをインポートします. 自動的にソートされる新規グループに追加されているMODは即時ソートし直されます"
+
+#: bash\bash\basher.py:11182
+msgid "Import Groups"
+msgstr "グループをインポート"
+
+#: bash\bash\basher.py:11186
+msgid "Import names from"
+msgstr "CSVファイルからNameをインポートします"
+
+#: bash\bash\basher.py:11192
+msgid "Source file must be a csv file"
+msgstr "インポート元のデータはCSVファイルでなくてはいけません"
+
+#: bash\bash\basher.py:11201
+msgid "Imported %d mod/groups (%d changed)"
+msgstr "%d MOD/グループをインポートしました(変更: %d)"
+
+#: bash\bash\basher.py:11209
+msgid "Editor Ids"
+msgstr "Editor ID"
+
+#: bash\bash\basher.py:11216
+msgid "_Eids.csv"
+msgstr ""
+
+#: bash\bash\basher.py:11220
+msgid "Export eids to"
+msgstr "Editor IDをCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:11224
+msgid "Export Editor Ids"
+msgstr "Editor IDをエクスポート"
+
+#: bash\bash\basher.py:11249
+msgid "Import editor ids from a text file. This will replace existing ids and is not reversible!"
+msgstr "Editor IDをテキストファイルからインポートします. この動作はesp内のEditor IDを書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:11251
+msgid "Import Editor Ids"
+msgstr "Editor IDをインポート"
+
+#: bash\bash\basher.py:11286
+msgid "Objects Changed"
+msgstr ""
+
+#: bash\bash\basher.py:11295
+msgid "Decompile All"
+msgstr "全てをデコンパイル"
+
+#: bash\bash\basher.py:11301
+msgid "This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override"
+msgstr "このコマンドは、「Compile All」によって追加されてしまった、上書き元と比較して差異が一切存在しない全てのスクリプトを削除します"
+
+#: bash\bash\basher.py:11307
+msgid "Skipping %s"
+msgstr "%sをスキップ中"
+
+#: bash\bash\basher.py:11341
+msgid "Scripts removed: %d."
+"Scripts remaining: %d"
+msgstr "%d個のスクリプトが削除されました"
+"%dのスクリプトが維持されています"
+
+#: bash\bash\basher.py:11343
+msgid "Only %d scripts were identical. This is probably intentional, so no changes have been made"
+msgstr "%d個のスクリプトのみが「差異なし」でした. おそらく意図的なものであるため、変更はしませんでした"
+
+#: bash\bash\basher.py:11352
+msgid "Form IDs"
+msgstr "Form ID"
+
+#: bash\bash\basher.py:11357
+msgid "For advanced modders only! Systematically replaces one set of Form Ids with another in npcs, creatures, containers and leveled lists according to a Replacers.csv file"
+msgstr "熟練Modderのみご使用ください！Replacers.csvに基づいて、NPC、Creature、ContainerとLeveled ListのForm IDセットを書き換えます"
+
+#: bash\bash\basher.py:11359
+msgid "Import Form IDs"
+msgstr "Form IDをインポート"
+
+#: bash\bash\basher.py:11365
+msgid "Form ID mapper file"
+msgstr ""
+
+#: bash\bash\basher.py:11396
+msgid "Names"
+msgstr ""
+
+#: bash\bash\basher.py:11403
+msgid "_Names.csv"
+msgstr ""
+
+#: bash\bash\basher.py:11407
+msgid "Export names to"
+msgstr "NameをCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:11412
+msgid "Export Names"
+msgstr "Nameをエクスポート"
+
+#: bash\bash\basher.py:11437
+msgid "Import record names from a text file. This will replace existing names and is not reversible!"
+msgstr "Nameをテキストファイルからインポートします. この動作はesp内のName情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:11453
+msgid "Source file must be mod (.esp or .esm) or csv file"
+msgstr "インポート元のデータはcsvファイルかMODでなくてはいけません"
+
+#: bash\bash\basher.py:11481
+msgid "Objects Renamed"
+msgstr ""
+
+#: bash\bash\basher.py:11495
+msgid "Rebuild Patch (CBash *BETA*)"
+msgstr "パッチをビルドする(CBash *BETA注意*)"
+
+#: bash\bash\basher.py:11497
+msgid "Rebuild Patch"
+msgstr "パッチをビルドする"
+
+#: bash\bash\basher.py:11519
+msgid "That which does not exist cannot be patched."
+"Load some mods and try again"
+msgstr ""
+
+#: bash\bash\basher.py:11519
+msgid "Existential Error"
+msgstr ""
+
+#: bash\bash\basher.py:11523
+msgid "Building with CBash is cool.  It's faster and allows more things to be handled, but it is still in BETA.  If you have problems, post them in the official thread, then use the non-CBash build function"
+msgstr ""
+
+#: bash\bash\basher.py:11528
+msgid "The patch you are rebuilding (%s) was created in %s mode.  You are trying to rebuild it using %s mode.  Wrye Bash will attempt to import your settings over, however some may not be copied correctly"
+msgstr ""
+
+#: bash\bash\basher.py:11551
+msgid "The following mods are tagged 'Deactivate'. These should be deactivated before building the patch, and then imported into the patch during build."
+"*%s"
+msgstr "以下のMODは「Deactive」タグがつけられています. Patchをビルドする前にDeactivateしてください. Deactivateしてビルドすれば、Bashed Patchにインポートされます."
+"*%s"
+
+#: bash\bash\basher.py:11552
+msgid "The following mods are tagged 'Filter'. These should be deactivated before building the patch, and then merged into the patch during build."
+"*%s"
+msgstr "以下のMODは「Filter」タグがつけられています. Patchをビルドする前にDeactivateしてください. Deactivateしてビルドすれば、Bashed Patchにマージされます."
+"*%s"
+
+#: bash\bash\basher.py:11553
+msgid "The following mods are mergeable. While it is not important to Wrye Bash functionality or the end contents of the bashed patch, it is suggest that they be deactivated and merged into the patch; this (helps) avoid the  Fallout maximum esp/m limit."
+"*%s"
+msgstr "以下のMODはマージ可能です. Wrye Bashの機能上あるいは最終的なBashed Patchの中身に変化はありませんが、Deactivateしてマージすることにより、esp/esm数を削減することができます."
+"*%s"
+
+#: bash\bash\basher.py:11554
+msgid "The following mods are tagged 'NoMerge'. These should be deactivated before building the patch and imported according to tag(s), and preferences."
+"*%s"
+msgstr ""
+
+#: bash\bash\basher.py:11557
+msgid "Deactivate Suggested Mods?"
+msgstr ""
+
+#: bash\bash\basher.py:11580
+msgid "MISSING MASTER"
+msgstr ""
+
+#: bash\bash\basher.py:11582
+msgid "DELINQUENT MASTER"
+msgstr ""
+
+#: bash\bash\basher.py:11590
+msgid "WARNING!"
+"The following mod(s) have master file error(s):"
+"%sPlease adjust your load order to rectify those probem(s) before continuing. However you can still proceed if you want to. Proceed?"
+msgstr ""
+
+#: bash\bash\basher.py:11590
+msgid "Missing or Delinquent Master Errors"
+msgstr ""
+
+#: bash\bash\basher.py:11608
+msgid "List Patch Config"
+msgstr "パッチ設定を表示"
+
+#: bash\bash\basher.py:11632
+msgid "Config"
+msgstr ""
+
+#: bash\bash\basher.py:11633
+msgid "This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard."
+""
+msgstr "現在のBashed Patchの設定です. このレポートの内容は、クリップボードにもコピーされています"
+
+#: bash\bash\basher.py:11638
+msgid "Patch Mode"
+msgstr ""
+
+#: bash\bash\basher.py:11707
+msgid "Bashed Patch Configuration"
+msgstr "Bashed Patchの設定情報"
+
+#: bash\bash\basher.py:11716
+msgid "Edit Ratings"
+msgstr "レーティングを編集"
+
+#: bash\bash\basher.py:11717
+msgid "Ratings"
+msgstr "レーティング"
+
+#: bash\bash\basher.py:11718
+msgid "Add rating"
+msgstr "レーティングを追加"
+
+#: bash\bash\basher.py:11728
+msgid "Version 0.85"
+msgstr "Version 0.85化"
+
+#: bash\bash\basher.py:11734
+msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the GECK by resetting the internal file version number back to 0.85. While this will make the mod editable, it may also break the mod in some way"
+msgstr "警告！上級Modder向け機能です！"
+""
+"この機能ではファイルの内部バージョンを0.85にリセットすることにより、古いGECKで編集できるようになります. MODが破損する可能性があります"
+
+#: bash\bash\basher.py:11735
+msgid "Set File Version"
+msgstr "バージョンをセットする"
+
+#: bash\bash\basher.py:11749
+msgid "Details"
+msgstr "詳細表示"
+
+#: bash\bash\basher.py:11760
+msgid "Sorting records"
+msgstr "レコードをソート中"
+
+#: bash\bash\basher.py:11764
+msgid "(Details not provided for this record type.)"
+""
+""
+msgstr "(このレコードタイプは詳細表示できません)"
+""
+""
+
+#: bash\bash\basher.py:11782
+msgid "Remove World Orphans"
+msgstr "World Orphansを削除"
+
+#: bash\bash\basher.py:11787
+msgid "In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans"
+msgstr "MOD編集によりWorld Groupに属するCellがParentを喪失した状態になってしまうことがあります. このコマンドでは、そうした「孤児」化したものを削除します"
+
+#: bash\bash\basher.py:11805
+msgid "Saving %s"
+msgstr ""
+
+#: bash\bash\basher.py:11810
+msgid "Orphan cell blocks removed: %d"
+msgstr "World Groupに属さないCellブロックを削除しました: %d"
+
+#: bash\bash\basher.py:11819
+msgid "Readme"
+msgstr "Readmeを開く"
+
+#: bash\bash\basher.py:11838
+msgid "Scripts"
+msgstr "スクリプト"
+
+#: bash\bash\basher.py:11846
+msgid "Skip prefix (leave blank to not skip any), non-case sensitive)"
+msgstr "除外したいスクリプトがある場合、そのプレフィックス(接頭辞)となる文字列を入力してください(必要ない場合は空欄のままにしてください)、大文字小文字は区別しません"
+
+#: bash\bash\basher.py:11847
+msgid "Skip Prefix?"
+msgstr "除外するプレフィックスはありますか？"
+
+#: bash\bash\basher.py:11849
+msgid "Remove prefix from file names f.e. enter cob to save script cobDenockInit"
+"as DenockInit.ext rather than as cobDenockInit.ext  (leave blank to not cut any prefix, non-case sensitive)"
+msgstr "スクリプト名からプレフィックスを削除し、それをファイル名として使用します. たとえばcobと入力すれば、cobDenockInitというスクリプトは、「cobDenockInit+拡張子」ではなく「DenockInit+拡張子」となります(必要ない場合は空欄のままにしてください)、大文字小文字は区別しません"
+
+#: bash\bash\basher.py:11850
+msgid "Remove Prefix from file names?"
+msgstr "ファイル名からプレフィックスを削除しますか？"
+
+#: bash\bash\basher.py:11855
+msgid "Choose directory to export scripts to"
+msgstr "スクリプトをエクスポートするディレクトリを選択してください"
+
+#: bash\bash\basher.py:11882
+msgid "Import script from a text file. This will replace existing scripts and is not reversible (except by restoring from backup)!"
+msgstr "Scriptをテキストファイルからインポートします. この動作はesp内のScriptを書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:11892
+msgid "Choose directory to import scripts from"
+msgstr "スクリプトをインポートするディレクトリを選択してください"
+
+#: bash\bash\basher.py:11896
+msgid "Import scripts that don't exist in the esp as new scripts?"
+"(If not they will just be skipped)"
+msgstr "espに該当するスクリプトが存在しない場合、新しいスクリプトとしてインポートしますか？"
+"(いいえを選択すると、該当するスクリプトがないスクリプトをスキップします)"
+
+#: bash\bash\basher.py:11906
+msgid "No changed or new scripts to import"
+msgstr "インポートすべき差異のある、もしくは新しいスクリプトはありませんでした"
+
+#: bash\bash\basher.py:11909
+msgid "Imported %d changed scripts from %s:"
+"%s"
+msgstr "%d個のスクリプトを%sからインポートしました: "
+"%s"
+
+#: bash\bash\basher.py:11913
+msgid "Imported %d new scripts from %s:"
+"%s"
+msgstr "新しいスクリプトとして、%d個を%sからインポートしました: "
+"%s"
+
+#: bash\bash\basher.py:11936
+msgid "_Stats.csv"
+msgstr ""
+
+#: bash\bash\basher.py:11940
+msgid "Export stats to"
+msgstr "アイテム性能情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:11945
+msgid "Export Stats"
+msgstr "アイテム性能情報をエクスポート"
+
+#: bash\bash\basher.py:11970
+msgid "Import item stats from a text file. This will replace existing stats and is not reversible!"
+msgstr "アイテム性能情報をテキストファイルからインポートします. この動作はesp内のアイテム性能情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:11979
+msgid "Import stats from"
+msgstr ""
+
+#: bash\bash\basher.py:11986
+msgid "Source file must be a Stats.csv file"
+msgstr "インポート元のデータはStats.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12002
+msgid "No relevant stats to import"
+msgstr "インポートできるアイテム性能情報がありません"
+
+#: bash\bash\basher.py:12005
+msgid "No changed stats to import"
+msgstr ""
+
+#: bash\bash\basher.py:12017
+msgid "Item Data"
+msgstr "アイテム情報"
+
+#: bash\bash\basher.py:12024
+msgid "_ItemData.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12028
+msgid "Export item data to"
+msgstr "アイテム情報ををCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12033
+msgid "Export Item Data"
+msgstr "アイテム情報ををエクスポート"
+
+#: bash\bash\basher.py:12058
+msgid "Import pretty much complete item data from a text file. This will replace existing data and is not reversible!"
+msgstr ""
+
+#: bash\bash\basher.py:12060
+msgid "Import Item Data"
+msgstr ""
+
+#: bash\bash\basher.py:12067
+msgid "Import item data from"
+msgstr ""
+
+#: bash\bash\basher.py:12074
+msgid "Source file must be a ItemData.csv file"
+msgstr "インポート元のデータはItemData.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12091
+msgid "No relevant data to import"
+msgstr "インポートできるデータがありません"
+
+#: bash\bash\basher.py:12095
+msgid "Imported Item Data:"
+"* %03d  %s:"
+""
+msgstr ""
+
+#: bash\bash\basher.py:12103
+msgid "Prices"
+msgstr "アイテムの価格"
+
+#: bash\bash\basher.py:12110
+msgid "_Prices.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12114
+msgid "Export prices to"
+msgstr "アイテムの価格情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12119
+msgid "Export Prices"
+msgstr "アイテムの価格情報をエクスポート"
+
+#: bash\bash\basher.py:12144
+msgid "Import item prices from a text file. This will replace existing prices and is not reversible!"
+msgstr "アイテムの価格情報をテキストファイルからインポートします. この動作はesp内のアイテムの価格情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:12146
+msgid "Import prices"
+msgstr "アイテムの価格情報をインポート"
+
+#: bash\bash\basher.py:12153
+msgid "Import prices from"
+msgstr "アイテムの価格情報をCSVファイルからインポートします"
+
+#: bash\bash\basher.py:12160
+msgid "Source file must be a Prices.csv file or esp/m"
+msgstr "インポート元のデータはPrices.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12164
+msgid "Import Prices"
+msgstr "アイテムの価格情報をインポート"
+
+#: bash\bash\basher.py:12180
+msgid "No relevant prices to import"
+msgstr "インポートできるアイテムの価格情報がありません"
+
+#: bash\bash\basher.py:12184
+msgid "Imported Prices:"
+"* %s: %d"
+""
+msgstr "アイテムの価格情報をインポートしました:"
+"* %s: %d"
+""
+
+#: bash\bash\basher.py:12192
+msgid "Map Markers"
+msgstr ""
+
+#: bash\bash\basher.py:12199
+msgid "_MapMarkers.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12203
+msgid "Export Map Markers to"
+msgstr "Map MarkerをCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12208
+msgid "Export Map Markers"
+msgstr "Map Markerをエクスポート"
+
+#: bash\bash\basher.py:12230
+msgid "Import Map Markers data from a text file. This will replace existing the data on map markers with the same editor ids and is not reversible!"
+msgstr "Map Marker情報をテキストファイルからインポートします. この動作はesp内のMap Marker情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:12232
+msgid "Import Map Markers"
+msgstr "Map Markerをインポート"
+
+#: bash\bash\basher.py:12239
+msgid "Import Map Markers from"
+msgstr "Map MarkerををCSVファイルからインポートします"
+
+#: bash\bash\basher.py:12246
+msgid "Source file must be a MapMarkers.csv file"
+msgstr "インポート元のデータはMapMarkers.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12259
+msgid "No relevant Map Markers to import"
+msgstr "インポートできるMap Marker情報がありません"
+
+#: bash\bash\basher.py:12273
+msgid "Cell Block Info"
+msgstr "Cellブロック情報"
+
+#: bash\bash\basher.py:12280
+msgid "CellBlockInfo.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12284
+msgid "Export Cell Block Info to"
+msgstr "Cellブロック情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12289
+msgid "Export Cell Block Info"
+msgstr "Cellブロック情報をエクスポート"
+
+#: bash\bash\basher.py:12306
+msgid "Sigil Stones"
+msgstr ""
+
+#: bash\bash\basher.py:12313
+msgid "_SigilStones.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12317
+msgid "Export Sigil Stone details to"
+msgstr "Sigil Stone詳細情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12321
+msgid "Export Sigil Stone details"
+msgstr "Sigil Stone詳細情報をエクスポート"
+
+#: bash\bash\basher.py:12345
+msgid "Import Sigil Stone details from a text file. This will replace existing the data on sigil stones with the same form ids and is not reversible!"
+msgstr "Sigil Stoneの詳細情報をテキストファイルからインポートします. この動作はesp内のSigil Stoneの詳細情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:12347
+msgid "Import Sigil Stones details"
+msgstr "Sigil Stone詳細情報をインポート"
+
+#: bash\bash\basher.py:12354
+msgid "Import Sigil Stone details from"
+msgstr "Sigil Stone詳細情報をCSVファイルからインポートします"
+
+#: bash\bash\basher.py:12361
+msgid "Source file must be a _SigilStones.csv file"
+msgstr "インポート元のデータはxxx_SigilStones.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12365
+msgid "Import Sigil Stone details"
+msgstr "Sigil Stone詳細情報をインポート"
+
+#: bash\bash\basher.py:12377
+msgid "No relevant Sigil Stone details to import"
+msgstr "インポートできるSigil Stone詳細情報がありません"
+
+#: bash\bash\basher.py:12396
+msgid "_Spells.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12400
+msgid "Export Spell details to"
+msgstr "Spell詳細情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12402
+msgid "Export flags and effects?"
+"(If not they will just be skipped)"
+msgstr "フラグとエフェクトもエクスポートしますか？(しない場合はスキップされます)"
+
+#: bash\bash\basher.py:12403
+msgid "Export Spells"
+msgstr "Spellをエクスポート"
+
+#: bash\bash\basher.py:12406
+msgid "Export Spell details"
+msgstr "Spell詳細情報をエクスポート"
+
+#: bash\bash\basher.py:12430
+msgid "Import Spell details from a text file. This will replace existing the data on spells with the same form ids and is not reversible!"
+msgstr "Spellの詳細情報をテキストファイルからインポートします. この動作はesp内のSpellの詳細情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:12432
+msgid "Import Spell details"
+msgstr "Spellの詳細情報をインポート"
+
+#: bash\bash\basher.py:12439
+msgid "Import Spell details from"
+msgstr "Spellの詳細情報をファイルからインポートします"
+
+#: bash\bash\basher.py:12442
+msgid "Import flags and effects?"
+"(If not they will just be skipped)"
+msgstr "フラグとエフェクトをインポートしますか？"
+"(インポートしない場合はスキップされます)"
+
+#: bash\bash\basher.py:12448
+msgid "Source file must be a _Spells.csv file"
+msgstr "インポート元のデータはxxx_Spells.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12464
+msgid "No relevant Spell details to import"
+msgstr "インポートできるSpellの詳細情報がありません"
+
+#: bash\bash\basher.py:12477
+msgid "Ingredients"
+msgstr ""
+
+#: bash\bash\basher.py:12484
+msgid "_Ingredients.csv"
+msgstr ""
+
+#: bash\bash\basher.py:12488
+msgid "Export Ingredient details to"
+msgstr "Ingredient詳細情報をCSVファイルにエクスポートします"
+
+#: bash\bash\basher.py:12492
+msgid "Export Ingredient details"
+msgstr "Ingredient詳細情報をエクスポート"
+
+#: bash\bash\basher.py:12516
+msgid "Import Ingredient details from a text file. This will replace existing the data on Ingredients with the same form ids and is not reversible!"
+msgstr "Ingredient情報をテキストファイルからインポートします. この動作はesp内のIngredient情報を書き換えてしまい、またインポートによる変化の巻き戻しもできません！"
+
+#: bash\bash\basher.py:12518
+msgid "Import Ingredients details"
+msgstr "Ingredient情報をインポート"
+
+#: bash\bash\basher.py:12525
+msgid "Import Ingredient details from"
+msgstr "Ingredient情報をインポートします"
+
+#: bash\bash\basher.py:12532
+msgid "Source file must be a _Ingredients.csv file"
+msgstr "インポート元のデータはxxx_Ingredients.csvというファイル名である必要があります"
+
+#: bash\bash\basher.py:12536
+msgid "Import Ingredient details"
+msgstr "Ingredient情報をインポート"
+
+#: bash\bash\basher.py:12548
+msgid "No relevant Ingredient details to import"
+msgstr "インポートできるIngredient情報がありません"
+
+#: bash\bash\basher.py:12560
+msgid "Undelete Refs"
+msgstr "削除したレファレンスを復帰"
+
+#: bash\bash\basher.py:12565
+msgid "Changes deleted refs to ignored. This is a very advanced feature and should only be used by modders who know exactly what they're doing"
+msgstr "レファレンスの削除を無効化します. 極めて上級向け機能ですので、この作業が何を意味するのかよく理解しているModderのみ使用してください"
+
+#: bash\bash\basher.py:12613
+msgid "Scan Mods"
+msgstr "MODをスキャン"
+
+#: bash\bash\basher.py:12614
+msgid "This is a report of records that where detected as either Identical To Master (ITM) or a deleted reference (UDR)."
+""
+msgstr "マスターと差異のないレコード(ITM)、もしくはレファレンスが削除されている(UDR)状態が検知されたレコードに関するレポートです."
+""
+
+#: bash\bash\basher.py:12639
+msgid "* UDR: %i"
+msgstr ""
+
+#: bash\bash\basher.py:12641
+msgid "* %s"
+msgstr ""
+
+#: bash\bash\basher.py:12644
+msgid "* ITM: %i"
+msgstr ""
+
+#: bash\bash\basher.py:12650
+msgid "Dirty Edit Scan Results"
+msgstr "好ましくない編集スキャンの結果"
+
+#: bash\bash\basher.py:12679
+msgid "About %s"
+msgstr "%sについて"
+
+#: bash\bash\basher.py:12687
+msgid "Enter profile name"
+msgstr "プロファイル名を入力してください"
+
+#: bash\bash\basher.py:12729
+msgid "Active profile cannot be removed"
+msgstr "アクティブなプロファイルは削除できません"
+
+#: bash\bash\basher.py:12735
+msgid "Delete profile %s and the %d save files it contains?"
+msgstr "プロファイル%sには%d個のセーブデータが含まれています. 削除しますか？"
+
+#: bash\bash\basher.py:12736
+msgid "Delete Profile"
+msgstr "プロファイルを削除"
+
+#: bash\bash\basher.py:12740
+msgid "Sanity check failed: No\"Fallout3\\Save\" in %s"
+msgstr ""
+
+#: bash\bash\basher.py:12759
+msgid "Edit Profiles"
+msgstr "プロファイルを編集"
+
+#: bash\bash\basher.py:12778
+msgid "Save Profiles"
+msgstr "プロファイルを保存"
+
+#: bash\bash\basher.py:12828
+msgid "Load Masters"
+msgstr "このセーブのマスターを現在のロードリストにする"
+
+#: bash\bash\basher.py:12847
+msgid "Import Face"
+msgstr "顔データのインポート"
+
+#: bash\bash\basher.py:12889
+msgid "No player (PC) faces found in %s"
+msgstr "%sにプレイヤーの顔データがありません"
+
+#: bash\bash\basher.py:12901
+msgid "Rename Player"
+msgstr "プレイヤー名を変更"
+
+#: bash\bash\basher.py:12907
+msgid "Enter new player name. E.g. Conan the Bold"
+msgstr "新しいプレイヤー名を入力してください"
+
+#: bash\bash\basher.py:12908
+msgid "Rename player"
+msgstr "プレイヤー名を変更します"
+
+#: bash\bash\basher.py:12920
+msgid "Export Screenshot"
+msgstr "スクリーンショットをエクスポート"
+
+#: bash\bash\basher.py:12926
+msgid "Save Screenshot as"
+msgstr "ファイル名をつけてスクリーンショットを保存"
+
+#: bash\bash\basher.py:12937
+msgid "Diff Masters"
+msgstr "現在のロードとの差分を表示"
+
+#: bash\bash\basher.py:12948
+msgid "Active Masters"
+msgstr "アクティブなマスター"
+
+#: bash\bash\basher.py:12957
+msgid "Masters are the same"
+msgstr "現在のロードリストと一致しています"
+
+#: bash\bash\basher.py:12962
+msgid "Removed Masters (%s):"
+"*"
+msgstr "現在のロードリストに欠けているMOD(%s):"
+"*"
+
+#: bash\bash\basher.py:12966
+msgid "Added Masters (%s):"
+"*"
+msgstr "セーブデータから増えているMOD(%s):"
+"*"
+
+#: bash\bash\basher.py:12989
+msgid "Re-number Save(s)"
+msgstr "セーブ番号を再ナンバリング"
+
+#: bash\bash\basher.py:12995
+msgid "Enter new number to start numbering the selected saves at"
+msgstr "選択したセーブのナンバリング開始番号を入力してください"
+
+#: bash\bash\basher.py:12996
+msgid "Save Number"
+msgstr "セーブ番号"
+
+#: bash\bash\basher.py:12996
+msgid "Re-number Saves"
+msgstr "セーブ番号を再ナンバリング"
+
+#: bash\bash\basher.py:13056
+msgid "Armor"
+"Flags"
+msgstr ""
+
+#: bash\bash\basher.py:13061
+msgid "Clothing"
+"Flags"
+msgstr ""
+
+#: bash\bash\basher.py:13083
+msgid "Name is too long"
+msgstr "その名前では長すぎます"
+
+#: bash\bash\basher.py:13086
+msgid "Name is already used"
+msgstr "その名前は既に使用されています"
+
+#: bash\bash\basher.py:13096
+msgid "No changes made"
+msgstr "何も変更されませんでした"
+
+#: bash\bash\basher.py:13108
+msgid "Names modified: %d"
+msgstr "名前を変更しました: %d"
+
+#: bash\bash\basher.py:13113
+msgid "Rename Enchanted"
+msgstr "Enchantアイテムをリネームする"
+
+#: bash\bash\basher.py:13113
+msgid "Rename Spells"
+msgstr "Spellをリネームする"
+
+#: bash\bash\basher.py:13113
+msgid "Rename Potions"
+msgstr "Potionをリネームする"
+
+#: bash\bash\basher.py:13142
+msgid "No items to edit"
+msgstr "編集する項目がありません"
+
+#: bash\bash\basher.py:13156
+msgid "Loading Masters"
+msgstr "マスターをロード中"
+
+#: bash\bash\basher.py:13194
+msgid "Delete Spells"
+msgstr "Spellを削除"
+
+#: bash\bash\basher.py:13202
+msgid "Player Spells"
+msgstr "プレイヤーが所持しているSpell"
+
+#: bash\bash\basher.py:13212
+msgid "Set Number of Uses for Weapon Enchantments"
+msgstr "Enchant武器の使用回数を設定"
+
+#: bash\bash\basher.py:13219
+msgid "Enter the number of uses you desire per recharge for all custom made enchantements."
+"(Enter 0 for unlimited uses)"
+msgstr "全ての自作Enchant武器について、設定したい使用回数を入力してください."
+"(ゼロを入力すると無制限で使用できるようになります)"
+
+#: bash\bash\basher.py:13219
+msgid "Number of Uses"
+msgstr "使用回数"
+
+#: bash\bash\basher.py:13271
+msgid "You can't move saves to the current profile!"
+msgstr "現在のプロファイルにセーブデータを移動することはできません！"
+
+#: bash\bash\basher.py:13280
+msgid "A file named %s already exists in %s. Overwrite it?"
+msgstr "%sというファイルは%sに既に存在します. 上書きしますか？"
+
+#: bash\bash\basher.py:13282
+msgid "Move File"
+msgstr "ファイルを移動しました"
+
+#: bash\bash\basher.py:13296
+msgid "%d files copied to %s"
+msgstr "%d個のファイルを「%s」にコピーしました"
+
+#: bash\bash\basher.py:13296
+msgid "Copy File"
+msgstr "ファイルを複製しました"
+
+#: bash\bash\basher.py:13303
+msgid "Repair Abomb"
+msgstr "遅延バグの修正"
+
+#: bash\bash\basher.py:13319
+msgid "Abomb counter is too low to reset"
+msgstr "リセットするには値が低すぎます"
+
+#: bash\bash\basher.py:13321
+msgid "Reset Abomb counter? (Current progress: %.0f%%.)"
+""
+"Note: Abomb animation slowing won't occur until progress is near 100%%"
+msgstr "遅延バグをリセットしますか？(進行度: %.0f%%)"
+""
+"注意: アニメーション遅延は、進行度が100%%に近くなるまで発生しません"
+
+#: bash\bash\basher.py:13325
+msgid "Abomb counter reset"
+msgstr "遅延バグをリセットしますか？"
+
+#: bash\bash\basher.py:13332
+msgid "Repair Factions"
+msgstr "Factionの修正"
+
+#: bash\bash\basher.py:13338
+msgid "This will (mostly) repair faction membership errors due to Wrye Bash v 105 bug and/or faction changes in underlying mods."
+""
+"WARNING! This repair is NOT perfect! Do not use it unless you have to!"
+msgstr "本機能でWrye Bash v105のバグなどによるFaction情報のエラーが(おおむね)修正されます."
+""
+"警告！この修正は * 不完全 * です！どうしてもの場合以外は実行しないでください！"
+
+#: bash\bash\basher.py:13339
+msgid "Update NPC Levels"
+msgstr "NPCのレベルをアップデートする"
+
+#: bash\bash\basher.py:13341
+msgid "Restore dropped factions too? WARNING: This may involve clicking through a LOT of yes/no dialogs"
+msgstr "欠落したFaction情報もリストアしますか？警告: はい/いいえのクリック地獄に陥る可能性があります"
+
+#: bash\bash\basher.py:13378
+msgid "NPC Factions Restored/UnNulled"
+msgstr "NPCのFactionを書き換えました"
+
+#: bash\bash\basher.py:13381
+msgid "Updating"
+msgstr "アップデート中"
+
+#: bash\bash\basher.py:13438
+msgid "Restore %s to %s faction?"
+msgstr "%sをFaction %sに復帰させますか？"
+
+#: bash\bash\basher.py:13465
+msgid "Repair Hair"
+msgstr "髪型の修正"
+
+#: bash\bash\basher.py:13474
+msgid "Hair repaired"
+msgstr "髪型を修正しました"
+
+#: bash\bash\basher.py:13476
+msgid "No repair necessary"
+msgstr "修正は必要ありません"
+
+#: bash\bash\basher.py:13483
+msgid "Reweigh Potions"
+msgstr "Potionの重量を変更する"
+
+#: bash\bash\basher.py:13490
+msgid "Set weight of all player potions to"
+msgstr "自作ポーションの重量を変更します"
+
+#: bash\bash\basher.py:13496
+msgid "Invalid weight: %f"
+msgstr "無効な重量です: %f"
+
+#: bash\bash\basher.py:13517
+msgid "Potions reweighed: %d"
+msgstr "Potionの重量を変更しました: %s"
+
+#: bash\bash\basher.py:13520
+msgid "No potions to reweigh!"
+msgstr "重量を変更できる項目がありません"
+
+#: bash\bash\basher.py:13527
+msgid "Statistics"
+msgstr "統計情報"
+
+#: bash\bash\basher.py:13538
+msgid "Calculating statistics"
+msgstr "統計情報を算出中"
+
+#: bash\bash\basher.py:13549
+msgid "fose Statistics"
+msgstr ""
+
+#: bash\bash\basher.py:13563
+msgid "fose"
+msgstr ""
+
+#: bash\bash\basher.py:13578
+msgid "Remove Bloat"
+msgstr "Bloatデータを削除する"
+
+#: bash\bash\basher.py:13587
+msgid "Scanning for Bloat"
+msgstr "Bloatをスキャン中"
+
+#: bash\bash\basher.py:13595
+msgid "No bloating found"
+msgstr "Bloatデータはありません"
+
+#: bash\bash\basher.py:13603
+msgid "Null Ref Objects: %s"
+""
+msgstr ""
+
+#: bash\bash\basher.py:13604
+msgid "Remove savegame bloating?"
+"%s"
+"WARNING: This is a risky procedure that may corrupt your savegame! Use only if necessary!"
+msgstr "セーブのBloatデータを削除しますか？"
+"%s"
+"警告: セーブデータが破損する危険性があります！どうしても必要な時のみ実行してください！"
+
+#: bash\bash\basher.py:13605
+msgid "Remove bloating?"
+msgstr "Bloatデータを削除しますか？"
+
+#: bash\bash\basher.py:13608
+msgid "Removing Bloat"
+msgstr "Bloatデータを削除中"
+
+#: bash\bash\basher.py:13610
+msgid "Saving"
+msgstr "保存中"
+
+#: bash\bash\basher.py:13614
+msgid "Uncreated Objects: %d"
+"Uncreated Refs: %d"
+"UnNulled Refs: %d"
+msgstr ""
+
+#: bash\bash\basher.py:13629
+msgid "This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods. This supercedes the older\"Import NPC Level\" command"
+msgstr "現在アクティブなMODからNPCレベルを反映し、選択したセーブのNPCを現在の環境にレベルを再調整します. これは旧「Import NPC Levels」コマンドの後継機能です"
+
+#: bash\bash\basher.py:13658
+msgid "NPCs Releveled"
+msgstr "NPCのレベルを再調整しました"
+
+#: bash\bash\basher.py:13699
+msgid ""
+""
+"Some mods had load errors and were skipped:"
+"*"
+msgstr ""
+""
+"読み込みエラーの発生したMODをスキップしました:"
+"*"
+
+#: bash\bash\basher.py:13709
+msgid "Next Shot"
+msgstr "次のスクリーンショット"
+
+#: bash\bash\basher.py:13717
+msgid "Screenshot base name, optionally with next screenshot number."
+"E.g. ScreenShot or ScreenShot_101 or Subdir\\ScreenShot_201"
+msgstr "スクリーンショットのベース名を入力してください. オプションとして、連番で次に作成される数値を付け足すことも可能です."
+"例: ScreenShot、ScreenShot_101、Subdir\\ScreenShot_201"
+
+#: bash\bash\basher.py:13744
+msgid "Convert to %s"
+msgstr "%sに変換"
+
+#: bash\bash\basher.py:13751
+msgid "Converting to %s"
+msgstr "%sに変換中"
+
+#: bash\bash\basher.py:13793
+msgid "Custom [%i]"
+msgstr "カスタム [%i]"
+
+#: bash\bash\basher.py:13796
+msgid "JPEG Quality"
+msgstr "JPEG品質"
+
+#: bash\bash\basher.py:13823
+msgid "Import Archives"
+msgstr "アーカイブをインポート"
+
+#: bash\bash\basher.py:13829
+msgid "Import message archive(s)"
+msgstr "メッセージアーカイブをインポートします"
+
+#: bash\bash\basher.py:13846
+msgid "Delete Messages"
+msgstr "メッセージを削除"
+
+#: bash\bash\basher.py:13862
+msgid "Add New Person"
+msgstr "新しい人物を追加"
+
+#: bash\bash\basher.py:13865
+msgid "Add new person"
+msgstr "新しい人物を追加"
+
+#: bash\bash\basher.py:13868
+msgid "already exists"
+msgstr "既に存在しています"
+
+#: bash\bash\basher.py:13879
+msgid "Export"
+msgstr "エクスポート"
+
+#: bash\bash\basher.py:13881
+msgid "Export People"
+msgstr "人物をエクスポート"
+
+#: bash\bash\basher.py:13886
+msgid "Export people to text file"
+msgstr "ファイル名をつけて人物を保存します"
+
+#: bash\bash\basher.py:13891
+msgid "Records exported: %d"
+msgstr "人物をエクスポートしました: %d"
+
+#: bash\bash\basher.py:13900
+msgid "Import People"
+msgstr "人物をインポート"
+
+#: bash\bash\basher.py:13905
+msgid "Import people from text file"
+msgstr "テキストファイルから人物をインポートします"
+
+#: bash\bash\basher.py:13910
+msgid "People imported: %d"
+msgstr "人物をインポートしました: %d"
+
+#: bash\bash\basher.py:13944
+msgid "Change to"
+msgstr "変更"
+
+#: bash\bash\basher.py:13954
+msgid "Change master name to"
+msgstr "マスターファイルを変更します"
+
+#: bash\bash\basher.py:14084
+msgid "Used Path: %s"
+msgstr ""
+
+#: bash\bash\basher.py:14085
+msgid "Used Arguments"
+msgstr ""
+
+#: bash\bash\basher.py:14243
+msgid "Executing BOSS"
+msgstr "BOSSを実行中"
+
+#: bash\bash\basher.py:14246
+msgid "Processing... deghosting mods"
+msgstr "処理中...MODを非Ghost化しています"
+
+#: bash\bash\basher.py:14267
+msgid "Processing... launching BOSS"
+msgstr "処理中...BOSSを起動しています"
+
+#: bash\bash\basher.py:14310
+msgid "FOSE Disabled"
+msgstr ""
+
+#: bash\bash\basher.py:14310
+msgid "FOSE Enabled"
+msgstr ""
+
+#: bash\bash\basher.py:14348
+msgid "Auto-Quit Disabled"
+msgstr "ゲーム起動時の自動Wrye Bash終了が無効になっています"
+
+#: bash\bash\basher.py:14348
+msgid "Auto-Quit Enabled"
+msgstr "ゲーム起動時の自動Wrye Bash終了が有効になっています"
+
+#: bash\bash\basher.py:14368
+msgid "Help File"
+msgstr "ヘルプファイル"
+
+#: bash\bash\basher.py:14518
+msgid "Launch Fallout3"
+msgstr ""
+
+#: bash\bash\basher.py:14519
+msgid "Launch Fallout3 + FOSE"
+msgstr ""
+
+#: bash\bash\basher.py:14525
+msgid "Launch GECK"
+msgstr ""
+
+#: bash\bash\basher.py:14526
+msgid "Launch GECK + FOSE"
+msgstr ""
+
+#: bash\bash\basher.py:14532
+msgid "Launch FOMM"
+msgstr ""
+
+#: bash\bash\basher.py:14537
+msgid "Launch InsanitySorrow's Oblivion Launcher"
+msgstr "InsanitySorrow's Oblivion Launcherを起動"
+
+#: bash\bash\basher.py:14542
+msgid "Launch InsanitySorrow's Readme Generator"
+msgstr "InsanitySorrow's Readme Generatorを起動"
+
+#: bash\bash\basher.py:14547
+msgid "Launch InsanitySorrow's Random Name Generator"
+msgstr "InsanitySorrow's Random Name Generatorを起動"
+
+#: bash\bash\basher.py:14552
+msgid "Launch InsanitySorrow's Random NPC Generator"
+msgstr "InsanitySorrow's Random NPC Generatorを起動"
+
+#: bash\bash\basher.py:14557
+msgid "Oblivion Face Exchange Lite"
+msgstr ""
+
+#: bash\bash\basher.py:14562
+msgid "Oblivion Mod List Generator"
+msgstr ""
+
+#: bash\bash\basher.py:14572
+msgid "Launch BSA Commander"
+msgstr "BSA Commanderを起動"
+
+#: bash\bash\basher.py:14577
+msgid "Launch Tabula"
+msgstr "Tabulaを起動"
+
+#: bash\bash\basher.py:14612
+msgid "Launch FO3Edit"
+msgstr ""
+
+#: bash\bash\basher.py:14617
+msgid "Launch MasterUpdate"
+msgstr ""
+
+#: bash\bash\basher.py:14622
+msgid "Launch MasterRestore"
+msgstr ""
+
+#: bash\bash\basher.py:14633
+msgid "Launch BOSS"
+msgstr "BOSSを起動"
+
+#: bash\bash\basher.py:14639
+msgid "Launch AutoCad"
+msgstr "AutoCadを起動"
+
+#: bash\bash\basher.py:14644
+msgid "Launch Blender"
+msgstr "Blenderを起動"
+
+#: bash\bash\basher.py:14649
+msgid "Launch Dogwaffle"
+msgstr "Dogwaffleを起動"
+
+#: bash\bash\basher.py:14654
+msgid "Launch Gmax"
+msgstr "Gmaxを起動"
+
+#: bash\bash\basher.py:14659
+msgid "Launch Maya"
+msgstr "Mayaを起動"
+
+#: bash\bash\basher.py:14664
+msgid "Launch 3dsMax"
+msgstr "3dsMaxを起動"
+
+#: bash\bash\basher.py:14669
+msgid "Launch Milkshape 3D"
+msgstr "Milkshape 3Dを起動"
+
+#: bash\bash\basher.py:14674
+msgid "Launch Mudbox"
+msgstr "Mudboxを起動"
+
+#: bash\bash\basher.py:14679
+msgid "Launch Sculptris"
+msgstr "Sculptrisを起動"
+
+#: bash\bash\basher.py:14684
+msgid "Launch Softimage Mod Tool"
+msgstr "Softimage Mod Toolを起動"
+
+#: bash\bash\basher.py:14689
+msgid "Launch SpeedTree"
+msgstr "SpeedTreeを起動"
+
+#: bash\bash\basher.py:14694
+msgid "Launch Tree\[d\]"
+msgstr "Tree\[d\]を起動"
+
+#: bash\bash\basher.py:14699
+msgid "Launch Wings 3D"
+msgstr "Wings 3Dを起動"
+
+#: bash\bash\basher.py:14705
+msgid "Launch Nifskope"
+msgstr "Nifskopeを起動"
+
+#: bash\bash\basher.py:14711
+msgid "Launch AniFX"
+msgstr "AniFXを起動"
+
+#: bash\bash\basher.py:14716
+msgid "Launch Art Of Illusion"
+msgstr "Art Of Illusionを起動"
+
+#: bash\bash\basher.py:14721
+msgid "Launch Artweaver"
+msgstr "Artweaverを起動"
+
+#: bash\bash\basher.py:14726
+msgid "Launch CrazyBump"
+msgstr "CrazyBumpを起動"
+
+#: bash\bash\basher.py:14731
+msgid "Launch DDSConverter"
+msgstr "DDSConverterを起動"
+
+#: bash\bash\basher.py:14736
+msgid "Launch DeepPaint"
+msgstr "DeepPaintを起動"
+
+#: bash\bash\basher.py:14741
+msgid "Launch FastStone Image Viewer"
+msgstr "FastStone Image Viewerを起動"
+
+#: bash\bash\basher.py:14746
+msgid "Launch Genetica"
+msgstr "Geneticaを起動"
+
+#: bash\bash\basher.py:14751
+msgid "Launch Genetica Viewer"
+msgstr "Genetica Viewerを起動"
+
+#: bash\bash\basher.py:14756
+msgid "Launch GIMP"
+msgstr "GIMPを起動"
+
+#: bash\bash\basher.py:14761
+msgid "Launch GIMP Shop"
+msgstr "GIMP Shopを起動"
+
+#: bash\bash\basher.py:14766
+msgid "Launch IcoFX"
+msgstr "IcoFXを起動"
+
+#: bash\bash\basher.py:14771
+msgid "Launch Inkscape"
+msgstr "Inkscapeを起動"
+
+#: bash\bash\basher.py:14776
+msgid "Launch IrfanView"
+msgstr "IrfanViewを起動"
+
+#: bash\bash\basher.py:14781
+msgid "Launch MaPZone"
+msgstr "MaPZoneを起動"
+
+#: bash\bash\basher.py:14786
+msgid "Launch MyPaint"
+msgstr "MyPaintを起動"
+
+#: bash\bash\basher.py:14791
+msgid "Launch Nvidia Melody"
+msgstr "Nvidia Melodyを起動"
+
+#: bash\bash\basher.py:14796
+msgid "Launch Paint.NET"
+msgstr "Paint.NETを起動"
+
+#: bash\bash\basher.py:14801
+msgid "Launch PaintShop Photo Pro"
+msgstr "PaintShop Photo Proを起動"
+
+#: bash\bash\basher.py:14806
+msgid "Launch Photoshop"
+msgstr "Photoshopを起動"
+
+#: bash\bash\basher.py:14811
+msgid "Launch PhotoScape"
+msgstr "PhotoScapeを起動"
+
+#: bash\bash\basher.py:14816
+msgid "Launch PhotoSEAM"
+msgstr "PhotoSEAMを起動"
+
+#: bash\bash\basher.py:14821
+msgid "Launch Photobie"
+msgstr "Photobieを起動"
+
+#: bash\bash\basher.py:14826
+msgid "Launch PhotoFiltre"
+msgstr "PhotoFiltreを起動"
+
+#: bash\bash\basher.py:14831
+msgid "Launch Pixel Studio Pro"
+msgstr "Pixel Studio Proを起動"
+
+#: bash\bash\basher.py:14836
+msgid "Launch Pixia"
+msgstr "Pixiaを起動"
+
+#: bash\bash\basher.py:14841
+msgid "Launch TextureMaker"
+msgstr "TextureMakerを起動"
+
+#: bash\bash\basher.py:14846
+msgid "Launch TwistedBrush"
+msgstr "TwistedBrushを起動"
+
+#: bash\bash\basher.py:14851
+msgid "Launch Windows Texture Viewer"
+msgstr "Windows Texture Viewerを起動"
+
+#: bash\bash\basher.py:14856
+msgid "Launch xNormal"
+msgstr "xNormalを起動"
+
+#: bash\bash\basher.py:14861
+msgid "Launch XnView"
+msgstr "XnViewを起動"
+
+#: bash\bash\basher.py:14867
+msgid "Launch Audacity"
+msgstr "Audacityを起動"
+
+#: bash\bash\basher.py:14872
+msgid "Launch ABC Amber Audio Converter"
+msgstr "ABC Amber Audio Converterを起動"
+
+#: bash\bash\basher.py:14877
+msgid "Launch Switch"
+msgstr "Switchを起動"
+
+#: bash\bash\basher.py:14882
+msgid "Launch Fraps"
+msgstr "Frapsを起動"
+
+#: bash\bash\basher.py:14887
+msgid "Interactive Map of Cyrodiil and Shivering Isles"
+msgstr ""
+
+#: bash\bash\basher.py:14892
+msgid "Launch LogitechKeyboard"
+msgstr "LogitechKeyboardを起動"
+
+#: bash\bash\basher.py:14897
+msgid "Launch MediaMonkey"
+msgstr "MediaMonkeyを起動"
+
+#: bash\bash\basher.py:14902
+msgid "Launch Notepad++"
+msgstr "Notepad++を起動"
+
+#: bash\bash\basher.py:14907
+msgid "Launch Steam"
+msgstr "Steamを起動"
+
+#: bash\bash\basher.py:14912
+msgid "Launch EVGA Precision"
+msgstr "EVGA Precisionを起動"
+
+#: bash\bash\basher.py:14917
+msgid "Launch WinMerge"
+msgstr "WinMergeを起動"
+
+#: bash\bash\basher.py:14922
+msgid "Launch FreeMind"
+msgstr "FreeMindを起動"
+
+#: bash\bash\basher.py:14927
+msgid "Launch Freeplane"
+msgstr "Freeplaneを起動"
+
+#: bash\bash\basher.py:14932
+msgid "Launch FileZilla"
+msgstr "FileZillaを起動"
+
+#: bash\bash\basher.py:14937
+msgid "Launch Egg Translator"
+msgstr "Egg Translatorを起動"
+
+#: bash\bash\basher.py:14942
+msgid "Launch RAD Video Tools"
+msgstr "RAD Video Toolsを起動"
+
+#: bash\bash\basher.py:14947
+msgid "Launch WinSnap"
+msgstr "WinSnapを起動"
+
+#: bash\bash\basher.py:15007
+msgid "Launch BashMon"
+msgstr "BashMonを起動"
+
+#: bash\bash\basher.py:15016
+msgid "Sort by"
+msgstr "ソート"
+
+#: bash\bash\basher.py:15102
+msgid "Open at"
+msgstr "ブラウザで開く"
+
+#: bash\bash\basher.py:15133
+msgid "Conversions"
+msgstr "コンバート"
+
+#: bash\bash\basher.py:15203
+msgid "Load"
+msgstr "ロードリスト"
+
+#: bash\bash\basher.py:15344
+msgid "Mod Cleaning"
+msgstr "MODクリーニング"
+
+#: bash\bash\basher.py:15382
+msgid "Profile"
+msgstr "プロファイル"
+
+#: bash\bash\basher.py:15416
+msgid "Copy To"
+msgstr "コピー"
+
+#: bash\bash\basher.py:15561
+msgid "Settings"
+msgstr "設定情報"
+
+#: bash\bash\bashmon.py:255
+msgid "exists and is not a save file"
+msgstr "は存在しますがセーブファイルではありません"
+
+#: bash\bash\bashmon.py:257
+msgid "is not a save file"
+msgstr "はセーブファイルではありません"
+
+#: bash\bash\bashmon.py:287
+msgid "Bashmon stopped"
+msgstr "Bashmonが停止しました"
+
+#: bash\bash\bashmon.py:291
+msgid "Fallout.ini is busy"
+msgstr ""
+
+#: bash\bash\belt.py:41
+msgid "Extra arguments to '%s'"
+msgstr ""
+
+#: bash\bash\belt.py:42
+msgid "Missing arguments to '%s'"
+msgstr ""
+
+#: bash\bash\belt.py:43
+msgid "Unexpected '%s'"
+msgstr ""
+
+#: bash\bash\belt.py:81
+msgid "Installer Wizard"
+msgstr "インストールウィザードを開始"
+
+#: bash\bash\belt.py:406
+msgid "The installer script has finished, and will apply the following settings"
+msgstr "インストーラスクリプトが完了しました. 以下の設定を適用します"
+
+#: bash\bash\belt.py:414
+msgid "Esp/ms"
+msgstr "esp/esm"
+
+#: bash\bash\belt.py:438
+msgid "Ini Tweaks"
+msgstr "INI Tweaks"
+
+#: bash\bash\belt.py:461
+msgid "Apply these selections"
+msgstr "この選択を適用する"
+
+#: bash\bash\belt.py:467
+msgid "Install this package"
+msgstr "このパッケージをインストールする"
+
+#: bash\bash\belt.py:543
+msgid "WARNING: The following version requirements are not met for using this installer"
+msgstr "警告: 以下のファイルのバージョンが一致しません"
+
+#: bash\bash\belt.py:547
+msgid "Version Requirements"
+msgstr "要求バージョン"
+
+#: bash\bash\belt.py:552
+msgid "Need"
+msgstr "必要なバージョン"
+
+#: bash\bash\belt.py:553
+msgid "Have"
+msgstr "現在のバージョン"
+
+#: bash\bash\belt.py:597
+msgid "Install anyway"
+msgstr "気にせずインストールする"
+
+#: bash\bash\belt.py:914
+msgid "Could not open wizard file"
+msgstr "ウィザードファイルを開けませんでした"
+
+#: bash\bash\belt.py:924
+msgid "An error occured in the wizard script:"
+" Line:\t%s"
+" Error:\t%s"
+msgstr "ウィザードスクリプトにエラーが発生しました:"
+" 行:\t%s"
+" エラー:\t%s"
+
+#: bash\bash\belt.py:927
+msgid "An unhandled error occured while parsing the wizard:"
+" Line(%s):\t%s"
+""
+""
+msgstr "ウィザード展開中にエラーが発生しました:"
+" 行(%s):\t%s"
+""
+""
+
+#: bash\bash\belt.py:1333
+msgid "Invalid syntax for 'For' statement.  Expected format:"
+" For var_name in Subpackages"
+" For var_name in subpackage_name"
+msgstr "「For」行のシンタックスが無効です. 以下の書式でなくてはいけません: "
+"For var_name in Subpackages"
+"For var_name in subpackage_name"
+
+#: bash\bash\belt.py:1340
+msgid "Subpackage '%s' does not exist"
+msgstr "サブパッケージ「%s」が存在しません"
+
+#: bash\bash\belt.py:1342
+msgid "SubPackage '%s' does not exist"
+msgstr "サブパッケージ「%s」が存在しません"
+
+#: bash\bash\belt.py:1503
+msgid "Sub-package '%s' is not a part of the installer"
+msgstr "サブパッケージ「%s」はインストーラの一部ではありません"
+
+#: bash\bash\belt.py:1518
+msgid "Espm '%s' is not a part of the installer"
+msgstr "ファイル「%s」はインストーラの一部ではありません"
+
+#: bash\bash\belt.py:1530
+msgid "Cannot rename %s to %s: the extensions must match"
+msgstr "%sを%sにリネームできません: 拡張子を一致させてください"
+
+#: bash\bash\belt.py:1594
+msgid "Version '%s' expected in format 'x.x.x.x'"
+msgstr "バージョン「%s」は「x.x.x.x」形式であることが望まれます"
+
+#: bash\bash\belt.py:1610
+msgid "No reason given"
+msgstr "理由不明"
+
+#: bash\bash\belt.py:1611
+msgid "The installer wizard was canceled"
+msgstr "インストールウィザードを中止しました"
+
+#: bash\bash\bosh.py:12194
+msgid "Following mods have a TES4 version that isn't recognized as one of the standard versions (1.30, 1.32, 1.33 and 1.34).  It is untested what effect this can have on the game, but presumably Fallout New Vegas will refuse to load anything above 1.34"
+msgstr "笏慊ｬﾃ氾ｲﾃ懌莫ﾂｽﾃ氾ｲﾃｦ笏慊ｮﾃ氾ｲﾃ｡MOD笏慊ｮﾃ氾ｲﾃ俄莫ﾂｬ笏愿ｸ笏愿づ氾ｲﾂｮ笏懌筈I笏慊ｮﾃ氾ｲﾃ弋ES4笏愿ｳo笏懌幅[笏愿ｳW笏愿ｳ笏慊ｺ笏愿ｳ笏懌筈(1.30, 1.32, 1.33 笏慊ｮ笏ｬ笏絶莫ﾂｮ笏ｬﾃ≫莫ﾂｮ笏愿ｼE1.34)笏慊ｮﾃ氾ｲﾃ｡笏慊ｮ笏懌狽笏慊ｮ笏ｬﾂｮ笏慊ｮ笏愿ｸ笏慊ｮﾃ氾ｲﾃｶ笏慊ｮ笏愿ｴ笏慊ｿY笏懌筈笏懌風笏慊ｮ笏愿ｼEﾂｮﾃ氾ｲﾃ懌莫ﾂｮ笏懌狽笏愿ｳo笏懌幅[笏愿ｳW笏愿ｳ笏慊ｺ笏愿ｳ笏懌筈笏慊ｮ笏ｬﾂ｡笏懌淵L笏慊ｮ笏愿ｼEﾂｮﾃ氾ｶﾃ・莫ﾂｮ笏懌狽笏慊ｮﾃ氾ｻﾃｼEﾂｮ笏愿・ 笏愿ｳQ笏懌幅[笏愿ｳ笏愿ｼEﾂｮﾃ氾ｲﾃｶ笏慊ｮ笏愿｢笏慊ｮﾃ氾ｲﾃ｡笏慊ｮ笏ｬﾃ≫莫ﾂｮ笏懌亦笏慊ｮﾃ氾ｲﾃ懌莫ﾂｽe笏慊ｻﾃ氾ｶﾃ俄莫ﾂｮ笏ｬﾂ｡笏慊ｻy笏慊ｮﾃ氾ｶﾃｮ笏慊ｮ笏愿・莫ﾂｮ笏ｬﾂｫ笏慊ｮﾃ氾ｲﾃ俄莫笆都笏懌風笏ｬﾃ鯛莫ﾂｮﾃ氾ｶ笊昶莫ﾂｮ笏愿・莫ﾂｮ笏ｬﾂｼ笏懌幅A1.34笏慊ｮ笏ｬﾃ≫莫ﾂｮ笏愿冷莫ﾂｪ笏愿ｲ笏慊ｮ笏ｬﾂ｢笏慊ｮ笏懌狽笏愿ｫ笏愿や莫ﾃｼE笏慊ｮﾃ氾ｲﾃ｡笏慊ｮ笏愿ｴ笏慊ｮﾃ氾ｲﾃ｡笏慊ｮﾃ氾ｲﾃ宇alloutNV笏慊ｮ笏ｬﾂｼ笏愿ｳ笏慊ｼ笏懌幅[笏愿ｳh笏慊ｮ笏ｬﾂ｡笏慊ｻ笏慊ｪ笏愿づ氾ｻﾃｪ笏慊ｮ笏愿・莫ﾂｮ笏愿懌莫ﾂｽﾃ氾ｶﾂｼ笏愿・笏愿ｫ笏ｬﾂ｢笏慊ｮ笏ｬﾂｼ笏慊ｮ笏愿ｭ笏慊ｮ笏愿冷莫ﾂｮﾃ氾ｻﾃｼEﾂｮ笏愿・"
+
+#: bash\bash\basher.py:4893
+msgid "It appears that the current user doesn't have permissions for some or all of the files in Fallout New Vegas\\Data."
+"Specifically had permission denied to change the time on:"
+"%s"
+msgstr "笏慊ｫﾃ氾ｲﾃｹ笏慊ｼ笏ｬﾂｪ笏慊ｮﾃ氾ｲﾃ｡笏愿ｳ笏愿鯛莫笊拏笏愿ｳU笏慊ｮﾃ氾ｲﾃ俄莫ﾂｮ笏懌狽笏慊ｮ笏ｬﾃｭ笏慊ｮﾃ氾ｶﾂｼ笏慊ｮ笏ｬﾂｫ笏慊ｮﾃ氾ｲﾃ｡笏懌幅A笏慊ｮ笏愿ｭ笏慊ｮ笏愿懌莫ﾂｮ笏懌狽笏慊ｮﾃ氾ｲﾃ俄莫ﾂｪS笏慊ｮﾃ氾ｶﾃ・莫ﾂｮﾃ氾ｲﾃ｡笏愿ｳt笏愿ｳ@笏愿ｳC笏愿ｳ笏慊ｻ笏慊ｮﾃ氾ｲﾃｶ笏慊ｪﾃ氾ｲﾂｼ笏慊ｮ笏愿・莫ﾂｮ笏愿懌莫ﾃｳA笏愿ｳN笏愿ｳZ笏愿ｳX笏慊ｫ笏愿ｭ笏慊ｮ笏ｬﾂｼ笏慊ｮﾃ氾ｲﾃ懌莫ﾂｮ笏懌狽笏慊ｮ笏ｬﾃ≫莫ﾂｮ笏懌亦笏慊ｮﾃ氾ｶ笊昶莫ﾂｮ笏愿・ Fallout New Vegas\\Data"
+"笏愿ｼEﾃ鯛莫ﾂｮﾃ氾ｶ笊昶莫ﾂｮ笏愿ｴ笏愿ｳ^笏愿ｳC笏愿ｳ笏愿ｼEﾃｳX笏愿ｳ^笏愿ｳ笏懌筈笏愿ｳv笏懌俣笏ｬﾃｱ笏慊ｼX笏慊ｮ笏ｬﾂｼ笏慊ｻ笏慊ｪ笏愿づ氾ｻﾃｪ笏慊ｮﾃ氾ｶﾃｩ笏慊ｮ笏愿ｸ笏慊ｮﾃ氾ｻﾃｼEﾂｮ笏愿ｼEﾂｮ笏ｬﾃｳ: "
+"%s"
+msgstr ""
+
+#: bash\bash\basher.py:7829
+msgid "Export list of allowed/disallowed NVSE plugin dlls"
+msgstr "笏慊ｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏懌幅E笏愿や溌笆停莫ﾂｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏慊ｮﾃ氾ｲﾃ｡NVSE Plugin DLL笏愿ｳ笏慊ｿ笏愿ｳX笏愿ｳg笏慊ｮ笏ｬﾂ｡笏愿ｳG笏愿ｳN笏愿ｳX笏愿ｳ|笏懌幅[笏愿ｳg"
+
+#: bash\bash\basher.py:7836
+msgid "Export list of allowed/disallowed NVSE plugin dlls to"
+msgstr "笏慊ｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏懌幅E笏愿や溌笆停莫ﾂｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏慊ｮﾃ氾ｲﾃ｡NVSE Plugin DLL笏愿ｳ笏慊ｿ笏愿ｳX笏愿ｳg笏慊ｮ笏ｬﾂ｡笏愿ｳG笏愿ｳN笏愿ｳX笏愿ｳ|笏懌幅[笏愿ｳg笏慊ｮ笏愿ｼEﾂｮﾃ氾ｻﾃｼEﾂｮ笏愿・"
+msgstr ""
+
+#: bash\bash\basher.py:7861
+msgid "Import list of allowed/disallowed NVSE plugin dlls"
+msgstr "笏慊ｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏懌幅E笏愿や溌笆停莫ﾂｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏慊ｮﾃ氾ｲﾃ｡NVSE Plugin DLL笏愿ｳ笏慊ｿ笏愿ｳX笏愿ｳg笏慊ｮ笏ｬﾂ｡笏愿ｳC笏愿ｳ笏懌筈笏愿ｳ|笏懌幅[笏愿ｳg"
+
+#: bash\bash\basher.py:7868
+msgid "Import list of allowed/disallowed NVSE plugin dlls from"
+msgstr "笏慊ｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏懌幅E笏愿や溌笆停莫ﾂｻ笏懌風笏慊ｽﾃ氾ｶﾂｼ笏慊ｮﾃ氾ｲﾃ｡NVSE Plugin DLL笏愿ｳ笏慊ｿ笏愿ｳX笏愿ｳg笏慊ｮ笏ｬﾂ｡笏愿ｳC笏愿ｳ笏懌筈笏愿ｳ|笏懌幅[笏愿ｳg笏慊ｮ笏愿ｼEﾂｮﾃ氾ｻﾃｼEﾂｮ笏愿・"
+msgstr ""
+msgstr ""
+
+#: bash\bash\basher.py:9834
+msgid "FNVEdit Expert"
+msgstr "FNVEdit笏慊ｻN笏懌筈笏ｬﾂｽ笏愿ｼEﾃｹ笏慊ｮﾃ氾ｲﾃｶ笏懌幅u笏慊ｿm笏愿・笏慊ｽ笏ｬﾃ≫莫笊療氾ｲﾂｮ笏愿ｳX笏愿ｳL笏愿ｳb笏愿ｳv笏懌幅v笏慊ｬ笏ｬ笆鯛莫ﾃｫ笏愿や莫ﾂｮ笏ｬﾂ｡笏懌筈n笏慊ｮ笏愿・"
+msgstr ""
+
+#: bash\bash\basher.py:11740
+msgid "Version 1.32"
+msgstr "Version 1.32笏慊ｽﾃ氾ｲﾃｼE"
+
+#: bash\bash\basher.py:11746
+msgid "WARNING! For advanced modders only! This feature allows you to edit newer official mods in the GECK by resetting the internal file version number back to 1.32. While this will make the mod editable, it may also break the mod in some way"
+msgstr "笏慊ｫx笏慊ｼ笏愿ｫ笏懌幅I笏愿ｼEﾃ・莫ﾂｻ笏慊ｽModder笏慊ｫ笏ｬ笏や莫ﾂｮ笏ｬ笊冷莫ﾂｻ@笏愿・笏慊ｮﾃ氾ｶ笊昶莫ﾂｮ笏愿・莫笊扞"
+""
+"笏慊ｮﾃ氾ｻﾃ・莫ﾂｮﾃ氾ｲﾃ｡笏慊ｻ@笏愿・笏慊ｮﾃ氾ｶ笊昶莫ﾂｮﾃ氾ｲﾃ俄莫ﾃｳt笏愿ｳ@笏愿ｳC笏愿ｳ笏慊ｻ笏慊ｮﾃ氾ｲﾃ｡笏懌筈笏愿ｴ笏懌俣笏愿や莫ﾃｳo笏懌幅[笏愿ｳW笏愿ｳ笏慊ｺ笏愿ｳ笏懌筈笏慊ｮ笏ｬﾂ｡1.32笏慊ｮﾃ氾ｲﾃｶ笏愿ｳ笏慊ｿ笏愿ｳZ笏愿ｳb笏愿ｳg笏慊ｮ笏愿・莫ﾂｮ笏愿懌莫ﾂｮﾃ氾ｻﾃ・莫ﾂｮ笏愿ｺ笏慊ｮﾃ氾ｲﾃｶ笏慊ｮ笏ｬﾃ≫莫ﾂｮ笏愿冷莫笊戡笏慊ｫﾃ氾ｶﾂ｣笏慊ｮ笏懌狽GECK笏慊ｮﾃ氾ｶ笊昶莫笆凪莫ﾃｨ笏愿ｼE笏慊ｮﾃ氾ｶ笊昶莫ﾂｮ笏ｬﾂ｢笏慊ｮ笏愿懌莫ﾂｮ笏ｬﾃ≫莫ﾂｮ笏懌亦笏慊ｮﾃ氾ｲﾃｶ笏慊ｮﾃ氾ｲﾃ懌莫ﾂｮ笏愿冷莫ﾂｮﾃ氾ｻﾃｼEﾂｮ笏愿・ MOD笏慊ｮ笏ｬﾂｼ笏愿Ｋ笏慊ｪﾃ氾ｲﾃｺ笏慊ｮ笏愿・莫ﾂｮ笏愿懌莫ﾂｽﾃ氾ｶﾂｼ笏愿・笏愿ｫ笏ｬﾂ｢笏慊ｮ笏ｬﾂｼ笏慊ｮ笏愿ｭ笏慊ｮ笏愿冷莫ﾂｮﾃ氾ｻﾃｼEﾂｮ笏愿・"
