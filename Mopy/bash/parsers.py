@@ -1385,19 +1385,33 @@ class ItemStats:
     def __init__(self,types=None,aliases=None):
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        self.attr_type = {'eid':self.sstr,
-                          'weight':self.sfloat,
-                          'value':self.sint,
-                          'damage':self.sint,
-                          'speed':self.sfloat,
-                          'enchantPoints':self.sint,
-                          'health':self.sint,
-                          'strength':self.sint,
-                          'duration':self.sint,
-                          'quality':self.sfloat,
-                          'uses':self.sint,
-                          'reach':self.sfloat,
-                          'armorRating':self.sint,}
+        if bush.game.fsName == u'Skyrim':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'armorRating':self.sint,
+                              'duration':self.sint,
+                              'speed':self.sfloat,
+                              'reach':self.sfloat,
+                              'stagger':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'critDamage':self.sint,
+                              'criticalMultiplier':self.sfloat,
+                              'criticalEffect':self.sint,}
+        elif bush.game.fsName == u'Oblivion':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'speed':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'health':self.sint,
+                              'strength':self.sint,
+                              'duration':self.sint,
+                              'quality':self.sfloat,
+                              'uses':self.sint,
+                              'reach':self.sfloat,}
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
 
