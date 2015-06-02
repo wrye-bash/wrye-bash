@@ -279,7 +279,7 @@ class PatchFile(_PFile, ModFile):
         selfLoadFactoryAddClass = self.loadFactory.addClass
         nullFid = (GPath(bosh.modInfos.masterName),0)
         for blockType,block in modFile.tops.iteritems():
-            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
+            iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             #--Make sure block type is also in read and write factories
             if blockType not in selfLoadFactoryRecTypes:
                 recClass = selfMergeFactoryType_class[blockType]
@@ -440,7 +440,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                       'ACRES','REFRS']
 
         iiModeSet = {u'InventOnly', u'IIM'}
-        levelLists = {'LVLC', 'LVLI', 'LVSP'}
+        levelLists = bush.game.listTypes
         nullProgress = Progress()
 
         infos = bosh.modInfos
