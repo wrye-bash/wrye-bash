@@ -22,21 +22,18 @@
 #
 # =============================================================================
 
-"""This module contains the skyrim record classes. Ripped from skyrim.py"""
+"""This module contains the fallout3 record classes"""
 import re
 import struct
 import itertools
 from ...bolt import Flags, sio, DataDict, encode, GPath, struct_unpack, \
     struct_pack
-from ...brec import MelRecord, MelStructs, \
-    MelObject, MelGroups, MelStruct, FID, MelGroup,MelString, \
-    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
-    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
-    MelCountedFids, MelSortedFidList, MelStrings, MelFull0, MelTuple
+    MreGmstBase, MelStrings, MelFull0, MelTuple
 from ...bass import null1, null2, null3, null4
 from ... import bush
-from constants import allConditions, fid1Conditions, fid2Conditions
 from operator import attrgetter
 from ...exception import BoltError, ModError, ModSizeError, StateError
 
@@ -102,12 +99,12 @@ class MelConditions(MelStructs):
         unpacked1 = ins.unpack('=B3sfH2s',12,readId)
         (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
         #--Get parameters
-        if ifunc not in allConditions:
+        if ifunc not in bush.game_mod.constants.allConditions:
             raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
         # Form1 is Param1
-        form1 = 'I' if ifunc in fid1Conditions else 'i'
+        form1 = 'I' if ifunc in bush.game_mod.constants.fid1Conditions else 'i'
         # Form2 is Param2
-        form2 = 'I' if ifunc in fid2Conditions else 'i'
+        form2 = 'I' if ifunc in bush.game_mod.constants.fid2Conditions else 'i'
         # Form3 is runOn
         form3 = 'I'
         # Form4 is reference, this is a formID when runOn = 2
