@@ -248,9 +248,9 @@ class MelCoed(MelOptStruct):
 # When all of Skyrim's records are entered this needs to be updated
 # To more closly resemple the wbCOEDOwnerDecider from TES5Edit
 #------------------------------------------------------------------------------
-class MelColorN(MelStruct):
+class MelColorN(MelOptStruct):
         def __init__(self):
-                MelStruct.__init__(self,'CNAM','=4B',
+                MelOptStruct.__init__(self,'CNAM','=4B',
                         'red','green','blue','unused')
 
 #------------------------------------------------------------------------------
@@ -562,8 +562,8 @@ class MelMODS(MelBase):
         for x in xrange(count):
             string = ins.readString32(size,readId)
             fid = ins.unpackRef(readId)
-            unk, = ins.unpack('I',4,readId)
-            dataAppend((string,fid,unk))
+            index, = ins.unpack('I',4,readId)
+            dataAppend((string,fid,index))
         record.__setattr__(self.attr,data)
 
     def dumpData(self,record,out):
@@ -573,10 +573,10 @@ class MelMODS(MelBase):
             structPack = struct.pack
             data = record.__getattribute__(self.attr)
             outData = structPack('I',len(data))
-            for (string,fid,unk) in data:
+            for (string,fid,index) in data:
                 outData += structPack('I',len(string))
                 outData += encode(string)
-                outData += structPack('=2I',fid,unk)
+                outData += structPack('=2I',fid,index)
             out.packSub(self.subType,outData)
 
     def mapFids(self,record,function,save=False):
@@ -585,7 +585,7 @@ class MelMODS(MelBase):
         attr = self.attr
         data = record.__getattribute__(attr)
         if data is not None:
-            data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
+            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
             if save: record.__setattr__(attr,data)
 
 #------------------------------------------------------------------------------
@@ -606,7 +606,7 @@ class MelModel(MelGroup):
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
             MelBase(types[1],'modt_p'),
-            MelMODS(types[2],'mod_s'),
+            MelMODS(types[2],'alternateTextures'),
             )
 
     def debug(self,on=True):
@@ -639,6 +639,33 @@ class MelPerks(MelStructs):
             out.packSub('PRKZ','<I',len(perks))
             MelStructs.dumpData(self,record,out)
 
+#------------------------------------------------------------------------------
+class MelScrxen(MelFids):
+    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
+
+    def getLoaders(self,loaders):
+        loaders['SCRV'] = self
+        loaders['SCRO'] = self
+
+    def loadData(self,record,ins,type,size,readId):
+        isFid = (type == 'SCRO')
+        if isFid: value = ins.unpackRef(readId)
+        else: value, = ins.unpack('I',4,readId)
+        record.__getattribute__(self.attr).append((isFid,value))
+
+    def dumpData(self,record,out):
+        for isFid,value in record.__getattribute__(self.attr):
+            if isFid: out.packRef('SCRO',value)
+            else: out.packSub('SCRV','I',value)
+
+    def mapFids(self,record,function,save=False):
+        scrxen = record.__getattribute__(self.attr)
+        for index,(isFid,value) in enumerate(scrxen):
+            if isFid:
+                result = function(value)
+                if save: scrxen[index] = (isFid,result)
+
+# Probably obsolete.  Included for reference and testing.
 #------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
@@ -1327,7 +1354,7 @@ class MreActi(MelRecord):
 
     ActivatorFlags = Flags(0L,Flags.getNames(
         (0, 'noDisplacement'),
-        (0, 'ignoredBySandbox'),
+        (1, 'ignoredBySandbox'),
     ))
 
     melSet = MelSet(
@@ -2486,10 +2513,28 @@ class MreEczn(MelRecord):
             (2, 'disableCombatBoundary'),
         ))
 
+    class MelEcznData(MelStruct):
+        """Handle older truncated DATA for ECZN subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 12:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 8:
+                unpacked = ins.unpack('II',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,12,size,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('DATA','2I2bBb',(FID,'owner',None),(FID,'location',None),'rank','minimumLevel',
-                  (EcznTypeFlags,'flags',0L),('maxLevel',null1)),
+        MelEcznData('DATA','2I2bBb',(FID,'owner',None),(FID,'location',None),
+                    ('rank',0),('minimumLevel',0),(EcznTypeFlags,'flags',0L),
+                    ('maxLevel',0)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -3727,6 +3772,31 @@ class MreKywd(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
+# Commented out for performance reasons. Slows down loading quite a bit.
+# If Bash ever wants to be able to add masters to a mod, this minimal definition is required
+# It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
+#
+#class MreLand(MelRecord):
+#    """Land structure. Part of exterior cells."""
+#
+#    classType = 'LAND'
+#    melSet = MelSet(
+#        MelBase('DATA','data_p'),
+#        MelBase('VNML','normals_p'),
+#        MelBase('VHGT','heights_p'),
+#        MelBase('VCLR','vertexColors_p'),
+#        # wbRUnion Needed (BTXT) or ('ATXT' and 'VTXT'), not both
+#        MelStructs('BTXT','IBsh','baseTextures', (FID,'texture'), 'quadrant', 'unknown', 'layer'),
+#        MelGroups('alphaLayers',
+#            MelStruct('ATXT','IBsh',(FID,'texture'), 'quadrant', 'unknown', 'layer'),
+#            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unknown', 'opacity'),
+#        ),
+#        MelFidList('VTEX','vertexTextures'),
+#    )
+#    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+# --
+# Likely not a good idea to use because of performance
+#------------------------------------------------------------------------------
 class MreLcrt(MelRecord):
     """Location Reference Type record."""
     classType = 'LCRT'
@@ -3790,7 +3860,7 @@ class MreLctn(MelRecord):
         MelFid('NAM1','music',),
         MelFid('FNAM','unreportedCrimeFaction',),
         MelFid('MNAM','worldLocationMarkerRef',),
-        MelStruct('RNAM','f','worldLocationRadius',),
+        MelOptStruct('RNAM','f','worldLocationRadius',),
         MelFid('NAM0','horseMarkerRef',),
         MelColorN(),
     )
@@ -5047,7 +5117,8 @@ class MrePerk(MelRecord):
         MelVmad(),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelConditions(),
         MelGroup('_data',
             MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
@@ -5384,7 +5455,7 @@ class MreQust(MelRecord):
 # Marker for organization please don't remove ---------------------------------
 # RACE ------------------------------------------------------------------------
 class MreRace(MelRecord):
-    """Quest"""
+    """Race"""
     classType = 'RACE'
 
     melSet = MelSet(
