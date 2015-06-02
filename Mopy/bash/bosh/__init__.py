@@ -2535,6 +2535,7 @@ class OblivionIni(IniFile):
             aiBsa.mtime = aiBsaMTime
         if doRedirect == self.getBsaRedirection():
             return
+        # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
             source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
