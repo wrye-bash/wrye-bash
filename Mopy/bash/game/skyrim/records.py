@@ -5034,19 +5034,232 @@ class MreProj(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
-# Marker for organization please don't remove ---------------------------------
-# QUST ------------------------------------------------------------------------
+class MelItems(MelGroups):
+    """Handle writing out a preceding COCT subrecord for count of CNTO/COED subrecords."""
+    NullLoader = MelNull('ANY')
+    def __init__(self, attr='items'):
+        MelGroups.__init__(self,attr,
+            MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
+            MelOptStruct('COED','=IIf',(FID,'owner'),(FID,'glob'), ('rank'))
+            )
+
+    def getLoaders(self, loaders):
+        MelGroups.getLoaders(self,loaders)
+        loaders['COCT'] = MelItems.NullLoader
+
+    def dumpData(self,record,out):
+        value = record.__getattribute__(self.attr)
+        # Only write the COCT/CNTO/COED subrecords if count > 0
+        if value:
+            out.packSub('COCT','<I',len(value))
+            MelGroups.dumpData(self,record,out)
+
 class MreQust(MelRecord):
     """Quest"""
     classType = 'QUST'
+    _questFlags = Flags(0,Flags.getNames(
+        (0,'startGameEnabled'),
+        (2,'wildernessEncounter'),
+        (3,'allowRepeatedStages'),
+        (8,'runOnce'),
+        (9,'excludeFromDialogueExport'),
+        (10,'warnOnAliasFillFailure'),
+    ))
+    _stageFlags = Flags(0,Flags.getNames(
+        (0,'unknown0'),
+        (1,'startUpStage'),
+        (2,'startDownStage'),
+        (3,'keepInstanceDataFromHereOn'),
+    ))
+    stageEntryFlags = Flags(0,Flags.getNames('complete','fail'))
+    objectiveFlags = Flags(0,Flags.getNames('oredWithPrevious'))
+    targetFlags = Flags(0,Flags.getNames('ignoresLocks'))
+    aliasFlags = Flags(0,Flags.getNames(
+        (0,'reservesLocationReference'),
+        (1,'optional'),
+        (2,'questObject'),
+        (3,'allowReuseInQuest'),
+        (4,'allowDead'),
+        (5,'inLoadedArea'),
+        (6,'essential'),
+        (7,'allowDisabled'),
+        (8,'storesText'),
+        (9,'allowReserved'),
+        (10,'protected'),
+        (11,'noFillType'),
+        (12,'allowDestroyed'),
+        (13,'closest'),
+        (14,'usesStoredText'),
+        (15,'initiallyDisabled'),
+        (16,'allowCleared'),
+        (17,'clearsNameWhenRemoved'),
+    ))
+
+    #--Condition loader
+    class MelQuestLoaders(DataDict):
+        """Since CTDA/CIS1/CIS2 and FNAM subrecords occur in two different places,
+        we need to replace ordinary 'loaders' dictionary with a 'dictionary' that will
+        return the correct element to handle the CTDA/CIS1/CIS2/FNAM subrecord. 'Correct'
+        element is determined by which other subrecords have been encountered."""
+        def __init__(self,loaders,
+                     dialogueConditions,
+                     eventConditions,
+                     stages,
+                     objectives,
+                     aliases,
+                     description,
+                     targets
+            ):
+            self.data = loaders
+            self.type_conditions = {
+                'EDID':dialogueConditions,
+                'NEXT':eventConditions,
+                'INDX':stages,
+                'QOBJ':objectives,
+                'ALID':aliases,
+                'ALED':targets,
+            }
+            self.conditions = dialogueConditions
+            self.type_fnam = {
+                'EDID':objectives,
+                'ANAM':aliases,
+            }
+            self.fnam = objectives
+            self.type_nnam = {
+                'EDID':objectives,
+                'ANAM':description,
+            }
+            self.nnam = objectives
+            self.type_targets = {
+                'EDID':objectives,
+                'ANAM':targets,
+            }
+            self.targets = objectives
+        def __getitem__(self,key):
+            if key in ('CTDA','CIS1','CIS2'): return self.conditions
+            if key == 'FNAM': return self.fnam
+            if key == 'NNAM': return self.nnam
+            if key == 'QSTA': return self.targets
+            self.conditions = self.type_conditions.get(key, self.conditions)
+            self.fnam = self.type_fnam.get(key, self.fnam)
+            self.nnam = self.type_nnam.get(key, self.nnam)
+            self.targets = self.type_targets.get(key, self.targets)
+            return self.data[key]
+
+    class MelAliasGroups(MelGroups):
+        def loadData(self,record,ins,type,size,readId):
+            """Reads data from ins into record attribute."""
+            if type in ('ALST','ALLS'):
+                target = self.getDefault()
+                record.__getattribute__(self.attr).append(target)
+            else:
+                target = record.__getattribute__(self.attr)[-1]
+            slots = []
+            for element in self.elements:
+                slots.extend(element.getSlotsUsed())
+            target.__slots__ = slots
+            self.loaders[type].loadData(target,ins,type,size,readId)
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
+        MelLString('FULL','full'),
+        MelStruct('DNAM','=H2BiI',(_questFlags,'questFlags',0L),'priority','formVersion','unknown','questType'),
+        MelOptStruct('ENAM','4s',('event',None)),
+        MelFids('QTGL','textDisplayGlobals'),
+        MelString('FLTR','objectWindowFilter'),
+        MelConditions('dialogueConditions'),
+        MelBase('NEXT','marker'),
+        MelConditions('eventConditions'),
+        MelGroups('stages',
+            MelStruct('INDX','hBb','index',(_stageFlags,'flags',0L),'unknown'),
+            MelGroups('logEntries',
+                MelStruct('QSDT','B',(stageEntryFlags,'stageFlags',0L)),
+                MelConditions(),
+                MelLString('CNAM','text'),
+                MelFid('NAM0', 'nextQuest'),
+                MelGroup('unused',
+                    MelBase('SCHR','schr_p'),
+                    MelBase('SCDA','scda_p'),
+                    MelBase('SCTX','sctx_p'),
+                    MelBase('QNAM','qnam_p'),
+                    MelBase('SCRO','scro_p'),
+                    ),
+                ),
+            ),
+        MelGroups('objectives',
+            MelStruct('QOBJ','h','index'),
+            MelStruct('FNAM','I',(objectiveFlags,'flags',0L)),
+            MelLString('NNAM','description'),
+            MelGroups('targets',
+                MelStruct('QSTA','iB3s','alias',(targetFlags,'flags'),('unused1',null3)),
+                MelConditions(),
+                ),
+            ),
+        MelBase('ANAM','aliasMarker'),
+        MelAliasGroups('aliases',
+            MelOptStruct('ALST','I',('aliasId',None)),
+            MelOptStruct('ALLS','I',('aliasIdLocation',None)),
+            MelString('ALID', 'aliasName'),
+            MelStruct('FNAM','I',(aliasFlags,'flags',0L)),
+            MelOptStruct('ALFI','i',('forcedIntoAlias',None)),
+            MelFid('ALFL','specificLocation'),
+            MelFid('ALFR','forcedReference'),
+            MelFid('ALUA','uniqueActor'),
+            MelGroup('locationAliasReference',
+                MelStruct('ALFA','I','alias'),
+                MelFid('KNAM','keyword'),
+                MelFid('ALRT','referenceType'),
+                ),
+            MelGroup('externalAliasReference',
+                MelFid('ALEQ','quest'),
+                MelStruct('ALEA','I','alias'),
+                ),
+            MelGroup('createReferenceToObject',
+                MelFid('ALCO','object'),
+                MelStruct('ALCA','I','createAt'),
+                MelStruct('ALCL','I','createLevel'),
+                ),
+            MelGroup('findMatchingReferenceNearAlias',
+                MelStruct('ALNA','I','alias'),
+                MelStruct('ALNT','I','type'),
+                ),
+            MelGroup('findMatchingReferenceFromEvent',
+                MelStruct('ALFE','4s',('fromEvent',null4)),
+                MelStruct('ALFD','4s',('eventData',null4)),
+                ),
+            MelConditions(),
+            MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+            MelItems(),
+            MelFid('SPOR','spectatorOverridePackageList'),
+            MelFid('OCOR','observeDeadBodyOverridePackageList'),
+            MelFid('GWOR','guardWarnOverridePackageList'),
+            MelFid('ECOR','combatOverridePackageList'),
+            MelFid('ALDN','displayName'),
+            MelFids('ALSP','aliasSpells'),
+            MelFids('ALFC','aliasFactions'),
+            MelFids('ALPC','aliasPackageData'),
+            MelFid('VTCK','voiceType'),
+            MelBase('ALED','aliasEnd'),
+            ),
+        MelLString('NNAM','description'),
+        MelGroups('targets',
+            MelStruct('QSTA','iB3s','alias',(targetFlags,'flags'),('unused1',null3)),
+            MelConditions(),
+            ),
+        )
+    melSet.loaders = MelQuestLoaders(melSet.loaders,
+                                     melSet.elements[7],  # dialogueConditions
+                                     melSet.elements[9],  # eventConditions
+                                     melSet.elements[10], # stages
+                                     melSet.elements[11], # objectives
+                                     melSet.elements[13], # aliases
+                                     melSet.elements[14], # description
+                                     melSet.elements[15], # targets
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Needs Updating
+# Needs testing should be mergable
 #------------------------------------------------------------------------------
 # Marker for organization please don't remove ---------------------------------
 # RACE ------------------------------------------------------------------------
