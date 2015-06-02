@@ -1638,6 +1638,12 @@ def unpack_byte(ins): return struct_unpack('B', ins.read(1))[0]
 def unpack_int_signed(ins): return struct_unpack('i', ins.read(4))[0]
 def unpack_int64_signed(ins): return struct_unpack('q', ins.read(8))[0]
 def unpack_4s(ins): return struct_unpack('4s', ins.read(4))[0]
+def unpack_str16_delim(ins):
+    str_value = ins.read(struct_unpack('Hc', ins.read(3))[0])
+    ins.read(1) # discard delimiter
+    return str_value
+def unpack_int_delim(ins): return struct_unpack('Ic', ins.read(5))[0]
+def unpack_byte_delim(ins): return struct_unpack('Bc', ins.read(2))[0]
 
 def unpack_string(ins, string_len):
     return struct_unpack('%ds' % string_len, ins.read(string_len))[0]

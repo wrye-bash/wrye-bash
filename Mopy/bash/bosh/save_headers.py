@@ -30,6 +30,7 @@
 
 __author__ = 'Utumno'
 
+import copy
 import itertools
 import StringIO
 import struct
@@ -39,7 +40,8 @@ from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    struct_unpack
+    struct_unpack, unpack_int_delim, unpack_str16_delim, unpack_byte_delim, \
+    unpack_many
 from ..exception import SaveHeaderError
 
 class SaveFileHeader(object):
@@ -390,6 +392,84 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         self.gameTicks = (days * 24 * 60 * 60 + hours * 60 * 60 + minutes
                              * 60) * 1000
 
+class FalloutNVSaveHeader(SaveFileHeader):
+    save_magic = 'FO3SAVEGAME'
+    __slots__ = ('language', 'ssDepth', 'pcNick', '_unknown', 'gameDate')
+    _masters_unknown_byte = 0x1B
+    unpackers = OrderedDict([
+        ('header_size', (00, unpack_int)),
+        ('_unknown',    (00, unpack_int_delim)),
+        ('language',    (00, lambda ins: unpack_many(ins, '64sc')[0])),
+        ('ssWidth',     (00, unpack_int_delim)),
+        ('ssHeight',    (00, unpack_int_delim)),
+        ('ssDepth',     (00, unpack_int_delim)),
+        ('pcName',      (00, unpack_str16_delim)),
+        ('pcNick',      (00, unpack_str16_delim)),
+        ('pcLevel',     (00, unpack_int_delim)),
+        ('pcLocation',  (00, unpack_str16_delim)),
+        ('gameDate',    (00, unpack_str16_delim)),
+    ])
+
+    def load_masters(self, ins):
+        self._mastersStart = ins.tell()
+        self._master_list_size(ins)
+        self.masters = []
+        numMasters = unpack_byte_delim(ins)
+        for count in xrange(numMasters):
+            self.masters.append(unpack_str16_delim(ins))
+
+    def _master_list_size(self, ins):
+        formVersion, masterListSize = unpack_many(ins, '=BI')
+        if formVersion != self._masters_unknown_byte: raise SaveHeaderError(
+            u'Unknown byte at position %d is %r not 0x%X' % (
+                ins.tell() - 4, formVersion, self._masters_unknown_byte))
+        return masterListSize
+
+    def _write_masters(self, ins, out):
+        def _pack(fmt, *args): out.write(struct_pack(fmt, *args))
+        self._master_list_size(ins) # discard old size
+        _pack('=BI', self._masters_unknown_byte, self._master_block_size())
+        #--Skip old masters
+        numMasters = unpack_byte_delim(ins) # get me the Byte
+        oldMasters = self._dump_masters(ins, numMasters, out, _pack)
+        #--Offsets
+        offset = out.tell() - ins.tell()
+        #--File Location Table
+        for i in xrange(5):
+            # formIdArrayCount offset and 5 others
+            oldOffset = unpack_int(ins)
+            _pack('I', oldOffset + offset)
+        return oldMasters
+
+    def _dump_masters(self, ins, numMasters, out, _pack):
+        oldMasters = []
+        for count in xrange(numMasters):
+            oldMasters.append(unpack_str16_delim(ins))
+        #--Write new masters
+        _pack('Bc', len(self.masters), '|')
+        for master in self.masters:
+            _pack('Hc', len(master), '|')
+            out.write(master.s)
+            _pack('c', '|')
+        return oldMasters
+
+    def _master_block_size(self):
+        return 2 + sum(len(x) + 4 for x in self.masters)
+
+    def calc_time(self):
+        # gameDate format: hours.minutes.seconds
+        hours, minutes, seconds = [int(x) for x in self.gameDate.split('.')]
+        playSeconds = hours * 60 * 60 + minutes * 60 + seconds
+        self.gameDays = float(playSeconds) / (24 * 60 * 60)
+        self.gameTicks = playSeconds * 1000
+
+class Fallout3SaveHeader(FalloutNVSaveHeader):
+    save_magic = 'FO3SAVEGAME'
+    __slots__ = ()
+    _masters_unknown_byte = 0x15
+    unpackers = copy.copy(FalloutNVSaveHeader.unpackers)
+    del unpackers['language']
+
 # Factory
 def get_save_header_type(game_fsName):
     """:rtype: type"""
@@ -399,3 +479,7 @@ def get_save_header_type(game_fsName):
         return SkyrimSaveHeader
     elif game_fsName == u'Fallout4':
         return Fallout4SaveHeader
+    elif game_fsName == u'FalloutNV':
+        return FalloutNVSaveHeader
+    elif game_fsName == u'Fallout3':
+        return Fallout3SaveHeader
