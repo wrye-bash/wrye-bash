@@ -240,6 +240,7 @@ class PatchFile(_PFile, ModFile):
                 #--Error checks
                 if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
                     self.worldOrphanMods.append(modName)
+                # What game mode is this for exactly?
                 if 'SCPT' in modFile.tops and modName != u'Oblivion.esm':
                     gls = modFile.SCPT.getRecord(0x00025811)
                     if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
@@ -430,6 +431,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         if not len(self.loadMods): return
         #Parent records must be processed before any children
         #EYES,HAIR must be processed before RACE
+        # This should probably be updated for FO3/FNV/TES5 - see issue #287
         groupOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
                       'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
                       'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
