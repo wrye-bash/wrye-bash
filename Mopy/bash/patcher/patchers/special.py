@@ -566,6 +566,154 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         self.mod_count = {}
 
 #------------------------------------------------------------------------------
+class FidListsMerger(_AListsMerger,ListPatcher):
+    """Merged FormID lists mod file."""
+    scanOrder = 46
+    editOrder = 46
+    name = _(u'FormID Lists')
+    text = (_(u'Merges changes to formid lists from ACTIVE/MERGED MODS ONLY.') +
+            u"\n\n" +
+            _(u'Advanced users may override Deflst tags for any mod (active or inactive) using the list below.'))
+    tip = _(u"Merges changes to formid lists from all active mods.")
+    choiceMenu = (u'Auto',u'----',u'Deflst') #--List of possible choices for each config item. Item 0 is default.
+    autoKey = (u'Deflst',)
+    forceAuto = False
+    iiMode = True
+    selectCommands = False
+    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],'configChecks':{},'configChoices':{}}
+
+    #--Static------------------------------------------------------------------
+    @staticmethod
+    def getDefaultTags():
+        tags = {}
+        for fileName in (u'FormID Lists.csv',u'My FormId Lists.csv'):
+            textPath = dirs[u'patches'].join(fileName)
+            if textPath.exists():
+                with bolt.CsvReader(textPath) as reader:
+                    for fields in reader:
+                        if len(fields) < 2 or not fields[0] or fields[1] not in (u'DR',u'R',u'D',u'RD',u''): continue
+                        tags[GPath(fields[0])] = fields[1]
+        return tags
+
+    #--Config Phase -----------------------------------------------------------
+    def getChoice(self,item):
+        """Get default config choice."""
+        choice = self.configChoices.get(item)
+        if not isinstance(choice,set): choice = {u'Auto'}
+        if u'Auto' in choice:
+            if item in bosh.modInfos:
+                bashTags = bosh.modInfos[item].getBashTags()
+                choice = {u'Auto'} | ({u'Deflst',} & bashTags)
+        self.configChoices[item] = choice
+        return choice
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
+        if isinstance(item,Path): item = item.s
+        if choice:
+            return u'%s [%s]' % (item,u''.join(sorted(choice)))
+        else:
+            return item
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.srcMods = set(self.getConfigChecked()) & set(loadMods)
+        self.listTypes = ('FLST',)
+        self.type_list = dict([(type,{}) for type in self.listTypes])
+        self.masterItems = {}
+        self.mastersScanned = set()
+        self.levelers = None #--Will initialize later
+
+    def getReadClasses(self):
+        """Returns load factory classes needed for reading."""
+        return self.listTypes
+
+    def getWriteClasses(self):
+        """Returns load factory classes needed for writing."""
+        return self.listTypes
+
+    def scanModFile(self, modFile, progress):
+        """Add lists from modFile."""
+        #--Level Masters (complete initialization)
+        if self.levelers is None:
+            allMods = set(self.patchFile.allMods)
+            self.levelers = [leveler for leveler in self.getConfigChecked() if
+                             leveler in allMods]
+            self.deflstMasters = set()
+            for leveler in self.levelers:
+                self.deflstMasters.update(bosh.modInfos[leveler].header.masters)
+        #--Begin regular scan
+        modName = modFile.fileInfo.name
+        modFile.convertToLongFids(self.listTypes)
+        #--PreScan for later Deflsts?
+        if modName in self.deflstMasters:
+            for type in self.listTypes:
+                for levList in getattr(modFile,type).getActiveRecords():
+                    masterItems = self.masterItems.setdefault(levList.fid,{})
+                    # masterItems[modName] = set([entry.listId for entry in levList.entries])
+                    masterItems[modName] = set(levList.formIDInList)
+            self.mastersScanned.add(modName)
+        #--Deflst setup
+        configChoice = self.configChoices.get(modName,tuple())
+        isDeflst = (u'Deflst' in configChoice)
+        #--Scan
+        for type in self.listTypes:
+            levLists = self.type_list[type]
+            newLevLists = getattr(modFile,type)
+            for newLevList in newLevLists.getActiveRecords():
+                listId = newLevList.fid
+                isListOwner = (listId[0] == modName)
+                #--Items, deflsts sets
+                # newLevList.items = items = set([entry.listId for entry in newLevList.entries])
+                newLevList.items = items = set(newLevList.formIDInList)
+                if not isListOwner:
+                    #--Deflsts: all items in masters minus current items
+                    newLevList.deflsts = deflsts = set()
+                    if isDeflst:
+                        id_masterItems = self.masterItems.get(listId)
+                        if id_masterItems:
+                            for masterName in modFile.tes4.masters:
+                                if masterName in id_masterItems:
+                                    deflsts |= id_masterItems[masterName]
+                            deflsts -= items
+                            newLevList.items |= deflsts
+                #--Cache/Merge
+                if isListOwner:
+                    levList = copy.deepcopy(newLevList)
+                    levList.mergeSources = []
+                    levLists[listId] = levList
+                elif listId not in levLists:
+                    levList = copy.deepcopy(newLevList)
+                    levList.mergeSources = [modName]
+                    levLists[listId] = levList
+                else:
+                    levLists[listId].mergeWith(newLevList,modName)
+
+    def buildPatch(self,log,progress):
+        """Adds merged lists to patchfile."""
+        keep = self.patchFile.getKeeper()
+        #--Deflsts List
+        log.setHeader(u'= '+self.__class__.name,True)
+        log.setHeader(u'=== '+_(u'Deflsters'))
+        for leveler in (self.levelers or []):
+            log(u'* '+self.getItemLabel(leveler))
+        #--Save to patch file
+        type = u'FLST'
+        log.setHeader(u'=== '+_(u'Merged %s Lists') % u'FormID')
+        patchBlock = getattr(self.patchFile,type)
+        levLists = self.type_list[type]
+        for record in sorted(levLists.values(),key=attrgetter('eid')):
+            if not record.mergeOverLast: continue
+            fid = keep(record.fid)
+            patchBlock.setRecord(levLists[fid])
+            log(u'* '+record.eid)
+            for mod in record.mergeSources:
+                log(u'  * ' + self.getItemLabel(mod))
+
+#------------------------------------------------------------------------------
 class _AContentsChecker(SpecialPatcher):
     """Checks contents of leveled lists, inventories and containers for
     correct content types."""

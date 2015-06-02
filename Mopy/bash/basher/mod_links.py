@@ -1092,6 +1092,12 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
                 for item in conf.get('configItems',[]):
                     log(u'. __%s__' % patcher.getItemLabel(item))
                     clip.write(u'    %s\n' % patcher.getItemLabel(item))
+            elif isinstance(patcher, (special.FidListsMerger)):
+                # FormID Lists
+                patcher.configChoices = conf.get('configChoices',{})
+                for item in conf.get('configItems',[]):
+                    log(u'. __%s__' % patcher.getItemLabel(item))
+                    clip.write(u'    %s\n' % patcher.getItemLabel(item))
             elif isinstance(patcher, (base.CBash_AliasesPatcher,
                                       base.AliasesPatcher)):
                 # Alias mod names
