@@ -22,18 +22,16 @@
 #
 # =============================================================================
 
-"""This module contains the skyrim record classes. Ripped from skyrim.py"""
+"""This module contains the fallout3 record classes"""
 import re
 import struct
 import itertools
 from ...bolt import Flags, sio, DataDict, encode, GPath, struct_unpack, \
     struct_pack
-from ...brec import MelRecord, MelStructs, \
-    MelObject, MelGroups, MelStruct, FID, MelGroup,MelString, \
-    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
-    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
-    MelCountedFids, MelSortedFidList, MelStrings, MelFull0, MelTuple
+    MreGmstBase, MelStrings, MelFull0, MelTuple
 from ...bass import null1, null2, null3, null4
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions

@@ -22,35 +22,24 @@
 #
 # =============================================================================
 
-"""This module contains the skyrim record classes. Ripped from skyrim.py"""
-import re
+"""This module contains the falloutnv record classes."""
 import struct
 import itertools
-from ...bolt import Flags, sio, DataDict, encode, GPath
+from ...bolt import Flags, DataDict, GPath
 """ Can't import MelConditions, MelEffects, MreAlch,
     MreCpth, MreIdle, MreMesg, MrePack, MrePerk, MreQust, MreSpel, MreTerm,
     Because once the imported Fallout 3 record is used it will use Fallout 3
     constants.py regardless of imports in falloutnv.records.py."""
-from ..fallout3.records import MelBipedFlags, MelDestructible, \
-    MreHasEffects, MreLeveledList, MelMODS, MelModel, MelOwnership, \
-    MelScrxen, MreHeader, MreActor, MreAddn, MreAnio, MreAvif, MreBook, \
-    MreBptd, MreCams, MreClas, MreClmt, MreCobj, MreCrea, MreDebr, MreDoor, \
-    MreEczn, MreEfsh, MreExpl, MreEyes, MreFlst, MreFurn, MreGras, MreHair, \
-    MreIdlm, MreImgs, MreIngr, MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, \
-    MreLvln, MreMgef, MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MreNpc, \
-    MrePwat, MreRads, MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, \
-    MreWatr, MreWrld
-from ...brec import MelRecord, MelStructs, \
-    MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
-    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
-    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
-    MelCountedFids, MelSortedFidList, MelStrings, MelFull0, MelTuple
+from ..fallout3.records import MreHeader, MreNpc #accessed via game_mod.records
+from ..fallout3.records import MelBipedFlags, MelDestructible, MreHasEffects, \
+    MelModel, MelOwnership, MelScrxen
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+    MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0
 from ...bass import null1, null2, null3, null4
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions
-from operator import attrgetter
-from ...exception import BoltError, ModError, ModSizeError, StateError
+from ...exception import BoltError, ModError, ModSizeError
 
 from_iterable = itertools.chain.from_iterable
 
