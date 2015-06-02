@@ -999,6 +999,8 @@ class SpellsPatcher(importers.SpellsPatcher, _ImporterPatcherPanel): pass
 class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
                           _ImporterPatcherPanel): pass
 
+class DestructiblePatcher(importers.DestructiblePatcher, _ListPatcherPanel): pass
+
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
                       _TweakPatcherPanel): default_isEnabled = True
