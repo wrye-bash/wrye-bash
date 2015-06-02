@@ -4011,13 +4011,30 @@ class MreMato(MelRecord):
             (0, 'singlePass'),
         ))
 
+    class MelMatoData(MelStruct):
+        """Handle older truncated DATA for MATO subrecord."""
+        def loadData(self,record,ins,type,size,readId):
+            if size == 48:
+                MelStruct.loadData(self,record,ins,type,size,readId)
+                return
+            elif size == 28:
+                unpacked = ins.unpack('fffffff',size,readId)
+            else:
+                raise ModSizeError(record.inName,readId,48,size,True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
         MelGroups('wordsOfPower',
             MelBase('DNAM','propertyData',),
             ),
-        MelStruct('DATA','11fI','falloffScale','falloffBias','noiseUVScale',
+        MelMatoData('DATA','11fI','falloffScale','falloffBias','noiseUVScale',
                   'materialUVScale','projectionVectorX','projectionVectorY',
                   'projectionVectorZ','normalDampener',
                   'singlePassColor','singlePassColor',
