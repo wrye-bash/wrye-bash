@@ -1,0 +1,2763 @@
+plugins:
+  - name: 'UWWUT - Broken Steel Addon.esp'
+    tag:
+      - Graphics
+  - name: 'xCALIBRuniverse.esm'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
+  - name: 'BrokenSteel.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - C.Water
+      - Delev
+      - Factions
+      - Stats
+    dirty:
+      - crc: 0x30011b79
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 275
+        udr: 34
+        nav: 12
+  - name: 'Realistic Interior Lighting - PL.esp'
+    tag:
+      - C.Light
+  - name: 'UrgeWashingtonBoS.esp'
+    dirty:
+      - crc: 0x98fd9bed
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 14
+        udr: 16
+  - name: 'zeta.esm'
+    dirty:
+      - crc: 0x1d017e23
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 15
+  - name: 'thepitt.esm'
+    dirty:
+      - crc: 0xb38b3e44
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 40
+        nav: 5
+  - name: 'FACE3 - DLC04 Point Lookout.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'FOOK2 - [DESTRUCTION] Main.esp'
+    tag:
+      - Destructible
+      - Scripts
+  - name: 'Apocalypse Armory.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+  - name: 'Unofficial Fallout 3 Patch.esm'
+    tag:
+      - C.Music
+      - Deflst
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - Relations
+      - Relev
+      - Stats
+  - name: 'More Ammo (Explosive).esp'
+    tag:
+      - Relev
+  - name: 'DALCO Inventory Sorter - Max Level Workaround.esp'
+    tag:
+      - Names
+  - name: 'anchorage.esm'
+    dirty:
+      - crc: 0xa4ba9d10
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 54
+        udr: 10
+  - name: 'Arwen_EVE_Patch.esp'
+    tag:
+      - Graphics
+      - Sound
+      - Stats
+  - name: 'Goth Girls Multipack.esp'
+    tag:
+      - Eyes
+      - Hair
+      - Invent
+      - NPC.Race
+      - NpcFaces
+  - name: 'StreetLights.esm'
+    dirty:
+      - crc: 0xc5690e8e
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 18
+  - name: 'Destruction.esm'
+    tag:
+      - Destructible
+      - Scripts
+  - name: 'Dog lover''s mod NO ANCHORAGE.esp'
+    tag:
+      - Deflst
+      - Delev
+  - name: 'pointlookout.esm'
+    dirty:
+      - crc: 0xd92704d8
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 21
+  - name: 'Lings.esm'
+    tag:
+      - Hair
+  - name: 'Mart''s Mutant Mod.esm'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relations
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0x9695f2a1
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 77
+  - name: 'RD_ElderLyonsRobe.esp'
+    tag:
+      - Graphics
+  - name: 'Xepha''s Dynamic Weather.esm'
+    tag:
+      - C.Climate
+      - Sound
+    dirty:
+      - crc: 0x80acea99
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 13
+  - name: 'FNNsys.esm'
+    tag:
+      - Scripts
+  - name: 'Vault 101 Revisited.esm'
+    dirty:
+      - crc: 0x848d8679
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 33
+        udr: 9
+        nav: 2
+  - name: '20th Century Weapons.esm'
+    tag:
+      - Scripts
+  - name: 'Apocalypse Armory - xCALIBR.esp'
+    tag:
+      - Deflst
+      - Names
+      - Stats
+  - name: 'LingsDLC.esm'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'FOOK2 - [DESTRUCTION] DIK.esp'
+    tag:
+      - Destructible
+      - Scripts
+  - name: 'Shojo NPC.esp'
+    tag:
+      - Invent
+      - NPC.Race
+      - NpcFaces
+  - name: 'XENH.esm'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'EnhancedChildren.esm'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'vaultgirlrp.esp'
+    tag:
+      - Graphics
+      - Invent
+  - name: 'BA_InventorySorterPointLookout.esp'
+    tag:
+      - Names
+  - name: 'HairPack.esm'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'Weld - Badge.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'ModBetterPArmorSteel.esp'
+    tag:
+      - Stats
+  - name: 'Destruction - DLC.esp'
+    tag:
+      - Destructible
+      - Scripts
+  - name: 'FaceMe.esm'
+    tag:
+      - Eyes
+      - Hair
+      - NPC.Race
+      - NpcFaces
+  - name: 'BA_InventorySorterGOTY.esp'
+    tag:
+      - Names
+  - name: 'xCALIBR.esm'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'Arwen_Core.esm'
+    tag:
+      - Actors.Animations
+  - name: 'DCInteriors_ComboEdition.esm'
+    dirty:
+      - crc: 0xf85a5358
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 48
+  - name: 'Merged.esp'
+    tag:
+      - NoMerge
+  - name: 'AddWanda_v2_blk_eot.esp'
+    tag:
+      - Invent
+  - name: 'Project Beauty.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NPC.Race
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: '20th Century v5 ALIVE (Slaver).esp'
+    tag:
+      - Invent
+  - name: 'Canterbury Commons Interiors Embiggened.esm'
+    tag:
+      - Relations
+    dirty:
+      - crc: 0x43e23b19
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 181
+        udr: 20
+        nav: 3
+  - name: 'infiltrations.esp'
+    tag:
+      - Scripts
+  - name: 'FACE3.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NPC.Race
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: 'Laboratory (BS & PL).esp'
+    tag:
+      - Scripts
+  - name: 'Mez''s Merged Patch 5-0 - DLC-FWE-WMK-MMM.esp'
+    tag:
+      - Deflst
+      - Delev
+      - Factions
+      - Invent
+      - Relations
+      - Relev
+      - Scripts
+  - name: 'PlasmaRifleRedesign.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'CFWRv4.esm'
+    tag:
+      - Deflst
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Stats
+  - name: '[DC RANGER ARSENAL v3] - DLC GEAR.esp'
+    tag:
+      - Deflst
+  - name: '32S&W.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'FireLightFix.esp'
+    tag:
+      - C.Light
+    dirty:
+      - crc: 0x482c04b2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+        udr: 4
+  - name: 'unique_uniquesDLC.esp'
+    tag:
+      - Graphics
+  - name: 'MS11fix.esp'
+    tag:
+      - Actors.AIPackages
+      - C.Light
+      - Invent
+      - Scripts
+  - name: 'Mart''s Mutant Mod - DLC The Pitt.esp'
+    tag:
+      - Delev
+      - Relev
+      - Scripts
+  - name: 'EWE Energy Weapons Enhanced.esm'
+    tag:
+      - Deflst
+      - Graphics
+      - Invent
+      - Relev
+      - Scripts
+      - Stats
+  - name: 'CFWR.esm'
+    tag:
+      - Delev
+      - Graphics
+      - Relev
+      - Stats
+  - name: 'DALCO Inventory Sorter - FWE (Mothership Zeta).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'FNNsys - FWE.esp'
+    tag:
+      - Scripts
+  - name: 'AliciasCuteShop.esm'
+    tag:
+      - Stats
+  - name: 'FO3 Wanderers Edition - Main File.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Deflst
+      - Delev
+      - Invent
+      - Names
+      - Relations
+      - Relev
+      - Stats
+    dirty:
+      - crc: 0x9c986068
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 13
+  - name: 'PyromaniacFix-Burnmaster.esp'
+    tag:
+      - Deflst
+  - name: 'RH_EVE_Bridge.esp'
+    dirty:
+      - crc: 0x6239eb2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'xCALIBR_ammo_Override_v1_01_for_20th Century Weapons -Plus- Reborn FWE-WMK-Calibr14_V1_70RC_18668.esp'
+    dirty:
+      - crc: 0x32eac10d
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 351
+        udr: 1
+  - name: 'GNRBuilding_BoS.esm'
+    tag:
+      - Invent
+  - name: 'Project Beauty- Point Lookout.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'RoadWardens.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.Stats
+      - Factions
+      - Invent
+      - ScriptContents
+      - Scripts
+  - name: 'BoS_DX.esp'
+    tag:
+      - Graphics
+  - name: 'Stop Insulting Me Outcasts.esp'
+    tag:
+      - Factions
+  - name: 'EVE.esm'
+    tag:
+      - Graphics
+      - Invent
+      - Scripts
+      - Sound
+  - name: 'BnB special armors.esp'
+    tag:
+      - Invent
+      - Relev
+  - name: 'FOOK2 - Main.esm'
+    tag:
+      - Factions
+      - Invent
+      - Relations
+      - Stats
+  - name: 'BoS_FOOKedition_Armor.esp'
+    tag:
+      - Graphics
+  - name: 'Companion Core.esm'
+    dirty:
+      - crc: 0x6f02e35
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'DALCO Inventory Sorter - WMK - FWE (DLC PointLookout).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'FWE - Combat Overhaul_Core.esm'
+    tag:
+      - Graphics
+      - Names
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Base Game).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'RobCo Certified v2.esm'
+    dirty:
+      - crc: 0xe363b7d7
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 9
+  - name: 'More308Ammo.esp'
+    tag:
+      - Relev
+  - name: 'ArefuExpandedByAzar.esm'
+    tag:
+      - Factions
+      - Invent
+    dirty:
+      - crc: 0x81581fca
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 209
+        udr: 54
+        nav: 16
+  - name: 'Tactical Weapons by gRs Frederyck.esp'
+    tag:
+      - Invent
+  - name: 'The Mantis Imperative - Mantis.esp'
+    tag:
+      - Relev
+    dirty:
+      - crc: 0x663ddf02
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        udr: 11
+  - name: 'DALCO Inventory Sorter - Fallout 3 & All DLCs.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Silenced DKS-501.esp'
+    tag:
+      - Deflst
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: 'FireLightFix_rus.esp'
+    tag:
+      - C.Light
+    dirty:
+      - crc: 0xed54e353
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+        udr: 4
+  - name: 'Weapon Repair Kits.esp'
+    tag:
+      - Relev
+  - name: 'RH_WMK_Bridge.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'FWE+WMKexcalibrified(Anch).esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'The Pitt - Fixes.esp'
+    tag:
+      - Names
+  - name: 'Compatibility_Plugin_TalonExtraArmor_FWE_BrokenSteel.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'PyromaniacFix-Both.esp'
+    tag:
+      - Deflst
+  - name: '20th Century v4 ALIVE (Chinese Ghoul).esp'
+    tag:
+      - Invent
+  - name: 'EVE - FWE Master Release.esp'
+    tag:
+      - Actors.ACBS
+      - Graphics
+      - Invent
+      - Sound
+      - Stats
+  - name: 'People_Radio.esp'
+    dirty:
+      - crc: 0x839a113b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'Shojo Race.esm'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'Abbreviated Effects.esm'
+    tag:
+      - Names
+  - name: 'ScrapMetal.esp'
+    tag:
+      - Invent
+  - name: 'RH_IRONSIGHTS.esm'
+    tag:
+      - Inven
+    dirty:
+      - crc: 0xba4abfe7
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        udr: 1
+  - name: 'Unofficial Fallout 3 Patch - Operation Anchorage.esp'
+    tag:
+      - Deflst
+      - Names
+  - name: 'Weld - Badge and Hat.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'Unofficial Fallout 3 Patch - The Pitt.esp'
+    tag:
+      - Deflst
+      - Names
+  - name: 'PLweightadjust.esp'
+    tag:
+      - Invent
+      - Scripts
+      - Stats
+  - name: 'Unofficial Fallout 3 Patch - Broken Steel.esp'
+    tag:
+      - Deflst
+      - Names
+      - NoMerge
+  - name: 'Unofficial Fallout 3 Patch - Point Lookout.esp'
+    tag:
+      - Deflst
+      - Invent
+      - Names
+      - Stats
+  - name: 'Placable Lights v2.1.esp'
+    tag:
+      - Actors.AIData
+      - Relev
+  - name: 'Unofficial Fallout 3 Patch - Mothership Zeta.esp'
+    tag:
+      - Deflst
+      - Names
+  - name: 'royphilipsveryevil.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+  - name: 'UWWUT - The Pitt Addon.esp'
+    tag:
+      - Graphics
+  - name: 'PyromaniacFix-Both+Nuka-BS.esp'
+    tag:
+      - Deflst
+  - name: 'MMM - FWE_Combat Overhaul Master Release.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Factions
+      - Graphics
+      - Invent
+      - Relations
+      - Scripts
+      - Stats
+  - name: 'Project Beauty HD version [Hair Fix].esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'DarkerInteriorsAnchorage.esp'
+    tag:
+      - C.Light
+  - name: 'QuantumLab (PL & MZ).esp'
+    tag:
+      - Scripts
+  - name: 'QuantumLab.esp'
+    tag:
+      - Scripts
+  - name: 'SVDForFWE.esp'
+    tag:
+      - Stats
+  - name: 'Error Correction.esp'
+    tag:
+      - Scripts
+  - name: 'FO3 Wanderers Edition - Alternate Travel.esp'
+    dirty:
+      - crc: 0x9876e38c
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+        udr: 1
+  - name: 'CFWR_EVE_LoadLast.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'Mart''s Mutant Mod - No Corpse Flies.esp'
+    tag:
+      - Relev
+  - name: 'royphilipsevilwmask.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+  - name: 'Less Useless Karma Gifts.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Mart''s Mutant Mod - No Geckos.esp'
+    tag:
+      - Relev
+  - name: 'BBBackpacks-v1-1.esp'
+    tag:
+      - Stats
+  - name: 'moirared.esp'
+    tag:
+      - Invent
+  - name: 'BlackWidowBurkeFix.esp'
+    tag:
+      - Scripts
+  - name: 'PyromaniacFix-Burnmaster-BS.esp'
+    tag:
+      - Deflst
+  - name: 'Scavenger World - FWE Edition v0.07.esp'
+    tag:
+      - Relev
+  - name: 'PyromaniacFix-Both-BS.esp'
+    tag:
+      - Deflst
+  - name: 'PyromaniacFix-Both+Nuka.esp'
+    tag:
+      - Deflst
+  - name: 'frederyck calibr fix-excalibrified.esp'
+    tag:
+      - Invent
+  - name: 'BetterGamePerformance.esp'
+    tag:
+      - Deflst
+      - Delev
+  - name: 'Action for men v3.0.esp'
+    tag:
+      - Invent
+  - name: 'Nuka Cola Enhanced.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'ArefuExpandedByAzar-FixOptRemOld.esp'
+    dirty:
+      - crc: 0x675e86e8
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        udr: 39
+  - name: 'DALCO Inventory Sorter - Fallout 3 (Base Game).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Existence2.0.esp'
+    dirty:
+      - crc: 0xe5309da
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        nav: 1
+  - name: 'DALCO Inventory Sorter - Operation Anchorage.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Operation Anchorage).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - The Pitt.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (The Pitt).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'LingsPrettyThings.esp'
+    tag:
+      - Eyes
+      - Hair
+      - Invent
+      - Names
+      - NPC.Class
+      - NPC.Race
+      - NpcFaces
+      - R.Attributes-F
+      - R.Attributes-M
+      - R.Description
+      - R.Head
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+  - name: 'DALCO Inventory Sorter - Broken Steel.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Scenic_Loading_Background_PointofLookoutDLC.esp'
+    tag:
+      - Graphics
+  - name: 'Towers Hill.esp'
+    tag:
+      - Invent
+  - name: '20th Century v4 ALIVE (Vendor).esp'
+    tag:
+      - Invent
+  - name: 'DarkerInteriorsFallOut3.esp'
+    tag:
+      - C.Light
+  - name: 'DALCO Inventory Sorter - Point Lookout.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Point Lookout).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'PPA - FWE Tougher NPC Power Armour.esp'
+    tag:
+      - Relev
+    dirty:
+      - crc: 0xd1635385
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'DALCO Inventory Sorter - Mothership Zeta.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Mothership Zeta).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'AutoGates.esp'
+    tag:
+      - Scripts
+  - name: 'Scavenger World - FWE Edition v0.08.esp'
+    tag:
+      - Relev
+  - name: 'DALCO Inventory Sorter - Unofficial Fallout 3 Patch (Fallout 3 & All DLCs).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Mart''s Mutant Mod - DLC Anchorage.esp'
+    tag:
+      - Scripts
+  - name: 'RockopolisRebuilt.esp'
+    dirty:
+      - crc: 0x51c3dd7a
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 4
+  - name: 'BA_RepairVanilla.esp'
+    tag:
+      - Deflst
+  - name: 'DALCO Inventory Sorter - CALIBR.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Apocalypse Armory + EVE.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'ZORTS - Custom HP - FWE.esp'
+    tag:
+      - Scripts
+  - name: 'Project Beauty- Broken Steel.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Delay ThePitt + Anchorage.esp'
+    tag:
+      - Scripts
+  - name: 'Raider preset beta.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Start_Energy_Weapon.esp'
+    tag:
+      - Invent
+  - name: 'FACE3 - NPCS.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'ScavengerWasteland.esp'
+    tag:
+      - Actors.AIData
+      - Invent
+      - Relev
+      - Scripts
+  - name: 'FACE3 NPCS - DLC03 Broken Steel.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'ModBetterPArmorAnchorage.esp'
+    tag:
+      - Stats
+  - name: 'CarvanTrader.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Invent
+      - Names
+      - R. Attributes-F
+      - R. Attributes-M
+      - R.Skills
+      - Scripts
+  - name: 'Laurens_Bathroom_poetry_V1.esp'
+    dirty:
+      - crc: 0xd8a75c40
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'FO3 Wanderers Edition - DLC Broken Steel.esp'
+    dirty:
+      - crc: 0x9226281c
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 14
+  - name: 'SpiderAnts.esp'
+    tag:
+      - Relev
+  - name: 'DTOforFWE.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'DALCO Inventory Sorter - Dynamic Crosshair.esp'
+    tag:
+      - Names
+  - name: 'Vault 89 (player home) V1-35.esp'
+    tag:
+      - Scripts
+  - name: 'FaceMe.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'FaceMe-Broken Steel.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Loki_HistoricSpeeches_v1.esp'
+    dirty:
+      - crc: 0x21340b32
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'Moira-EXSP.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'CRAFTable_WMKs_skill_req_Amodeus.esp'
+    tag:
+      - Invent
+  - name: 'Slightly More Ammo (Explosive).esp'
+    tag:
+      - Relev
+  - name: 'BatteriesPlusV1_2.esp'
+    tag:
+      - Graphics
+  - name: 'xCALIBR_override.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'Realistic icons.esp'
+    tag:
+      - Graphics
+  - name: 'CreateScrapMetal.esp'
+    tag:
+      - Invent
+  - name: 'Slightly More Ammo.esp'
+    tag:
+      - Relev
+  - name: 'FO3 Wanderers Edition - Main File.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.Stats
+      - Deflst
+      - Delev
+      - Destructible
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Stats
+    dirty:
+      - crc: 0x1982ec9
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 15
+  - name: 'DALCO Inventory Sorter - CASM.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'FO3 Wanderers Edition - DLC Anchorage.esp'
+    tag:
+      - Deflst
+    dirty:
+      - crc: 0xd6aa0d05
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'EZCompanion_Type-N.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'WasteWearGloves.esp'
+    tag:
+      - Relev
+  - name: 'EVE - RH Ironsights Patch.esp'
+    tag:
+      - Graphics
+  - name: 'ZL-ACR.esp'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0xe4d428d7
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 7
+  - name: 'MTC RealWildnessLife.esp'
+    tag:
+      - Relations
+  - name: 'Clothed Sarah Lyons.esp'
+    tag:
+      - Invent
+  - name: 'ReneersRadioMod.esp'
+    tag:
+      - Scripts
+  - name: 'FWE+WMKexcalibrified(Lkout).esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'xCALIBRmunitions.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Despicable Dashwood v2.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+  - name: 'HeirApparent.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0xb633db19
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        nav: 1
+  - name: 'HairPack_2chPlus.esp'
+    tag:
+      - Hair
+  - name: 'IntoTheDeepWoods.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0x4d6ae42b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 7
+  - name: 'Lawbringer Boutnies Ver1.1.esp'
+    tag:
+      - Invent
+  - name: 'PPA - FWE 2.esp'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0x8b401d77
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'DALCO Inventory Sorter - Max Level Workaround (HP-BS).esp'
+    tag:
+      - Names
+  - name: 'DALCO Inventory Sorter - Mart''s Mutant Mod (Main).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: '3EFskewer.esp'
+    tag:
+      - Stats
+  - name: 'NotSoFast.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0xfff16d14
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        udr: 29
+  - name: 'IMCN - Point Lookout.esp'
+    tag:
+      - Stats
+  - name: 'SimpleEyePatch.esp'
+    tag:
+      - Eyes
+      - Invent
+  - name: 'The Mantis Imperative - Nasty Zeta.esp'
+    dirty:
+      - crc: 0xbc544f07
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 17
+  - name: 'The Mantis Imperative - SkillBooks.esp'
+    dirty:
+      - crc: 0xdd2e48b1
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'The Mantis Imperative - Jello.esp'
+    tag:
+      - Relev
+  - name: 'Clothed American Soldiers.esp'
+    tag:
+      - Invent
+  - name: 'AlexScorpion''s and Weijiesen''s Smoking Fun.esp'
+    tag:
+      - Invent
+  - name: 'Canterbury Commons Interiors Embiggened.esp'
+    tag:
+      - Relations
+    dirty:
+      - crc: 0x3d8abed8
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 181
+        udr: 20
+        nav: 3
+  - name: 'DALCO Inventory Sorter - FWE (Operation Anchorage).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'FF_DestructibleRadios.esp'
+    tag:
+      - Destructible
+  - name: 'Angry Scientists.esp'
+    tag:
+      - Invent
+  - name: 'EVE.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'ScrapMetal_H.esp'
+    tag:
+      - Invent
+  - name: 'EVE - FWE Master Release (pulse fix).esp'
+    tag:
+      - Actors.ACBS
+      - Graphics
+      - Invent
+      - Stats
+  - name: 'ScrapMetal_Q.esp'
+    tag:
+      - Invent
+  - name: 'Laboratory (BS).esp'
+    tag:
+      - Scripts
+  - name: 'CRAFTable_WMKs_skill_requirements_no_assault_rifle_and_laser_pistol.esp'
+    tag:
+      - Invent
+  - name: 'RideableCreature.esp'
+    dirty:
+      - crc: 0xb59d8ade
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 4
+        udr: 1
+  - name: 'MrLabTechnician - FWE.esp'
+    tag:
+      - Deflst
+      - Delev
+  - name: 'PlasmaWeaponsRedesignRebalance.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'Placeable Lights Basic Edition v2.1.esp'
+    tag:
+      - Actors.AIData
+      - Relev
+  - name: '7_HolsterForHandGunsV1_1.esp'
+    tag:
+      - Invent
+  - name: 'PlasmaRifleRedesign_standardonly.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: '20th_Century_Weapons -Plus- Reborn_v1_70RC-18668_Ironsights_v1_1.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'SelfSurgeryKit.esp'
+    tag:
+      - Relev
+  - name: 'Dree Perks.esp'
+    tag:
+      - name: Delev
+        condition: 'checksum("Dree Perks.esp", 25D3F8CA)'
+      - name: Relev
+        condition: 'checksum("Dree Perks.esp", 25D3F8CA)'
+  - name: 'DALCO Inventory Sorter - Sack of Holding.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Chems and Meds Re-Textures Pack.esp'
+    tag:
+      - Graphics
+  - name: 'Scenic_Loading_Background.esp'
+    tag:
+      - Graphics
+  - name: 'laserPistolRetextured-IronSightsPatch.esp'
+    tag:
+      - Graphics
+  - name: 'MAXdog.esp'
+    tag:
+      - Graphics
+  - name: 'Skill Modification Assignment.esp'
+    tag:
+      - Scripts
+      - Stats
+  - name: 'ShadySands.esp'
+    tag:
+      - Factions
+      - Relations
+  - name: 'SuperSledgeBeatdown.esp'
+    tag:
+      - Scripts
+  - name: 'RadioTenpennyTower.esp'
+    dirty:
+      - crc: 0x813140d8
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'BA_InventorySorterAnchorage.esp'
+    tag:
+      - Names
+  - name: 'COL Enclave VER2.esp'
+    tag:
+      - Graphics
+  - name: 'BA_InventorySorterBrokenSteel.esp'
+    tag:
+      - Names
+  - name: 'CRAFTable_WMKs.esp'
+    tag:
+      - Invent
+  - name: 'BA_InventorySorterThePitt.esp'
+    tag:
+      - Names
+  - name: 'Accurate Assault Rifles 1.2.esp'
+    tag:
+      - Stats
+  - name: 'BA_InventorySorterZeta.esp'
+    tag:
+      - Names
+  - name: 'AmmoSorter - Start.esp'
+    tag:
+      - Names
+  - name: 'ZL-SVD-CALIBR.esp'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0x1141ee84
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 11
+  - name: 'Dragonskin Tactical Outfit.esp'
+    tag:
+      - Graphics
+  - name: 'DALCO Inventory Sorter - FWE (Followers Enh (BrS)).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'MTC Wasteland Travellers.esp'
+    dirty:
+      - crc: 0xa7e3339
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 55
+  - name: 'AmmoSorter - End.esp'
+    tag:
+      - Names
+  - name: 'FO3Merged.esp'
+    tag:
+      - NoMerge
+  - name: 'Scenic_Loading_Background_OperationAnchorageDLC.esp'
+    tag:
+      - Graphics
+  - name: 'slaveraider_newlook.esp'
+    tag:
+      - Graphics
+  - name: 'loadingsc.esp'
+    tag:
+      - Graphics
+  - name: 'Destruction - Main.esp'
+    tag:
+      - Destructible
+      - Graphics
+      - Scripts
+  - name: 'unique_uniques.esp'
+    tag:
+      - Graphics
+  - name: 'Classic Fallout Weapons BETA.esp'
+    tag:
+      - Invent
+      - Relev
+  - name: 'Mannequin.esp'
+    tag:
+      - Actors.AIData
+  - name: 'BombayTradingCo.esp'
+    tag:
+      - Actors.AIPackages
+      - Invent
+      - Names
+      - Scripts
+      - Stats
+  - name: 'xCALIBRUniverse_FWE_FPS.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
+  - name: 'Mart''s Mutant Mod.esp'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Relations
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0xf2b3a052
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 41
+  - name: 'Clothed Sarah Lyons - Sleepwear.esp'
+    tag:
+      - Invent
+  - name: 'megaton_lighting.esp'
+    tag:
+      - C.Light
+  - name: 'UWWUT_WT - BS Addon.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'Confessor Cromwell has a Break_EV.esp'
+    tag:
+      - Actors.AIPackages
+  - name: 'DALCO Inventory Sorter - Underground Hideout (Fallout 3 & All DLCs).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (DLC Zeta).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'xCALIBRammo_override.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'Gunfire Sound Range Increased.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - Sound
+  - name: 'CP - FACE3 NPCS [MMM].esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Essential Caravan Merchants.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'Essential_Zeta_Allies.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (DLC ThePitt).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Named Wastelanders.esp'
+    tag:
+      - Names
+  - name: 'DALCO Inventory Sorter - FWE (Broken Steel).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'CRAFTable_WMKs_skill_requirements_lead_pipe_no_assault_rifle_and_laser_pistol_.esp'
+    tag:
+      - Invent
+  - name: 'Named Wasteland.esp'
+    tag:
+      - Names
+  - name: 'MTC Wasteland Travellers (Optional)- Crowded Cities less NPCs.esp'
+    dirty:
+      - crc: 0xe577ee9
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 19
+  - name: 'Outcast DX - FWE patch.esp'
+    tag:
+      - Graphics
+  - name: 'MTC Wasteland Travellers (Optional)- Crowded Cities.esp'
+    dirty:
+      - crc: 0xe577ee9
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 23
+  - name: 'Mart''s Mutant Mod - UF3P.esp'
+    tag:
+      - Invent
+  - name: 'Apocalypse Armory - CALIBR.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'royphilipsevil.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+  - name: 'royphilipsveryevilwmask.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+  - name: 'Wasteland Gigolo.esp'
+    tag:
+      - Scripts
+  - name: 'WattzLasers.esp'
+    tag:
+      - Delev
+      - Relev
+      - Stats
+  - name: 'Arwen_MMM_Patch.esp'
+    tag:
+      - Scripts
+  - name: 'Weld and Steel - Badges, only Weld hat.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'DarkerInteriorsPointLookout.esp'
+    tag:
+      - C.Light
+  - name: 'DALCO Inventory Sorter - WMK - FWE (DLC ThePitt).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'xCALIBR_2CW_CP_Sorted.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'MegatonLights.esp'
+    tag:
+      - C.Light
+  - name: 'xCALIBRUniverse_FWE_Tactical.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
+  - name: 'FOOK2 - Main.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'FO3 Wanderers Edition - Followers Enhanced.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.Stats
+  - name: 'CRAFTable_WMKs_lead_pipe_no_assault_rifle_and laser_pistol.esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (Brotherhood_Outcast).esp'
+    tag:
+      - Invent
+  - name: 'FOOK2 - [DESTRUCTION] Mothership Zeta.esp'
+    tag:
+      - Destructible
+      - Scripts
+  - name: 'Item Descriptions Img.esp'
+    tag:
+      - Graphics
+      - NoMerge
+  - name: 'AfrosNukaCola.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'DALCO Inventory Sorter - FWE (Main File).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Dread Dogmeat.esp'
+    tag:
+      - Scripts
+  - name: 'FO3 Wanderers Edition - DLC Point Lookout.esp'
+    tag:
+      - Delev
+      - Relev
+    dirty:
+      - crc: 0xb63aaa64
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 23
+  - name: 'delayzeta.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0x776851a3
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'FO3 Wanderers Edition - DLC The Pitt.esp'
+    tag:
+      - Names
+    dirty:
+      - crc: 0xbff37246
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'HairPack_2chPlus+.esp'
+    tag:
+      - Hair
+  - name: 'DALCO Inventory Sorter - FWE (The Pitt).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: '[DC RANGER ARSENAL v3 MASTER].esm'
+    tag:
+      - Deflst
+  - name: 'DALCO Inventory Sorter - FWE (Point Lookout).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - FWE (Alternate Travel).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Millenia_C96_replacer.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'Deputy Weld and Steel - Badges and Hats.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'DALCO Inventory Sorter - FWE (Followers Enh).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'FO3 Wanderers Edition - Followers Enhanced (BrokenSteel).esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.Stats
+    dirty:
+      - crc: 0x88f5a264
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+  - name: 'EVE - FWE Master Release (Follower Enhanced).esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'FO3 Wanderers Edition - Optional VATS Halftime.esp'
+    dirty:
+      - crc: 0x1b66e394
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'CRAFTable_WMKs_skill_requirements_lead_pipe.esp'
+    tag:
+      - Invent
+  - name: 'FO3 Wanderers Edition - Optional Worn Weapons.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Brahmin Dairy Products.esp'
+    tag:
+      - Relev
+    dirty:
+      - crc: 0xc01a90c2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+  - name: 'Bottle That Water Alternative - Broken Steel.esp'
+    tag:
+      - Scripts
+      - Stats
+  - name: 'FO3 Wanderers Edition - Talon Loot Crash Fix.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'FWE_Overhaul Kit - Main.esp'
+    tag:
+      - Actors.ACBS
+      - Deflst
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+  - name: 'Tribal_DX.esp'
+    tag:
+      - Deflst
+      - Graphics
+  - name: '20th Century v5 ALIVE (Chinese Ghoul).esp'
+    tag:
+      - Invent
+  - name: 'FWE_Overhaul Kit - Equipment .esp'
+    tag:
+      - Actors.ACBS
+      - Deflst
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'FWE - Combat Overhaul_Equipment.esp'
+    tag:
+      - Actors.ACBS
+      - Deflst
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'ColtM4Carbines_RHIronSights.esp'
+    tag:
+      - Graphics
+  - name: 'Caravan Merchants Heal After Combat.esp'
+    tag:
+      - Scripts
+  - name: 'SuperStim.esp'
+    tag:
+      - Scripts
+  - name: 'CantaburyCommonsGuards.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'WeaponModKits.esp'
+    tag:
+      - Actors.AIData
+      - Delev
+      - Invent
+      - Names
+      - Relev
+  - name: 'Temple of the Union Overhaul.esp'
+    dirty:
+      - crc: 0xe4a3c388
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 34
+        udr: 167
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (Base).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'WeaponModKits - FWE Master Release.esp'
+    tag:
+      - Deflst
+      - Names
+      - Relev
+    dirty:
+      - crc: 0x25042115
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 82
+  - name: 'Xepha''s Darkened Interiors.esp'
+    tag:
+      - C.Light
+  - name: 'WeaponModKits - FWE Optional Worn Weapons.esp'
+    tag:
+      - Delev
+  - name: 'DALCO Inventory Sorter - WMK - FWE Master Release.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'EWE Supermutant Energy Weapons.esp'
+    tag:
+      - Relev
+  - name: 'DarkerInteriorsThePitt.esp'
+    tag:
+      - C.Light
+  - name: 'CRAFTable_WMKs_no_assault_rifle_and_laser_pistol.esp'
+    tag:
+      - Invent
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (DLC Anchorage).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - WMK - FWE (DLC Anchorage).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (DLC BrS).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - WMK - FWE (DLC BrS).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'DALCO Inventory Sorter - Weapon Mod Kits (DLC PointLookout).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Realistic Interior Lighting - OA.esp'
+    tag:
+      - C.Light
+  - name: 'DALCO Inventory Sorter - WMK - FWE (DLC Zeta).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'IMCN - Operation Anchorage.esp'
+    tag:
+      - Stats
+  - name: 'CRAFTable_WMKs_lead_pipe.esp'
+    tag:
+      - Invent
+  - name: 'X-1_Tales_of_Wonder!.esp'
+    dirty:
+      - crc: 0xc8b56e69
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 4
+  - name: 'T3T_WMK1.esp'
+    tag:
+      - Deflst
+      - Stats
+  - name: 'xCALIBR_FWE5_Override.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: '44Magnum.esp'
+    tag:
+      - Deflst
+      - Stats
+  - name: 'Arwen_GOTY_Hard-Core.esp'
+    tag:
+      - NoMerge
+  - name: 'Scavenger World - Updated v0.08.esp'
+    tag:
+      - Relev
+  - name: 'AlexScorpion''s  and Weijiesen''s Smoking Fun.esp'
+    tag:
+      - Invent
+  - name: 'Mart''s Mutant Mod - Increased Increased Spawns.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - Project Beauty + FWE.esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'alienblasterammo.esp'
+    tag:
+      - Stats
+  - name: '20th Century v5 ALIVE (Vault 101).esp'
+    tag:
+      - Invent
+  - name: 'PPA - Mothership Zeta.esp'
+    dirty:
+      - crc: 0xbc734e8b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'Drone Cannon Fix.esp'
+    tag:
+      - Graphics
+  - name: 'IMCN - RiPnO Compatibility and Ingestibles.esp'
+    tag:
+      - Stats
+  - name: 'Ghouls Cohabitate.esp'
+    tag:
+      - ScriptContents
+  - name: 'laserRifleRetexturedScoped.esp'
+    tag:
+      - Graphics
+  - name: 'laserRifleRetextured-IronSightsPatch.esp'
+    tag:
+      - Graphics
+  - name: 'laserScatterGunRetextured.esp'
+    tag:
+      - Graphics
+  - name: 'delaypl.esp'
+    dirty:
+      - crc: 0xd5daf34e
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'FortIndependenceRedesigned.esp'
+    dirty:
+      - crc: 0xe7bc4beb
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 20
+        udr: 716
+  - name: 'Millenia_AK47_replacer.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'DALCO Inventory Sorter - IGM.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Tactical Weapons-Calibr-V3 762 fix.esp'
+    tag:
+      - Invent
+  - name: 'DALCO Inventory Sorter - Max Level Workaround (BS).esp'
+    tag:
+      - Names
+  - name: '3EFhelmlessstealthsuit.esp'
+    dirty:
+      - crc: 0xecf23f
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 9
+        udr: 1
+  - name: 'PlasmaRifleRedesign_A321only.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'WMKAA12Shotgun.esp'
+    tag:
+      - Graphics
+  - name: 'DALCO Inventory Sorter - WMKAA12Shotgun.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'AnimatedFanV2f3.esp'
+    tag:
+      - Destructible
+  - name: 'BoSDX.esp'
+    tag:
+      - Graphics
+  - name: 'WinterizedT51bDX.esp'
+    tag:
+      - Graphics
+      - Scripts
+    dirty:
+      - crc: 0x1d21bee9
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+      - crc: 0xb32fd263
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'cyber_meat.esp'
+    tag:
+      - Graphics
+  - name: 'xCALIBRuniverse_LingsPrettyThings.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+      - NPC.Class
+      - Voice-F
+  - name: 'Outcast DX.esp'
+    tag:
+      - Graphics
+  - name: 'Cat Outfit Fanged.esp'
+    tag:
+      - Eyes
+  - name: 'Cat Outfit Only.esp'
+    tag:
+      - Eyes
+  - name: 'clearhelmets4radsuits.esp'
+    tag:
+      - Graphics
+  - name: 'Mart''s Mutant Mod - DLC Broken Steel.esp'
+    tag:
+      - Delev
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0x4489c0d6
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'Mart''s Mutant Mod - Natural Selection.esp'
+    tag:
+      - Relations
+  - name: 'COL Enclave Hell.esp'
+    tag:
+      - Graphics
+  - name: 'K2_ArmorsRedone_Raiders.esp'
+    tag:
+      - Graphics
+  - name: 'Arwen_MMM_Med-Tec_Patch.esp'
+    tag:
+      - Relev
+      - Scripts
+  - name: 'K2_GirlieGirlVaultBabe.esp'
+    tag:
+      - Invent
+  - name: 'ZL-SVD.esp'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0x3b754c8b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 11
+  - name: 'ModBetterPArmorVanilla.esp'
+    tag:
+      - Stats
+  - name: 'ModBetterPArmorPitt.esp'
+    tag:
+      - Stats
+  - name: 'Test-Weapon_additional armor.esp'
+    tag:
+      - Invent
+  - name: 'Realistic Interior Lighting.esp'
+    tag:
+      - C.Light
+  - name: 'OverMightyGold.esp'
+    tag:
+      - Invent
+  - name: 'xCALIBRuniverse_LingsBrokenSteel.esp'
+    tag:
+      - Actors.ACBS
+      - Hair
+      - NpcFaces
+  - name: 'Reclothing For LPT and Flash.esp'
+    tag:
+      - Invent
+  - name: 'Mart''s Mutant Mod - Tougher Traders.esp'
+    tag:
+      - Actors.AIData
+      - Actors.Stats
+      - Factions
+      - Relations
+  - name: 'Bobbleheads Begone.esp'
+    tag:
+      - Scripts
+  - name: 'PLFewerItems.esp'
+    tag:
+      - Delev
+      - Relev
+    dirty:
+      - crc: 0xe3ef4366
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+        udr: 56
+  - name: 'CantaburyCommonsGuards - DTO.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+  - name: 'Mart''s Mutant Mod - FOOK2.esp'
+    tag:
+      - Relations
+  - name: 'RobCo Certified v2 Zeta Addon.esp'
+    dirty:
+      - crc: 0x7e827a3
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'More Ammo.esp'
+    tag:
+      - Relev
+  - name: 'Everso Slightly More Ammo.esp'
+    tag:
+      - Relev
+  - name: 'Scavenger World - Updated v0.07.esp'
+    tag:
+      - Relev
+  - name: 'SimpleSmokeo.esp'
+    tag:
+      - Actors.AIPackages
+      - Actors.Animations
+      - Delev
+      - Invent
+      - Names
+      - Relev
+  - name: 'WRK - Plugin.esp'
+    tag:
+      - Invent
+      - Relev
+  - name: 'ZORTS - Custom HP.esp'
+    tag:
+      - Scripts
+  - name: 'ZORTS - Custom HP - FOOK2.esp'
+    tag:
+      - Scripts
+  - name: 'Replenishment.esp'
+    tag:
+      - Scripts
+  - name: 'UWWUT.esp'
+    tag:
+      - Graphics
+  - name: 'UWWUT - WMK Addon.esp'
+    tag:
+      - Graphics
+  - name: 'RH_IronSights_Basic_ZetaPlugin.esp'
+    dirty:
+      - crc: 0x9449eb44
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 5
+  - name: 'UWWUT_WT.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'UWWUT_WT - TP Addon.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'UWWUT_WT - WMK Addon.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'WeaponModKits-Unique.esp'
+    tag:
+      - Graphics
+  - name: 'unique_uniquesCut.esp'
+    tag:
+      - Graphics
+  - name: 'unique_uniquesCutDLC.esp'
+    tag:
+      - Graphics
+  - name: 'Less Useless Karma Gifts 2.0.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Xepha''s Dynamic Weather - The Pitt.esp'
+    tag:
+      - C.Climate
+  - name: 'frederyck+FWE+xCALIBR.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'FWE+WMK_weapons_xCALIBRified.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'Nuka Cola Enhanced - FWE.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'MyMegaton-AmmoPress-Calibr-Plus-Unlocked_v1_21_18605.esp'
+    tag:
+      - Names
+    dirty:
+      - crc: 0xc061b97b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        udr: 8
+  - name: 'Bottle That Water Alternative.esp'
+    tag:
+      - Scripts
+      - Stats
+  - name: 'RH_IronSights_Basic_PittPlugin.esp'
+    dirty:
+      - crc: 0xf4974e27
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'Empty Nuka-Cola Quantum Bottles.esp'
+    tag:
+      - Names
+  - name: 'xCALIBRammo_FWE.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'PlasmaPistolRedesign.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'Water Bottles 3000.esp'
+    tag:
+      - Deactivate
+      - Graphics
+      - NoMerge
+  - name: 'schematics2.esp'
+    tag:
+      - Graphics
+      - NoMerge
+  - name: 'DangerousRadroaches_MMM.esp'
+    tag:
+      - Actors.CombatStyle
+  - name: 'Weld and Steel - Badges.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'Deputy Weld and Steel - Badges Steel Hat.esp'
+    tag:
+      - Actors.Anims
+      - Graphics
+      - Invent
+  - name: 'GaryHoloTape.esp'
+    tag:
+      - Names
+  - name: 'Trucker Holotapes.esp'
+    tag:
+      - Names
+  - name: 'EVE Operation Anchorage.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'EVE Anchorage - FWE DLC Anchorage.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: '20th Century v4 ALIVE (Vault 101).esp'
+    tag:
+      - Invent
+    dirty:
+      - crc: 0xf569054a
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 4
+  - name: 'EVE - FWE with WeaponModKits.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'Mart''s Mutant Mod - DLC Point Lookout.esp'
+    tag:
+      - Delev
+      - Relev
+      - Scripts
+  - name: 'Mart''s Mutant Mod - Increased Spawns.esp'
+    tag:
+      - Relev
+  - name: 'All Companions Essential.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'RadioTenpenny.esp'
+    dirty:
+      - crc: 0xf7eca8bd
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 7
+  - name: 'Mart''s Mutant Mod - DLC Zeta.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0xcebfcdbc
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'DALCO Inventory Sorter - Mart''s Mutant Mod (DLC Broken Steel).esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Project Beauty- Point Lookout MMM.esp'
+    tag:
+      - Deactivate
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Mart''s Mutant Mod - No Abominable Mutants.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - No Floaters.esp'
+    tag:
+      - Relev
+  - name: 'YearlingBooks.esp'
+    tag:
+      - Scripts
+  - name: 'Mart''s Mutant Mod - No Iguanas.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - No Stalker Creatures.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - No Wanamingos.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - Feral Ghoul Rampage.esp'
+    tag:
+      - Relev
+  - name: 'Mart''s Mutant Mod - Reduced Wasteland Spawns.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Mart''s Mutant Mod - Zones Respawn.esp'
+    tag:
+      - Relations
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0xcb6a4b5f
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 9
+  - name: 'Mart''s Mutant Mod - Project Beauty (HD Addition).esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Mart''s Mutant Mod - Project Beauty.esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'bittercup_6.esp'
+    tag:
+      - Delev
+      - Relev
+      - ScriptContents
+  - name: 'CP - FACE3 [MMM] Racefix.esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Mart''s Mutant Mod - FOOK2 - DIK.esp'
+    tag:
+      - Relations
+  - name: 'Mart''s Mutant Mod - FWE Master Release.esp'
+    tag:
+      - Invent
+      - Relations
+  - name: 'DALCO Inventory Sorter - MMM - FWE.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'Mart''s Mutant Mod - FWE Master Release + DLCs.esp'
+    tag:
+      - Invent
+      - Relations
+      - Scripts
+  - name: 'FasterMorePowerfulMines.esp'
+    tag:
+      - Stats
+  - name: 'Mart''s Mutant Mod - FWE Master Release + Project Beauty.esp'
+    tag:
+      - NoMerge
+      - NPC.Race
+      - NpcFaces
+  - name: 'Mart''s Mutant Mod - FWE with EVE.esp'
+    tag:
+      - Invent
+      - Relations
+  - name: 'Mart''s Mutant Mod - DC Interiors.esp'
+    tag:
+      - Relations
+  - name: 'AMPUTATE!.esp'
+    tag:
+      - Scripts
+  - name: 'ARC - Assembled Robotic Companions.esp'
+    tag:
+      - Invent
+      - Stats
+  - name: 'CharonImproved.esp'
+    tag:
+      - Actors.AIPackages
+  - name: 'llama''s Vanilla Followers for Charon Improved.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Stats
+  - name: 'Get Your Cherry Back.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+  - name: 'CompanionCherry.esp'
+    tag:
+      - Actors.Stats
+  - name: 'mesme.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'Xepha''s Dynamic Weather - Main + DLC Merged.esp'
+    tag:
+      - C.Climate
+    dirty:
+      - crc: 0x691323eb
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 13
+  - name: 'RI_LootTableRI.esp'
+    tag:
+      - Delev
+  - name: 'RI_LootTablePN.esp'
+    tag:
+      - Delev
+  - name: 'Imp''s More Complex Needs.esp'
+    tag:
+      - Delev
+      - Relev
+      - Stats
+  - name: 'FWE-20thCent Ammo Weight in Names.esp'
+    tag:
+      - Names
+  - name: 'IMCN - 5 DLC Merged.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - The Pitt.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - Broken Steel.esp'
+    tag:
+      - Stats
+  - name: 'Elgar''s Extra Random Encounters.esp'
+    dirty:
+      - crc: 0x6fbcb8b4
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 218
+  - name: 'IMCN - Mothership Zeta.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - FWE Compatibility and Ingestibles.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - FOOK2 Ingestibles.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - BLTC Compatibility and Ingestibles.esp'
+    tag:
+      - Stats
+  - name: 'IMCN - MMM Meats, Bloods, and Eyeballs.esp'
+    tag:
+      - Delev
+      - Relev
+      - Stats
+  - name: 'Attentater''s Wasteland Economy.esp'
+    tag:
+      - Names
+  - name: 'BA_RepairThePitt.esp'
+    tag:
+      - Deflst
+  - name: 'ArefuExpandedByAzar-FixOptAddNew.esp'
+    dirty:
+      - crc: 0x9b1efe6b
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 4
+  - name: 'BA_RepairGOTY.esp'
+    tag:
+      - Deflst
+  - name: 'ChildKiller.esp'
+    tag:
+      - Actors.ACBS
+      - Scripts
+  - name: 'EWE DLC Addon.esp'
+    tag:
+      - Deflst
+      - Graphics
+      - Stats
+  - name: 'Big Town Overhaul [GangStore].esp'
+    dirty:
+      - crc: 0x563db400
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 53
+        udr: 684
+  - name: 'URWL.esp'
+    tag:
+      - C.Light
+  - name: 'QuantumLab (MZ).esp'
+    tag:
+      - Scripts
+  - name: 'Laboratory.esp'
+    tag:
+      - Scripts
+  - name: 'Laboratory (PL).esp'
+    tag:
+      - Scripts
+  - name: 'AinzBeautifuleEyes.esp'
+    tag:
+      - Eyes
+  - name: 'QuantumLab (PL).esp'
+    tag:
+      - Scripts
+  - name: 'Laboratory (MZ).esp'
+    tag:
+      - Scripts
+  - name: '20th Century v5 ALIVE (Talon_Regulator).esp'
+    tag:
+      - Invent
+  - name: 'Laboratory (BS & MZ).esp'
+    tag:
+      - Scripts
+  - name: 'UUF3P - FWE Patch.esp'
+    tag:
+      - Deflst
+      - Factions
+      - Invent
+      - Scripts
+      - Stats
+  - name: 'Laboratory (PL & MZ).esp'
+    tag:
+      - Scripts
+  - name: 'LightweightFoodSanitizer.esp'
+    tag:
+      - Stats
+  - name: 'MiscWeightFix.esp'
+    tag:
+      - Stats
+  - name: 'Owned!.esp'
+    tag:
+      - Factions
+  - name: 'RRRU +4 UFP.esp'
+    tag:
+      - Deflst
+  - name: 'RRRU +4.esp'
+    tag:
+      - Deflst
+  - name: 'DALCO Inventory Sorter - SMA.esp'
+    tag:
+      - Names
+      - NoMerge
+  - name: 'WRK Final - Plugin.esp'
+    tag:
+      - Invent
+      - Relev
+  - name: 'MoreMapMarkers.esp'
+    dirty:
+      - crc: 0xb7f1fa75
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 289
+        udr: 1
+  - name: 'WRK Final - Point Lookout.esp'
+    tag:
+      - Invent
+  - name: 'Arwen_Realism_Core.esp'
+    tag:
+      - Actors.CombatStyle
+      - Actors.Stats
+      - Destructible
+      - Names
+      - Relev
+      - Sound
+      - Stats
+  - name: 'Arwen_GOTY_Realism_Core.esp'
+    tag:
+      - NoMerge
+  - name: 'Arwen_Hard-Core.esp'
+    tag:
+      - Actors.CombatStyle
+      - Actors.Stats
+      - Destructible
+      - Names
+      - Relev
+      - Stats
+  - name: 'FO3_WRP.esp'
+    tag:
+      - Graphics
+  - name: 'Arwen_Med-Tec.esp'
+    tag:
+      - Names
+  - name: 'FelloutWithLightingOverhual-1.0.esp'
+    tag:
+      - C.Light
+  - name: 'Arwen_GOTY_Med-Tec.esp'
+    tag:
+      - Names
+      - Relev
+      - Stats
+  - name: 'Phalanx-MainFollowerModule.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+  - name: 'GH-HealingRebalanceMod_Infirmary+Lab.esp'
+    tag:
+      - Scripts
+  - name: 'DALCO Inventory Sorter - Max Level Workaround (HP).esp'
+    tag:
+      - Names
+  - name: 'Fellout-PointLookout.esp'
+    dirty:
+      - crc: 0xf33277f6
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: '20th Century v4 ALIVE (RivetCity).esp'
+    tag:
+      - Invent
+  - name: 'Realistic Interior Lighting - BS.esp'
+    tag:
+      - C.Light
+  - name: 'DarkerInteriorsBrokenSteel.esp'
+    tag:
+      - C.Light
+  - name: 'DarkerInteriorsZeta.esp'
+    tag:
+      - C.Light
+  - name: 'URWL47.esp'
+    tag:
+      - C.Light
+  - name: 'URWL48.esp'
+    tag:
+      - C.Light
+  - name: 'URWL-Normal Color Saturation.esp'
+    tag:
+      - C.Light
+  - name: 'URWLRain.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Companion Core DLC Addon.esp'
+    dirty:
+      - crc: 0x37145cc8
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'NColorDCInteriors.esp'
+    tag:
+      - C.Light
+  - name: 'Xepha''s Darkened Interiors - OA.esp'
+    tag:
+      - C.Light
+  - name: 'Xepha''s Darkened Interiors - BS.esp'
+    tag:
+      - C.Light
+  - name: 'Xepha''s Darkened Interiors - PL.esp'
+    tag:
+      - C.Light
+  - name: 'Xepha''s Dynamic Weather - Main.esp'
+    tag:
+      - C.Climate
+  - name: 'Xepha''s Dynamic Weather - Anchorage.esp'
+    tag:
+      - C.Climate
+  - name: 'ArlingtonRestoration.esp'
+    dirty:
+      - crc: 0x7644ffdb
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 11
+        udr: 481
+        nav: 7
+      - crc: 0xbb8568ed
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        nav: 7
+  - name: 'Xepha''s Dynamic Weather - Broken Steel.esp'
+    tag:
+      - C.Climate
+  - name: 'Xepha''s Dynamic Weather - Point Lookout.esp'
+    tag:
+      - C.Climate
+  - name: 'BornAgain Outcast v3.esp'
+    tag:
+      - Graphics
+      - Names
+      - Relev
+  - name: 'Xepha''s Dynamic Weather - Weather Machine (Quest Added).esp'
+    dirty:
+      - crc: 0x21c258f6
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+        nav: 1
+  - name: 'HairPack_2chPlus+EYE.esp'
+    tag:
+      - eyes
+      - Hair
+  - name: 'FeralGhoulTest.esp'
+    tag:
+      - Relev
+  - name: '20th Century v4 ALIVE (NPC_Settler).esp'
+    tag:
+      - Invent
+  - name: '20th Century v4 ALIVE (Raider).esp'
+    tag:
+      - Invent
+  - name: '20th Century v4 ALIVE (Brotherhood_Outcast).esp'
+    tag:
+      - Invent
+  - name: '20th Century v4 ALIVE (SuperMutant).esp'
+    tag:
+      - Invent
+    dirty:
+      - crc: 0x189a679d
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 11
+  - name: 'AAAAlbino_LingsBOG.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: '20th Century v4 ALIVE (Talon_Regulator).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (Vendor).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (Containers).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (NPC_Settler).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (RivetCity).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (Raider).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (SuperMutant).esp'
+    tag:
+      - Invent
+  - name: '20th Century v5 ALIVE (TEST Container).esp'
+    dirty:
+      - crc: 0x4f5ccd2c
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'FWE Realistic Ammo Weight in Names inc. 20th Cent.esp'
+    tag:
+      - Names
+  - name: 'Dog lover''s mod.esp'
+    tag:
+      - Deflst
+      - Delev
+  - name: 'MMM dog lover''s mod.esp'
+    tag:
+      - Deflst
+      - Delev
+  - name: 'CUSTOM RACES.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'DIM CUSTOM RACES V2.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'EwwGhoulyBody.esp'
+    tag:
+      - Body-F
+  - name: 'VB_Hair_Shojo+CotW_15.esp'
+    tag:
+      - Hair
+  - name: 'Shojo Race.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'XENH.esp'
+    tag:
+      - Eyes
+      - Hair
+  - name: '"[Nukomimi-San] Starter.esp"'
+    tag:
+      - Eyes
+      - Hair
+  - name: 'CALIBRv14 Ammunition Schematics for FWE-WMK-CRAFT-V1_3-18639.esp'
+    dirty:
+      - crc: 0x9ab2cf5e
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'RobcoCertified24SideMod.esp'
+    dirty:
+      - crc: 0x9c938fce
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'xCALIBRuniverse.esp'
+    tag:
+      - Actors.DeathItems
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+  - name: 'xCALIBRUniverse - WMK.esp'
+    tag:
+      - Graphics
+      - Names
+      - Sound
+      - Stats
+  - name: 'xCALIBR_override_unsorted.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'xCALIBR_override_FWE5.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'xCALIBR_2CW_CP.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'xCALIBR_20CW_v5.12.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'FWE(v.5.04)+WMK_weapons_xCALIBRified.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'FWE+WMKexcalibrified(Pitt).esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'Choose your own hairstyle (load this last on FOMM).esp'
+    tag:
+      - Eyes
+      - Hair
+      - NPC.Race
+      - NpcFaces
+  - name: 'ZL-MP5 Pack.esp'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0xb7146642
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+  - name: 'TenpennyGhoulsAtPeace.esp'
+    tag:
+      - ScriptContents
+  - name: 'ACRForFWE.esp'
+    tag:
+      - Stats
+  - name: 'MP5ForFWE.esp'
+    tag:
+      - Stats
+  - name: '20th Century Weapons -Plus- Reborn FWE-WMK-Calibr14_V1_70RC_18668.esp'
+    tag:
+      - Names
+      - Relev
+      - Stats
+    dirty:
+      - crc: 0xdbf185aa
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 474
+        udr: 1
+  - name: 'ArefuExpandedByAzar-FixMisc.esp'
+    dirty:
+      - crc: 0x283eaf75
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+  - name: 'Big Town Overhaul.esp'
+    dirty:
+      - crc: 0x31e2d0e2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 41
+        udr: 684
+  - name: 'Binoculars.esp'
+    dirty:
+      - crc: 0x5a50fe32
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 15
+        udr: 2
+  - name: 'Binoculars and Scopes.esp'
+    dirty:
+      - crc: 0x30f58333
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+        udr: 2
+  - name: 'Blackened FWE + MMM + Project Beauty.esp'
+    tag:
+      - Actors.Stats
+      - Factions
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0xd8bb74f2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'Blackened FWE + MMM + EVE + Project Beauty.esp'
+    tag:
+      - Actors.Stats
+      - Factions
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+  - name: 'Bornagain Zeta Combat Armor Texture Patch.esp'
+    dirty:
+      - crc: 0xab095a45
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'Imperfection.esm'
+    dirty:
+      - crc: 0x219ae3e2
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 24
+        udr: 7
+  - name: 'delaysteel.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0xe818b262
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'PrototypePowerArmorUsesStimpaks.esp'
+    tag:
+      - Scripts
+  - name: 'DriveableMotorCycle.esp'
+    dirty:
+      - crc: 0x949faf2c
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 3
+  - name: 'FastTravelIndoors.esp'
+    dirty:
+      - crc: 0x42953e9a
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 6
+  - name: 'GlowingGhouls.esp'
+    tag:
+      - Scripts
+  - name: 'GNR Enhanced.esp'
+    tag:
+      - Scripts
+  - name: 'Paradise Lost - Unique Texture and Icon.esp'
+    tag:
+      - Graphics
+  - name: 'PlasmaRifleAwesomefied.esp'
+    tag:
+      - Sound
+      - Stats
+  - name: 'PlasmaRifleAwesomefiedWMK.esp'
+    tag:
+      - Sound
+      - Stats
+  - name: 'PPA - FWE.esp'
+    dirty:
+      - crc: 0xd43a04e
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 2
+  - name: 'RagdollOverhaulFO3.esp'
+    tag:
+      - Actors.Skeleton
+  - name: 'tubRRCompound.esp'
+    tag:
+      - Actors.AIPackages
+      - Actors.Stats
+      - Inven
+      - Scripts
+    dirty:
+      - crc: 0x27bea633
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 336
+        udr: 13
+        nav: 7
+  - name: 'Merged Patch.esp'
+    tag:
+      - NoMerge
+  - name: 'Clarity.esp'
+    dirty:
+      - crc: 0xa9b7f199
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'RH_IronSights_Basic_AnchoragePlugin.esp'
+    dirty:
+      - crc: 0x7ef88f51
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'RH_IronSights_Basic_BrokenSteelPlugin.esp'
+    dirty:
+      - crc: 0xa1feb067
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 1
+  - name: 'DLC Enemies Freedom.esp'
+    dirty:
+      - crc: 0x971497c7
+        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
+        itm: 21
