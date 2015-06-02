@@ -436,6 +436,12 @@ class F4seCosave(SkseCosave):
     signature = 'F4SE'
     _espm_chunk_type = {'SDOM', 'DOML'}
 
+class NvseCosave(ACoSaveFile):
+    signature = 'NVSE'
+
+class FoseCosave(ACoSaveFile):
+    signature = 'FOSE'
+
 # Factory
 def get_cosave_type(game_fsName):
     """:rtype: type"""
@@ -447,4 +453,8 @@ def get_cosave_type(game_fsName):
         return SkseSECosave
     elif game_fsName == u'Fallout4':
         return F4seCosave
+    elif game_fsName == u'Fallout3':
+        return FoseCosave
+    elif game_fsName == u'FalloutNV':
+        return NvseCosave
     return None

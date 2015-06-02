@@ -108,14 +108,12 @@ for details.
 ## Contributing Code
 
 I'm really glad you're reading this, because we need volunteer developers to
-help this project come to fruition. Some outstanding issues we need help with
-are:
+help advance this project. Some outstanding issues we need help with are:
 
-1. Update patchers so Wrye Bash can process Skyrim's and Fallout4 files as it does for Oblivion
+1. Update patchers so Wrye Bash can process Skyrim's and Fallout files as it does for Oblivion
 1. Add tests for patchers package - we are setting up a test repo here: https://github.com/wrye-bash/test_bash
 1. Add tests for other sensitive areas (load order, refresh, BAIN etc)
 1. Move on to newer python/wx python versions, initially wx classic 3.02
-1. Update cosave code to work with script extenders other than OBSE
 1. Update save files editing code for games other than Oblivion
 1. Update CBash for games other than Oblivion. CBash repo: https://github.com/wrye-bash/CBash
 
