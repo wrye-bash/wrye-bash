@@ -1925,25 +1925,33 @@ class ImportInventory(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
+        if game.fsName == u'Skyrim':
+            loadFactory = LoadFactory(False,'NPC_','CONT')
+        else:
+            loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
-                for record in block.getActiveRecords():
-                    self.touched.add(mapper(record.fid))
+            if game.fsName == u'Skyrim':
+                for block in (srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
+            else:
+                for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
             progress.plus()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1956,8 +1964,8 @@ class ImportInventory(ImportPatcher):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(('NPC_','CREA','CONT'))
-            for type in ('NPC_','CREA','CONT'):
+            modFile.convertToLongFids(game.inventoryTypes)
+            for type in game.inventoryTypes:
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
@@ -1980,7 +1988,7 @@ class ImportInventory(ImportPatcher):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in ('NPC_','CREA','CONT'):
+            for type in game.inventoryTypes:
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,type).getActiveRecords():
@@ -1994,7 +2002,7 @@ class ImportInventory(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = {}
-        for type in ('NPC_','CREA','CONT'):
+        for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
