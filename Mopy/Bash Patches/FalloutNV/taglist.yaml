@@ -1,0 +1,2535 @@
+plugins:
+  - name: '188 Trading Post Revisited.esp'
+    tag:
+      - NpcFaces
+  - name: '1nivPNSLPatch.esp'
+    tag:
+      - Names
+      - Stats
+  - name: '1nivVSLArmors.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: '1st Recon Revised.esp'
+    tag:
+      - Invent
+  - name: '47 ENB Weather - TTW Patch.esp'
+    tag:
+      - C.ImageSpace
+      - C.Water
+      - Sound
+  - name: '47 ENB Weather.esp'
+    tag:
+      - C.ImageSpace
+      - C.Water
+      - Sound
+  - name: 'A Better Arcade.esp'
+    tag:
+      - Invent
+      - NpcFaces
+  - name: 'A Better Boone.esp'
+    tag:
+      - Invent
+      - NpcFaces
+  - name: 'A Better Cass - Rearmed M1911.esp'
+    tag:
+      - Graphics
+      - Sound
+      - Stats
+  - name: 'A Better Cass - Rearmed SG.esp'
+    tag:
+      - Graphics
+      - Sound
+      - Stats
+  - name: 'A Better Cass.esp'
+    tag:
+      - Invent
+      - NpcFaces
+  - name: 'A Better Veronica.esp'
+    tag:
+      - Invent
+      - NpcFaces
+  - name: 'ACS-DeadMoney.esp'
+    tag:
+      - Invent
+  - name: 'ACS-DLCMerged.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'ACS-GunRunnersArsenal.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'ACS-HonestHearts.esp'
+    tag:
+      - Invent
+  - name: 'ACS-LonesomeRoad.esp'
+    tag:
+      - Names
+  - name: 'ACS-WMXModernWeapons.esp'
+    tag:
+      - Invent
+  - name: 'ADAM Complete.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Stats
+  - name: 'Afterschool Special.esm'
+    tag:
+      - Invent
+  - name: 'AG Shell Casing Fixes - OWB.esp'
+    tag:
+      - Graphics
+  - name: 'AG Shell Casing Fixes Repeater-Service-ThatGun.esp'
+    tag:
+      - Graphics
+  - name: 'AG Shell Casing Fixes-All Five.esp'
+    tag:
+      - Graphics
+  - name: 'Ahzteks Pistol and SMG Replacements.esp'
+    tag:
+      - Graphics
+      - Names
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'Ahzteks Weapon Overhaul.esp'
+    tag:
+      - Deflst
+      - Delev
+      - Invent
+  - name: 'Alternative Blood Spout.esp'
+    tag:
+      - Graphics
+  - name: 'Alternative Repairing - Breakdown Item Icons.esp'
+    tag:
+      - Graphics
+  - name: 'ammoingredientsloot.esp'
+    tag:
+      - Invent
+  - name: 'AnimatedFan.esp'
+    tag:
+      - Destructible
+  - name: 'Armor Replacer Child NPC Fix.esp'
+    tag:
+      - Invent
+  - name: 'Armored PA Gloves.esp'
+    tag:
+      - Deflst
+  - name: 'Arwen_NV_Realism_Core.esp'
+    tag:
+      - Stats
+  - name: 'AsharasLightningItems_ForNV.esp'
+    tag:
+      - Actors.AIData
+      - Invent
+      - NpcFaces
+  - name: 'Assault Carbine mods.esp'
+    tag:
+      - WeaponMods
+  - name: 'athornysituation.esp'
+    tag:
+      - Relations
+      - Scripts
+    dirty:
+      - crc: 0xcc32f754
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 10
+  - name: 'avangraffscorned.esp'
+    tag:
+      - Actors.AIPackages
+    dirty:
+      - crc: 0x26ab27d
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'awilderwasteland.esp'
+    tag:
+      - AI.Packages
+      - Stats
+    dirty:
+      - crc: 0xed3d7bb3
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 9
+  - name: 'AWOP-AhztekWeaponPatch.esp'
+    tag:
+      - Invent
+  - name: 'AWOPCaliberXAmmoPatch.esp'
+    tag:
+      - Invent
+  - name: 'AWOPCaliberXAmmoPatchLOW.esp'
+    tag:
+      - Invent
+  - name: 'AWorldOfPain(Preview).esm'
+    tag:
+      - Deflst
+      - Invent
+  - name: 'Better Ammo Crafting.esp'
+    tag:
+      - Names
+  - name: 'better that gun 223.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'better that gun 44mag.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BetterCraftingSorting.esp'
+    tag:
+      - Names
+  - name: 'BIS - Bobblehunt Patch.esp'
+    tag:
+      - Names
+  - name: 'BIS - Brumbek''s Inventory Sorting.esp'
+    tag:
+      - Names
+  - name: 'BIS - CBC Dead Money Patch ESM.esp'
+    tag:
+      - Names
+  - name: 'BIS - CBC Dead Money Patch ESP.esp'
+    tag:
+      - Names
+  - name: 'BIS - CFWNV-DLC.esp'
+    tag:
+      - Names
+  - name: 'BIS - CFWNV.esp'
+    tag:
+      - Names
+  - name: 'BIS - Community Bugfix Comp ESM.esp'
+    tag:
+      - Names
+  - name: 'BIS - Community Bugfix Comp ESP.esp'
+    tag:
+      - Names
+  - name: 'BIS - Compiled Patch - DeadMoney.esp'
+    tag:
+      - Names
+  - name: 'BIS - Compiled Patch - HonestHearts.esp'
+    tag:
+      - Names
+  - name: 'BIS - Compiled Patch.esp'
+    tag:
+      - Names
+  - name: 'BIS - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'BIS - FOOK - New Vegas DLCs.esp'
+    tag:
+      - Names
+  - name: 'BIS - FOOK - New Vegas.esp'
+    tag:
+      - Names
+  - name: 'BIS - Grenade Hotkey.esp'
+    tag:
+      - Names
+  - name: 'BIS - Gun Runners Arsenal.esp'
+    tag:
+      - Names
+  - name: 'BIS - Honest Hearts.esp'
+    tag:
+      - Names
+  - name: 'BIS - Kobu Better Binoculars High.esp'
+    tag:
+      - Names
+  - name: 'BIS - Kobu Better Binoculars Low.esp'
+    tag:
+      - Names
+  - name: 'BIS - Kobu Better Binoculars Max.esp'
+    tag:
+      - Names
+  - name: 'BIS - Kobu Better Binoculars Medium.esp'
+    tag:
+      - Names
+  - name: 'BIS - Lonesome Road.esp'
+    tag:
+      - Names
+  - name: 'BIS - MiscItemIconsNV 0.9.esp'
+    tag:
+      - Names
+  - name: 'BIS - More Cactus Water Recipes.esp'
+    tag:
+      - Names
+  - name: 'BIS - Old World Blues.esp'
+    tag:
+      - Names
+  - name: 'BIS - Primary Needs HUD.esp'
+    tag:
+      - Names
+  - name: 'BIS - Project Nevada - Core.esp'
+    tag:
+      - Names
+  - name: 'BIS - Project Nevada - Cyberware.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'BIS - Project Nevada - Equipment.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'BIS - Project Nevada - Rebalance.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'BIS - Promo DLC Caravan Pack.esp'
+    tag:
+      - Names
+  - name: 'BIS - Promo DLC Classic Pack.esp'
+    tag:
+      - Names
+  - name: 'BIS - Promo DLC Mercenary Pack.esp'
+    tag:
+      - Names
+  - name: 'BIS - Promo DLC Tribal Pack.esp'
+    tag:
+      - Names
+  - name: 'BIS - Sprint Mod.esp'
+    tag:
+      - Names
+  - name: 'BIS - T3T_MiscItemIconsNV 0.7.esp'
+    tag:
+      - Names
+  - name: 'BIS - Weapon Mod Expansion.esp'
+    tag:
+      - Names
+  - name: 'BIS - Weight_Balance_v10.esp'
+    tag:
+      - Names
+  - name: 'BIS - WME - Dead Money Arenovalis Retex.esp'
+    tag:
+      - Names
+  - name: 'BIS - WME - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'BIS - WME - Honest Hearts Arenovalis Retex.esp'
+    tag:
+      - Names
+  - name: 'BIS - WME - Honest Hearts.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2aa - Armor - DR+DT - revamp high.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2aa - Armor - DR+DT - revamp low.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2aa - Armor - DR+DT - revamp med.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2ba - Armor - DR+DT - simple high.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2ba - Armor - DR+DT - simple low.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 2ba - Armor - DR+DT - simple med.esp'
+    tag:
+      - Names
+  - name: 'BIS - XFO - 6aa - Epic Skills.esp'
+    tag:
+      - Names
+  - name: 'Bitter Springs Revisited.esp'
+    tag:
+      - NpcFaces
+  - name: 'boa ncrpahelmet.esp'
+    tag:
+      - Delev
+      - Graphics
+  - name: 'Boacombat2glove.esp'
+    tag:
+      - Graphics
+  - name: 'Book of Steel - TTW.esp'
+    tag:
+      - Graphics
+  - name: 'Book of Steel.esp'
+    tag:
+      - Graphics
+  - name: 'BrokenSteel.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Actors.DeathItem
+      - C.Water
+      - Deflst
+      - Delev
+      - Destructible
+      - Factions
+      - Graphics
+      - Invent
+      - Relev
+      - Scripts
+      - Stats
+  - name: 'Caliber.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Stats
+    dirty:
+      - crc: 0x38c75b04
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 7
+  - name: 'CaliberXgunrunners.esm'
+    tag:
+      - Names
+  - name: 'Cass and Veronica.esp'
+    tag:
+      - Invent
+      - NpcFaces
+  - name: 'CFW-DLC.esp'
+    tag:
+      - Graphics
+      - Invent
+  - name: 'CFWTTW.esm'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relev
+  - name: 'christinecos.esp'
+    tag:
+      - Graphics
+  - name: 'Classic Plasma Grenade.esp'
+    tag:
+      - Graphics
+  - name: 'Classic Pulse Grenade (classic sound).esp'
+    tag:
+      - Graphics
+      - Sounds
+  - name: 'Classic Pulse Grenade (vanilla sound).esp'
+    tag:
+      - Graphics
+  - name: 'Community Bugfix Compilation Patch.esm'
+    tag:
+      - Actors.AIPackages
+      - Delev
+      - Invent
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'Community Bugfix Compilation Patch.esp'
+    tag:
+      - Actors.AIPackages
+      - Delev
+      - Invent
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'CompanionLevel30Cap.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'CompanionsImproved.esp'
+    tag:
+      - Actors.AIPackages
+  - name: 'Compiled Patch.esp'
+    tag:
+      - Actors.AIPackages
+      - Delev
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'Cuter Boone NEW.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'Cuter Boone.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'Cuter Veronica Felicia Day-Essential.esp'
+    tag:
+      - NpcFaces
+  - name: 'Cuter Veronica Felicia Day.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'DeadMoney.esm'
+    tag:
+      - Actors.Stats
+      - Graphics
+      - Invent
+      - Names
+      - Stats
+    dirty:
+      - crc: 0xd70f165b
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 403
+        udr: 51
+  - name: 'DeadMoneyFemaleTuxedo.esp'
+    tag:
+      - Graphics
+  - name: 'Destruction.esm'
+    tag:
+      - C.Owner
+      - Destructible
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'Doc Mitchell''s House Owner.esp'
+    tag:
+      - C.Owner
+  - name: 'DrugsAreBadMKay-IS.esp'
+    tag:
+      - Names
+  - name: 'ELECTRO-CITY - CompletedWorkorders.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Destructible
+      - Invent
+      - Names
+      - NpcFaces
+      - Stats
+  - name: 'ELECTRO-CITY - CompletedWorkorders.esp'
+    tag:
+      - Names
+  - name: 'EnergyBoost.esp'
+    tag:
+      - Stats
+  - name: 'Equipment Restoration Project - JSawyer.esp'
+    tag:
+      - Actors.ACBS
+      - Delev
+      - Names
+      - NPC.Class
+      - Stats
+  - name: 'Equipment Restoration Project - Project Nevada.esp'
+    tag:
+      - Actors.Stats
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Stats
+      - WeaponMods
+  - name: 'Equipment Restoration Project - TTW.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.Stats
+      - C.Music
+      - C.Owner
+      - Invent
+  - name: 'Equipment Restoration Project - WRP.esp'
+    tag:
+      - Graphics
+  - name: 'Equipment Restoration Project.esp'
+    tag:
+      - Actors.Stats
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Stats
+      - WeaponMods
+  - name: 'EVE FNV - ALL DLC.esp'
+    tag:
+      - Delev
+      - Destructible
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'EVE FNV.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'EwwGhoulyBody.esp'
+    tag:
+      - Body-F
+  - name: 'ExplosivesImmunityFix.esp'
+    dirty:
+      - crc: 0xec0f1920
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'EZ_VanillaFollowers.esp'
+    tag:
+      - Actors.AIPackages
+      - Actors.CombatStyle
+  - name: 'F3NVProjectRealityMkIv3.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'F3NVProjectRealityMkIv4.2.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Fallout3.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.Skeleton
+      - Actors.Stats
+      - C.Acoustic
+      - C.Light
+      - C.Owner
+      - Deflst
+      - Delev
+      - Destructible
+      - Factions
+      - Invent
+      - Names
+      - NPC.Class
+      - NpcFaces
+      - Relations
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'FCO - Afterschool Special.esp'
+    tag:
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCO - Glowing One.esp'
+    tag:
+      - Scripts
+    dirty:
+      - crc: 0xe746e1d
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'FCO - NPC Changes.esp'
+    tag:
+      - Actors.ACBS
+      - Eyes
+      - Names
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCO - OWB.esp'
+    tag:
+      - Actors.ACBS
+      - NPC.Race
+      - NpcFaces
+    dirty:
+      - crc: 0x15a3bcc8
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 18
+  - name: 'FCO - Playable Races + Roberts Patch.esp'
+    tag:
+      - Body-M
+      - Names
+  - name: 'FCO - Roberts Patch.esp'
+    tag:
+      - Body-M
+    dirty:
+      - crc: 0xa03db8ae
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'FCO - The New Bison Steve.esp'
+    tag:
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCO - Willow (Cazy).esp'
+    tag:
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCO - Willow.esp'
+    tag:
+      - Actors.ACBS
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCO.esp'
+    tag:
+      - Actors.ACBS
+      - NPC.Race
+      - NpcFaces
+  - name: 'FCOMaster.esm'
+    tag:
+      - Actors.ACBS
+      - Eyes
+      - Names
+      - NPC.Race
+      - NpcFaces
+  - name: 'FeelingIrradiated-IS.esp'
+    tag:
+      - Names
+  - name: 'Fiends, With Style.esm'
+    tag:
+      - Delev
+  - name: 'Fix the lights and Crap be gone.esp'
+    dirty:
+      - crc: 0xb5671ca9
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 8
+        udr: 54166
+  - name: 'Flight of the ValkED-E.esp'
+    tag:
+      - Sound
+  - name: 'FNV Realistic Wasteland Lighting - Enhanced.esp'
+    tag:
+      - C.ImageSpace
+      - C.Water
+      - Sound
+  - name: 'FNVMerged.esp'
+    tag:
+      - NoMerge
+  - name: 'Food&DrinkDontHeal.esp'
+    tag:
+      - Stats
+  - name: 'FOOK - New Vegas.esm'
+    tag:
+      - Deflst
+      - Delev
+      - Graphics
+      - Names
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'FOOK - New Vegas.esp'
+    tag:
+      - Deflst
+      - Delev
+      - Graphics
+      - Names
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'Frequency - PN+WMX Patch.esp'
+    tag:
+      - Graphics
+  - name: 'Frequency - WMX Patch.esp'
+    tag:
+      - Graphics
+  - name: 'GRA - The Right to Bear Arms.esp'
+    tag:
+      - Delev
+      - Relev
+      - Stats
+  - name: 'GRA Overhaul - EVE.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'GRA Overhaul - WMX or WME.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'GRA Overhaul.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'GRA WRP Compatibility Patch.esp'
+    tag:
+      - Graphics
+  - name: 'GRA-WRP-Patch-Two_Unofficial.esp'
+    tag:
+      - Graphics
+  - name: 'Gun Runners'' Arsenal Disabled - TTW.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+  - name: 'Gun Runners'' Arsenal Disabled.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+  - name: 'GunRunnersArsenal.esm'
+    tag:
+      - Destructible
+      - Graphics
+      - Invent
+    dirty:
+      - crc: 0xaac938d
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 97
+  - name: 'Hanlon the badass 4.esp'
+    tag:
+      - NpcFaces
+  - name: 'hardercore_combat.esp'
+    tag:
+      - Stats
+  - name: 'hardercore_wealth.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'HeadWearShaderFX.esp'
+    tag:
+      - Scripts
+      - Stats
+  - name: 'Hereticus Faction Armors Fading.esp'
+    tag:
+      - Names
+  - name: 'HHType3tribalhands.esp'
+    tag:
+      - Body-F
+  - name: 'HonestHearts-CaliberX.esm'
+    tag:
+      - Names
+  - name: 'HonestHearts.esm'
+    tag:
+      - C.Light
+      - Graphics
+      - Names
+      - Sound
+    dirty:
+      - crc: 0x2352b189
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 121
+        udr: 10
+  - name: 'ILO - A World of Pain.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - D.E.I.M.O.S.esp'
+    tag:
+      - C.ImageSpace
+      - C.Light
+      - C.LTemplate
+      - C.Owner
+  - name: 'ILO - Dead Money.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - Fallout New Vegas - No Lucky38.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - Fallout New Vegas.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - GS Shack.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - Honest Hearts.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - Lonesome Road.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - New Vegas Bounties II.esp'
+    tag:
+      - C.ImageSpace
+      - C.Light
+      - C.LTemplate
+    dirty:
+      - crc: 0x8e8f65e5
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 7
+        udr: 1
+  - name: 'ILO - New Vegas Bounties.esp'
+    tag:
+      - C.ImageSpace
+      - C.Light
+      - C.LTemplate
+    dirty:
+      - crc: 0xd7d915c3
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'ILO - NVInteriors Project - AWOP.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - NVInteriors Project.esp'
+    tag:
+      - C.ImageSpace
+      - C.Light
+      - C.LTemplate
+      - C.Owner
+    dirty:
+      - crc: 0xe5b86a01
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 7
+  - name: 'ILO - Old World Blues.esp'
+    tag:
+      - C.Light
+  - name: 'ILO - Project Reality Patch.esp'
+    tag:
+      - C.Climate
+  - name: 'ILO - Tale of Two Wastelands.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Dead Money.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Honest Hearts.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Lonesome Road.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Old World Blues.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Original Lucky38 Suite.esp'
+    tag:
+      - C.Light
+  - name: 'ILO-RI-Rust Town.esp'
+    tag:
+      - C.Light
+  - name: 'IMCNNV - Sorted.esp'
+    tag:
+      - Names
+  - name: 'ImmaSightinMahLazor.esp'
+    tag:
+      - Stats
+  - name: 'Imp''s More Complex Needs - JA - SORTED.esp'
+    tag:
+      - Names
+  - name: 'Improved Sound FX - EVE.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - GRA.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - HH Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - LR Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - Merged Major DLCs.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - OWB Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - Project Nevada.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - Weapon Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - WMX - GRA Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - WMX - Merged Major DLCs.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX - WMX - Weapon Sharing Fix.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sound FX.esp'
+    tag:
+      - Sound
+  - name: 'Improved Sounds FX.esp'
+    tag:
+      - Sound
+  - name: 'ImprovedBinocs.esp'
+    tag:
+      - Invent
+  - name: 'Integration - Couriers Stash+WMX.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'Interior Lighting Overhaul - Core.esm'
+    tag:
+      - C.Climate
+      - C.Light
+      - C.Owner
+      - Destructible
+  - name: 'Interior Lighting Overhaul - L38PS.esm'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul - Ultimate Edition - No Lucky38.esp'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul - Ultimate Edition.esp'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul-Realistic Interiors-Combined.esp'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul-Realistic Interiors-Full.esp'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul-Realistic.esp'
+    tag:
+      - C.Light
+  - name: 'Interior Lighting Overhaul.esp'
+    tag:
+      - C.Light
+  - name: 'Inventory Sorter - Moddable Unique Weps.esp'
+    tag:
+      - Names
+  - name: 'IWS-Core.esm'
+    tag:
+      - Delev
+  - name: 'JacknDianeFix.esp'
+    tag:
+      - Invent
+  - name: 'JillBSAA Multicolor.esp'
+    tag:
+      - Invent
+  - name: 'JSawyer - CE.esp'
+    tag:
+      - Destructible
+      - Graphics
+      - Invent
+      - Names
+      - Stats
+  - name: 'JSawyer - EVE.esp'
+    tag:
+      - Graphics
+      - Names
+      - Scripts
+      - Stats
+      - WeaponMods
+  - name: 'JSawyer - IMPACT.esp'
+    tag:
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'JSawyer - Project Nevada.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Names
+      - Relev
+      - Stats
+  - name: 'JSawyer - TTW.esp'
+    tag:
+      - Deflst
+      - Graphics
+      - Names
+      - NpcFaces
+      - Scripts
+      - Stats
+  - name: 'JSawyer Ultimate - TTW.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relev
+  - name: 'JSawyer Ultimate.esp'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - Relev
+  - name: 'jsawyer.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Deflst
+      - Delev
+      - Destructible
+      - Graphics
+      - Invent
+      - Names
+      - NPC.Class
+      - Relev
+      - Stats
+      - WeaponMods
+  - name: 'KDS Wearable Backpacks.esp'
+    tag:
+      - Invent
+  - name: 'KFE - Refill Water Bottles.esp'
+    tag:
+      - Scripts
+  - name: 'kochandbohr.esp'
+    tag:
+      - Actors.ACBS
+      - Factions
+  - name: 'LFox Bottle That Water.esp'
+    tag:
+      - Names
+      - Scripts
+  - name: 'Lings.esm'
+    tag:
+      - Eyes
+      - Graphics
+      - Hair
+      - NpcFaces
+  - name: 'LingsPrettyThings.esp'
+    tag:
+      - Eyes
+      - Hair
+      - Invent
+      - Names
+      - NPC.Class
+      - NPC.Race
+      - NpcFaces
+      - R.Attributes-F
+      - R.Attributes-M
+      - R.Description
+      - R.Head
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+  - name: 'LinkesAuge - Bug fixing compilation.esp'
+    tag:
+      - Deflst
+      - Names
+      - Scripts
+      - Stats
+  - name: 'LinkesAuge - Retexture edits.esp'
+    tag:
+      - Graphics
+  - name: 'LonesomeRoad.esm'
+    tag:
+      - Stats
+    dirty:
+      - crc: 0x30073d50
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 240
+        udr: 6
+  - name: 'LootOverhaul.esp'
+    tag:
+      - Invent
+  - name: 'Lore version.esp'
+    tag:
+      - NpcFaces
+  - name: 'LouderGuns.esp'
+    tag:
+      - Sound
+  - name: 'Lucky 38 Lights.esp'
+    tag:
+      - C.Light
+  - name: 'LUMENARIUM - Working Sunglasses ONLY.esp'
+    tag:
+      - Names
+  - name: 'M.M.A.T - Companion Module.esp'
+    tag:
+      - Actors.AIPackages
+  - name: 'M.M.A.T - Ingestible Module.esp'
+    tag:
+      - Stats
+  - name: 'M.M.A.T - Loot Module.esp'
+    tag:
+      - Invent
+  - name: 'M.M.A.T - Shader Module.esp'
+    tag:
+      - Stats
+  - name: 'M.M.A.T - Spawn Module.esp'
+    tag:
+      - Relev
+  - name: 'M.M.A.T - Weapon Module.esp'
+    tag:
+      - Stats
+  - name: 'M.M.A.T Loot Module.esp'
+    tag:
+      - Invent
+  - name: 'Machienzo - NPC Cosmetic Fixes - Ver 1.55.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: 'Machienzo - NPC Cosmetic Fixes - Ver 1.57.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: 'Machienzo - NPC Cosmetic Fixes.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: 'MadScience02.esp'
+    tag:
+      - Actors.DeathItem
+  - name: 'MarcusInvFix.esp'
+    tag:
+      - Invent
+  - name: 'Mart''s Mutant Mod Merged Patch Helper.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.DeathItem
+      - Graphics
+      - Scripts
+  - name: 'Mart''s Mutant Mod.esm'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - Relev
+  - name: 'MergedPatch.esp'
+    tag:
+      - NoMerge
+  - name: 'MikotoBeauty.esm'
+    tag:
+      - Eyes
+      - Graphics
+      - Hair
+      - Names
+  - name: 'MikotoBeauty.esp'
+    tag:
+      - Eyes
+      - Hair
+      - Names
+  - name: 'MikotoBPCCArcade.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'MikotoBPCCBoone.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'MikotoBPCCCass.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'MikotoBPCCFull.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'MikotoBPWastersOverhaul.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'Mikotos_REyescapesNV.esp'
+    tag:
+      - Eyes
+  - name: 'MiscItemIconsNV.esp'
+    tag:
+      - Graphics
+      - NoMerge
+  - name: 'Mission Mojave - Ultimate Edition Plus Standalone.esp'
+    tag:
+      - NoMerge
+  - name: 'Mission Mojave - Ultimate Edition Plus.esp'
+    tag:
+      - NoMerge
+  - name: 'Mission Mojave - Ultimate Edition.esp'
+    tag:
+      - Actors.AIPackages
+      - NoMerge
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'MMM_NV.esp'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - Relev
+  - name: 'MMUE - Deutsch.esp'
+    tag:
+      - Actors.AIPackages
+      - NoMerge
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'MMWE - Rebalanced Leveled Lists.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'MMWE - Vanilla Spawn Chance.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'MMWE-Claw Beast B Gone.esp'
+    tag:
+      - Delev
+  - name: 'MMWE-LoreOut-Rebalanced.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'MMWE-LoreOut-VanillaSpawnChance.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'MMWE-LoreOut.esp'
+    tag:
+      - Delev
+  - name: 'MMWE-No Oblivion.esp'
+    tag:
+      - Delev
+  - name: 'MMWE-No Werewolves.esp'
+    tag:
+      - Delev
+  - name: 'Moddable Anti-Materiel Rifle 2.esp'
+    tag:
+      - WeaponMods
+  - name: 'Moddable Anti-Materiel Rifle.esp'
+    tag:
+      - WeaponMods
+  - name: 'Moddable Unique Weps.esm'
+    tag:
+      - WeaponMods
+  - name: 'Moddable Unique Weps.esp'
+    tag:
+      - WeaponMods
+  - name: 'MoMod.esm'
+    tag:
+      - Relev
+  - name: 'Monster Mod Wasteland Edition.esp'
+    tag:
+      - Relev
+  - name: 'monsterranch.esp'
+    tag:
+      - Relev
+  - name: 'More Perks for Dead Money Update.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+  - name: 'More Perks for Honest Hearts Update.esp'
+    tag:
+      - Graphics
+  - name: 'More Perks for Old World Blues Update.esp'
+    tag:
+      - Names
+  - name: 'More Perks Update.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+  - name: 'More Perks.esm'
+    tag:
+      - Names
+  - name: 'More Traits Update.esp'
+    tag:
+      - Actors.ACBS
+  - name: 'Mutant Eyes.esp'
+    tag:
+      - Eyes
+  - name: 'My essential friends (animals).esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+  - name: 'NCRTrooperOverhaul.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Stats
+    dirty:
+      - crc: 0xbddf839b
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 6
+  - name: 'Nevada Skies - Ultimate DLC Edition.esp'
+    dirty:
+      - crc: 0xd6b9e659
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 4
+  - name: 'Nevada Skies - URWLHH.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Nevada Skies - URWLified.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Nevada Skies.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NEVAX - BEAUTYPACK.esp'
+    tag:
+      - Body-F
+      - Body-M
+      - NPCFaces
+  - name: 'NEVAX - FUNDE.esp'
+    tag:
+      - Deflst
+      - Relev
+  - name: 'NEVAX - ITEMBALANCINGS.esp'
+    tag:
+      - Stats
+  - name: 'NEVAX - KAUFINHALTE.esp'
+    tag:
+      - Deflst
+      - Invent
+      - Relev
+  - name: 'NEVAX - MEHR MONSTER.esp'
+    tag:
+      - Relev
+      - Scripts
+  - name: 'NEVAX - MONSTER.esp'
+    tag:
+      - Deflst
+      - Relev
+  - name: 'NEVAX - NPC BALANCING.esp'
+    tag:
+      - Deflst
+      - Relev
+      - Scripts
+  - name: 'NEVAX - RAIDER u NPC.esp'
+    tag:
+      - Deflst
+      - Relev
+      - Scripts
+  - name: 'NEVAX - RUESTUNGEN.esp'
+    tag:
+      - Deflst
+      - Relev
+  - name: 'NEVAX - WAFFEN.esp'
+    tag:
+      - Deflst
+      - Relev
+  - name: 'New Vegas Bounties II.esp'
+    tag:
+      - C.Light
+  - name: 'New Vegas Redesigned 3.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Delev
+      - Graphics
+      - Invent
+      - NPC.Race
+      - NpcFaces
+      - Relev
+    dirty:
+      - crc: 0xeb023707
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 93
+        udr: 73
+  - name: 'New Vegas Redesigned 3.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Delev
+      - Graphics
+      - Invent
+      - NPC.Race
+      - NpcFaces
+      - Relev
+    dirty:
+      - crc: 0xfaf9f22e
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1018
+        udr: 74
+  - name: 'New Vegas Redesigned II.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NpcFaces
+  - name: 'New Vegas redesigned- Honest Hearts.esp'
+    tag:
+      - Actors.ACBS
+      - NpcFaces
+  - name: 'New Vegas Redesigned.esm'
+    tag:
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NpcFaces
+  - name: 'NewVegasBountiesII.esp'
+    tag:
+      - Relations
+    dirty:
+      - crc: 0x11d6afea
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        nav: 2
+  - name: 'NewVegasUncut.esm'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Names
+  - name: 'NiceCass - C.esp'
+    tag:
+      - NpcFaces
+  - name: 'NiceCass.esp'
+    tag:
+      - NpcFaces
+  - name: 'NoWeaponZoom.esp'
+    tag:
+      - Stats
+  - name: 'NPC Project - Aero Office Park.esp'
+    tag:
+      - NpcFaces
+  - name: 'Npc&CreatureRespawn.esp'
+    tag:
+      - Relev
+  - name: 'NSkies - Vanilla Edition.esm'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NSkies URWLified.esm'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NSkies URWLifiedDM.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NSkies URWLifiedHH.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NSkies URWLifiedOWB.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'NV Game Stabilizer.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA1.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA2.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA4.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA5.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA5F.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA6.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA7.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA7b.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA8.esm'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA8.esp'
+    tag:
+      - NoMerge
+  - name: 'NV GameStabilizerA9.esp'
+    tag:
+      - NoMerge
+  - name: 'NVCE DLC01.esp'
+    tag:
+      - Actors.ACBS
+      - NPC.Race
+      - NpcFaces
+  - name: 'NVCE DLC02.esp'
+    tag:
+      - Actors.ACBS
+      - Invent
+      - NPC.Race
+      - NpcFaces
+  - name: 'NVCE DLC03.esp'
+    tag:
+      - Actors.ACBS
+      - Body-M
+      - NpcFaces
+  - name: 'NVCE DLC04.esp'
+    tag:
+      - Actors.ACBS
+      - NpcFaces
+  - name: 'NVCE Main (Faces Only).esm'
+    tag:
+      - Actors.ACBS
+      - Deactivate
+      - Filter
+      - NPC.Race
+      - NpcFaces
+  - name: 'NVCE Main.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Invent
+      - NPC.Race
+      - NpcFaces
+  - name: 'NVDLC04 Allegiance w Duster.esp'
+    tag:
+      - Scripts
+  - name: 'NVHarderCore.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'NVInteriors_ComboEdition.esm'
+    tag:
+      - Graphics
+  - name: 'NVORganizedItems.esp'
+    tag:
+      - Names
+  - name: 'NVPhalanx.esp'
+    tag:
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - C.Owner
+      - Scripts
+  - name: 'NVR- Lore version.esp'
+    tag:
+      - Actors.ACBS
+      - NpcFaces
+  - name: 'NVR- Recommended.esp'
+    tag:
+      - Actors.ACBS
+      - NpcFaces
+  - name: 'NVWastelandUnlocked.esp'
+    tag:
+      - Delev
+      - Names
+      - Relations
+      - Relev
+      - Stats
+      - WeaponMods
+  - name: 'NVWeaponAmmoTweaks.esp'
+    tag:
+      - Stats
+      - WeaponMods
+  - name: 'OldWorldBlues.esm'
+    tag:
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+    dirty:
+      - crc: 0x7f8f8225
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 124
+  - name: 'originalintro.esp'
+    tag:
+      - Actors.AIPackages
+      - Invent
+    dirty:
+      - crc: 0xb0a1b1bb
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 6
+  - name: 'originalintroExtended.esp'
+    tag:
+      - Actors.AIPackages
+      - Invent
+    dirty:
+      - crc: 0x3abe494e
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 4
+  - name: 'OWB Big Empty Overhaul.esp'
+    tag:
+      - Invent
+      - Names
+      - Stats
+  - name: 'OWB HQ Textures Fix.esp'
+    tag:
+      - Graphics
+  - name: 'Pacersgambit.esp'
+    tag:
+      - Actors.AIPackages
+      - Scripts
+    dirty:
+      - crc: 0x793d7342
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'PlasmaRifleAwesomefied.esp'
+    tag:
+      - Sound
+      - Stats
+  - name: 'PMT - Deadlier Combat Mk II.esp'
+    tag:
+      - Stats
+  - name: 'PMT - Deadlier Combat.esp'
+    tag:
+      - Stats
+  - name: 'PMT - Destructible Ordnance.esp'
+    tag:
+      - Destructible
+  - name: 'PMT - More Demanding Hardcore.esp'
+    tag:
+      - Stats
+  - name: 'PMT - Reduced Ammo and Chems.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'PMT - Reduced Caps and Item Value.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'PMT - Slower Reloading No Visible Perk.esp'
+    tag:
+      - Stats
+  - name: 'PMT - Slower Reloading.esp'
+    tag:
+      - Stats
+  - name: 'PMT - Tougher XPadjust.esp'
+    tag:
+      - Invent
+  - name: 'PMT - XPadjust.esp'
+    tag:
+      - Invent
+  - name: 'PointLookout.esm'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+  - name: 'populatedcasino-light.esp'
+    tag:
+      - AI.Packages
+    dirty:
+      - crc: 0xc7507f30
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 46
+        udr: 16
+  - name: 'populatedcasino-medium.esp'
+    tag:
+      - AI.Packages
+    dirty:
+      - crc: 0x39574e5a
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 47
+        udr: 8
+  - name: 'populatedcasino.esp'
+    tag:
+      - AI.Packages
+    dirty:
+      - crc: 0x9eae96ff
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 48
+        udr: 2
+  - name: 'Power Armor Distribution Overhaul - JSawyer.esp'
+    tag:
+      - Stats
+  - name: 'Power Armor Distribution Overhaul - MMM.esp'
+    tag:
+      - Actors.Stats
+      - Factions
+      - Scripts
+  - name: 'Power Armor Distribution Overhaul - NVCE.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.Stats
+      - Invent
+      - NPC.Class
+      - NpcFaces
+  - name: 'Power Armor Distribution Overhaul - TTW.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Skeleton
+      - Actors.Stats
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - NPC.Class
+      - Stats
+  - name: 'Power Armor Distribution Overhaul - TTW_OutcastTrading.esp'
+    tag:
+      - Invent
+  - name: 'Power Armor Distribution Overhaul - Unoctium.esp'
+    tag:
+      - Graphics
+  - name: 'Power Armor Distribution Overhaul.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Actors.Stats
+      - Factions
+      - Invent
+      - Names
+      - Scripts
+  - name: 'Powered Power Armor.esp'
+    tag:
+      - Deflst
+  - name: 'Project Beauty.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - Body-F
+      - Body-M
+      - Eyes
+      - Hair
+      - NPC.Race
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+      - Voice-F
+      - Voice-M
+  - name: 'Project Brazil Project Nevada Patch.esp'
+    tag:
+      - Invent
+  - name: 'Project Nevada - All DLC.esp'
+    tag:
+      - Actors.DeathItem
+      - Invent
+      - Relev
+  - name: 'Project Nevada - Core.esm'
+    tag:
+      - Invent
+  - name: 'Project Nevada - Cyberware.esp'
+    tag:
+      - Invent
+  - name: 'Project Nevada - Equipment.esm'
+    tag:
+      - Actors.ACBS
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Stats
+  - name: 'Project Nevada - Med-X Fix.esp'
+    tag:
+      - Names
+  - name: 'Project Nevada - Old World Blues.esp'
+    tag:
+      - Invent
+  - name: 'Project Nevada - Rebalance Complete.esp'
+    tag:
+      - Relev
+    dirty:
+      - crc: 0xe0e2c3c0
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 22
+  - name: 'Project Nevada - Rebalance.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Stats
+  - name: 'Project Nevada - TTW.esp'
+    tag:
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - Relev
+  - name: 'Project Nevada - WME.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - WeaponMods
+  - name: 'Project Nevada - WMX.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - WeaponMods
+  - name: 'Project Nevada Rebalance Complete.esp'
+    dirty:
+      - crc: 0xe0e2c3c0
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 22
+  - name: 'Project Westland vision-ZionHH.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Project Westland vision.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Project13 - Populated Wasteland.esp'
+    tag:
+      - Actors.AIPackages
+      - Delev
+      - Relev
+  - name: 'ProjectRealityMkIv5HDR.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'Psiclones.esm'
+    tag:
+      - Names
+  - name: 'QS_Blackwolf_NV_Backpackmod.esp'
+    tag:
+      - Invent
+  - name: 'RaestlozFactionArmorEnhancement.esp'
+    tag:
+      - Scripts
+  - name: 'RagdollOverhaulULTIMATE.esp'
+    tag:
+      - Actors.Skeleton
+    dirty:
+      - crc: 0x8ab4f125
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 15
+  - name: 'Raul - Danny Trejo.esp'
+    tag:
+      - NoMerge
+      - NpcFaces
+  - name: 'Real Weapon Names - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names - Honest Hearts.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names - NPC Compnaion Weapons.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names - Project Nevada.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names - WMX - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names - WMX.esp'
+    tag:
+      - Names
+  - name: 'Real Weapon Names.esp'
+    tag:
+      - Names
+  - name: 'Realistic Weight Overhaul.esp'
+    tag:
+      - NoMerge
+      - Stats
+  - name: 'Realistic Weight.esp'
+    tag:
+      - NoMerge
+      - Stats
+  - name: 'Rearm.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'RearmRebalance.esp'
+    tag:
+      - Stats
+  - name: 'Rebalance.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'RebalanceRearm.esp'
+    tag:
+      - Stats
+  - name: 'ReElijahfied.esp'
+    tag:
+      - NpcFaces
+  - name: 'Reload.esp'
+    tag:
+      - Delev
+      - Names
+      - Relev
+  - name: 'repairkitsexpanded.esp'
+    tag:
+      - Names
+  - name: 'REPCONN Test Site Fixes.esp'
+    tag:
+      - Actors.AIData
+      - Actors.AIPackages
+      - Factions
+      - Scripts
+  - name: 'ReSort.esp'
+    tag:
+      - Names
+  - name: 'RexReplacerEss.esp'
+    tag:
+      - Graphics
+  - name: 'RH_IronSights_NV_Vanilla.esp'
+    tag:
+      - Graphics
+  - name: 'RHKGilbertCompanion-Mikoto.esp'
+    tag:
+      - Graphics
+      - Hair
+      - NpcFaces
+      - R.Mouth
+      - R.Teeth
+  - name: 'RivensEyescapesNV.esp'
+    tag:
+      - Eyes
+  - name: 'Roberts_NewVegas.esp'
+    tag:
+      - Body-M
+      - Graphics
+    dirty:
+      - crc: 0x8162c3ba
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'rotfacetoriches.esp'
+    tag:
+      - Factions
+      - Names
+  - name: 'RustTownAdditions3.esp'
+    tag:
+      - Factions
+      - Invent
+      - Names
+  - name: 'Seeker Veronica.esp'
+    tag:
+      - Invent
+  - name: 'Shotgun Commando 1.2 Caravan.esp'
+    tag:
+      - Stats
+  - name: 'Shotgun Commando.esp'
+    tag:
+      - Stats
+  - name: 'Smashed Patch.esp'
+    tag:
+      - NoMerge
+  - name: 'Sorter - Books.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Combined - Aid Crafting.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Combined - T3T Icon Compatch.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Combined - Weighted.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Combined.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Empty Consumables - Dead Money.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Empty Consumables.esp'
+    tag:
+      - Names
+  - name: 'Sorter - Magazines.esp'
+    tag:
+      - Names
+  - name: 'StreetLights.esm'
+    tag:
+      - Graphics
+      - Scripts
+      - Stats
+  - name: 'SupahWeapons.esp'
+    dirty:
+      - crc: 0xec7f4960
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 15
+        udr: 8226
+  - name: 'Superior Firepower - Factional Changes.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Superior Firepower - Unique Weaponry.esp'
+    tag:
+      - Stats
+  - name: 'T3T_MiscItemIconsNV.esp'
+    tag:
+      - Graphics
+  - name: 'T6M Equipment Replacer NV.esm'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+  - name: 'T6M Equipment Replacer NV.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'TaleOfTwoWastelands.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Skeleton
+      - Actors.Stats
+      - C.Acoustic
+      - C.Light
+      - C.Music
+      - C.Owner
+      - C.Water
+      - Deflst
+      - Delev
+      - Destructible
+      - Factions
+      - Graphics
+      - Invent
+      - Names
+      - Relations
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'Tales from the Burning Sands.esm'
+    tag:
+      - Factions
+      - Names
+      - Relev
+      - Scripts
+    dirty:
+      - crc: 0x35f7bae7
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 17
+  - name: 'TheInheritance.esp'
+    tag:
+      - Relations
+    dirty:
+      - crc: 0x71715d56
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        udr: 2
+        nav: 4
+  - name: 'ThePitt.esm'
+    tag:
+      - Actors.DeathItem
+      - Graphics
+      - Relations
+  - name: 'TrooperOverhaul-Dragbody.esp'
+    tag:
+      - Actors.ACBS
+      - Deflst
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+    dirty:
+      - crc: 0x40b5e4bc
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 4
+  - name: 'TTW - Realistic Interior Lighting.esp'
+    tag:
+      - C.Light
+  - name: 'TTW Realistic Wasteland Lighting - Enhanced.esp'
+    tag:
+      - C.ImageSpace
+      - C.Water
+      - Sound
+  - name: 'TTW Redesigned.esm'
+    tag:
+      - Factions
+      - Invent
+      - Names
+  - name: 'TTW-WEP.esp'
+    tag:
+      - Graphics
+  - name: 'ttw_-_cut_item_stats.esp'
+    tag:
+      - Stats
+  - name: 'TTW_AnchorageCustomization.esp'
+    tag:
+      - Names
+  - name: 'TTW_OutcastTrading.esp'
+    tag:
+      - Actors.AIData
+      - Actors.Stats
+  - name: 'TTW_Reputation.esp'
+    tag:
+      - Actors.Stats
+      - Factions
+      - Names
+      - Relations
+      - Stats
+  - name: 'TTW_SpeechChecks.esp'
+    tag:
+      - Names
+  - name: 'TTW_StartupMenu.esp'
+    tag:
+      - Names
+  - name: 'TTWfixes.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Stats
+      - C.Light
+      - C.Owner
+      - C.Water
+      - Deflst
+      - Delev
+      - Destructible
+      - Eyes
+      - Factions
+      - Graphics
+      - Hair
+      - Invent
+      - Names
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'TTWInteriorsProject_Combo.esm'
+    tag:
+      - Invent
+      - Names
+  - name: 'TTWInteriorsProject_Combo_AWOP.esm'
+    tag:
+      - Invent
+      - Names
+  - name: 'TTWOptions.esp'
+    tag:
+      - Names
+  - name: 'Tutorial Killer - Alternate Start.esp'
+    dirty:
+      - crc: 0xd1257bc7
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'Type 6.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Stats
+  - name: 'UWHNV-Addon-DLC.esp'
+    tag:
+      - C.Light
+  - name: 'UWHNV-Addon-FollowerHome.esp'
+    tag:
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - NpcFaces
+  - name: 'UWHNV-Addon-GRA.esp'
+    tag:
+      - C.Light
+  - name: 'Veronica1.0.esp'
+    tag:
+      - NpcFaces
+  - name: 'Veronica_nerdy.esp'
+    tag:
+      - NpcFaces
+  - name: 'VeronicaOlder.esp'
+    tag:
+      - NpcFaces
+  - name: 'Voice dissonance fix.esp'
+    tag:
+      - NpcFaces
+  - name: 'Vulpes Inculta.esp'
+    tag:
+      - NpcFaces
+  - name: 'Vurt''s WFO.esp'
+    dirty:
+      - crc: 0x31b1b874
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 377
+      - crc: 0x71755f08
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 356
+  - name: 'VyntageCass02.esp'
+    tag:
+      - NpcFaces
+  - name: 'VyntageVeronica02.esp'
+    tag:
+      - NpcFaces
+  - name: 'WARZONES Respawner.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+  - name: 'WARZONES RespawnerLITE.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+  - name: 'Weapon Mod Expansion.esm'
+    tag:
+      - Names
+  - name: 'Weapon Mod Expansion.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WeaponModsExpanded.esp'
+    tag:
+      - Actors.AIData
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Stats
+      - WeaponMods
+  - name: 'Weapons.of.the.New.Millenia.CaliberX4+.Patch.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Stats
+    dirty:
+      - crc: 0xe0d9629c
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 1
+  - name: 'Weapons.of.the.New.Millenia.esm'
+    dirty:
+      - crc: 0x1e04d898
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 10
+  - name: 'Weapons.of.the.New.Millenia.Store.LITE.esp'
+    tag:
+      - C.Light
+    dirty:
+      - crc: 0xb5824c7a
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 8
+  - name: 'Weight_Balance.esp'
+    tag:
+      - Stats
+  - name: 'Weight_Balance_v07.esp'
+    tag:
+      - Stats
+  - name: 'Weight_Balance_v10.esp'
+    tag:
+      - Stats
+  - name: 'Weight_Rebalance_v10.esp.'
+    tag:
+      - Stats
+  - name: 'WME - 00 Commando.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WME - Arwen Core.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WME - FOOK.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Names
+      - Sound
+      - Stats
+  - name: 'WME - RH Ironsights.esp'
+    tag:
+      - Graphics
+      - WeaponMods
+  - name: 'WME - that gun 223.esp'
+    tag:
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WME - that gun 44 mag.esp'
+    tag:
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WME - that gun 556.esp'
+    tag:
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WME Replacer - FOOK.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
+      - WeaponMods
+  - name: 'WMX-ArenovalisTextures.esp'
+    tag:
+      - Graphics
+      - NoMerge
+  - name: 'WMX-AWOP Patch.esp'
+    tag:
+      - WeaponMods
+  - name: 'WMX-AWOP-Overhaul.esp'
+    tag:
+      - WeaponMods
+  - name: 'WMX-DeadMoney.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMX-DLCMerged.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+      - WeaponMods
+  - name: 'WMX-EVE-AllDLC.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMX-EVE-AllDLCMerged.esp'
+    tag:
+      - Graphics
+      - Stats
+      - WeaponMods
+  - name: 'WMX-EVE.esp'
+    tag:
+      - Graphics
+      - WeaponMods
+  - name: 'WMX-GunRunnersArsenal.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMX-HonestHearts.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMX-LonesomeRoad.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMX-ModernWeapons.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'WMX-OldWorldBlues.esp'
+    tag:
+      - Invent
+      - WeaponMods
+  - name: 'WMXUE-PN.esp'
+    tag:
+      - Graphics
+      - Invent
+      - Names
+      - WeaponMods
+  - name: 'WMXUE.esp'
+    tag:
+      - Delev
+      - Invent
+      - WeaponMods
+  - name: 'XVEnclaveBunker.esp'
+    tag:
+      - Invent
+  - name: 'YUP - Base Game + All DLC.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Stats
+      - C.Acoustic
+      - C.Owner
+      - C.Water
+      - Deflst
+      - Delev
+      - Destructible
+      - Eyes
+      - Factions
+      - Graphics
+      - Hair
+      - Invent
+      - Names
+      - Relations
+      - Relev
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'YUP - Gameplay Tweaks - TTW.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.CombatStyle
+      - Actors.Skeleton
+      - Actors.Stats
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'YUP - Gameplay Tweaks.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Skeleton
+      - Actors.Stats
+      - C.Owner
+      - Delev
+      - Destructible
+      - Factions
+      - Graphics
+      - Invent
+      - Names
+      - NPC.Class
+      - Scripts
+      - Sound
+      - Stats
+  - name: 'YUP - NPC Fixes (Base Game + All DLC).esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.DeathItem
+      - Actors.Stats
+      - Delev
+      - Factions
+      - Invent
+      - NpcFaces
+      - Scripts
+  - name: 'YUP - NPC Fixes (Base Game).esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Stats
+      - Delev
+      - Factions
+      - Invent
+      - Names
+      - NPC.Class
+      - NPC.Race
+      - NpcFaces
+      - Scripts
