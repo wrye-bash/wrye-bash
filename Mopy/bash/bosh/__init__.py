@@ -3243,6 +3243,8 @@ def initDefaultTools():
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
     tooldirs['SSEEditPath'] = dirs['app'].join(u'SSEEdit.exe')
     tooldirs['Fo4EditPath'] = dirs['app'].join(u'FO4Edit.exe')
+    tooldirs['Fo3EditPath'] = dirs['app'].join(u'FO3Edit.exe')
+    tooldirs['FnvEditPath'] = dirs['app'].join(u'FNVEdit.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
     tooldirs['Tes4GeckoPath'] = dirs['app'].join(u'Tes4Gecko.jar')
     tooldirs['Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')
