@@ -3017,20 +3017,10 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
-    def addMods(self, plugins, index=None, savePlugins=False):
-        """Adds the specified mods to load order at the given index or at the bottom if none is given."""
-        # Remove any duplicates
-        plugins = set(plugins)
-        # Add plugins
-        for plugin in plugins:
-            if plugin not in self.LoadOrder:
-                if index is None:
-                    self.LoadOrder.append(plugin)
-                else:
-                    self.LoadOrder.insert(index, plugin)
-                    index += 1
-        # Refresh liblo
-        if savePlugins: self.saveLoadAndActive()
+    def renameInLo(self, newName, oldName):
+        oldIndex = self.LoadOrder.index(oldName)
+        self.removeMods([oldName], savePlugins=False)
+        self.LoadOrder.insert(oldIndex, newName)
 
     @_cache
     def refreshLoadOrder(self,forceRefresh=False):
@@ -4180,6 +4170,23 @@ class ModInfos(FileInfos):
         except KeyError:
             return sys.maxint # sort mods that do not have a load order LAST
 
+    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
+        # Calculating indexes through order.index() so corrupt mods (which
+        # don't show in the ModList) don't break Drag n Drop
+        order = self.plugins.LoadOrder
+        newPos = order.index(dropItem)
+        if newPos <= 0: return False
+        start = order.index(firstItem)
+        stop = order.index(lastItem) + 1  # excluded
+        # Can't move the game's master file anywhere else but position 0
+        master = self.masterName
+        if master in order[start:stop]: return False
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
+        return True
+
     def getBashDir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
@@ -4743,9 +4750,7 @@ class ModInfos(FileInfos):
         isSelected = self.isActiveCached(oldName)
         if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
-        oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.removeMods([oldName], savePlugins=False)
-        self.plugins.addMods([newName], index=oldIndex, savePlugins=False)
+        self.plugins.renameInLo(newName, oldName)
         if isSelected: self.select(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.plugins.saveLoadAndActive()

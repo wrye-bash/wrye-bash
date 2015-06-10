@@ -771,9 +771,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         'Group': lambda self, a: bosh.modInfos.table.getItem(a, 'group', u''),
         'Installer': lambda self, a: bosh.modInfos.table.getItem(
                      a, 'installer', u''),
-        # FIXME(ut): quadratic + accessing modInfos.plugins which is private
-        'Load Order': lambda self, a: a in bosh.modInfos.plugins.LoadOrder and
-                                      bosh.modInfos.plugins.LoadOrder.index(a),
+        'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
         'Modified': lambda self, a: self.data[a].getPath().mtime,
         'Size': lambda self, a: self.data[a].size,
         'Status': lambda self, a: self.data[a].getStatus(),
@@ -786,26 +784,14 @@ class ModList(_ModsSortMixin, balt.UIList):
     _sunkenBorder = False
 
     #-- Drag and Drop-----------------------------------------------------
-    def _dropIndexes(self, indexes, newIndex): # needs work, blurred
-        """Drop contiguous indexes in newIndex"""
+    def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
+        """Drop contiguous indexes on newIndex and return True if LO changed"""
         if newIndex < 0: return False # from OnChar() & moving master esm up
-        # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop
-        order = bosh.modInfos.plugins.LoadOrder
         count = self._gList.GetItemCount()
-        newPos = order.index(self.GetItem(newIndex)) if (
-            count > newIndex) else order.index(self.GetItem(count - 1))
-        if newPos <= 0: return False
-        start = order.index(self.GetItem(indexes[0]))
-        stop = order.index(self.GetItem(indexes[-1])) + 1 # excluded
-        # Can't move the game's master file anywhere else but position 0
-        master = bosh.modInfos.masterName
-        if master in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
+        dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
+        firstItem = self.GetItem(indexes[0])
+        lastItem = self.GetItem(indexes[-1])
+        return bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
 
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
