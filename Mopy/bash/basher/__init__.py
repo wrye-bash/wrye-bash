@@ -455,7 +455,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
     #--Relist
     def ReList(self):
         fileOrderNames = [v.name for v in self.data.values()]
-        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames,False)
+        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
 
     #--InitEdit
     def InitEdit(self):

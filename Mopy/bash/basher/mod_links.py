@@ -1376,7 +1376,7 @@ class Mod_AddMaster(OneItemLink):
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
-        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+        for masterName in bosh.modInfos.getOrdered(names):
             if masterName in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
                 masterName = bosh.modInfos[masterName].name
@@ -2693,7 +2693,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
                 return self._showError(
                     name.s + u' ' + _(u"is already a master."))
             names.append(name)
-        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+        for masterName in bosh.modInfos.getOrdered(names):
             if masterName in bosh.modInfos:
                 masterName = bosh.modInfos[masterName].name
             modInfo.header.masters.append(masterName)

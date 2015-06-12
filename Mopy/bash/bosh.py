@@ -351,7 +351,7 @@ class MasterSet(set):
 
     def getOrdered(self):
         """Returns masters in proper load order."""
-        return list(modInfos.getOrdered(self))
+        return modInfos.getOrdered(self)
 
 #------------------------------------------------------------------------------
 class LoadFactory:
@@ -3213,7 +3213,7 @@ class FileInfo(_AFileInfo):
         if status == 30:
             return status
         #--Misordered?
-        self.masterOrder = modInfos.getOrdered(self.masterNames)
+        self.masterOrder = tuple(modInfos.getOrdered(self.masterNames))
         if self.masterOrder != self.masterNames:
             return 20
         else:
@@ -4175,6 +4175,10 @@ class ModInfos(FileInfos):
         """
         return self.plugins.lord.activeOrdered
     def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
+    def loIndexCachedOrMax(self, mod):
+        try: return self.plugins.lord.lindex(mod)
+        except KeyError:
+            return sys.maxint # sort mods that do not have a load order LAST
 
     def getBashDir(self):
         """Returns Bash data storage directory."""
@@ -4398,18 +4402,19 @@ class ModInfos(FileInfos):
                 return True
         return False
 
-    def getOrdered(self,modNames,asTuple=True):
-        """Sort list of mod names into their load order."""
+    def getOrdered(self, modNames):
+        """Return a list containing modNames' elements sorted into load order.
+
+        If some elements do not have a load order they are appended to the list
+        in alphabetical, case insensitive order (used also to resolve
+        modification time conflicts).
+        :param modNames: an iterable containing bolt.Paths
+        :rtype : list
+        """
         modNames = list(modNames)
-        try:
-            #modNames.sort()          # CDC Why a default sort? We want them in load order!  Is try even needed?
-            data = self.plugins.LoadOrder
-            modNames.sort(key=lambda a: (a in data) and data.index(a)) #--Sort on masterlist load order
-        except:
-            deprint(u'Error sorting modnames:',modNames,traceback=True)
-            raise
-        if asTuple: return tuple(modNames)
-        else: return modNames
+        modNames.sort() # resolve time conflicts or no load order
+        modNames.sort(key=self.loIndexCachedOrMax)
+        return modNames
 
     def getSemiActive(self,masters):
         """Returns (merged,imported) mods made semi-active by Bashed Patch."""

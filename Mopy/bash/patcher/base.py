@@ -250,7 +250,7 @@ class AListPatcher(_Abstract_Patcher):
     def sortConfig(self,items):
         """Return sorted items. Default assumes mods and sorts by load
         order."""
-        return bosh.modInfos.getOrdered(items,False)
+        return bosh.modInfos.getOrdered(items)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
