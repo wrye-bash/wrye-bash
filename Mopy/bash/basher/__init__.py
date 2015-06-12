@@ -1035,13 +1035,13 @@ class ModList(_ModsSortMixin, balt.UIList):
         notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
         for item in mods:
             if item in removed or item in notDeactivatable: continue
-            oldFiles = bosh.modInfos.ordered[:]
+            oldFiles = bosh.modInfos.activeCached
             fileName = GPath(item)
             #--Unselect?
             if self.data.isActiveCached(fileName):
                 try:
                     self.data.unselect(fileName)
-                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
+                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > (fileName in changed):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]
@@ -1057,7 +1057,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                 #if fileName in self.data.bad_names: return
                 try:
                     self.data.select(fileName)
-                    changed = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]

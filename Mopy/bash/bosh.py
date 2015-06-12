@@ -4169,6 +4169,10 @@ class ModInfos(FileInfos):
     def isActiveCached(self, mod):
         """Return true if the mod is in the current active mods cache."""
         return mod in self.plugins.lord.active
+    @property
+    def activeCached(self):
+        """Return the current active mods in load order as a tuple."""
+        return self.plugins.lord.activeOrdered
 
     def getBashDir(self):
         """Returns Bash data storage directory."""

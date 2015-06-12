@@ -277,9 +277,9 @@ class PatchDialog(balt.Dialog):
                         bosh.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
-                    oldFiles = bosh.modInfos.ordered[:]
+                    oldFiles = set(bosh.modInfos.activeCached)
                     bosh.modInfos.select(patchName, doSave=True)
-                    changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    changedFiles = set(bosh.modInfos.activeCached) - oldFiles
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
