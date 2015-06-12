@@ -785,13 +785,6 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _Execute(self):
         # Clean up some memory
         bolt.GPathPurge()
-        # Create plugin dictionaries -- used later. Speeds everything up! Yay!
-        fullLoadOrder   = bosh.modInfos.plugins.LoadOrder   #CDC used this cached value no need to requery
-
-        index = 0
-        for name in fullLoadOrder:
-            bush.fullLoadOrder[name] = index
-            index += 1
 
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]

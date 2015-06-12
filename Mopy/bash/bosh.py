@@ -4174,6 +4174,7 @@ class ModInfos(FileInfos):
         :rtype : tuple
         """
         return self.plugins.lord.activeOrdered
+    def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
 
     def getBashDir(self):
         """Returns Bash data storage directory."""

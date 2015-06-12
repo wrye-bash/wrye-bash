@@ -32,16 +32,16 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 import random
 import re
 # Internal
-from ... import bush # for fullLoadOrder, defaultEyes (?)
+from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
 from ...bolt import SubProgress, BoltError, GPath, deprint
 from ...bosh import LoadFactory, ModFile
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
-from ...patcher.base import AMultiTweakItem, Patcher
+from ...patcher.base import AMultiTweakItem
 from ...patcher.patch_files import PatchFile
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
-    DoublePatcher, CBash_DoublePatcher, CBash_ListPatcher
+    DoublePatcher, CBash_DoublePatcher
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
@@ -782,12 +782,12 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
+        dex = bosh.modInfos.loIndexCached
         for modInfo in bosh.modInfos.values():
-            if autoRe.match(modInfo.name.s) or (
-                        autoKey & set(modInfo.getBashTags())):
-                if bush.fullLoadOrder[modInfo.name] > \
-                        bush.fullLoadOrder[PatchFile.patchName]: continue
-                autoItems.append(modInfo.name)
+            name = modInfo.name
+            if dex(name) >= dex(PatchFile.patchName): continue
+            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
+                autoItems.append(name)
         return autoItems
 
     #--Patch Phase ------------------------------------------------------------

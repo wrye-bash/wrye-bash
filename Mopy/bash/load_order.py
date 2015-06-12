@@ -63,6 +63,7 @@ class LoadOrder(object):
     @property # sugar - API: maybe drop:
     def activeOrdered(self): return self._activeOrdered
 
+    def lindex(self, path): return self.__mod_loIndex[path] # KeyError
     def lorder(self, paths): # API: sort in place ? see usages
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
 
