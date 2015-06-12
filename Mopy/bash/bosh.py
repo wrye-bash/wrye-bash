@@ -4518,7 +4518,8 @@ class ModInfos(FileInfos):
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
-    def getTagList(self,mod_list=None):
+    @staticmethod
+    def getTagList(mod_list=None):
         """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
         Either for all mods in the data folder or if specified for one specific mod.
         """
@@ -4540,7 +4541,8 @@ class ModInfos(FileInfos):
                 else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
-            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
+            lindex = lambda t: modInfos.loIndexCached(t[0])
+            for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
                     if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):

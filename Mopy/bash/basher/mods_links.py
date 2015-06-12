@@ -275,7 +275,7 @@ class Mods_ListMods(ItemLink):
                       icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class Mods_ListBashTags(ItemLink):
+class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     """Copies list of bash tags to clipboard."""
     text = _(u"List Bash Tags...")
     help = _(u"Copies list of bash tags to clipboard.")
