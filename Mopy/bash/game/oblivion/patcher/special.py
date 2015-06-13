@@ -555,8 +555,8 @@ class MFactMarker(_AMFactMarker,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(MFactMarker, self).initPatchFile(patchFile, loadMods)
         self.id_info = {} #--Morphable factions keyed by fid
-        self.isActive = bool(self.srcs) and GPath(
-            u"Cobl Main.esm") in bosh.modInfos.ordered
+        self.isActive = bool(self.srcs) and bosh.modInfos.isActiveCached(
+            GPath(u"Cobl Main.esm"))
         self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
 
     def initData(self,progress):

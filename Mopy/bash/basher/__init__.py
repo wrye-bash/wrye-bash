@@ -315,9 +315,8 @@ class _ModsSortMixin(object):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            active = bosh.modInfos.ordered
-            items.sort(key=lambda x: x not in set(
-                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+            items.sort(key=lambda x: x not in set(bosh.modInfos.activeCached
+                ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
     def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
 
@@ -336,9 +335,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
                  }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            active = bosh.modInfos.ordered
             items.sort(key=lambda x: self.data[x].name not in set(
-                active) | bosh.modInfos.imported | bosh.modInfos.merged)
+                bosh.modInfos.activeCached) | bosh.modInfos.imported
+                                            | bosh.modInfos.merged)
     _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
 
@@ -390,7 +389,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             return status
         fileOrderIndex = mi
         loadOrderIndex = self.loadOrderNames.index(masterName)
-        ordered = bosh.modInfos.ordered
+        ordered = bosh.modInfos.activeCached
         if fileOrderIndex != loadOrderIndex:
             return 20
         elif status > 0:
@@ -410,8 +409,8 @@ class MasterList(_ModsSortMixin, balt.UIList):
             if voCurrent: value += u' ['+voCurrent+u']'
         labels['File'] = value
         labels['Num'] = u'%02X' % mi
-        if masterName in bosh.modInfos.ordered:
-            value = u'%02X' % (bosh.modInfos.ordered.index(masterName),)
+        if bosh.modInfos.isActiveCached(masterName):
+            value = u'%02X' % (bosh.modInfos.activeCached.index(masterName),)
         else:
             value = u''
         labels['Current Order'] = value
@@ -432,7 +431,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             item.SetTextColour(colors['default.text'])
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
-            if bosh.modInfos.isSelected(masterName):
+            if bosh.modInfos.isActiveCached(masterName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -449,13 +448,14 @@ class MasterList(_ModsSortMixin, balt.UIList):
         listCtrl.SetItem(item)
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = (masterName in bosh.modInfos.ordered) or (masterName in bosh.modInfos.merged and 2)
+        oninc = bosh.modInfos.isActiveCached(masterName) or (
+            masterName in bosh.modInfos.merged and 2)
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
 
     #--Relist
     def ReList(self):
         fileOrderNames = [v.name for v in self.data.values()]
-        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames,False)
+        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
 
     #--InitEdit
     def InitEdit(self):
@@ -771,9 +771,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         'Group': lambda self, a: bosh.modInfos.table.getItem(a, 'group', u''),
         'Installer': lambda self, a: bosh.modInfos.table.getItem(
                      a, 'installer', u''),
-        # FIXME(ut): quadratic + accessing modInfos.plugins which is private
-        'Load Order': lambda self, a: a in bosh.modInfos.plugins.LoadOrder and
-                                      bosh.modInfos.plugins.LoadOrder.index(a),
+        'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
         'Modified': lambda self, a: self.data[a].getPath().mtime,
         'Size': lambda self, a: self.data[a].size,
         'Status': lambda self, a: self.data[a].getStatus(),
@@ -786,26 +784,14 @@ class ModList(_ModsSortMixin, balt.UIList):
     _sunkenBorder = False
 
     #-- Drag and Drop-----------------------------------------------------
-    def _dropIndexes(self, indexes, newIndex): # needs work, blurred
-        """Drop contiguous indexes in newIndex"""
+    def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
+        """Drop contiguous indexes on newIndex and return True if LO changed"""
         if newIndex < 0: return False # from OnChar() & moving master esm up
-        # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop
-        order = bosh.modInfos.plugins.LoadOrder
         count = self._gList.GetItemCount()
-        newPos = order.index(self.GetItem(newIndex)) if (
-            count > newIndex) else order.index(self.GetItem(count - 1))
-        if newPos <= 0: return False
-        start = order.index(self.GetItem(indexes[0]))
-        stop = order.index(self.GetItem(indexes[-1])) + 1 # excluded
-        # Can't move the game's master file anywhere else but position 0
-        master = bosh.modInfos.masterName
-        if master in order[start:stop]: return False
-        # List of names to move removed and then reinserted at new position
-        toMove = order[start:stop]
-        del order[start:stop]
-        order[newPos:newPos] = toMove
-        return True
+        dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
+        firstItem = self.GetItem(indexes[0])
+        lastItem = self.GetItem(indexes[-1])
+        return bosh.modInfos.dropItems(dropItem, firstItem, lastItem)
 
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
@@ -838,8 +824,8 @@ class ModList(_ModsSortMixin, balt.UIList):
         labels['Modified'] = formatDate(fileInfo.getPath().mtime)
         labels['Size'] = self._round(fileInfo.size)
         labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
-        order = bosh.modInfos.ordered
-        value = u'%02X' % order.index(fileName) if fileName in order else u''
+        value = u'%02X' % bosh.modInfos.activeCached.index(fileName) \
+            if bosh.modInfos.isActiveCached(fileName) else u''
         labels['Load Order'] = value
         labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
         labels['Mod Status'] = fileInfo.txt_status()
@@ -851,7 +837,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
-            1 if fileName in bosh.modInfos.ordered
+            1 if bosh.modInfos.isActiveCached(fileName)
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
@@ -895,12 +881,12 @@ class ModList(_ModsSortMixin, balt.UIList):
         if fileName in bosh.modInfos.bad_names:
             item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileName in bosh.modInfos.missing_strings:
-            if fileName in bosh.modInfos.ordered:
+            if bosh.modInfos.isActiveCached(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
         elif fileInfo.hasBadMasterNames():
-            if bosh.modInfos.isSelected(fileName):
+            if bosh.modInfos.isActiveCached(fileName):
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
             else:
                 item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
@@ -993,7 +979,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not self.data.isSelected(GPath(item))]
+                          not self.data.isActiveCached(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._checkUncheckMod(*selected)
@@ -1034,13 +1020,13 @@ class ModList(_ModsSortMixin, balt.UIList):
         notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
         for item in mods:
             if item in removed or item in notDeactivatable: continue
-            oldFiles = bosh.modInfos.ordered[:]
+            oldFiles = bosh.modInfos.activeCached
             fileName = GPath(item)
             #--Unselect?
-            if self.data.isSelected(fileName):
+            if self.data.isActiveCached(fileName):
                 try:
                     self.data.unselect(fileName)
-                    changed = bolt.listSubtract(oldFiles,bosh.modInfos.ordered)
+                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > (fileName in changed):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]
@@ -1056,7 +1042,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                 #if fileName in self.data.bad_names: return
                 try:
                     self.data.select(fileName)
-                    changed = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]
@@ -1732,7 +1718,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(bosh.modInfos.ordered), len(bosh.modInfos.data))
+        len(bosh.modInfos.activeCached), len(bosh.modInfos.data))
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):

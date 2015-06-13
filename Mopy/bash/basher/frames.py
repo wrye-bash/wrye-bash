@@ -384,7 +384,7 @@ class ModChecker(wx.Frame):
         self.SetSizeHints(250,250)
         self.SetIcons(Resources.bashBlue)
         #--Data
-        self.ordered = None
+        self.orderedActive = None
         self.merged = None
         self.imported = None
         #--Text
@@ -494,7 +494,7 @@ class ModChecker(wx.Frame):
         bosh.settings[
             'bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
         #--Cache info from modinfos to support auto-update.
-        self.ordered = bosh.modInfos.ordered
+        self.orderedActive = bosh.modInfos.activeCached
         self.merged = bosh.modInfos.merged.copy()
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
@@ -521,7 +521,7 @@ class ModChecker(wx.Frame):
     def OnActivate(self,event):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (event.GetActive() and (
-            self.ordered != bosh.modInfos.ordered or
+            self.orderedActive != bosh.modInfos.activeCached or
             self.merged != bosh.modInfos.merged or
             self.imported != bosh.modInfos.imported)
             ):

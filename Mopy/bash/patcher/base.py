@@ -35,7 +35,6 @@ import copy
 import re
 from ..bolt import AbstractError, GPath, Path
 from ..bosh import reModExt, dirs, reCsvExt # should I not import dirs here ?
-from .. import bush # for fullLoadOrder - needed ?
 from .. import bosh # for modInfos
 
 #------------------------------------------------------------------------------
@@ -194,13 +193,13 @@ class AListPatcher(_Abstract_Patcher):
             autoKey = {autoKey}
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
+        dex = bosh.modInfos.loIndexCached
         for modInfo in bosh.modInfos.values():
-            if autoRe.match(modInfo.name.s) or (
-                autoKey & modInfo.getBashTags()):
-                if bush.fullLoadOrder[modInfo.name] > \
-                    bush.fullLoadOrder[self._patchFile().patchName]: continue
-                autoItems.append(modInfo.name)
-                if self.choiceMenu: self.getChoice(modInfo.name)
+            name = modInfo.name
+            if dex(name) >= dex(self._patchFile().patchName): continue
+            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
+                autoItems.append(name)
+                if self.choiceMenu: self.getChoice(name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(set(dirs['patches'].list()) | set(
                 dirs['defaultPatches'].list())):
@@ -251,7 +250,7 @@ class AListPatcher(_Abstract_Patcher):
     def sortConfig(self,items):
         """Return sorted items. Default assumes mods and sorts by load
         order."""
-        return bosh.modInfos.getOrdered(items,False)
+        return bosh.modInfos.getOrdered(items)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -447,11 +446,11 @@ class APatchMerger(AListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
+        dex = bosh.modInfos.loIndexCached
         for modInfo in bosh.modInfos.values():
-            if modInfo.name in bosh.modInfos.mergeable and u'NoMerge' not in \
-                    modInfo.getBashTags() and \
-                            bush.fullLoadOrder[modInfo.name] < \
-                            bush.fullLoadOrder[self._patchFile().patchName]:
+            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
+            if (modInfo.name in bosh.modInfos.mergeable and
+                u'NoMerge' not in modInfo.getBashTags()):
                 autoItems.append(modInfo.name)
         return autoItems
 

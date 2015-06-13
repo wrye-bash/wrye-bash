@@ -87,7 +87,9 @@ class PatchFile(_PFile, ModFile):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        loadMods = [name for name in bosh.modInfos.ordered if bush.fullLoadOrder[name] < bush.fullLoadOrder[PatchFile.patchName]]
+        dex = bosh.modInfos.loIndexCached
+        loadMods = [name for name in bosh.modInfos.activeCached
+                    if dex(name) < dex(PatchFile.patchName)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods, [])
@@ -344,7 +346,9 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.races_vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
         self.races_data = {'EYES':[],'HAIR':[]}
         #--Mods
-        loadMods = [name for name in bosh.modInfos.ordered if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]]
+        dex = bosh.modInfos.loIndexCached
+        loadMods = [name for name in bosh.modInfos.activeCached
+                    if dex(name) < dex(CBash_PatchFile.patchName)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods,[])
@@ -420,7 +424,9 @@ class CBash_PatchFile(_PFile, ObModFile):
         levelLists = {'LVLC', 'LVLI', 'LVSP'}
         nullProgress = Progress()
 
-        IIMSet = set([modName for modName in (self.allSet|self.scanSet) if bool(bosh.modInfos[modName].getBashTags() & iiModeSet)])
+        infos = bosh.modInfos
+        IIMSet = set([modName for modName in (self.allSet | self.scanSet) if
+                      bool(infos[modName].getBashTags() & iiModeSet)])
 
         self.Current = ObCollection(ModsPath=dirs['mods'].s)
 
@@ -428,17 +434,17 @@ class CBash_PatchFile(_PFile, ObModFile):
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
+        dex = infos.loIndexCached
+        def less(mod): return dex(mod) < dex(CBash_PatchFile.patchName)
         for name in self.mergeSet:
-            if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]:
-                self.Current.addMergeMod(bosh.modInfos[name].getPath().stail)
+            if less(name): self.Current.addMergeMod(infos[name].getPath().stail)
         for name in self.loadSet:
-            if name not in self.mergeSet:
-                if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]:
-                    self.Current.addMod(bosh.modInfos[name].getPath().stail)
+            if name not in self.mergeSet and less(name):
+                self.Current.addMod(infos[name].getPath().stail)
         for name in self.scanSet:
-            if name not in self.mergeSet and name not in self.loadSet:
-                if bush.fullLoadOrder[name] < bush.fullLoadOrder[CBash_PatchFile.patchName]:
-                    self.Current.addScanMod(bosh.modInfos[name].getPath().stail)
+            if name not in self.mergeSet and name not in self.loadSet \
+                    and less(name):
+                self.Current.addScanMod(infos[name].getPath().stail)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()

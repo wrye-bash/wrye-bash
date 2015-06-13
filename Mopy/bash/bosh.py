@@ -351,7 +351,7 @@ class MasterSet(set):
 
     def getOrdered(self):
         """Returns masters in proper load order."""
-        return list(modInfos.getOrdered(self))
+        return modInfos.getOrdered(self)
 
 #------------------------------------------------------------------------------
 class LoadFactory:
@@ -3017,20 +3017,10 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
-    def addMods(self, plugins, index=None, savePlugins=False):
-        """Adds the specified mods to load order at the given index or at the bottom if none is given."""
-        # Remove any duplicates
-        plugins = set(plugins)
-        # Add plugins
-        for plugin in plugins:
-            if plugin not in self.LoadOrder:
-                if index is None:
-                    self.LoadOrder.append(plugin)
-                else:
-                    self.LoadOrder.insert(index, plugin)
-                    index += 1
-        # Refresh liblo
-        if savePlugins: self.saveLoadAndActive()
+    def renameInLo(self, newName, oldName):
+        oldIndex = self.LoadOrder.index(oldName)
+        self.removeMods([oldName], savePlugins=False)
+        self.LoadOrder.insert(oldIndex, newName)
 
     @_cache
     def refreshLoadOrder(self,forceRefresh=False):
@@ -3213,7 +3203,7 @@ class FileInfo(_AFileInfo):
         if status == 30:
             return status
         #--Misordered?
-        self.masterOrder = modInfos.getOrdered(self.masterNames)
+        self.masterOrder = tuple(modInfos.getOrdered(self.masterNames))
         if self.masterOrder != self.masterNames:
             return 20
         else:
@@ -3343,7 +3333,7 @@ class ModInfo(FileInfo):
         return crc
 
     def txt_status(self):
-        if self.name in modInfos.ordered: return _(u'Active')
+        if modInfos.isActiveCached(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
         elif self.name in modInfos.imported: return _(u'Imported')
         else: return _(u'Non-Active')
@@ -3366,7 +3356,7 @@ class ModInfo(FileInfo):
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
-        if not (modInfos.isSelected(self.name) and maExGroup):
+        if not (modInfos.isActiveCached(self.name) and maExGroup):
             return False
         else:
             exGroup = maExGroup.group(1)
@@ -3816,12 +3806,12 @@ class SaveInfo(FileInfo):
         status = FileInfo.getStatus(self)
         masterOrder = self.masterOrder
         #--File size?
-        if status > 0 or len(masterOrder) > len(modInfos.ordered):
+        if status > 0 or len(masterOrder) > len(modInfos.activeCached):
             return status
         #--Current ordering?
-        if masterOrder != modInfos.ordered[:len(masterOrder)]:
+        if masterOrder != modInfos.activeCached[:len(masterOrder)]:
             return status
-        elif masterOrder == modInfos.ordered:
+        elif masterOrder == modInfos.activeCached:
             return -20
         else:
             return -10
@@ -3944,8 +3934,8 @@ class FileInfos(DataDict):
         data = self.data
         oldNames = set(data)
         newNames = set()
-        added = set()
-        updated = set()
+        _added = set()
+        _updated = set()
         names = self._names()
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
@@ -3966,18 +3956,18 @@ class FileInfos(DataDict):
                 else:
                     data[name] = fileInfo
                     self.corrupted.pop(name,None)
-                    if isAdded: added.add(name)
-                    elif isUpdated: updated.add(name)
+                    if isAdded: _added.add(name)
+                    elif isUpdated: _updated.add(name)
             newNames.add(name)
-        deleted = oldNames - newNames
-        for name in deleted:
+        _deleted = oldNames - newNames
+        for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            if name in data: data.pop(name)
-        if deleted:
+            data.pop(name, None)
+        if _deleted:
             # items deleted outside Bash
-            for d in set(self.table.keys()) &  set(deleted):
+            for d in set(self.table.keys()) &  set(_deleted):
                 del self.table[d]
-        return bool(added) or bool(updated) or bool(deleted)
+        return bool(_added) or bool(_updated) or bool(_deleted)
 
     #--Right File Type? [ABSTRACT]
     def rightFileType(self,fileName):
@@ -4119,9 +4109,8 @@ class ModInfos(FileInfos):
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        #--Selection state (ordered, merged, imported)
+        #--Selection state (merged, imported)
         self.plugins = Plugins()
-        self.ordered = tuple() # active mods in load order
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -4164,6 +4153,39 @@ class ModInfos(FileInfos):
     def lockLO(self): return settings['bosh.modInfos.resetMTimes']
     @lockLO.setter
     def lockLO(self, val): settings['bosh.modInfos.resetMTimes'] = val
+
+    #--Load Order utility methods - be sure cache is valid when using them-----
+    def isActiveCached(self, mod):
+        """Return true if the mod is in the current active mods cache."""
+        return mod in self.plugins.lord.active
+    @property
+    def activeCached(self):
+        """Return the currently cached active mods in load order as a tuple.
+        :rtype : tuple
+        """
+        return self.plugins.lord.activeOrdered
+    def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
+    def loIndexCachedOrMax(self, mod):
+        try: return self.plugins.lord.lindex(mod)
+        except KeyError:
+            return sys.maxint # sort mods that do not have a load order LAST
+
+    def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
+        # Calculating indexes through order.index() so corrupt mods (which
+        # don't show in the ModList) don't break Drag n Drop
+        order = self.plugins.LoadOrder
+        newPos = order.index(dropItem)
+        if newPos <= 0: return False
+        start = order.index(firstItem)
+        stop = order.index(lastItem) + 1  # excluded
+        # Can't move the game's master file anywhere else but position 0
+        master = self.masterName
+        if master in order[start:stop]: return False
+        # List of names to move removed and then reinserted at new position
+        toMove = order[start:stop]
+        del order[start:stop]
+        order[newPos:newPos] = toMove
+        return True
 
     def getBashDir(self):
         """Returns Bash data storage directory."""
@@ -4214,7 +4236,7 @@ class ModInfos(FileInfos):
         activeBad = self.activeBad = set()
         for fileName in self.data:
             if self.isBadFileName(fileName.s):
-                if fileName in self.ordered:
+                if self.isActiveCached(fileName):
                     ## For now, we'll leave them active, until
                     ## we finish testing what the game will support
                     #self.unselect(fileName)
@@ -4228,8 +4250,8 @@ class ModInfos(FileInfos):
            but are missing them (=CTD)."""
         oldBad = self.missing_strings
         bad = set()
-        for fileName in self.data:
-            if self.data[fileName].isMissingStrings():
+        for fileName, fileInfo in self.iteritems():
+            if fileInfo.isMissingStrings():
                 bad.add(fileName)
         new = bad - oldBad
         self.missing_strings = bad
@@ -4266,10 +4288,10 @@ class ModInfos(FileInfos):
         changed = []
         toGhost = settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
-            active = self.plugins.selected
             allowGhosting = self.table.getColumn('allowGhosting')
             for mod, modInfo in self.iteritems():
-                modGhost = toGhost and mod not in active and allowGhosting.get(mod,True)
+                modGhost = toGhost and not self.isActiveCached(mod) \
+                           and allowGhosting.get(mod, True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
                 if newGhost != oldGhost:
@@ -4277,9 +4299,8 @@ class ModInfos(FileInfos):
         return changed
 
     def refreshInfoLists(self):
-        """Refreshes various mod info lists (mtime_mods, mtime_selected, exGroup_mods, imported, exported."""
-        #--Ordered
-        self.ordered = self.getOrdered(self.plugins.selected)
+        """Refreshes various mod info lists (mtime_mods, mtime_selected,
+        exGroup_mods, imported, exported)."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -4292,7 +4313,7 @@ class ModInfos(FileInfos):
         mtime_selected = self.mtime_selected
         mtime_selected.clear()
         self.exGroup_mods.clear()
-        for modName in self.ordered:
+        for modName in self.activeCached:
             mtime = modInfos[modName].mtime
             mtime_selected[mtime].append(modName)
             maExGroup = reExGroup.match(modName.s)
@@ -4300,7 +4321,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(self.ordered)
+        self.merged,self.imported = self.getSemiActive(self.activeCached)
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -4388,18 +4409,19 @@ class ModInfos(FileInfos):
                 return True
         return False
 
-    def getOrdered(self,modNames,asTuple=True):
-        """Sort list of mod names into their load order."""
+    def getOrdered(self, modNames):
+        """Return a list containing modNames' elements sorted into load order.
+
+        If some elements do not have a load order they are appended to the list
+        in alphabetical, case insensitive order (used also to resolve
+        modification time conflicts).
+        :param modNames: an iterable containing bolt.Paths
+        :rtype : list
+        """
         modNames = list(modNames)
-        try:
-            #modNames.sort()          # CDC Why a default sort? We want them in load order!  Is try even needed?
-            data = self.plugins.LoadOrder
-            modNames.sort(key=lambda a: (a in data) and data.index(a)) #--Sort on masterlist load order
-        except:
-            deprint(u'Error sorting modnames:',modNames,traceback=True)
-            raise
-        if asTuple: return tuple(modNames)
-        else: return modNames
+        modNames.sort() # resolve time conflicts or no load order
+        modNames.sort(key=self.loIndexCachedOrMax)
+        return modNames
 
     def getSemiActive(self,masters):
         """Returns (merged,imported) mods made semi-active by Bashed Patch."""
@@ -4477,7 +4499,7 @@ class ModInfos(FileInfos):
                 merged,imported = self.getSemiActive(present)
             else:
                 log.setHeader(head+_(u'Active Mod Files:'))
-                masters = set(self.ordered)
+                masters = set(self.activeCached)
                 merged,imported = self.merged,self.imported
             allMods = masters | merged | imported
             allMods = self.getOrdered([x for x in allMods if x in self])
@@ -4508,40 +4530,47 @@ class ModInfos(FileInfos):
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
-    def getTagList(self,mod_list=None):
-        """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
-        Either for all mods in the data folder or if specified for one specific mod.
-        """
+    @staticmethod
+    def _tagsies(modInfo, tagList):
+        mname = modInfo.name
+        def tags(msg, iterable, tagsList):
+            return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
+        if not modInfos.table.getItem(mname, 'autoBashTags') and \
+               modInfos.table.getItem(mname, 'bashTags', u''):
+            tagList = tags(_(u'From Manual (if any this overrides '
+                u'Description/LOOT sourced tags): '), sorted(
+                modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
+        if modInfo.getBashTagsDesc():
+            tagList = tags(_(u'From Description: '),
+                           sorted(modInfo.getBashTagsDesc()), tagList)
+        if configHelpers.getBashTags(mname):
+            tagList = tags(_(u'From LOOT Masterlist and or userlist: '),
+                           sorted(configHelpers.getBashTags(mname)), tagList)
+        if configHelpers.getBashRemoveTags(mname):
+            tagList = tags(_(u'Removed by LOOT Masterlist and or userlist: '),
+                      sorted(configHelpers.getBashRemoveTags(mname)), tagList)
+        return tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+
+    @staticmethod
+    def getTagList(mod_list=None):
+        """Return the list as wtxt of current bash tags (but don't say which
+        ones are applied via a patch) - either for all mods in the data folder
+        or if specified for one specific mod."""
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
         tagList += u'[spoiler][xml]\n'
         if mod_list:
             for modInfo in mod_list:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
-                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
-                    if modInfo.getBashTagsDesc():
-                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
-                    if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
-                    if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
-                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+                    tagList = ModInfos._tagsies(modInfo, tagList)
                 else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
-            for modInfo in sorted(modInfos.data.values(),cmp=lambda x,y: cmp(x.mtime, y.mtime)):
+            lindex = lambda t: modInfos.loIndexCached(t[0])
+            for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
-                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
-                    if modInfo.getBashTagsDesc():
-                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
-                    if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
-                    if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
-                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+                    tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/xml][/spoiler]'
         return tagList
 
@@ -4567,10 +4596,6 @@ class ModInfos(FileInfos):
             FileInfos.refreshFile(self,fileName)
         finally:
             self.refreshInfoLists()
-
-    def isSelected(self,modFile):
-        """True if modFile is selected (active)."""
-        return modFile in self.ordered
 
     def select(self,fileName,doSave=True,modSet=None,children=None):
         """Adds file to selected."""
@@ -4603,9 +4628,9 @@ class ModInfos(FileInfos):
             self.plugins.selected.remove(fileName)
         else: return
         #--Unselect children
-        for selFile in self.plugins.selected[:]:
+        for selFile in self.plugins.selected[:]: # we recursively manipulate it
             #--Already unselected or missing?
-            if not self.isSelected(selFile) or selFile not in self.data:
+            if not selFile in self.plugins.selected or selFile not in self.data:
                 continue
             #--One of selFile's masters?
             for master in self[selFile].header.masters:
@@ -4685,7 +4710,7 @@ class ModInfos(FileInfos):
         """True if there is another mod with the same mtime."""
         if load_order.usingTxtFile():
             return False
-        elif not self.isSelected(modName): return False
+        elif not self.isActiveCached(modName): return False
         else:
             mtime = self[modName].mtime
             return len(self.mtime_selected[mtime]) > 1
@@ -4727,16 +4752,14 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        isSelected = self.isSelected(oldName)
+        isSelected = self.isActiveCached(oldName)
         if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
-        oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.removeMods([oldName], savePlugins=False)
-        self.plugins.addMods([newName], index=oldIndex, savePlugins=False)
-        self.refreshInfoLists()
+        self.plugins.renameInLo(newName, oldName)
         if isSelected: self.select(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.plugins.saveLoadAndActive()
+        self.refreshInfoLists()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
@@ -5284,7 +5307,7 @@ class ConfigHelpers:
     def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showCRC=False,showVersion=True,showWarn=True,scanDirty=None):
         """Checks currently loaded mods against ruleset.
            scanDirty should be the instance of ModChecker, to scan."""
-        active = set(modInfos.ordered)
+        active = set(modInfos.activeCached)
         merged = modInfos.merged
         imported = modInfos.imported
         activeMerged = active | merged
@@ -5377,7 +5400,7 @@ class ConfigHelpers:
             else:
                 log.setHeader(warning+_(u'Missing/Delinquent Masters'))
                 previousMods = set()
-                for mod in modInfos.ordered:
+                for mod in modInfos.activeCached:
                     loggedMod = False
                     for master in modInfos[mod].header.masters:
                         if master not in active:
@@ -6105,7 +6128,6 @@ class Installer(object):
         reReadMe = self.reReadMe
         docExts = self.docExts
         imageExts = self.imageExts
-        scriptExts = self.scriptExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -7686,7 +7708,6 @@ class InstallersData(DataDict):
     def refreshInstallers(self,progress=None,fullRefresh=False):
         """Refresh installer data."""
         progress = progress or bolt.Progress()
-        changed = False
         pending = set()
         projects = set()
         #--Current archives
@@ -7837,7 +7858,6 @@ class InstallersData(DataDict):
         scanned = set([])
         convertersJoin = dirs['converters'].join
         converterGet = self.bcfPath_sizeCrcDate.get
-        bcfPath_sizeCrcDate = self.bcfPath_sizeCrcDate
         archivesAdd = archives.add
         scannedAdd = scanned.add
         for archive in dirs['converters'].list():
@@ -7917,7 +7937,6 @@ class InstallersData(DataDict):
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
         progress = progress or bolt.Progress()
-        changed = False
         pending = set()
         bcfCRC_converter = self.bcfCRC_converter
         convJoin = dirs['converters'].join
@@ -8025,7 +8044,7 @@ class InstallersData(DataDict):
         """Move specified archives to specified position."""
         moveSet = set(moveList)
         data = self.data
-        orderKey = lambda x: data[x].order
+        orderKey = lambda p: data[p].order
         newList = [x for x in sorted(data,key=orderKey) if x not in moveSet]
         moveList.sort(key=orderKey)
         newList[newPos:newPos] = moveList
@@ -8196,9 +8215,9 @@ class InstallersData(DataDict):
         data_sizeCrcDate = self.data_sizeCrcDate
         getArchiveOrder =  lambda x: self[x].order
         #--Determine files to remove and files to restore. Keep in mind that
-        #  that multipe input archives may be interspersed with other archives
-        #  that may block (mask) them from deleting files and/or may provide
-        #  files that should be restored to make up for previous files. However,
+        #  multiple input archives may be interspersed with other archives that
+        #  may block (mask) them from deleting files and/or may provide files
+        #  that should be restored to make up for previous files. However,
         #  restore can be skipped, if existing files matches the file being
         #  removed.
         masked = set()
@@ -8339,15 +8358,15 @@ class InstallersData(DataDict):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getArchiveOrder =  lambda x: data[x].order
-        getBSAOrder = lambda x: list(modInfos.ordered).index(x[1].root + ".esp")
+        getArchiveOrder = lambda a: self[a].order
+        getBSAOrder = lambda b: modInfos.activeCached.index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
             # Create list of active BSA files in srcInstaller
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
-#            print("Ordered: {}".format(modInfos.ordered))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if x.root + ".esp" in modInfos.ordered]
+#            print("Ordered: {}".format(modInfos.activeCached))
+            activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
 #                print("BSA Paths: {}".format(bsas))
@@ -8366,7 +8385,7 @@ class InstallersData(DataDict):
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if x.root + ".esp" in modInfos.ordered])
+                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
@@ -8437,7 +8456,6 @@ class InstallersData(DataDict):
             orderKey = lambda x: self.data[x].order
             allPackages = sorted(self.data,key=orderKey)
             #--List
-            modIndex,header = 0, None
             log(u'[spoiler][xml]\n',False)
             for package in allPackages:
                 prefix = u'%03d' % self.data[package].order
@@ -8449,6 +8467,12 @@ class InstallersData(DataDict):
                     log(u'-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
+
+    def filterInstallables(self, installerKeys):
+        def installable(x): # type: 0: unset/invalid; 1: simple; 2: complex
+            return x in self and self[x].type in (1, 2) and isinstance(self[x],
+                (InstallerArchive, InstallerProject))
+        return filter(installable, installerKeys)
 
 #------------------------------------------------------------------------------
 class ModDetails:
@@ -9800,7 +9824,7 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if master not in modInfos:
                     if not verbose: return False
                     missingMasters.append(master.s)
-                elif not modInfos.isSelected(master):
+                elif not modInfos.isActiveCached(master):
                     if not verbose: return False
                     nonActiveMasters.append(master.s)
         #--masters not present in mod list?

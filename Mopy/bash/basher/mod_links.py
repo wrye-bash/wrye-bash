@@ -483,9 +483,7 @@ class Mod_ListBashTags(ItemLink):
 
     def Execute(self,event):
         #--Get masters list
-        files = []
-        for fileName in self.selected:
-            files.append(bosh.modInfos[fileName])
+        files = [bosh.modInfos[fileName] for fileName in self.selected]
         text = bosh.modInfos.getTagList(files)
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
@@ -604,7 +602,7 @@ class _GhostLink(ItemLink):
     def setAllow(filename): return not _GhostLink.getAllow(filename)
     @staticmethod
     def toGhost(filename): return _GhostLink.getAllow(filename) and \
-            filename not in bosh.modInfos.ordered # cannot ghost active mods
+        not bosh.modInfos.isActiveCached(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
         return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
@@ -629,7 +627,7 @@ class _GhostLink(ItemLink):
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
@@ -641,7 +639,7 @@ class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
 #------------------------------------------------------------------------------
 class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda fname: fname not in bosh.modInfos.ordered)
+    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
 
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
@@ -658,7 +656,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     def _enable(self):
         # only enable ghosting for one item if not active
         if len(self.selected) == 1 and not self.isGhost:
-            return self.path not in bosh.modInfos.ordered
+            return not bosh.modInfos.isActiveCached(self.path)
         return True
 
     def Execute(self,event):
@@ -785,17 +783,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _Execute(self):
         # Clean up some memory
         bolt.GPathPurge()
-        # Create plugin dictionaries -- used later. Speeds everything up! Yay!
-        fullLoadOrder   = bosh.modInfos.plugins.LoadOrder   #CDC used this cached value no need to requery
-
-        index = 0
-        for name in fullLoadOrder:
-            bush.fullLoadOrder[name] = index
-            index += 1
 
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        if not bosh.modInfos.ordered:
+        if not bosh.modInfos.activeCached:
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
                 _(u'Load some mods and try again.'),
@@ -838,8 +829,9 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     self.window.RefreshUI(refreshSaves=False) #rescan mergeable
 
         #--Check if we should be deactivating some plugins
-        ActivePriortoPatch = [x for x in bosh.modInfos.ordered if
-                              bosh.modInfos[x].mtime < fileInfo.mtime]
+        def less(modName, dex=bosh.modInfos.loIndexCached):
+            return dex(modName) < dex(fileName)
+        ActivePriortoPatch = [x for x in bosh.modInfos.activeCached if less(x)]
         unfiltered = [x for x in ActivePriortoPatch if
                       u'Filter' in bosh.modInfos[x].getBashTags()]
         merge = [x for x in ActivePriortoPatch if
@@ -901,18 +893,18 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     with balt.BusyCursor():
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
-                        bosh.modInfos.refreshInfoLists()
                         bosh.modInfos.plugins.saveActive()
+                        bosh.modInfos.refreshInfoLists()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
 
         previousMods = set()
         missing = {}
         delinquent = {}
-        for mod in bosh.modInfos.ordered:
+        for mod in bosh.modInfos.activeCached:
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
-                if master not in bosh.modInfos.ordered:
+                if not bosh.modInfos.isActiveCached(master):
                     missing.setdefault(mod,[]).append(master)
                 elif master not in previousMods:
                     delinquent.setdefault(mod,[]).append(master)
@@ -1384,7 +1376,7 @@ class Mod_AddMaster(OneItemLink):
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
-        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+        for masterName in bosh.modInfos.getOrdered(names):
             if masterName in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
                 masterName = bosh.modInfos[masterName].name
@@ -2701,7 +2693,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
                 return self._showError(
                     name.s + u' ' + _(u"is already a master."))
             names.append(name)
-        for masterName in bosh.modInfos.getOrdered(names, asTuple=False):
+        for masterName in bosh.modInfos.getOrdered(names):
             if masterName in bosh.modInfos:
                 masterName = bosh.modInfos[masterName].name
             modInfo.header.masters.append(masterName)

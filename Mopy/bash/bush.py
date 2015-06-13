@@ -37,7 +37,6 @@ from bolt import GPath, Path, deprint, BoltError
 game = None         # the python module for the current game
 gamePath = None     # absolute bolt Path to the game directory
 foundGames = {}     # 'name':Path dict used by the Settings switch game menu
-fullLoadOrder = {}  ##: some patchers cache
 
 # Module Cache
 _allGames={} # 'name'->module

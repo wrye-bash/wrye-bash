@@ -63,6 +63,7 @@ class LoadOrder(object):
     @property # sugar - API: maybe drop:
     def activeOrdered(self): return self._activeOrdered
 
+    def lindex(self, path): return self.__mod_loIndex[path] # KeyError
     def lorder(self, paths): # API: sort in place ? see usages
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
 
@@ -104,19 +105,19 @@ def __fixLoadOrder(lord):
         bolt.deprint(u'%s in %d position' % (masterName, masterDex))
         lord.remove(masterName)
         lord.insert(0, masterName)
-        reordered = True
-    else: reordered = False
+        _reordered = True
+    else: _reordered = False
     loadOrder = set(lord)
     modFiles = set(bosh.modInfos.keys())
     # CORRUPTED FILES HAVE A LOAD ORDER TOO
     modFiles.update(bosh.modInfos.corrupted.keys())
-    removedFiles = loadOrder - modFiles
-    addedFiles = modFiles - loadOrder
+    _removedFiles = loadOrder - modFiles
+    _addedFiles = modFiles - loadOrder
     # Remove non existent plugins from load order
-    lord[:] = [x for x in lord if x not in removedFiles]
+    lord[:] = [x for x in lord if x not in _removedFiles]
     # Add new plugins to load order
     indexFirstEsp = _indexFirstEsp(lord)
-    for mod in addedFiles:
+    for mod in _addedFiles:
         if bosh.modInfos[mod].isEsm():
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
@@ -128,15 +129,15 @@ def __fixLoadOrder(lord):
             lord.remove(mod)
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
-            reordered = True
+            _reordered = True
     # Save changes if necessary
-    if removedFiles or addedFiles or reordered:
-        if removedFiles or reordered: # must fix the active too
+    if _removedFiles or _addedFiles or _reordered:
+        if _removedFiles or _reordered: # must fix the active too
             __fixActive(_current_lo.activeOrdered, lord)
-        bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)' % (
-            str(_pl(addedFiles) or u'None'), str(_pl(removedFiles) or u'None'),
-            u'No' if not reordered else _pl(oldLord, u'from:\n') +
-                                        _pl(lord, u'\nto:\n')))
+        bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)'
+             % (_pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
+             u'No' if not _reordered else _pl(oldLord, u'from:\n') +
+                                          _pl(lord, u'\nto:\n')))
         SaveLoadOrder(lord, _fixed=True)
         return True # changes, saved
     return False # no changes, not saved
@@ -149,10 +150,10 @@ def _getActiveFromLiblo(lord): # pass a VALID load order in
 def __fixActive(acti, lord):
     # filter plugins not present in load order
     actiFiltered = [x for x in acti if x in lord] # preserve acti order
-    removed = set(acti) - set(actiFiltered)
-    if removed: # take note as we may need to rewrite plugins txt
-        msg = _(u'Those mods were present in plugins txt but not present in '
-                u'Data/ directory') + u': ' + _pl(removed) + u'\n'
+    _removed = set(acti) - set(actiFiltered)
+    if _removed: # take note as we may need to rewrite plugins txt
+        msg = u'Those mods were present in plugins txt but were not present ' \
+              u'in Data/ directory or were corrupted: ' + _pl(_removed) + u'\n'
     else: msg = u''
     # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,
     # Update.esm] on empty plugins.txt) - Keep it cause eventually (when liblo
@@ -162,18 +163,19 @@ def __fixActive(acti, lord):
     if bush.game.fsName == 'Skyrim':
         updateEsm = bolt.GPath(u'Update.esm')
         if updateEsm in lord and not updateEsm in acti:
-            msg += _(u'Update.esm not present in plugins.txt while present in '
-                     u'Data folder') + u'\n'
+            msg += (u'Update.esm not present in plugins.txt while present in '
+                    u'Data folder') + u'\n'
             addUpdateEsm = True
+    dexDict = {mod:index for index, mod in enumerate(lord)}
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
     # STILL restore for skyrim to warn on LO change
     if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
         actiSorted = actiFiltered[:]
-        actiSorted.sort(key=lord.index) # all present in lord
+        actiSorted.sort(key=dexDict.__getitem__) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
-            msg += u'Plugins.txt order of plugins (%s) differs from current ' \
-                   u'load order (%s)' % (_pl(actiFiltered), _pl(actiSorted))
-    else: actiSorted = sorted(actiFiltered, key=lord.index)
+            msg += (u'Plugins.txt order of plugins (%s) differs from current '
+                   u'load order (%s)') % (_pl(actiFiltered), _pl(actiSorted))
+    else: actiSorted = sorted(actiFiltered, key=dexDict.__getitem__)
     if addUpdateEsm: # insert after the last master (as does liblo)
         actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
     if msg:

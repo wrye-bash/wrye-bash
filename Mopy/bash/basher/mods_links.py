@@ -103,7 +103,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self, event): _self.DoEdit(event)
         class _SaveLink(EnabledLink):
             text = _(u'Save List...')
-            def _enable(self): return bool(bosh.modInfos.ordered)
+            def _enable(self): return bool(bosh.modInfos.activeCached)
             def Execute(self, event): _self.DoSave(event)
         self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
                            SeparatorLink()]
@@ -130,12 +130,13 @@ class Mods_LoadList(ChoiceLink):
         """Select all mods."""
         modInfos = bosh.modInfos
         try:
-            def select(m):
-                if not modInfos.isSelected(m): modInfos.select(m, doSave=False)
+            def _select(m):
+                if not modInfos.isActiveCached(m):
+                    modInfos.select(m, doSave=False)
             mods = map(GPath, self.window.GetItems())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
-                if self.window.isBP(mod): select(mod)
+                if self.window.isBP(mod): _select(mod)
             # then activate mods that are not tagged NoMerge or Deactivate or Filter
             def _deactive(modName):
                 tags = modInfos[modName].getBashTags()
@@ -143,10 +144,10 @@ class Mods_LoadList(ChoiceLink):
             mods = filter(lambda m: not _deactive(m), mods)
             mergeable = set(modInfos.mergeable)
             for mod in mods:
-                if not mod in mergeable: select(mod)
+                if not mod in mergeable: _select(mod)
             # then activate as many of the remaining mods as we can
             for mod in mods:
-                if mod in mergeable: select(mod)
+                if mod in mergeable: _select(mod)
             modInfos.plugins.saveActive()
             modInfos.refreshInfoLists()
         except bosh.PluginsFullError:
@@ -167,7 +168,7 @@ class Mods_LoadList(ChoiceLink):
         if len(newItem) > 64:
             message = _(u'Load list name must be between 1 and 64 characters long.')
             return self._showError(message)
-        self.loadListsDict[newItem] = bosh.modInfos.ordered[:]
+        self.loadListsDict[newItem] = list(bosh.modInfos.activeCached)
         bosh.settings.setChanged('bash.loadLists.data')
 
     def DoEdit(self,event):
@@ -274,7 +275,7 @@ class Mods_ListMods(ItemLink):
                       icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class Mods_ListBashTags(ItemLink):
+class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     """Copies list of bash tags to clipboard."""
     text = _(u"List Bash Tags...")
     help = _(u"Copies list of bash tags to clipboard.")

@@ -273,17 +273,16 @@ class PatchDialog(balt.Dialog):
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patchName.s
-            if bosh.modInfos.isSelected(patchName) or (
+            if bosh.modInfos.isActiveCached(patchName) or (
                         bosh.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
-                    oldFiles = bosh.modInfos.ordered[:]
+                    oldFiles = set(bosh.modInfos.activeCached)
                     bosh.modInfos.select(patchName, doSave=True)
-                    changedFiles = bolt.listSubtract(bosh.modInfos.ordered,oldFiles)
+                    changedFiles = set(bosh.modInfos.activeCached) - oldFiles
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                    # bosh.modInfos.refreshInfoLists() # covered in refreshFile
                 except bosh.PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')

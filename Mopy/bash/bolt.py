@@ -1931,13 +1931,10 @@ def invertDict(indict):
     """Invert a dictionary."""
     return dict((y,x) for x,y in indict.iteritems())
 
-def listSubtract(alist,blist):
+def listSubtract(alist, blist):
     """Return a copy of first list minus items in second list."""
-    result = []
-    for item in alist:
-        if item not in blist:
-            result.append(item)
-    return result
+    s = set(blist)
+    return [a for a in alist if a not in s]
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
