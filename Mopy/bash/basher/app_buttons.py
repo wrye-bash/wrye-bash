@@ -174,33 +174,19 @@ class App_Button(StatusBar_Button):
             self.exePath = exePathArgs
             self.exeArgs = tuple()
         self.images = images
-        if workingDir:
-            self.workingDir = GPath(workingDir)
-        else:
-            self.workingDir = None
-        #--Exe stuff
-        if self.exePath and self.exePath.cext == u'.exe': #Sometimes exePath is "None"
-            self.isExe = True
-        else:
-            self.isExe = False
+        self.workingDir = GPath(workingDir) if workingDir else None
+        #--Exe stuff, note that sometimes exePath is None
+        self.isExe = self.exePath and self.exePath.cext == u'.exe'
         #--Java stuff
-        if self.exePath and self.exePath.cext == u'.jar': #Sometimes exePath is "None"
-            self.isJava = True
+        self.isJava = self.exePath and self.exePath.cext == u'.jar'
+        if self.isJava:
             self.java = self.getJava()
             self.jar = self.exePath
             self.appArgs = u''.join(self.exeArgs)
-        else:
-            self.isJava = False
         #--shortcut
-        if self.exePath and self.exePath.cext == u'.lnk': #Sometimes exePath is "None"
-            self.isShortcut = True
-        else:
-            self.isShortcut = False
+        self.isShortcut = self.exePath and self.exePath.cext == u'.lnk'
         #--Folder
-        if self.exePath and self.exePath.isdir():
-            self.isFolder = True
-        else:
-            self.isFolder = False
+        self.isFolder = self.exePath and self.exePath.isdir()
         #--**SE stuff
         self._obseTip = obseTip
         self.obseArg = obseArg

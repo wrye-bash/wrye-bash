@@ -3934,8 +3934,8 @@ class FileInfos(DataDict):
         data = self.data
         oldNames = set(data)
         newNames = set()
-        added = set()
-        updated = set()
+        _added = set()
+        _updated = set()
         names = self._names()
         for name in names:
             if self.dirdef and not self.dir.join(name).isfile():
@@ -3956,18 +3956,18 @@ class FileInfos(DataDict):
                 else:
                     data[name] = fileInfo
                     self.corrupted.pop(name,None)
-                    if isAdded: added.add(name)
-                    elif isUpdated: updated.add(name)
+                    if isAdded: _added.add(name)
+                    elif isUpdated: _updated.add(name)
             newNames.add(name)
-        deleted = oldNames - newNames
-        for name in deleted:
+        _deleted = oldNames - newNames
+        for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            if name in data: data.pop(name)
-        if deleted:
+            data.pop(name, None)
+        if _deleted:
             # items deleted outside Bash
-            for d in set(self.table.keys()) &  set(deleted):
+            for d in set(self.table.keys()) &  set(_deleted):
                 del self.table[d]
-        return bool(added) or bool(updated) or bool(deleted)
+        return bool(_added) or bool(_updated) or bool(_deleted)
 
     #--Right File Type? [ABSTRACT]
     def rightFileType(self,fileName):
@@ -4250,8 +4250,8 @@ class ModInfos(FileInfos):
            but are missing them (=CTD)."""
         oldBad = self.missing_strings
         bad = set()
-        for fileName in self.data:
-            if self.data[fileName].isMissingStrings():
+        for fileName, fileInfo in self.iteritems():
+            if fileInfo.isMissingStrings():
                 bad.add(fileName)
         new = bad - oldBad
         self.missing_strings = bad
@@ -4531,25 +4531,38 @@ class ModInfos(FileInfos):
             return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
+    def _tagsies(modInfo, tagList):
+        mname = modInfo.name
+        def tags(msg, iterable, tagsList):
+            return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
+        if not modInfos.table.getItem(mname, 'autoBashTags') and \
+               modInfos.table.getItem(mname, 'bashTags', u''):
+            tagList = tags(_(u'From Manual (if any this overrides '
+                u'Description/LOOT sourced tags): '), sorted(
+                modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
+        if modInfo.getBashTagsDesc():
+            tagList = tags(_(u'From Description: '),
+                           sorted(modInfo.getBashTagsDesc()), tagList)
+        if configHelpers.getBashTags(mname):
+            tagList = tags(_(u'From LOOT Masterlist and or userlist: '),
+                           sorted(configHelpers.getBashTags(mname)), tagList)
+        if configHelpers.getBashRemoveTags(mname):
+            tagList = tags(_(u'Removed by LOOT Masterlist and or userlist: '),
+                      sorted(configHelpers.getBashRemoveTags(mname)), tagList)
+        return tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+
+    @staticmethod
     def getTagList(mod_list=None):
-        """Returns the list as wtxt of current bash tags (but doesn't say what ones are applied via a patch).
-        Either for all mods in the data folder or if specified for one specific mod.
-        """
+        """Return the list as wtxt of current bash tags (but don't say which
+        ones are applied via a patch) - either for all mods in the data folder
+        or if specified for one specific mod."""
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
         tagList += u'[spoiler][xml]\n'
         if mod_list:
             for modInfo in mod_list:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'
                 if modInfo.getBashTags():
-                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
-                    if modInfo.getBashTagsDesc():
-                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
-                    if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
-                    if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
-                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+                    tagList = ModInfos._tagsies(modInfo, tagList)
                 else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
@@ -4557,15 +4570,7 @@ class ModInfos(FileInfos):
             for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
-                    if not modInfos.table.getItem(modInfo.name,'autoBashTags') and modInfos.table.getItem(modInfo.name,'bashTags',u''):
-                        tagList += u'  * '+_(u'From Manual (if any this overrides Description/LOOT sourced tags): ') + u', '.join(sorted(modInfos.table.getItem(modInfo.name,'bashTags',u''))) + u'\n'
-                    if modInfo.getBashTagsDesc():
-                        tagList += u'  * '+_(u'From Description: ') + u', '.join(sorted(modInfo.getBashTagsDesc())) + u'\n'
-                    if configHelpers.getBashTags(modInfo.name):
-                        tagList += u'  * '+_(u'From LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashTags(modInfo.name))) + u'\n'
-                    if configHelpers.getBashRemoveTags(modInfo.name):
-                        tagList += u'  * '+_(u'Removed by LOOT Masterlist and or userlist: ') + u', '.join(sorted(configHelpers.getBashRemoveTags(modInfo.name))) + u'\n'
-                    tagList += u'  * '+_(u'Result: ') + u', '.join(sorted(modInfo.getBashTags())) + u'\n'
+                    tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/xml][/spoiler]'
         return tagList
 
@@ -6123,7 +6128,6 @@ class Installer(object):
         reReadMe = self.reReadMe
         docExts = self.docExts
         imageExts = self.imageExts
-        scriptExts = self.scriptExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -7704,7 +7708,6 @@ class InstallersData(DataDict):
     def refreshInstallers(self,progress=None,fullRefresh=False):
         """Refresh installer data."""
         progress = progress or bolt.Progress()
-        changed = False
         pending = set()
         projects = set()
         #--Current archives
@@ -7855,7 +7858,6 @@ class InstallersData(DataDict):
         scanned = set([])
         convertersJoin = dirs['converters'].join
         converterGet = self.bcfPath_sizeCrcDate.get
-        bcfPath_sizeCrcDate = self.bcfPath_sizeCrcDate
         archivesAdd = archives.add
         scannedAdd = scanned.add
         for archive in dirs['converters'].list():
@@ -7935,7 +7937,6 @@ class InstallersData(DataDict):
     def refreshConverters(self,progress=None,fullRefresh=False):
         """Refreshes converter status, and moves duplicate BCFs out of the way"""
         progress = progress or bolt.Progress()
-        changed = False
         pending = set()
         bcfCRC_converter = self.bcfCRC_converter
         convJoin = dirs['converters'].join
@@ -8043,7 +8044,7 @@ class InstallersData(DataDict):
         """Move specified archives to specified position."""
         moveSet = set(moveList)
         data = self.data
-        orderKey = lambda x: data[x].order
+        orderKey = lambda p: data[p].order
         newList = [x for x in sorted(data,key=orderKey) if x not in moveSet]
         moveList.sort(key=orderKey)
         newList[newPos:newPos] = moveList
@@ -8214,9 +8215,9 @@ class InstallersData(DataDict):
         data_sizeCrcDate = self.data_sizeCrcDate
         getArchiveOrder =  lambda x: self[x].order
         #--Determine files to remove and files to restore. Keep in mind that
-        #  that multipe input archives may be interspersed with other archives
-        #  that may block (mask) them from deleting files and/or may provide
-        #  files that should be restored to make up for previous files. However,
+        #  multiple input archives may be interspersed with other archives that
+        #  may block (mask) them from deleting files and/or may provide files
+        #  that should be restored to make up for previous files. However,
         #  restore can be skipped, if existing files matches the file being
         #  removed.
         masked = set()
@@ -8455,7 +8456,6 @@ class InstallersData(DataDict):
             orderKey = lambda x: self.data[x].order
             allPackages = sorted(self.data,key=orderKey)
             #--List
-            modIndex,header = 0, None
             log(u'[spoiler][xml]\n',False)
             for package in allPackages:
                 prefix = u'%03d' % self.data[package].order
@@ -8467,6 +8467,12 @@ class InstallersData(DataDict):
                     log(u'-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
+
+    def filterInstallables(self, installerKeys):
+        def installable(x): # type: 0: unset/invalid; 1: simple; 2: complex
+            return x in self and self[x].type in (1, 2) and isinstance(self[x],
+                (InstallerArchive, InstallerProject))
+        return filter(installable, installerKeys)
 
 #------------------------------------------------------------------------------
 class ModDetails:

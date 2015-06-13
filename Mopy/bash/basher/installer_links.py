@@ -81,10 +81,8 @@ class _InstallerLink(Installers_Link, EnabledLink):
             return True
         return False
 
-    def filterInstallables(self): return filter(lambda x: # TODO(ut) - simplify - type in (1, 2) ??
-        x in self.idata and self.idata[x].type in (1, 2) and isinstance(
-        self.idata[x], (bosh.InstallerArchive, bosh.InstallerProject)),
-                                                self.selected)
+    def filterInstallables(self):
+        return self.idata.filterInstallables(self.selected)
 
     def hasMarker(self):
         if len(self.selected) > 0:
