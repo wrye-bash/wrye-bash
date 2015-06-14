@@ -878,20 +878,24 @@
                 <li>Male height
                 <li>Male weight
             </ul>
+        <tr><td>C.Acoustic<td>Modifies cell Acoustic Space. (TES5)<td>The Acoustic Space (XCAS) subrecord in Cell (CELL) records.
         <tr><td>C.Climate<td>Modifies cell climates.<td>The following Cell (CELL) subrecords:
             <ul>
                 <li>Climate (XCCM)
-                <li>IsBehaveLikeExterior flag
+                <li>IsBehaveLikeExterior or Show Sky flag
             </ul>
+        <tr><td>C.Encounter<td>Modifies cell Encounter Zone. (TES5)<td>The Encounter Zone (XEZN) subrecord in Cell (CELL) records.
+        <tr><td>C.ImageSpace<td>Modifies cell ImageSpace. (TES5)<td>The Image Space (XCIM) subrecord in Cell (CELL) records.
         <tr><td>C.Light<td>Modifies cell lighting or fog.<td>The following Cell (CELL) subrecords:
             <ul>
                 <li>Lighting Ambient Color
                 <li>Lighting Directional Color
                 <li>Lighting Fog Color
+                <li>LTMP subrecord in Cell (CELL) records
             </ul>
+        <tr><td>C.Location<td>Modifies cell Location. (TES5)<td>The Location (XLCN) subrecord in Cell (CELL) records.
         <tr><td>C.Music<td>Modifies cell music type.<td>The Music (XCMT) subrecord in Cell (CELL) records.
-        <tr><td>C.Name<td>Modifies cell names.<td>
-        The Name (FULL) subrecord in Cell (CELL) records.
+        <tr><td>C.Name<td>Modifies cell names.<td>The Name (FULL) subrecord in Cell (CELL) records.
         <tr><td>C.Owner<td>Modifies cell ownership.<td>The following Cell (CELL) subrecords:
             <ul>
                 <li>Owner (XOWN)
@@ -900,13 +904,15 @@
                 <li>IsPublicPlace flag
             </ul>
         <tr><td>C.RecordFlags<td>Modifies the off-limits or dangerous flags.<td>Any Cell (CELL) record flags not covered by the other Cell-related Bash Tags.
+        <tr><td>C.Regions<td>Modifies the Cells Region subrecord.<td>Any XCLR subrecord of the Cell (CELL) record
+        <tr><td>C.SkyLighting<td>Modifies Use Sky Lighting cell flag.<td>Use Sky Lighting (CELL) flag (TES5)
         <tr><td>C.Water<td>Modifies cell water type or level.<td>The following Cell (CELL) subrecords:
             <ul>
                 <li>Water (XCWT)
                 <li>Water height (XCLW)
                 <li>IsHasWater flag
             </ul>
-        <tr><td>Creatures.Blood<td>Modifies the creature blood subrecords.<td>The following Creature (CREA) subrecords:
+        <tr><td>Creatures.Blood<td>Modifies the creature blood subrecords.<td>The following Creature (CREA) subrecords: (TES4)
             <ul>
                 <li>Blood spray (NAM0)
                 <li>Blood decal (NAM1)
@@ -1100,14 +1106,29 @@
             </ul>
         <tr><td>Sound<td>Replaces sounds.<td>The following subrecords:
             <ul>
-                <li>Activator: sound (SNAM)
-                <li>Container: open sound (SNAM), close sound (QNAM).
-                <li>Creature: foot weight (WNAM), inherits sounds from (CSCR), other sounds.
-                <li>Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
-                <li>Light: sound (SNAM)
-                <li>Magic Effect: casting/bolt/hit/area sounds.
-                <li>Weather: sounds
+                <li>(ACTI) Activator: sound (SNAM, VNAM)
+                <li>(ADDN) Addon: Ambient Sound (SNAM)
+                <li>(ALCH) Allchemy: Drop Sound (ZNAM), Pickup Sound (YNAM), Consume sound (ENIT)
+                <li>(AMMO) Ammunition: Drop Sound (ZNAM), pickup Sound (YNAM)
+                <li>(APPA) Aparatus: Drop Sound (ZNAM), Pickup Sound (YNAM)
+                <li>(ARMA) Armor Addon (Armature): Footstep Sound (SNDD)
+                <li>(ARMO) Armor: Drop Sound (ZNAM), Pickup Sound (YNAM)
+                <li>(ASPC) Acustic Space: Ambient Sound (ZNAM), Pickup Sound (YNAM), Consume sound (ENIT)
+                <li>(BOOK) Book: Drop Sound (ZNAM), Pickup Sound (YNAM),
+                <li>(CONT) Container: open sound (SNAM), close sound (QNAM).
+                <li>(CREA) Creature: foot weight (WNAM), inherits sounds from (CSCR), other sounds. (TES4, FO3, FNV)
+                <li>(DOOR) Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
+                <li>(EXPL) Explosion: sound1, sound2 (DATA).
+                <li>(LIGH) Light: sound (SNAM)
+                <li>(MGEF) Magic Effect: casting/bolt/hit/area sounds.
+                <li>(SNCT) Sound Category: parent (PNAM), staticVolumeMultiplier (VNAM). (TES5 Only)
+                <li>(SNDR) Sound Descriptor: category (GNAM), sounds (ANAM), all from (LNAM) & (BNAM). (TES5 Only)
+                <li>(SOPM) Sound Output Model: reverbSendpct (NAM1), outputType (MNAM), Output Values (ONAM), Attenuation Values (ANAM). (TES5 Only)
+                <li>(SOUN) Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
+                <li>(WTHR) Weather: sounds
+                <li>(WEAP) Magic Effect: Attack Sound, Looping Sounds, Attack Fail Sound, Idle Sound, Equip Sound, Unequip Sound, Gun Shot Sounds, Melee Swing Sounds, Block Sounds, Mod Shoot Sounds
             </ul>
+            Not all apply to each game
         <tr><td>SpellStats<td>Modifies spell stats.<td>The following Spell (SPEL) subrecords:
             <ul>
                 <li>Name (FULL)
