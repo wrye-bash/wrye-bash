@@ -3687,53 +3687,6 @@ class INIInfo(FileInfo):
             self._status = 10
         return self._status
 
-    def getLinesStatus(self):
-        """Return a list of the lines and their statuses, in the form:
-        [setting,value,status]
-        for statuses:
-        -10: highlight orange (not tweak not in ini)
-          0: no highlight (header, in ini)
-         10: highlight yellow (setting, in ini, but different)
-         20: highlight green (setting, in ini, and same)"""
-        ini = self.getFileInfos().ini
-        tweak = self.getPath()
-        ini_settings = ini.getSettings()
-        tweak_settings,deleted_settings = ini.getTweakFileSettings(tweak)
-        reComment = re.compile(u';.*',re.U)
-        reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
-        reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
-        section = LString(ini.defaultSection)
-
-        lines = []
-
-        with tweak.open('r') as tweakFile:
-            for line in tweakFile:
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                if maSection:
-                    section = LString(maSection.group(1))
-                    if section in ini_settings:
-                        lines.append((line.strip(u'\n\r'),u'',0))
-                    else:
-                        lines.append((line.strip(u'\n\r'),u'',-10))
-                elif maSetting:
-                    if section in ini_settings:
-                        setting = LString(maSetting.group(1))
-                        if setting in ini_settings[section]:
-                            value = LString(maSetting.group(2).strip())
-                            if value == ini_settings[section][setting]:
-                                lines.append((maSetting.group(1),maSetting.group(2),20))
-                            else:
-                                lines.append((maSetting.group(1),maSetting.group(2),10))
-                        else:
-                            lines.append((maSetting.group(1),maSetting.group(2),-10))
-                    else:
-                        lines.append((maSetting.group(1),maSetting.group(2),-10))
-                else:
-                    lines.append((line.strip(u'\r\n'),u'',0))
-        return lines
-
     def listErrors(self):
         """Returns ini tweak errors as text."""
         #--Setup
