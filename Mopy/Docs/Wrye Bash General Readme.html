@@ -899,10 +899,9 @@
 </ul>
 
 <h3 id="trouble-known">Known Bugs</h3>
-<p>Wrye Bash, being a complex program, has a few bugs that are known to its developers. The team is aware of the issues below and will fix them if possible.
-<ul>
-	<li>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors. Avoid using mapped paths and junction links for your game install.
-</ul>
+<p>Wrye Bash, being a complex program, has its share of bugs.
+	Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for know bugs and enhancement requests.
+Respect developer's time - keep discussions there short, sweet and technical. No walls of text or forum chit chat.
 
 <h3 id="trouble-mistakes">Common Issues</h3>
 <table>
@@ -938,17 +937,15 @@ MemoryError</code>
 				<li>If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
 			</ul>
 		<tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
+		<tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
 </table>
 
 
 <h2 id="credits">Credits</h2>
 <img alt="Monkey God of Modding" src="../bash/images/wrye_monkey_87.jpg">
-<h3>Current Maintainers</h3>
+<h3>Current Maintainer</h3>
 <ul>
-	<li>Pacific Morrowind: New imports, exports, tweaks, etc.
-	<li>Lojack: Wizard based install system, Ini tab, etc.
-	<li>myk002: Project management, Asynchronous installer tab, etc.
-	<li>Waruddar: Extensive additions/improvements/fixes, primary author of CBash
+	<li>Utumno: Complete refactoring of the codebase, performance.
 </ul>
 
 <h3>Past Authors</h3>
@@ -959,6 +956,10 @@ MemoryError</code>
 	<li>Haama: OBSE cofile definitions, various fixes, improvements etc
 	<li>Badhair: OBSE cofile reading code, various optimizations etc.
 	<li>Breeze582000: Bashmon
+	<li>Pacific Morrowind: New imports, exports, tweaks, etc.
+	<li>Lojack: Wizard based install system, Ini tab, etc.
+	<li>myk002: Project management, Asynchronous installer tab, etc.
+	<li>Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 </ul>
 
 <h3>Additional Credits</h3>
