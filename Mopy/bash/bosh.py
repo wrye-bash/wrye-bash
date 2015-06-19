@@ -3267,9 +3267,7 @@ class FileInfo(_AFileInfo):
 
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
-# TODO(ut): 2 variations for reBashTags
-#reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U) #flagged as error
-#reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
+reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
 class ModInfo(FileInfo):
     """An esp/m file."""
@@ -3483,15 +3481,6 @@ class ModInfo(FileInfo):
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
-    def shiftBashTags(self):
-        """Shifts bash keys from bottom to top."""
-        description = self.header.description
-        reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U)
-        if reBashTags.match(description) or reReturns.search(description):
-            description = reReturns.sub(u'\r',description)
-            description = reBashTags.sub(ur'\2\n\1',description)
-            self.writeDescription(description)
-
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
         modInfos.table.setItem(self.name,'bashTags',keys)
@@ -3505,7 +3494,6 @@ class ModInfo(FileInfo):
         else:
             strKeys = u''
         description = self.header.description or ''
-        reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
         if reBashTags.search(description):
             description = reBashTags.sub(strKeys,description)
         else:
