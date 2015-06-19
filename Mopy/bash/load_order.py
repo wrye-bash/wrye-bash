@@ -161,8 +161,12 @@ def __fixActive(acti, lord):
     # need to correct this here
     addUpdateEsm = False
     if bush.game.fsName == 'Skyrim':
+        skyrim = bolt.GPath(u'Skyrim.esm')
+        if not skyrim in actiFiltered:
+            actiFiltered.insert(0, skyrim)
+            msg += u'Skyrim.esm not present in active mods' + u'\n'
         updateEsm = bolt.GPath(u'Update.esm')
-        if updateEsm in lord and not updateEsm in acti:
+        if updateEsm in lord and not updateEsm in actiFiltered:
             msg += (u'Update.esm not present in plugins.txt while present in '
                     u'Data folder') + u'\n'
             addUpdateEsm = True
