@@ -1556,7 +1556,7 @@ class SaveFile:
                             if chunkType == 'RVTS':
                                 #--OBSE String
                                 modIndex,stringID,stringLength, = unpack('=BIH',7)
-                                stringData = ins.read(stringLength)
+                                stringData = _unicode(ins.read(stringLength))
                                 log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
                                 log(u'    '+_(u'ID  :')+u'  %u' % stringID)
                                 log(u'    '+_(u'Data:')+u'  %s' % stringData)
