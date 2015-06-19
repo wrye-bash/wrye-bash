@@ -63,6 +63,7 @@
     <ol>
         <li><a href="#mods-exclusion">Exclusion Groups</a>
         <li><a href="#mods-details">The Plugin Details Panel</a>
+        <li><a href="#mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</a>
         <li><a href="#mods-csv">CSV Files</a>
         <li><a href="#mods-commands">Context Menu Commands</a>
     </ol>
@@ -79,9 +80,10 @@
     <li><a href="#saves">Saves Tab</a>
     <ol>
         <li><a href="#saves-overview">Overview</a>
+        <li><a href="#saves-symbols">Color scheme for Save Game Files</a>
+        <li><a href="#saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO)</a>
         <li><a href="#saves-profiles">Save Profiles</a>
         <li><a href="#saves-face">Face Import</a>
-        <li><a href="#saves-symbols">What Symbols &amp; Colours Mean</a>
         <li><a href="#saves-commands">Context Menu Commands</a>
     </ol>
 </ol>
@@ -394,8 +396,22 @@
         <tr><td>Modification Time<td>For Oblivion, this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file versions.
         <tr><td>Author<td>Who made the selected plugin.
         <tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
-        <tr><td>Masters List<td>The plugins (.esm or .esp) that the selected plugin depends on, and their indices (positions in load order). Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. Renaming can be done by left-clicking the plugin entry and editing in the column display, or right-clicking the plugin and selecting <q>Change To...</q> then selecting the replacement plugin. <b>Do not</b> use this to change a plugin's masters to unrelated plugins, as this will cause file corruption.
+        <tr><td>Masters List<td>The plugins (.esm or .esp) that the selected plugin depends on, and their indices (positions in load order). Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. Renaming can be done by left-clicking the plugin entry and editing in the column display, or right-clicking the plugin and selecting <q>Change To...</q> then selecting the replacement plugin. <b>Do not</b> use this to change a plugin's masters to unrelated plugins, as this will cause file corruption.<br />
+        <tr><td>MI<td>Master Index of the mod. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Bash Tags<td>This field lists any Bash Tags that are assigned to the selected plugin. Right-clicking will display a list of Bash Tags and allow you to add or remove tags by checking or unchecking them.
+</table>
+
+<h3 id="mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the the Current load order.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Master Index differs from the Current load order. Masters of this plugin still exist in the Data folder but plugins are out of order compared to the order of its masters when the mod was saved.<br />
+        <br />If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the “winner”. But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A Master is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
 <h3 id="mods-csv">CSV Files</h3>
@@ -1298,10 +1314,34 @@
         <tr><td>Screenshot<td>The screenshot embedded in the save file, taken at the moment of saving.
         <tr><td>Masters List<td>The plugins that the save file depends on, and their load order.<br />
         Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired replacement plugin from the Data directory.<br />
-        Masters can also be disabled if they have been removed and are preventing your save from loading, as may sometimes happen, by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of the plugin dependency, but this will let the game <i>try</i> to remove the dependency.
+        Masters can also be disabled if they have been removed and are preventing your save from loading, as may sometimes happen, by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of the plugin dependency, but this will let the game <i>try</i> to remove the dependency.<br />
+        <tr><td>MI<td>Master Index of the save game. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Notes<td>This section can be used to keep notes on the save file.
 </table>
 
+<h3 id="saves-symbols">Color scheme for Save Game Files</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_purple_on.png" alt="Purple"/><td>Excellent. Exactly synced with the current load order.
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+</table>
+
+<h3 id="saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO)</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the save game at the time it was saved.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. The plugin still exists in the Data folder but a plugin was added or removed before of after this plugin.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A plugin is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
+</table>
 
 <h3 id="saves-profiles">Save Profiles</h3>
 <p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="#tools-swapping">Oblivion.esm Swapping</a>.
@@ -1352,19 +1392,6 @@
         <li>Now import the face as normal. The eyes/hair should also be imported.
     </ul>
 </ul>
-
-
-<h3 id="saves-symbols">What Symbols &amp; Colours Mean</h3>
-<table>
-    <thead>
-        <tr><th>Checkbox Colour<th>Meaning
-    <tbody>
-        <tr><td><img src="../bash/images/checkbox_purple_on.png" alt="Purple"/><td>Good. Exactly synced with the current load order.
-        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
-        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
-        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
-        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
-</table>
 
 <h3 id="saves-commands">Context Menu Commands</h3>
 <table>
