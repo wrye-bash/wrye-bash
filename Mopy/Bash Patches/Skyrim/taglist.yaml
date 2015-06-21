@@ -1,7 +1,9 @@
 plugins:
   - name: Update.esm
     tag:
+      - C.Location
       - Delev
+      - Invent
       - Relev
     dirty:
       - crc: 0x412d96fb
@@ -17,12 +19,31 @@ plugins:
         udr: 3
   - name: Unofficial Skyrim Patch.esp
     tag:
+      - C.Acoustic
+      - C.Climate
+      - C.Encounter
+      - C.ImageSpace
+      - C.Light
+      - C.Location
+      - C.Music
+      - C.Name
+      - C.Owner
+      - C.Water
       - Delev
+      - Graphics
+      - Invent
+      - Names
       - Relev
+      - Sound
+      - Stats
   - name: Dawnguard.esm
     tag:
+      - C.Location
       - Delev
-      - Relev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
     dirty:
       - crc: 0x31fea081
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -37,16 +58,42 @@ plugins:
         nav: 57
   - name: Unofficial Dawnguard Patch.esp
     tag:
+      - C.Climate
+      - C.Encounter
+      - C.Location
+      - C.Name
       - Delev
-      - Relev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
   - name: Hearthfires.esm
+    tag:
+      - C.Location
+      - Graphics
+      - Invent
     dirty:
       - crc: 0xaf82ce6a
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 184
         udr: 11
         nav: 5
+  - name: Unofficial Hearthfire Patch.esp
+    tag:
+      - C.Climate
+      - C.Location
+      - C.Owner
+      - Graphics
+      - Invent
+      - Names
+      - Sound
   - name: Dragonborn.esm
+    tag:
+      - C.Location
+      - Graphics
+      - Invent
+      - Names
     dirty:
       - crc: 0xa9f83bff
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -55,7 +102,17 @@ plugins:
         nav: 1
   - name: Unofficial Dragonborn Patch.esp
     tag:
+      - C.Climate
+      - C.Encounter
+      - C.Location
+      - C.Music
+      - C.Name
       - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Sound
+      - Stats
   - name: Wyrmstooth.esp
     dirty:
       - crc: 0x54f43cef
@@ -649,11 +706,13 @@ plugins:
       - crc: 0x34e8c367
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
-  - name: DFG's Blade & Dagger Sheathe Sounds.*\.esp
+  - name: DFG's Blade & Dagger Sheathe Sounds.esp
     dirty:
       - crc: 0x3f16767e
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 11
+  - name: DFG's Blade & Dagger Sheathe Sounds_Dawnguard.esp
+    dirty:
       - crc: 0x533f47ec
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 12
@@ -745,6 +804,14 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
   - name: Cutting Room Floor.esp
+    tag:
+      - C.Climate
+      - C.Location
+      - C.Owner
+      - Delev
+      - Invent
+      - Names
+      - Stats
     dirty:
       - crc: 0x6a765402
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -786,10 +853,6 @@ plugins:
       - crc: 0xc3c5505
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 16
-  - name: (83Willows_)?101BUGs.+\.esp
-    tag:
-      - Delev
-      - Relev
   - name: ADV HB-Style.esp
     dirty:
       - crc: 0x4ae9efe5
@@ -838,7 +901,7 @@ plugins:
   - name: arrowboltupgrades.esp
     tag:
       - Relev
-  - name: Arrows of Magicka.*\.esp
+  - name: Arrows of Magicka.esp
     dirty:
       - crc: 0x449c7bdc
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -891,15 +954,17 @@ plugins:
       - crc: 0x7aea5a0a
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 3
-  - name: BellyachesNewDragonSpecies_?(Tougher)?(Factionless)?(Dragons)?\.esp
+  - name: BellyachesNewDragonSpecies_FactionlessDragons.esp
+    dirty:
+      - crc: 0xaa96f38f
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 118
+        udr: 3
+  - name: BellyachesNewDragonSpecies.esp
     dirty:
       - crc: 0x685e2580
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 117
-        udr: 3
-      - crc: 0xaa96f38f
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        itm: 118
         udr: 3
   - name: Birds.esp
     dirty:
@@ -1189,7 +1254,7 @@ plugins:
       - crc: 0xc3c58f71
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
-  - name: Get More Ingots.*\.esp
+  - name: Get More Ingots 3 ingots.esp
     dirty:
       - crc: 0xcb4c5908
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -1552,15 +1617,18 @@ plugins:
   - name: Prides of Skyrim( weak)?\.esp
     tag:
       - Relev
+  - name: Prides of Skyrim.esp
     dirty:
       - crc: 0x914a3a73
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 94
         udr: 40
+        nav: 1
       - crc: 0xd748752a
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 94
         udr: 40
+        nav: 1
   - name: Rageofthespirits.esp
     dirty:
       - crc: 0xbc4ba4f4
@@ -1586,11 +1654,14 @@ plugins:
     tag:
       - Delev
       - Relev
+  - name: Realistic Wildlife Loot - Reduced.esp
     dirty:
-      - crc: 0x16afa5f7
+      - crc: 0xde8bf53d
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 3
-      - crc: 0xde8bf53d
+  - name: Realistic Wildlife Loot - Realistic.esp
+    dirty:
+      - crc: 0x16afa5f7
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 3
   - name: Real Wildlife Skyrim 0.1.esp
@@ -1907,7 +1978,7 @@ plugins:
       - crc: 0x8a7728ac
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 13
-  - name: TorchesForSkyrim(_x1.5|_x2|_x2.5|_x3)?\.esp
+  - name: TorchesForSkyrim.esp
     dirty:
       - crc: 0x2ded0382
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -2036,7 +2107,7 @@ plugins:
       - crc: 0xfb560796
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 13
-  - name: SIM.?- NPC.?AdditionsWEREWOLVES\.esp
+  - name: SIM - NPCAdditionsWEREWOLVES.esp
     dirty:
       - crc: 0x28cca4f1
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -4257,18 +4328,22 @@ plugins:
       - crc: 0xbc3e8547
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 3
-  - name: bettercities(morebees|docksolitude|jarlshouses|newfarm)?\.esp
+  - name: bettercitiesdocksolitude.esp
+    dirty:
+      - crc: 0x953f6085
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 1
+  - name: bettercitiesjarlshouses.esp
+    dirty:
+      - crc: 0x776c8b0d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        udr: 54
+  - name: bettercitiesnewfarm.esp
     dirty:
       - crc: 0x3f73afce
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
         udr: 1
-      - crc: 0x776c8b0d
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        udr: 54
-      - crc: 0x953f6085
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        itm: 1
   - name: BetterDarkBrotherhood.esp
     dirty:
       - crc: 0x6e40868
@@ -5107,7 +5182,7 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 61
         udr: 10
-  - name: Falkreath Graveyard\w?\.esp
+  - name: Falkreath Graveyard.esp
     dirty:
       - crc: 0x51c7052a
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -5706,24 +5781,34 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
         udr: 1
-  - name: L'Antre Dwemer v\d\.?\d?\.esp
+  - name: L'Antre Dwemer v1.7.esp
+    dirty:
+      - crc: 0xb181177
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 27
+        udr: 13
+        nav: 2
+  - name: L'Antre Dwemer v1.6.esp
+    dirty:
+      - crc: 0x420d0fa7
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 25
+        udr: 13
+        nav: 2
+  - name: L'Antre Dwemer v1.5.esp
+    dirty:
+      - crc: 0x6288a08e
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 28
+        udr: 13
+        nav: 2
+  - name: L'Antre Dwemer v1.4.esp
     dirty:
       - crc: 0x5c8677d
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 28
         udr: 13
-      - crc: 0xb181177
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        itm: 27
-        udr: 13
-      - crc: 0x420d0fa7
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        itm: 25
-        udr: 13
-      - crc: 0x6288a08e
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
-        itm: 28
-        udr: 13
+        nav: 2
   - name: Lakeshore.esp
     dirty:
       - crc: 0xc18979b1
@@ -5961,14 +6046,18 @@ plugins:
       - crc: 0x6c5aa0a9
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         udr: 1
-  - name: MB_GreyHaven_(1|2).*\.esp
+  - name: MB_GreyHaven_1.esp
     dirty:
       - crc: 0xc2739ee3
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 20
+        nav: 1
+  - name: MB_GreyHaven_2.esp
+    dirty:
       - crc: 0xf80bc53c
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 20
+        nav: 1
   - name: MercenaryGuild.esp
     dirty:
       - crc: 0x8539027a
@@ -6655,6 +6744,14 @@ plugins:
         udr: 2
   - name: SkyHavenTempleEnhanced.esp
     dirty:
+      - crc: 0x99ac1b47
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 85
+        udr: 315
+      - crc: 0xa2e8a0b6
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 85
+        udr: 315
       - crc: 0xdc10ae9f
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 61
@@ -6946,14 +7043,16 @@ plugins:
       - crc: 0x16581eb1
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         udr: 2
-  - name: TheClone Honeyside.*\.esp
+  - name: TheClone Honeyside.esp
+    dirty:
+      - crc: 0xbf7d1324
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        udr: 75
+  - name: TheClone Honeyside û Housecarl B gone.esp
     dirty:
       - crc: 0x7086a8f6
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
-        udr: 75
-      - crc: 0xbf7d1324
-        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         udr: 75
   - name: The Descent.esp
     dirty:
@@ -7068,6 +7167,7 @@ plugins:
       - crc: 0x8e258333
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 8
+        nav: 2
   - name: throneroom.esp
     dirty:
       - crc: 0x2f04b129
@@ -7613,6 +7713,10 @@ plugins:
       - crc: 0xcdade9f6
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 5
+  - name: aMidianBorn_ContentAddon.esp
+    tag:
+      - Delev
+      - Relev
   - name: Babette.esp
     dirty:
       - crc: 0x6596e3cf
@@ -8170,6 +8274,10 @@ plugins:
     tag:
       - Delev
       - Relev
+    dirty:
+      - crc: 0x8b9ef695
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
   - name: SkyTEST-RealisticAnimals&Predators.esp
     dirty:
       - crc: 0x2e582d9b
@@ -8828,6 +8936,9 @@ plugins:
       - crc: 0x6c30e0ba
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 4
+  - name: Open Cities Skyrim.esp
+    tag:
+      - C.Location
   - name: SoS - The Wilds.esp
     dirty:
       - crc: 0xc1743294
@@ -8838,6 +8949,11 @@ plugins:
       - crc: 0x3363ba8f
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 1
+  - name: EnhancedLightsandFX.esp
+    dirty:
+      - crc: 0x2f172642
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 12
   - name: Realistic Lighting.esp
     dirty:
       - crc: 0x5f40f0f8
@@ -10305,9 +10421,32 @@ plugins:
         itm: 14
   - name: Inigo.esp
     dirty:
+      - crc: 0x4321049d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 39
       - crc: 0xb9fc7507
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 10
+  - name: tos_laintardale_hf.esp
+    dirty:
+      - crc: 0xe536de07
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 13
+  - name: SerenityCrewPatch.esp
+    dirty:
+      - crc: 0x8de14c64
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 3
+  - name: Morskom.esp
+    dirty:
+      - crc: 0x700cd98d
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 8
+  - name: SerenitySeapointPatch.esp
+    dirty:
+      - crc: 0x74f86411
+        util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
+        itm: 4
   - name: Ja´dirr + Kharjo Makeover.esp
     dirty:
       - crc: 0xc21a23e1
@@ -10605,7 +10744,7 @@ plugins:
       - crc: 0x470ee7a6
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 12
-  - name: FF(Bretons|BretonClaribelle|Imperials|Redguards)?\.esp
+  - name: FFBretonClaribelle.esp
     dirty:
       - crc: 0xca543d50
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -10794,20 +10933,26 @@ plugins:
       - crc: 0xd249ade2
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
-  - name: SprigganFollower(_lvl\d)?\d?\.esp
+  - name: SprigganFollower.esp
     dirty:
       - crc: 0x1179651
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
         udr: 2
+  - name: SprigganFollower_lvl25.esp
+    dirty:
       - crc: 0x22f1546b
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
         udr: 2
+  - name: SprigganFollower_lvl50.esp
+    dirty:
       - crc: 0x3045f427
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
         udr: 2
+  - name: SprigganFollower_lvl1.esp
+    dirty:
       - crc: 0x3e675448
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 2
@@ -10872,7 +11017,7 @@ plugins:
       - crc: 0x814a898c
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 3
-  - name: Better Followers - [SBNP].*\.esp
+  - name: Better Followers - P.esp
     dirty:
       - crc: 0x7514fa0b
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
@@ -10913,6 +11058,9 @@ plugins:
       - crc: 0x62c0e76d
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 141
+  - name: Alternate Start - Live Another Life.esp
+    tag:
+      - C.Location
   - name: Bandit Start.esp
     dirty:
       - crc: 0x57d4e755
@@ -11272,6 +11420,16 @@ plugins:
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 211
         udr: 56
+  - name: STEP Core Patch.esp
+    tag:
+      - Names
+      - Stats
+  - name: STEP Extended Patch.esp
+    tag:
+      - Delev
+      - Names
+      - Relev
+      - Stats
   - name: Warburg's 3D Paper World Map - Texture 1.esp
     dirty:
       - crc: 0xc243a5f2
@@ -11287,6 +11445,12 @@ plugins:
       - crc: 0xaafe91d6
         util: "[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)"
         itm: 9
+  - name: TES5Merged.esp
+    tag:
+      - NoMerge
+  - name: Smashed Patch.esp
+    tag:
+      - NoMerge
   - name: CombatDramaOverhaul.esp
     dirty:
       - crc: 0x964e1f5c
@@ -11306,3 +11470,31 @@ plugins:
   - name: PocketMoney.esp
     tag:
       - Relev
+  - name: PerkusMaximus_Master.esp
+    tag:
+      - Names
+  - name: PerkusMaximus_Mage.esp
+    tag:
+      - Names
+  - name: PerkusMaximus_Thief.esp
+    tag:
+      - Names
+      - Stats
+  - name: PerkusMaximus_Warrior.esp
+    tag:
+      - Names
+  - name: Wind Destruction.esp
+    tag:
+      - name: -Relev
+        condition: file("PerkusMaximus_Master.esp")
+  - name: Pre PaMa WAFR Patch.esp
+    tag:
+      - Names
+  - name: Pre PaMa CCF Patch.esp
+    tag:
+      - Names
+      - Stats
+  - name: Pre PaMa CCOR Patch.esp
+    tag:
+      - Names
+      - Stats
