@@ -1032,7 +1032,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                         changed = [x.s for x in changed]
                         removed += changed
                         balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
-                except Exception as e:
+                except BoltError as e:
                     balt.showError(self, u'%s' % e)
             #--Select?
             else:

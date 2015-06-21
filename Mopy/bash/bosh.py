@@ -4623,20 +4623,28 @@ class ModInfos(FileInfos):
 
     def unselect(self,fileName,doSave=True):
         """Removes file from selected."""
+        if not isinstance(fileName, (set, list)): fileName = {fileName}
+        fileNames = set(fileName)
+        sel = set(self.plugins.selected)
+        diff = sel - fileNames
+        if len(diff) == len(sel): return
         #--Unselect self
-        if fileName in self.plugins.selected:
-            self.plugins.selected.remove(fileName)
-        else: return
+        sel = diff
         #--Unselect children
-        for selFile in self.plugins.selected[:]: # we recursively manipulate it
-            #--Already unselected or missing?
-            if not selFile in self.plugins.selected or selFile not in self.data:
-                continue
-            #--One of selFile's masters?
-            for master in self[selFile].header.masters:
-                if master == fileName:
-                    self.unselect(selFile,False)
-                    break
+        children = set()
+        def _children(parent):
+            for selFile in sel:
+                if selFile in children: continue # if no more => no more in sel
+                for master in self[selFile].header.masters:
+                    if master == parent:
+                        children.add(selFile)
+                        break
+        for fileName in fileNames: _children(fileName)
+        while children:
+            child = children.pop()
+            sel.remove(child)
+            _children(child)
+        self.plugins.selected = self.getOrdered(sel)
         #--Save
         if doSave: self.plugins.saveActive()
 
@@ -4763,11 +4771,12 @@ class ModInfos(FileInfos):
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
-        if fileName.s not in bush.game.masterFiles:
-            self.unselect(fileName)
-            FileInfos.delete(self, fileName, **kwargs)
-        else:
-            raise bolt.BoltError("Cannot delete the game's master file(s).")
+        if not isinstance(fileName, (set, list)): fileName = {fileName}
+        for f in fileName:
+            if f.s in bush.game.masterFiles: raise bolt.BoltError(
+                u"Cannot delete the game's master file(s).")
+        self.unselect(fileName, doSave=False)
+        FileInfos.delete(self, fileName, **kwargs)
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
