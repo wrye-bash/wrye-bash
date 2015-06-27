@@ -1971,16 +1971,17 @@ class BsaFile:
             progress(0,_(u"Backing up BSA file. This will take a while..."))
             self.path.copyTo(backup)
 
-    def updateAIText(self,files=None):
-        """Update aiText with specified files. (Or remove, if files == None.)"""
+    @staticmethod
+    def updateAIText(files=None):
+        """Update aiText with specified files (or remove, if files == None)."""
         aiPath = dirs['app'].join(u'ArchiveInvalidation.txt')
         if not files:
             aiPath.remove()
             return
         #--Archive invalidation
         aiText = re.sub(ur'\\',u'/',u'\n'.join(files))
-        with aiPath.open('w'):
-            write(aiText)
+        with aiPath.open('w') as f:
+            f.write(aiText)
 
     @staticmethod
     def resetOblivionBSAMTimes():
@@ -4648,7 +4649,8 @@ class ModInfos(FileInfos):
         #--Save
         if doSave: self.plugins.saveActive()
 
-    def isBadFileName(self,modName):
+    @staticmethod
+    def isBadFileName(modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
         try:
             modName.encode('cp1252')
@@ -4780,7 +4782,7 @@ class ModInfos(FileInfos):
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
-        self.unselect(fileName)
+        self.unselect(fileName, doSave=True)
         FileInfos.move(self,fileName,destDir,doRefresh)
 
     #--Mod info/modify --------------------------------------------------------
@@ -5886,7 +5888,8 @@ class Installer(object):
         return sorted(files,key=lambda x: sortKeys[x])
 
     @staticmethod
-    def refreshSizeCrcDate(apRoot,old_sizeCrcDate,progress=None,removeEmpties=False,fullRefresh=False):
+    def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
+                           fullRefresh=False):
         """Update old_sizeCrcDate for root directory.
         This is used both by InstallerProject's and by InstallersData."""
         rootIsMods = (apRoot == dirs['mods']) #--Filtered scanning for mods directory.
@@ -6141,7 +6144,6 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
-        packageFiles = {u'package.txt', u'package.jpg'}
         unSize = 0
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
@@ -6178,8 +6180,8 @@ class Installer(object):
         skipSp = bush.game.sp.shortName and skipObse
         spDir = bush.game.sp.installDir.lower()+u'\\'
         hasExtraData = self.hasExtraData
-        type = self.type
-        if type == 2:
+        type_    = self.type
+        if type_ == 2:
             allSubs = set(self.subNames[1:])
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         #--Init to empty
@@ -6213,7 +6215,7 @@ class Installer(object):
         splitExt = os.path.splitext
         dest_src = {}
         #--Bad archive?
-        if type not in {1,2}: return dest_src
+        if type_ not in {1,2}: return dest_src
         #--Scan over fileSizeCrcs
         rootIdex = self.fileRootIdex
         for full,size,crc in self.fileSizeCrcs:
@@ -6222,7 +6224,7 @@ class Installer(object):
             if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
                 continue
             sub = u''
-            if type == 2: #--Complex archive
+            if type_ == 2: #--Complex archive
                 sub = file.split(u'\\',1)
                 if len(sub) == 1:
                     file, = sub
@@ -6546,31 +6548,31 @@ class Installer(object):
         # to ignore
         reDataFile = self.reDataFile
         #--Type, subNames
-        type = 0
+        type_ = 0
         subNameSet = set()
         subNameSetAdd = subNameSet.add
         subNameSetAdd(u'')
         reDataFileSearch = reDataFile.search
         for file,size,crc in fileSizeCrcs:
             file = file[rootIdex:]
-            if type != 1:
+            if type_ != 1:
                 frags = file.split(u'\\')
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFileSearch(frags[0]) or
                     nfrags > 1 and frags[0].lower() in dataDirs):
-                    type = 1
+                    type_ = 1
                     break
                 #--Type 2?
-                elif nfrags > 2 and not frags[0].startswith(u'--') and frags[1].lower() in dataDirs:
+                elif nfrags > 2 and not frags[0].startswith(u'--') and \
+                                frags[1].lower() in dataDirs \
+                 or nfrags == 2 and not frags[0].startswith(u'--') and \
+                                reDataFileSearch(frags[1]):
                     subNameSetAdd(frags[0])
-                    type = 2
-                elif nfrags == 2 and not frags[0].startswith(u'--') and reDataFileSearch(frags[1]):
-                    subNameSetAdd(frags[0])
-                    type = 2
-        self.type = type
+                    type_ = 2
+        self.type = type_
         #--SubNames, SubActives
-        if type == 2:
+        if type_ == 2:
             self.subNames = sorted(subNameSet,key=unicode.lower)
             actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
@@ -6733,7 +6735,8 @@ class InstallerConverter(object):
                 cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
                 result = f.close()
         except Exception as e:
-            raise StateError(u'Error creating BCF.dat:\nError: %s' % e)
+            raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
+                sys.exc_info()[2]
         finally:
             if result:
                 raise StateError(u"Error creating BCF.dat:\nError Code: %s" % result)
@@ -6859,7 +6862,7 @@ class InstallerConverter(object):
         subGet = subArchives.get
         lastStep = 0
         #--Get settings
-        attrs = ['espmNots','hasExtraData','skipVoices','comments','subActives','isSolid']
+        attrs = self.settings
         map(self.__setattr__, attrs, map(destInstaller.__getattribute__,attrs))
         #--Make list of source files
         for installer in [data[x] for x in srcArchives]:
@@ -7330,7 +7333,8 @@ class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
     __slots__ = tuple() #--No new slots
 
-    def removeEmpties(self,name):
+    @staticmethod
+    def removeEmpties(name):
         """Removes empty directories from project directory."""
         empties = set()
         projectDir = dirs['installers'].join(name)
@@ -7344,8 +7348,8 @@ class InstallerProject(Installer):
         fileSizeCrcs = self.fileSizeCrcs = []
         src_sizeCrcDate = self.src_sizeCrcDate
         apRoot = dirs['installers'].join(archive)
-        Installer.refreshSizeCrcDate(apRoot, src_sizeCrcDate,
-            progress, True, fullRefresh)
+        Installer.refreshSizeCrcDate(apRoot, src_sizeCrcDate, progress,
+                                     fullRefresh)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
@@ -7644,8 +7648,7 @@ class InstallersData(DataDict):
         #--Refresh Other
         if 'D' in what:
             changed |= Installer.refreshSizeCrcDate(
-                dirs['mods'], self.data_sizeCrcDate, progress,
-                settings['bash.installers.removeEmptyDirs'], fullRefresh)
+                dirs['mods'], self.data_sizeCrcDate, progress, fullRefresh)
         if 'I' in what: changed |= self.refreshInstallers(progress,fullRefresh)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()

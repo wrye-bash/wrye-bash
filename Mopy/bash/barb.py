@@ -205,7 +205,9 @@ class BackupSettings(BaseBackupSettings):
         #returns False if user cancels
         if self.archive is None or self.dir.join(self.archive).exists():
             dt = datetime.datetime.now()
-            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (bush.game.fsName,dt.strftime(u'%Y-%m-%d %H.%M.%S'),self.verDat,self.verApp)
+            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
+                bush.game.fsName, dt.strftime(u'%Y-%m-%d %H.%M.%S'),
+                self.verDat, self.verApp)
             if not self.quit:
                 path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
                 if not path: return False
@@ -331,7 +333,8 @@ class RestoreSettings(BaseBackupSettings):
             if path.exists():
                 for name in path.list():
                     if path.join(name).isfile():
-                        deprint(GPath(tpath).join(name).s + u' --> ' + fpath.join(name).s)
+                        deprint(GPath(tpath).join(name).s + u' --> '
+                                + fpath.join(name).s)
                         path.join(name).copyTo(fpath.join(name))
 
         #restore savegame profile settings
@@ -342,7 +345,8 @@ class RestoreSettings(BaseBackupSettings):
             for root, folders, files in path.walk(True,None,True):
                 root = GPath(u'.'+root.s)
                 for name in files:
-                    deprint(tpath.join(root,name).s + u' --> ' + fpath.join(root,name).s)
+                    deprint(tpath.join(root,name).s + u' --> '
+                            + fpath.join(root,name).s)
                     path.join(root,name).copyTo(fpath.join(root,name))
 
         # tell the user the restore is compete and warn about restart

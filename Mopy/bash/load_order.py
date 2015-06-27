@@ -152,7 +152,7 @@ def __fixActive(acti, lord):
     actiFiltered = [x for x in acti if x in lord] # preserve acti order
     _removed = set(acti) - set(actiFiltered)
     if _removed: # take note as we may need to rewrite plugins txt
-        msg = u'Those mods were present in plugins txt but were not present ' \
+        msg = u'Those mods were present in plugins.txt but were not present ' \
               u'in Data/ directory or were corrupted: ' + _pl(_removed) + u'\n'
     else: msg = u''
     # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,

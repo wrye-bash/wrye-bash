@@ -479,12 +479,12 @@ class Installers_SkipLandscapeLODMeshes(Installers_Skip):
     text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
 
 class Installers_SkipLandscapeLODTextures(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
+    """Toggle skipLandscapeLODTextures setting and update."""
     text = _(u'Skip LOD Textures')
     key = 'bash.installers.skipLandscapeLODTextures'
 
 class Installers_SkipLandscapeLODNormals(Installers_Skip):
-    """Toggle skipDistantLOD setting and update."""
+    """Toggle skipLandscapeLODNormals setting and update."""
     text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
 

@@ -1134,14 +1134,12 @@ class InstallerProject_Sync(_InstallerLink):
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerProject_Pack(AppendableLink, _InstallerLink):
+class InstallerProject_Pack(_InstallerLink):
     """Pack project to an archive."""
-    text = _(u'Pack to Archive...')
+    text, help = _(u'Pack to Archive...'), _(u'Pack project to an archive')
+    release = False
 
-    def _append(self, window):
-        self.selected = window.GetSelected() # append runs before _initData
-        self.window = window # and the idata access is via self.window
-        return self.isSingleProject()
+    def _enable(self): return self.isSingleProject()
 
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
@@ -1167,40 +1165,15 @@ class InstallerProject_Pack(AppendableLink, _InstallerLink):
         if archive in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?')
                                         % archive.s, default=False): return
-        self._pack(archive, installer, project, release=False)
+        self._pack(archive, installer, project, release=self.__class__.release)
 
 #------------------------------------------------------------------------------
-class InstallerProject_ReleasePack(_InstallerLink):
+class InstallerProject_ReleasePack(InstallerProject_Pack):
     """Pack project to an archive for release. Ignores dev files/folders."""
     text = _(u'Package for Release...')
-
-    def _enable(self): return self.isSingleProject()
-
-    def Execute(self,event):
-        #--Generate default filename from the project name and the default extension
-        project = self.selected[0]
-        installer = self.idata[project]
-        archive = bosh.GPath(project.s + bosh.defaultExt)
-        #--Confirm operation
-        result = self._askText(_(u"Pack %s to Archive:") % project.s,
-                               default=archive.s)
-        result = (result or u'').strip()
-        if not result: return
-        #--Error checking
-        archive = GPath(result).tail
-        if not archive.s:
-            self._showWarning(_(u"%s is not a valid archive name.") % result)
-            return
-        if self.idata.dir.join(archive).isdir():
-            self._showWarning(_(u"%s is a directory.") % archive.s)
-            return
-        if archive.cext not in bosh.writeExts:
-            self._showWarning(_(u"The %s extension is unsupported. Using %s instead.") % (archive.cext, bosh.defaultExt))
-            archive = GPath(archive.sroot + bosh.defaultExt).tail
-        if archive in self.idata:
-            if not self._askYes(_(u"%s already exists. Overwrite it?")
-                                        % archive.s, default=False): return
-        self._pack(archive, installer, project, release=True)
+    help = _(
+        u'Pack project to an archive for release. Ignores dev files/folders')
+    release = True
 
 #------------------------------------------------------------------------------
 class InstallerConverter_Apply(_InstallerLink):
