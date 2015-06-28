@@ -4193,9 +4193,7 @@ class BashFrame(wx.Frame):
                 u'for maintaining your load order, it will also undo any '
                 u'load order changes that you have made in OBMM.')
             lockTimes = not balt.askYes(self, message, _(u'Lock Load Order'))
-            bosh.modInfos.lockLO = lockTimes
-            if lockTimes: bosh.modInfos.resetMTimes()
-            else: bosh.modInfos.mtimes.clear()
+            bosh.modInfos.lockLOSet(lockTimes)
             message = _(
                 u"Lock Load Order is now %s.  To change it in the future, "
                 u"right click on the main list header on the Mods tab and "
@@ -4429,8 +4427,7 @@ def InitSettings(): # this must run first !
     balt._settings = bosh.settings
     balt.sizes = bosh.settings.getChanged('bash.window.sizes',{})
     settings = bosh.settings
-    settings.loadDefaults(settingDefaults) # called in bosh.initSettings() also
-    # with bosh.settingDefaults passed in
+    settings.loadDefaults(settingDefaults)
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')

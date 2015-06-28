@@ -98,11 +98,6 @@ reOblivion = re.compile(
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
-#--Default settings
-settingDefaults = {
-    'bosh.modInfos.resetMTimes':True,
-    }
-
 #--Unicode
 exe7z = u'7z.exe'
 
@@ -4151,9 +4146,12 @@ class ModInfos(FileInfos):
         self.voAvailable = set()
 
     @property
-    def lockLO(self): return settings['bosh.modInfos.resetMTimes']
-    @lockLO.setter
-    def lockLO(self, val): settings['bosh.modInfos.resetMTimes'] = val
+    def lockLO(self):
+        return settings.getChanged('bosh.modInfos.resetMTimes', True)
+    def lockLOSet(self, val):
+        settings['bosh.modInfos.resetMTimes'] = val
+        if val: self._resetMTimes()
+        else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
     def isActiveCached(self, mod):
@@ -4201,6 +4199,8 @@ class ModInfos(FileInfos):
 
     def canSetTimes(self):
         """Returns a boolean indicating if mtime setting is allowed."""
+        ##: canSetTimes() will trigger a prompt if OBMM is installed so I keep
+        # it in refresh(): bin the OBMM warn and instead add a warn In lockLO
         if self._OBMMWarn(): return False
         if not self.lockLO: return False
         if settings.dictFile.readOnly: return False
@@ -4218,7 +4218,7 @@ class ModInfos(FileInfos):
         self.canSetTimes()
         hasChanged = doInfos and FileInfos.refresh(self)
         if hasChanged:
-            self.resetMTimes()
+            self._resetMTimes()
         hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
         hasGhosted = self.autoGhost(force=False)
         self.refreshInfoLists()
@@ -4259,7 +4259,7 @@ class ModInfos(FileInfos):
         self.new_missing_strings = new
         return bool(new)
 
-    def resetMTimes(self):
+    def _resetMTimes(self):
         """Remember/reset mtimes of member files."""
         if not self.canSetTimes(): return
         del self.mtimesReset[:]
@@ -10493,8 +10493,6 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     if 'bash.readme' in settings:
         settings['bash.version'] = _(settings['bash.readme'][1])
         del settings['bash.readme']
-    # load rest of settings that do not have a value loaded - also in basher
-    settings.loadDefaults(settingDefaults)
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':

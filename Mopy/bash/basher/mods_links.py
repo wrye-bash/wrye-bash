@@ -338,12 +338,7 @@ class Mods_LockTimes(CheckLink):
 
     def _check(self): return bosh.modInfos.lockLO
 
-    def Execute(self,event):
-        lockLO = not bosh.modInfos.lockLO
-        if not lockLO: bosh.modInfos.mtimes.clear()
-        bosh.modInfos.lockLO = lockLO
-        bosh.modInfos.refresh(doInfos=False)
-        self.window.RefreshUI(refreshSaves=True)
+    def Execute(self,event): bosh.modInfos.lockLOSet(not bosh.modInfos.lockLO)
 
 # CRUFT -----------------------------------------------------------------------
 class Mods_ReplacersData: # CRUFT
