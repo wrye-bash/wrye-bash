@@ -597,7 +597,7 @@ class Installer_Install(_InstallerLink):
             self.iPanel.RefreshUIMods()
             Link.Frame.RefreshData()
 
-class Installer_ListStructure(_InstallerLink):   # Provided by Waruddar
+class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
     text = _(u"List Structure...")
 

@@ -5817,8 +5817,13 @@ class Installer(object):
     docDirs = {u'screenshots'}
     dataDirsMinus = {u'bash', u'replacers',
                      u'--'}  #--Will be skipped even if hasExtraData == True.
-    reDataFile = re.compile(ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$',re.I|re.U)
-    reReadMe = re.compile(ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)\.(txt|rtf|htm|html|doc|odt)$',re.I|re.U)
+    reDataFile = re.compile(
+        ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
+    reReadMe = re.compile(
+        ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
+        ur'\.(txt|rtf|htm|html|doc|odt)$', re.I | re.U)
+    reList = re.compile(
+        u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.bsl'}
@@ -7108,8 +7113,7 @@ class InstallerArchive(Installer):
         self.size = archive.size
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
-        oldstylefileSizeCrcs = []
-        reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)',re.U)
+        reList = Installer.reList
         file = size = crc = isdir = 0
         self.isSolid = False
         with archive.unicodeSafe() as tempArch:
@@ -7296,9 +7300,8 @@ class InstallerArchive(Installer):
             log = bolt.LogFile(out)
             log.setHeader(_(u'Package Structure:'))
             log(u'[spoiler][xml]\n', False)
-            reList = re.compile(u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+            reList = Installer.reList
             file = u''
-            isdir = False
             apath = dirs['installers'].join(archive)
             with apath.unicodeSafe() as tempArch:
                 ins = listArchiveContents(tempArch.s)
@@ -7315,16 +7318,13 @@ class InstallerArchive(Installer):
                             text.append((u'%s' % file, isdir))
                         elif key == u'Method':
                             file = u''
-                            isdir = False
             text.sort()
             #--Output
             for line in text:
                 dir = line[0]
                 isdir = line[1]
-                if isdir:
-                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + os.sep)
-                else:
-                    log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1])
+                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + (
+                    os.sep if isdir else u''))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
@@ -7557,16 +7557,16 @@ class InstallerProject(Installer):
 
     def listSource(self,archive):
         """Returns package structure as text."""
-        def walkPath(dir, depth):
-            for file in os.listdir(dir):
-                path = os.path.join(dir, file)
-            if os.path.isdir(path):
-                log(u' ' * depth + file + u'\\')
-                depth += 2
-                walkPath(path, depth)
-                depth -= 2
-            else:
-                log(u' ' * depth + file)
+        def walkPath(folder, depth):
+            for entry in os.listdir(folder):
+                path = os.path.join(folder, entry)
+                if os.path.isdir(path):
+                    log(u' ' * depth + entry + u'\\')
+                    depth += 2
+                    walkPath(path, depth)
+                    depth -= 2
+                else:
+                    log(u' ' * depth + entry)
         #--Setup
         with sio() as out:
             log = bolt.LogFile(out)
