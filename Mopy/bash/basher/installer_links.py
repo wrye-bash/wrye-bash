@@ -110,6 +110,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+    ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
         return self._askNumber(
             _(u'Use what maximum size for each solid block?') + u'\n' + _(
@@ -117,7 +118,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             title=title, value=value, min=0, max=102400)
 
     def _pack(self, archive, installer, project, release=False):
-        #--Archive configuration options ##: this should be in an "archives.py"
+        #--Archive configuration options
         blockSize = None
         if archive.cext in bosh.noSolidExts:
             isSolid = False
@@ -150,6 +151,29 @@ class _InstallerLink(Installers_Link, EnabledLink):
             #--Refresh UI
             self.idata.irefresh(what='I')
             self.window.RefreshUI()
+
+    def _askFilename(self, message, filename):
+        result = self._askText(message, title=self.dialogTitle,
+                               default=filename)
+        result = (result or u'').strip()
+        if not result: return
+        archive = GPath(result).tail
+        #--Error checking
+        if not archive.s:
+            self._showWarning(_(u'%s is not a valid archive name.') % result)
+            return
+        if self.idata.dir.join(archive).isdir():
+            self._showWarning(_(u'%s is a directory.') % archive.s)
+            return
+        if archive.cext not in bosh.writeExts:
+            self._showWarning(
+                _(u'The %s extension is unsupported. Using %s instead.') % (
+                archive.cext, bosh.defaultExt))
+            archive = GPath(archive.sroot + bosh.defaultExt).tail
+        if archive in self.idata:
+            if not self._askYes(_(u'%s already exists. Overwrite it?') %
+                    archive.s, title=self.dialogTitle, default=False): return
+        return archive
 
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_InstallerLink):
@@ -1136,35 +1160,22 @@ class InstallerProject_Sync(_InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(_InstallerLink):
     """Pack project to an archive."""
-    text, help = _(u'Pack to Archive...'), _(u'Pack project to an archive')
+    text = dialogTitle = _(u'Pack to Archive...')
+    help = _(u'Pack project to an archive')
     release = False
 
     def _enable(self): return self.isSingleProject()
 
+    @balt.conversation
     def Execute(self,event):
         #--Generate default filename from the project name and the default extension
         project = self.selected[0]
         installer = self.idata[project]
         archive = bosh.GPath(project.s + bosh.defaultExt)
         #--Confirm operation
-        result = self._askText(_(u'Pack %s to Archive:') % project.s,
-                               default=archive.s)
-        result = (result or u'').strip()
-        if not result: return
-        #--Error checking
-        archive = GPath(result).tail
-        if not archive.s:
-            self._showWarning(_(u'%s is not a valid archive name.') % result)
-            return
-        if self.idata.dir.join(archive).isdir():
-            self._showWarning(_(u'%s is a directory.') % archive.s)
-            return
-        if archive.cext not in bosh.writeExts:
-            self._showWarning(_(u'The %s extension is unsupported. Using %s instead.') % (archive.cext, bosh.defaultExt))
-            archive = GPath(archive.sroot + bosh.defaultExt).tail
-        if archive in self.idata:
-            if not self._askYes(_(u'%s already exists. Overwrite it?')
-                                        % archive.s, default=False): return
+        archive = self._askFilename(
+            message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
+        if not archive: return
         self._pack(archive, installer, project, release=self.__class__.release)
 
 #------------------------------------------------------------------------------
@@ -1187,29 +1198,17 @@ class InstallerConverter_Apply(_InstallerLink):
         self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))
         self.text = self.dispName
 
+    @balt.conversation
     def Execute(self,event):
         #--Generate default filename from BCF filename
-        result = self.converter.fullPath.sbody[:-4]
+        defaultFilename = self.converter.fullPath.sbody[:-4] + bosh.defaultExt
         #--List source archives
-        message = _(u'Using:')+u'\n* '
-        message += u'\n* '.join(sorted(u'(%08X) - %s' % (x,self.idata.crc_installer[x].archive) for x in self.converter.srcCRCs)) + u'\n'
-        #--Confirm operation
-        result = self._askText(message, title=self.dialogTitle,
-                               default=result + bosh.defaultExt)
-        result = (result or u'').strip()
-        if not result: return
-        #--Error checking
-        destArchive = GPath(result).tail
-        if not destArchive.s:
-            self._showWarning(_(u'%s is not a valid archive name.') % result)
-            return
-        if destArchive.cext not in bosh.writeExts:
-            self._showWarning(_(u'The %s extension is unsupported. Using %s instead.') % (destArchive.cext, bosh.defaultExt))
-            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
-        if destArchive in self.idata:
-            if not self._askYes(_(
-                    u'%s already exists. Overwrite it?') % destArchive.s,
-                                title=self.dialogTitle, default=False): return
+        message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
+            u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in
+            self.converter.srcCRCs)) + u'\n'
+        #--Ask for an output filename
+        destArchive = self._askFilename(message, filename=defaultFilename)
+        if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             self.converter.apply(destArchive,self.idata.crc_installer,SubProgress(progress,0.0,0.99))
@@ -1239,38 +1238,21 @@ class InstallerConverter_Apply(_InstallerLink):
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
     text = _(u'Embedded BCF')
+    dialogTitle = _(u'Apply BCF...')
 
+    @balt.conversation
     def Execute(self,event):
         name = self.selected[0]
         archive = self.idata[name]
         #--Ask for an output filename
-        destArchive = self._askText(_(u'Output file:'),
-                                    title=_(u'Apply BCF...'),
-                                    default=name.stail)
-        destArchive = (destArchive if destArchive else u'').strip()
-        if not destArchive: return
-        destArchive = GPath(destArchive)
-        #--Error checking
-        if not destArchive.s:
-            self._showWarning(_(u'%s is not a valid archive name.')
-                              % destArchive.s)
-            return
-        if destArchive.cext not in bosh.writeExts:
-            self._showWarning(
-                _(u'The %s extension is unsupported. Using %s instead.') % (
-                                 destArchive.cext, bosh.defaultExt))
-            destArchive = GPath(destArchive.sroot + bosh.defaultExt).tail
-        if destArchive in self.idata:
-            if not self._askYes(_(u'%s already exists. Overwrite it?')
-                                % destArchive.s, _(u'Apply BCF...'),
-                                default=False):
-                return
+        dest = self._askFilename(_(u'Output file:'), filename=name.stail)
+        if not dest: return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
-            self.idata.applyEmbeddedBCFs([archive],[destArchive],progress)
-            iArchive = self.idata[destArchive]
+            self.idata.applyEmbeddedBCFs([archive], [dest], progress)
+            iArchive = self.idata[dest]
             if iArchive.order == -1:
                 lastInstaller = self.idata[self.selected[-1]]
-                self.idata.moveArchives([destArchive],lastInstaller.order+1)
+                self.idata.moveArchives([dest], lastInstaller.order + 1)
             self.idata.irefresh(what='I')
             self.window.RefreshUI()
 
@@ -1382,6 +1364,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
         linkSet = set()
+        del self.links[:]
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
