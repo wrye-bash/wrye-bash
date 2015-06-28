@@ -31,6 +31,12 @@ language = None
 AppVersion = u"306"
 bashIni = None
 
+#--Null strings (for default empty byte arrays)
+null1 = '\x00'
+null2 = null1*2
+null3 = null1*3
+null4 = null1*4
+
 def GetBashIni(iniPath=None, reload_=False): ##: needs work
     iniPath = iniPath or u'bash.ini'
     global bashIni

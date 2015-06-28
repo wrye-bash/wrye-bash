@@ -258,13 +258,6 @@ class PickleDict(bolt.PickleDict):
             self.oldPath.backup.remove()
         return saved
 
-# Util Constants --------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
 #--Header tags
 reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
 reRequires = re.compile(ur'^Requires: *(.*)',re.M|re.U)
@@ -8601,7 +8594,7 @@ class PCFaces:
             self.eid = self.pcName = u'generic'
             self.fggs_p = self.fgts_p = '\x00'*4*50
             self.fgga_p = '\x00'*4*30
-            self.unused2 = null2
+            self.unused2 = bass.null2
             self.health = self.unused3 = self.baseSpell = self.fatigue = self.level = 0
             self.skills = self.attributes = self.iclass = None
             self.factions = []

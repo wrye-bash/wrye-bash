@@ -29,12 +29,13 @@ import itertools
 from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
     _encode
-from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
-    null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelModel, \
-    null1, MelFidList, MelStructA, MreRecord, MreGmstBase, MelLString, \
-    MelCountedFidList, MelOptStructA, MelCountedFids, MelSortedFidList
+from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
+    ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
+    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+    MreHeaderBase, MelBase, MelUnicode, MelModel, MelFidList, MelStructA, \
+    MreRecord, MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
+    MelCountedFids, MelSortedFidList
+from ...bass import null1, null2, null3, null4
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
