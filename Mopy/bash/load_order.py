@@ -80,7 +80,10 @@ _current_lo = __empty # must always be valid (or __empty)
 # liblo calls - they include fixup code (which may or may not be
 # needed/working). __fix methods accept lists as output parameters
 def _getLoFromLiblo():
-    lord = _liblo_handle.GetLoadOrder()
+    if usingTxtFile():
+        lord = _liblo_handle.GetLoadOrder()
+    else:
+        lord = bosh.modInfos.calculateLO()
     __fixLoadOrder(lord)
     return lord
 

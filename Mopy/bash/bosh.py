@@ -4700,6 +4700,13 @@ class ModInfos(FileInfos):
     @staticmethod # this belongs to load_order.py !
     def usingTxtFile(): return load_order.usingTxtFile()
 
+    def calculateLO(self, mods=None): # excludes corrupt mods
+        if mods is None: mods = self.keys()
+        mods = sorted(mods) # sort case insensitive (for time conflicts)
+        mods.sort(key=lambda x: self[x].mtime)
+        mods.sort(key=lambda x: not self[x].isEsm())
+        return mods
+
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
