@@ -4253,7 +4253,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(self.activeCached)
+        self.merged,self.imported = self.getSemiActive(set(self.activeCached))
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -4356,13 +4356,18 @@ class ModInfos(FileInfos):
         return modNames
 
     def getSemiActive(self,masters):
-        """Returns (merged,imported) mods made semi-active by Bashed Patch."""
+        """Return (merged,imported) mods made semi-active by Bashed Patch.
+
+        If no bashed patches are present in 'masters' then return empty sets.
+        Else for each bashed patch use its config (if present) to find mods
+        it merges or imports."""
         merged,imported = set(),set()
-        for modName,modInfo in [(modName,self[modName]) for modName in masters]:
-            if modInfo.header.author != u'BASHED PATCH': continue
-            patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
+        patches = masters & self.bashed_patches
+        for patchName in patches:
+            patchConfigs = self.table.getItem(patchName, 'bash.patch.configs')
             if not patchConfigs: continue
-            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(patchConfigs) else 'PatchMerger'
+            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
+                patchConfigs) else 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
                 configChecks = patchConfigs[patcherstr]['configChecks']
                 for modName in configChecks:
