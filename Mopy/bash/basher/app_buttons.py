@@ -454,7 +454,9 @@ class App_BOSS(App_Button):
             # Clear the saved times from before
             bosh.modInfos.mtimes.clear()
             # And refresh to get the new times so WB will keep the order that BOSS specifies
-            bosh.modInfos.refresh(doInfos=False)
+            # if on timestamp method scan the data dir, if not loadorder.txt
+            # should have changed, plugins refreshLoadOrder should detect that
+            bosh.modInfos.refresh(scanData=not bosh.modInfos.usingTxtFile())
             # Refresh UI, so WB is made aware of the changes to loadorder.txt
             BashFrame.modList.RefreshUI(refreshSaves=True)
 

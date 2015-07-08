@@ -3011,9 +3011,10 @@ class Plugins:
     @_cache
     def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
-        hasChanged = load_order.haveLoFilesChanged()
-        if forceRefresh or hasChanged: self.lord = load_order.GetLo()
-        return hasChanged
+        oldLord = self.lord
+        if forceRefresh or load_order.haveLoFilesChanged():
+            self.lord = load_order.GetLo()
+        return oldLord != self.lord
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -4144,15 +4145,16 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, doInfos=True): ##: doInfos is for what ??
+    def refresh(self, scanData=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes."""
-        self.canSetTimes()
-        hasChanged = doInfos and FileInfos.refresh(self)
-        if hasChanged:
+        hasChanged = scanData and FileInfos.refresh(self)
+        if self.canSetTimes() and hasChanged:
             self._resetMTimes()
-        hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
+        _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
+        hasChanged += self.plugins.refreshLoadOrder(
+            forceRefresh=hasChanged or _modTimesChange)
         hasGhosted = self.autoGhost(force=False)
-        self.refreshInfoLists()
+        if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
@@ -4232,7 +4234,8 @@ class ModInfos(FileInfos):
 
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected,
-        exGroup_mods, imported, exported)."""
+        exGroup_mods, imported, exported) - call after refreshing from Data
+        AND having latest load order."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()

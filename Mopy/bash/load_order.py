@@ -63,6 +63,12 @@ class LoadOrder(object):
     @property # sugar - API: maybe drop:
     def activeOrdered(self): return self._activeOrdered
 
+    def __eq__(self, other):
+        return isinstance(other, LoadOrder) and self._active == other._active \
+               and self._loadOrder == other._loadOrder
+    def __ne__(self, other): return not self == other
+    def __hash__(self): return hash((self._loadOrder, self._active))
+
     def lindex(self, path): return self.__mod_loIndex[path] # KeyError
     def lorder(self, paths): # API: sort in place ? see usages
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
@@ -243,8 +249,6 @@ def haveLoFilesChanged():
     if _plugins_txt_path.exists() and (mtimePlugins != _plugins_txt_path.mtime
                                     or sizePlugins  != _plugins_txt_path.size):
         return True
-    if not usingTxtFile():
-        return True  # Until we find a better way, Oblivion always needs True #FIXME !!!!!!!!!!
     return _loadorder_txt_path.exists() and (
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)

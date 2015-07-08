@@ -803,10 +803,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-        # FIXME(ut): hack below - used to fix things like mtimes conflicts not
-        # updated - must call modInfos.refresh, wait till latter's fixed though
-        bosh.FileInfos.refresh(bosh.modInfos)
+        bosh.FileInfos.refresh(bosh.modInfos) # update mtimes conflicts etc
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
@@ -1025,7 +1022,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             #--Unselect?
             if self.data.isActiveCached(fileName):
                 try:
-                    self.data.unselect(fileName)
+                    self.data.unselect(fileName, doSave=True)
                     changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > (fileName in changed):
                         changed.remove(fileName)
@@ -1041,7 +1038,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                 ## game to load these files.s
                 #if fileName in self.data.bad_names: return
                 try:
-                    self.data.select(fileName)
+                    self.data.select(fileName, doSave=True)
                     changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
                         changed.remove(fileName)
@@ -1052,7 +1049,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                         % fileName.s)
                     return
         #--Refresh
-        bosh.modInfos.refresh()
+        bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
     @staticmethod
@@ -1332,8 +1329,7 @@ class ModDetails(_SashDetailsPanel):
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.modInfo.name)
-            bosh.modInfos.refresh(doInfos=False)
-            bosh.modInfos.refreshInfoLists()
+            bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
             return
         #--Backup
@@ -1371,9 +1367,7 @@ class ModDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        if bosh.modInfos.refresh(doInfos=False):
-            bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # maybe also called in modInfos.refresh !
+        bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     def DoCancel(self,event):
