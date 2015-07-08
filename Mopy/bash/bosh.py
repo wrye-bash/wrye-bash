@@ -2987,13 +2987,12 @@ class Plugins:
             self.lord.lorder(self.selected), self.lord.loadOrder)
 
     @_cache
-    def saveLoadOrder(self):
+    def saveLoadOrder(self, _selected=None):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder, acti=_selected)
 
     def saveLoadAndActive(self):
-        self.saveLoadOrder()
-        self.saveActive()
+        self.saveLoadOrder(_selected=self.selected)
 
     def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""
