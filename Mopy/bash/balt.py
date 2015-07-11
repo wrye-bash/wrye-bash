@@ -2783,12 +2783,13 @@ class ListBoxes(Dialog):
                                                wx.TR_FULL_ROW_HIGHLIGHT |
                                                wx.TR_HIDE_ROOT)
                 root = checksCtrl.AddRoot(title)
+                wx.EVT_MOTION(checksCtrl, self.OnMotion)
                 for item, subitems in group[2].iteritems():
                     child = checksCtrl.AppendItem(root,item.s)
                     for subitem in subitems:
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(tooltip(tip)) # does not always show
+            checksCtrl.SetToolTip(tooltip(tip))
             subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i + 1)
@@ -2807,6 +2808,8 @@ class ListBoxes(Dialog):
             self.SetSize(wxSize(minWidth,-1))
         self.text.Rewrap(self.GetSize().width)
         self.Bind(wx.EVT_SIZE, self.OnSize)
+
+    def OnMotion(self, event): return
 
     def OnSize(self, event):
         self.text.Rewrap(self.GetSize().width)
