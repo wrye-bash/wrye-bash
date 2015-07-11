@@ -259,9 +259,6 @@ class PickleDict(bolt.PickleDict):
         return saved
 
 #--Header tags
-reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
-reRequires = re.compile(ur'^Requires: *(.*)',re.M|re.U)
-reReqItem = re.compile(ur'^([a-zA-Z]+) *([\d]*\.?[\d]*)$',re.U)
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
 #--Mod Extensions
@@ -4794,21 +4791,6 @@ class ModInfos(FileInfos):
             return float(maVersion.group(1))
         else:
             return 0
-
-#    def getRequires(self,fileName):
-#        """Extracts and returns requirement dictionary for fileName from header.hedr.description."""
-#        print "****************************** THIS FUNCTION WAS CALLED"
-#        requires = {}
-#        if not fileName in self.data or not self.data[fileName].header:
-#            maRequires = reRequires.search(self.data[fileName].header.description)
-#            if maRequires:
-#                for item in map(string.strip,maRequires.group(1).split(u',')):
-#                    maReqItem = reReqItem.match(item)
-#                    key,value = ma
-#                    if maReqItem:
-#                        key,value = maReqItem.groups()
-#                        requires[key] = float(value or 0)
-#        return requires
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def setOblivionVersions(self):
