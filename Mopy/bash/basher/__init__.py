@@ -3293,6 +3293,7 @@ class MessageList(balt.UIList):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     reNoRe = re.compile(u'^Re: *',re.U)
+    _recycle = False
     _default_sort_col = 'Date'
     _sort_keys = {'Date': lambda self, a: self.data[a][2],
                   'Subject': lambda self, a: MessageList.reNoRe.sub(
@@ -3330,7 +3331,8 @@ class MessageList(balt.UIList):
         bosh.messages.writeText(path,*keys)
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
 
-    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages')):
+    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages'),
+                      order=False, recycle=False):
         message = _(u'Delete these %d message(s)? This operation cannot'
                     u' be undone.') % len(items)
         yes = balt.askYes(self, message, title=dialogTitle)
@@ -3405,6 +3407,7 @@ class PeopleList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
+    _recycle = False
     _default_sort_col = 'Name'
     _sort_keys = {'Name': lambda self, x: x.lower(),
                   'Karma': lambda self, x: self.data[x][1],
