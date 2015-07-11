@@ -3858,7 +3858,7 @@ class FileInfos(DataDict):
     def refresh(self):
         """Refresh from file directory."""
         data = self.data
-        oldNames = set(data)
+        oldNames = set(data) | set(self.corrupted)
         newNames = set()
         _added = set()
         _updated = set()
@@ -3888,7 +3888,7 @@ class FileInfos(DataDict):
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            data.pop(name, None)
+            data.pop(name, None); self.corrupted.pop(name, None)
         if _deleted:
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
@@ -4100,8 +4100,8 @@ class ModInfos(FileInfos):
             return sys.maxint # sort mods that do not have a load order LAST
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop
+        # Calculating indexes through order.index() cause we may be called in
+        # a row before saving the modified load order
         order = self.plugins.LoadOrder
         newPos = order.index(dropItem)
         if newPos <= 0: return False

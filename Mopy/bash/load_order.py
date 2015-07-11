@@ -31,6 +31,11 @@ in to Bash and on setting lo/active from inside Bash.
  - all active mods must be present and have a load order and
  - especially for skyrim the relative order of entries in plugin.txt must be
  the same as their relative load order in loadorder.txt
+- corrupted files do not have a load order (comments suggested that they had
+nevertheless liblo 6.0 checks if plugins are valid and does not add them -
+if however they are loaded from file they are initially added and then
+LoadOrder::CheckValidity() will throw). TODO: Bash valid vs liblo valid - is
+disagreement handled ?
 
 Currently investigating what the liblo calls return to me and monkey
 patching that (see __fix methods).
@@ -108,8 +113,8 @@ def __fixLoadOrder(lord, _selected=None):
     oldLord = lord[:] ### print
     # game's master might be out of place (if using timestamps for load
     # ordering or a manually edited loadorder.txt) so move it up
-    masterDex = lord.index(bosh.modInfos.masterName)
     masterName = bosh.modInfos.masterName
+    masterDex = lord.index(masterName)
     if masterDex > 0:
         bolt.deprint(u'%s in %d position' % (masterName, masterDex))
         lord.remove(masterName)
@@ -118,27 +123,27 @@ def __fixLoadOrder(lord, _selected=None):
     else: _reordered = False
     loadOrder = set(lord)
     modFiles = set(bosh.modInfos.keys())
-    # CORRUPTED FILES HAVE A LOAD ORDER TOO
-    modFiles.update(bosh.modInfos.corrupted.keys())
-    _removedFiles = loadOrder - modFiles
+    _removedFiles = loadOrder - modFiles # may remove corrupted mods returned
+    # from liblo (text file), we are supposed to take care of that
     _addedFiles = modFiles - loadOrder
     # Remove non existent plugins from load order
     lord[:] = [x for x in lord if x not in _removedFiles]
-    # Add new plugins to load order
     indexFirstEsp = _indexFirstEsp(lord)
-    for mod in _addedFiles:
-        if bosh.modInfos[mod].isEsm():
-            lord.insert(indexFirstEsp, mod)
-            indexFirstEsp += 1
-        else:
-            lord.append(mod)
     # Check to see if any esm files are loaded below an esp and reorder as necessary
     for mod in lord[indexFirstEsp:]: # SEEMS NOT NEEDED, liblo does this
-        if bosh.modInfos[mod].isEsm():
+        if mod in bosh.modInfos and bosh.modInfos[mod].isEsm():
             lord.remove(mod)
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
             _reordered = True
+    # Append new plugins to load order
+    for mod in _addedFiles:
+        if bosh.modInfos[mod].isEsm():
+            lord.insert(indexFirstEsp, mod)
+            indexFirstEsp += 1
+        else: lord.append(mod)
+    if _addedFiles and not usingTxtFile():
+        lord = bosh.modInfos.calculateLO(mods=lord)
     # Save changes if necessary
     if _removedFiles or _addedFiles or _reordered:
         if _removedFiles or _reordered: # must fix the active too
@@ -166,8 +171,8 @@ def _getActiveFromLiblo(lord): # pass a VALID load order in
     return acti
 
 def __fixActive(acti, lord):
-    # filter plugins not present in load order
-    actiFiltered = [x for x in acti if x in lord] # preserve acti order
+    # filter plugins not present in modInfos - this will disable corrupted too!
+    actiFiltered = [x for x in acti if x in bosh.modInfos] #preserve acti order
     _removed = set(acti) - set(actiFiltered)
     if _removed: # take note as we may need to rewrite plugins txt
         msg = u'Those mods were present in plugins.txt but were not present ' \
