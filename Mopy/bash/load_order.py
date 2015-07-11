@@ -177,6 +177,7 @@ def __fixActive(acti, lord):
     if _removed: # take note as we may need to rewrite plugins txt
         msg = u'Those mods were present in plugins.txt but were not present ' \
               u'in Data/ directory or were corrupted: ' + _pl(_removed) + u'\n'
+        bosh.modInfos.selectedBad = _removed
     else: msg = u''
     # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,
     # Update.esm] on empty plugins.txt) - Keep it cause eventually (when liblo
@@ -205,7 +206,13 @@ def __fixActive(acti, lord):
     else: actiSorted = sorted(actiFiltered, key=dexDict.__getitem__)
     if addUpdateEsm: # insert after the last master (as does liblo)
         actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
-    acti[:] = actiSorted
+    # check if we have more than 256 active mods
+    if len(actiSorted) > 255:
+        msg += u'Plugins.txt contains more than 255 plugins - the following ' \
+               u'plugins will be deactivated: '
+        bosh.modInfos.selectedExtra = actiSorted[255:]
+        msg += _pl(bosh.modInfos.selectedExtra)
+    acti[:] = actiSorted[:255] # chop off extra
     if msg:
         ##: Notify user - maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)

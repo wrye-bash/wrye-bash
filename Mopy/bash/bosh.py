@@ -4074,6 +4074,10 @@ class ModInfos(FileInfos):
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
+        # removed/extra mods in plugins.txt - set in load_order.py,
+        # used in RefreshData
+        self.selectedBad = set()
+        self.selectedExtra = []
 
     @property
     def lockLO(self):

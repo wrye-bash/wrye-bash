@@ -4059,7 +4059,7 @@ class BashFrame(wx.Frame):
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
-        # self._lostWarnings()
+        self._loadOrderWarnings()
         self._corruptedWarns()
         self._corruptedGameIni()
         self._y2038Resets()
@@ -4079,42 +4079,31 @@ class BashFrame(wx.Frame):
         #--Done (end recursion blocker)
         self.inRefreshData = False
 
-    def _lostWarnings(self):
-        """Restore those."""
-        #--Does plugins.txt have any bad or missing files?
-        ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
-        #if bosh.modInfos.plugins.selectedBad:
-        #    message = [u'',_(u'Missing files have been removed from load list:')]
-        #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
-        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-        #             _(u'Missing files have been removed from load list:'),
-        #             [message],liststyle='list',Cancel=False)
-        #    dialog.ShowModal()
-        #    dialog.Destroy()
-        #    del bosh.modInfos.plugins.selectedBad[:]
-        #    bosh.modInfos.plugins.save()
+    def _loadOrderWarnings(self):
+        """Warn if plugins.txt has bad or missing files, or is overloaded."""
+        def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
+            ListBoxes.Display(self, title, message, [lists], liststyle='list',
+                              canCancel=False)
+        if bosh.modInfos.selectedBad:
+           msg = [u'',_(u'Missing files have been removed from load list:')]
+           msg.extend(sorted(bosh.modInfos.selectedBad))
+           warn(_(u'Missing files have been removed from load list:'), msg)
+           bosh.modInfos.selectedBad = set()
         #--Was load list too long? or bad filenames?
-        ## Net to recode this with libloadorder as well
-        #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
-        #    message = []
-        #    ## Disable this message for now, until we're done testing if
-        #    ## we can get the game to load these files
-        #    #if bosh.modInfos.activeBad:
-        #    #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
-        #    #    msg.extend(bosh.modInfos.bad_names)
-        #    #    bosh.modInfos.activeBad = set()
-        #    #    message.append(msg)
-        #    if bosh.modInfos.plugins.selectedExtra:
-        #        msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
-        #        msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
-        #        message.append(msg)
-        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-        #             _(u'Files have been removed from load list:'),
-        #             message,liststyle='list',Cancel=False)
-        #    dialog.ShowModal()
-        #    dialog.Destroy()
-        #    del bosh.modInfos.plugins.selectedExtra[:]
-        #    bosh.modInfos.plugins.save()
+        if bosh.modInfos.selectedExtra:## or bosh.modInfos.activeBad:
+           ## Disable this message for now, until we're done testing if
+           ## we can get the game to load these files
+           #if bosh.modInfos.activeBad:
+           #    msg = [u'Incompatible names:',
+           #           u'Incompatible file names deactivated:']
+           #    msg.extend(bosh.modInfos.bad_names)
+           #    bosh.modInfos.activeBad = set()
+           #    message.append(msg)
+           msg = [u'Too many files:', _(
+               u'Load list is overloaded.  Some files have been deactivated:')]
+           msg.extend(sorted(bosh.modInfos.selectedExtra))
+           warn(_(u'Files have been removed from load list:'), msg)
+           bosh.modInfos.selectedExtra = set()
 
     def _corruptedWarns(self):
         #--Any new corrupted files?
