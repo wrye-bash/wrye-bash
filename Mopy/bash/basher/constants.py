@@ -286,6 +286,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.skipLandscapeLODMeshes':False,
     'bash.installers.skipLandscapeLODTextures':False,
     'bash.installers.skipLandscapeLODNormals':False,
+    'bash.installers.skipTESVBsl':True,
     'bash.installers.allowOBSEPlugins':True,
     'bash.installers.renameStrings':True,
     'bash.installers.sortProjects':False,

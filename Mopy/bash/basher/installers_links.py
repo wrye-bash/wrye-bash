@@ -52,7 +52,8 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_SkipDocs', 'Installers_SkipDistantLOD',
            'Installers_SkipLandscapeLODMeshes',
            'Installers_SkipLandscapeLODTextures',
-           'Installers_SkipLandscapeLODNormals', 'Installers_RenameStrings']
+           'Installers_SkipLandscapeLODNormals', 'Installers_SkipBsl',
+           'Installers_RenameStrings']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -487,6 +488,11 @@ class Installers_SkipLandscapeLODNormals(Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
+
+class Installers_SkipBsl(AppendableLink, Installers_Skip):
+    """Toggle skipTESVBsl setting and update."""
+    text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
+    def _append(self, window): return bush.game.fsName == 'Skyrim'
 
 class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""

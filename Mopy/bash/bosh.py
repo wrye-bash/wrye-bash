@@ -5759,7 +5759,7 @@ class Installer(object):
         u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.bsl'}
+                u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
@@ -6095,6 +6095,7 @@ class Installer(object):
             skipLandscapeLODMeshes = False
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
+            skipTESVBsl = False
             renameStrings = False
             bethFilesSkip = set()
         else:
@@ -6107,6 +6108,7 @@ class Installer(object):
             skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+            skipTESVBsl = settings['bash.installers.skipTESVBsl']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
@@ -6242,6 +6244,8 @@ class Installer(object):
             elif skipVoices and fileStartsWith(u'sound\\voice'):
                 continue
             elif skipScreenshots and fileStartsWith(u'screenshots'):
+                continue
+            elif skipTESVBsl and fileExt == u'.bsl':
                 continue
             elif fileLower == u'wizard.txt':
                 self.hasWizard = full
