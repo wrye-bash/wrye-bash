@@ -2979,19 +2979,20 @@ class Plugins:
 
     @_cache
     def saveActive(self):
-        """Write data to Plugins.txt file. Always call AFTER setting the load order."""
-        # liblo attempts to unghost files, no need to duplicate that here.
-        #(ut) liblo DID NOT unghost - see: e64d55bdd1b37607141aba241709dc7c61f3bad9 - is it supposed to ?
-        self.lord = load_order.SetActivePlugins(self.lord.lorder(self.selected), self.lord.loadOrder)
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        self.lord = load_order.SetActivePlugins(
+            self.lord.lorder(self.selected), self.lord.loadOrder)
 
     @_cache
-    def saveLoadOrder(self):
+    def saveLoadOrder(self, _selected=None):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder, acti=_selected)
 
     def saveLoadAndActive(self):
-        self.saveLoadOrder()
-        self.saveActive()
+        self.saveLoadOrder(_selected=self.selected)
 
     def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""
@@ -3011,9 +3012,10 @@ class Plugins:
     @_cache
     def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
-        hasChanged = load_order.haveLoFilesChanged()
-        if forceRefresh or hasChanged: self.lord = load_order.GetLo()
-        return hasChanged
+        oldLord = self.lord
+        if forceRefresh or load_order.haveLoFilesChanged():
+            self.lord = load_order.GetLo()
+        return oldLord != self.lord
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -3453,31 +3455,28 @@ class ModInfo(FileInfo):
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         normal = self.dir.join(self.name)
-        ghost = normal+u'.ghost'
+        ghost = normal + u'.ghost'
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         #  TODO(ut): both should never exist simultaneously
-        if normal.exists():
-            if self.isGhost:
-                self.isGhost = False
-                self.name = normal
-        elif ghost.exists():
-            if not self.isGhost:
-                self.isGhost = True
-                self.name = ghost
+        if normal.exists(): self.isGhost = False
+        elif ghost.exists(): self.isGhost = True
         # Current status == what we want it?
-        if isGhost == self.isGhost:
-            return isGhost
+        if isGhost == self.isGhost: return isGhost
         # Current status != what we want, so change it
         try:
-            if not normal.editable() or not ghost.editable(): return self.isGhost
+            if not normal.editable() or not ghost.editable():
+                return self.isGhost
+            oldCtime = self.ctime
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
+            self.ctime = oldCtime
         except:
-            pass
+            deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
+                (ghost.s, normal.s)[isGhost]), traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
@@ -3859,7 +3858,7 @@ class FileInfos(DataDict):
     def refresh(self):
         """Refresh from file directory."""
         data = self.data
-        oldNames = set(data)
+        oldNames = set(data) | set(self.corrupted)
         newNames = set()
         _added = set()
         _updated = set()
@@ -3889,7 +3888,7 @@ class FileInfos(DataDict):
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            data.pop(name, None)
+            data.pop(name, None); self.corrupted.pop(name, None)
         if _deleted:
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
@@ -3955,7 +3954,7 @@ class FileInfos(DataDict):
                     backPath = filePath + ext
                     toDeleteAppend(backPath)
             #--Backups
-            backRoot = backBase.join(fileInfo.name)
+            backRoot = backBase.join(fileName)
             for backPath in (backRoot,backRoot+u'f'):
                 toDeleteAppend(backPath)
         #--Now do actual deletions
@@ -4075,6 +4074,10 @@ class ModInfos(FileInfos):
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
+        # removed/extra mods in plugins.txt - set in load_order.py,
+        # used in RefreshData
+        self.selectedBad = set()
+        self.selectedExtra = []
 
     @property
     def lockLO(self):
@@ -4101,8 +4104,8 @@ class ModInfos(FileInfos):
             return sys.maxint # sort mods that do not have a load order LAST
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop
+        # Calculating indexes through order.index() cause we may be called in
+        # a row before saving the modified load order
         order = self.plugins.LoadOrder
         newPos = order.index(dropItem)
         if newPos <= 0: return False
@@ -4144,15 +4147,18 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, doInfos=True): ##: doInfos is for what ??
+    def refresh(self, scanData=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes."""
-        self.canSetTimes()
-        hasChanged = doInfos and FileInfos.refresh(self)
-        if hasChanged:
+        # TODO: make sure that calling two times this in a row second time
+        # ALWAYS returns False - was not true when autoghost run !
+        hasChanged = scanData and FileInfos.refresh(self)
+        if self.canSetTimes() and hasChanged:
             self._resetMTimes()
-        hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
+        _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
+        hasChanged += self.plugins.refreshLoadOrder(
+            forceRefresh=hasChanged or _modTimesChange)
         hasGhosted = self.autoGhost(force=False)
-        self.refreshInfoLists()
+        if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
@@ -4232,7 +4238,8 @@ class ModInfos(FileInfos):
 
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected,
-        exGroup_mods, imported, exported)."""
+        exGroup_mods, imported, exported) - call after refreshing from Data
+        AND having latest load order."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -4316,16 +4323,16 @@ class ModInfos(FileInfos):
 
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
-#        print "Output of ModInfos.data"
-        for mod in self.values():
-            autoTag = self.table.getItem(mod.name,'autoBashTags')
-            if autoTag is None and self.table.getItem(mod.name,'bashTags') is None:
+        for modName, mod in self.iteritems():
+            autoTag = self.table.getItem(modName, 'autoBashTags')
+            if autoTag is None and self.table.getItem(
+                    modName, 'bashTags') is None:
                 # A new mod, set autoBashTags to True (default)
-                self.table.setItem(mod.name,'autoBashTags',True)
+                self.table.setItem(modName, 'autoBashTags', True)
                 autoTag = True
             elif autoTag is None:
                 # An old mod that had manual bash tags added, disable autoBashTags
-                self.table.setItem(mod.name,'autoBashTags',False)
+                self.table.setItem(modName, 'autoBashTags', False)
             if autoTag:
                 mod.reloadBashTags()
 
@@ -4386,9 +4393,11 @@ class ModInfos(FileInfos):
         toSelect = modsSet - missingSet
         #--Save
         self.plugins.selected = list(toSelect)
+        # we should unghost ourselves so that ctime is properly set
+        for s in toSelect: self[s].setGhost(False)
         self.plugins.saveActive()
         self.refreshInfoLists()
-        self.autoGhost(force=False)
+        self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
         extra = set() ##: was never set - actually saveActive will just raise
         if missingSet or extra:
@@ -4694,6 +4703,13 @@ class ModInfos(FileInfos):
 
     @staticmethod # this belongs to load_order.py !
     def usingTxtFile(): return load_order.usingTxtFile()
+
+    def calculateLO(self, mods=None): # excludes corrupt mods
+        if mods is None: mods = self.keys()
+        mods = sorted(mods) # sort case insensitive (for time conflicts)
+        mods.sort(key=lambda x: self[x].mtime)
+        mods.sort(key=lambda x: not self[x].isEsm())
+        return mods
 
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):

@@ -305,8 +305,7 @@ class File_Redate(AppendableLink, ItemLink):
             fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(doInfos=False)
-        modInfos.refreshInfoLists()
+        modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 class File_Snapshot(ItemLink):

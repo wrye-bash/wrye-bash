@@ -167,8 +167,7 @@ class Mod_OrderByName(EnabledLink):
             modInfos[fileName].setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(doInfos=False)
-        modInfos.refreshInfoLists()
+        modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
@@ -894,6 +893,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.plugins.saveActive()
+                        # just active mods (no modtimes changes), still needed:
                         bosh.modInfos.refreshInfoLists()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()

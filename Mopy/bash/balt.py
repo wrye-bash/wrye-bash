@@ -445,11 +445,22 @@ def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     gCheckBox.SetValue(checked)
     return gCheckBox
 
-def staticText(parent, label=u'', pos=defPos, size=defSize, style=0,
-               noAutoResize=False, name=u"staticText"):
+class staticText(wx.StaticText):
     """Static text element."""
-    if noAutoResize: style |= wx.ST_NO_AUTORESIZE
-    return wx.StaticText(parent, defId, label, pos, size, style, name)
+
+    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
+                 noAutoResize=False, name=u"staticText"):
+        if noAutoResize: style |= wx.ST_NO_AUTORESIZE
+        wx.StaticText.__init__(self, parent, defId, label, pos, size, style,
+                               name)
+        self._label = label # save the unwrapped text
+        self.Rewrap()
+
+    def Rewrap(self, width=None):
+        self.Freeze()
+        self.SetLabel(self._label)
+        self.Wrap(width or self.GetSize().width)
+        self.Thaw()
 
 def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
         min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
@@ -1783,6 +1794,7 @@ class UIList(wx.Panel):
     # yet initialized when balt is imported, so I can't use ColorChecks here
     icons = __icons
     _shellUI = False # only True in Screens/INIList/Installers
+    _recycle = True # False on tabs that recycle makes no sense (People, PM)
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
@@ -2272,12 +2284,12 @@ class UIList(wx.Panel):
     @conversation
     def DeleteItems(self, event=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
-        recycle = (
+        recycle = (self.__class__._recycle and
         # menu items fire 'CommandEvent' - I need a workaround to detect Shift
             True if event is None else not event.ShiftDown())
         items = self._toDelete(items)
         if not self.__class__._shellUI:
-            items = self._promptDelete(items, dialogTitle, order)
+            items = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
         for i in items:
             try:
@@ -2296,14 +2308,14 @@ class UIList(wx.Panel):
     def _toDelete(self, items):
         return items if items is not None else self.GetSelected()
 
-    def _promptDelete(self, items, dialogTitle, order):
+    def _promptDelete(self, items, dialogTitle, order, recycle):
         if not items: return items
         message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
         if order: items.sort()
         message.extend(items)
-        with ListBoxes(self, dialogTitle,
-                       _(u'Delete these items?  This operation cannot be '
-                         u'undone.'), [message]) as dialog:
+        msg = _(u'Delete these items?  This operation cannot be undone.') \
+            if not recycle else _(u'Delete these items to the recycling bin ?')
+        with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
 
@@ -2724,7 +2736,7 @@ class ListBoxes(Dialog):
 
     def __init__(self, parent, title, message, lists, liststyle='check',
                  style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True,
-                 resize=False): # NB: message param is unused (since day 1)
+                 resize=False):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2740,11 +2752,15 @@ class ListBoxes(Dialog):
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))
         self.SetIcons(Resources.bashBlue)
-        minWidth = self.GetTextExtent(title)[0]*1.2+64
-        sizer = wx.FlexGridSizer(len(lists)+1,1)
+        minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
+        sizer = wx.FlexGridSizer(len(lists) + 2, 1)
+        self.text = staticText(self, message)
+        self.text.Rewrap(minWidth) # otherwise self.text expands to max width
+        sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
+        sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)
         self._ids = {}
         labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
-        self.SetSize(wxSize(self.GetTextExtent(title)[0]*1.2+64,-1))
+        self.SetSize(wxSize(minWidth, -1))
         for i,group in enumerate(lists):
             title = group[0] # also serves as key in self._ids dict
             tip = group[1]
@@ -2772,20 +2788,14 @@ class ListBoxes(Dialog):
                     for subitem in subitems:
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
-            checksCtrl.SetToolTip(tooltip(tip))
+            checksCtrl.SetToolTip(tooltip(tip)) # does not always show
             subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
-            sizer.AddGrowableRow(i)
+            sizer.AddGrowableRow(i + 1)
         okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
         buttonSizer = hSizer(spacer,
                              (okButton,0,wx.ALIGN_RIGHT),
                              )
-        for id,label in labels.iteritems():
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            but = button(self,id=id,label=label)
-            but.Bind(wx.EVT_BUTTON,self.OnClick)
-            buttonSizer.Add(but,0,wx.ALIGN_RIGHT|wx.LEFT,2)
         if canCancel:
             buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
         sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
@@ -2795,6 +2805,12 @@ class ListBoxes(Dialog):
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wxSize(minWidth,-1))
+        self.text.Rewrap(self.GetSize().width)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
+    def OnSize(self, event):
+        self.text.Rewrap(self.GetSize().width)
+        event.Skip()
 
     def OnKeyUp(self,event):
         """Char events"""

@@ -803,10 +803,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             bosh.modInfos.plugins.saveLoadOrder()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-        # FIXME(ut): hack below - used to fix things like mtimes conflicts not
-        # updated - must call modInfos.refresh, wait till latter's fixed though
-        bosh.FileInfos.refresh(bosh.modInfos)
+        bosh.FileInfos.refresh(bosh.modInfos) # update mtimes conflicts etc
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
@@ -1025,7 +1022,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             #--Unselect?
             if self.data.isActiveCached(fileName):
                 try:
-                    self.data.unselect(fileName)
+                    self.data.unselect(fileName, doSave=True)
                     changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > (fileName in changed):
                         changed.remove(fileName)
@@ -1041,7 +1038,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                 ## game to load these files.s
                 #if fileName in self.data.bad_names: return
                 try:
-                    self.data.select(fileName)
+                    self.data.select(fileName, doSave=True)
                     changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
                     if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
                         changed.remove(fileName)
@@ -1052,7 +1049,7 @@ class ModList(_ModsSortMixin, balt.UIList):
                         % fileName.s)
                     return
         #--Refresh
-        bosh.modInfos.refresh()
+        bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
     @staticmethod
@@ -1332,8 +1329,7 @@ class ModDetails(_SashDetailsPanel):
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.modInfo.name)
-            bosh.modInfos.refresh(doInfos=False)
-            bosh.modInfos.refreshInfoLists()
+            bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
             return
         #--Backup
@@ -1371,9 +1367,7 @@ class ModDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        if bosh.modInfos.refresh(doInfos=False):
-            bosh.modInfos.refreshInfoLists()
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # maybe also called in modInfos.refresh !
+        bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     def DoCancel(self,event):
@@ -3299,6 +3293,7 @@ class MessageList(balt.UIList):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     reNoRe = re.compile(u'^Re: *',re.U)
+    _recycle = False
     _default_sort_col = 'Date'
     _sort_keys = {'Date': lambda self, a: self.data[a][2],
                   'Subject': lambda self, a: MessageList.reNoRe.sub(
@@ -3336,7 +3331,8 @@ class MessageList(balt.UIList):
         bosh.messages.writeText(path,*keys)
         self.gText.Navigate(path.s,0x2) #--0x2: Clear History
 
-    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages')):
+    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages'),
+                      order=False, recycle=False):
         message = _(u'Delete these %d message(s)? This operation cannot'
                     u' be undone.') % len(items)
         yes = balt.askYes(self, message, title=dialogTitle)
@@ -3411,6 +3407,7 @@ class PeopleList(balt.Tank):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
+    _recycle = False
     _default_sort_col = 'Name'
     _sort_keys = {'Name': lambda self, x: x.lower(),
                   'Karma': lambda self, x: self.data[x][1],
@@ -4065,7 +4062,7 @@ class BashFrame(wx.Frame):
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
-        # self._lostWarnings()
+        self._loadOrderWarnings()
         self._corruptedWarns()
         self._corruptedGameIni()
         self._y2038Resets()
@@ -4085,42 +4082,31 @@ class BashFrame(wx.Frame):
         #--Done (end recursion blocker)
         self.inRefreshData = False
 
-    def _lostWarnings(self):
-        """Restore those."""
-        #--Does plugins.txt have any bad or missing files?
-        ## Not applicable now with libloadorder - perhaps find a way to simulate this warning
-        #if bosh.modInfos.plugins.selectedBad:
-        #    message = [u'',_(u'Missing files have been removed from load list:')]
-        #    message.extend(sorted(bosh.modInfos.plugins.selectedBad))
-        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-        #             _(u'Missing files have been removed from load list:'),
-        #             [message],liststyle='list',Cancel=False)
-        #    dialog.ShowModal()
-        #    dialog.Destroy()
-        #    del bosh.modInfos.plugins.selectedBad[:]
-        #    bosh.modInfos.plugins.save()
+    def _loadOrderWarnings(self):
+        """Warn if plugins.txt has bad or missing files, or is overloaded."""
+        def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
+            ListBoxes.Display(self, title, message, [lists], liststyle='list',
+                              canCancel=False)
+        if bosh.modInfos.selectedBad:
+           msg = [u'',_(u'Missing files have been removed from load list:')]
+           msg.extend(sorted(bosh.modInfos.selectedBad))
+           warn(_(u'Missing files have been removed from load list:'), msg)
+           bosh.modInfos.selectedBad = set()
         #--Was load list too long? or bad filenames?
-        ## Net to recode this with libloadorder as well
-        #if bosh.modInfos.plugins.selectedExtra:## or bosh.modInfos.activeBad:
-        #    message = []
-        #    ## Disable this message for now, until we're done testing if
-        #    ## we can get the game to load these files
-        #    #if bosh.modInfos.activeBad:
-        #    #    msg = [u'Incompatible names:',u'Incompatible file names deactivated:']
-        #    #    msg.extend(bosh.modInfos.bad_names)
-        #    #    bosh.modInfos.activeBad = set()
-        #    #    message.append(msg)
-        #    if bosh.modInfos.plugins.selectedExtra:
-        #        msg = [u'Too many files:',_(u'Load list is overloaded.  Some files have been deactivated:')]
-        #        msg.extend(sorted(bosh.modInfos.plugins.selectedExtra))
-        #        message.append(msg)
-        #    dialog = ListBoxes(self,_(u'Warning: Load List Sanitized'),
-        #             _(u'Files have been removed from load list:'),
-        #             message,liststyle='list',Cancel=False)
-        #    dialog.ShowModal()
-        #    dialog.Destroy()
-        #    del bosh.modInfos.plugins.selectedExtra[:]
-        #    bosh.modInfos.plugins.save()
+        if bosh.modInfos.selectedExtra:## or bosh.modInfos.activeBad:
+           ## Disable this message for now, until we're done testing if
+           ## we can get the game to load these files
+           #if bosh.modInfos.activeBad:
+           #    msg = [u'Incompatible names:',
+           #           u'Incompatible file names deactivated:']
+           #    msg.extend(bosh.modInfos.bad_names)
+           #    bosh.modInfos.activeBad = set()
+           #    message.append(msg)
+           msg = [u'Too many files:', _(
+               u'Load list is overloaded.  Some files have been deactivated:')]
+           msg.extend(sorted(bosh.modInfos.selectedExtra))
+           warn(_(u'Files have been removed from load list:'), msg)
+           bosh.modInfos.selectedExtra = set()
 
     def _corruptedWarns(self):
         #--Any new corrupted files?
