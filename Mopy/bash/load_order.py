@@ -173,7 +173,7 @@ def __fixActive(acti, lord):
     dexDict = {mod:index for index, mod in enumerate(lord)}
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
     # STILL restore for skyrim to warn on LO change
-    if usingTxtFile() and False: ## FIXME: LIBLO returns the entries unordered
+    if usingTxtFile():
         actiSorted = actiFiltered[:]
         actiSorted.sort(key=dexDict.__getitem__) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
@@ -256,7 +256,8 @@ if not _liblo.liblo:
     raise bolt.BoltError(u'The libloadorder API could not be loaded.')
 bolt.deprint(u'Using libloadorder API version:', _liblo.version)
 
-_liblo_handle = _liblo_handle(bosh.dirs['app'].s,bush.game.fsName)
+_liblo_handle = _liblo_handle(bosh.dirs['app'].s, bush.game.fsName,
+                              bosh.dirs['userApp'].s)
 if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
         u'Nehrim.esm').isfile():
     _liblo_handle.SetGameMaster(u'Nehrim.esm')
