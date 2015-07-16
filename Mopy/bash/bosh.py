@@ -2979,10 +2979,12 @@ class Plugins:
 
     @_cache
     def saveActive(self):
-        """Write data to Plugins.txt file. Always call AFTER setting the load order."""
-        # liblo attempts to unghost files, no need to duplicate that here.
-        #(ut) liblo DID NOT unghost - see: e64d55bdd1b37607141aba241709dc7c61f3bad9 - is it supposed to ?
-        self.lord = load_order.SetActivePlugins(self.lord.lorder(self.selected), self.lord.loadOrder)
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        self.lord = load_order.SetActivePlugins(
+            self.lord.lorder(self.selected), self.lord.loadOrder)
 
     @_cache
     def saveLoadOrder(self):
@@ -3454,31 +3456,28 @@ class ModInfo(FileInfo):
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         normal = self.dir.join(self.name)
-        ghost = normal+u'.ghost'
+        ghost = normal + u'.ghost'
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         #  TODO(ut): both should never exist simultaneously
-        if normal.exists():
-            if self.isGhost:
-                self.isGhost = False
-                self.name = normal
-        elif ghost.exists():
-            if not self.isGhost:
-                self.isGhost = True
-                self.name = ghost
+        if normal.exists(): self.isGhost = False
+        elif ghost.exists(): self.isGhost = True
         # Current status == what we want it?
-        if isGhost == self.isGhost:
-            return isGhost
+        if isGhost == self.isGhost: return isGhost
         # Current status != what we want, so change it
         try:
-            if not normal.editable() or not ghost.editable(): return self.isGhost
+            if not normal.editable() or not ghost.editable():
+                return self.isGhost
+            oldCtime = self.ctime
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
+            self.ctime = oldCtime
         except:
-            pass
+            deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
+                (ghost.s, normal.s)[isGhost]), traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
@@ -3956,7 +3955,7 @@ class FileInfos(DataDict):
                     backPath = filePath + ext
                     toDeleteAppend(backPath)
             #--Backups
-            backRoot = backBase.join(fileInfo.name)
+            backRoot = backBase.join(fileName)
             for backPath in (backRoot,backRoot+u'f'):
                 toDeleteAppend(backPath)
         #--Now do actual deletions
@@ -4147,6 +4146,8 @@ class ModInfos(FileInfos):
 
     def refresh(self, scanData=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes."""
+        # TODO: make sure that calling two times this in a row second time
+        # ALWAYS returns False - was not true when autoghost run !
         hasChanged = scanData and FileInfos.refresh(self)
         if self.canSetTimes() and hasChanged:
             self._resetMTimes()
@@ -4319,16 +4320,16 @@ class ModInfos(FileInfos):
 
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
-#        print "Output of ModInfos.data"
-        for mod in self.values():
-            autoTag = self.table.getItem(mod.name,'autoBashTags')
-            if autoTag is None and self.table.getItem(mod.name,'bashTags') is None:
+        for modName, mod in self.iteritems():
+            autoTag = self.table.getItem(modName, 'autoBashTags')
+            if autoTag is None and self.table.getItem(
+                    modName, 'bashTags') is None:
                 # A new mod, set autoBashTags to True (default)
-                self.table.setItem(mod.name,'autoBashTags',True)
+                self.table.setItem(modName, 'autoBashTags', True)
                 autoTag = True
             elif autoTag is None:
                 # An old mod that had manual bash tags added, disable autoBashTags
-                self.table.setItem(mod.name,'autoBashTags',False)
+                self.table.setItem(modName, 'autoBashTags', False)
             if autoTag:
                 mod.reloadBashTags()
 
@@ -4389,9 +4390,11 @@ class ModInfos(FileInfos):
         toSelect = modsSet - missingSet
         #--Save
         self.plugins.selected = list(toSelect)
+        # we should unghost ourselves so that ctime is properly set
+        for s in toSelect: self[s].setGhost(False)
         self.plugins.saveActive()
         self.refreshInfoLists()
-        self.autoGhost(force=False)
+        self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
         extra = set() ##: was never set - actually saveActive will just raise
         if missingSet or extra:
