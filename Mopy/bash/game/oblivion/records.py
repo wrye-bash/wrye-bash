@@ -27,12 +27,12 @@ import re
 import struct
 from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict
-from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, null3, \
-    null4, ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MreLeveledListBase, MelSet, MelFid, null2, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
-    MelModel, MelFull0, null1, MelFidList, MelStructA, MelStrings, MreRecord, \
-    MreGmstBase, MelTuple
+from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
+    ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
+    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+    MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0, \
+    MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, MelTuple
+from ...bass import null1, null2, null3, null4
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from constants import allConditions, fid1Conditions, fid2Conditions
 

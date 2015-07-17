@@ -34,13 +34,7 @@ from operator import attrgetter
 
 import bolt
 from bolt import _unicode, _encode, sio, GPath
-
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
+from bass import null1
 
 # Util Functions ---------------------------------------------------------------
 #--Type coercion

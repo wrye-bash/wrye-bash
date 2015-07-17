@@ -35,7 +35,7 @@ from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, \
     staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
-from ..patcher import configIsCBash
+from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
@@ -167,8 +167,7 @@ class Mod_OrderByName(EnabledLink):
             modInfos[fileName].setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(doInfos=False)
-        modInfos.refreshInfoLists()
+        modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
@@ -894,6 +893,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                         for mod in deselect:
                             bosh.modInfos.unselect(mod,False)
                         bosh.modInfos.plugins.saveActive()
+                        # just active mods (no modtimes changes), still needed:
                         bosh.modInfos.refreshInfoLists()
                         self.window.RefreshUI(refreshSaves=True) # True ?
             dialog.Destroy()
@@ -1056,23 +1056,14 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
     help = _(
         u'Exports the Bashed Patch configuration to a Wrye Bash readable file')
 
+    @balt.conversation
     def Execute(self,event):
         """Handle execution."""
         #--Config
-        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
-        patchName = self.selected[0].s + u'_Configuration.dat'
-        outDir = bosh.dirs['patches']
-        outDir.makedirs()
-        #--File dialog
-        outPath = self._askSave(
-            title=_(u'Export Bashed Patch configuration to:'),
-            defaultDir=outDir, defaultFile=patchName,
-            wildcard=u'*_Configuration.dat')
-        if not outPath: return
-        pklPath = outPath+u'.pkl'
-        table = bolt.Table(bosh.PickleDict(outPath, pklPath))
-        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][configIsCBash(config)])),'bash.patch.configs',config)
-        table.save()
+        config = bosh.modInfos.table.getItem(self.selected[0],
+                                             'bash.patch.configs', {})
+        exportConfig(patchName=self.selected[0].s, config=config,
+                     isCBash=configIsCBash(config), win=self.window)
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------

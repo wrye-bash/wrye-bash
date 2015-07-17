@@ -258,17 +258,7 @@ class PickleDict(bolt.PickleDict):
             self.oldPath.backup.remove()
         return saved
 
-# Util Constants --------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
 #--Header tags
-reGroup = re.compile(ur'^Group: *(.*)',re.M|re.U)
-reRequires = re.compile(ur'^Requires: *(.*)',re.M|re.U)
-reReqItem = re.compile(ur'^([a-zA-Z]+) *([\d]*\.?[\d]*)$',re.U)
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
 #--Mod Extensions
@@ -2953,17 +2943,17 @@ def _cache(lord_func):
     return _plugins_cache_wrapper
 
 class Plugins:
-    """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
-       else should access it directly.  Since migrating to libloadorder, this
-       class now only really is used to detect if a refresh from libloadorder
-       is required."""
+    """Singleton wrapper around load_order.py, owned by modInfos - nothing
+       else should access it directly and nothing else should access load_order
+       directly - only via this class (except usingTxtFile() for now). Mainly
+       exposes _LoadOrder_ and _selected_ caches used by modInfos to manipulate
+       the load order/active and then save at once. May disappear in a later
+       iteration of the load order API."""
     def __init__(self):
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
             self.dir = dirs['app']
         else:
             self.dir = dirs['userApp']
-        self.pathPlugins = self.dir.join(u'plugins.txt')
-        self.pathOrder = self.dir.join(u'loadorder.txt')
         # Plugins cache, manipulated by code which changes load order/active
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
@@ -2971,37 +2961,22 @@ class Plugins:
         #--Create dirs/files if necessary
         self.dir.makedirs()
 
-    def copyTo(self,toDir):
-        """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
-        if self.pathPlugins.exists():
-            self.pathPlugins.copyTo(toDir.join(u'plugins.txt'))
-        if self.pathOrder.exists():
-            self.pathOrder.copyTo(toDir.join(u'loadorder.txt'))
-
-    def copyFrom(self,fromDir):
-        """Move a different plugins.txt and loadorder.txt here for use."""
-        move = fromDir.join(u'plugins.txt')
-        if move.exists():
-            move.copyTo(self.pathPlugins)
-        move = fromDir.join(u'loadorder.txt')
-        if move.exists():
-            move.copyTo(self.pathOrder)
-
     @_cache
     def saveActive(self):
-        """Write data to Plugins.txt file. Always call AFTER setting the load order."""
-        # liblo attempts to unghost files, no need to duplicate that here.
-        #(ut) liblo DID NOT unghost - see: e64d55bdd1b37607141aba241709dc7c61f3bad9 - is it supposed to ?
-        self.lord = load_order.SetActivePlugins(self.lord.lorder(self.selected), self.lord.loadOrder)
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        self.lord = load_order.SetActivePlugins(
+            self.lord.lorder(self.selected), self.lord.loadOrder)
 
     @_cache
-    def saveLoadOrder(self):
+    def saveLoadOrder(self, _selected=None):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder, acti=_selected)
 
     def saveLoadAndActive(self):
-        self.saveLoadOrder()
-        self.saveActive()
+        self.saveLoadOrder(_selected=self.selected)
 
     def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""
@@ -3021,9 +2996,10 @@ class Plugins:
     @_cache
     def refreshLoadOrder(self,forceRefresh=False):
         """Reload for plugins.txt or masterlist.txt changes."""
-        hasChanged = load_order.haveLoFilesChanged()
-        if forceRefresh or hasChanged: self.lord = load_order.GetLo()
-        return hasChanged
+        oldLord = self.lord
+        if forceRefresh or load_order.haveLoFilesChanged():
+            self.lord = load_order.GetLo()
+        return oldLord != self.lord
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -3277,9 +3253,7 @@ class FileInfo(_AFileInfo):
 
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
-# TODO(ut): 2 variations for reBashTags
-#reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U) #flagged as error
-#reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
+reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
 class ModInfo(FileInfo):
     """An esp/m file."""
@@ -3465,43 +3439,31 @@ class ModInfo(FileInfo):
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         normal = self.dir.join(self.name)
-        ghost = normal+u'.ghost'
+        ghost = normal + u'.ghost'
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         #  TODO(ut): both should never exist simultaneously
-        if normal.exists():
-            if self.isGhost:
-                self.isGhost = False
-                self.name = normal
-        elif ghost.exists():
-            if not self.isGhost:
-                self.isGhost = True
-                self.name = ghost
+        if normal.exists(): self.isGhost = False
+        elif ghost.exists(): self.isGhost = True
         # Current status == what we want it?
-        if isGhost == self.isGhost:
-            return isGhost
+        if isGhost == self.isGhost: return isGhost
         # Current status != what we want, so change it
         try:
-            if not normal.editable() or not ghost.editable(): return self.isGhost
+            if not normal.editable() or not ghost.editable():
+                return self.isGhost
+            oldCtime = self.ctime
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
+            self.ctime = oldCtime
         except:
-            pass
+            deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
+                (ghost.s, normal.s)[isGhost]), traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
-    def shiftBashTags(self):
-        """Shifts bash keys from bottom to top."""
-        description = self.header.description
-        reBashTags = re.compile(u'^(.+)({{BASH:[^}]*}})$',re.S|re.U)
-        if reBashTags.match(description) or reReturns.search(description):
-            description = reReturns.sub(u'\r',description)
-            description = reBashTags.sub(ur'\2\n\1',description)
-            self.writeDescription(description)
-
     def setBashTags(self,keys):
         """Sets bash keys as specified."""
         modInfos.table.setItem(self.name,'bashTags',keys)
@@ -3515,7 +3477,6 @@ class ModInfo(FileInfo):
         else:
             strKeys = u''
         description = self.header.description or ''
-        reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
         if reBashTags.search(description):
             description = reBashTags.sub(strKeys,description)
         else:
@@ -3696,53 +3657,6 @@ class INIInfo(FileInfo):
         elif mismatch == 2:
             self._status = 10
         return self._status
-
-    def getLinesStatus(self):
-        """Return a list of the lines and their statuses, in the form:
-        [setting,value,status]
-        for statuses:
-        -10: highlight orange (not tweak not in ini)
-          0: no highlight (header, in ini)
-         10: highlight yellow (setting, in ini, but different)
-         20: highlight green (setting, in ini, and same)"""
-        ini = self.getFileInfos().ini
-        tweak = self.getPath()
-        ini_settings = ini.getSettings()
-        tweak_settings,deleted_settings = ini.getTweakFileSettings(tweak)
-        reComment = re.compile(u';.*',re.U)
-        reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
-        reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
-        section = LString(ini.defaultSection)
-
-        lines = []
-
-        with tweak.open('r') as tweakFile:
-            for line in tweakFile:
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                if maSection:
-                    section = LString(maSection.group(1))
-                    if section in ini_settings:
-                        lines.append((line.strip(u'\n\r'),u'',0))
-                    else:
-                        lines.append((line.strip(u'\n\r'),u'',-10))
-                elif maSetting:
-                    if section in ini_settings:
-                        setting = LString(maSetting.group(1))
-                        if setting in ini_settings[section]:
-                            value = LString(maSetting.group(2).strip())
-                            if value == ini_settings[section][setting]:
-                                lines.append((maSetting.group(1),maSetting.group(2),20))
-                            else:
-                                lines.append((maSetting.group(1),maSetting.group(2),10))
-                        else:
-                            lines.append((maSetting.group(1),maSetting.group(2),-10))
-                    else:
-                        lines.append((maSetting.group(1),maSetting.group(2),-10))
-                else:
-                    lines.append((line.strip(u'\r\n'),u'',0))
-        return lines
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -3928,7 +3842,7 @@ class FileInfos(DataDict):
     def refresh(self):
         """Refresh from file directory."""
         data = self.data
-        oldNames = set(data)
+        oldNames = set(data) | set(self.corrupted)
         newNames = set()
         _added = set()
         _updated = set()
@@ -3958,7 +3872,7 @@ class FileInfos(DataDict):
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            data.pop(name, None)
+            data.pop(name, None); self.corrupted.pop(name, None)
         if _deleted:
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
@@ -4024,7 +3938,7 @@ class FileInfos(DataDict):
                     backPath = filePath + ext
                     toDeleteAppend(backPath)
             #--Backups
-            backRoot = backBase.join(fileInfo.name)
+            backRoot = backBase.join(fileName)
             for backPath in (backRoot,backRoot+u'f'):
                 toDeleteAppend(backPath)
         #--Now do actual deletions
@@ -4144,6 +4058,10 @@ class ModInfos(FileInfos):
         self.size_voVersion = bolt.invertDict(self.version_voSize)
         self.voCurrent = None
         self.voAvailable = set()
+        # removed/extra mods in plugins.txt - set in load_order.py,
+        # used in RefreshData
+        self.selectedBad = set()
+        self.selectedExtra = []
 
     @property
     def lockLO(self):
@@ -4170,8 +4088,8 @@ class ModInfos(FileInfos):
             return sys.maxint # sort mods that do not have a load order LAST
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
-        # Calculating indexes through order.index() so corrupt mods (which
-        # don't show in the ModList) don't break Drag n Drop
+        # Calculating indexes through order.index() cause we may be called in
+        # a row before saving the modified load order
         order = self.plugins.LoadOrder
         newPos = order.index(dropItem)
         if newPos <= 0: return False
@@ -4213,15 +4131,18 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, doInfos=True): ##: doInfos is for what ??
+    def refresh(self, scanData=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes."""
-        self.canSetTimes()
-        hasChanged = doInfos and FileInfos.refresh(self)
-        if hasChanged:
+        # TODO: make sure that calling two times this in a row second time
+        # ALWAYS returns False - was not true when autoghost run !
+        hasChanged = scanData and FileInfos.refresh(self)
+        if self.canSetTimes() and hasChanged:
             self._resetMTimes()
-        hasChanged += self.plugins.refreshLoadOrder(forceRefresh=hasChanged)
+        _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
+        hasChanged += self.plugins.refreshLoadOrder(
+            forceRefresh=hasChanged or _modTimesChange)
         hasGhosted = self.autoGhost(force=False)
-        self.refreshInfoLists()
+        if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
@@ -4301,7 +4222,8 @@ class ModInfos(FileInfos):
 
     def refreshInfoLists(self):
         """Refreshes various mod info lists (mtime_mods, mtime_selected,
-        exGroup_mods, imported, exported)."""
+        exGroup_mods, imported, exported) - call after refreshing from Data
+        AND having latest load order."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -4322,7 +4244,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(self.activeCached)
+        self.merged,self.imported = self.getSemiActive(set(self.activeCached))
 
     def refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -4385,16 +4307,16 @@ class ModInfos(FileInfos):
 
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
-#        print "Output of ModInfos.data"
-        for mod in self.values():
-            autoTag = self.table.getItem(mod.name,'autoBashTags')
-            if autoTag is None and self.table.getItem(mod.name,'bashTags') is None:
+        for modName, mod in self.iteritems():
+            autoTag = self.table.getItem(modName, 'autoBashTags')
+            if autoTag is None and self.table.getItem(
+                    modName, 'bashTags') is None:
                 # A new mod, set autoBashTags to True (default)
-                self.table.setItem(mod.name,'autoBashTags',True)
+                self.table.setItem(modName, 'autoBashTags', True)
                 autoTag = True
             elif autoTag is None:
                 # An old mod that had manual bash tags added, disable autoBashTags
-                self.table.setItem(mod.name,'autoBashTags',False)
+                self.table.setItem(modName, 'autoBashTags', False)
             if autoTag:
                 mod.reloadBashTags()
 
@@ -4425,13 +4347,18 @@ class ModInfos(FileInfos):
         return modNames
 
     def getSemiActive(self,masters):
-        """Returns (merged,imported) mods made semi-active by Bashed Patch."""
+        """Return (merged,imported) mods made semi-active by Bashed Patch.
+
+        If no bashed patches are present in 'masters' then return empty sets.
+        Else for each bashed patch use its config (if present) to find mods
+        it merges or imports."""
         merged,imported = set(),set()
-        for modName,modInfo in [(modName,self[modName]) for modName in masters]:
-            if modInfo.header.author != u'BASHED PATCH': continue
-            patchConfigs = self.table.getItem(modName,'bash.patch.configs',None)
+        patches = masters & self.bashed_patches
+        for patchName in patches:
+            patchConfigs = self.table.getItem(patchName, 'bash.patch.configs')
             if not patchConfigs: continue
-            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(patchConfigs) else 'PatchMerger'
+            patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
+                patchConfigs) else 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
                 configChecks = patchConfigs[patcherstr]['configChecks']
                 for modName in configChecks:
@@ -4450,9 +4377,11 @@ class ModInfos(FileInfos):
         toSelect = modsSet - missingSet
         #--Save
         self.plugins.selected = list(toSelect)
+        # we should unghost ourselves so that ctime is properly set
+        for s in toSelect: self[s].setGhost(False)
         self.plugins.saveActive()
         self.refreshInfoLists()
-        self.autoGhost(force=False)
+        self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
         extra = set() ##: was never set - actually saveActive will just raise
         if missingSet or extra:
@@ -4759,6 +4688,13 @@ class ModInfos(FileInfos):
     @staticmethod # this belongs to load_order.py !
     def usingTxtFile(): return load_order.usingTxtFile()
 
+    def calculateLO(self, mods=None): # excludes corrupt mods
+        if mods is None: mods = self.keys()
+        mods = sorted(mods) # sort case insensitive (for time conflicts)
+        mods.sort(key=lambda x: self[x].mtime)
+        mods.sort(key=lambda x: not self[x].isEsm())
+        return mods
+
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
@@ -4801,21 +4737,6 @@ class ModInfos(FileInfos):
             return float(maVersion.group(1))
         else:
             return 0
-
-#    def getRequires(self,fileName):
-#        """Extracts and returns requirement dictionary for fileName from header.hedr.description."""
-#        print "****************************** THIS FUNCTION WAS CALLED"
-#        requires = {}
-#        if not fileName in self.data or not self.data[fileName].header:
-#            maRequires = reRequires.search(self.data[fileName].header.description)
-#            if maRequires:
-#                for item in map(string.strip,maRequires.group(1).split(u',')):
-#                    maReqItem = reReqItem.match(item)
-#                    key,value = ma
-#                    if maReqItem:
-#                        key,value = maReqItem.groups()
-#                        requires[key] = float(value or 0)
-#        return requires
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
     def setOblivionVersions(self):
@@ -4890,6 +4811,18 @@ class ModInfos(FileInfos):
             oldInfo = ModInfo(self.dir,oldName)
             oldInfo.setGhost(True)
         self.voCurrent = newVersion
+
+    def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
+    # does not really belong here, but then where ?
+        """Save current plugins into arcSaves directory, load plugins from
+        newSaves directory and set oblivion version."""
+        arcPath, newPath = (dirs['saveBase'].join(saves) for saves in
+                            (arcSaves, newSaves))
+        load_order.swap(arcPath, newPath)
+        # Swap Oblivion version to memorized version
+        voNew = saveInfos.profiles.setItemDefault(newSaves, 'vOblivion',
+                                                  self.voCurrent)
+        if voNew in self.voAvailable: self.setOblivionVersion(voNew)
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
@@ -4985,7 +4918,7 @@ class SaveInfos(FileInfos):
         self.table.save()
         self._initDB(dirs['saveBase'].join(self.localSave))
 
-    def setLocalSave(self,localSave):
+    def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
         self.localSave = localSave
@@ -4994,7 +4927,7 @@ class SaveInfos(FileInfos):
                                 localSave)
         self.iniMTime = oblivionIni.path.mtime
         self._initDB(dirs['saveBase'].join(self.localSave))
-        self.refresh()
+        if refreshSaveInfos: self.refresh()
 
     #--Enabled ----------------------------------------------------------------
     @staticmethod
@@ -5826,7 +5759,7 @@ class Installer(object):
         u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.bsl'}
+                u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
@@ -6162,6 +6095,7 @@ class Installer(object):
             skipLandscapeLODMeshes = False
             skipLandscapeLODTextures = False
             skipLandscapeLODNormals = False
+            skipTESVBsl = False
             renameStrings = False
             bethFilesSkip = set()
         else:
@@ -6174,6 +6108,7 @@ class Installer(object):
             skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
             skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
             skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+            skipTESVBsl = settings['bash.installers.skipTESVBsl']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
@@ -6309,6 +6244,8 @@ class Installer(object):
             elif skipVoices and fileStartsWith(u'sound\\voice'):
                 continue
             elif skipScreenshots and fileStartsWith(u'screenshots'):
+                continue
+            elif skipTESVBsl and fileExt == u'.bsl':
                 continue
             elif fileLower == u'wizard.txt':
                 self.hasWizard = full
@@ -8601,7 +8538,7 @@ class PCFaces:
             self.eid = self.pcName = u'generic'
             self.fggs_p = self.fgts_p = '\x00'*4*50
             self.fgga_p = '\x00'*4*30
-            self.unused2 = null2
+            self.unused2 = bass.null2
             self.health = self.unused3 = self.baseSpell = self.fatigue = self.level = 0
             self.skills = self.attributes = self.iclass = None
             self.factions = []

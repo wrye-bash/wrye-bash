@@ -352,6 +352,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_SkipLandscapeLODMeshes())
     InstallersList.mainMenu.append(Installers_SkipLandscapeLODTextures())
     InstallersList.mainMenu.append(Installers_SkipLandscapeLODNormals())
+    InstallersList.mainMenu.append(Installers_SkipBsl())
     InstallersList.mainMenu.append(Installers_RenameStrings())
     #--Item links
     #--File

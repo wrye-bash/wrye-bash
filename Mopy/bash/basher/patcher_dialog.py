@@ -37,7 +37,7 @@ from ..balt import staticText, vSizer, hSizer, spacer, Link, OkButton, \
     RevertToSavedButton, RevertButton
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
-from ..patcher import configIsCBash
+from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
@@ -172,10 +172,7 @@ class PatchDialog(balt.Dialog):
             progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
-            patchConfigs = {'ImportedMods':set()}
-            for patcher in self.patchers:
-                patcher.saveConfig(patchConfigs)
-            bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+            self._saveConfig(patchName)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
@@ -314,33 +311,24 @@ class PatchDialog(balt.Dialog):
             + u'\n\n' + _(u'Try again?') % (old.s, new.s, new.s),
              _(u'Bash Patch - Save Error'))
 
-    def SaveConfig(self,event=None):
+    def __config(self):
+        config = {'ImportedMods': set()}
+        for patcher in self.patchers: patcher.saveConfig(config)
+        return config
+
+    def _saveConfig(self, patchName):
         """Save the configuration"""
-        patchName = self.patchInfo.name
-        patchConfigs = {'ImportedMods':set()}
-        for patcher in self.patchers:
-            patcher.saveConfig(patchConfigs)
-        bosh.modInfos.table.setItem(patchName,'bash.patch.configs',patchConfigs)
+        config = self.__config()
+        bosh.modInfos.table.setItem(patchName, 'bash.patch.configs', config)
 
     def ExportConfig(self,event=None):
         """Export the configuration to a user selected dat file."""
-        patchName = self.patchInfo.name + _(u'_Configuration.dat')
-        textDir = bosh.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = balt.askSave(self.parent,_(u'Export Bashed Patch configuration to:'),
-                                textDir,patchName, u'*Configuration.dat')
-        if not textPath: return
-        pklPath = textPath+u'.pkl'
-        table = bolt.Table(bosh.PickleDict(textPath, pklPath))
-        patchConfigs = {'ImportedMods':set()}
-        for patcher in self.patchers:
-            patcher.saveConfig(patchConfigs)
-        table.setItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',patchConfigs)
-        table.save()
+        config = self.__config()
+        exportConfig(patchName=self.patchInfo.name, config=config,
+                     isCBash=self.doCBash, win=self.parent)
 
     def ImportConfig(self,event=None):
-        """Import the configuration to a user selected dat file."""
+        """Import the configuration from a user selected dat file."""
         patchName = self.patchInfo.name + _(u'_Configuration.dat')
         textDir = bosh.dirs['patches']
         textDir.makedirs()

@@ -29,13 +29,6 @@ from constants import bethDataFiles, allBethFiles
 from ... import brec
 from ...brec import *
 
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
 #--Name of the game to use in UI.
 displayName = u'Oblivion'
 #--Name of the game's filesystem folder.

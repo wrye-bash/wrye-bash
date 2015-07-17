@@ -26,18 +26,23 @@
 To use outside of Bash replace the Bash imports below with:
 
 class Path: pass
+class BoltError(Exception): pass
 def GPath(x): return u'' if x is None else unicode(x, 'utf8')
+def deprint(x, traceback=False):
+    import tarceback
+    traceback.print_exc()
 """
 
 from ctypes import *
 import os
-from bolt import Path, GPath, BoltError
+import sys
+from bolt import Path, GPath, BoltError, deprint
 
 liblo = None
 version = None
 
 # Version of libloadorder this Python script is written for.
-PythonLibloVersion = (4,0)
+PythonLibloVersion = (7,5)
 
 DebugLevel = 0
 # DebugLevel
@@ -164,6 +169,7 @@ def Init(path):
     LIBLO_ERROR_TIMESTAMP_WRITE_FAIL = _uint(
         'LIBLO_ERROR_TIMESTAMP_WRITE_FAIL')
     LIBLO_WARN_LO_MISMATCH = _uint('LIBLO_WARN_LO_MISMATCH')
+    LIBLO_WARN_INVALID_LIST = _uint('LIBLO_WARN_INVALID_LIST')
     LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
     errors = dict((name, value) for name, value in locals().iteritems() if
                   name.startswith('LIBLO_'))
@@ -213,6 +219,7 @@ def Init(path):
     # =========================================================================
     ## unsigned int lo_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
     _Clo_get_version = liblo.lo_get_version
+    _Clo_get_version.restype = LibloErrorCheck
     _Clo_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
     try:
@@ -231,7 +238,7 @@ def Init(path):
     ## unsigned int lo_create_handle(lo_game_handle * const gh, const unsigned int gameId, const char * const gamePath);
     _Clo_create_handle = liblo.lo_create_handle
     _Clo_create_handle.restype = LibloErrorCheck
-    _Clo_create_handle.argtypes = [lo_game_handle_p, c_uint, c_char_p]
+    _Clo_create_handle.argtypes = [lo_game_handle_p, c_uint, c_char_p, c_char_p]
     ## void lo_destroy_handle(lo_game_handle gh);
     _Clo_destroy_handle = liblo.lo_destroy_handle
     _Clo_destroy_handle.restype = None
@@ -256,18 +263,6 @@ def Init(path):
     _Clo_set_load_order = liblo.lo_set_load_order
     _Clo_set_load_order.restype = LibloErrorCheck
     _Clo_set_load_order.argtypes = [lo_game_handle, c_char_p_p, c_size_t]
-    # ## unsigned int lo_get_plugin_position(lo_game_handle gh, const char * const plugin, size_t * const index);
-    # _Clo_get_plugin_position = liblo.lo_get_plugin_position
-    # _Clo_get_plugin_position.restype = LibloErrorCheck
-    # _Clo_get_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t_p]
-    # ## unsigned int lo_set_plugin_position(lo_game_handle gh, const char * const plugin, size_t index);
-    # _Clo_set_plugin_position = liblo.lo_set_plugin_position
-    # _Clo_set_plugin_position.restype = LibloErrorCheck
-    # _Clo_set_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t]
-    # ## unsigned int lo_get_indexed_plugin(lo_game_handle gh, const size_t index, char ** const plugin);
-    # _Clo_get_indexed_plugin = liblo.lo_get_indexed_plugin
-    # _Clo_get_indexed_plugin.restype = LibloErrorCheck
-    # _Clo_get_indexed_plugin.argtypes = [lo_game_handle, c_size_t, c_char_p_p]
 
     # =========================================================================
     # API Functions - Active Plugins
@@ -290,10 +285,18 @@ def Init(path):
     # _Clo_get_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool_p]
 
     # =========================================================================
+    # API Functions - Misc
+    # =========================================================================
+    # # unsigned int lo_fix_plugin_lists(lo_game_handle gh);
+    # _Clo_fix_plugin_lists = liblo.lo_fix_plugin_lists
+    # _Clo_fix_plugin_lists.restype = LibloErrorCheck
+    # _Clo_fix_plugin_lists.argtypes = [lo_game_handle]
+
+    # =========================================================================
     # Class Wrapper
     # =========================================================================
     class LibloHandle(object):
-        def __init__(self,gamePath,game='Oblivion'):
+        def __init__(self,gamePath,game='Oblivion',userPath=None):
             """ game can be one of the LIBLO_GAME_*** codes, or one of the
                 aliases defined above in the 'games' dictionary."""
             if isinstance(game,basestring):
@@ -303,14 +306,16 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self._DB = lo_game_handle()
             try:
-                _Clo_create_handle(byref(self._DB),game,_enc(gamePath))
+                _Clo_create_handle(byref(self._DB),game,_enc(gamePath),userPath)
             except LibloError as err:
-                if err.args[0].startswith("LIBLO_WARN_LO_MISMATCH"):
-                    # If there is a Mismatch between loadorder.txt and plugns.txt finish initialization
-                    # and fix the mismatch at a later time
+                if (err.code == LIBLO_WARN_LO_MISMATCH
+                    or err.code == LIBLO_WARN_INVALID_LIST):
+                    # If there is a Mismatch between loadorder.txt and
+                    # plugins.txt, or one of them is invalid, finish
+                    # initialization and fix the mismatch at a later time
                     pass
                 else:
-                    raise err
+                    raise
             # Get Load Order Method
             method = c_uint32()
             _Clo_get_load_order_method(self._DB,byref(method))
@@ -334,7 +339,12 @@ def Init(path):
         def GetLoadOrder(self):
             plugins = c_char_p_p()
             num = c_size_t()
-            _Clo_get_load_order(self._DB, byref(plugins), byref(num))
+            try:
+                _Clo_get_load_order(self._DB, byref(plugins), byref(num))
+            except LibloError as err:
+                if err.code != LIBLO_WARN_INVALID_LIST: raise
+                deprint(u'lo_get_load_order WARN_INVALID_LIST:',
+                        traceback=True)
             return map(GPath, plugins[:num.value])
         def SetLoadOrder(self, plugins):
             plugins = [_enc(x) for x in plugins]
@@ -342,9 +352,10 @@ def Init(path):
             plugins = list_of_strings(plugins)
             try:
                 _Clo_set_load_order(self._DB, plugins, num)
-            except LibloError as ex: # TMP - no business logic here !
-                if ex.code == liblo.LIBLO_ERROR_INVALID_ARGS:
-                    raise BoltError(u'Cannot load plugins before masters.')
+            except LibloError as ex: # must notify the user that lo was not set
+                deprint(u'lo_set_load_order failed:', traceback=True)
+                raise BoltError(ex.msg), None, sys.exc_info()[2]
+
 
         # ---------------------------------------------------------------------
         # Active plugin management
@@ -352,7 +363,12 @@ def Init(path):
         def GetActivePlugins(self):
             plugins = c_char_p_p()
             num = c_size_t()
-            _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
+            try:
+                _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
+            except LibloError as err:
+                if err.code != LIBLO_WARN_INVALID_LIST: raise
+                deprint(u'lo_get_active_plugins WARN_INVALID_LIST:',
+                        traceback=True)
             return map(GPath, plugins[:num.value])
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
