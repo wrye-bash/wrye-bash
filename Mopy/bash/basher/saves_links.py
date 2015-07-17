@@ -155,7 +155,7 @@ class Saves_Profiles(ChoiceLink):
     @property
     def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
 
-    class _ProfileLink(CheckLink):
+    class _ProfileLink(CheckLink, EnabledLink):
         @property
         def help(self):
             return _(u'Set profile to %(prof)s (My Games/Saves/%(prof)s)') % {
@@ -163,18 +163,17 @@ class Saves_Profiles(ChoiceLink):
         @property
         def relativePath(self): return u'Saves\\' + self.text + u'\\'
         def _check(self): return Saves_Profiles.local == self.relativePath
+        def _enable(self): return not self._check()
         def Execute(self, event):
-            """Handle selection of label."""
             arcSaves = bosh.saveInfos.localSave
             newSaves = self.relativePath
-            bosh.saveInfos.setLocalSave(newSaves)
-            Saves_Profiles.swapPlugins(arcSaves,newSaves)
-            Saves_Profiles.swapOblivionVersion(newSaves)
-            Link.Frame.SetTitle()
-            self.window.panel.ClearDetails()
-            Link.Frame.RefreshData()
-            # bosh.modInfos.autoGhost() # RefreshData calls modInfos.refresh()
-            # BashFrame.modList.RefreshUI(refreshSaves=True)
+            with balt.BusyCursor():
+                bosh.saveInfos.setLocalSave(newSaves, refreshSaveInfos=False)
+                bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
+                Link.Frame.SetTitle()
+                self.window.panel.ClearDetails()
+                self.window.DeleteAll() # let call below repopulate
+                Link.Frame.RefreshData()
 
     cls = _ProfileLink
 
@@ -200,23 +199,6 @@ class Saves_Profiles(ChoiceLink):
     def _initData(self, window, selection):
         super(Saves_Profiles, self)._initData(window, selection)
         Saves_Profiles.local = bosh.saveInfos.localSave
-
-    @staticmethod
-    def swapPlugins(arcSaves,newSaves):
-        """Saves current plugins into arcSaves directory and loads plugins
-        from newSaves directory (if present)."""
-        arcPath,newPath = (bosh.dirs['saveBase'].join(saves)
-            for saves in (arcSaves,newSaves))
-        #--Archive old Saves
-        bosh.modInfos.plugins.copyTo(arcPath)
-        bosh.modInfos.plugins.copyFrom(newPath)
-
-    @staticmethod
-    def swapOblivionVersion(newSaves):
-        """Swaps Oblivion version to memorized version."""
-        voNew = bosh.saveInfos.profiles.setItemDefault(newSaves,'vOblivion',bosh.modInfos.voCurrent)
-        if voNew in bosh.modInfos.voAvailable:
-            bosh.modInfos.setOblivionVersion(voNew)
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):

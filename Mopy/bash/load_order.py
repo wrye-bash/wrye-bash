@@ -41,6 +41,7 @@ Currently investigating what the liblo calls return to me and monkey
 patching that (see __fix methods).
 Double underscores and dirty comments are no accident - ALPHA
 """
+import time
 import bolt
 import bush
 import liblo as _liblo
@@ -288,6 +289,24 @@ def haveLoFilesChanged():
     return _loadorder_txt_path.exists() and (
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)
+
+def swap(oldPath, newPath):
+    """Save current plugins into oldPath directory and load plugins from
+    newPath directory (if present)."""
+    # Save plugins.txt and loadorder.txt inside the old (saves) directory
+    if _plugins_txt_path.exists():
+        _plugins_txt_path.copyTo(oldPath.join(u'plugins.txt'))
+    if _loadorder_txt_path.exists():
+        _loadorder_txt_path.copyTo(oldPath.join(u'loadorder.txt'))
+    # Move the new plugins.txt and loadorder.txt here for use
+    move = newPath.join(u'plugins.txt')
+    if move.exists():
+        move.copyTo(_plugins_txt_path)
+        _plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
+    move = newPath.join(u'loadorder.txt')
+    if move.exists():
+        move.copyTo(_loadorder_txt_path)
+        _loadorder_txt_path.mtime = time.time()#update mtime to trigger refresh
 
 #----------------------------------------------------------------------REFACTOR
 _liblo_handle, _liblo_error = _liblo.Init(bosh.dirs['compiled'].s)

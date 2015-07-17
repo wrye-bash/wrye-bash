@@ -2943,39 +2943,23 @@ def _cache(lord_func):
     return _plugins_cache_wrapper
 
 class Plugins:
-    """Plugins.txt and loadorder.txt file. Owned by modInfos.  Almost nothing
-       else should access it directly.  Since migrating to libloadorder, this
-       class now only really is used to detect if a refresh from libloadorder
-       is required."""
+    """Singleton wrapper around load_order.py, owned by modInfos - nothing
+       else should access it directly and nothing else should access load_order
+       directly - only via this class (except usingTxtFile() for now). Mainly
+       exposes _LoadOrder_ and _selected_ caches used by modInfos to manipulate
+       the load order/active and then save at once. May disappear in a later
+       iteration of the load order API."""
     def __init__(self):
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
             self.dir = dirs['app']
         else:
             self.dir = dirs['userApp']
-        self.pathPlugins = self.dir.join(u'plugins.txt')
-        self.pathOrder = self.dir.join(u'loadorder.txt')
         # Plugins cache, manipulated by code which changes load order/active
         self.LoadOrder = [] # the masterlist load order (always sorted)
         self.selected = []  # list of the currently active plugins (not always in order)
         self.lord = None    # WIP: valid LoadOrder object, must be kept in sync with load_order._current_load_order
         #--Create dirs/files if necessary
         self.dir.makedirs()
-
-    def copyTo(self,toDir):
-        """Save plugins.txt and loadorder.txt to a different directory (for backup)"""
-        if self.pathPlugins.exists():
-            self.pathPlugins.copyTo(toDir.join(u'plugins.txt'))
-        if self.pathOrder.exists():
-            self.pathOrder.copyTo(toDir.join(u'loadorder.txt'))
-
-    def copyFrom(self,fromDir):
-        """Move a different plugins.txt and loadorder.txt here for use."""
-        move = fromDir.join(u'plugins.txt')
-        if move.exists():
-            move.copyTo(self.pathPlugins)
-        move = fromDir.join(u'loadorder.txt')
-        if move.exists():
-            move.copyTo(self.pathOrder)
 
     @_cache
     def saveActive(self):
@@ -4828,6 +4812,18 @@ class ModInfos(FileInfos):
             oldInfo.setGhost(True)
         self.voCurrent = newVersion
 
+    def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
+    # does not really belong here, but then where ?
+        """Save current plugins into arcSaves directory, load plugins from
+        newSaves directory and set oblivion version."""
+        arcPath, newPath = (dirs['saveBase'].join(saves) for saves in
+                            (arcSaves, newSaves))
+        load_order.swap(arcPath, newPath)
+        # Swap Oblivion version to memorized version
+        voNew = saveInfos.profiles.setItemDefault(newSaves, 'vOblivion',
+                                                  self.voCurrent)
+        if voNew in self.voAvailable: self.setOblivionVersion(voNew)
+
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
@@ -4922,7 +4918,7 @@ class SaveInfos(FileInfos):
         self.table.save()
         self._initDB(dirs['saveBase'].join(self.localSave))
 
-    def setLocalSave(self,localSave):
+    def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
         self.localSave = localSave
@@ -4931,7 +4927,7 @@ class SaveInfos(FileInfos):
                                 localSave)
         self.iniMTime = oblivionIni.path.mtime
         self._initDB(dirs['saveBase'].join(self.localSave))
-        self.refresh()
+        if refreshSaveInfos: self.refresh()
 
     #--Enabled ----------------------------------------------------------------
     @staticmethod
