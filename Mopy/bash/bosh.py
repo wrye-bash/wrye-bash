@@ -8091,6 +8091,67 @@ class InstallersData(DataDict):
                 else: # installer is the only column used in iniInfos table
                     iniInfos.table.delRow(i.tail)
 
+    def _createTweaks(self, destFiles, installer, tweaksCreated):
+        """Generate INI Tweaks when a CRC mismatch is detected while
+        installing a mod INI (not ini tweak) in the Data/ directory.
+
+        If the current CRC of the ini is different than the one BAIN is
+        installing, a tweak file will be generated. Call me *before*
+        installing the new inis then call _editTweaks() to populate the tweaks.
+        """
+        for relPath in destFiles:
+            if (not relPath.cext in (u'.ini', u'.cfg') or
+                # don't create ini tweaks for overridden ini tweaks...
+                relPath.head.cs == u'ini tweaks'): continue
+            oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
+            newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
+            if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
+            iniAbsDataPath = dirs['mods'].join(relPath)
+            # Create a copy of the old one
+            baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
+                iniAbsDataPath.sbody, iniAbsDataPath.sbody))
+            tweakPath = self.__tweakPath(baseName)
+            iniAbsDataPath.copyTo(tweakPath)
+            tweaksCreated.add((tweakPath, iniAbsDataPath))
+
+    @staticmethod
+    def __tweakPath(baseName):
+        oldIni, num = baseName, 1
+        while oldIni.exists():
+            suffix = u' - Copy' + (u'' if num == 1 else u' (%i)' % num)
+            oldIni = baseName.head.join(baseName.sbody + suffix + baseName.ext)
+            num += 1
+        return oldIni
+
+    @staticmethod
+    def _editTweaks(tweaksCreated):
+        """Edit created ini tweaks with settings that differ and/or don't exist
+        in the new ini."""
+        for (tweakPath, iniAbsDataPath) in tweaksCreated:
+            iniFile = BestIniFile(iniAbsDataPath)
+            currSection = None
+            lines = []
+            for (text, section, setting, value, status, lineNo,
+                 deleted) in iniFile.getTweakFileLines(tweakPath):
+                if status in (10, -10):
+                    # A setting that exists in both INI's, but is different,
+                    # or a setting that doesn't exist in the new INI.
+                    if section == u']set[' or section == u']setGS[':
+                        lines.append(text + u'\n')
+                    elif section != currSection:
+                        section = currSection
+                        if not section: continue
+                        lines.append(u'\n[%s]\n' % section)
+                    elif not section:
+                        continue
+                    else:
+                        lines.append(text + u'\n')
+            # Re-write the tweak
+            with tweakPath.open('w') as ini:
+                ini.write(u'; INI Tweak created by Wrye Bash, using settings '
+                          u'from old file.\n\n')
+                ini.writelines(lines)
+
     def install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
         what:
@@ -8118,54 +8179,14 @@ class InstallersData(DataDict):
             if not override:
                 destFiles &= installer.missingFiles
             if destFiles:
-                for file in destFiles:
-                    if file.cext in (u'.ini',u'.cfg') and not file.head.cs == u'ini tweaks':
-                        oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
-                        newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
-                        if oldCrc is not None and newCrc is not None:
-                            if newCrc != oldCrc:
-                                target = dirs['mods'].join(file)
-                                # Creat a copy of the old one
-                                baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
-                                oldIni = baseName
-                                num = 1
-                                while oldIni.exists():
-                                    if num == 1:
-                                        suffix = u' - Copy'
-                                    else:
-                                        suffix = u' - Copy (%i)' % num
-                                    num += 1
-                                    oldIni = baseName.head.join(baseName.sbody+suffix+baseName.ext)
-                                target.copyTo(oldIni)
-                                tweaksCreated.add((oldIni,target))
-                installer.install(archive,destFiles,self.data_sizeCrcDate,SubProgress(progress,index,index+1))
+                self._createTweaks(destFiles, installer, tweaksCreated)
+                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                                  SubProgress(progress, index, index + 1))
                 InstallersData.updateTable(destFiles, archive.s)
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
-            # Edit the tweaks
-            for (oldIni,target) in tweaksCreated:
-                iniFile = BestIniFile(target)
-                currSection = None
-                lines = []
-                for (text,section,setting,value,status,lineNo,deleted) in iniFile.getTweakFileLines(oldIni):
-                    if status in (10,-10):
-                        # A setting that exists in both INI's, but is different,
-                        # or a setting that doesn't exist in the new INI.
-                        if section == u']set[' or section == u']setGS[':
-                            lines.append(text+u'\n')
-                        elif section != currSection:
-                            section = currSection
-                            if not section: continue
-                            lines.append(u'\n[%s]\n' % section)
-                        elif not section:
-                            continue
-                        else:
-                            lines.append(text+u'\n')
-                # Re-write the tweak
-                with oldIni.open('w') as file:
-                    file.write(u'; INI Tweak created by Wrye Bash, using settings from old file.\n\n')
-                    file.writelines(lines)
+            self._editTweaks(tweaksCreated)
         self.refreshStatus()
         return tweaksCreated
 
