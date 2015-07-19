@@ -1834,8 +1834,8 @@ class CoSaves:
         maSave = CoSaves.reSave.search(savePath.s)
         if maSave: savePath = savePath.root
         first = maSave and maSave.group(1) or u''
-        return tuple(savePath+ext+first
-                     for ext in (u'.pluggy',u'.'+bush.game.se.shortName.lower()))
+        return tuple(savePath + ext + first for ext in
+                     (u'.pluggy', u'.' + bush.game.se.shortName.lower()))
 
     def __init__(self,savePath,saveName=None):
         """Initialize with savePath."""
@@ -1845,7 +1845,14 @@ class CoSaves:
 
     def delete(self, **kwargs): # not a DataDict subclass
         """Delete cofiles."""
-        _delete(filter(lambda p: p.exists, self.paths), **kwargs)
+        paths = filter(lambda pa: pa.exists(), self.paths)
+        #--Backups
+        backBase = kwargs['backupDir']
+        backpaths = filter(lambda b: b.exists(),
+                           (backBase.join(p.tail) for p in paths))
+        backpaths += filter(lambda bf: bf.exists(),
+                            (p + u'f' for p in backpaths))
+        _delete(paths + tuple(backpaths), **kwargs)
 
     def recopy(self,savePath,saveName,pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
@@ -4872,6 +4879,7 @@ class SaveInfos(FileInfos):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self, fileName, **kwargs)
         kwargs['confirm'] = False # ask only on save deletion
+        kwargs['backupDir'] = self.getBashDir().join('Backups')
         CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
