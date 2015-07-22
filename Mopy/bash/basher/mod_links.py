@@ -927,8 +927,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree', resize=True,
-                bOk=_(u'Continue Despite Errors')) as warning:
+                liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
                    if not warning.askOkModal(): return
         with PatchDialog(self.window, fileInfo, self.doCBash,
                          importConfig) as patchDialog: patchDialog.ShowModal()
