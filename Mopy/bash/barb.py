@@ -34,10 +34,9 @@ import bosh
 import bush
 from . import images_list
 from bosh import startupinfo, dirs
-from bolt import BoltError, AbstractError, StateError, GPath, Progress, \
-    deprint
+from bolt import BoltError, AbstractError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, \
-    showWarning, showInfo, Link
+    showWarning, showInfo, Link, BusyCursor
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
@@ -48,7 +47,8 @@ class BackupCancelled(BoltError):
 #------------------------------------------------------------------------------
 class BaseBackupSettings:
     def __init__(self, parent=None, path=None, quit=False):
-        if path is not None and path.ext == u'' and not path.exists(): path = None
+        if path is not None and path.ext == u'' and not path.exists():
+            path = None
         if path is None: path = bosh.settings['bash.backupPath']
         if path is None: path = dirs['modsBash']
         self.quit = quit
@@ -57,21 +57,19 @@ class BaseBackupSettings:
         if path.ext:
             self.dir = path.head
             self.archive = path.tail
-        #end if
         self.parent = parent
         self.verDat = bosh.settings['bash.version']
         self.verApp = bass.AppVersion
         self.files = {}
         self.tmp = None
 
-    def __del__(self):
-        if self.tmp and self.tmp.exists(): self.tmp.rmtree(u'~tmp')
+    def __del__(self): ## FIXME: does not delete immediately - used to lead to
+    # file not found as ~tmp was deleted in mid restore ....
+        if self.tmp and self.tmp.exists(): self.tmp.rmtree(safety=u'WryeBash_')
 
     def maketmp(self):
         # create a ~tmp directory
-        self.tmp = self.dir.join(u'~tmp')
-        if self.tmp.exists(): self.tmp.rmtree(u'~tmp')
-        self.tmp.makedirs()
+        self.tmp = bolt.Path.tempDir()
 
     def Apply(self):
         raise AbstractError
@@ -130,8 +128,6 @@ class BackupSettings(BaseBackupSettings):
                 fpath = path.join(name+ext)
                 if fpath.exists(): self.files[tpath] = fpath
                 if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
-            #end for
-        #end for
 
         #backup all files in Mopy\Data, Data\Bash Patches\ and Data\INI Tweaks
         for path, tmpdir in (
@@ -161,37 +157,42 @@ class BackupSettings(BaseBackupSettings):
 
         #backup save profile settings
         savedir = GPath(u'My Games\\'+game)
-        profiles = [u''] + [x for x in dirs['saveBase'].join(u'Saves').list() if dirs['saveBase'].join(u'Saves',x).isdir() and x != u'bash']
+        profiles = [u''] + bosh.SaveInfos.getLocalSaveDirs()
         for profile in profiles:
-            tpath = savedir.join(u'Saves',profile,u'plugins.txt')
-            fpath = dirs['saveBase'].join(u'Saves',profile,u'plugins.txt')
-            if fpath.exists(): self.files[tpath] = fpath
-            for ext in (u'.dat',u'.pkl'):
-                tpath = savedir.join(u'Saves',profile,u'Bash',u'Table'+ext)
-                fpath = dirs['saveBase'].join(u'Saves',profile,u'Bash',u'Table'+ext)
+            pluginsTxt = (u'Saves', profile, u'plugins.txt')
+            loadorderTxt = (u'Saves', profile, u'loadorder.txt')
+            for txt in (pluginsTxt, loadorderTxt):
+                tpath = savedir.join(*txt)
+                fpath = dirs['saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
-                if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
+            for ext in (u'.dat', u'.pkl'):
+                table = (u'Saves', profile, u'Bash', u'Table' + ext)
+                tpath = savedir.join(*table)
+                fpath = dirs['saveBase'].join(*table)
+                if fpath.exists(): self.files[tpath] = fpath
+                if fpath.backup.exists():
+                    self.files[tpath.backup] = fpath.backup
 
     def Apply(self):
         if not self.PromptFile(): return
-
         deprint(u'')
         deprint(_(u'BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
-
-        # copy all files to ~tmp backup dir
-        for tpath,fpath in self.files.iteritems():
-            deprint(tpath.s + u' <-- ' + fpath.s)
-            fpath.copyTo(self.tmp.join(tpath))
-        #end for
-
-        # dump the version info and file listing
-        with self.tmp.join(u'backup.dat').open('wb') as out:
-            cPickle.dump(self.verDat, out, -1) #data version, if this doesn't match the installed data version, do not allow restore
-            cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the user on restore
-
-        # create the backup archive
-        _compress(self.dir, self.archive, self.tmp) # may raise StateError
-        bosh.settings['bash.backupPath'] = self.dir
+        with BusyCursor():
+            # copy all files to ~tmp backup dir
+            for tpath,fpath in self.files.iteritems():
+                deprint(tpath.s + u' <-- ' + fpath.s)
+                fpath.copyTo(self.tmp.join(tpath))
+            # dump the version info and file listing
+            with self.tmp.join(u'backup.dat').open('wb') as out:
+                # data version, if this doesn't match the installed data
+                # version, do not allow restore
+                cPickle.dump(self.verDat, out, -1)
+                # app version, if this doesn't match the installer app version,
+                # warn the user on restore
+                cPickle.dump(self.verApp, out, -1)
+            # create the backup archive
+            _compress(self.dir, self.archive, self.tmp) # may raise StateError
+            bosh.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
 
     def PromptFile(self):
@@ -262,14 +263,8 @@ class RestoreSettings(BaseBackupSettings):
 
         if not self.PromptFile():
             raise BackupCancelled()
-        #end if
 
-        try:
-            _extract(self.dir.join(self.archive), self.tmp)
-        except StateError:
-            self.WarnFailed()
-            return
-        #end try
+        _extract(self.dir.join(self.archive), self.tmp)
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
             self.verApp = cPickle.load(ins)
@@ -356,7 +351,6 @@ class RestoreSettings(BaseBackupSettings):
             if not path: return False
             self.dir = path.head
             self.archive = path.tail
-        #end if
         self.maketmp()
         return True
 

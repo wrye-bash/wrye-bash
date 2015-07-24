@@ -55,38 +55,37 @@ class Settings_BackupSettings(ItemLink):
 
     @balt.conversation
     def Execute(self,event):
-        def PromptConfirm(msg=None):
-            msg = msg or _(u'Do you want to backup your Bash settings now?')
-            return balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?'))
+        msg = _(u'Do you want to backup your Bash settings now?')
+        if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
         BashFrame.SaveSettings(Link.Frame)
-        #backup = barb.BackupSettings(Link.Frame)
-        try:
-            if not PromptConfirm(): return
-            dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
-            icon = staticBitmap(dialog)
-            sizer = vSizer(
-                (hSizer((icon,0,wx.ALL,6),
-                        (staticText(dialog,_(u'Do you want to backup any images?'),noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
-                        ),1,wx.EXPAND|wx.ALL,6),
-                (hSizer(spacer,
-                        button(dialog, label=_(u'Backup All Images'),
-                        onClick=lambda e: dialog.EndModal(2)),
-                        (button(dialog, label=_(u'Backup Changed Images'),
-                        onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
-                        (button(dialog, label=_(u'None'),
-                        onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
-                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-                )
-            dialog.SetSizer(sizer)
-            with dialog: images = dialog.ShowModal()
-            with balt.BusyCursor():
-                backup = barb.BackupSettings(Link.Frame,backup_images=images)
-                backup.Apply()
+        dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
+        icon = staticBitmap(dialog)
+        sizer = vSizer(
+            (hSizer((icon,0,wx.ALL,6),
+                    (staticText(dialog,_(u'Do you want to backup any images?'),
+                                noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                    ),1,wx.EXPAND|wx.ALL,6),
+            (hSizer(spacer,
+                    button(dialog, label=_(u'Backup All Images'),
+                    onClick=lambda e: dialog.EndModal(2)),
+                    (button(dialog, label=_(u'Backup Changed Images'),
+                    onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
+                    (button(dialog, label=_(u'None'),
+                    onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
+                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+            )
+        dialog.SetSizer(sizer)
+        with dialog: images = dialog.ShowModal()
+        with balt.BusyCursor():
+            backup = barb.BackupSettings(Link.Frame,backup_images=images)
+        try: # no BusyCursor() here, the prompt in Apply will invalidate it
+            backup.Apply()
         except bolt.StateError:
             deprint(u'Backup settings failed', traceback=True)
             backup.WarnFailed()
         except barb.BackupCancelled:
             pass
+        finally: del backup # deletes tmp dir
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
@@ -95,18 +94,23 @@ class Settings_RestoreSettings(ItemLink):
     help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
              u"file.")
 
+    @balt.conversation
     def Execute(self,event):
+        backup = None # barb.RestoreSettings may raise....
         try:
             backup = barb.RestoreSettings(Link.Frame)
             if backup.PromptConfirm():
                 backup.restore_images = balt.askYes(Link.Frame,
-                    _(u'Do you want to restore saved images as well as settings?'),
-                    _(u'Restore Settings'))
-                backup.Apply()
-        except barb.BackupCancelled: #cancelled
+                _(u'Do you want to restore saved images as well as settings?'),
+                _(u'Restore Settings'))
+                with balt.BusyCursor(): backup.Apply()
+        except bolt.StateError:
+            deprint(u'Restore settings failed:', traceback=True)
+            if backup: backup.WarnFailed()
+        except barb.BackupCancelled:
             pass
-        #end try
-        backup = None
+        finally:
+            if backup: del backup # deletes tmp dir
 
 #------------------------------------------------------------------------------
 class Settings_SaveSettings(ItemLink):
