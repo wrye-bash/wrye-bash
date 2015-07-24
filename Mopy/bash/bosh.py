@@ -6665,6 +6665,38 @@ class Installer(object):
         raise AbstractError
 
 #------------------------------------------------------------------------------
+#  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
+reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
+def compressionSettings(archive, blockSize, isSolid):
+    archiveType = writeExts.get(archive.cext)
+    if not archiveType:
+        #--Always fall back to using the defaultExt
+        archive = GPath(archive.sbody + defaultExt).tail
+        archiveType = writeExts.get(archive.cext)
+    if archive.cext in noSolidExts: # zip
+        solid = u''
+    else:
+        if isSolid:
+            if blockSize:
+                solid = u'-ms=on -ms=%dm' % blockSize
+            else:
+                solid = u'-ms=on'
+        else:
+            solid = u'-ms=off'
+    userArgs = inisettings['7zExtraCompressionArguments']
+    if userArgs:
+        if reSolid.search(userArgs):
+            if not solid: # zip, will blow if ms=XXX is passed in
+                old = userArgs
+                userArgs = reSolid.sub(u'', userArgs).strip()
+                if old != userArgs: deprint(
+                    archive.s + u': 7zExtraCompressionArguments ini option '
+                                u'"' + old + u'" -> "' + userArgs + u'"')
+            solid = userArgs
+        else:
+            solid += userArgs
+    return archive, archiveType, solid
+
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
     return [exe7z, u'a', destDir.join(destArchive).temp.s,
@@ -6985,58 +7017,14 @@ class InstallerConverter(object):
         self.pack(tmpDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
         self.isSolid = destInstaller.isSolid
 
-    def pack(self,srcFolder,destArchive,outDir,progress=None):
+    def pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        progress = progress if progress else bolt.Progress()
-        #--Used solely for the progress bar
-        length = sum([len(files) for x,y,files in os.walk(srcFolder.s)])
         #--Determine settings for 7z
-        archiveType = writeExts.get(destArchive.cext)
-        if not archiveType:
-            #--Always fail back to using the defaultExt
-            destArchive = GPath(destArchive.sbody + defaultExt).tail
-            archiveType = writeExts.get(destArchive.cext)
-        outFile = outDir.join(destArchive)
-
-        if self.isSolid:
-            if self.blockSize:
-                solid = u'-ms=on -ms=%dm' % self.blockSize
-            else:
-                solid = u'-ms=on'
-        else:
-            solid = u'-ms=off'
-        if inisettings['7zExtraCompressionArguments']:
-            if u'-ms=on' in inisettings['7zExtraCompressionArguments']:
-                solid = u' %s' % inisettings['7zExtraCompressionArguments']
-            else: solid += u' %s' % inisettings['7zExtraCompressionArguments']
-
-        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -scsUTF-8 -sccUTF-8 "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % srcFolder.s)
-
-        progress(0,destArchive.s+u'\n'+_(u'Compressing files...'))
-        progress.setFull(1+length)
-        #--Pack the files
-        ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-        #--Error checking and progress feedback
-        reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
-        regMatch = reCompressing.match
-        reError = re.compile(u'Error: (.*)',re.U)
-        regErrMatch = reError.match
-        errorLine = []
-        index = 0
-        for line in ins:
-            line = unicode(line, 'utf8')
-            maCompressing = regMatch(line)
-            if len(errorLine) or regErrMatch(line):
-                errorLine.append(line)
-            if maCompressing:
-                progress(index,destArchive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
-                index += 1
-        result = ins.close()
-        if result or errorLine:
-            outFile.temp.remove()
-            raise StateError(destArchive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-        #--Finalize the file, and cleanup
-        outFile.untemp()
+        destArchive, archiveType, solid = compressionSettings(
+            destArchive, self.blockSize, self.isSolid)
+        command = compressCommand(destArchive, outDir, srcFolder, solid,
+                                  archiveType)
+        bolt.compress7z(command, outDir, destArchive, srcFolder, progress)
         Installer.rmTempDir()
 
     def unpack(self,srcInstaller,fileNames,progress=None):
@@ -7455,13 +7443,10 @@ class InstallerProject(Installer):
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
         """Packs project to build directory. Release filters out development
         material from the archive"""
-        progress = progress or bolt.Progress()
         length = len(self.fileSizeCrcs)
         if not length: return
-        archiveType = writeExts.get(archive.cext)
-        if not archiveType:
-            archive = GPath(archive.sbody + defaultExt).tail
-            archiveType = writeExts.get(archive.cext)
+        archive, archiveType, solid = compressionSettings(archive, blockSize,
+                                                          isSolid)
         outDir = dirs['installers']
         realOutFile = outDir.join(archive)
         outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
@@ -7471,20 +7456,6 @@ class InstallerProject(Installer):
             num += 1
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
-            if archive.cext in noSolidExts:
-                solid = u''
-            else:
-                if isSolid:
-                    if blockSize:
-                        solid = u'-ms=on -ms=%dm' % blockSize
-                    else:
-                        solid = u'-ms=on'
-                else:
-                    solid = u'-ms=off'
-            if inisettings['7zExtraCompressionArguments']:
-                if u'-ms=' in inisettings['7zExtraCompressionArguments']:
-                    solid = u' '+inisettings['7zExtraCompressionArguments']
-                else: solid += u' '+inisettings['7zExtraCompressionArguments']
             #--Dump file list
             with self.tempList.open('w',encoding='utf-8-sig') as out:
                 if release:
@@ -7493,28 +7464,11 @@ class InstallerProject(Installer):
                     out.write(u'--*\\')
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
-            progress(0,archive.s+u'\n'+_(u'Compressing files...'))
-            progress.setFull(1+length)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
-            regMatch = reCompressing.match
-            reError = re.compile(u'Error: (.*)',re.U)
-            regErrMatch = reError.match
-            errorLine = []
-            index = 0
-            for line in ins:
-                maCompressing = regMatch(line)
-                if len(errorLine) or regErrMatch(line):
-                    errorLine.append(unicode(line,'utf8'))
-                if maCompressing:
-                    progress(index,archive.s+u'\n'+_(u'Compressing files...')+u'\n%s' % unicode(maCompressing.group(1).strip(),'utf8'))
-                    index += 1
-            result = ins.close()
-            self.tempList.remove()
-            if result:
-                outFile.temp.remove()
-                raise StateError(archive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-            outFile.untemp()
+            try:
+                bolt.compress7z(command, outDir, outFile.tail, projectDir,
+                                progress)
+            finally:
+                self.tempList.remove()
             outFile.moveTo(realOutFile)
 
     @staticmethod
