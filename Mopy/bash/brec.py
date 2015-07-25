@@ -1696,14 +1696,15 @@ class MreGmstBase(MelRecord):
            eid."""
         cls = self.__class__
         if not cls.Ids:
+            fname = cls.Master + u'_ids.pkl'
             try:
-                fname = cls.Master+u'_ids.pkl'
                 import bosh # Late import to avoid circular imports
                 cls.Ids = cPickle.load(bosh.dirs['db'].join(fname).open())[cls.classType]
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True
                 bolt.deprint(u'Error loading %s:' % fname, traceback=True)
+                bolt.deprintOn = old
                 raise
         return GPath(cls.Master+u'.esm'),cls.Ids[self.eid]
 
