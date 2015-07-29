@@ -1039,12 +1039,14 @@ class ModList(_ModsSortMixin, balt.UIList):
                 ## game to load these files.s
                 #if fileName in self.data.bad_names: return
                 try:
-                    self.data.select(fileName, doSave=True)
-                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
-                    if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        balt.showList(self,u'${count} '+_(u'Masters activated:'),changed,10,fileName.s)
+                    activated = self.data.select(fileName, doSave=True)
+                    if len(activated) > ((fileName in activated) + (
+                        GPath(u'Oblivion.esm') in activated)):
+                        activated.remove(fileName)
+                        activated = [x.s for x in activated]
+                        balt.showList(self,
+                                      u'${count} ' + _(u'Masters activated:'),
+                                      activated, 10, fileName.s)
                 except bolt.BoltError as e:
                     if refreshNeeded:
                         bosh.modInfos.refreshInfoLists()

@@ -4524,9 +4524,11 @@ class ModInfos(FileInfos):
         finally:
             self.refreshInfoLists()
 
-    def select(self,fileName,doSave=True,modSet=None,children=None):
+    def select(self, fileName, doSave=True, modSet=None, children=None,
+               _activated=None):
         """Adds file to selected."""
         plugins = self.plugins
+        if _activated is None: _activated = set()
         try:
             if len(plugins.selected) == 255:
                 raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
@@ -4541,12 +4543,14 @@ class ModInfos(FileInfos):
             ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
-                    self.select(master,False,modSet,children)
+                    self.select(master, False, modSet, children, _activated)
             # Unghost
             self[fileName].setGhost(False)
             #--Select in plugins
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
+                _activated.add(fileName)
+            return self.getOrdered(_activated or [])
         finally:
             if doSave: plugins.saveActive()
 
