@@ -4328,17 +4328,6 @@ class ModInfos(FileInfos):
                 mod.reloadBashTags()
 
     #--Mod selection ----------------------------------------------------------
-    def circularMasters(self,stack,masters=None):
-        stackTop = stack[-1]
-        masters = masters or (stackTop in self.data and self.data[stackTop].masterNames)
-        if not masters: return False
-        for master in masters:
-            if master in stack:
-                return True
-            if self.circularMasters(stack+[master]):
-                return True
-        return False
-
     def getOrdered(self, modNames):
         """Return a list containing modNames' elements sorted into load order.
 
