@@ -400,7 +400,8 @@ def main():
     else:
         app = basher.BashApp()
 
-    if not _rightWxVersion() or not _rightPythonVersion(): return
+    if not hasattr(sys, 'frozen') and (
+        not _rightWxVersion() or not _rightPythonVersion()): return
 
     # process backup/restore options
     # quit if either is true, but only after calling both
@@ -663,30 +664,15 @@ def _rightWxVersion():
     return run
 
 def _rightPythonVersion():
-    run = True
-    sysVersion = (
-        sys.version_info[0], sys.version_info[1], sys.version_info[2])
-    if sysVersion < (
-    2, 6):  # nasty, may cause failure in oneInstanceChecker but
-        # better than bash failing to open things for no (user)
-        # apparent reason such as in 2.5.2 and under.
-        bolt.close_fds = False
-        if sysVersion[:2] == (2, 5):
-            run = balt.askYes(None, _(
-                u"Warning: You are using a python version prior to 2.6 and "
-                u"there may be some instances that failures will occur.  "
-                u"Updating to Python 2.7x is recommended but not imperative. "
-                u" Do you still want to run Wrye Bash right now?"),
-                              _(u"Warning OLD Python version detected"))
-        else:
-            run = balt.askYes(None, _(
-                u"Warning: You are using a Python version prior to 2.5x "
-                u"which is totally out of date and ancient and Bash will "
-                u"likely not like it and may totally refuse to work.  Please "
-                u"update to a more recent version of Python(2.7x is "
-                u"preferred).  Do you still want to run Wrye Bash?"),
-                              _(u"Warning OLD Python version detected"))
-    return run
+    sysVersion = sys.version_info[:3]
+    if sysVersion < (2, 7) or sysVersion >= (3,):
+        balt.showError(None, _(u"Only Python 2.7 and newer is supported "
+            u"(%s.%s.%s detected). If you know what you're doing install the "
+            u"WB python version and edit this warning out. "
+            u"Wrye Bash will exit.") % sysVersion,
+            title=_(u"Incompatible Python version detected"))
+        return False
+    return True
 
 if __name__ == '__main__':
     main()
