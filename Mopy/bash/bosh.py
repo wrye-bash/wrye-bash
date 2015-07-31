@@ -4372,28 +4372,25 @@ class ModInfos(FileInfos):
         #--Deselect/select plugins
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
+        listToSelect = self.getOrdered(toSelect)
+        extra = listToSelect[255:]
         #--Save
-        self.plugins.selected = list(toSelect)
+        self.plugins.selected = listToSelect[:255]
         # we should unghost ourselves so that ctime is properly set
         for s in toSelect: self[s].setGhost(False)
         self.plugins.saveActive()
         self.refreshInfoLists()
         self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
-        extra = set() ##: was never set - actually saveActive will just raise
-        if missingSet or extra:
-            message = u''
-            if missingSet:
-                message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-                message += u'\n* '.join(x.s for x in missingSet)
-            if extra:
-                if missingSet: message += u'\n'
-                message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-                extra = toSelect - set(self.plugins.selected)
-                message += u'\n* '.join(x.s for x in extra)
-            return message
-        else:
-            return None
+        message = u''
+        if missingSet:
+            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+            message += u'\n* '.join(x.s for x in missingSet)
+        if extra:
+            if missingSet: message += u'\n'
+            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+            message += u'\n* '.join(x.s for x in extra)
+        return message
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
