@@ -488,7 +488,6 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
-    mtimeResets = [] #--Used by getmtime
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
 
     @staticmethod
@@ -735,14 +734,6 @@ class Path(object):
                 if werr.winerror != 123: raise
                 deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
                 mtime = 1146007898.0 #0blivion.exe's time... random basically.
-        #--Y2038 bug? (os.path.getmtime() can't handle years over unix epoch)
-        if mtime <= 0:
-            import random
-            #--Kludge mtime to a random time within 10 days of 1/1/2037
-            mtime = time.mktime((2037,1,1,0,0,0,3,1,0))
-            mtime += random.randint(0,10*24*60*60) #--10 days in seconds
-            self.mtime = mtime
-            Path.mtimeResets.append(self)
         return mtime
     def setmtime(self,mtime):
         try:

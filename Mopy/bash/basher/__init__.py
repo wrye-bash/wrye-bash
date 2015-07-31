@@ -4052,7 +4052,6 @@ class BashFrame(wx.Frame):
         self._loadOrderWarnings()
         self._corruptedWarns()
         self._corruptedGameIni()
-        self._y2038Resets()
         self._obmmWarn()
         self._missingDocsDir()
         #--Merge info
@@ -4142,19 +4141,6 @@ class BashFrame(wx.Frame):
                         u'(e.g. "[General]"), but does not. You should edit '
                         u'the file to correct this.') % bush.game.iniFiles[0]
                 balt.showWarning(self, fill(msg))
-
-    def _y2038Resets(self): # CRUFT python 2.5
-        #--Any Y2038 Resets?
-        if bolt.Path.mtimeResets:
-            message = [u'', _(
-                u"Bash cannot handle dates greater than January 19, "
-                u"2038. Accordingly, the dates for the following files have "
-                u"been reset to an earlier date: ")]
-            message.extend(sorted(bolt.Path.mtimeResets))
-            ListBoxes.Display(self, _(u'Warning: Dates Reset'), _(
-                u'Modified dates have been reset to an earlier date for these '
-                u'files'), [message], liststyle='list', canCancel=False)
-            del bolt.Path.mtimeResets[:]
 
     def _obmmWarn(self):
         #--OBMM Warning?
