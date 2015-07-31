@@ -31,7 +31,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
-from ..bolt import GPath, deprint, BoltError
+from ..bolt import GPath, BoltError
 from ..patcher.patch_files import PatchFile
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
@@ -128,40 +128,13 @@ class Mods_LoadList(ChoiceLink):
 
     def DoAll(self,event):
         """Select all mods."""
-        modInfos = bosh.modInfos
-        toActivate = set(modInfos.activeCached)
         try:
-            def _select(m):
-                if not m in toActivate:
-                    modInfos.select(m, doSave=False)
-                    toActivate.add(m)
-            mods = map(GPath, self.window.GetItems())
-            # first select the bashed patch(es) and their masters
-            for mod in mods: ##: usually results in exclusion group violation
-                if self.window.isBP(mod): _select(mod)
-            # then activate mods that are not tagged NoMerge or Deactivate or Filter
-            def _deactive(modName):
-                tags = modInfos[modName].getBashTags()
-                return u'Deactivate' in tags or u'Filter' in tags
-            mods = filter(lambda m: not _deactive(m), mods)
-            mergeable = set(modInfos.mergeable)
-            for mod in mods:
-                if not mod in mergeable: _select(mod)
-            # then activate as many of the remaining mods as we can
-            for mod in mods:
-                if mod in mergeable: _select(mod)
-            modInfos.plugins.saveActive(active=toActivate)
+            bosh.modInfos.selectAll()
         except bosh.PluginsFullError:
-            deprint(u'Select All: 255 mods activated', traceback=True)
-            modInfos.plugins.saveActive(active=toActivate)
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
         except BoltError as e:
-            toActivate.clear()
-            deprint(u'Select All: saveActive failed', traceback=True)
-            self._showError(u'%s' % e)
-        if not toActivate: return
-        modInfos.refreshInfoLists() # no modtimes changes, just active
+            self._showError(u'%s' % e, _(u'Select All'))
         self._refresh()
 
     def DoSave(self,event):

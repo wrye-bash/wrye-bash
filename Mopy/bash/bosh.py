@@ -4512,7 +4512,7 @@ class ModInfos(FileInfos):
         else: msg = voice % name # hasVoices
         return balt.askWarning(parent, msg, title + name)
 
-    #--Mod Specific ----------------------------------------------------------
+    #--Mod Specific -----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""
         return reModExt.search(fileName.s)
@@ -4524,6 +4524,7 @@ class ModInfos(FileInfos):
         finally:
             self.refreshInfoLists()
 
+    #--Active mods management -------------------------------------------------
     def select(self, fileName, doSave=True, modSet=None, children=None,
                _activated=None):
         """Adds file to selected."""
@@ -4581,6 +4582,45 @@ class ModInfos(FileInfos):
         self.plugins.selected = self.getOrdered(sel)
         #--Save
         if doSave: self.plugins.saveActive()
+
+    def selectAll(self):
+        toActivate = set(self.activeCached)
+        try:
+            def _select(m):
+                if not m in toActivate:
+                    self.select(m, doSave=False)
+                    toActivate.add(m)
+            mods = self.keys()
+            # first select the bashed patch(es) and their masters
+            for mod in mods: ##: usually results in exclusion group violation
+                if self.isBP(mod): _select(mod)
+            # then activate mods not tagged NoMerge or Deactivate or Filter
+            def _activatable(modName):
+                tags = modInfos[modName].getBashTags()
+                return not (u'Deactivate' in tags or u'Filter' in tags)
+            mods = filter(_activatable, mods)
+            mergeable = set(self.mergeable)
+            for mod in mods:
+                if not mod in mergeable: _select(mod)
+            # then activate as many of the remaining mods as we can
+            for mod in mods:
+                if mod in mergeable: _select(mod)
+            self.plugins.saveActive(active=toActivate)
+        except PluginsFullError:
+            deprint(u'select All: 255 mods activated', traceback=True)
+            self.plugins.saveActive(active=toActivate)
+            raise
+        except BoltError:
+            toActivate.clear()
+            deprint(u'select All: saveActive failed', traceback=True)
+            raise
+        finally:
+            if toActivate:
+                self.refreshInfoLists() # no modtimes changes, just active
+
+    #-- Helpers ---------------------------------------------------------------
+    def isBP(self, modName): return self[modName].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS')
 
     @staticmethod
     def isBadFileName(modName):

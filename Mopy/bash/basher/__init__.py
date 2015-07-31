@@ -1058,10 +1058,6 @@ class ModList(_ModsSortMixin, balt.UIList):
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
-    @staticmethod
-    def isBP(modName): return bosh.modInfos[modName].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
-
 #------------------------------------------------------------------------------
 class _SashDetailsPanel(SashPanel):
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
