@@ -1015,6 +1015,7 @@ class ModList(_ModsSortMixin, balt.UIList):
     def _checkUncheckMod(self, *mods):
         removed = []
         notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
+        refreshNeeded = False
         for item in mods:
             if item in removed or item in notDeactivatable: continue
             oldFiles = bosh.modInfos.activeCached
@@ -1044,10 +1045,13 @@ class ModList(_ModsSortMixin, balt.UIList):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]
                         balt.showList(self,u'${count} '+_(u'Masters activated:'),changed,10,fileName.s)
-                except bosh.PluginsFullError:
-                    balt.showError(self,_(u'Unable to add mod %s because load list is full.')
-                        % fileName.s)
+                except bolt.BoltError as e:
+                    if refreshNeeded:
+                        bosh.modInfos.refreshInfoLists()
+                        self.RefreshUI(refreshSaves=True)
+                    balt.showError(self, u'%s' % e)
                     return
+            refreshNeeded = True
         #--Refresh
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)

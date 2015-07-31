@@ -31,7 +31,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
-from ..bolt import GPath
+from ..bolt import GPath, deprint, BoltError
 from ..patcher.patch_files import PatchFile
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
@@ -129,10 +129,12 @@ class Mods_LoadList(ChoiceLink):
     def DoAll(self,event):
         """Select all mods."""
         modInfos = bosh.modInfos
+        toActivate = set(modInfos.activeCached)
         try:
             def _select(m):
-                if not modInfos.isActiveCached(m):
+                if not m in toActivate:
                     modInfos.select(m, doSave=False)
+                    toActivate.add(m)
             mods = map(GPath, self.window.GetItems())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
@@ -148,11 +150,18 @@ class Mods_LoadList(ChoiceLink):
             # then activate as many of the remaining mods as we can
             for mod in mods:
                 if mod in mergeable: _select(mod)
-            modInfos.plugins.saveActive()
-            modInfos.refreshInfoLists() # no modtimes changes, just active
+            modInfos.plugins.saveActive(active=toActivate)
         except bosh.PluginsFullError:
+            deprint(u'Select All: 255 mods activated', traceback=True)
+            modInfos.plugins.saveActive(active=toActivate)
             self._showError(_(u"Mod list is full, so some mods were skipped"),
                             _(u'Select All'))
+        except BoltError as e:
+            toActivate.clear()
+            deprint(u'Select All: saveActive failed', traceback=True)
+            self._showError(u'%s' % e)
+        if not toActivate: return
+        modInfos.refreshInfoLists() # no modtimes changes, just active
         self._refresh()
 
     def DoSave(self,event):

@@ -891,7 +891,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
-                            bosh.modInfos.unselect(mod,False)
+                            bosh.modInfos.unselect(mod, doSave=False)
                         bosh.modInfos.plugins.saveActive()
                         # just active mods (no modtimes changes), still needed:
                         bosh.modInfos.refreshInfoLists()

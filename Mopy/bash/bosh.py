@@ -2969,13 +2969,14 @@ class Plugins:
         self.dir.makedirs()
 
     @_cache
-    def saveActive(self):
+    def saveActive(self, active=None):
         """Write data to Plugins.txt file.
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
         self.lord = load_order.SetActivePlugins(
-            self.lord.lorder(self.selected), self.lord.loadOrder)
+            self.lord.lorder(active if active else self.selected),
+            self.lord.loadOrder)
 
     @_cache
     def saveLoadOrder(self, _selected=None):
@@ -4527,11 +4528,11 @@ class ModInfos(FileInfos):
         """Adds file to selected."""
         plugins = self.plugins
         try:
+            if len(plugins.selected) == 255:
+                raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
                 raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
-            # Unghost
-            self[fileName].setGhost(False)
             #--Select masters
             if modSet is None: modSet = set(self.keys())
             #--Check for bad masternames:
@@ -4541,6 +4542,8 @@ class ModInfos(FileInfos):
             for master in self[fileName].header.masters:
                 if master in modSet:
                     self.select(master,False,modSet,children)
+            # Unghost
+            self[fileName].setGhost(False)
             #--Select in plugins
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
@@ -4548,7 +4551,8 @@ class ModInfos(FileInfos):
             if doSave: plugins.saveActive()
 
     def unselect(self,fileName,doSave=True):
-        """Removes file from selected."""
+        """Remove mods and their children from selected, can only raise if
+        doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         fileNames = set(fileName)
         sel = set(self.plugins.selected)
