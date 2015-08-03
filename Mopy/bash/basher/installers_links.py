@@ -218,7 +218,6 @@ class Installers_AnnealAll(Installers_Link):
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
                 self.idata.anneal(progress=progress)
         finally:
-            self.idata.irefresh(what='NS')
             self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installers_UninstallAllPackages(Installers_Link):
@@ -233,7 +232,6 @@ class Installers_UninstallAllPackages(Installers_Link):
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(unArchives='ALL',progress=progress)
         finally:
-            self.idata.irefresh(what='NS')
             self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installers_Refresh(AppendableLink, Installers_Link):

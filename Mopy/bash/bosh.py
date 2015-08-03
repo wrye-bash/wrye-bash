@@ -8158,7 +8158,7 @@ class InstallersData(DataDict):
                 ini.writelines(lines)
         tweaksCreated -= removed
 
-    def install(self,archives,progress=None,last=False,override=True):
+    def _install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
         what:
             'MISSING': only missing files.
@@ -8193,8 +8193,11 @@ class InstallersData(DataDict):
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
-        self.refreshStatus()
         return tweaksCreated
+
+    def install(self,archives,progress=None,last=False,override=True):
+        try: return self._install(archives, progress, last, override)
+        finally: self.irefresh(what='NS')
 
     @staticmethod
     def _determineEmptyDirs(emptyDirs, removedFiles):
@@ -8313,16 +8316,17 @@ class InstallersData(DataDict):
             #  And/or may block later uninstalls.
             elif installer.isActive:
                 masked |= self._filter(archive, installer, removes, restores)
-        #--Remove files, update InstallersData, update load order
-        self._removeFiles(removes, progress)
-        #--De-activate
-        for archive in unArchives:
-            data[archive].isActive = False
-        #--Restore files
-        if settings['bash.installers.autoAnneal']:
-            self._restoreFiles(restores, progress)
-        #--Done
-        self.refreshStatus()
+        try:
+            #--Remove files, update InstallersData, update load order
+            self._removeFiles(removes, progress)
+            #--De-activate
+            for archive in unArchives:
+                data[archive].isActive = False
+            #--Restore files
+            if settings['bash.installers.autoAnneal']:
+                self._restoreFiles(restores, progress)
+        finally:
+            self.irefresh(what='NS')
 
     def _restoreFiles(self, restores, progress):
         getArchiveOrder = lambda x: self[x].order
@@ -8365,12 +8369,15 @@ class InstallersData(DataDict):
             #  And/or may block later uninstalls.
             if installer.isActive:
                 self._filter(archive, installer, removes, restores)
-        #--Remove files, update InstallersData, update load order
-        self._removeFiles(removes, progress)
-        #--Restore files
-        self._restoreFiles(restores, progress)
+        try:
+            #--Remove files, update InstallersData, update load order
+            self._removeFiles(removes, progress)
+            #--Restore files
+            self._restoreFiles(restores, progress)
+        finally:
+            self.irefresh(what='NS')
 
-    def clean(self,progress):
+    def clean(self, progress):  ##: add error handling/refresh remove ghosts
         data = self.data
         getArchiveOrder = lambda x: data[x].order
         installed = []
