@@ -8127,6 +8127,7 @@ class InstallersData(DataDict):
     def _editTweaks(tweaksCreated):
         """Edit created ini tweaks with settings that differ and/or don't exist
         in the new ini."""
+        removed = set()
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
@@ -8146,11 +8147,16 @@ class InstallersData(DataDict):
                         continue
                     else:
                         lines.append(text + u'\n')
+            if not lines: # avoid creating empty tweaks
+                removed.add((tweakPath, iniAbsDataPath))
+                tweakPath.remove()
+                continue
             # Re-write the tweak
             with tweakPath.open('w') as ini:
                 ini.write(u'; INI Tweak created by Wrye Bash, using settings '
                           u'from old file.\n\n')
                 ini.writelines(lines)
+        tweaksCreated -= removed
 
     def install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
