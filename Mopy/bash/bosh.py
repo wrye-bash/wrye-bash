@@ -8206,40 +8206,45 @@ class InstallersData(DataDict):
         removedPlugins = set()
         removedPluginsAdd = removedPlugins.add
         #--Construct list of files to delete
-        for file_ in removes:
-            path = modsDirJoin(file_)
+        for relPath in removes:
+            path = modsDirJoin(relPath)
             if path.exists():
                 removedFilesAdd(path)
-            ghostPath = path + u'.ghost'
-            if ghostPath.exists():
-                removedFilesAdd(ghostPath)
-            if reModExtSearch(file_.s):
-                removedPluginsAdd(file_)
-                removedPluginsAdd(file_ + u'.ghost')
+            if reModExtSearch(relPath.s):
+                removedPluginsAdd(relPath)
             emptyDirsAdd(path.head)
         #--Now determine which directories will be empty, replacing subsets of
         # removedFiles by their parent dir if the latter will be emptied
         removedFiles = self._determineEmptyDirs(emptyDirs, removedFiles)
-        #--Do the deletion
         nonPlugins = removedFiles - set(map(modsDirJoin, removedPlugins))
-        if nonPlugins:
-            parent = progress.getParent() if progress else None
-            balt.shellDelete(nonPlugins, parent=parent)
-        #--Delete mods and remove them from load order
-        if removedPlugins:
-            modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
-            ##: HACK - because I short circuit ModInfos.refresh() via
-            # delete_Refresh() modList.RefreshUI won't be called leaving stale
-            # entries in modList._gList._item_itemId - note that deleting via
-            # the UIList calls modList.RefreshUI() which cleans _gList dicts
-            balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
-            # This is _less_ hacky than _not_ calling modInfos.delete(). Real
-            # solution: refresh keeps track of deleted, added, modified - (ut)
-        #--Update InstallersData
-        InstallersData.updateTable(removes, u'') #will delete ini tweak entries
-        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-        for file_ in removes:
-            data_sizeCrcDatePop(file_, None)
+        ex = None # if an exception is raised we must again check removes
+        try: #--Do the deletion
+            if nonPlugins:
+                parent = progress.getParent() if progress else None
+                balt.shellDelete(nonPlugins, parent=parent)
+            #--Delete mods and remove them from load order
+            if removedPlugins:
+                modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
+                ##: HACK - because I short circuit ModInfos.refresh() via
+                # delete_Refresh(), modList.RefreshUI won't be called leaving
+                # stale entries in modList._gList._item_itemIdd - note that
+                # deleting via the UIList calls modList.RefreshUI() which
+                # cleans _gList internal dictionaries
+                balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
+                # This is _less_ hacky than _not_ calling modInfos.delete().
+                # Real solution: refresh should keep track of deleted, added,
+                # modified - (ut)
+        except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
+        except:
+            ex = sys.exc_info()
+            raise
+        finally:
+            if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
+            InstallersData.updateTable(removes, u'')
+            #--Update InstallersData
+            data_sizeCrcDatePop = self.data_sizeCrcDate.pop
+            for relPath in removes:
+                data_sizeCrcDatePop(relPath, None)
 
     def _filter(self, archive, installer, removes, restores):
         files = set(installer.data_sizeCrc)
