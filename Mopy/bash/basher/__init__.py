@@ -576,13 +576,6 @@ class INIList(balt.UIList):
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
-    def _postDeleteRefresh(self, deleted):
-        deleted = filter(lambda path: not path.exists(),
-                         map(self.data.dir.join, deleted))
-        if not deleted: return
-        for d in deleted: bosh.InstallersData.track(d, factory=bosh.INIInfo)
-        super(INIList, self)._postDeleteRefresh(deleted)
-
     def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
@@ -923,14 +916,6 @@ class ModList(_ModsSortMixin, balt.UIList):
             kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
-
-    def _postDeleteRefresh(self, deleted):
-        deleted = filter(lambda path: not path.exists(),
-                         map(self.data.dir.join, deleted))
-        if not deleted: return
-        for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-        super(ModList, self)._postDeleteRefresh(deleted)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):

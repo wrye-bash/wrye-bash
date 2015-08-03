@@ -1240,6 +1240,8 @@ class DataDict:
 
     def delete(self, itemOrItems, **kwargs):
         raise NotImplementedError('Only use in UIList data stores.')
+    def delete_Refresh(self, deleted):
+        raise NotImplementedError('Only use in UIList data stores.')
 
 #------------------------------------------------------------------------------
 from collections import MutableSet

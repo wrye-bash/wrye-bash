@@ -3955,12 +3955,21 @@ class FileInfos(DataDict):
             _delete(toDelete, **kwargs)
         finally:
             #--Table
-            for filePath in tableUpdate:
-                if not filePath.exists():
-                    self.table.delRow(tableUpdate[filePath])
+            for filePath, modname in tableUpdate.iteritems():
+                if not filePath.exists(): self.table.delRow(modname)
+                else: del tableUpdate[filePath] # item was not deleted
             #--Refresh
             if doRefresh:
-                self.refresh()
+                self.delete_Refresh(tableUpdate.values())
+
+    def _updateBain(self, deleted):
+        """Track deleted inis and mods so BAIN can update its UI.
+        :param deleted: make sure those are deleted before calling this method
+        """
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.track(d, factory=self.factory)
+
+    def delete_Refresh(self, deleted): self.refresh()
 
     #--Move
     def move(self,fileName,destDir,doRefresh=True):
@@ -4014,6 +4023,11 @@ class INIInfos(FileInfos):
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
         return dir_
+
+    def delete_Refresh(self, deleted):
+        FileInfos.delete_Refresh(self, deleted)
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        self._updateBain(deleted)
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
@@ -4756,6 +4770,17 @@ class ModInfos(FileInfos):
                 u"Cannot delete the game's master file(s).")
         self.unselect(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
+
+    def delete_Refresh(self, deleted):
+        # adapted from refresh() (avoid refreshing from the data directory)
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        if not deleted: return
+        for name in deleted:
+            self.pop(name, None)
+            if self.mtimes.has_key(name): del self.mtimes[name]
+        self.plugins.removeMods(deleted, savePlugins=True)
+        self.refreshInfoLists()
+        self._updateBain(deleted)
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
@@ -5515,6 +5540,8 @@ class Messages(DataDict):
         del self.data[key]
         self.hasChanged = True
 
+    def delete_Refresh(self, deleted): pass
+
     def search(self,term):
         """Search entries for term."""
         term = term.strip()
@@ -5708,6 +5735,8 @@ class PeopleData(PickleTankData, DataDict):
         del self.data[key]
         self.hasChanged = True
 
+    def delete_Refresh(self, deleted): pass
+
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
@@ -5772,6 +5801,8 @@ class ScreensData(DataDict):
         _delete(filePath, **kwargs)
         for item in filePath:
             if not item.exists(): del self.data[item.tail]
+
+    def delete_Refresh(self, deleted): self.refresh()
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -7681,7 +7712,10 @@ class InstallersData(DataDict):
                 if not item.exists():
                     del self.data[item.tail]
                     refresh = True
-            if refresh: self.irefresh(what='ION') # will "set changed" too
+            if refresh: self.delete_Refresh(toDelete) # will "set changed" too
+
+    def delete_Refresh(self, deleted): self.irefresh(what='ION') # unused as
+    # Installers follow the _shellUI path and refresh in InstallersData.delete
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
