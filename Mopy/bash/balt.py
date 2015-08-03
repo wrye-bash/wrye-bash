@@ -2286,12 +2286,12 @@ class UIList(wx.Panel):
                     dialogTitle=_(u'Delete Items'), order=True):
         recycle = (self.__class__._recycle and
         # menu items fire 'CommandEvent' - I need a workaround to detect Shift
-            True if event is None else not event.ShiftDown())
+            (True if event is None else not event.ShiftDown()))
         items = self._toDelete(items)
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
-        for i in items:
+        for i in items: ##: simplify and make sure delete_Refresh() runs !
             try:
                 if not self.__class__._shellUI: # non shellUI path used to
                     # delete as many as possible, I kept this behavior
@@ -2302,8 +2302,8 @@ class UIList(wx.Panel):
             except (AccessDeniedError, CancelError, SkipError): pass
             finally:
                 if self.__class__._shellUI: break # could delete fail mid-way ?
-        else: self.data.refresh()
-        self._postDeleteRefresh(items)
+        else: self.data.delete_Refresh(items)
+        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):
         return items if items is not None else self.GetSelected()
@@ -2313,13 +2313,11 @@ class UIList(wx.Panel):
         message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
         if order: items.sort()
         message.extend(items)
-        msg = _(u'Delete these items?  This operation cannot be undone.') \
-            if not recycle else _(u'Delete these items to the recycling bin ?')
+        msg = _(u'Delete these items to the recycling bin ?') if recycle else \
+            _(u'Delete these items?  This operation cannot be undone.')
         with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
-
-    def _postDeleteRefresh(self, deleted): self.RefreshUI(refreshSaves=True)
 
     #--Helpers ----------------------------------------------------------------
     @staticmethod
@@ -2735,8 +2733,7 @@ class ListBoxes(Dialog):
     """A window with 1 or more lists."""
 
     def __init__(self, parent, title, message, lists, liststyle='check',
-                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True,
-                 resize=False):
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
         """lists is in this format:
         if liststyle == 'check' or 'list'
         [title,tooltip,item1,item2,itemn],
@@ -2745,9 +2742,8 @@ class ListBoxes(Dialog):
         [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
         [title,tooltip,....],
         """
-        ##: resize = True - drop resize parameter
         super(ListBoxes, self).__init__(parent, title=title, style=style,
-                                        resize=resize)
+                                        resize=True)
         self.itemMenu = Links()
         self.itemMenu.append(_CheckList_SelectAll())
         self.itemMenu.append(_CheckList_SelectAll(False))

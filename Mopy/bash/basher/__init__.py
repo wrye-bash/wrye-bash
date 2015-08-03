@@ -576,13 +576,6 @@ class INIList(balt.UIList):
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
-    def _postDeleteRefresh(self, deleted):
-        deleted = filter(lambda path: not path.exists(),
-                         map(self.data.dir.join, deleted))
-        if not deleted: return
-        for d in deleted: bosh.InstallersData.track(d, factory=bosh.INIInfo)
-        super(INIList, self)._postDeleteRefresh(deleted)
-
     def getLabels(self, fileName):
         labels, table = {}, self.data.table
         labels['File'] = fileName.s
@@ -924,14 +917,6 @@ class ModList(_ModsSortMixin, balt.UIList):
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
 
-    def _postDeleteRefresh(self, deleted):
-        deleted = filter(lambda path: not path.exists(),
-                         map(self.data.dir.join, deleted))
-        if not deleted: return
-        for d in deleted: bosh.InstallersData.track(d, factory=bosh.ModInfo)
-        bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-        super(ModList, self)._postDeleteRefresh(deleted)
-
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Handle doubleclicking a mod in the Mods List."""
@@ -1015,6 +1000,7 @@ class ModList(_ModsSortMixin, balt.UIList):
     def _checkUncheckMod(self, *mods):
         removed = []
         notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
+        refreshNeeded = False
         for item in mods:
             if item in removed or item in notDeactivatable: continue
             oldFiles = bosh.modInfos.activeCached
@@ -1038,23 +1024,24 @@ class ModList(_ModsSortMixin, balt.UIList):
                 ## game to load these files.s
                 #if fileName in self.data.bad_names: return
                 try:
-                    self.data.select(fileName, doSave=True)
-                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
-                    if len(changed) > ((fileName in changed) + (GPath(u'Oblivion.esm') in changed)):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        balt.showList(self,u'${count} '+_(u'Masters activated:'),changed,10,fileName.s)
-                except bosh.PluginsFullError:
-                    balt.showError(self,_(u'Unable to add mod %s because load list is full.')
-                        % fileName.s)
+                    activated = self.data.select(fileName, doSave=True)
+                    if len(activated) > ((fileName in activated) + (
+                        GPath(u'Oblivion.esm') in activated)):
+                        activated.remove(fileName)
+                        activated = [x.s for x in activated]
+                        balt.showList(self,
+                                      u'${count} ' + _(u'Masters activated:'),
+                                      activated, 10, fileName.s)
+                except bolt.BoltError as e:
+                    if refreshNeeded:
+                        bosh.modInfos.refreshInfoLists()
+                        self.RefreshUI(refreshSaves=True)
+                    balt.showError(self, u'%s' % e)
                     return
+            refreshNeeded = True
         #--Refresh
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
-
-    @staticmethod
-    def isBP(modName): return bosh.modInfos[modName].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
 
 #------------------------------------------------------------------------------
 class _SashDetailsPanel(SashPanel):
@@ -4065,7 +4052,6 @@ class BashFrame(wx.Frame):
         self._loadOrderWarnings()
         self._corruptedWarns()
         self._corruptedGameIni()
-        self._y2038Resets()
         self._obmmWarn()
         self._missingDocsDir()
         #--Merge info
@@ -4155,19 +4141,6 @@ class BashFrame(wx.Frame):
                         u'(e.g. "[General]"), but does not. You should edit '
                         u'the file to correct this.') % bush.game.iniFiles[0]
                 balt.showWarning(self, fill(msg))
-
-    def _y2038Resets(self): # CRUFT python 2.5
-        #--Any Y2038 Resets?
-        if bolt.Path.mtimeResets:
-            message = [u'', _(
-                u"Bash cannot handle dates greater than January 19, "
-                u"2038. Accordingly, the dates for the following files have "
-                u"been reset to an earlier date: ")]
-            message.extend(sorted(bolt.Path.mtimeResets))
-            ListBoxes.Display(self, _(u'Warning: Dates Reset'), _(
-                u'Modified dates have been reset to an earlier date for these '
-                u'files'), [message], liststyle='list', canCancel=False)
-            del bolt.Path.mtimeResets[:]
 
     def _obmmWarn(self):
         #--OBMM Warning?

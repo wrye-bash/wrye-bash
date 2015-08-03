@@ -2969,13 +2969,14 @@ class Plugins:
         self.dir.makedirs()
 
     @_cache
-    def saveActive(self):
+    def saveActive(self, active=None):
         """Write data to Plugins.txt file.
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
         self.lord = load_order.SetActivePlugins(
-            self.lord.lorder(self.selected), self.lord.loadOrder)
+            self.lord.lorder(active if active else self.selected),
+            self.lord.loadOrder)
 
     @_cache
     def saveLoadOrder(self, _selected=None):
@@ -3954,12 +3955,21 @@ class FileInfos(DataDict):
             _delete(toDelete, **kwargs)
         finally:
             #--Table
-            for filePath in tableUpdate:
-                if not filePath.exists():
-                    self.table.delRow(tableUpdate[filePath])
+            for filePath, modname in tableUpdate.iteritems():
+                if not filePath.exists(): self.table.delRow(modname)
+                else: del tableUpdate[filePath] # item was not deleted
             #--Refresh
             if doRefresh:
-                self.refresh()
+                self.delete_Refresh(tableUpdate.values())
+
+    def _updateBain(self, deleted):
+        """Track deleted inis and mods so BAIN can update its UI.
+        :param deleted: make sure those are deleted before calling this method
+        """
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.track(d, factory=self.factory)
+
+    def delete_Refresh(self, deleted): self.refresh()
 
     #--Move
     def move(self,fileName,destDir,doRefresh=True):
@@ -4013,6 +4023,11 @@ class INIInfos(FileInfos):
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
         return dir_
+
+    def delete_Refresh(self, deleted):
+        FileInfos.delete_Refresh(self, deleted)
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        self._updateBain(deleted)
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
@@ -4328,17 +4343,6 @@ class ModInfos(FileInfos):
                 mod.reloadBashTags()
 
     #--Mod selection ----------------------------------------------------------
-    def circularMasters(self,stack,masters=None):
-        stackTop = stack[-1]
-        masters = masters or (stackTop in self.data and self.data[stackTop].masterNames)
-        if not masters: return False
-        for master in masters:
-            if master in stack:
-                return True
-            if self.circularMasters(stack+[master]):
-                return True
-        return False
-
     def getOrdered(self, modNames):
         """Return a list containing modNames' elements sorted into load order.
 
@@ -4382,28 +4386,25 @@ class ModInfos(FileInfos):
         #--Deselect/select plugins
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
+        listToSelect = self.getOrdered(toSelect)
+        extra = listToSelect[255:]
         #--Save
-        self.plugins.selected = list(toSelect)
+        self.plugins.selected = listToSelect[:255]
         # we should unghost ourselves so that ctime is properly set
         for s in toSelect: self[s].setGhost(False)
         self.plugins.saveActive()
         self.refreshInfoLists()
         self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
-        extra = set() ##: was never set - actually saveActive will just raise
-        if missingSet or extra:
-            message = u''
-            if missingSet:
-                message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-                message += u'\n* '.join(x.s for x in missingSet)
-            if extra:
-                if missingSet: message += u'\n'
-                message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-                extra = toSelect - set(self.plugins.selected)
-                message += u'\n* '.join(x.s for x in extra)
-            return message
-        else:
-            return None
+        message = u''
+        if missingSet:
+            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+            message += u'\n* '.join(x.s for x in missingSet)
+        if extra:
+            if missingSet: message += u'\n'
+            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+            message += u'\n* '.join(x.s for x in extra)
+        return message
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
@@ -4522,7 +4523,7 @@ class ModInfos(FileInfos):
         else: msg = voice % name # hasVoices
         return balt.askWarning(parent, msg, title + name)
 
-    #--Mod Specific ----------------------------------------------------------
+    #--Mod Specific -----------------------------------------------------------
     def rightFileType(self,fileName):
         """Bool: File is a mod."""
         return reModExt.search(fileName.s)
@@ -4534,15 +4535,18 @@ class ModInfos(FileInfos):
         finally:
             self.refreshInfoLists()
 
-    def select(self,fileName,doSave=True,modSet=None,children=None):
+    #--Active mods management -------------------------------------------------
+    def select(self, fileName, doSave=True, modSet=None, children=None,
+               _activated=None):
         """Adds file to selected."""
         plugins = self.plugins
+        if _activated is None: _activated = set()
         try:
+            if len(plugins.selected) == 255:
+                raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
                 raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
-            # Unghost
-            self[fileName].setGhost(False)
             #--Select masters
             if modSet is None: modSet = set(self.keys())
             #--Check for bad masternames:
@@ -4551,15 +4555,20 @@ class ModInfos(FileInfos):
             ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
-                    self.select(master,False,modSet,children)
+                    self.select(master, False, modSet, children, _activated)
+            # Unghost
+            self[fileName].setGhost(False)
             #--Select in plugins
             if fileName not in plugins.selected:
                 plugins.selected.append(fileName)
+                _activated.add(fileName)
+            return self.getOrdered(_activated or [])
         finally:
             if doSave: plugins.saveActive()
 
     def unselect(self,fileName,doSave=True):
-        """Removes file from selected."""
+        """Remove mods and their children from selected, can only raise if
+        doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         fileNames = set(fileName)
         sel = set(self.plugins.selected)
@@ -4584,6 +4593,45 @@ class ModInfos(FileInfos):
         self.plugins.selected = self.getOrdered(sel)
         #--Save
         if doSave: self.plugins.saveActive()
+
+    def selectAll(self):
+        toActivate = set(self.activeCached)
+        try:
+            def _select(m):
+                if not m in toActivate:
+                    self.select(m, doSave=False)
+                    toActivate.add(m)
+            mods = self.keys()
+            # first select the bashed patch(es) and their masters
+            for mod in mods: ##: usually results in exclusion group violation
+                if self.isBP(mod): _select(mod)
+            # then activate mods not tagged NoMerge or Deactivate or Filter
+            def _activatable(modName):
+                tags = modInfos[modName].getBashTags()
+                return not (u'Deactivate' in tags or u'Filter' in tags)
+            mods = filter(_activatable, mods)
+            mergeable = set(self.mergeable)
+            for mod in mods:
+                if not mod in mergeable: _select(mod)
+            # then activate as many of the remaining mods as we can
+            for mod in mods:
+                if mod in mergeable: _select(mod)
+            self.plugins.saveActive(active=toActivate)
+        except PluginsFullError:
+            deprint(u'select All: 255 mods activated', traceback=True)
+            self.plugins.saveActive(active=toActivate)
+            raise
+        except BoltError:
+            toActivate.clear()
+            deprint(u'select All: saveActive failed', traceback=True)
+            raise
+        finally:
+            if toActivate:
+                self.refreshInfoLists() # no modtimes changes, just active
+
+    #-- Helpers ---------------------------------------------------------------
+    def isBP(self, modName): return self[modName].header.author in (
+            u'BASHED PATCH', u'BASHED LISTS')
 
     @staticmethod
     def isBadFileName(modName):
@@ -4722,6 +4770,17 @@ class ModInfos(FileInfos):
                 u"Cannot delete the game's master file(s).")
         self.unselect(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
+
+    def delete_Refresh(self, deleted):
+        # adapted from refresh() (avoid refreshing from the data directory)
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        if not deleted: return
+        for name in deleted:
+            self.pop(name, None)
+            if self.mtimes.has_key(name): del self.mtimes[name]
+        self.plugins.removeMods(deleted, savePlugins=True)
+        self.refreshInfoLists()
+        self._updateBain(deleted)
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
@@ -5481,6 +5540,8 @@ class Messages(DataDict):
         del self.data[key]
         self.hasChanged = True
 
+    def delete_Refresh(self, deleted): pass
+
     def search(self,term):
         """Search entries for term."""
         term = term.strip()
@@ -5674,6 +5735,8 @@ class PeopleData(PickleTankData, DataDict):
         del self.data[key]
         self.hasChanged = True
 
+    def delete_Refresh(self, deleted): pass
+
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
@@ -5738,6 +5801,8 @@ class ScreensData(DataDict):
         _delete(filePath, **kwargs)
         for item in filePath:
             if not item.exists(): del self.data[item.tail]
+
+    def delete_Refresh(self, deleted): self.refresh()
 
 #------------------------------------------------------------------------------
 class Installer(object):
@@ -7647,7 +7712,10 @@ class InstallersData(DataDict):
                 if not item.exists():
                     del self.data[item.tail]
                     refresh = True
-            if refresh: self.irefresh(what='ION') # will "set changed" too
+            if refresh: self.delete_Refresh(toDelete) # will "set changed" too
+
+    def delete_Refresh(self, deleted): self.irefresh(what='ION') # unused as
+    # Installers follow the _shellUI path and refresh in InstallersData.delete
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""

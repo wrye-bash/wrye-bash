@@ -747,7 +747,7 @@ class Mod_MarkMergeable(EnabledLink):
 class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return super(_Mod_BP_Link, self)._enable() and self.window.isBP(
+        return super(_Mod_BP_Link, self)._enable() and bosh.modInfos.isBP(
             self.selected[0])
 
 class _Mod_Patch_Update(_Mod_BP_Link):
@@ -891,7 +891,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 if deselect:
                     with balt.BusyCursor():
                         for mod in deselect:
-                            bosh.modInfos.unselect(mod,False)
+                            bosh.modInfos.unselect(mod, doSave=False)
                         bosh.modInfos.plugins.saveActive()
                         # just active mods (no modtimes changes), still needed:
                         bosh.modInfos.refreshInfoLists()
@@ -927,8 +927,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
                 [_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle='tree', resize=True,
-                bOk=_(u'Continue Despite Errors')) as warning:
+                liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
                    if not warning.askOkModal(): return
         with PatchDialog(self.window, fileInfo, self.doCBash,
                          importConfig) as patchDialog: patchDialog.ShowModal()
@@ -939,7 +938,7 @@ class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
     def _decide(self, window, selection):
         """Return a radio button if CBash is enabled a simple item
         otherwise."""
-        enable = len(selection) == 1 and window.isBP(selection[0])
+        enable = len(selection) == 1 and bosh.modInfos.isBP(selection[0])
         if enable and bosh.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch

@@ -202,15 +202,15 @@ class Saves_Profiles(ChoiceLink):
 
 #------------------------------------------------------------------------------
 class Save_LoadMasters(OneItemLink):
-    """Sets the load list to the save game's masters."""
+    """Sets the active mods to the save game's masters."""
     text = _(u'Load Masters')
-    help = _(u"Set the load list to the save game's masters")
+    help = _(u"Set the active mods to the save game's masters")
 
     def Execute(self,event):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
-        BashFrame.modList.RefreshUI(refreshSaves=True) # will refresh saves too
+        BashFrame.modList.RefreshUI(refreshSaves=True)
         if errorMessage: self._showError(errorMessage, fileName.s)
 
 #------------------------------------------------------------------------------

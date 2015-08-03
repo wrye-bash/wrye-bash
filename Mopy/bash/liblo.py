@@ -374,7 +374,11 @@ def Init(path):
             plugins = [_enc(x) for x in plugins]
             num = len(plugins)
             plugins = list_of_strings(plugins)
-            _Clo_set_active_plugins(self._DB, plugins, num)
+            try:
+                _Clo_set_active_plugins(self._DB, plugins, num)
+            except LibloError as ex: # plugins.txt not written !
+                deprint(u'lo_set_active_plugins failed:', traceback=True)
+                raise BoltError(ex.msg), None, sys.exc_info()[2]
 
     # shadowing, must move LibloHandle, LibloError to module scope
     return LibloHandle, LibloError # return the public API
