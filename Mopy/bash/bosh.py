@@ -8169,13 +8169,37 @@ class InstallersData(DataDict):
         self.refreshStatus()
         return tweaksCreated
 
+    @staticmethod
+    def _determineEmptyDirs(emptyDirs, removedFiles):
+        allRemoves = set(removedFiles)
+        allRemovesAdd, removedFilesAdd = allRemoves.add, removedFiles.add
+        emptyDirsClear, emptyDirsAdd = emptyDirs.clear, emptyDirs.add
+        exclude = {dirs['mods'], dirs['mods'].join(u'Docs')} # don't bother
+        # with those (Data won't likely be removed and Docs we want it around)
+        emptyDirs -= exclude
+        while emptyDirs:
+            testDirs = set(emptyDirs)
+            emptyDirsClear()
+            for folder in sorted(testDirs, key=len, reverse=True):
+                # Sorting by length, descending, ensure we always
+                # are processing the deepest directories first
+                files = set(map(folder.join, folder.list()))
+                remaining = files - allRemoves
+                if not remaining: # If all items in this directory will be
+                    # removed, this directory is also safe to remove.
+                    removedFiles -= files
+                    removedFilesAdd(folder)
+                    allRemovesAdd(folder)
+                    emptyDirsAdd(folder.head)
+            emptyDirs -= exclude
+        return removedFiles
+
     def _removeFiles(self, removes, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
-        emptyDirsClear = emptyDirs.clear
         removedFiles = set()
         removedFilesAdd = removedFiles.add
         reModExtSearch = reModExt.search
@@ -8193,24 +8217,9 @@ class InstallersData(DataDict):
                 removedPluginsAdd(file_)
                 removedPluginsAdd(file_ + u'.ghost')
             emptyDirsAdd(path.head)
-        #--Now determine which directories will be empty
-        allRemoves = set(removedFiles)
-        allRemovesAdd = allRemoves.add
-        while emptyDirs:
-            testDirs = set(emptyDirs)
-            emptyDirsClear()
-            for dir in sorted(testDirs, key=len, reverse=True):
-                # Sorting by length, descending, ensure we always
-                # are processing the deepest directories first
-                items = set(map(dir.join, dir.list()))
-                remaining = items - allRemoves
-                if not remaining:
-                    # If there are no items in this directory that will not
-                    # be removed, this directory is also safe to remove.
-                    removedFiles -= items
-                    removedFilesAdd(dir)
-                    allRemovesAdd(dir)
-                    emptyDirsAdd(dir.head)
+        #--Now determine which directories will be empty, replacing subsets of
+        # removedFiles by their parent dir if the latter will be emptied
+        removedFiles = self._determineEmptyDirs(emptyDirs, removedFiles)
         #--Do the deletion
         nonPlugins = removedFiles - set(map(modsDirJoin, removedPlugins))
         if nonPlugins:
@@ -8248,7 +8257,6 @@ class InstallersData(DataDict):
         unArchives = set(unArchives)
         data = self.data
         data_sizeCrcDate = self.data_sizeCrcDate
-        getArchiveOrder =  lambda x: self[x].order
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
         #  may block (mask) them from deleting files and/or may provide files
@@ -8259,8 +8267,9 @@ class InstallersData(DataDict):
         removes = set()
         restores = {}
         #--March through archives in reverse order...
-        for archive in sorted(data,key=getArchiveOrder,reverse=True):
-            installer = data[archive]
+        getArchiveOrder =  lambda tup: tup[1].order
+        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+                                         reverse=True):
             #--Uninstall archive?
             if archive in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
@@ -8306,7 +8315,6 @@ class InstallersData(DataDict):
         progress = progress if progress else bolt.Progress()
         data = self.data
         anPackages = set(anPackages or data)
-        getArchiveOrder =  lambda x: data[x].order
         #--Get remove/refresh files from anPackages
         removes = set()
         for package in anPackages:
@@ -8318,12 +8326,13 @@ class InstallersData(DataDict):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = {}
-        for package in sorted(data,key=getArchiveOrder,reverse=True):
-            installer = data[package]
+        getArchiveOrder =  lambda tup: tup[1].order
+        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+                                         reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self._filter(package, installer, removes, restores)
+                self._filter(archive, installer, removes, restores)
         #--Remove files, update InstallersData, update load order
         self._removeFiles(removes, progress)
         #--Restore files
