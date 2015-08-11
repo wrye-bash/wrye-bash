@@ -29,9 +29,8 @@ import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bosh, balt, bush
-from ..balt import BoolLink, AppendableLink, Link, ItemLink, ListBoxes
+from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes
 from ..bass import Resources
-from ..bolt import SubProgress
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_Refresh', 'Installers_AddMarker',
@@ -219,9 +218,7 @@ class Installers_AnnealAll(Installers_Link):
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
                 self.idata.anneal(progress=progress)
         finally:
-            self.idata.irefresh(what='NS')
-            self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
@@ -235,9 +232,7 @@ class Installers_UninstallAllPackages(Installers_Link):
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(unArchives='ALL',progress=progress)
         finally:
-            self.idata.irefresh(what='NS')
-            self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
@@ -285,8 +280,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
                     self.idata.clean(progress=progress)
             finally:
                 self.idata.irefresh(what='NS')
-                self.iPanel.RefreshUIMods()
-                Link.Frame.RefreshData()
+                self.iPanel.RefreshUIMods(_refreshData=True)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

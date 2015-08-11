@@ -2739,17 +2739,23 @@ class InstallersPanel(SashTankPanel):
         installer.comments = self.gComments.GetValue()
         self.data.setChanged()
 
-    def RefreshUIMods(self):
+    def RefreshUIMods(self, _refreshData=False):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
         if bosh.modInfos.refresh():
             del bosh.modInfos.mtimesReset[:]
-            BashFrame.modList.RefreshUI(refreshSaves=True)  # True ?
+            BashFrame.modList.RefreshUI(refreshSaves=True)
         if BashFrame.iniList is not None:
             if bosh.iniInfos.refresh():
                 BashFrame.iniList.panel.RefreshPanel('ALL')
             else:
                 BashFrame.iniList.panel.RefreshPanel('TARGETS')
+        if not _refreshData: return
+        try: # HACK: using .booting hack to short circuit double refreshes
+            balt.Link.Frame.booting = True
+            balt.Link.Frame.RefreshData()
+        finally:
+            balt.Link.Frame.booting = False
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""

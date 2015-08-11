@@ -899,15 +899,15 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             dialog.Destroy()
 
         previousMods = set()
-        missing = {}
-        delinquent = {}
+        missing = collections.defaultdict(list)
+        delinquent = collections.defaultdict(list)
         for mod in bosh.modInfos.activeCached:
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
                 if not bosh.modInfos.isActiveCached(master):
-                    missing.setdefault(mod,[]).append(master)
+                    missing[mod].append(master)
                 elif master not in previousMods:
-                    delinquent.setdefault(mod,[]).append(master)
+                    delinquent[mod].append(master)
             previousMods.add(mod)
         if missing or delinquent:
             proceed_ = _(u'WARNING!') + u'\n' + _(

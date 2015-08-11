@@ -2762,7 +2762,6 @@ class OmodFile:
 
             # Extract the files
             reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
-            reError = re.compile(ur'Error:',re.U)
             progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
 
             subprogress = bolt.SubProgress(progress, 0, 0.4)
@@ -5741,21 +5740,21 @@ class PeopleData(PickleTankData, DataDict):
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
-        newNames,name,buffer = set(),None,None
+        newNames, name, buff = set(), None, None
         with path.open('r') as ins:
             reName = re.compile(ur'==([^=]+)=*$',re.U)
             for line in ins:
                 maName = reName.match(line)
                 if not maName:
-                    if buffer: buffer.write(line)
+                    if buff: buff.write(line)
                     continue
                 if name:
-                    self.data[name] = (time.time(),0,buffer.getvalue().strip())
+                    self.data[name] = (time.time(), 0, buff.getvalue().strip())
                     newNames.add(name)
-                    buffer.close()
-                    buffer = None
+                    buff.close()
+                    buff = None
                 name = maName.group(1).strip()
-                if name: buffer = sio()
+                if name: buff = sio()
         if newNames: self.setChanged()
         return newNames
 
@@ -5811,15 +5810,16 @@ class Installer(object):
     its installation state."""
 
     #--Member data
-    persistent = ('archive','order','group','modified','size','crc',
-        'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
-        'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps',
-        'skipRefresh','fileRootIdex')
-    volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
-        'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
-    __slots__ = persistent+volatile
+    persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
+        'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
+        'dirty_sizeCrc', 'comments', 'readMe', 'packageDoc', 'packagePic',
+        'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
+        'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
+    volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
+        'missingFiles', 'mismatchedFiles', 'refreshed', 'mismatchedEspms',
+        'unSize', 'espms', 'underrides', 'hasWizard', 'espmMap', 'hasReadme',
+        'hasBCF', 'hasBethFiles')
+    __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
     dataDirsMinus = {u'bash', u'replacers',
@@ -6716,10 +6716,12 @@ class InstallerConverter(object):
         map(self.__setattr__,self.persistBCF + self.persistDAT + self.addedPersistDAT, values)
 
     def load(self,fullLoad=False):
-        """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
-        if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
+        """Load BCF.dat. Called once when a BCF is first installed, during a
+        fullRefresh, and when the BCF is applied"""
+        if not self.fullPath.exists(): raise StateError(
+            u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
         with self.fullPath.unicodeSafe() as path:
-            # Temp rename if it's name wont encode correctly
+            # Temp rename if its name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (exe7z, path.s)
             try:
                 ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
@@ -6735,8 +6737,10 @@ class InstallerConverter(object):
                         return self._translate(self._stream.read(numBytes))
                     def readline(self):
                         return self._translate(self._stream.readline())
-                    def _translate(self, s):
-                        return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,flags=re.U)
+                    @staticmethod
+                    def _translate(s):
+                        return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,
+                                      flags=re.U)
                 translator = _Translator(ins)
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
@@ -6957,7 +6961,8 @@ class InstallerConverter(object):
         if len(self.missingFiles):
             #--Unpack missing files
             Installer.rmTempDir()
-            destInstaller.unpackToTemp(destArchive,self.missingFiles,SubProgress(progress,lastStep, lastStep + 0.2))
+            destInstaller.unpackToTemp(destArchive, self.missingFiles,
+                SubProgress(progress, lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing
             #--Work around since moveTo doesn't allow direct moving of a directory into its own subdirectory
@@ -7730,7 +7735,7 @@ class InstallersData(DataDict):
             self.moveArchives([destName],self.data[item].order+1)
             self.refreshOrder()
 
-    #--Refresh Functions --------------------------------------------------------
+    #--Refresh Functions ------------------------------------------------------
     def refreshInstallers(self,progress=None,fullRefresh=False):
         """Refresh installer data."""
         progress = progress or bolt.Progress()
@@ -7797,8 +7802,7 @@ class InstallersData(DataDict):
 
     def embeddedBCFsExist(self):
         """Return true if any InstallerArchive's have an embedded BCF file in them"""
-        for file in self.data:
-            installer = self.data[file]
+        for installer in self.values():
             if installer.hasBCF and isinstance(installer,InstallerArchive):
                 return True
         return False
@@ -7821,7 +7825,7 @@ class InstallersData(DataDict):
             bcfFile = dirs['converters'].join(u'temp-'+srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             Installer.rmTempDir()
-            #--Creat the converter, apply it
+            #--Create the converter, apply it
             destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
             converter.apply(destArchive,self.crc_installer,bolt.SubProgress(progress,0.0,0.99),installer.crc)
@@ -7956,6 +7960,7 @@ class InstallersData(DataDict):
             changed |= installer.refreshStatus(self)
         return changed
 
+    #--Converters
     @staticmethod
     def validConverterName(path):
         return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
@@ -8091,7 +8096,75 @@ class InstallersData(DataDict):
                 else: # installer is the only column used in iniInfos table
                     iniInfos.table.delRow(i.tail)
 
-    def install(self,archives,progress=None,last=False,override=True):
+    #--Install
+    def _createTweaks(self, destFiles, installer, tweaksCreated):
+        """Generate INI Tweaks when a CRC mismatch is detected while
+        installing a mod INI (not ini tweak) in the Data/ directory.
+
+        If the current CRC of the ini is different than the one BAIN is
+        installing, a tweak file will be generated. Call me *before*
+        installing the new inis then call _editTweaks() to populate the tweaks.
+        """
+        for relPath in destFiles:
+            if (not relPath.cext in (u'.ini', u'.cfg') or
+                # don't create ini tweaks for overridden ini tweaks...
+                relPath.head.cs == u'ini tweaks'): continue
+            oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
+            newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
+            if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
+            iniAbsDataPath = dirs['mods'].join(relPath)
+            # Create a copy of the old one
+            baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
+                iniAbsDataPath.sbody, iniAbsDataPath.sbody))
+            tweakPath = self.__tweakPath(baseName)
+            iniAbsDataPath.copyTo(tweakPath)
+            tweaksCreated.add((tweakPath, iniAbsDataPath))
+
+    @staticmethod
+    def __tweakPath(baseName):
+        oldIni, num = baseName, 1
+        while oldIni.exists():
+            suffix = u' - Copy' + (u'' if num == 1 else u' (%i)' % num)
+            oldIni = baseName.head.join(baseName.sbody + suffix + baseName.ext)
+            num += 1
+        return oldIni
+
+    @staticmethod
+    def _editTweaks(tweaksCreated):
+        """Edit created ini tweaks with settings that differ and/or don't exist
+        in the new ini."""
+        removed = set()
+        for (tweakPath, iniAbsDataPath) in tweaksCreated:
+            iniFile = BestIniFile(iniAbsDataPath)
+            currSection = None
+            lines = []
+            for (text, section, setting, value, status, lineNo,
+                 deleted) in iniFile.getTweakFileLines(tweakPath):
+                if status in (10, -10):
+                    # A setting that exists in both INI's, but is different,
+                    # or a setting that doesn't exist in the new INI.
+                    if section == u']set[' or section == u']setGS[':
+                        lines.append(text + u'\n')
+                    elif section != currSection:
+                        section = currSection
+                        if not section: continue
+                        lines.append(u'\n[%s]\n' % section)
+                    elif not section:
+                        continue
+                    else:
+                        lines.append(text + u'\n')
+            if not lines: # avoid creating empty tweaks
+                removed.add((tweakPath, iniAbsDataPath))
+                tweakPath.remove()
+                continue
+            # Re-write the tweak
+            with tweakPath.open('w') as ini:
+                ini.write(u'; INI Tweak created by Wrye Bash, using settings '
+                          u'from old file.\n\n')
+                ini.writelines(lines)
+        tweaksCreated -= removed
+
+    def _install(self,archives,progress=None,last=False,override=True):
         """Install selected archives.
         what:
             'MISSING': only missing files.
@@ -8118,56 +8191,45 @@ class InstallersData(DataDict):
             if not override:
                 destFiles &= installer.missingFiles
             if destFiles:
-                for file in destFiles:
-                    if file.cext in (u'.ini',u'.cfg') and not file.head.cs == u'ini tweaks':
-                        oldCrc = self.data_sizeCrcDate.get(file,(None,None,None))[1]
-                        newCrc = installer.data_sizeCrc.get(file,(None,None))[1]
-                        if oldCrc is not None and newCrc is not None:
-                            if newCrc != oldCrc:
-                                target = dirs['mods'].join(file)
-                                # Creat a copy of the old one
-                                baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (target.sbody, target.sbody))
-                                oldIni = baseName
-                                num = 1
-                                while oldIni.exists():
-                                    if num == 1:
-                                        suffix = u' - Copy'
-                                    else:
-                                        suffix = u' - Copy (%i)' % num
-                                    num += 1
-                                    oldIni = baseName.head.join(baseName.sbody+suffix+baseName.ext)
-                                target.copyTo(oldIni)
-                                tweaksCreated.add((oldIni,target))
-                installer.install(archive,destFiles,self.data_sizeCrcDate,SubProgress(progress,index,index+1))
+                self._createTweaks(destFiles, installer, tweaksCreated)
+                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                                  SubProgress(progress, index, index + 1))
                 InstallersData.updateTable(destFiles, archive.s)
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
-            # Edit the tweaks
-            for (oldIni,target) in tweaksCreated:
-                iniFile = BestIniFile(target)
-                currSection = None
-                lines = []
-                for (text,section,setting,value,status,lineNo,deleted) in iniFile.getTweakFileLines(oldIni):
-                    if status in (10,-10):
-                        # A setting that exists in both INI's, but is different,
-                        # or a setting that doesn't exist in the new INI.
-                        if section == u']set[' or section == u']setGS[':
-                            lines.append(text+u'\n')
-                        elif section != currSection:
-                            section = currSection
-                            if not section: continue
-                            lines.append(u'\n[%s]\n' % section)
-                        elif not section:
-                            continue
-                        else:
-                            lines.append(text+u'\n')
-                # Re-write the tweak
-                with oldIni.open('w') as file:
-                    file.write(u'; INI Tweak created by Wrye Bash, using settings from old file.\n\n')
-                    file.writelines(lines)
-        self.refreshStatus()
+            self._editTweaks(tweaksCreated)
         return tweaksCreated
+
+    def install(self,archives,progress=None,last=False,override=True):
+        try: return self._install(archives, progress, last, override)
+        finally: self.irefresh(what='NS')
+
+    #--Uninstall, Anneal, Clean
+    @staticmethod
+    def _determineEmptyDirs(emptyDirs, removedFiles):
+        allRemoves = set(removedFiles)
+        allRemovesAdd, removedFilesAdd = allRemoves.add, removedFiles.add
+        emptyDirsClear, emptyDirsAdd = emptyDirs.clear, emptyDirs.add
+        exclude = {dirs['mods'], dirs['mods'].join(u'Docs')} # don't bother
+        # with those (Data won't likely be removed and Docs we want it around)
+        emptyDirs -= exclude
+        while emptyDirs:
+            testDirs = set(emptyDirs)
+            emptyDirsClear()
+            for folder in sorted(testDirs, key=len, reverse=True):
+                # Sorting by length, descending, ensure we always
+                # are processing the deepest directories first
+                files = set(map(folder.join, folder.list()))
+                remaining = files - allRemoves
+                if not remaining: # If all items in this directory will be
+                    # removed, this directory is also safe to remove.
+                    removedFiles -= files
+                    removedFilesAdd(folder)
+                    allRemovesAdd(folder)
+                    emptyDirsAdd(folder.head)
+            emptyDirs -= exclude
+        return removedFiles
 
     def _removeFiles(self, removes, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
@@ -8175,64 +8237,53 @@ class InstallersData(DataDict):
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
-        emptyDirsClear = emptyDirs.clear
         removedFiles = set()
         removedFilesAdd = removedFiles.add
         reModExtSearch = reModExt.search
         removedPlugins = set()
         removedPluginsAdd = removedPlugins.add
         #--Construct list of files to delete
-        for file_ in removes:
-            path = modsDirJoin(file_)
+        for relPath in removes:
+            path = modsDirJoin(relPath)
             if path.exists():
                 removedFilesAdd(path)
-            ghostPath = path + u'.ghost'
-            if ghostPath.exists():
-                removedFilesAdd(ghostPath)
-            if reModExtSearch(file_.s):
-                removedPluginsAdd(file_)
-                removedPluginsAdd(file_ + u'.ghost')
+            if reModExtSearch(relPath.s):
+                removedPluginsAdd(relPath)
             emptyDirsAdd(path.head)
-        #--Now determine which directories will be empty
-        allRemoves = set(removedFiles)
-        allRemovesAdd = allRemoves.add
-        while emptyDirs:
-            testDirs = set(emptyDirs)
-            emptyDirsClear()
-            for dir in sorted(testDirs, key=len, reverse=True):
-                # Sorting by length, descending, ensure we always
-                # are processing the deepest directories first
-                items = set(map(dir.join, dir.list()))
-                remaining = items - allRemoves
-                if not remaining:
-                    # If there are no items in this directory that will not
-                    # be removed, this directory is also safe to remove.
-                    removedFiles -= items
-                    removedFilesAdd(dir)
-                    allRemovesAdd(dir)
-                    emptyDirsAdd(dir.head)
-        #--Do the deletion
+        #--Now determine which directories will be empty, replacing subsets of
+        # removedFiles by their parent dir if the latter will be emptied
+        removedFiles = self._determineEmptyDirs(emptyDirs, removedFiles)
         nonPlugins = removedFiles - set(map(modsDirJoin, removedPlugins))
-        if nonPlugins:
-            parent = progress.getParent() if progress else None
-            balt.shellDelete(nonPlugins, parent=parent)
-        #--Delete mods and remove them from load order
-        if removedPlugins:
-            modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
-            ##: HACK - because I short circuit ModInfos.refresh() via
-            # delete_Refresh() modList.RefreshUI won't be called leaving stale
-            # entries in modList._gList._item_itemId - note that deleting via
-            # the UIList calls modList.RefreshUI() which cleans _gList dicts
-            balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
-            # This is _less_ hacky than _not_ calling modInfos.delete(). Real
-            # solution: refresh keeps track of deleted, added, modified - (ut)
-        #--Update InstallersData
-        InstallersData.updateTable(removes, u'') #will delete ini tweak entries
-        data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-        for file_ in removes:
-            data_sizeCrcDatePop(file_, None)
+        ex = None # if an exception is raised we must again check removes
+        try: #--Do the deletion
+            if nonPlugins:
+                parent = progress.getParent() if progress else None
+                balt.shellDelete(nonPlugins, parent=parent)
+            #--Delete mods and remove them from load order
+            if removedPlugins:
+                modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
+                ##: HACK - because I short circuit ModInfos.refresh() via
+                # delete_Refresh(), modList.RefreshUI won't be called leaving
+                # stale entries in modList._gList._item_itemIdd - note that
+                # deleting via the UIList calls modList.RefreshUI() which
+                # cleans _gList internal dictionaries
+                balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
+                # This is _less_ hacky than _not_ calling modInfos.delete().
+                # Real solution: refresh should keep track of deleted, added,
+                # modified - (ut)
+        except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
+        except:
+            ex = sys.exc_info()
+            raise
+        finally:
+            if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
+            InstallersData.updateTable(removes, u'')
+            #--Update InstallersData
+            data_sizeCrcDatePop = self.data_sizeCrcDate.pop
+            for relPath in removes:
+                data_sizeCrcDatePop(relPath, None)
 
-    def _filter(self, archive, installer, removes, restores):
+    def __filter(self, archive, installer, removes, restores): ##: comments
         files = set(installer.data_sizeCrc)
         myRestores = (removes & files) - set(restores)
         for file in myRestores:
@@ -8248,7 +8299,6 @@ class InstallersData(DataDict):
         unArchives = set(unArchives)
         data = self.data
         data_sizeCrcDate = self.data_sizeCrcDate
-        getArchiveOrder =  lambda x: self[x].order
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
         #  may block (mask) them from deleting files and/or may provide files
@@ -8259,8 +8309,9 @@ class InstallersData(DataDict):
         removes = set()
         restores = {}
         #--March through archives in reverse order...
-        for archive in sorted(data,key=getArchiveOrder,reverse=True):
-            installer = data[archive]
+        getArchiveOrder =  lambda tup: tup[1].order
+        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+                                         reverse=True):
             #--Uninstall archive?
             if archive in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
@@ -8271,17 +8322,18 @@ class InstallersData(DataDict):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                masked |= self._filter(archive, installer, removes, restores)
-        #--Remove files, update InstallersData, update load order
-        self._removeFiles(removes, progress)
-        #--De-activate
-        for archive in unArchives:
-            data[archive].isActive = False
-        #--Restore files
-        if settings['bash.installers.autoAnneal']:
-            self._restoreFiles(restores, progress)
-        #--Done
-        self.refreshStatus()
+                masked |= self.__filter(archive, installer, removes, restores)
+        try:
+            #--Remove files, update InstallersData, update load order
+            self._removeFiles(removes, progress)
+            #--De-activate
+            for archive in unArchives:
+                data[archive].isActive = False
+            #--Restore files
+            if settings['bash.installers.autoAnneal']:
+                self._restoreFiles(restores, progress)
+        finally:
+            self.irefresh(what='NS')
 
     def _restoreFiles(self, restores, progress):
         getArchiveOrder = lambda x: self[x].order
@@ -8306,7 +8358,6 @@ class InstallersData(DataDict):
         progress = progress if progress else bolt.Progress()
         data = self.data
         anPackages = set(anPackages or data)
-        getArchiveOrder =  lambda x: data[x].order
         #--Get remove/refresh files from anPackages
         removes = set()
         for package in anPackages:
@@ -8318,18 +8369,22 @@ class InstallersData(DataDict):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = {}
-        for package in sorted(data,key=getArchiveOrder,reverse=True):
-            installer = data[package]
+        getArchiveOrder =  lambda tup: tup[1].order
+        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+                                         reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self._filter(package, installer, removes, restores)
-        #--Remove files, update InstallersData, update load order
-        self._removeFiles(removes, progress)
-        #--Restore files
-        self._restoreFiles(restores, progress)
+                self.__filter(archive, installer, removes, restores)
+        try:
+            #--Remove files, update InstallersData, update load order
+            self._removeFiles(removes, progress)
+            #--Restore files
+            self._restoreFiles(restores, progress)
+        finally:
+            self.irefresh(what='NS')
 
-    def clean(self,progress):
+    def clean(self, progress):  ##: add error handling/refresh remove ghosts
         data = self.data
         getArchiveOrder = lambda x: data[x].order
         installed = []
@@ -8375,6 +8430,7 @@ class InstallersData(DataDict):
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()
 
+    #--Utils
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
         mode: OVER: Overrides; UNDER: Underrides"""
