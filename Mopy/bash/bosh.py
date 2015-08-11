@@ -4373,9 +4373,10 @@ class ModInfos(FileInfos):
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
                 configChecks = patchConfigs[patcherstr]['configChecks']
                 for modName in configChecks:
-                    if configChecks[modName]:
+                    if configChecks[modName] and modName in self:
                         merged.add(modName)
-            imported.update(patchConfigs.get('ImportedMods',tuple()))
+            imported.update(filter(lambda x: x in self,
+                                   patchConfigs.get('ImportedMods', tuple())))
         return merged,imported
 
     def selectExact(self,modNames):
@@ -8082,7 +8083,7 @@ class InstallersData(DataDict):
         """Set the 'installer' column in mod and ini tables for the
         destFiles."""
         for i in destFiles:
-            if reModExt.match(i.cext):
+            if value and reModExt.match(i.cext): # if value == u'' we come from delete !
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
                 if value:
@@ -8211,16 +8212,25 @@ class InstallersData(DataDict):
                     allRemovesAdd(dir)
                     emptyDirsAdd(dir.head)
         #--Do the deletion
-        if removedFiles:
+        nonPlugins = removedFiles - set(map(modsDirJoin, removedPlugins))
+        if nonPlugins:
             parent = progress.getParent() if progress else None
-            balt.shellDelete(removedFiles, parent=parent)
+            balt.shellDelete(nonPlugins, parent=parent)
+        #--Delete mods and remove them from load order
+        if removedPlugins:
+            modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
+            ##: HACK - because I short circuit ModInfos.refresh() via
+            # delete_Refresh() modList.RefreshUI won't be called leaving stale
+            # entries in modList._gList._item_itemId - note that deleting via
+            # the UIList calls modList.RefreshUI() which cleans _gList dicts
+            balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
+            # This is _less_ hacky than _not_ calling modInfos.delete(). Real
+            # solution: refresh keeps track of deleted, added, modified - (ut)
         #--Update InstallersData
         InstallersData.updateTable(removes, u'') #will delete ini tweak entries
         data_sizeCrcDatePop = self.data_sizeCrcDate.pop
         for file_ in removes:
             data_sizeCrcDatePop(file_, None)
-        #--Remove mods from load order
-        modInfos.plugins.removeMods(removedPlugins, savePlugins=True)
 
     def _filter(self, archive, installer, removes, restores):
         files = set(installer.data_sizeCrc)

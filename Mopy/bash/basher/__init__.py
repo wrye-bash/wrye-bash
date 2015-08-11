@@ -910,9 +910,8 @@ class ModList(_ModsSortMixin, balt.UIList):
 
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
-        # make sure filter() is needed
         files = kwargs.get('files', ())
-        if files : ##: why is this needed ?
+        if files : ##: this is a hack to mask bugs - uproot !
             kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
@@ -3881,7 +3880,7 @@ class BashFrame(wx.Frame):
     modChecker = None
     # UILists - use sparingly for inter Panel communication
     # modList is always set but for example iniList may be None (tab not
-    # enabled). BashFrame should perform the None check (not the clients)
+    # enabled). There is a single use of modList in bosh that needs revisiting
     saveList = None
     iniList = None
     modList = None
@@ -4054,7 +4053,7 @@ class BashFrame(wx.Frame):
         self._corruptedGameIni()
         self._obmmWarn()
         self._missingDocsDir()
-        #--Merge info
+        #--Merge info # FIXME(ut) should be in ModInfos.refresh !
         oldMergeable = set(bosh.modInfos.mergeable)
         scanList = bosh.modInfos.refreshMergeable()
         difMergeable = oldMergeable ^ bosh.modInfos.mergeable
