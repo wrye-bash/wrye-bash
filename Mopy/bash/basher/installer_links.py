@@ -39,7 +39,7 @@ from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bosh, bush, balt
 from ..bass import Resources
-from ..balt import EnabledLink, CheckLink, AppendableLink, Link, OneItemLink
+from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile
@@ -300,8 +300,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     doIt(self.selected, progress)
             finally:
                 self.idata.irefresh(what=what)
-                self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+                self.iPanel.RefreshUIMods(_refreshData=True)
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
@@ -390,8 +389,7 @@ class Installer_Anneal(_InstallerLink):
             pass
         finally:
             self.idata.irefresh(what='NS')
-            self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
@@ -594,8 +592,7 @@ class Installer_Install(_InstallerLink):
                         self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
             self.idata.irefresh(what='N')
-            self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
@@ -767,17 +764,15 @@ class Installer_Uninstall(_InstallerLink):
     def _enable(self): return len(self.filterInstallables())
 
     def Execute(self,event):
-        """Handle selection."""
+        """Uninstall selected Installers."""
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
                 self.idata.uninstall(self.filterInstallables(),progress)
         except (CancelError,SkipError):
             pass
         finally:
-            self.idata.irefresh(what='NS')
-            bosh.modInfos.plugins.saveLoadOrder()
-            self.iPanel.RefreshUIMods()
-            Link.Frame.RefreshData()
+            self.idata.irefresh(what='NS') ##: repeated in uninstall !!!!!
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 class Installer_CopyConflicts(_InstallerLink):
     """For Modders only - copy conflicts to a new project."""
