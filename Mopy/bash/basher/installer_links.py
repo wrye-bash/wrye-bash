@@ -845,12 +845,9 @@ class Installer_CopyConflicts(_InstallerLink):
                                     srcFull.copyTo(destFull)
                                     curFile += 1
                         else:
-                            installer.unpackToTemp(package,curConflicts,
-                                                   SubProgress(progress,
-                                                               curFile,
-                                                               curFile + len(
-                                                                 curConflicts),
-                                                               numFiles))
+                            installer.unpackToTemp(package, curConflicts,
+                                SubProgress(progress, curFile,
+                                    curFile + len(curConflicts), numFiles))
                             installer.getTempDir().moveTo(
                                 installers_dir.join(destDir,GPath(
                                     u"%03d - %s" % (order,package.s))))

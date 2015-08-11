@@ -2762,7 +2762,6 @@ class OmodFile:
 
             # Extract the files
             reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
-            reError = re.compile(ur'Error:',re.U)
             progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
 
             subprogress = bolt.SubProgress(progress, 0, 0.4)
@@ -5741,21 +5740,21 @@ class PeopleData(PickleTankData, DataDict):
     #--Operations
     def loadText(self,path):
         """Enter info from text file."""
-        newNames,name,buffer = set(),None,None
+        newNames, name, buff = set(), None, None
         with path.open('r') as ins:
             reName = re.compile(ur'==([^=]+)=*$',re.U)
             for line in ins:
                 maName = reName.match(line)
                 if not maName:
-                    if buffer: buffer.write(line)
+                    if buff: buff.write(line)
                     continue
                 if name:
-                    self.data[name] = (time.time(),0,buffer.getvalue().strip())
+                    self.data[name] = (time.time(), 0, buff.getvalue().strip())
                     newNames.add(name)
-                    buffer.close()
-                    buffer = None
+                    buff.close()
+                    buff = None
                 name = maName.group(1).strip()
-                if name: buffer = sio()
+                if name: buff = sio()
         if newNames: self.setChanged()
         return newNames
 
@@ -5811,15 +5810,16 @@ class Installer(object):
     its installation state."""
 
     #--Member data
-    persistent = ('archive','order','group','modified','size','crc',
-        'fileSizeCrcs','type','isActive','subNames','subActives','dirty_sizeCrc',
-        'comments','readMe','packageDoc','packagePic','src_sizeCrcDate','hasExtraData',
-        'skipVoices','espmNots','isSolid','blockSize','overrideSkips','remaps',
-        'skipRefresh','fileRootIdex')
-    volatile = ('data_sizeCrc','skipExtFiles','skipDirFiles','status','missingFiles',
-        'mismatchedFiles','refreshed','mismatchedEspms','unSize','espms',
-        'underrides','hasWizard','espmMap','hasReadme','hasBCF','hasBethFiles')
-    __slots__ = persistent+volatile
+    persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
+        'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
+        'dirty_sizeCrc', 'comments', 'readMe', 'packageDoc', 'packagePic',
+        'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
+        'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
+    volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
+        'missingFiles', 'mismatchedFiles', 'refreshed', 'mismatchedEspms',
+        'unSize', 'espms', 'underrides', 'hasWizard', 'espmMap', 'hasReadme',
+        'hasBCF', 'hasBethFiles')
+    __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
     dataDirsMinus = {u'bash', u'replacers',
@@ -6716,10 +6716,12 @@ class InstallerConverter(object):
         map(self.__setattr__,self.persistBCF + self.persistDAT + self.addedPersistDAT, values)
 
     def load(self,fullLoad=False):
-        """Loads BCF.dat. Called once when a BCF is first installed, during a fullRefresh, and when the BCF is applied"""
-        if not self.fullPath.exists(): raise StateError(u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
+        """Load BCF.dat. Called once when a BCF is first installed, during a
+        fullRefresh, and when the BCF is applied"""
+        if not self.fullPath.exists(): raise StateError(
+            u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
         with self.fullPath.unicodeSafe() as path:
-            # Temp rename if it's name wont encode correctly
+            # Temp rename if its name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (exe7z, path.s)
             try:
                 ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
@@ -6735,8 +6737,10 @@ class InstallerConverter(object):
                         return self._translate(self._stream.read(numBytes))
                     def readline(self):
                         return self._translate(self._stream.readline())
-                    def _translate(self, s):
-                        return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,flags=re.U)
+                    @staticmethod
+                    def _translate(s):
+                        return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,
+                                      flags=re.U)
                 translator = _Translator(ins)
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
@@ -6957,7 +6961,8 @@ class InstallerConverter(object):
         if len(self.missingFiles):
             #--Unpack missing files
             Installer.rmTempDir()
-            destInstaller.unpackToTemp(destArchive,self.missingFiles,SubProgress(progress,lastStep, lastStep + 0.2))
+            destInstaller.unpackToTemp(destArchive, self.missingFiles,
+                SubProgress(progress, lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing
             #--Work around since moveTo doesn't allow direct moving of a directory into its own subdirectory
@@ -7730,7 +7735,7 @@ class InstallersData(DataDict):
             self.moveArchives([destName],self.data[item].order+1)
             self.refreshOrder()
 
-    #--Refresh Functions --------------------------------------------------------
+    #--Refresh Functions ------------------------------------------------------
     def refreshInstallers(self,progress=None,fullRefresh=False):
         """Refresh installer data."""
         progress = progress or bolt.Progress()
@@ -7797,8 +7802,7 @@ class InstallersData(DataDict):
 
     def embeddedBCFsExist(self):
         """Return true if any InstallerArchive's have an embedded BCF file in them"""
-        for file in self.data:
-            installer = self.data[file]
+        for installer in self.values():
             if installer.hasBCF and isinstance(installer,InstallerArchive):
                 return True
         return False
@@ -7821,7 +7825,7 @@ class InstallersData(DataDict):
             bcfFile = dirs['converters'].join(u'temp-'+srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             Installer.rmTempDir()
-            #--Creat the converter, apply it
+            #--Create the converter, apply it
             destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
             converter.apply(destArchive,self.crc_installer,bolt.SubProgress(progress,0.0,0.99),installer.crc)
@@ -7956,6 +7960,7 @@ class InstallersData(DataDict):
             changed |= installer.refreshStatus(self)
         return changed
 
+    #--Converters
     @staticmethod
     def validConverterName(path):
         return path.cext in defaultExt and (path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
@@ -8091,6 +8096,7 @@ class InstallersData(DataDict):
                 else: # installer is the only column used in iniInfos table
                     iniInfos.table.delRow(i.tail)
 
+    #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
         """Generate INI Tweaks when a CRC mismatch is detected while
         installing a mod INI (not ini tweak) in the Data/ directory.
@@ -8199,6 +8205,7 @@ class InstallersData(DataDict):
         try: return self._install(archives, progress, last, override)
         finally: self.irefresh(what='NS')
 
+    #--Uninstall, Anneal, Clean
     @staticmethod
     def _determineEmptyDirs(emptyDirs, removedFiles):
         allRemoves = set(removedFiles)
@@ -8276,7 +8283,7 @@ class InstallersData(DataDict):
             for relPath in removes:
                 data_sizeCrcDatePop(relPath, None)
 
-    def _filter(self, archive, installer, removes, restores):
+    def __filter(self, archive, installer, removes, restores): ##: comments
         files = set(installer.data_sizeCrc)
         myRestores = (removes & files) - set(restores)
         for file in myRestores:
@@ -8315,7 +8322,7 @@ class InstallersData(DataDict):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                masked |= self._filter(archive, installer, removes, restores)
+                masked |= self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, progress)
@@ -8368,7 +8375,7 @@ class InstallersData(DataDict):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self._filter(archive, installer, removes, restores)
+                self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, progress)
@@ -8423,6 +8430,7 @@ class InstallersData(DataDict):
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()
 
+    #--Utils
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
         mode: OVER: Overrides; UNDER: Underrides"""

@@ -2042,7 +2042,7 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                 print icons
                 print error
                 print self.patchFile.Current.Debug_DumpModFiles()
-                raise error
+                raise
             mod_count = self.mod_count
             mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
             record.UnloadRecord()
