@@ -6862,7 +6862,7 @@ class InstallerConverter(object):
             progress(0,srcInstaller.archive+u'\n'+_(u'Extracting files...'))
             tempCRC = srcInstaller.crc
             srcInstaller.crc = realCRC
-            self.unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
+            self._unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
             srcInstaller.crc = tempCRC
             lastStep = nextStep
             nextStep += step
@@ -6968,7 +6968,7 @@ class InstallerConverter(object):
             #--But it is easier to use the existing recursive extraction
             for index, (installerCRC) in enumerate(subArchives):
                 installer = data.crc_installer[installerCRC]
-                self.unpack(installer,subArchives[installerCRC],SubProgress(progress, lastStep, nextStep))
+                self._unpack(installer,subArchives[installerCRC],SubProgress(progress, lastStep, nextStep))
                 lastStep = nextStep
                 nextStep += step
             #--Note all extracted files
@@ -7050,7 +7050,7 @@ class InstallerConverter(object):
         bolt.compress7z(command, outDir, destArchive, srcFolder, progress)
         Installer.rmTempDir()
 
-    def unpack(self,srcInstaller,fileNames,progress=None):
+    def _unpack(self, srcInstaller, fileNames, progress=None):
         """Recursive function: completely extracts the source installer to subTempDir.
         It does NOT clear the temp folder.  This should be done prior to calling the function.
         Each archive and sub-archive is extracted to its own sub-directory to prevent file thrashing"""
@@ -7076,39 +7076,18 @@ class InstallerConverter(object):
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (exe7z, apath.s, subTempDir.s, tempList.s)
+        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
+            exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
-        ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-        #--Error Checking, and progress feedback
-        #--Note subArchives for recursive unpacking
-        subArchives = []
-        reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
-        regMatch = reExtracting.match
-        reError = re.compile(u'Error: (.*)',re.U)
-        regErrMatch = reError.match
-        errorLine = []
-        index = 0
-        for line in ins:
-            maExtracting = regMatch(line)
-            if len(errorLine) or regErrMatch(line):
-                errorLine.append(line)
-            if maExtracting:
-                extracted = GPath(maExtracting.group(1).strip())
-                if progress:
-                    progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
-                if extracted.cext in readExts:
-                    subArchives.append(subTempDir.join(extracted.s))
-                index += 1
-        result = ins.close()
-        tempList.remove()
-        bolt.clearReadOnly(subTempDir)
-        if result or errorLine:
-            raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
-        #--Done
+        try:
+            subArchives = bolt.extract7z(command, srcInstaller, progress,
+                                         readExtensions=readExts)
+        finally:
+            tempList.remove()
+            bolt.clearReadOnly(subTempDir) ##: do this once
         #--Recursively unpack subArchives
-        if len(subArchives):
-            for archive in subArchives:
-                self.unpack(archive,[u'*'])
+        for archive in map(subTempDir.join, subArchives):
+            self._unpack(archive, [u'*'])
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):

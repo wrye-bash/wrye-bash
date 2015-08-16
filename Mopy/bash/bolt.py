@@ -1976,11 +1976,11 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
     #--Finalize the file, and cleanup
     outFile.untemp()
 
-def extract7z(command, srcFile, progress):
+def extract7z(command, srcFile, progress, readExtensions=None):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
                             stdin=subprocess.PIPE, startupinfo=startupinfo)
-    #--Error Checking, and progress feedback
-    index, errorLine = 0, u''
+    # Error checking, progress feedback and subArchives for recursive unpacking
+    index, errorLine, subArchives = 0, u'', []
     with proc.stdout as out:
         for line in iter(out.readline, b''):
             line = unicode(line, 'utf8')
@@ -1989,14 +1989,17 @@ def extract7z(command, srcFile, progress):
                 break
             maExtracting = regExtractMatch(line)
             if maExtracting and progress:
+                extracted = GPath(maExtracting.group(1).strip())
                 progress(index, srcFile.s + u'\n' + _(
-                    u'Extracting files...') + u'\n' + maExtracting.group(
-                    1).strip())
+                    u'Extracting files...') + u'\n' + extracted.s)
+                if readExtensions and extracted.cext in readExtensions:
+                    subArchives.append(extracted)
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:
         raise StateError(srcFile.s + u': Extraction failed:\n' +
                 u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    return subArchives
 
 def wrapPopenOut(command, wrapper, errorMsg):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
