@@ -96,14 +96,14 @@ class Settings_RestoreSettings(ItemLink):
 
     @balt.conversation
     def Execute(self,event):
+        if not barb.RestoreSettings.PromptConfirm(): return
         backup = None # barb.RestoreSettings may raise....
         try:
             backup = barb.RestoreSettings(Link.Frame)
-            if backup.PromptConfirm():
-                backup.restore_images = balt.askYes(Link.Frame,
+            backup.restore_images = balt.askYes(Link.Frame,
                 _(u'Do you want to restore saved images as well as settings?'),
                 _(u'Restore Settings'))
-                with balt.BusyCursor(): backup.Apply()
+            with balt.BusyCursor(): backup.Apply()
         except bolt.StateError:
             deprint(u'Restore settings failed:', traceback=True)
             if backup: backup.WarnFailed()

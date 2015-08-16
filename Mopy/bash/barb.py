@@ -44,6 +44,8 @@ class BackupCancelled(BoltError):
 
 #------------------------------------------------------------------------------
 class BaseBackupSettings:
+    verApp = bass.AppVersion
+
     def __init__(self, parent=None, path=None, quit=False):
         if path is not None and path.ext == u'' and not path.exists():
             path = None
@@ -57,7 +59,6 @@ class BaseBackupSettings:
             self.archive = path.tail
         self.parent = parent
         self.verDat = bosh.settings['bash.version']
-        self.verApp = bass.AppVersion
         self.files = {}
         self.tmp = None
 
@@ -75,7 +76,8 @@ class BaseBackupSettings:
     def PromptFile(self):
         raise AbstractError
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         raise AbstractError
 
     def PromptMismatch(self):
@@ -84,16 +86,12 @@ class BaseBackupSettings:
     def CmpDataVersion(self):
         return cmp(self.verDat, bosh.settings['bash.version'])
 
-    def CmpAppVersion(self):
-        # Changed to prompt updating on any version change
-        # Needs to check the cached value in settings for the initial upgrade check
-        return cmp(self.verApp, bosh.settings['bash.version'])
-
     def SameDataVersion(self):
         return not self.CmpDataVersion()
 
-    def SameAppVersion(self):
-        return not self.CmpAppVersion()
+    @staticmethod
+    def SameAppVersion():
+        return not cmp(bass.AppVersion, bosh.settings['bash.version'])
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
@@ -212,17 +210,19 @@ class BackupSettings(BaseBackupSettings):
         self.maketmp()
         return True
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         msg = msg or _(u'Do you want to backup your Bash settings now?')
-        return askYes(self.parent,msg,_(u'Backup Bash Settings?'))
+        return askYes(Link.Frame, msg, _(u'Backup Bash Settings?'))
 
-    def PromptMismatch(self):
+    @staticmethod
+    def PromptMismatch():
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
         if bosh.settings['bash.version'] == 0: return False
-        return not self.SameAppVersion() and self.PromptConfirm(
+        return not BaseBackupSettings.SameAppVersion() and BackupSettings.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
             _(u'Previous Version: ')+(u'%s\n' % bosh.settings['bash.version']) +
-            _(u'Current Version: ')+(u'%s\n' % self.verApp) +
+            _(u'Current Version: ')+(u'%s\n' % bass.AppVersion) +
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
     def PromptContinue(self):
@@ -352,15 +352,16 @@ class RestoreSettings(BaseBackupSettings):
         self.maketmp()
         return True
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         # returns False if user cancels
         msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
         msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your settings are restored.')
-        return askYes(self.parent,msg,_(u'Restore Bash Settings?'))
+        return askYes(Link.Frame, msg, _(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
         # return True if same app version or user confirms
-        return self.SameAppVersion() or askWarning(self.parent,
+        return BaseBackupSettings.SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
               _(u'Backup v%s does not match v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
               u'\n' +
