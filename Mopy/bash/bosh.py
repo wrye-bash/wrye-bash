@@ -7101,9 +7101,7 @@ class InstallerConverter(object):
                 index += 1
         result = ins.close()
         tempList.remove()
-        # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % subTempDir.s
-        ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
+        bolt.clearReadOnly(subTempDir)
         if result or errorLine:
             raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
         #--Done
@@ -7201,9 +7199,7 @@ class InstallerArchive(Installer):
                 bolt.extract7z(command, archive, progress)
             finally:
                 self.tempList.remove()
-                # Clear ReadOnly flag if set
-                cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
-                ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
+                bolt.clearReadOnly(self.getTempDir())
         #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -7276,11 +7272,8 @@ class InstallerArchive(Installer):
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        tmpDir = self.getTempDir()
-        # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % tmpDir.s
-        ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-        tempDirJoin = tmpDir.join
+        bolt.clearReadOnly(self.getTempDir())
+        tempDirJoin = self.getTempDir().join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)

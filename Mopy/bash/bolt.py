@@ -876,8 +876,7 @@ class Path(object):
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
-                cmd = ur'attrib -R "%s\*" /S /D' % self._s
-                subprocess.call(cmd,stdout=subprocess.PIPE,startupinfo=startupinfo)
+                clearReadOnly(self)
             except UnicodeError:
                 flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
@@ -1020,6 +1019,11 @@ class Path(object):
             return cmp(self._cs, other._cs)
         else:
             return cmp(self._cs, Path.getCase(other))
+
+def clearReadOnly(dirPath):
+    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
+    cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
+    subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
