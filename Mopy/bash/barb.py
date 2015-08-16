@@ -24,10 +24,8 @@
 
 """Rollback library."""
 
-import re
 import datetime
 import cPickle
-import StringIO
 from subprocess import Popen, PIPE
 import bash
 import bass
@@ -37,7 +35,7 @@ import bush
 from . import images_list
 from bosh import startupinfo, dirs
 from bolt import BoltError, AbstractError, StateError, GPath, Progress, \
-    deprint, Path
+    deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, \
     showWarning, showInfo, Link
 
@@ -267,7 +265,7 @@ class RestoreSettings(BaseBackupSettings):
         #end if
 
         try:
-            unpack7z(self.dir.join(self.archive), self.tmp)
+            _extract(self.dir.join(self.archive), self.tmp)
         except StateError:
             self.WarnFailed()
             return
@@ -414,48 +412,20 @@ def _compress(outDir, outFile, srcDir, progress=None):
     bolt.compress7z(command, outDir, outFile, srcDir, progress)
 
 #------------------------------------------------------------------------------
-def unpack7z(srcFile, dstDir, progress=None):
-    # extract srcFile to dstDir
-    progress = progress or Progress()
-
+def _extract(srcFile, dstDir):
+    """Extract srcFile to dstDir"""
     # count the files in the archive
     length = 0
     command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
-    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-    ins = StringIO.StringIO(ins)
-    for line in ins: length += 1
-    ins.close()
-
-    if progress:
-        progress(0,srcFile.s+u'\n'+_(u'Extracting files...'))
-        progress.setFull(1+length)
-
-    app7z = dirs['compiled'].join(u'7z.exe').s
-    command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
-
-    #--Extract files
-    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-    #--Error Checking, and progress feedback
-    #--Note subArchives for recursive unpacking
-    reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
-    regMatch = reExtracting.match
-    reError = re.compile(u'Error: (.*)',re.U)
-    regErrMatch = reError.match
-    errorLine = []
-    index = 0
-    for line in ins:
-        line = unicode(line, Path.sys_fs_enc)
-        maExtracting = regMatch(line)
-        if len(errorLine) or regErrMatch(line):
-            errorLine.append(line)
-        if maExtracting:
-            extracted = GPath(maExtracting.group(1).strip())
-            if progress:
-                progress(index,srcFile.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
-            index += 1
-    result = ins.close()
-    if result:
-        raise StateError(srcFile.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
+    out, unused_err = Popen(command, stdout=PIPE, stdin=PIPE,
+                            startupinfo=startupinfo, bufsize=1).communicate()
+    with bolt.sio(out) as lines:
+        for line in lines: length += 1
+    progress = Progress()
+    progress(0, srcFile.s + u'\n' + _(u'Extracting files...'))
+    progress.setFull(1 + length)
+    command = bosh.extractCommand(srcFile, dstDir)
+    bolt.extract7z(command, srcFile, progress)
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':

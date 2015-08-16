@@ -1935,7 +1935,9 @@ def winNewLines(inString):
 
 # Archives --------------------------------------------------------------------
 regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
-regErrMatch = re.compile(ur'Error:', re.U).match
+regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
+regErrMatch = re.compile(
+    u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U).match
 
 def compress7z(command, outDir, destArchive, srcDir, progress=None):
     outFile = outDir.join(destArchive)
@@ -1969,6 +1971,28 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
                 u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
     #--Finalize the file, and cleanup
     outFile.untemp()
+
+def extract7z(command, srcFile, progress):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    #--Error Checking, and progress feedback
+    index, errorLine = 0, u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            maExtracting = regExtractMatch(line)
+            if maExtracting and progress:
+                progress(index, srcFile.s + u'\n' + _(
+                    u'Extracting files...') + u'\n' + maExtracting.group(
+                    1).strip())
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        raise StateError(srcFile.s + u': Extraction failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------

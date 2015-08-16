@@ -6706,6 +6706,11 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
             u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
             u"%s\\*" % srcFolder.s]
 
+def extractCommand(archivePath, outDirPath):
+    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
+        exe7z, archivePath.s, outDirPath.s)
+    return command
+
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
@@ -6805,24 +6810,12 @@ class InstallerConverter(object):
         self.load(True)
         Installer.rmTempDir()
         tmpDir = Installer.newTempDir()
-        progress = progress if progress else bolt.Progress()
+        progress = progress or bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         #--Extract BCF
         with self.fullPath.unicodeSafe() as tempPath:
-            command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (exe7z,tempPath,tmpDir.s)
-            ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            ins = sio(ins)
-            #--Error checking
-            reError = re.compile(u'Error:',re.U)
-            regMatch = reError.match
-            errorLine = []
-            for line in ins:
-                line = unicode(line, 'utf8')
-                if len(errorLine) or regMatch(line):
-                    errorLine.append(line)
-            result = ins.close()
-        if result or errorLine:
-            raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
+            command = extractCommand(tempPath, tmpDir)
+            bolt.extract7z(command, tempPath, progress)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -7169,7 +7162,6 @@ class InstallerArchive(Installer):
                 args += u' -r'
             command = u'"%s" l %s' % (exe7z, args)
             ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            reExtracting = re.compile(ur'^Extracting\s+(.+)',re.U)
             reError = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U)
             numFiles = 0
             errorLine = []
@@ -7191,31 +7183,13 @@ class InstallerArchive(Installer):
             progress.setFull(numFiles)
             #--Extract files
             command = u'"%s" x %s' % (exe7z, args)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            extracted = []
-            index = 0
-            for line in ins:
-                line = unicode(line,'utf8')
-#                deprint(line)
-                maExtracting = reExtracting.match(line)
-                if len(errorLine) or reError.match(line):
-                    errorLine.append(line.rstrip())
-                if maExtracting:
-                    extracted.append(maExtracting.group(1).strip())
-                    progress(index,archive.s+u'\n'+_(u'Extracting files...')+u'\n'+maExtracting.group(1).strip())
-                    index += 1
-            result = ins.close()
-            self.tempList.remove()
-            # Clear ReadOnly flag if set
-            cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
-            ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            if result or errorLine:
-                if len(errorLine) > 10:
-                    if bolt.deprintOn:
-                        for line in errorLine:
-                            print line
-                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
-                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
+            try:
+                bolt.extract7z(command, archive, progress)
+            finally:
+                self.tempList.remove()
+                # Clear ReadOnly flag if set
+                cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
+                ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
         #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
