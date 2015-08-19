@@ -29,7 +29,7 @@ from ..balt import ItemLink, vSizer, hSizer, spacer, button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     staticText, tooltip, Link, staticBitmap
 from .. import barb, bosh, bush, balt, bass, bolt
-from ..bolt import StateError, deprint, GPath
+from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
 from .dialogs import ColorDialog
 from .app_buttons import App_Button # TODO(ut): ugly
@@ -82,7 +82,8 @@ class Settings_BackupSettings(ItemLink):
             with balt.BusyCursor():
                 backup = barb.BackupSettings(Link.Frame,backup_images=images)
                 backup.Apply()
-        except StateError:
+        except bolt.StateError:
+            deprint(u'Backup settings failed', traceback=True)
             backup.WarnFailed()
         except barb.BackupCancelled:
             pass

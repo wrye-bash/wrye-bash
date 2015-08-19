@@ -99,7 +99,7 @@ undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Unicode
-exe7z = u'7z.exe'
+exe7z = u'7z.exe' # this should be moved to bolt (or bass ?) but still set here
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
@@ -6665,6 +6665,15 @@ class Installer(object):
         raise AbstractError
 
 #------------------------------------------------------------------------------
+def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
+                    archiveType=u'7z'): # WIP - note solid on by default (7z)
+    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+            u'-t%s' % archiveType] + solid.split() + [
+            u'-y', u'-r', # quiet, recursive
+            u'-o"%s"' % destDir.s,
+            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
+            u"%s\\*" % srcFolder.s]
+
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
@@ -6748,18 +6757,15 @@ class InstallerConverter(object):
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
+        def _dump(att, dat):
+            cPickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
         try:
-            result = 0
             with Installer.getTempDir().join(u'BCF.dat').open('wb') as f:
-                cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
-                cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
-                result = f.close()
+                _dump(self.persistBCF, f)
+                _dump(self.settings + self.volatile + self.addedSettings, f)
         except Exception as e:
             raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
                 sys.exc_info()[2]
-        finally:
-            if result:
-                raise StateError(u"Error creating BCF.dat:\nError Code: %s" % result)
 
     def apply(self,destArchive,crc_installer,progress=None,embedded=0L):
         """Applies the BCF and packages the converted archive"""
@@ -7043,12 +7049,11 @@ class InstallerConverter(object):
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
-            out = tempList.open('w',encoding='utf-8-sig')
-            out.write(u'\n'.join(fileNames))
-        finally:
-            result = out.close()
-            if result: raise StateError(u"Error creating file list for 7z:\nError Code: %s" % result)
-            result = 0
+            with tempList.open('w',encoding='utf-8-sig') as out:
+                out.write(u'\n'.join(fileNames))
+        except Exception as e:
+            raise StateError, (u"Error creating file list for 7z:\nError: %s"
+                               % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
         if isinstance(srcInstaller,InstallerArchive):
@@ -10513,11 +10518,13 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order
-    import load_order
+    global load_order, exe7z
+    import load_order ##: move it from here - also called from restore settings
+    load_order = load_order
     initOptions(bashIni)
     initLogFile()
     Installer.initData()
+    exe7z = dirs['compiled'].join(exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

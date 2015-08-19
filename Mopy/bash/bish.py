@@ -1503,11 +1503,12 @@ class Archive:
         """Refreshes file list from archive."""
         files = {}
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
-        path = size = crc = isDir = 0
+        path = size = isDir = 0
 
-        command = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
-        command = command.encode('mbcs')
-        out = Popen(command, stdout=PIPE, stdin=PIPE).stdout
+        cmd = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
+        cmd = cmd.encode('mbcs')
+        proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
+        out = proc.stdout
         for line in out:
             print line,
             maList = reList.match(line)
@@ -1525,9 +1526,10 @@ class Archive:
                     if path and not isDir:
                         files[path] = (size,crc)
                         #print '%8d %8X %s' % (size,crc,path.s)
-                    path = size = crc = 0
-        result = out.close()
-        print 'result',result
+                    path = size = 0
+        out.close()
+        returncode = proc.wait()
+        print 'result', returncode
 
     def extract(self):
         """Extracts specified files from archive."""

@@ -24,7 +24,6 @@
 
 """Rollback library."""
 
-import os
 import re
 import datetime
 import cPickle
@@ -32,6 +31,7 @@ import StringIO
 from subprocess import Popen, PIPE
 import bash
 import bass
+import bolt
 import bosh
 import bush
 from . import images_list
@@ -192,11 +192,7 @@ class BackupSettings(BaseBackupSettings):
             cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the user on restore
 
         # create the backup archive
-        try:
-            pack7z(self.dir.join(self.archive),self.tmp)
-        except StateError, e:
-            raise
-        #end try
+        _compress(self.dir, self.archive, self.tmp) # may raise StateError
         bosh.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
 
@@ -412,45 +408,10 @@ class RestoreSettings(BaseBackupSettings):
         Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
-def pack7z(dstFile, srcDir, progress=None):
-    # archive srcdir to dstFile in 7z format without solid compression
-    progress = progress or Progress()
-
-    #--Used solely for the progress bar
-    length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
-
-    app7z = dirs['compiled'].join(u'7z.exe').s
-    command = u'"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
-
-    progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
-    progress.setFull(1+length)
-
-    #--Pack the files
-    ins = Popen(
-        command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-    #--Error checking and progress feedback
-    reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
-    regMatch = reCompressing.match
-    reError = re.compile(u'Error: (.*)',re.U)
-    regErrMatch = reError.match
-    errorLine = []
-    index = 0
-    for line in ins:
-        # filenames with non latin characters would raise UnicodeDecodeError
-        # idea from: http://stackoverflow.com/a/9951851/281545
-        line = unicode(line, Path.sys_fs_enc)
-        maCompressing = regMatch(line)
-        if len(errorLine) or regErrMatch(line):
-            errorLine.append(line)
-        if maCompressing:
-            progress(index,dstFile.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
-            index += 1
-    result = ins.close() # FIXME: FileIO.close() returns None
-    if result:
-        dstFile.temp.remove()
-        raise StateError(dstFile.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-    #--Finalize the file, and cleanup
-    dstFile.untemp()
+def _compress(outDir, outFile, srcDir, progress=None):
+    # archive srcdir to outFile in 7z format WITH solid compression
+    command = bosh.compressCommand(outFile, outDir, srcDir)
+    bolt.compress7z(command, outDir, outFile, srcDir, progress)
 
 #------------------------------------------------------------------------------
 def unpack7z(srcFile, dstDir, progress=None):

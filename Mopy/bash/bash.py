@@ -361,7 +361,6 @@ def main():
         isUAC = bosh.testUAC(bush.gamePath.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath,
                       opts.oblivionPath, bashIni)
-        bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:

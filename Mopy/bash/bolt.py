@@ -1933,6 +1933,43 @@ def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
     return reUnixNewLine.sub(u'\r\n',inString)
 
+# Archives --------------------------------------------------------------------
+regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
+regErrMatch = re.compile(ur'Error:', re.U).match
+
+def compress7z(command, outDir, destArchive, srcDir, progress=None):
+    outFile = outDir.join(destArchive)
+    progress = progress or Progress()
+    #--Used solely for the progress bar
+    length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+    progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
+    progress.setFull(1 + length)
+    #--Pack the files
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, # needed for some commands
+                            startupinfo=startupinfo)
+    #--Error checking and progress feedback
+    index, errorLine = 0, u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8') # utf-8 is ok see bosh.compressCommand
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            maCompressing = regCompressMatch(line)
+            if maCompressing:
+                progress(index, destArchive.s + u'\n' + _(
+                    u'Compressing files...') + u'\n' + maCompressing.group(
+                    1).strip())
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        outFile.temp.remove()
+        raise StateError(destArchive.s + u': Compression failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    #--Finalize the file, and cleanup
+    outFile.untemp()
+
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Log:
