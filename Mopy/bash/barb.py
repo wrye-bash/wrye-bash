@@ -26,14 +26,12 @@
 
 import datetime
 import cPickle
-from subprocess import Popen, PIPE
 import bash
 import bass
 import bolt
 import bosh
 import bush
 from . import images_list
-from bosh import startupinfo, dirs
 from bolt import BoltError, AbstractError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, \
     showWarning, showInfo, Link, BusyCursor
@@ -50,7 +48,7 @@ class BaseBackupSettings:
         if path is not None and path.ext == u'' and not path.exists():
             path = None
         if path is None: path = bosh.settings['bash.backupPath']
-        if path is None: path = dirs['modsBash']
+        if path is None: path = bosh.dirs['modsBash']
         self.quit = quit
         self.dir = path
         self.archive = None
@@ -102,7 +100,7 @@ class BackupSettings(BaseBackupSettings):
 
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
-        game = bush.game.fsName
+        game, dirs = bush.game.fsName, bosh.dirs
         for path, name, tmpdir in (
               (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
               (dirs['mods'].join(u'Bash'),        u'Table',                game+u'\\Data\\Bash'),
@@ -281,7 +279,7 @@ class RestoreSettings(BaseBackupSettings):
         deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
-        game = bush.game.fsName
+        game, dirs = bush.game.fsName, bosh.dirs
         tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 
@@ -408,13 +406,7 @@ def _compress(outDir, outFile, srcDir, progress=None):
 #------------------------------------------------------------------------------
 def _extract(srcFile, dstDir):
     """Extract srcFile to dstDir"""
-    # count the files in the archive
-    length = 0
-    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
-    out, unused_err = Popen(command, stdout=PIPE, stdin=PIPE,
-                            startupinfo=startupinfo, bufsize=1).communicate()
-    with bolt.sio(out) as lines:
-        for line in lines: length += 1
+    length = bosh.countFilesInArchive(srcFile)
     progress = Progress()
     progress(0, srcFile.s + u'\n' + _(u'Extracting files...'))
     progress.setFull(1 + length)

@@ -6711,6 +6711,36 @@ def extractCommand(archivePath, outDirPath):
         exe7z, archivePath.s, outDirPath.s)
     return command
 
+regErrMatch = re.compile(u'Error:', re.U).match
+
+def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
+    """Count all regular files in srcArch (or only the subset in
+    listFilePath)."""
+    # http://stackoverflow.com/q/31124670/281545
+    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
+    if listFilePath: command += [u'@%s' % listFilePath.s]
+    if recurse: command += [u'-r']
+    proc = Popen(command, stdout=PIPE, stdin=PIPE if listFilePath else None,
+                 startupinfo=startupinfo, bufsize=1)
+    errorLine = line = u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''): # consider io.TextIOWrapper
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+    returncode = proc.wait()
+    msg = u'%s: Listing failed\n' % srcArch.s
+    if returncode or errorLine:
+        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
+    elif not line: # should not happen
+        msg += u'Empty output'
+    else: msg = u''
+    if msg: raise StateError(msg) # consider using CalledProcessError
+    # number of files is reported in the last line - example:
+    #                                3534900       325332  75 files, 29 folders
+    return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
+
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
@@ -7157,31 +7187,15 @@ class InstallerArchive(Installer):
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
-            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (arch.s, self.getTempDir().s, self.tempList.s)
-            if recurse:
-                args += u' -r'
-            command = u'"%s" l %s' % (exe7z, args)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            reError = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U)
-            numFiles = 0
-            errorLine = []
-            for line in ins:
-                line = unicode(line,'utf8')
-                if len(errorLine) or reError.match(line):
-                    errorLine.append(line.rstrip())
-                # we'll likely get a few extra lines, but that's ok
-                numFiles += 1
-            if ins.close() or errorLine:
-                if len(errorLine) > 10:
-                    if bolt.deprintOn:
-                        for line in errorLine:
-                            print line
-                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
-                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
+            numFiles = countFilesInArchive(arch, listFilePath=self.tempList,
+                                           recurse=recurse)
             progress = progress or bolt.Progress()
             progress.state = 0
             progress.setFull(numFiles)
             #--Extract files
+            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
+                arch.s, self.getTempDir().s, self.tempList.s)
+            if recurse: args += u' -r'
             command = u'"%s" x %s' % (exe7z, args)
             try:
                 bolt.extract7z(command, archive, progress)
