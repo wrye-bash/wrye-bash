@@ -1935,7 +1935,7 @@ class ImportInventory(ImportPatcher):
         super(ImportInventory, self).initPatchFile(patchFile, loadMods)
         self.id_deltas = {}
         self.srcs = [x for x in self.srcs if
-                     x in bosh.modInfos and x in patchFile.allMods]
+                     x in bosh.modInfos and x in patchFile.allSet]
         self.inventOnlyMods = set(x for x in self.srcs if (
             x in patchFile.mergeSet and
             {u'InventOnly', u'IIM'} & bosh.modInfos[x].getBashTags()))

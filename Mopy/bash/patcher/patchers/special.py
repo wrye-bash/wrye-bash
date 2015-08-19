@@ -167,9 +167,8 @@ class ListsMerger(_AListsMerger,ListPatcher):
         """Add lists from modFile."""
         #--Level Masters (complete initialization)
         if self.levelers is None:
-            allMods = set(self.patchFile.allMods)
             self.levelers = [leveler for leveler in self.getConfigChecked() if
-                             leveler in allMods]
+                             leveler in self.patchFile.allSet]
             self.delevMasters = set()
             for leveler in self.levelers:
                 self.delevMasters.update(bosh.modInfos[leveler].header.masters)

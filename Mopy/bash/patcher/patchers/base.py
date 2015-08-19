@@ -64,7 +64,7 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         else:
             return [item for item in self.configItems if
                     self.configChecks[item] and (
-                        item in self.patchFile.allMods or not reModExt.match(
+                        item in self.patchFile.allSet or not reModExt.match(
                             item.s))]
 
 class MultiTweakItem(AMultiTweakItem):
