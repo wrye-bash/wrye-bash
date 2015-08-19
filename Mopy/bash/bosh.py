@@ -6809,8 +6809,9 @@ class InstallerConverter(object):
         #--Move files around and pack them
         try:
             self.arrangeFiles(SubProgress(progress,lastStep,0.7))
-        except bolt.StateError as e:
+        except bolt.StateError:
             self.hasBCF = False
+            raise
         else:
             self.pack(Installer.getTempDir(),destArchive,dirs['installers'],SubProgress(progress,0.7,1.0))
             #--Lastly, apply the settings.
@@ -7809,12 +7810,12 @@ class InstallersData(DataDict):
 
     def applyEmbeddedBCFs(self,installers=None,destArchives=None,progress=bolt.Progress()):
         if not installers:
-            installers = (self.data[x] for x in self.data)
-            installers = [x for x in installers if x.hasBCF and isinstance(x,InstallerArchive)]
+            installers = [x for x in self.values() if
+                          x.hasBCF and isinstance(x, InstallerArchive)]
         if not installers: return False
         if not destArchives:
             destArchives = [GPath(x.archive) for x in installers]
-        progress.setFull(max(len(installers),1))
+        progress.setFull(len(installers))
         for i,installer in enumerate(installers):
             name = GPath(installer.archive)
             progress(i,name.s)
@@ -7828,7 +7829,16 @@ class InstallersData(DataDict):
             #--Create the converter, apply it
             destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
-            converter.apply(destArchive,self.crc_installer,bolt.SubProgress(progress,0.0,0.99),installer.crc)
+            try:
+                converter.apply(destArchive, self.crc_installer,
+                                bolt.SubProgress(progress, 0.0, 0.99),
+                                installer.crc)
+            except StateError:
+                deprint(u'%s: ' % destArchive.s + _(u'An error occurred '
+                        u'while applying an Embedded BCF.'), traceback=True)
+                bcfFile.remove()
+                continue
+            ##: finally: bcfFile.remove() # ?
             #--Add the new archive to Bash
             if destArchive not in self:
                 self[destArchive] = InstallerArchive(destArchive)
@@ -7839,11 +7849,10 @@ class InstallersData(DataDict):
             pArchive = dirs['installers'].join(destArchive)
             iArchive.refreshed = False
             iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
-            if iArchive.hasBCF:
-                # If applying the BCF created a new archive with an embedded BCF,
-                # ignore the embedded BCF for now, so we don't end up in an infinite
-                # loop
-                iArchive.hasBCF = False
+            # If applying the BCF created a new archive with an embedded BCF,
+            # ignore the embedded BCF for now, so we don't end up in an
+            # infinite loop
+            iArchive.hasBCF = False
             bcfFile.remove()
         self.irefresh(what='I')
         return True

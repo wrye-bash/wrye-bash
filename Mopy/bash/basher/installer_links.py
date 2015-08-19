@@ -1199,13 +1199,16 @@ class InstallerConverter_Apply(_InstallerLink):
         if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
-            self.converter.apply(destArchive,self.idata.crc_installer,SubProgress(progress,0.0,0.99))
-            if hasattr(self.converter, 'hasBCF') and not self.converter.hasBCF:
-                deprint(u'An error occurred while attempting to apply an Auto-BCF:',traceback=True)
-                self._showWarning(
-                    _(u'%s: An error occurred while applying an Auto-BCF.' % destArchive.s))
+            try:
+                self.converter.apply(destArchive, self.idata.crc_installer,
+                                     SubProgress(progress, 0.0, 0.99))
+            except StateError:
                 # hasBCF will be set to False if there is an error while
                 # rearranging files
+                msg = u'%s: ' % destArchive.s + _(
+                    u'An error occurred while applying an Auto-BCF.')
+                deprint(msg, traceback=True)
+                self._showWarning(msg)
                 return
             #--Add the new archive to Bash
             if destArchive not in self.idata:
