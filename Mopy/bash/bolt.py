@@ -1998,6 +1998,15 @@ def extract7z(command, srcFile, progress):
         raise StateError(srcFile.s + u': Extraction failed:\n' +
                 u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
 
+def wrapPopenOut(command, wrapper, errorMsg):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    out, unused_err = proc.communicate()
+    wrapper(out)
+    returncode = proc.returncode
+    if returncode:
+        raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
+
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Log:

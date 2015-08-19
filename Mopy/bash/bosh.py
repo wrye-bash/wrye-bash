@@ -6796,15 +6796,8 @@ class InstallerConverter(object):
         fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(
             u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
-        with self.fullPath.unicodeSafe() as path:
-            # Temp rename if its name wont encode correctly
-            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (exe7z, path.s)
-            try:
-                ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            except:
-                raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
-            with sio(ins) as ins:
-                setter = object.__setattr__
+        def translate(out):
+            with sio(out) as stream:
                 # translate data types to new hierarchy
                 class _Translator:
                     def __init__(self, streamToWrap):
@@ -6817,10 +6810,16 @@ class InstallerConverter(object):
                     def _translate(s):
                         return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,
                                       flags=re.U)
-                translator = _Translator(ins)
+                translator = _Translator(stream)
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
                     map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
+        with self.fullPath.unicodeSafe() as path:
+            # Temp rename if its name wont encode correctly
+            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
+                exe7z, path.s)
+            bolt.wrapPopenOut(command, translate, errorMsg=
+                u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
