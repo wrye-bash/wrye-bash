@@ -99,7 +99,7 @@ undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 #--Unicode
-exe7z = u'7z.exe'
+exe7z = u'7z.exe' # this should be moved to bolt (or bass ?) but still set here
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
@@ -6665,6 +6665,82 @@ class Installer(object):
         raise AbstractError
 
 #------------------------------------------------------------------------------
+#  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
+reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
+def compressionSettings(archive, blockSize, isSolid):
+    archiveType = writeExts.get(archive.cext)
+    if not archiveType:
+        #--Always fall back to using the defaultExt
+        archive = GPath(archive.sbody + defaultExt).tail
+        archiveType = writeExts.get(archive.cext)
+    if archive.cext in noSolidExts: # zip
+        solid = u''
+    else:
+        if isSolid:
+            if blockSize:
+                solid = u'-ms=on -ms=%dm' % blockSize
+            else:
+                solid = u'-ms=on'
+        else:
+            solid = u'-ms=off'
+    userArgs = inisettings['7zExtraCompressionArguments']
+    if userArgs:
+        if reSolid.search(userArgs):
+            if not solid: # zip, will blow if ms=XXX is passed in
+                old = userArgs
+                userArgs = reSolid.sub(u'', userArgs).strip()
+                if old != userArgs: deprint(
+                    archive.s + u': 7zExtraCompressionArguments ini option '
+                                u'"' + old + u'" -> "' + userArgs + u'"')
+            solid = userArgs
+        else:
+            solid += userArgs
+    return archive, archiveType, solid
+
+def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
+                    archiveType=u'7z'): # WIP - note solid on by default (7z)
+    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+            u'-t%s' % archiveType] + solid.split() + [
+            u'-y', u'-r', # quiet, recursive
+            u'-o"%s"' % destDir.s,
+            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
+            u"%s\\*" % srcFolder.s]
+
+def extractCommand(archivePath, outDirPath):
+    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
+        exe7z, archivePath.s, outDirPath.s)
+    return command
+
+regErrMatch = re.compile(u'Error:', re.U).match
+
+def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
+    """Count all regular files in srcArch (or only the subset in
+    listFilePath)."""
+    # http://stackoverflow.com/q/31124670/281545
+    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
+    if listFilePath: command += [u'@%s' % listFilePath.s]
+    if recurse: command += [u'-r']
+    proc = Popen(command, stdout=PIPE, stdin=PIPE if listFilePath else None,
+                 startupinfo=startupinfo, bufsize=1)
+    errorLine = line = u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''): # consider io.TextIOWrapper
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+    returncode = proc.wait()
+    msg = u'%s: Listing failed\n' % srcArch.s
+    if returncode or errorLine:
+        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
+    elif not line: # should not happen
+        msg += u'Empty output'
+    else: msg = u''
+    if msg: raise StateError(msg) # consider using CalledProcessError
+    # number of files is reported in the last line - example:
+    #                                3534900       325332  75 files, 29 folders
+    return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
+
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
     #--Temp Files/Dirs
@@ -6720,15 +6796,8 @@ class InstallerConverter(object):
         fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(
             u"\nLoading %s:\nBCF doesn't exist." % self.fullPath.s)
-        with self.fullPath.unicodeSafe() as path:
-            # Temp rename if its name wont encode correctly
-            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (exe7z, path.s)
-            try:
-                ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            except:
-                raise StateError(u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
-            with sio(ins) as ins:
-                setter = object.__setattr__
+        def translate(out):
+            with sio(out) as stream:
                 # translate data types to new hierarchy
                 class _Translator:
                     def __init__(self, streamToWrap):
@@ -6741,25 +6810,28 @@ class InstallerConverter(object):
                     def _translate(s):
                         return re.sub(u'^(bolt|bosh)$', ur'bash.\1', s,
                                       flags=re.U)
-                translator = _Translator(ins)
+                translator = _Translator(stream)
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
                     map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
+        with self.fullPath.unicodeSafe() as path:
+            # Temp rename if its name wont encode correctly
+            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
+                exe7z, path.s)
+            bolt.wrapPopenOut(command, translate, errorMsg=
+                u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
+        def _dump(att, dat):
+            cPickle.dump(tuple(map(self.__getattribute__, att)), dat, -1)
         try:
-            result = 0
             with Installer.getTempDir().join(u'BCF.dat').open('wb') as f:
-                cPickle.dump(tuple(map(self.__getattribute__, self.persistBCF)), f,-1)
-                cPickle.dump(tuple(map(self.__getattribute__, self.settings + self.volatile + self.addedSettings)), f,-1)
-                result = f.close()
+                _dump(self.persistBCF, f)
+                _dump(self.settings + self.volatile + self.addedSettings, f)
         except Exception as e:
             raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
                 sys.exc_info()[2]
-        finally:
-            if result:
-                raise StateError(u"Error creating BCF.dat:\nError Code: %s" % result)
 
     def apply(self,destArchive,crc_installer,progress=None,embedded=0L):
         """Applies the BCF and packages the converted archive"""
@@ -6767,24 +6839,12 @@ class InstallerConverter(object):
         self.load(True)
         Installer.rmTempDir()
         tmpDir = Installer.newTempDir()
-        progress = progress if progress else bolt.Progress()
+        progress = progress or bolt.Progress()
         progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         #--Extract BCF
         with self.fullPath.unicodeSafe() as tempPath:
-            command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (exe7z,tempPath,tmpDir.s)
-            ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            ins = sio(ins)
-            #--Error checking
-            reError = re.compile(u'Error:',re.U)
-            regMatch = reError.match
-            errorLine = []
-            for line in ins:
-                line = unicode(line, 'utf8')
-                if len(errorLine) or regMatch(line):
-                    errorLine.append(line)
-            result = ins.close()
-        if result or errorLine:
-            raise StateError(self.fullPath.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
+            command = extractCommand(tempPath, tmpDir)
+            bolt.extract7z(command, tempPath, progress)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -6802,13 +6862,13 @@ class InstallerConverter(object):
             progress(0,srcInstaller.archive+u'\n'+_(u'Extracting files...'))
             tempCRC = srcInstaller.crc
             srcInstaller.crc = realCRC
-            self.unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
+            self._unpack(srcInstaller,files,SubProgress(progress,lastStep,nextStep))
             srcInstaller.crc = tempCRC
             lastStep = nextStep
             nextStep += step
         #--Move files around and pack them
         try:
-            self.arrangeFiles(SubProgress(progress,lastStep,0.7))
+            self._arrangeFiles(SubProgress(progress, lastStep, 0.7))
         except bolt.StateError:
             self.hasBCF = False
             raise
@@ -6825,7 +6885,7 @@ class InstallerConverter(object):
         """Applies the saved settings to an Installer"""
         map(destInstaller.__setattr__, self.settings + self.addedSettings, map(self.__getattribute__, self.settings + self.addedSettings))
 
-    def arrangeFiles(self,progress):
+    def _arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
         tmpDir = Installer.getTempDir()
         destDir = Installer.newTempDir()
@@ -6840,9 +6900,10 @@ class InstallerConverter(object):
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
             srcFile = srcDir_File[1]
-            if isinstance(srcDir,basestring):
+            if isinstance(srcDir, (basestring, Path)):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
-                srcFile = tempJoin(srcDir,srcFile)
+                srcDir = u'%s' % srcDir # Path defines __unicode__()
+                srcFile = tempJoin(srcDir ,srcFile)
             else:
                 srcFile = tempJoin(u"%08X" % srcDir,srcFile)
             destFile = destJoin(destFile)
@@ -6907,7 +6968,7 @@ class InstallerConverter(object):
             #--But it is easier to use the existing recursive extraction
             for index, (installerCRC) in enumerate(subArchives):
                 installer = data.crc_installer[installerCRC]
-                self.unpack(installer,subArchives[installerCRC],SubProgress(progress, lastStep, nextStep))
+                self._unpack(installer,subArchives[installerCRC],SubProgress(progress, lastStep, nextStep))
                 lastStep = nextStep
                 nextStep += step
             #--Note all extracted files
@@ -6979,61 +7040,17 @@ class InstallerConverter(object):
         self.pack(tmpDir,BCFArchive,dirs['converters'],SubProgress(progress, lastStep, 1.0))
         self.isSolid = destInstaller.isSolid
 
-    def pack(self,srcFolder,destArchive,outDir,progress=None):
+    def pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        progress = progress if progress else bolt.Progress()
-        #--Used solely for the progress bar
-        length = sum([len(files) for x,y,files in os.walk(srcFolder.s)])
         #--Determine settings for 7z
-        archiveType = writeExts.get(destArchive.cext)
-        if not archiveType:
-            #--Always fail back to using the defaultExt
-            destArchive = GPath(destArchive.sbody + defaultExt).tail
-            archiveType = writeExts.get(destArchive.cext)
-        outFile = outDir.join(destArchive)
-
-        if self.isSolid:
-            if self.blockSize:
-                solid = u'-ms=on -ms=%dm' % self.blockSize
-            else:
-                solid = u'-ms=on'
-        else:
-            solid = u'-ms=off'
-        if inisettings['7zExtraCompressionArguments']:
-            if u'-ms=on' in inisettings['7zExtraCompressionArguments']:
-                solid = u' %s' % inisettings['7zExtraCompressionArguments']
-            else: solid += u' %s' % inisettings['7zExtraCompressionArguments']
-
-        command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -scsUTF-8 -sccUTF-8 "%s"' % (exe7z, "%s" % outFile.temp.s, archiveType, solid, outDir.s, u"%s\\*" % srcFolder.s)
-
-        progress(0,destArchive.s+u'\n'+_(u'Compressing files...'))
-        progress.setFull(1+length)
-        #--Pack the files
-        ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-        #--Error checking and progress feedback
-        reCompressing = re.compile(u'Compressing\s+(.+)',re.U)
-        regMatch = reCompressing.match
-        reError = re.compile(u'Error: (.*)',re.U)
-        regErrMatch = reError.match
-        errorLine = []
-        index = 0
-        for line in ins:
-            line = unicode(line, 'utf8')
-            maCompressing = regMatch(line)
-            if len(errorLine) or regErrMatch(line):
-                errorLine.append(line)
-            if maCompressing:
-                progress(index,destArchive.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
-                index += 1
-        result = ins.close()
-        if result or errorLine:
-            outFile.temp.remove()
-            raise StateError(destArchive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-        #--Finalize the file, and cleanup
-        outFile.untemp()
+        destArchive, archiveType, solid = compressionSettings(
+            destArchive, self.blockSize, self.isSolid)
+        command = compressCommand(destArchive, outDir, srcFolder, solid,
+                                  archiveType)
+        bolt.compress7z(command, outDir, destArchive, srcFolder, progress)
         Installer.rmTempDir()
 
-    def unpack(self,srcInstaller,fileNames,progress=None):
+    def _unpack(self, srcInstaller, fileNames, progress=None):
         """Recursive function: completely extracts the source installer to subTempDir.
         It does NOT clear the temp folder.  This should be done prior to calling the function.
         Each archive and sub-archive is extracted to its own sub-directory to prevent file thrashing"""
@@ -7043,12 +7060,11 @@ class InstallerConverter(object):
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
-            out = tempList.open('w',encoding='utf-8-sig')
-            out.write(u'\n'.join(fileNames))
-        finally:
-            result = out.close()
-            if result: raise StateError(u"Error creating file list for 7z:\nError Code: %s" % result)
-            result = 0
+            with tempList.open('w',encoding='utf-8-sig') as out:
+                out.write(u'\n'.join(fileNames))
+        except Exception as e:
+            raise StateError, (u"Error creating file list for 7z:\nError: %s"
+                               % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
         if isinstance(srcInstaller,InstallerArchive):
@@ -7060,41 +7076,18 @@ class InstallerConverter(object):
         if progress:
             progress(0,srcInstaller.s+u'\n'+_(u'Extracting files...'))
             progress.setFull(1+len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (exe7z, apath.s, subTempDir.s, tempList.s)
+        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
+            exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
-        ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-        #--Error Checking, and progress feedback
-        #--Note subArchives for recursive unpacking
-        subArchives = []
-        reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
-        regMatch = reExtracting.match
-        reError = re.compile(u'Error: (.*)',re.U)
-        regErrMatch = reError.match
-        errorLine = []
-        index = 0
-        for line in ins:
-            maExtracting = regMatch(line)
-            if len(errorLine) or regErrMatch(line):
-                errorLine.append(line)
-            if maExtracting:
-                extracted = GPath(maExtracting.group(1).strip())
-                if progress:
-                    progress(index,srcInstaller.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
-                if extracted.cext in readExts:
-                    subArchives.append(subTempDir.join(extracted.s))
-                index += 1
-        result = ins.close()
-        tempList.remove()
-        # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % subTempDir.s
-        ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-        if result or errorLine:
-            raise StateError(srcInstaller.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
-        #--Done
+        try:
+            subArchives = bolt.extract7z(command, srcInstaller, progress,
+                                         readExtensions=readExts)
+        finally:
+            tempList.remove()
+            bolt.clearReadOnly(subTempDir) ##: do this once
         #--Recursively unpack subArchives
-        if len(subArchives):
-            for archive in subArchives:
-                self.unpack(archive,[u'*'])
+        for archive in map(subTempDir.join, subArchives):
+            self._unpack(archive, [u'*'])
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
@@ -7171,58 +7164,21 @@ class InstallerArchive(Installer):
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
-            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (arch.s, self.getTempDir().s, self.tempList.s)
-            if recurse:
-                args += u' -r'
-            command = u'"%s" l %s' % (exe7z, args)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            reExtracting = re.compile(ur'^Extracting\s+(.+)',re.U)
-            reError = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U)
-            numFiles = 0
-            errorLine = []
-            for line in ins:
-                line = unicode(line,'utf8')
-                if len(errorLine) or reError.match(line):
-                    errorLine.append(line.rstrip())
-                # we'll likely get a few extra lines, but that's ok
-                numFiles += 1
-            if ins.close() or errorLine:
-                if len(errorLine) > 10:
-                    if bolt.deprintOn:
-                        for line in errorLine:
-                            print line
-                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
-                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
+            numFiles = countFilesInArchive(arch, listFilePath=self.tempList,
+                                           recurse=recurse)
             progress = progress or bolt.Progress()
             progress.state = 0
             progress.setFull(numFiles)
             #--Extract files
+            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
+                arch.s, self.getTempDir().s, self.tempList.s)
+            if recurse: args += u' -r'
             command = u'"%s" x %s' % (exe7z, args)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            extracted = []
-            index = 0
-            for line in ins:
-                line = unicode(line,'utf8')
-#                deprint(line)
-                maExtracting = reExtracting.match(line)
-                if len(errorLine) or reError.match(line):
-                    errorLine.append(line.rstrip())
-                if maExtracting:
-                    extracted.append(maExtracting.group(1).strip())
-                    progress(index,archive.s+u'\n'+_(u'Extracting files...')+u'\n'+maExtracting.group(1).strip())
-                    index += 1
-            result = ins.close()
-            self.tempList.remove()
-            # Clear ReadOnly flag if set
-            cmd = ur'attrib -R "%s\*" /S /D' % self.getTempDir().s
-            ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-            if result or errorLine:
-                if len(errorLine) > 10:
-                    if bolt.deprintOn:
-                        for line in errorLine:
-                            print line
-                    errorLine = [_(u'%(count)i errors.  Enable debug mode for a more verbose output.') % {'count':len(errorLine)}]
-                raise StateError(u'%s: Extraction failed\n%s' % (archive.s,u'\n'.join(errorLine)))
+            try:
+                bolt.extract7z(command, archive, progress)
+            finally:
+                self.tempList.remove()
+                bolt.clearReadOnly(self.getTempDir())
         #--Done -> don't clean out temp dir, it's going to be used soon
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -7295,11 +7251,8 @@ class InstallerArchive(Installer):
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        tmpDir = self.getTempDir()
-        # Clear ReadOnly flag if set
-        cmd = ur'attrib -R "%s\*" /S /D' % tmpDir.s
-        ins, err = Popen(cmd, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-        tempDirJoin = tmpDir.join
+        bolt.clearReadOnly(self.getTempDir())
+        tempDirJoin = self.getTempDir().join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)
@@ -7450,13 +7403,10 @@ class InstallerProject(Installer):
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
         """Packs project to build directory. Release filters out development
         material from the archive"""
-        progress = progress or bolt.Progress()
         length = len(self.fileSizeCrcs)
         if not length: return
-        archiveType = writeExts.get(archive.cext)
-        if not archiveType:
-            archive = GPath(archive.sbody + defaultExt).tail
-            archiveType = writeExts.get(archive.cext)
+        archive, archiveType, solid = compressionSettings(archive, blockSize,
+                                                          isSolid)
         outDir = dirs['installers']
         realOutFile = outDir.join(archive)
         outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
@@ -7466,20 +7416,6 @@ class InstallerProject(Installer):
             num += 1
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
-            if archive.cext in noSolidExts:
-                solid = u''
-            else:
-                if isSolid:
-                    if blockSize:
-                        solid = u'-ms=on -ms=%dm' % blockSize
-                    else:
-                        solid = u'-ms=on'
-                else:
-                    solid = u'-ms=off'
-            if inisettings['7zExtraCompressionArguments']:
-                if u'-ms=' in inisettings['7zExtraCompressionArguments']:
-                    solid = u' '+inisettings['7zExtraCompressionArguments']
-                else: solid += u' '+inisettings['7zExtraCompressionArguments']
             #--Dump file list
             with self.tempList.open('w',encoding='utf-8-sig') as out:
                 if release:
@@ -7488,28 +7424,11 @@ class InstallerProject(Installer):
                     out.write(u'--*\\')
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
-            progress(0,archive.s+u'\n'+_(u'Compressing files...'))
-            progress.setFull(1+length)
-            ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-            reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
-            regMatch = reCompressing.match
-            reError = re.compile(u'Error: (.*)',re.U)
-            regErrMatch = reError.match
-            errorLine = []
-            index = 0
-            for line in ins:
-                maCompressing = regMatch(line)
-                if len(errorLine) or regErrMatch(line):
-                    errorLine.append(unicode(line,'utf8'))
-                if maCompressing:
-                    progress(index,archive.s+u'\n'+_(u'Compressing files...')+u'\n%s' % unicode(maCompressing.group(1).strip(),'utf8'))
-                    index += 1
-            result = ins.close()
-            self.tempList.remove()
-            if result:
-                outFile.temp.remove()
-                raise StateError(archive.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-            outFile.untemp()
+            try:
+                bolt.compress7z(command, outDir, outFile.tail, projectDir,
+                                progress)
+            finally:
+                self.tempList.remove()
             outFile.moveTo(realOutFile)
 
     @staticmethod
@@ -10513,11 +10432,13 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order
-    import load_order
+    global load_order, exe7z
+    import load_order ##: move it from here - also called from restore settings
+    load_order = load_order
     initOptions(bashIni)
     initLogFile()
     Installer.initData()
+    exe7z = dirs['compiled'].join(exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

@@ -67,8 +67,9 @@ def cmdBackup():
     path = None
     quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
-    backup = barb.BackupSettings(balt.Link.Frame,path,quit,opts.backup_images)
-    if backup.PromptMismatch() or opts.backup:
+    if barb.BackupSettings.PromptMismatch() or opts.backup:
+        backup = barb.BackupSettings(balt.Link.Frame, path, quit,
+                                     opts.backup_images)
         try:
             backup.Apply()
         except bolt.StateError:
@@ -79,7 +80,7 @@ def cmdBackup():
         except barb.BackupCancelled:
             if not backup.SameAppVersion() and not backup.PromptContinue():
                 return False
-    del backup
+        del backup
     return quit
 
 def cmdRestore():
@@ -361,7 +362,6 @@ def main():
         isUAC = bosh.testUAC(bush.gamePath.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath,
                       opts.oblivionPath, bashIni)
-        bosh.exe7z = bosh.dirs['compiled'].join(bosh.exe7z).s
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
@@ -405,9 +405,9 @@ def main():
 
     # process backup/restore options
     # quit if either is true, but only after calling both
-    quit = cmdBackup() ##: takes time
-    quit = cmdRestore() or quit
-    if quit: return
+    quit_ = cmdBackup()
+    quit_ = cmdRestore() or quit_
+    if quit_: return
 
     basher.isUAC = isUAC
     if isUAC:

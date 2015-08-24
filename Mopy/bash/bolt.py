@@ -876,8 +876,7 @@ class Path(object):
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
-                cmd = ur'attrib -R "%s\*" /S /D' % self._s
-                subprocess.call(cmd,stdout=subprocess.PIPE,startupinfo=startupinfo)
+                clearReadOnly(self)
             except UnicodeError:
                 flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
@@ -1020,6 +1019,11 @@ class Path(object):
             return cmp(self._cs, other._cs)
         else:
             return cmp(self._cs, Path.getCase(other))
+
+def clearReadOnly(dirPath):
+    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
+    cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
+    subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -1932,6 +1936,79 @@ def listSubtract(alist, blist):
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
     return reUnixNewLine.sub(u'\r\n',inString)
+
+# Archives --------------------------------------------------------------------
+regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
+regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
+regErrMatch = re.compile(
+    u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U).match
+
+def compress7z(command, outDir, destArchive, srcDir, progress=None):
+    outFile = outDir.join(destArchive)
+    progress = progress or Progress()
+    #--Used solely for the progress bar
+    length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+    progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
+    progress.setFull(1 + length)
+    #--Pack the files
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, # needed for some commands
+                            startupinfo=startupinfo)
+    #--Error checking and progress feedback
+    index, errorLine = 0, u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8') # utf-8 is ok see bosh.compressCommand
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            maCompressing = regCompressMatch(line)
+            if maCompressing:
+                progress(index, destArchive.s + u'\n' + _(
+                    u'Compressing files...') + u'\n' + maCompressing.group(
+                    1).strip())
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        outFile.temp.remove()
+        raise StateError(destArchive.s + u': Compression failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    #--Finalize the file, and cleanup
+    outFile.untemp()
+
+def extract7z(command, srcFile, progress, readExtensions=None):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    # Error checking, progress feedback and subArchives for recursive unpacking
+    index, errorLine, subArchives = 0, u'', []
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            maExtracting = regExtractMatch(line)
+            if maExtracting and progress:
+                extracted = GPath(maExtracting.group(1).strip())
+                progress(index, srcFile.s + u'\n' + _(
+                    u'Extracting files...') + u'\n' + extracted.s)
+                if readExtensions and extracted.cext in readExtensions:
+                    subArchives.append(extracted)
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        raise StateError(srcFile.s + u': Extraction failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    return subArchives
+
+def wrapPopenOut(command, wrapper, errorMsg):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    out, unused_err = proc.communicate()
+    wrapper(out)
+    returncode = proc.returncode
+    if returncode:
+        raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -32,7 +32,6 @@ from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
 from bass import Resources
 #--Python
 import cPickle
-import StringIO
 import string
 import os
 import textwrap
@@ -848,7 +847,7 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
     else: window.Show()
 
 #------------------------------------------------------------------------------
-def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
+def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
     try:
         import wx.lib.iewin
@@ -859,10 +858,9 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
         if not isinstance(logText,bolt.Path):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-            ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-            with logPath.open('w',encoding='utf-8-sig') as out:
+            with logPath.open('w',encoding='utf-8-sig') as out, \
+                 bolt.sio(logText+u'\n{{CSS:wtxt_sand_small.css}}') as ins:
                 bolt.WryeText.genHtml(ins,out,cssDir)
-            ins.close()
             logText = logPath
         webbrowser.open(logText.s)
         return
@@ -884,10 +882,9 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     if not isinstance(logText,bolt.Path):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-        ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf-8-sig') as out:
+        with logPath.open('w',encoding='utf-8-sig') as out, \
+             bolt.sio(logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
             bolt.WryeText.genHtml(ins,out,cssDir)
-        ins.close()
         logText = logPath
     textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
@@ -2479,9 +2476,8 @@ class Link(object):
     def _showInfo(self, message, title=_(u'Information'), **kwdargs):
         return showInfo(self.window, message, title, **kwdargs)
 
-    def _showWryeLog(self, logText, title=u'', style=0, asDialog=True,
-                     icons=None):
-        return showWryeLog(self.window, logText, title, style, asDialog, icons)
+    def _showWryeLog(self, logText, title=u'', asDialog=True, icons=None):
+        return showWryeLog(self.window, logText, title, asDialog, icons)
 
     def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
                    max=10000):

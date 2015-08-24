@@ -24,22 +24,17 @@
 
 """Rollback library."""
 
-import os
-import re
 import datetime
 import cPickle
-import StringIO
-from subprocess import Popen, PIPE
 import bash
 import bass
+import bolt
 import bosh
 import bush
 from . import images_list
-from bosh import startupinfo, dirs
-from bolt import BoltError, AbstractError, StateError, GPath, Progress, \
-    deprint, Path
+from bolt import BoltError, AbstractError, GPath, Progress, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, \
-    showWarning, showInfo, Link
+    showWarning, showInfo, Link, BusyCursor
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
@@ -49,31 +44,31 @@ class BackupCancelled(BoltError):
 
 #------------------------------------------------------------------------------
 class BaseBackupSettings:
+    verApp = bass.AppVersion
+
     def __init__(self, parent=None, path=None, quit=False):
-        if path is not None and path.ext == u'' and not path.exists(): path = None
+        if path is not None and path.ext == u'' and not path.exists():
+            path = None
         if path is None: path = bosh.settings['bash.backupPath']
-        if path is None: path = dirs['modsBash']
+        if path is None: path = bosh.dirs['modsBash']
         self.quit = quit
         self.dir = path
         self.archive = None
         if path.ext:
             self.dir = path.head
             self.archive = path.tail
-        #end if
         self.parent = parent
         self.verDat = bosh.settings['bash.version']
-        self.verApp = bass.AppVersion
         self.files = {}
         self.tmp = None
 
-    def __del__(self):
-        if self.tmp and self.tmp.exists(): self.tmp.rmtree(u'~tmp')
+    def __del__(self): ## FIXME: does not delete immediately - used to lead to
+    # file not found as ~tmp was deleted in mid restore ....
+        if self.tmp and self.tmp.exists(): self.tmp.rmtree(safety=u'WryeBash_')
 
     def maketmp(self):
         # create a ~tmp directory
-        self.tmp = self.dir.join(u'~tmp')
-        if self.tmp.exists(): self.tmp.rmtree(u'~tmp')
-        self.tmp.makedirs()
+        self.tmp = bolt.Path.tempDir()
 
     def Apply(self):
         raise AbstractError
@@ -81,7 +76,8 @@ class BaseBackupSettings:
     def PromptFile(self):
         raise AbstractError
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         raise AbstractError
 
     def PromptMismatch(self):
@@ -90,23 +86,19 @@ class BaseBackupSettings:
     def CmpDataVersion(self):
         return cmp(self.verDat, bosh.settings['bash.version'])
 
-    def CmpAppVersion(self):
-        # Changed to prompt updating on any version change
-        # Needs to check the cached value in settings for the initial upgrade check
-        return cmp(self.verApp, bosh.settings['bash.version'])
-
     def SameDataVersion(self):
         return not self.CmpDataVersion()
 
-    def SameAppVersion(self):
-        return not self.CmpAppVersion()
+    @staticmethod
+    def SameAppVersion():
+        return not cmp(bass.AppVersion, bosh.settings['bash.version'])
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
 
     def __init__(self, parent=None, path=None, quit=False, backup_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
-        game = bush.game.fsName
+        game, dirs = bush.game.fsName, bosh.dirs
         for path, name, tmpdir in (
               (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
               (dirs['mods'].join(u'Bash'),        u'Table',                game+u'\\Data\\Bash'),
@@ -132,8 +124,6 @@ class BackupSettings(BaseBackupSettings):
                 fpath = path.join(name+ext)
                 if fpath.exists(): self.files[tpath] = fpath
                 if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
-            #end for
-        #end for
 
         #backup all files in Mopy\Data, Data\Bash Patches\ and Data\INI Tweaks
         for path, tmpdir in (
@@ -163,41 +153,42 @@ class BackupSettings(BaseBackupSettings):
 
         #backup save profile settings
         savedir = GPath(u'My Games\\'+game)
-        profiles = [u''] + [x for x in dirs['saveBase'].join(u'Saves').list() if dirs['saveBase'].join(u'Saves',x).isdir() and x != u'bash']
+        profiles = [u''] + bosh.SaveInfos.getLocalSaveDirs()
         for profile in profiles:
-            tpath = savedir.join(u'Saves',profile,u'plugins.txt')
-            fpath = dirs['saveBase'].join(u'Saves',profile,u'plugins.txt')
-            if fpath.exists(): self.files[tpath] = fpath
-            for ext in (u'.dat',u'.pkl'):
-                tpath = savedir.join(u'Saves',profile,u'Bash',u'Table'+ext)
-                fpath = dirs['saveBase'].join(u'Saves',profile,u'Bash',u'Table'+ext)
+            pluginsTxt = (u'Saves', profile, u'plugins.txt')
+            loadorderTxt = (u'Saves', profile, u'loadorder.txt')
+            for txt in (pluginsTxt, loadorderTxt):
+                tpath = savedir.join(*txt)
+                fpath = dirs['saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
-                if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
+            for ext in (u'.dat', u'.pkl'):
+                table = (u'Saves', profile, u'Bash', u'Table' + ext)
+                tpath = savedir.join(*table)
+                fpath = dirs['saveBase'].join(*table)
+                if fpath.exists(): self.files[tpath] = fpath
+                if fpath.backup.exists():
+                    self.files[tpath.backup] = fpath.backup
 
     def Apply(self):
         if not self.PromptFile(): return
-
         deprint(u'')
         deprint(_(u'BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
-
-        # copy all files to ~tmp backup dir
-        for tpath,fpath in self.files.iteritems():
-            deprint(tpath.s + u' <-- ' + fpath.s)
-            fpath.copyTo(self.tmp.join(tpath))
-        #end for
-
-        # dump the version info and file listing
-        with self.tmp.join(u'backup.dat').open('wb') as out:
-            cPickle.dump(self.verDat, out, -1) #data version, if this doesn't match the installed data version, do not allow restore
-            cPickle.dump(self.verApp, out, -1) #app version, if this doesn't match the installer app version, warn the user on restore
-
-        # create the backup archive
-        try:
-            pack7z(self.dir.join(self.archive),self.tmp)
-        except StateError, e:
-            raise
-        #end try
-        bosh.settings['bash.backupPath'] = self.dir
+        with BusyCursor():
+            # copy all files to ~tmp backup dir
+            for tpath,fpath in self.files.iteritems():
+                deprint(tpath.s + u' <-- ' + fpath.s)
+                fpath.copyTo(self.tmp.join(tpath))
+            # dump the version info and file listing
+            with self.tmp.join(u'backup.dat').open('wb') as out:
+                # data version, if this doesn't match the installed data
+                # version, do not allow restore
+                cPickle.dump(self.verDat, out, -1)
+                # app version, if this doesn't match the installer app version,
+                # warn the user on restore
+                cPickle.dump(self.verApp, out, -1)
+            # create the backup archive
+            _compress(self.dir, self.archive, self.tmp) # may raise StateError
+            bosh.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
 
     def PromptFile(self):
@@ -219,17 +210,19 @@ class BackupSettings(BaseBackupSettings):
         self.maketmp()
         return True
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         msg = msg or _(u'Do you want to backup your Bash settings now?')
-        return askYes(self.parent,msg,_(u'Backup Bash Settings?'))
+        return askYes(Link.Frame, msg, _(u'Backup Bash Settings?'))
 
-    def PromptMismatch(self):
+    @staticmethod
+    def PromptMismatch():
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
         if bosh.settings['bash.version'] == 0: return False
-        return not self.SameAppVersion() and self.PromptConfirm(
+        return not BaseBackupSettings.SameAppVersion() and BackupSettings.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
             _(u'Previous Version: ')+(u'%s\n' % bosh.settings['bash.version']) +
-            _(u'Current Version: ')+(u'%s\n' % self.verApp) +
+            _(u'Current Version: ')+(u'%s\n' % bass.AppVersion) +
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
     def PromptContinue(self):
@@ -268,14 +261,8 @@ class RestoreSettings(BaseBackupSettings):
 
         if not self.PromptFile():
             raise BackupCancelled()
-        #end if
 
-        try:
-            unpack7z(self.dir.join(self.archive), self.tmp)
-        except StateError:
-            self.WarnFailed()
-            return
-        #end try
+        _extract(self.dir.join(self.archive), self.tmp)
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
             self.verApp = cPickle.load(ins)
@@ -292,7 +279,7 @@ class RestoreSettings(BaseBackupSettings):
         deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
-        game = bush.game.fsName
+        game, dirs = bush.game.fsName, bosh.dirs
         tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 
@@ -362,19 +349,19 @@ class RestoreSettings(BaseBackupSettings):
             if not path: return False
             self.dir = path.head
             self.archive = path.tail
-        #end if
         self.maketmp()
         return True
 
-    def PromptConfirm(self,msg=None):
+    @staticmethod
+    def PromptConfirm(msg=None):
         # returns False if user cancels
         msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
         msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your settings are restored.')
-        return askYes(self.parent,msg,_(u'Restore Bash Settings?'))
+        return askYes(Link.Frame, msg, _(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
         # return True if same app version or user confirms
-        return self.SameAppVersion() or askWarning(self.parent,
+        return BaseBackupSettings.SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
               _(u'Backup v%s does not match v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
               u'\n' +
@@ -412,89 +399,20 @@ class RestoreSettings(BaseBackupSettings):
         Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
-def pack7z(dstFile, srcDir, progress=None):
-    # archive srcdir to dstFile in 7z format without solid compression
-    progress = progress or Progress()
-
-    #--Used solely for the progress bar
-    length = sum([len(files) for x,y,files in os.walk(srcDir.s)])
-
-    app7z = dirs['compiled'].join(u'7z.exe').s
-    command = u'"%s" a "%s" -y -r "%s\\*"' % (app7z, dstFile.temp.s, srcDir.s)
-
-    progress(0,dstFile.s+u'\n'+_(u'Compressing files...'))
-    progress.setFull(1+length)
-
-    #--Pack the files
-    ins = Popen(
-        command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-    #--Error checking and progress feedback
-    reCompressing = re.compile(ur'Compressing\s+(.+)',re.U)
-    regMatch = reCompressing.match
-    reError = re.compile(u'Error: (.*)',re.U)
-    regErrMatch = reError.match
-    errorLine = []
-    index = 0
-    for line in ins:
-        # filenames with non latin characters would raise UnicodeDecodeError
-        # idea from: http://stackoverflow.com/a/9951851/281545
-        line = unicode(line, Path.sys_fs_enc)
-        maCompressing = regMatch(line)
-        if len(errorLine) or regErrMatch(line):
-            errorLine.append(line)
-        if maCompressing:
-            progress(index,dstFile.s+u'\n'+_(u'Compressing files...')+u'\n'+maCompressing.group(1).strip())
-            index += 1
-    result = ins.close() # FIXME: FileIO.close() returns None
-    if result:
-        dstFile.temp.remove()
-        raise StateError(dstFile.s+u': Compression failed:\n'+u'\n'.join(errorLine))
-    #--Finalize the file, and cleanup
-    dstFile.untemp()
+def _compress(outDir, outFile, srcDir, progress=None):
+    # archive srcdir to outFile in 7z format WITH solid compression
+    command = bosh.compressCommand(outFile, outDir, srcDir)
+    bolt.compress7z(command, outDir, outFile, srcDir, progress)
 
 #------------------------------------------------------------------------------
-def unpack7z(srcFile, dstDir, progress=None):
-    # extract srcFile to dstDir
-    progress = progress or Progress()
-
-    # count the files in the archive
-    length = 0
-    command = ur'"%s" l -slt "%s"' % (dirs['compiled'].join(u'7z.exe').s, srcFile.s)
-    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-    ins = StringIO.StringIO(ins)
-    for line in ins: length += 1
-    ins.close()
-
-    if progress:
-        progress(0,srcFile.s+u'\n'+_(u'Extracting files...'))
-        progress.setFull(1+length)
-
-    app7z = dirs['compiled'].join(u'7z.exe').s
-    command = u'"%s" x "%s" -y -o"%s"' % (app7z, srcFile.s, dstDir.s)
-
-    #--Extract files
-    ins = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout
-    #--Error Checking, and progress feedback
-    #--Note subArchives for recursive unpacking
-    reExtracting = re.compile(u'Extracting\s+(.+)',re.U)
-    regMatch = reExtracting.match
-    reError = re.compile(u'Error: (.*)',re.U)
-    regErrMatch = reError.match
-    errorLine = []
-    index = 0
-    for line in ins:
-        line = unicode(line, Path.sys_fs_enc)
-        maExtracting = regMatch(line)
-        if len(errorLine) or regErrMatch(line):
-            errorLine.append(line)
-        if maExtracting:
-            extracted = GPath(maExtracting.group(1).strip())
-            if progress:
-                progress(index,srcFile.s+u'\n'+_(u'Extracting files...')+u'\n'+extracted.s)
-            index += 1
-    result = ins.close()
-    if result:
-        raise StateError(srcFile.s+u': Extraction failed:\n'+u'\n'.join(errorLine))
+def _extract(srcFile, dstDir):
+    """Extract srcFile to dstDir"""
+    length = bosh.countFilesInArchive(srcFile)
+    progress = Progress()
+    progress(0, srcFile.s + u'\n' + _(u'Extracting files...'))
+    progress.setFull(1 + length)
+    command = bosh.extractCommand(srcFile, dstDir)
+    bolt.extract7z(command, srcFile, progress)
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':
