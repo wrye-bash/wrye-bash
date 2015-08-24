@@ -6868,7 +6868,7 @@ class InstallerConverter(object):
             nextStep += step
         #--Move files around and pack them
         try:
-            self.arrangeFiles(SubProgress(progress,lastStep,0.7))
+            self._arrangeFiles(SubProgress(progress, lastStep, 0.7))
         except bolt.StateError:
             self.hasBCF = False
             raise
@@ -6885,7 +6885,7 @@ class InstallerConverter(object):
         """Applies the saved settings to an Installer"""
         map(destInstaller.__setattr__, self.settings + self.addedSettings, map(self.__getattribute__, self.settings + self.addedSettings))
 
-    def arrangeFiles(self,progress):
+    def _arrangeFiles(self,progress):
         """Copies and/or moves extracted files into their proper arrangement."""
         tmpDir = Installer.getTempDir()
         destDir = Installer.newTempDir()
@@ -6900,9 +6900,10 @@ class InstallerConverter(object):
         for index, (crcValue, srcDir_File, destFile) in enumerate(self.convertedFiles):
             srcDir = srcDir_File[0]
             srcFile = srcDir_File[1]
-            if isinstance(srcDir,basestring):
+            if isinstance(srcDir, (basestring, Path)):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
-                srcFile = tempJoin(srcDir,srcFile)
+                srcDir = u'%s' % srcDir # Path defines __unicode__()
+                srcFile = tempJoin(srcDir ,srcFile)
             else:
                 srcFile = tempJoin(u"%08X" % srcDir,srcFile)
             destFile = destJoin(destFile)
