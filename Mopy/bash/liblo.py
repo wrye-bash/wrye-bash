@@ -306,7 +306,7 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self._DB = lo_game_handle()
             try:
-                _Clo_create_handle(byref(self._DB),game,_enc(gamePath),userPath)
+                _Clo_create_handle(byref(self._DB),game,_enc(gamePath),_enc(userPath))
             except LibloError as err:
                 if (err.code == LIBLO_WARN_LO_MISMATCH
                     or err.code == LIBLO_WARN_INVALID_LIST):
