@@ -386,6 +386,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             self.InitEdit()
         else:
             self.SetFileInfo(self.fileInfo)
+            self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
@@ -1157,6 +1158,8 @@ class _SashDetailsPanel(_EditableMixin, SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
+    def testChanges(self): raise AbstractError
+
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
@@ -1351,6 +1354,14 @@ class ModDetails(_SashDetailsPanel):
         return bosh.modInfos.askResourcesOk(fileInfo, parent=self,
             title=_(u'Rename '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
             voice=self.voice)
+
+    def testChanges(self): # used by the master list when editing is disabled
+        modInfo = self.modInfo
+        if not modInfo or (self.fileStr == modInfo.name and
+                self.modifiedStr == formatDate(modInfo.mtime) and
+                self.authorStr == modInfo.header.author and
+                self.descriptionStr == modInfo.header.description):
+            self.DoCancel(None)
 
     def DoSave(self,event):
         modInfo = self.modInfo
@@ -1981,6 +1992,11 @@ class SaveDetails(_SashDetailsPanel):
         else:
             self.fileStr = fileStr
             self.SetEdited()
+
+    def testChanges(self): # used by the master list when editing is disabled
+        saveInfo = self.saveInfo
+        if not saveInfo or self.fileStr == saveInfo.name:
+            self.DoCancel(None)
 
     def DoSave(self,event):
         """Event: Clicked Save button."""
