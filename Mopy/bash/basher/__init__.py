@@ -370,9 +370,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.edited = False
         self.fileInfo = fileInfo
         self.data.clear()
+        self.DeleteAll()
         #--Null fileInfo?
         if not fileInfo:
-            self.DeleteAll()
             return
         #--Fill data and populate
         for mi, masterName in enumerate(fileInfo.header.masters):
