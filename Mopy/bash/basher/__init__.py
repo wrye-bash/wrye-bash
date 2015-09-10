@@ -155,6 +155,7 @@ tabInfo = {
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
     'PM Archive':['MessagePanel', _(u"PM Archive"), None],
     'People':['PeoplePanel', _(u"People"), None],
+    'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
 # Windows ---------------------------------------------------------------------
@@ -187,9 +188,12 @@ class NotebookPanel(wx.Panel):
         """
         if hasattr(self, '_firstShow'):
             self.uiList.SetScrollPosition()
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
+            try:
+                sashPos = settings.get(self.sashPosKey,
+                                       self.__class__.defaultSashPos)
+                self.splitter.SetSashPosition(sashPos)
+            except AttributeError:
+                pass # BSAs grrr
             del self._firstShow
         self.uiList.autosizeColumns()
         self.SetStatusCount()
@@ -3102,7 +3106,6 @@ class BSAList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
     _sort_keys = {'File': None,
                   'Modified': lambda self, a: self.data[a].mtime,
                   'Size': lambda self, a: self.data[a].size,
@@ -3115,17 +3118,6 @@ class BSAList(balt.UIList):
         labels['Modified'] = formatDate(fileInfo.mtime)
         labels['Size'] = self._round(fileInfo.size)
         return labels
-
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            fileName = GPath(self.GetItem(hitItem))
-            newEnabled = not self.data.isEnabled(fileName)
-            newName = self.data.enable(fileName,newEnabled)
-            if newName != fileName: self.RefreshUI()
-        #--Pass Event onward
-        event.Skip()
 
 #------------------------------------------------------------------------------
 class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
@@ -3167,7 +3159,7 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
         """Set file to be viewed."""
         #--Reset?
         if fileName == 'SAME':
-            if not self.BSAInfo or self.BSAInfo.name not in bosh.BSAInfos:
+            if not self.BSAInfo or self.BSAInfo.name not in bosh.bsaInfos:
                 fileName = None
             else:
                 fileName = self.BSAInfo.name
@@ -3177,7 +3169,7 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
             self.fileStr = ''
         #--Valid fileName?
         else:
-            BSAInfo = self.BSAInfo = bosh.BSAInfos[fileName]
+            BSAInfo = self.BSAInfo = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = BSAInfo.name.s
         #--Set Fields
@@ -3189,7 +3181,7 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
         #--Info Box
         self.gInfo.DiscardEdits()
         if fileName:
-            self.gInfo.SetValue(bosh.BSAInfos.table.getItem(fileName,'info',_(u'Notes: ')))
+            self.gInfo.SetValue(bosh.bsaInfos.table.getItem(fileName,'info',_(u'Notes: ')))
         else:
             self.gInfo.SetValue(_(u'Notes: '))
 
@@ -3202,7 +3194,7 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
     def OnInfoEdit(self,event):
         """Info field was edited."""
         if self.BSAInfo and self.gInfo.IsModified():
-            bosh.BSAInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
+            bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
         event.Skip()
 
     def OnTextEdit(self,event):
@@ -3242,22 +3234,22 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
-            bosh.BSAInfos.rename(oldName,newName)
+            bosh.bsaInfos.rename(oldName,newName)
         #--Done
         try:
-            bosh.BSAInfos.refreshFile(BSAInfo.name)
+            bosh.bsaInfos.refreshFile(BSAInfo.name)
             self.SetFile(self.BSAInfo.name)
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        self.SetFile(self.BSAInfo.name)
-        BSAList.RefreshUI(files=[BSAInfo.name])
+        self.bsaList.RefreshUI()
 
     def DoCancel(self,event):
         """Event: Clicked cancel button."""
         self.SetFile(self.BSAInfo.name)
 
     def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
 class BSAPanel(_DetailsViewMixin, NotebookPanel):
@@ -3266,22 +3258,23 @@ class BSAPanel(_DetailsViewMixin, NotebookPanel):
 
     def __init__(self,parent):
         NotebookPanel.__init__(self, parent)
-        self.listData = bosh.BSAInfos
+        self.listData = bosh.bsaInfos
+        bosh.bsaInfos.refresh()
         self.detailsPanel = BSADetails(self)
-        self.uilist = BSAList(
+        self.uiList = BSAList(
             self, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
         #--Layout
-        sizer = hSizer((BSAList, 1, wx.GROW),
+        sizer = hSizer((self.uiList, 1, wx.GROW),
                        ((4, -1), 0),
                        (self.detailsPanel, 0, wx.EXPAND))
         self.SetSizer(sizer)
         self.detailsPanel.Fit()
 
-    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
+    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.bsaInfos.data))
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
-        bosh.BSAInfos.profiles.save()
+        # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
 class MessageList(balt.UIList):
@@ -4344,6 +4337,7 @@ class BashApp(wx.App):
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
         # bsaInfos is used in BashFrame __init__() and RefreshData() methods
+        # TODO(ut): NOT USED CAUSE NOT REFRESHED - refresh here ? performance..
         bosh.bsaInfos = bosh.BSAInfos()
         # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check

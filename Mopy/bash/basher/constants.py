@@ -193,6 +193,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Screenshots': True,
         'PM Archive': False,
         'People': False,
+        'BSAs': True,
         },
     'bash.tabs.order': [
         'Installers',
@@ -202,6 +203,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Screenshots',
         'PM Archive',
         'People',
+        'BSAs',
         ],
     #--Wrye Bash: StatusBar
     'bash.statusbar.iconSize': 16,
