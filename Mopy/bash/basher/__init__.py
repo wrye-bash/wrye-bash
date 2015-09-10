@@ -3117,76 +3117,65 @@ class BSAList(balt.UIList):
         return labels
 
 #------------------------------------------------------------------------------
-class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
+class BSADetails(_EditableMixin, SashPanel):
     """BSAfile details panel."""
-    def __init__(self,parent):
-        """Initialize."""
-        wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
+
+    @property
+    def file_info(self): return self.BSAInfo
+    @property
+    def allowDetailsEdit(self): return True
+
+    def __init__(self, parent):
+        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
+                           style=wx.TAB_TRAVERSAL)
+        self.top, self.bottom = self.left, self.right
+        bsaPanel = parent.GetParent().GetParent()
+        self.bsaList = bsaPanel.uiList
+        _EditableMixin.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
-        self.edited = False
-        textWidth = 200
         #--File Name
-        self.file = textCtrl(self, size=(textWidth, -1),
-                             onText=self.OnTextEdit,
+        self.file = textCtrl(self.top, onText=self.OnTextEdit,
                              onKillFocus=self.OnEditFile, maxChars=256)
 
         #--BSA Info
-        self.gInfo = textCtrl(self, size=(textWidth, 100), multiline=True,
+        self.gInfo = textCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
-        #--Save/Cancel
-        self.save = SaveButton(self, onClick=self.DoSave)
-        self.cancel = CancelButton(self, onClick=self.DoCancel)
-        self.save.Disable()
-        self.cancel.Disable()
         #--Layout
-        sizer = vSizer(
-            (staticText(self,_(u'File:')),0,wx.TOP,4),
-            (self.file,0,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                spacer,
+        nameSizer = vSizer(
+            (hSizer((staticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
+            wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
+        nameSizer.SetSizeHints(self.top)
+        self.top.SetSizer(nameSizer)
+        infoSizer = vSizer(
+        (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
+        (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.TOP,4),
-            (self.gInfo,0,wx.TOP,4),
-            )
-        self.SetSizer(sizer)
+                ),0,wx.EXPAND|wx.TOP,4),)
+        infoSizer.SetSizeHints(self.bottom)
+        self.bottom.SetSizer(infoSizer)
 
-    def SetFile(self,fileName='SAME'):
+    def _resetDetails(self):
+        self.BSAInfo = None
+        self.fileStr = u''
+
+    def SetFile(self, fileName='SAME'):
         """Set file to be viewed."""
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.BSAInfo or self.BSAInfo.name not in bosh.bsaInfos:
-                fileName = None
-            else:
-                fileName = self.BSAInfo.name
-        #--Null fileName?
-        if not fileName:
-            BSAInfo = self.BSAInfo = None
-            self.fileStr = ''
-        #--Valid fileName?
-        else:
+        fileName = super(BSADetails, self).SetFile(fileName)
+        if fileName:
             BSAInfo = self.BSAInfo = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = BSAInfo.name.s
         #--Set Fields
         self.file.SetValue(self.fileStr)
-        #--Edit State
-        self.edited = 0
-        self.save.Disable()
-        self.cancel.Disable()
         #--Info Box
         self.gInfo.DiscardEdits()
         if fileName:
-            self.gInfo.SetValue(bosh.bsaInfos.table.getItem(fileName,'info',_(u'Notes: ')))
+            self.gInfo.SetValue(
+                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: ')))
         else:
             self.gInfo.SetValue(_(u'Notes: '))
-
-    def SetEdited(self):
-        """Mark as edited."""
-        self.edited = True
-        self.save.Enable()
-        self.cancel.Enable()
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
@@ -3227,7 +3216,6 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
         changeName = (self.fileStr != BSAInfo.name)
         #--Backup
         BSAInfo.makeBackup()
-        prevMTime = BSAInfo.mtime
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
@@ -3240,10 +3228,6 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
         self.bsaList.RefreshUI()
-
-    def DoCancel(self,event):
-        """Event: Clicked cancel button."""
-        self.SetFile(self.BSAInfo.name)
 
     def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
