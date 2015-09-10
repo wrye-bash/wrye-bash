@@ -188,12 +188,9 @@ class NotebookPanel(wx.Panel):
         """
         if hasattr(self, '_firstShow'):
             self.uiList.SetScrollPosition()
-            try:
-                sashPos = settings.get(self.sashPosKey,
-                                       self.__class__.defaultSashPos)
-                self.splitter.SetSashPosition(sashPos)
-            except AttributeError:
-                pass # BSAs grrr
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
             del self._firstShow
         self.uiList.autosizeColumns()
         self.SetStatusCount()
@@ -220,10 +217,10 @@ class NotebookPanel(wx.Panel):
 class _DetailsViewMixin(object):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
-    This is a hasty mixin. I added it to SashPanel and BSAPanel (which
-    subclasses NotebookPanel directly) so UILists can call SetDetails,
-    RefreshDetails and ClearDetails on their panels. TODO:
-     - just mix it only in classes that _do_ have a details view.
+    This is a hasty mixin. I added it to SashPanel so UILists can call
+    SetDetails, RefreshDetails and ClearDetails on their panels. TODO:
+     - just mix it only in classes that _do_ have a details view (as it is
+     even Details panels inherit it).
      - drop hideous if detailsPanel is not self, due to Installers, People
      using themselves as details (YAK!)
     """
@@ -3252,22 +3249,21 @@ class BSADetails(wx.Window): ## TODO inherit from _EditableMixin ##
     def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
-class BSAPanel(_DetailsViewMixin, NotebookPanel):
+class BSAPanel(SashPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
 
     def __init__(self,parent):
-        NotebookPanel.__init__(self, parent)
+        super(BSAPanel, self).__init__(parent)
+        left,right = self.left, self.right
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
-        self.detailsPanel = BSADetails(self)
         self.uiList = BSAList(
-            self, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        self.detailsPanel = BSADetails(right)
         #--Layout
-        sizer = hSizer((self.uiList, 1, wx.GROW),
-                       ((4, -1), 0),
-                       (self.detailsPanel, 0, wx.EXPAND))
-        self.SetSizer(sizer)
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
 
     def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.bsaInfos.data))
