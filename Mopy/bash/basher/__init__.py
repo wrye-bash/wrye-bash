@@ -3920,10 +3920,24 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
-        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
-            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.displayName
+
+    @balt.conversation
+    def warnTooManyModsBsas(self):
+        if not bosh.inisettings['WarnTooManyFiles']: return
+        if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
+        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not \
+                settings['bash.mods.autoGhost']:
+            message = _(u"It appears that you have more than 325 mods and bsas"
+                u" in your data directory and auto-ghosting is disabled. This "
+                u"may cause problems in %s; see the readme under auto-ghost "
+                u"for more details and please enable auto-ghost.") % \
+                      bush.game.displayName
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
-                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
+                message = _(u"It appears that you have more than 400 mods and "
+                    u"bsas in your data directory and auto-ghosting is "
+                    u"disabled. This will cause problems in %s; see the readme"
+                    u" under auto-ghost for more details. ") % \
+                          bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def BindRefresh(self, bind=True, _event=wx.EVT_ACTIVATE):
@@ -4309,10 +4323,12 @@ class BashApp(wx.App):
         progress.Destroy()
         if splashScreen:
             splashScreen.Destroy()
+            splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
         self.SetTopWindow(frame)
         frame.Show()
         frame.Maximize(settings['bash.frameMax'])
         balt.ensureDisplayed(frame)
+        frame.warnTooManyModsBsas()
         return frame
 
     def InitResources(self):
@@ -4336,8 +4352,7 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        # bsaInfos is used in BashFrame __init__() and RefreshData() methods
-        # TODO(ut): NOT USED CAUSE NOT REFRESHED - refresh here ? performance..
+        # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
         bosh.bsaInfos = bosh.BSAInfos()
         # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check
