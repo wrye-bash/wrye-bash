@@ -348,11 +348,11 @@ class MasterList(_ModsSortMixin, balt.UIList):
     @property # only used in ColumnsMenu which is not available in MasterList
     def allCols(self): return ['File', 'Num', 'Current Order']
 
-    def __init__(self, parent, fileInfo, setEditedFn, listData=None,
+    def __init__(self, parent, setEditedFn, listData=None,
                  keyPrefix=keyPrefix, panel=None):
         #--Data/Items
         self.edited = False
-        self.fileInfo = fileInfo
+        self.fileInfo = None
         self.loadOrderNames = []
         #--Parent init
         super(MasterList, self).__init__(parent,
@@ -504,12 +504,12 @@ class MasterList(_ModsSortMixin, balt.UIList):
         #--No change?
         if newName in bosh.modInfos:
             masterInfo = self.data[self.GetItem(itemDex)]
-            oldName = masterInfo.name
             masterInfo.setName(newName)
             self.ReList()
             self.PopulateItem(itemDex)
-            settings.getChanged('bash.mods.renames')[masterInfo.oldName] = newName
-        elif newName == '':
+            settings.getChanged('bash.mods.renames')[
+                masterInfo.oldName] = newName
+        elif newName == u'':
             event.Veto()
         else:
             balt.showError(self,_(u'File %s does not exist.') % newName.s)
@@ -1075,6 +1075,8 @@ class _SashDetailsPanel(SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
+    def _resetDetails(self): raise AbstractError
+
     # Details panel API
     def SetFile(self,fileName='SAME'):
         """Set file to be viewed."""
@@ -1102,39 +1104,38 @@ class ModDetails(_SashDetailsPanel):
         #--Data
         self.modInfo = None
         textWidth = 200
-        if True: #setup
-            #--Version
-            self.version = staticText(top,u'v0.00')
-            #--File Name
-            self.file = textCtrl(top, onKillFocus=self.OnEditFile,
-                                 onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
-            #--Author
-            self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
-                                   onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
-            #--Modified
-            self.modified = textCtrl(top,size=(textWidth, -1),
-                                     onKillFocus=self.OnEditModified,
-                                     onText=self.OnTextEdit, maxChars=32)
-            #--Description
-            self.description = textCtrl(top, size=(textWidth, 150),
-                                        multiline=True, autotooltip=False,
-                                        onKillFocus=self.OnEditDescription,
-                                        onText=self.OnTextEdit, maxChars=512)
-            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
-            masterPanel = wx.Panel(subSplitter)
-            tagPanel = wx.Panel(subSplitter)
-            #--Masters
-            self.uilist = MasterList(masterPanel, None, self.SetEdited,
-                                     keyPrefix=self.keyPrefix, panel=modPanel)
-            #--Save/Cancel
-            self.save = SaveButton(masterPanel, onClick=self.DoSave)
-            self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
-            self.save.Disable()
-            self.cancel.Disable()
-            #--Bash tags
-            self.allTags = bosh.allTags
-            self.gTags = roTextCtrl(tagPanel, autotooltip=False,
-                                    size=(textWidth, 100))
+        #--Version
+        self.version = staticText(top,u'v0.00')
+        #--File Name
+        self.file = textCtrl(top, onKillFocus=self.OnEditFile,
+                             onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
+        #--Author
+        self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
+                               onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
+        #--Modified
+        self.modified = textCtrl(top,size=(textWidth, -1),
+                                 onKillFocus=self.OnEditModified,
+                                 onText=self.OnTextEdit, maxChars=32)
+        #--Description
+        self.description = textCtrl(top, size=(textWidth, 150),
+                                    multiline=True, autotooltip=False,
+                                    onKillFocus=self.OnEditDescription,
+                                    onText=self.OnTextEdit, maxChars=512)
+        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
+        masterPanel = wx.Panel(subSplitter)
+        #--Masters
+        self.uilist = MasterList(masterPanel, self.SetEdited,
+                                 keyPrefix=self.keyPrefix, panel=modPanel)
+        #--Save/Cancel
+        self.save = SaveButton(masterPanel, onClick=self.DoSave)
+        self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
+        self.save.Disable()
+        self.cancel.Disable()
+        #--Bash tags
+        tagPanel = wx.Panel(subSplitter)
+        self.allTags = bosh.allTags
+        self.gTags = roTextCtrl(tagPanel, autotooltip=False,
+                                size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
@@ -1817,7 +1818,7 @@ class SaveDetails(_SashDetailsPanel):
         masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.uilist = MasterList(masterPanel, None, self.SetEdited,
+        self.uilist = MasterList(masterPanel, self.SetEdited,
                                  keyPrefix=self.keyPrefix, panel=savePanel)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
