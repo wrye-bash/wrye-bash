@@ -1178,19 +1178,19 @@ class ModDetails(_SashDetailsPanel):
         self.version = staticText(top,u'v0.00')
         #--File Name
         self.file = textCtrl(top, onKillFocus=self.OnEditFile,
-                             onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
+                             onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
         self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
-                               onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
+                               onText=self.OnAuthorEdit, maxChars=512) # size=(textWidth,-1))
         #--Modified
         self.modified = textCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
-                                 onText=self.OnTextEdit, maxChars=32)
+                                 onText=self.OnModifiedEdit, maxChars=32)
         #--Description
         self.description = textCtrl(top, size=(textWidth, 150),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
-                                    onText=self.OnTextEdit, maxChars=512)
+                                    onText=self.OnDescrEdit, maxChars=512)
         #--Masters
         self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
                                  panel=modPanel, detailsPanel=self)
@@ -1272,15 +1272,19 @@ class ModDetails(_SashDetailsPanel):
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
         self.gTags.Refresh()
 
-    def OnTextEdit(self,event):
+    def _OnTextEdit(self, event, value, control):
         if not self.modInfo: return
-        if self.modInfo and not self.edited:
-            if ((self.fileStr != self.file.GetValue()) or
-                (self.authorStr != self.author.GetValue()) or
-                (self.modifiedStr != self.modified.GetValue()) or
-                (self.descriptionStr != self.description.GetValue()) ):
-                self.SetEdited()
+        if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
+    def OnFileEdit(self, event):
+        self._OnTextEdit(event, self.fileStr, self.file)
+    def OnAuthorEdit(self, event):
+        self._OnTextEdit(event, self.authorStr, self.author)
+    def OnModifiedEdit(self, event):
+        self._OnTextEdit(event, self.modifiedStr, self.modified)
+    def OnDescrEdit(self, event):
+        self._OnTextEdit(event, self.descriptionStr.replace(
+            '\r\n', '\n').replace('\r', '\n'), self.description)
 
     def OnEditFile(self,event):
         if not self.modInfo: return
@@ -1326,9 +1330,9 @@ class ModDetails(_SashDetailsPanel):
 
     def OnEditDescription(self,event):
         if not self.modInfo: return
-        descriptionStr = self.description.GetValue()
-        if descriptionStr != self.descriptionStr:
-            self.descriptionStr = descriptionStr
+        if self.description.GetValue() != self.descriptionStr.replace('\r\n',
+                '\n').replace('\r', '\n'):
+            self.descriptionStr = self.description.GetValue() ##: .replace('\n', 'r\n')
             self.SetEdited()
 
     bsaAndVoice = _(u'This mod has an associated archive (%s.bsa) and an '
