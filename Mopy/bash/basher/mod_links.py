@@ -2690,7 +2690,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
         modInfo.header.changed = True
         self.window.SetFileInfo(modInfo)
         self.window.InitEdit()
-        self.window.SetMasterlistEdited()
+        self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
 class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT

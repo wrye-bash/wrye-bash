@@ -281,6 +281,7 @@ class Master_ChangeTo(_Master_EditList):
     text = _(u"Change to...")
     help = _(u"Rename/replace master through file dialog")
 
+    @balt.conversation
     def Execute(self,event):
         itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
@@ -304,8 +305,7 @@ class Master_ChangeTo(_Master_EditList):
         #--Save Name
         masterInfo.setName(newName)
         bosh.settings.getChanged('bash.mods.renames')[masterName] = newName
-        self.window.SetMasterlistEdited()
-        self.window.RefreshUI()
+        self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
 class Master_Disable(AppendableLink, _Master_EditList):
@@ -322,8 +322,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
         newName = GPath(re.sub(u'[mM]$','p',u'XX'+masterName.s))
         #--Save Name
         masterInfo.setName(newName)
-        self.window.SetMasterlistEdited()
-        self.window.RefreshUI()
+        self.window.SetMasterlistEdited(repopulate=True)
 
 # Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------

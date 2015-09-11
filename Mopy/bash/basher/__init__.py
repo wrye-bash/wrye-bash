@@ -218,7 +218,7 @@ class _DetailsViewMixin(object):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
     This is a hasty mixin. I added it to SashPanel so UILists can call
-    SetDetails, RefreshDetails and ClearDetails on their panels. TODO:
+    SetDetails, RefreshDetails and ClearDetails on their panels. TODO !:
      - just mix it only in classes that _do_ have a details view (as it is
      even Details panels inherit it).
      - drop hideous if detailsPanel is not self, due to Installers, People
@@ -364,7 +364,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = []
+        self.loadOrderNames = [] # needed as masters may be renamed
         self._allowEditKey = keyPrefix + '.allowEdit'
         if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
             self.message += self.saves192warn
@@ -405,7 +405,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         for mi, masterName in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masterName,0)
             self.data[mi] = masterInfo
-        self.ReList()
+        self._reList()
         self.PopulateItems()
 
     #--Get Master Status
@@ -484,7 +484,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
 
     #--Relist
-    def ReList(self):
+    def _reList(self):
         fileOrderNames = [v.name for v in self.data.values()]
         self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
 
@@ -503,7 +503,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         if edited: self.SetMasterlistEdited(repopulate=True)
 
     def SetMasterlistEdited(self, repopulate=False):
-        self.ReList()
+        self._reList()
         if repopulate: self.PopulateItems()
         self.edited = True
         self.detailsPanel.SetEdited() # inform the details panel
