@@ -1945,11 +1945,10 @@ regErrMatch = re.compile(
 
 def compress7z(command, outDir, destArchive, srcDir, progress=None):
     outFile = outDir.join(destArchive)
-    progress = progress or Progress()
-    #--Used solely for the progress bar
-    length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
-    progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
-    progress.setFull(1 + length)
+    if progress is not None: #--Used solely for the progress bar
+        length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+        progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
+        progress.setFull(1 + length)
     #--Pack the files
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
                             stdin=subprocess.PIPE, # needed for some commands
@@ -1962,6 +1961,7 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
             if regErrMatch(line):
                 errorLine = line + u''.join(out)
                 break
+            if progress is None: continue
             maCompressing = regCompressMatch(line)
             if maCompressing:
                 progress(index, destArchive.s + u'\n' + _(
@@ -1976,7 +1976,7 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
     #--Finalize the file, and cleanup
     outFile.untemp()
 
-def extract7z(command, srcFile, progress, readExtensions=None):
+def extract7z(command, srcFile, progress=None, readExtensions=None):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
                             stdin=subprocess.PIPE, startupinfo=startupinfo)
     # Error checking, progress feedback and subArchives for recursive unpacking
@@ -1988,12 +1988,13 @@ def extract7z(command, srcFile, progress, readExtensions=None):
                 errorLine = line + u''.join(out)
                 break
             maExtracting = regExtractMatch(line)
-            if maExtracting and progress:
+            if maExtracting:
                 extracted = GPath(maExtracting.group(1).strip())
-                progress(index, srcFile.s + u'\n' + _(
-                    u'Extracting files...') + u'\n' + extracted.s)
                 if readExtensions and extracted.cext in readExtensions:
                     subArchives.append(extracted)
+                if not progress: continue
+                progress(index, srcFile.s + u'\n' + _(
+                    u'Extracting files...') + u'\n' + extracted.s)
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:

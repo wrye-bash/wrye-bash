@@ -32,7 +32,7 @@ import bolt
 import bosh
 import bush
 from . import images_list
-from bolt import BoltError, AbstractError, GPath, Progress, deprint
+from bolt import BoltError, AbstractError, GPath, deprint
 from balt import askSave, askYes, askOpen, askWarning, showError, \
     showWarning, showInfo, Link, BusyCursor
 
@@ -186,8 +186,10 @@ class BackupSettings(BaseBackupSettings):
                 # app version, if this doesn't match the installer app version,
                 # warn the user on restore
                 cPickle.dump(self.verApp, out, -1)
-            # create the backup archive
-            _compress(self.dir, self.archive, self.tmp) # may raise StateError
+            # create the backup archive in 7z format WITH solid compression
+            # may raise StateError
+            command = bosh.compressCommand(self.archive, self.dir, self.tmp)
+            bolt.compress7z(command, self.dir, self.archive, self.tmp)
             bosh.settings['bash.backupPath'] = self.dir
         self.InfoSuccess()
 
@@ -258,11 +260,10 @@ class BackupSettings(BaseBackupSettings):
 class RestoreSettings(BaseBackupSettings):
     def __init__(self, parent=None, path=None, quit=False, restore_images=None):
         BaseBackupSettings.__init__(self,parent,path,quit)
-
         if not self.PromptFile():
             raise BackupCancelled()
-
-        _extract(self.dir.join(self.archive), self.tmp)
+        command = bosh.extractCommand(self.dir.join(self.archive), self.tmp)
+        bolt.extract7z(command, self.dir.join(self.archive))
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
             self.verApp = cPickle.load(ins)
@@ -397,22 +398,6 @@ class RestoreSettings(BaseBackupSettings):
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
         Link.Frame.Restart()
-
-#------------------------------------------------------------------------------
-def _compress(outDir, outFile, srcDir, progress=None):
-    # archive srcdir to outFile in 7z format WITH solid compression
-    command = bosh.compressCommand(outFile, outDir, srcDir)
-    bolt.compress7z(command, outDir, outFile, srcDir, progress)
-
-#------------------------------------------------------------------------------
-def _extract(srcFile, dstDir):
-    """Extract srcFile to dstDir"""
-    length = bosh.countFilesInArchive(srcFile)
-    progress = Progress()
-    progress(0, srcFile.s + u'\n' + _(u'Extracting files...'))
-    progress.setFull(1 + length)
-    command = bosh.extractCommand(srcFile, dstDir)
-    bolt.extract7z(command, srcFile, progress)
 
 # Main ------------------------------------------------------------------------
 if __name__ == '__main__':

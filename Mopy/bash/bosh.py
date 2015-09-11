@@ -6839,9 +6839,9 @@ class InstallerConverter(object):
         self.load(True)
         Installer.rmTempDir()
         tmpDir = Installer.newTempDir()
-        progress = progress or bolt.Progress()
-        progress(0,self.fullPath.stail+u'\n'+_(u'Extracting files...'))
         #--Extract BCF
+        if progress: progress(0, self.fullPath.stail + u'\n' + _(
+            u'Extracting files...'))
         with self.fullPath.unicodeSafe() as tempPath:
             command = extractCommand(tempPath, tmpDir)
             bolt.extract7z(command, tempPath, progress)
@@ -7164,11 +7164,11 @@ class InstallerArchive(Installer):
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
-            numFiles = countFilesInArchive(arch, listFilePath=self.tempList,
-                                           recurse=recurse)
-            progress = progress or bolt.Progress()
-            progress.state = 0
-            progress.setFull(numFiles)
+            if progress:
+                numFiles = countFilesInArchive(arch,
+                                listFilePath=self.tempList, recurse=recurse)
+                progress.state = 0
+                progress.setFull(numFiles)
             #--Extract files
             args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
                 arch.s, self.getTempDir().s, self.tempList.s)
