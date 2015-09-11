@@ -397,7 +397,16 @@
         <tr><td>Modification Time<td>For Oblivion, this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file versions.
         <tr><td>Author<td>Who made the selected plugin.
         <tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
-        <tr><td>Masters List<td>The plugins (.esm or .esp) that the selected plugin depends on, and their indices (positions in load order). Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. Renaming can be done by left-clicking the plugin entry and editing in the column display, or right-clicking the plugin and selecting <q>Change To...</q> then selecting the replacement plugin. <b>Do not</b> use this to change a plugin's masters to unrelated plugins, as this will cause file corruption.<br />
+        <tr><td>Masters List<td>The Masters list show the plugins (.esm or .esp) that the currently selected plugin depends on, the load order
+        (Mod Index) of that master in the plugin file, and the current load order of the master plugin if present and active.<br /><br />
+        Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. To rename a master, first allow editing from the
+        masters list column context menu and then either left-click the plugin entry and edit it in the column display, or right-click the
+        plugin and select <q>Change To...</q> then select the replacement plugin. <b>Do not</b> use this to change a plugin's masters to
+        unrelated plugins, as this will cause file corruption.<br />
+        If editing is allowed, items that are renamed inside Bash internal dictionaries appear <b>bolded</b> - on clicking on the masterlist they
+        take their renamed values and the <i>Save</i> and <i>Cancel</i> buttons are enabled. You may click on Save to save the new master list,
+        or on Cancel to revert displaying the non renamed masters.<br />
+        Disallowing edits will revert the list to the original and disable Save and Cancel buttons (if no other fields are edited).<br />
         <tr><td>MI<td>Master Index of the mod. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
         <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Bash Tags<td>This field lists any Bash Tags that are assigned to the selected plugin. Right-clicking will display a list of Bash Tags and allow you to add or remove tags by checking or unchecking them.
@@ -607,6 +616,34 @@
             Be sure to backup your load order for Skyrim.
         <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set. <b>Warning:</b> It is possible that this may cause data loss.
 </table>
+
+<table>
+    <thead>
+        <tr><th colspan="3">Mod's Masters List Column Header Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the masters list is sorted.
+            This is equivalent to clicking on a column header.
+        <tr><td colspan="2">Allow editing<td>Allow (or disallow) editing of the masters list.
+            Enables (or disables) the items' context menu entries.
+</table>
+
+
+<table>
+    <thead>
+        <tr><th colspan="3">Mod's Masters List Items Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Change To...<td>Rename a master by selecting the desired replacement esp/esm from the mods directory. It will add the
+            plugin to the internal renames dictionary of Bash and bold it on any master list that it appears. Hit Save to edit the selected file
+            permanently. Equivalent to left clicking the selected master for a second time, just allows you to select the mod from the Data
+            directory instead of entering the name manually.<br />
+            <ul>
+                <li>Note that you should only do this if the new name is a new version of the same mod. Replacing a mod with an unrelated mod will cause
+                file corruption.
+            </ul>
+</table>
+
 
 <h2 id="patch">Advanced Bashed Patch</h2>
 <p>You can have multiple Bashed Patches, though one is generally enough per <a href="#saves-profiles">save profile</a> or character. The only requirement for Wrye Bash recognising a plugin as a Bashed Patch is that its <q>Author</q> field is set to <q>BASHED PATCH</q>, so you can name a Bashed Patch whatever you want.
@@ -1313,9 +1350,24 @@
         <tr><td>Player Info<td>These three lines give the player character's name, their level, days have passed in-game, hours played and current location.
         <tr><td>O/P Flags<td> These two flags appear to the right of the player info, and indicate the presence of cosave files: O is for OBSE cosaves, and P is for Pluggy cosaves.
         <tr><td>Screenshot<td>The screenshot embedded in the save file, taken at the moment of saving.
-        <tr><td>Masters List<td>The plugins that the save file depends on, and their load order.<br />
-        Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired replacement plugin from the Data directory.<br />
-        Masters can also be disabled if they have been removed and are preventing your save from loading, as may sometimes happen, by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of the plugin dependency, but this will let the game <i>try</i> to remove the dependency.<br />
+        <tr><td>Masters List<td>The Masters list show the plugins (.esm or .esp) that the currently selected save file depends on, the load order
+        (Mod Index) of that master in the save file, and the current load order of the master plugin if present and active.<br /><br />
+        Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, first allow editing from the
+        masters list column context menu and then either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired
+        replacement plugin from the Data directory. Note that you should only do this if the new name is a new version of the same mod.
+        Replacing a mod with an unrelated mod will cause file corruption.<br />
+        If editing is allowed, items that are renamed inside Bash internal dictionaries appear <b>bolded</b> - on clicking on the masterlist they
+        take their renamed values and the <i>Save</i> and <i>Cancel</i> buttons are enabled. You may click on Save to save the new master list,
+        or on Cancel to revert displaying the non renamed masters.<br />
+        Disallowing edits will revert the list to the original and disable Save and Cancel buttons (if no other fields are edited).<br />
+            <ul>
+                <li>Note that currently renaming the master in the OBSE/SKSE cosave is NOT supported (except for very old OBSE versions). If the
+        save has a cosave this will most probably corrupt the cosave.
+                See <a href="https://github.com/wrye-bash/wrye-bash/issues/236">the related issue</a> (help wanted).
+            </ul>
+        Masters can also be disabled (again if editing is allowed) if they have been removed and are preventing your save from loading, as may sometimes happen,
+        by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of
+        the plugin dependency, but this will let the game <i>try</i> to remove the dependency.<br />
         <tr><td>MI<td>Master Index of the save game. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
         <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Notes<td>This section can be used to keep notes on the save file.
@@ -1454,6 +1506,41 @@
         <tr><td colspan="2">Repair Hair<td><i>Oblivion only.</i> Oblivion has a bug that will cause a crash if your PC's hair comes from a mod that has been removed and you then run showRaceMenu. This command resets your hair to the default for that race and gender, so you can then use showRaceMenu to select a new hair again if you wish.
 </table>
 
+
+<table>
+    <thead>
+        <tr><th colspan="3">Save's Masters List Column Header Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the masters list is sorted.
+            This is equivalent to clicking on a column header.
+        <tr><td colspan="2">Allow editing<td>Allow (or disallow) editing of the masters list.
+            Enables (or disables) the items' context menu entries.
+</table>
+
+
+<table>
+    <thead>
+        <tr><th colspan="3">Save's Masters List Items Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Change To...<td>Rename a master by selecting the desired replacement esp/esm from the mods directory. It will add the
+            plugin to the internal renames dictionary of Bash and bold it on any master list that it appears. Hit Save to edit the selected file
+            permanently. Equivalent to left clicking the selected master for a second time, just allows you to select the mod from the Data
+            directory instead of entering the name manually.<br />
+            <ul>
+                <li>Note that you should only do this if the new name is a new version of the same mod. Replacing a mod with an unrelated mod will cause
+                file corruption.
+                <li>Note also that currently renaming the master in the OBSE/SKSE cosave is NOT supported (except for very old OBSE versions). If the
+        save has a cosave this will most probably corrupt the cosave.
+                See <a href="https://github.com/wrye-bash/wrye-bash/issues/236">the related issue</a> (help wanted).
+            </ul>
+        <tr><td colspan="2">Disable<td>If you want to remove a mod from active use, you can usually just start
+            playing without the mod loaded. However, this won't work if the mod is an esm. You can get around this
+            by right clicking on the name and selecting Disable. This will rename the master to a non-existent esp.
+            Note that you still may run into logical errors which prevent the esm from being removed. But at least
+            this way the game will try to run without the master.
+</table>
 
 
 <h2 id="screenshots">Screenshots Tab</h2>

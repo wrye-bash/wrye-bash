@@ -285,6 +285,8 @@ def InitMasterLinks():
         sortMenu.links.append(Files_SortBy('Num'))
         sortMenu.links.append(Files_SortBy('Current Order'))
         MasterList.mainMenu.append(sortMenu)
+        MasterList.mainMenu.append(SeparatorLink())
+    MasterList.mainMenu.append(Master_AllowEdit())
     #--MasterList: Item Links
     MasterList.itemMenu.append(Master_ChangeTo())
     MasterList.itemMenu.append(Master_Disable())
