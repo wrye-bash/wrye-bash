@@ -29,7 +29,7 @@ class Path: pass
 class BoltError(Exception): pass
 def GPath(x): return u'' if x is None else unicode(x, 'utf8')
 def deprint(x, traceback=False):
-    import tarceback
+    import traceback
     traceback.print_exc()
 """
 
@@ -42,7 +42,7 @@ liblo = None
 version = None
 
 # Version of libloadorder this Python script is written for.
-PythonLibloVersion = (7,5)
+PythonLibloVersion = (7, 6)
 
 DebugLevel = 0
 # DebugLevel

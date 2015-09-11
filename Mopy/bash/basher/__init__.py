@@ -155,6 +155,7 @@ tabInfo = {
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
     'PM Archive':['MessagePanel', _(u"PM Archive"), None],
     'People':['PeoplePanel', _(u"People"), None],
+    # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
 # Windows ---------------------------------------------------------------------
@@ -213,13 +214,13 @@ class NotebookPanel(wx.Panel):
             table.save()
 
 #------------------------------------------------------------------------------
-class _DetailsPanelMixin(object):
-    """Details API alpha: mixin to add detailsPanel attribute to a Panel
+class _DetailsViewMixin(object):
+    """Mixin to add detailsPanel attribute to a Panel with a details view.
 
-    This is a hasty mixin. I added it to SashPanel and BSAPanel (which
-    subclasses NotebookPanel directly) so UILists can call SetDetails,
-    RefreshDetails and ClearDetails on their panels. TODO:
-     - just mix it only in classes that _do_ have a details view.
+    This is a hasty mixin. I added it to SashPanel so UILists can call
+    SetDetails, RefreshDetails and ClearDetails on their panels. TODO:
+     - just mix it only in classes that _do_ have a details view (as it is
+     even Details panels inherit it).
      - drop hideous if detailsPanel is not self, due to Installers, People
      using themselves as details (YAK!)
     """
@@ -232,20 +233,20 @@ class _DetailsPanelMixin(object):
     def SetDetails(self, fileName): self._setDetails(fileName)
 
     def RefreshUIColors(self):
-        super(_DetailsPanelMixin, self).RefreshUIColors()
+        super(_DetailsViewMixin, self).RefreshUIColors()
         self.RefreshDetails()
 
     def ClosePanel(self):
-        super(_DetailsPanelMixin, self).ClosePanel()
+        super(_DetailsViewMixin, self).ClosePanel()
         if self.detailsPanel and self.detailsPanel is not self:
             self.detailsPanel.ClosePanel()
 
     def ShowPanel(self):
-        super(_DetailsPanelMixin, self).ShowPanel()
+        super(_DetailsViewMixin, self).ShowPanel()
         if self.detailsPanel and self.detailsPanel is not self:
             self.detailsPanel.ShowPanel()
 
-class SashPanel(_DetailsPanelMixin, NotebookPanel):
+class SashPanel(_DetailsViewMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
 
@@ -348,11 +349,11 @@ class MasterList(_ModsSortMixin, balt.UIList):
     @property # only used in ColumnsMenu which is not available in MasterList
     def allCols(self): return ['File', 'Num', 'Current Order']
 
-    def __init__(self, parent, fileInfo, setEditedFn, listData=None,
+    def __init__(self, parent, setEditedFn, listData=None,
                  keyPrefix=keyPrefix, panel=None):
         #--Data/Items
         self.edited = False
-        self.fileInfo = fileInfo
+        self.fileInfo = None
         self.loadOrderNames = []
         #--Parent init
         super(MasterList, self).__init__(parent,
@@ -504,12 +505,12 @@ class MasterList(_ModsSortMixin, balt.UIList):
         #--No change?
         if newName in bosh.modInfos:
             masterInfo = self.data[self.GetItem(itemDex)]
-            oldName = masterInfo.name
             masterInfo.setName(newName)
             self.ReList()
             self.PopulateItem(itemDex)
-            settings.getChanged('bash.mods.renames')[masterInfo.oldName] = newName
-        elif newName == '':
+            settings.getChanged('bash.mods.renames')[
+                masterInfo.oldName] = newName
+        elif newName == u'':
             event.Veto()
         else:
             balt.showError(self,_(u'File %s does not exist.') % newName.s)
@@ -1043,19 +1044,77 @@ class ModList(_ModsSortMixin, balt.UIList):
         self.RefreshUI(refreshSaves=True)
 
 #------------------------------------------------------------------------------
-class _SashDetailsPanel(SashPanel):
-    defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+class _DetailsMixin(object):
+    """Mixin for panels that display detailed info on mods, saves etc."""
 
-    # TMP properties to unify details panels
     @property
     def file_info(self): raise AbstractError
     @property
     def file_infos(self): return self.file_info.getFileInfos()
 
+    def _resetDetails(self): raise AbstractError
+
+    # Details panel API
+    def SetFile(self, fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        if fileName == 'SAME':
+            if not self.file_info or \
+                            self.file_info.name not in self.file_infos:
+                fileName = None
+            else:
+                fileName = self.file_info.name
+        if not fileName: self._resetDetails()
+        return fileName
+
+class _EditableMixin(_DetailsMixin):
+    """Mixin for detail panels that allow editing the info they display."""
+
+    def __init__(self, buttonsParent):
+        self.edited = False
+        #--Save/Cancel
+        self.save = SaveButton(buttonsParent, onClick=self.DoSave)
+        self.cancel = CancelButton(buttonsParent, onClick=self.DoCancel)
+        self.save.Disable()
+        self.cancel.Disable()
+
+    # Details panel API
+    def SetFile(self, fileName='SAME'):
+        #--Edit State
+        self.edited = 0
+        self.save.Disable()
+        self.cancel.Disable()
+        return super(_EditableMixin, self).SetFile(fileName)
+
+    # Abstract edit methods
+    @property
+    def allowDetailsEdit(self): raise AbstractError
+
+    def SetEdited(self):
+        if not self.file_info: return
+        self.edited = True
+        if self.allowDetailsEdit:
+            self.save.Enable()
+        self.cancel.Enable()
+
+    def DoSave(self, event): raise AbstractError
+
+    def DoCancel(self, event):
+        self.SetFile(self.file_info.name if self.file_info else None)
+
+class _SashDetailsPanel(_EditableMixin, SashPanel):
+    """Mod and Saves details panel, feature a master's list."""
+    defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+
     def __init__(self, parent):
+        # TODO(ut) use super !! Initialize the UIList here !
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
-        self.edited = False
+        self.top, self.bottom = self.left, self.right
+        self.subSplitter = wx.gizmos.ThinSplitterWindow(self.bottom,
+                                                        style=splitterStyle)
+        self.masterPanel = wx.Panel(self.subSplitter)
+        _EditableMixin.__init__(self, self.masterPanel)
 
     def ShowPanel(self): ##: does not call super
         if hasattr(self, '_firstShow'):
@@ -1075,66 +1134,48 @@ class _SashDetailsPanel(SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
-    # Details panel API
-    def SetFile(self,fileName='SAME'):
-        """Set file to be viewed."""
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.file_info or \
-                            self.file_info.name not in self.file_infos:
-                fileName = None
-            else:
-                fileName = self.file_info.name
-        if not fileName: self._resetDetails()
-        return fileName
-
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
 
     @property
     def file_info(self): return self.modInfo
+    @property
+    def allowDetailsEdit(self): return bush.game.esp.canEditHeader
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
-        top, bottom = self.left, self.right
         modPanel = parent.GetParent().GetParent()
+        subSplitter, masterPanel = self.subSplitter, self.masterPanel
+        top, bottom = self.top, self.bottom
         #--Data
         self.modInfo = None
         textWidth = 200
-        if True: #setup
-            #--Version
-            self.version = staticText(top,u'v0.00')
-            #--File Name
-            self.file = textCtrl(top, onKillFocus=self.OnEditFile,
-                                 onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
-            #--Author
-            self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
-                                   onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
-            #--Modified
-            self.modified = textCtrl(top,size=(textWidth, -1),
-                                     onKillFocus=self.OnEditModified,
-                                     onText=self.OnTextEdit, maxChars=32)
-            #--Description
-            self.description = textCtrl(top, size=(textWidth, 150),
-                                        multiline=True, autotooltip=False,
-                                        onKillFocus=self.OnEditDescription,
-                                        onText=self.OnTextEdit, maxChars=512)
-            subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
-            masterPanel = wx.Panel(subSplitter)
-            tagPanel = wx.Panel(subSplitter)
-            #--Masters
-            self.uilist = MasterList(masterPanel, None, self.SetEdited,
-                                     keyPrefix=self.keyPrefix, panel=modPanel)
-            #--Save/Cancel
-            self.save = SaveButton(masterPanel, onClick=self.DoSave)
-            self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
-            self.save.Disable()
-            self.cancel.Disable()
-            #--Bash tags
-            self.allTags = bosh.allTags
-            self.gTags = roTextCtrl(tagPanel, autotooltip=False,
-                                    size=(textWidth, 100))
+        #--Version
+        self.version = staticText(top,u'v0.00')
+        #--File Name
+        self.file = textCtrl(top, onKillFocus=self.OnEditFile,
+                             onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
+        #--Author
+        self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
+                               onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
+        #--Modified
+        self.modified = textCtrl(top,size=(textWidth, -1),
+                                 onKillFocus=self.OnEditModified,
+                                 onText=self.OnTextEdit, maxChars=32)
+        #--Description
+        self.description = textCtrl(top, size=(textWidth, 150),
+                                    multiline=True, autotooltip=False,
+                                    onKillFocus=self.OnEditDescription,
+                                    onText=self.OnTextEdit, maxChars=512)
+        #--Masters
+        self.uilist = MasterList(masterPanel, self.SetEdited,
+                                 keyPrefix=self.keyPrefix, panel=modPanel)
+        #--Bash tags
+        tagPanel = wx.Panel(subSplitter)
+        self.allTags = bosh.allTags
+        self.gTags = roTextCtrl(tagPanel, autotooltip=False,
+                                size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
@@ -1207,17 +1248,6 @@ class ModDetails(_SashDetailsPanel):
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
         self.gTags.Refresh()
-        #--Edit State
-        self.edited = 0
-        self.save.Disable()
-        self.cancel.Disable()
-
-    def SetEdited(self):
-        if not self.modInfo: return
-        self.edited = True
-        if bush.game.esp.canEditHeader:
-            self.save.Enable()
-        self.cancel.Enable()
 
     def OnTextEdit(self,event):
         if not self.modInfo: return
@@ -1355,12 +1385,6 @@ class ModDetails(_SashDetailsPanel):
             self.SetFile(None)
         bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
-
-    def DoCancel(self,event):
-        if self.modInfo:
-            self.SetFile(self.modInfo.name)
-        else:
-            self.SetFile(None)
 
     #--Bash Tags
     def ShowBashTagsMenu(self, event):
@@ -1796,11 +1820,14 @@ class SaveDetails(_SashDetailsPanel):
 
     @property
     def file_info(self): return self.saveInfo
+    @property
+    def allowDetailsEdit(self): return bush.game.ess.canEditMasters
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
-        top, bottom = self.left, self.right
         savePanel = parent.GetParent().GetParent()
+        subSplitter, masterPanel = self.subSplitter, self.masterPanel
+        top, bottom = self.top, self.bottom
         #--Data
         self.saveInfo = None
         textWidth = 200
@@ -1813,20 +1840,13 @@ class SaveDetails(_SashDetailsPanel):
         self.gCoSaves = staticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        subSplitter = self.subSplitter = wx.gizmos.ThinSplitterWindow(bottom,style=splitterStyle)
-        masterPanel = wx.Panel(subSplitter)
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.uilist = MasterList(masterPanel, None, self.SetEdited,
+        self.uilist = MasterList(masterPanel, self.SetEdited,
                                  keyPrefix=self.keyPrefix, panel=savePanel)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
-        #--Save/Cancel
-        self.save = SaveButton(masterPanel, onClick=self.DoSave)
-        self.cancel = CancelButton(masterPanel, onClick=self.DoCancel)
-        self.save.Disable()
-        self.cancel.Disable()
         #--Layout
         detailsSizer = vSizer(
             (self.file,0,wx.EXPAND|wx.TOP,4),
@@ -1899,23 +1919,12 @@ class SaveDetails(_SashDetailsPanel):
             width,height,data = self.picData
             image = Image.GetImage(data, height, width)
             self.picture.SetBitmap(image.ConvertToBitmap())
-        #--Edit State
-        self.edited = 0
-        self.save.Disable()
-        self.cancel.Disable()
         #--Info Box
         self.gInfo.DiscardEdits()
         if fileName:
             self.gInfo.SetValue(bosh.saveInfos.table.getItem(fileName,'info',_(u'Notes: ')))
         else:
             self.gInfo.SetValue(_(u'Notes: '))
-
-    def SetEdited(self):
-        """Mark as edited."""
-        self.edited = True
-        if bush.game.ess.canEditMasters:
-            self.save.Enable()
-        self.cancel.Enable()
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
@@ -1926,9 +1935,9 @@ class SaveDetails(_SashDetailsPanel):
 
     def OnTextEdit(self,event):
         """Event: Editing file or save name text."""
-        if self.saveInfo and not self.edited:
-            if self.fileStr != self.file.GetValue():
-                self.SetEdited()
+        if not self.saveInfo: return
+        if not self.edited and self.fileStr != self.file.GetValue():
+            self.SetEdited()
         event.Skip()
 
     def OnEditFile(self,event):
@@ -1978,10 +1987,6 @@ class SaveDetails(_SashDetailsPanel):
             BashFrame.saveListRefresh()
         else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
             BashFrame.saveListRefresh()
-
-    def DoCancel(self,event):
-        """Event: Clicked cancel button."""
-        self.SetFile(self.saveInfo.name)
 
 #------------------------------------------------------------------------------
 class SavePanel(SashPanel):
@@ -3098,7 +3103,6 @@ class BSAList(balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    icons = None # no icons
     _sort_keys = {'File': None,
                   'Modified': lambda self, a: self.data[a].mtime,
                   'Size': lambda self, a: self.data[a].size,
@@ -3112,100 +3116,78 @@ class BSAList(balt.UIList):
         labels['Size'] = self._round(fileInfo.size)
         return labels
 
-    #--Event: Left Down
-    def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            fileName = GPath(self.GetItem(hitItem))
-            newEnabled = not self.data.isEnabled(fileName)
-            newName = self.data.enable(fileName,newEnabled)
-            if newName != fileName: self.RefreshUI()
-        #--Pass Event onward
-        event.Skip()
-
 #------------------------------------------------------------------------------
-class BSADetails(wx.Window):
+class BSADetails(_EditableMixin, SashPanel):
     """BSAfile details panel."""
-    def __init__(self,parent):
-        """Initialize."""
-        wx.Window.__init__(self, parent, -1, style=wx.TAB_TRAVERSAL)
+
+    @property
+    def file_info(self): return self.BSAInfo
+    @property
+    def allowDetailsEdit(self): return True
+
+    def __init__(self, parent):
+        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
+                           style=wx.TAB_TRAVERSAL)
+        self.top, self.bottom = self.left, self.right
+        bsaPanel = parent.GetParent().GetParent()
+        self.bsaList = bsaPanel.uiList
+        _EditableMixin.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
-        self.edited = False
-        textWidth = 200
         #--File Name
-        self.file = textCtrl(self, size=(textWidth, -1),
-                             onText=self.OnTextEdit,
+        self.file = textCtrl(self.top, onText=self.OnTextEdit,
                              onKillFocus=self.OnEditFile, maxChars=256)
 
         #--BSA Info
-        self.gInfo = textCtrl(self, size=(textWidth, 100), multiline=True,
+        self.gInfo = textCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
-        #--Save/Cancel
-        self.save = SaveButton(self, onClick=self.DoSave)
-        self.cancel = CancelButton(self, onClick=self.DoCancel)
-        self.save.Disable()
-        self.cancel.Disable()
         #--Layout
-        sizer = vSizer(
-            (staticText(self,_(u'File:')),0,wx.TOP,4),
-            (self.file,0,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                spacer,
+        nameSizer = vSizer(
+            (hSizer((staticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
+            wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
+        nameSizer.SetSizeHints(self.top)
+        self.top.SetSizer(nameSizer)
+        infoSizer = vSizer(
+        (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
+        (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.TOP,4),
-            (self.gInfo,0,wx.TOP,4),
-            )
-        self.SetSizer(sizer)
+                ),0,wx.EXPAND|wx.TOP,4),)
+        infoSizer.SetSizeHints(self.bottom)
+        self.bottom.SetSizer(infoSizer)
 
-    def SetFile(self,fileName='SAME'):
+    def _resetDetails(self):
+        self.BSAInfo = None
+        self.fileStr = u''
+
+    def SetFile(self, fileName='SAME'):
         """Set file to be viewed."""
-        #--Reset?
-        if fileName == 'SAME':
-            if not self.BSAInfo or self.BSAInfo.name not in bosh.BSAInfos:
-                fileName = None
-            else:
-                fileName = self.BSAInfo.name
-        #--Null fileName?
-        if not fileName:
-            BSAInfo = self.BSAInfo = None
-            self.fileStr = ''
-        #--Valid fileName?
-        else:
-            BSAInfo = self.BSAInfo = bosh.BSAInfos[fileName]
+        fileName = super(BSADetails, self).SetFile(fileName)
+        if fileName:
+            BSAInfo = self.BSAInfo = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = BSAInfo.name.s
         #--Set Fields
         self.file.SetValue(self.fileStr)
-        #--Edit State
-        self.edited = 0
-        self.save.Disable()
-        self.cancel.Disable()
         #--Info Box
         self.gInfo.DiscardEdits()
         if fileName:
-            self.gInfo.SetValue(bosh.BSAInfos.table.getItem(fileName,'info',_(u'Notes: ')))
+            self.gInfo.SetValue(
+                bosh.bsaInfos.table.getItem(fileName, 'info', _(u'Notes: ')))
         else:
             self.gInfo.SetValue(_(u'Notes: '))
-
-    def SetEdited(self):
-        """Mark as edited."""
-        self.edited = True
-        self.save.Enable()
-        self.cancel.Enable()
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
         if self.BSAInfo and self.gInfo.IsModified():
-            bosh.BSAInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
+            bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
         event.Skip()
 
     def OnTextEdit(self,event):
         """Event: Editing file or save name text."""
-        if self.BSAInfo and not self.edited:
-            if self.fileStr != self.file.GetValue():
-                self.SetEdited()
+        if not self.BSAInfo : return
+        if not self.edited and self.fileStr != self.file.GetValue():
+            self.SetEdited()
         event.Skip()
 
     def OnEditFile(self,event):
@@ -3234,50 +3216,45 @@ class BSADetails(wx.Window):
         changeName = (self.fileStr != BSAInfo.name)
         #--Backup
         BSAInfo.makeBackup()
-        prevMTime = BSAInfo.mtime
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
-            bosh.BSAInfos.rename(oldName,newName)
+            bosh.bsaInfos.rename(oldName,newName)
         #--Done
         try:
-            bosh.BSAInfos.refreshFile(BSAInfo.name)
+            bosh.bsaInfos.refreshFile(BSAInfo.name)
             self.SetFile(self.BSAInfo.name)
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        self.SetFile(self.BSAInfo.name)
-        BSAList.RefreshUI(files=[BSAInfo.name])
+        self.bsaList.RefreshUI()
 
-    def DoCancel(self,event):
-        """Event: Clicked cancel button."""
-        self.SetFile(self.BSAInfo.name)
-
-    def ClosePanel(self): pass # for _DetailsPanelMixin.detailsPanel.ClosePanel
+    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
-class BSAPanel(_DetailsPanelMixin, NotebookPanel):
+class BSAPanel(SashPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
 
     def __init__(self,parent):
-        NotebookPanel.__init__(self, parent)
-        self.listData = bosh.BSAInfos
-        self.detailsPanel = BSADetails(self)
-        self.uilist = BSAList(
-            self, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        super(BSAPanel, self).__init__(parent)
+        left,right = self.left, self.right
+        self.listData = bosh.bsaInfos
+        bosh.bsaInfos.refresh()
+        self.uiList = BSAList(
+            left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        self.detailsPanel = BSADetails(right)
         #--Layout
-        sizer = hSizer((BSAList, 1, wx.GROW),
-                       ((4, -1), 0),
-                       (self.detailsPanel, 0, wx.EXPAND))
-        self.SetSizer(sizer)
+        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
+        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
 
-    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.BSAInfos.data))
+    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.bsaInfos.data))
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
-        bosh.BSAInfos.profiles.save()
+        # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
 class MessageList(balt.UIList):
@@ -3561,11 +3538,18 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         if 'Mods' not in settings['bash.tabs.order']:
             settings['bash.tabs.order'] = ['Mods']+settings['bash.tabs.order']
         iInstallers = iMods = -1
-        for page in settings['bash.tabs.order']:
-            enabled = settings['bash.tabs'].get(page,False)
+        for page in settings.getChanged('bash.tabs.order'):
+            className, title, item = tabInfo.get(page, [None, None, None])
+            if title is None: # panel does not exist anymore
+                del settings['bash.tabs.order'][page]
+                try:
+                    del settings['bash.tabs'][page]
+                    settings.setChanged('bash.tabs')
+                except KeyError:
+                    pass # should not happen
+                continue
+            enabled = settings['bash.tabs'].get(page, False)
             if not enabled: continue
-            className,title,item = tabInfo.get(page,[None,None,None])
-            if title is None: continue
             panel = globals().get(className,None)
             if panel is None: continue
             # Some page specific stuff
@@ -3923,10 +3907,24 @@ class BashFrame(wx.Frame):
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
         self.SetSizer(sizer)
-        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not settings['bash.mods.autoGhost']:
-            message = _(u"It appears that you have more than 325 mods and bsas in your data directory and auto-ghosting is disabled. This may cause problems in %s; see the readme under auto-ghost for more details and please enable auto-ghost.") % bush.game.displayName
+
+    @balt.conversation
+    def warnTooManyModsBsas(self):
+        if not bosh.inisettings['WarnTooManyFiles']: return
+        if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
+        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not \
+                settings['bash.mods.autoGhost']:
+            message = _(u"It appears that you have more than 325 mods and bsas"
+                u" in your data directory and auto-ghosting is disabled. This "
+                u"may cause problems in %s; see the readme under auto-ghost "
+                u"for more details and please enable auto-ghost.") % \
+                      bush.game.displayName
             if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
-                message = _(u"It appears that you have more than 400 mods and bsas in your data directory and auto-ghosting is disabled. This will cause problems in %s; see the readme under auto-ghost for more details. ") % bush.game.displayName
+                message = _(u"It appears that you have more than 400 mods and "
+                    u"bsas in your data directory and auto-ghosting is "
+                    u"disabled. This will cause problems in %s; see the readme"
+                    u" under auto-ghost for more details. ") % \
+                          bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
     def BindRefresh(self, bind=True, _event=wx.EVT_ACTIVATE):
@@ -4312,10 +4310,12 @@ class BashApp(wx.App):
         progress.Destroy()
         if splashScreen:
             splashScreen.Destroy()
+            splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
         self.SetTopWindow(frame)
         frame.Show()
         frame.Maximize(settings['bash.frameMax'])
         balt.ensureDisplayed(frame)
+        frame.warnTooManyModsBsas()
         return frame
 
     def InitResources(self):
@@ -4339,7 +4339,7 @@ class BashApp(wx.App):
         progress.Update(40,_(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
-        # bsaInfos is used in BashFrame __init__() and RefreshData() methods
+        # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
         bosh.bsaInfos = bosh.BSAInfos()
         # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check

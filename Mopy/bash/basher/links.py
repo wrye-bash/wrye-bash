@@ -707,7 +707,7 @@ def InitSaveLinks():
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
-    """Initialize save tab menus."""
+    """Initialize BSA tab menus."""
     #--BSAList: Column Links
     if True: #--Sort
         sortMenu = MenuLink(_(u"Sort by"))
@@ -723,34 +723,12 @@ def InitBSALinks():
         fileMenu = MenuLink(_(u"File")) #>>
         fileMenu.links.append(File_Backup())
         fileMenu.links.append(File_Duplicate())
-        #fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(balt.UIList_Delete())
         fileMenu.links.append(File_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
-        #fileMenu.links.append(File_RevertToSnapshot())
         BSAList.itemMenu.append(fileMenu)
-    #--------------------------------------------
-    BSAList.itemMenu.append(SeparatorLink())
-    BSAList.itemMenu.append(Save_LoadMasters())
-    BSAList.itemMenu.append(File_ListMasters())
-    BSAList.itemMenu.append(Save_DiffMasters())
-    BSAList.itemMenu.append(Save_Stats())
-    #--------------------------------------------
-    BSAList.itemMenu.append(SeparatorLink())
-    BSAList.itemMenu.append(Save_EditPCSpells())
-    BSAList.itemMenu.append(Save_ImportFace())
-    BSAList.itemMenu.append(Save_EditCreated('ENCH'))
-    BSAList.itemMenu.append(Save_EditCreated('ALCH'))
-    BSAList.itemMenu.append(Save_EditCreated('SPEL'))
-    BSAList.itemMenu.append(Save_ReweighPotions())
-    BSAList.itemMenu.append(Save_UpdateNPCLevels())
-    #--------------------------------------------
-    BSAList.itemMenu.append(SeparatorLink())
-    BSAList.itemMenu.append(Save_Unbloat())
-    BSAList.itemMenu.append(Save_RepairAbomb())
-    BSAList.itemMenu.append(Save_RepairHair())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
@@ -861,4 +839,4 @@ def InitLinks():
     InitScreenLinks()
     InitMessageLinks()
     InitPeopleLinks()
-    #InitBSALinks()
+    # InitBSALinks()
