@@ -287,6 +287,7 @@ def InitMasterLinks():
         MasterList.mainMenu.append(sortMenu)
         MasterList.mainMenu.append(SeparatorLink())
     MasterList.mainMenu.append(Master_AllowEdit())
+    MasterList.mainMenu.append(Master_ClearRenames())
     #--MasterList: Item Links
     MasterList.itemMenu.append(Master_ChangeTo())
     MasterList.itemMenu.append(Master_Disable())

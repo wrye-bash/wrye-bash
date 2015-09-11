@@ -35,7 +35,7 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'Messages_Archive_Import', 'Message_Delete', 'People_AddNew',
            'People_Import', 'People_Karma', 'People_Export',
-           'Master_AllowEdit']
+           'Master_AllowEdit', 'Master_ClearRenames']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -257,6 +257,14 @@ class Master_AllowEdit(CheckLink):
 
     def _check(self): return self.window.allowEdit
     def Execute(self, event): self.window.allowEdit ^= True
+
+class Master_ClearRenames(ItemLink):
+    text = _(u'Clear Renames')
+    help = _(u'Clear internal Bash renames dictionary')
+
+    def Execute(self, event):
+        bosh.settings['bash.mods.renames'].clear()
+        self.window.RefreshUI()
 
 class _Master_EditList(EnabledLink):
 
