@@ -155,7 +155,7 @@ tabInfo = {
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
     'PM Archive':['MessagePanel', _(u"PM Archive"), None],
     'People':['PeoplePanel', _(u"People"), None],
-    'BSAs':['BSAPanel', _(u"BSAs"), None],
+    # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
 # Windows ---------------------------------------------------------------------
@@ -3538,11 +3538,18 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         if 'Mods' not in settings['bash.tabs.order']:
             settings['bash.tabs.order'] = ['Mods']+settings['bash.tabs.order']
         iInstallers = iMods = -1
-        for page in settings['bash.tabs.order']:
-            enabled = settings['bash.tabs'].get(page,False)
+        for page in settings.getChanged('bash.tabs.order'):
+            className, title, item = tabInfo.get(page, [None, None, None])
+            if title is None: # panel does not exist anymore
+                del settings['bash.tabs.order'][page]
+                try:
+                    del settings['bash.tabs'][page]
+                    settings.setChanged('bash.tabs')
+                except KeyError:
+                    pass # should not happen
+                continue
+            enabled = settings['bash.tabs'].get(page, False)
             if not enabled: continue
-            className,title,item = tabInfo.get(page,[None,None,None])
-            if title is None: continue
             panel = globals().get(className,None)
             if panel is None: continue
             # Some page specific stuff

@@ -839,4 +839,4 @@ def InitLinks():
     InitScreenLinks()
     InitMessageLinks()
     InitPeopleLinks()
-    InitBSALinks()
+    # InitBSALinks()
