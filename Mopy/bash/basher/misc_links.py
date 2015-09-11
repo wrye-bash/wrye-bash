@@ -34,7 +34,8 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screen_JpgQuality',
            'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
            'Messages_Archive_Import', 'Message_Delete', 'People_AddNew',
-           'People_Import', 'People_Karma', 'People_Export']
+           'People_Import', 'People_Karma', 'People_Export',
+           'Master_AllowEdit', 'Master_ClearRenames']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -251,13 +252,36 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Master_ChangeTo(EnabledLink):
+class Master_AllowEdit(CheckLink):
+    text, help = _(u'Allow edit'), _(u'Allow editing the masters list')
+
+    def _check(self): return self.window.allowEdit
+    def Execute(self, event): self.window.allowEdit ^= True
+
+class Master_ClearRenames(ItemLink):
+    text = _(u'Clear Renames')
+    help = _(u'Clear internal Bash renames dictionary')
+
+    def Execute(self, event):
+        bosh.settings['bash.mods.renames'].clear()
+        self.window.RefreshUI()
+
+class _Master_EditList(EnabledLink):
+
+    def _enable(self): return self.window.allowEdit
+
+    def _initData(self, window, selection):
+        super(_Master_EditList, self)._initData(window, selection)
+        if not self._enable(): self.help = self.__class__.help + u'.  ' + _(
+                u'You must first allow editing from the column menu')
+        else: self.help = self.__class__.help
+
+class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
     text = _(u"Change to...")
     help = _(u"Rename/replace master through file dialog")
 
-    def _enable(self): return self.window.edited
-
+    @balt.conversation
     def Execute(self,event):
         itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
@@ -280,19 +304,16 @@ class Master_ChangeTo(EnabledLink):
             return
         #--Save Name
         masterInfo.setName(newName)
-        self.window.ReList()
-        self.window.RefreshUI()
         bosh.settings.getChanged('bash.mods.renames')[masterName] = newName
+        self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
-class Master_Disable(AppendableLink, EnabledLink):
+class Master_Disable(AppendableLink, _Master_EditList):
     """Rename/replace master through file dialog."""
     text = _(u"Disable")
     help = _(u"Disable master")
 
     def _append(self, window): return not window.fileInfo.isMod() #--Saves only
-
-    def _enable(self): return self.window.edited
 
     def Execute(self,event):
         itemId = self.selected[0]
@@ -301,8 +322,7 @@ class Master_Disable(AppendableLink, EnabledLink):
         newName = GPath(re.sub(u'[mM]$','p',u'XX'+masterName.s))
         #--Save Name
         masterInfo.setName(newName)
-        self.window.ReList()
-        self.window.RefreshUI()
+        self.window.SetMasterlistEdited(repopulate=True)
 
 # Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------

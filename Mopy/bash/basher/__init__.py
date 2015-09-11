@@ -218,7 +218,7 @@ class _DetailsViewMixin(object):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
     This is a hasty mixin. I added it to SashPanel so UILists can call
-    SetDetails, RefreshDetails and ClearDetails on their panels. TODO:
+    SetDetails, RefreshDetails and ClearDetails on their panels. TODO !:
      - just mix it only in classes that _do_ have a details view (as it is
      even Details panels inherit it).
      - drop hideous if detailsPanel is not self, due to Installers, People
@@ -349,17 +349,44 @@ class MasterList(_ModsSortMixin, balt.UIList):
     @property # only used in ColumnsMenu which is not available in MasterList
     def allCols(self): return ['File', 'Num', 'Current Order']
 
-    def __init__(self, parent, setEditedFn, listData=None,
-                 keyPrefix=keyPrefix, panel=None):
+    message = _(u"Edit/update the masters list? Note that the update process "
+                u"may automatically rename some files. Be sure to review the "
+                u"changes before saving.")
+    seName = bush.game.se.shortName
+    saves192warn = u'\n\n' + _(u"Note that %(scrExtender)s cosaves are NOT "
+            u"supported, meaning that if you have a save that has a cosave "
+            u"the masters in the cosave WON'T be updated leading to "
+            u"crashes/lost information and whatnot." % {'scrExtender': seName})
+
+    def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
+                 detailsPanel=None):
         #--Data/Items
         self.edited = False
+        self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = []
+        self.loadOrderNames = [] # needed as masters may be renamed
+        self._allowEditKey = keyPrefix + '.allowEdit'
+        if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
+            self.message += self.saves192warn
         #--Parent init
         super(MasterList, self).__init__(parent,
                       data=listData if listData is not None else {},
                       keyPrefix=keyPrefix, panel=panel)
-        self._setEditedFn = setEditedFn
+
+    @property
+    def allowEdit(self): return bosh.settings.get(self._allowEditKey, False)
+    @allowEdit.setter
+    def allowEdit(self, val):
+        if val and (not self.detailsPanel.allowDetailsEdit or not
+               balt.askContinue(self, self.message, self.keyPrefix + '.update',
+                                _(u'Update Masters') + u' ' + _(u'BETA'))):
+            return
+        bosh.settings[self._allowEditKey] = val
+        if val:
+            self.InitEdit()
+        else:
+            self.SetFileInfo(self.fileInfo)
+            self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
@@ -370,15 +397,15 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.edited = False
         self.fileInfo = fileInfo
         self.data.clear()
+        self.DeleteAll()
         #--Null fileInfo?
         if not fileInfo:
-            self.DeleteAll()
             return
         #--Fill data and populate
         for mi, masterName in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masterName,0)
             self.data[mi] = masterInfo
-        self.ReList()
+        self._reList()
         self.PopulateItems()
 
     #--Get Master Status
@@ -446,6 +473,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
             item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
         else:
             item.SetBackgroundColour(colors['default.bkgd'])
+        if self.allowEdit:
+            if masterInfo.oldName in settings['bash.mods.renames']:
+                item.SetFont(Resources.fonts[1]) # aka bold it - add namedtuple
         listCtrl.SetItem(item)
         #--Image
         status = self.GetMasterStatus(mi)
@@ -454,51 +484,45 @@ class MasterList(_ModsSortMixin, balt.UIList):
         listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
 
     #--Relist
-    def ReList(self):
+    def _reList(self):
         fileOrderNames = [v.name for v in self.data.values()]
         self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
 
     #--InitEdit
     def InitEdit(self):
         #--Pre-clean
-        for masterInfo in self.data.values():
-            #--Missing Master?
-            if not masterInfo.modInfo:
-                masterName = masterInfo.name
-                newName = settings['bash.mods.renames'].get(masterName,None)
-                #--Rename?
-                if newName and newName in bosh.modInfos:
-                    masterInfo.setName(newName)
+        edited = False
+        for mi, masterInfo in self.data.items():
+            masterName = masterInfo.name
+            newName = settings['bash.mods.renames'].get(masterName, None)
+            #--Rename?
+            if newName and newName in bosh.modInfos:
+                masterInfo.setName(newName)
+                edited = True
         #--Done
+        if edited: self.SetMasterlistEdited(repopulate=True)
+
+    def SetMasterlistEdited(self, repopulate=False):
+        self._reList()
+        if repopulate: self.PopulateItems()
         self.edited = True
-        self.ReList()
-        self.PopulateItems()
-        self._setEditedFn()
+        self.detailsPanel.SetEdited() # inform the details panel
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
         if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
 
-    #--Item Menu
-    def DoItemMenu(self,event):
-        if not self.edited:
-            self.OnLeftDown(event)
-        else:
-            balt.UIList.DoItemMenu(self, event)
-
-    #--Event: Left Down
     def OnLeftDown(self,event):
-        #--Not edited yet?
-        if not self.edited and bush.game.ess.canEditMasters:
-            message = (_(u"Edit/update the masters list? Note that the update process may automatically rename some files. Be sure to review the changes before saving."))
-            if not balt.askContinue(self,message,'bash.masters.update',_(u'Update Masters')):
-                return
-            self.InitEdit()
-        #--Pass event on (for label editing)
-        else:
-            event.Skip()
+        if self.allowEdit: self.InitEdit()
+        event.Skip()
 
-    #--Label Edited
+    #--Events: Label Editing
+    def OnBeginEditLabel(self, event):
+        if not self.allowEdit:
+            event.Veto()
+        else: # pass event on (for label editing)
+            super(MasterList, self).OnBeginEditLabel(event)
+
     def OnLabelEdited(self,event):
         itemDex = event.m_itemIndex
         newName = GPath(event.GetText())
@@ -506,10 +530,10 @@ class MasterList(_ModsSortMixin, balt.UIList):
         if newName in bosh.modInfos:
             masterInfo = self.data[self.GetItem(itemDex)]
             masterInfo.setName(newName)
-            self.ReList()
-            self.PopulateItem(itemDex)
+            self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
                 masterInfo.oldName] = newName
+            self.PopulateItem(itemDex) # populate, refresh etc _last_
         elif newName == u'':
             event.Veto()
         else:
@@ -1134,6 +1158,8 @@ class _SashDetailsPanel(_EditableMixin, SashPanel):
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
                 self.subSplitter.GetSashPosition()
 
+    def testChanges(self): raise AbstractError
+
 class ModDetails(_SashDetailsPanel):
     """Details panel for mod tab."""
     keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
@@ -1155,22 +1181,22 @@ class ModDetails(_SashDetailsPanel):
         self.version = staticText(top,u'v0.00')
         #--File Name
         self.file = textCtrl(top, onKillFocus=self.OnEditFile,
-                             onText=self.OnTextEdit, maxChars=textWidth) # size=(textWidth,-1))
+                             onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
         self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
-                               onText=self.OnTextEdit, maxChars=512) # size=(textWidth,-1))
+                               onText=self.OnAuthorEdit, maxChars=512) # size=(textWidth,-1))
         #--Modified
         self.modified = textCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
-                                 onText=self.OnTextEdit, maxChars=32)
+                                 onText=self.OnModifiedEdit, maxChars=32)
         #--Description
         self.description = textCtrl(top, size=(textWidth, 150),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
-                                    onText=self.OnTextEdit, maxChars=512)
+                                    onText=self.OnDescrEdit, maxChars=512)
         #--Masters
-        self.uilist = MasterList(masterPanel, self.SetEdited,
-                                 keyPrefix=self.keyPrefix, panel=modPanel)
+        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
+                                 panel=modPanel, detailsPanel=self)
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
@@ -1249,15 +1275,19 @@ class ModDetails(_SashDetailsPanel):
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
         self.gTags.Refresh()
 
-    def OnTextEdit(self,event):
+    def _OnTextEdit(self, event, value, control):
         if not self.modInfo: return
-        if self.modInfo and not self.edited:
-            if ((self.fileStr != self.file.GetValue()) or
-                (self.authorStr != self.author.GetValue()) or
-                (self.modifiedStr != self.modified.GetValue()) or
-                (self.descriptionStr != self.description.GetValue()) ):
-                self.SetEdited()
+        if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
+    def OnFileEdit(self, event):
+        self._OnTextEdit(event, self.fileStr, self.file)
+    def OnAuthorEdit(self, event):
+        self._OnTextEdit(event, self.authorStr, self.author)
+    def OnModifiedEdit(self, event):
+        self._OnTextEdit(event, self.modifiedStr, self.modified)
+    def OnDescrEdit(self, event):
+        self._OnTextEdit(event, self.descriptionStr.replace(
+            '\r\n', '\n').replace('\r', '\n'), self.description)
 
     def OnEditFile(self,event):
         if not self.modInfo: return
@@ -1303,9 +1333,9 @@ class ModDetails(_SashDetailsPanel):
 
     def OnEditDescription(self,event):
         if not self.modInfo: return
-        descriptionStr = self.description.GetValue()
-        if descriptionStr != self.descriptionStr:
-            self.descriptionStr = descriptionStr
+        if self.description.GetValue() != self.descriptionStr.replace('\r\n',
+                '\n').replace('\r', '\n'):
+            self.descriptionStr = self.description.GetValue() ##: .replace('\n', 'r\n')
             self.SetEdited()
 
     bsaAndVoice = _(u'This mod has an associated archive (%s.bsa) and an '
@@ -1324,6 +1354,14 @@ class ModDetails(_SashDetailsPanel):
         return bosh.modInfos.askResourcesOk(fileInfo, parent=self,
             title=_(u'Rename '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
             voice=self.voice)
+
+    def testChanges(self): # used by the master list when editing is disabled
+        modInfo = self.modInfo
+        if not modInfo or (self.fileStr == modInfo.name and
+                self.modifiedStr == formatDate(modInfo.mtime) and
+                self.authorStr == modInfo.header.author and
+                self.descriptionStr == modInfo.header.description):
+            self.DoCancel(None)
 
     def DoSave(self,event):
         modInfo = self.modInfo
@@ -1838,8 +1876,8 @@ class SaveDetails(_SashDetailsPanel):
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         notePanel = wx.Panel(subSplitter)
         #--Masters
-        self.uilist = MasterList(masterPanel, self.SetEdited,
-                                 keyPrefix=self.keyPrefix, panel=savePanel)
+        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
+                                 panel=savePanel, detailsPanel=self)
         #--Save Info
         self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -1954,6 +1992,11 @@ class SaveDetails(_SashDetailsPanel):
         else:
             self.fileStr = fileStr
             self.SetEdited()
+
+    def testChanges(self): # used by the master list when editing is disabled
+        saveInfo = self.saveInfo
+        if not saveInfo or self.fileStr == saveInfo.name:
+            self.DoCancel(None)
 
     def DoSave(self,event):
         """Event: Clicked Save button."""

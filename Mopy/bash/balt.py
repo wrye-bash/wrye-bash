@@ -1967,8 +1967,8 @@ class UIList(wx.Panel):
         # parameters and get rid of ModList override(move part to PopulateItem)
         # Refresh UI uses must be optimized - pass in ONLY the items we need
         # refreshed - most of the time Refresh UI calls PopulateItems on ALL
-        # items - a nono. Refresh UI has 140 uses...
-        # B) consider adding 'select' tuple parameter (ex 'detail', duh) to
+        # items - a nono. Refresh UI has 106 uses...
+        # B) Rework details: add 'select' tuple parameter (ex 'detail', duh) to
         # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
         if files is self.__all:
@@ -1979,7 +1979,7 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        # if it was a single item then refresh details for it:
+        # Details HACK: if it was a single item then refresh details for it:
         if len(files) == 1: self.panel.SetDetails(files[0])
         else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
