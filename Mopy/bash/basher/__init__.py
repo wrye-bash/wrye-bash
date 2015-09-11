@@ -1295,10 +1295,6 @@ class ModDetails(_SashDetailsPanel):
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
             self.modified.SetValue(self.modifiedStr)
             return
-        except OverflowError:
-            balt.showError(self,_(u'Bash cannot handle files dates greater than January 19, 2038.)'))
-            self.modified.SetValue(self.modifiedStr)
-            return
         #--Normalize format
         modifiedStr = time.strftime(u'%c',newTimeTup)
         self.modifiedStr = modifiedStr
