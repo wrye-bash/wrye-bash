@@ -2963,7 +2963,7 @@ def initDefaultTools():
     tooldirs['OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
     tooldirs['ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
     tooldirs['ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
-    tooldirs['GimpShop'] = pathlist(u'GIMPshop',u'bin',u'gimp-2.2.exe')
+    tooldirs['Krita'] = pathlist(u'Krita (x86)',u'bin',u'krita.exe')
     tooldirs['PixelStudio'] = pathlist(u'Pixel',u'Pixel.exe')
     tooldirs['TwistedBrush'] = pathlist(u'Pixarra',u'TwistedBrush Open Studio',u'tbrush_open_studio.exe')
     tooldirs['PhotoScape'] = pathlist(u'PhotoScape',u'PhotoScape.exe')
