@@ -847,7 +847,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 modFile = bosh.ModFile(modInfo,loadFactory)
                 try:
                     modFile.load(True)
-                except bosh.ModError as x:
+                except bosh.ModError, x:
                     modErrors.append(u'%s'%x)
                     continue
                 if 'NPC_' not in modFile.tops: continue

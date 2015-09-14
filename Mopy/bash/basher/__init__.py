@@ -3599,7 +3599,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 item = panel(self)
                 self.AddPage(item,title)
                 tabInfo[page][2] = item
-            except Exception as e:
+            except Exception, e:
                 if isinstance(e, ImportError):
                     if page == 'PM Archive':
                         deprint(title+_(u' panel disabled due to Import Error (most likely comtypes)'),traceback=True)
