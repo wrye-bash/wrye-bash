@@ -90,30 +90,30 @@ class PatchDialog(balt.Dialog):
         self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
         cancelButton = CancelButton(self)
-        self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist')
+        self.gPatchers = gPatchers = balt.listBox(self, choices=patcherNames,
+                                                  isSingle=True, kind='checklist')
         self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)
         self.gImportConfig = OpenButton(self,label=_(u'Import'),onClick=self.ImportConfig)
         self.gRevertConfig = RevertToSavedButton(self,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
         self.gRevertToDefault = RevertButton(self,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,patcher.isEnabled)
+        for index, patcher in enumerate(self.patchers):
+            gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = staticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
-        self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
-        self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
-        self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
+        gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
+        gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
+        gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
+        gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
+        gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
         self.mouseItem = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
             (hSizer(
-                (self.gPatchers,0,wx.EXPAND),
-                (self.gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
+                (gPatchers,0,wx.EXPAND),
+                (gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
                 ),1,wx.EXPAND|wx.ALL,4),
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
