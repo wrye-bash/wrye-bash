@@ -4104,8 +4104,8 @@ class BashFrame(wx.Frame):
         self.CleanSettings()
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
         if not (self.IsIconized() or self.IsMaximized()):
-            settings['bash.framePos'] = self.GetPositionTuple()
-            settings['bash.frameSize'] = self.GetSizeTuple()
+            settings['bash.framePos'] = tuple(self.GetPosition())
+            settings['bash.frameSize'] = tuple(self.GetSize())
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
