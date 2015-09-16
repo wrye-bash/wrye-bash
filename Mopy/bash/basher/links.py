@@ -30,7 +30,7 @@ import os
 import win32gui
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MessageList, MasterList, bEnableWizard,  PeopleList,\
-    BashStatusBar, Tab_Link
+    BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
@@ -804,10 +804,7 @@ def InitSettingsLinks():
     SettingsMenu.append(SeparatorLink())
     SettingsMenu.append(Settings_Colors())
     if True:
-        tabsMenu = MenuLink(_(u'Tabs'))
-        for key in bosh.settings['bash.tabs.order']:
-            canDisable = bool(key != 'Mods')
-            tabsMenu.links.append(Tab_Link(key,canDisable))
+        tabsMenu = BashNotebook.tabLinks(MenuLink(_(u'Tabs')))
         SettingsMenu.append(tabsMenu)
     #--StatusBar
     if True:

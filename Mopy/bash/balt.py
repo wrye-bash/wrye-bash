@@ -2539,6 +2539,8 @@ class MenuLink(Link):
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
+    def append(self, link): self.links.append(link) ##: MenuLink(Link, Links) !
+
     def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
 
     def AppendToMenu(self, menu, window, selection):

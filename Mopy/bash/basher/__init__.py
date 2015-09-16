@@ -53,7 +53,7 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import os
 import re
 import sys
@@ -3508,10 +3508,10 @@ class PeoplePanel(SashTankPanel):
 
 #------------------------------------------------------------------------------
 #--Tabs menu
-class Tab_Link(AppendableLink, CheckLink, EnabledLink):
+class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
     """Handle hiding/unhiding tabs."""
     def __init__(self,tabKey,canDisable=True):
-        super(Tab_Link, self).__init__()
+        super(_Tab_Link, self).__init__()
         self.tabKey = tabKey
         self.enabled = canDisable
         className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
@@ -3522,10 +3522,10 @@ class Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
     def _enable(self): return self.enabled
 
-    def _check(self): return bosh.settings['bash.tabs'][self.tabKey]
+    def _check(self): return bosh.settings['bash.tabs.order'][self.tabKey]
 
     def Execute(self,event):
-        if bosh.settings['bash.tabs'][self.tabKey]:
+        if bosh.settings['bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
             iMods = None
             iInstallers = None
@@ -3555,7 +3555,7 @@ class Tab_Link(AppendableLink, CheckLink, EnabledLink):
             insertAt = 0
             for i,key in enumerate(bosh.settings['bash.tabs.order']):
                 if key == self.tabKey: break
-                if bosh.settings['bash.tabs'][key]:
+                if bosh.settings['bash.tabs.order'][key]:
                     insertAt = i+1
             className,title,panel = tabInfo[self.tabKey]
             if not panel:
@@ -3565,30 +3565,52 @@ class Tab_Link(AppendableLink, CheckLink, EnabledLink):
                 Link.Frame.notebook.AddPage(panel,title)
             else:
                 Link.Frame.notebook.InsertPage(insertAt,panel,title)
-        bosh.settings['bash.tabs'][self.tabKey] ^= True
-        bosh.settings.setChanged('bash.tabs')
+        bosh.settings['bash.tabs.order'][self.tabKey] ^= True
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
+
+    # default tabs order and default enabled state, keys as in tabInfo
+    _tabs_enabled_ordered = OrderedDict((('Installers', True),
+                                        ('Mods', True),
+                                        ('Saves', True),
+                                        ('INI Edits', True),
+                                        ('Screenshots', True),
+                                        ('PM Archive', False),
+                                        ('People', False),
+                                        # ('BSAs', False),
+                                       ))
+
+    @staticmethod
+    def _tabOrder():
+        """Return dict containing saved tab order and enabled state of tabs."""
+        newOrder = settings.getChanged('bash.tabs.order',
+                                       BashNotebook._tabs_enabled_ordered)
+        if not isinstance(newOrder, OrderedDict): # convert, on updating to 306
+            enabled = settings.getChanged('bash.tabs', # deprecated - never use
+                                          BashNotebook._tabs_enabled_ordered)
+            newOrder = OrderedDict([(x, enabled[x]) for x in newOrder
+            # needed if user updates to 306+ that drops 'bash.tabs', the latter
+            # is unchanged from default and the new version also removes a panel
+                                    if x in enabled])
+        # append any new tabs - apends last
+        newTabs = set(tabInfo) - set(newOrder)
+        for n in newTabs: newOrder[n] = BashNotebook._tabs_enabled_ordered[n]
+        # delete any removed tabs
+        deleted = set(newOrder) - set(tabInfo)
+        for d in deleted: del newOrder[d]
+        # Ensure the 'Mods' tab is always shown
+        if 'Mods' not in newOrder: newOrder['Mods'] = True # inserts last
+        settings['bash.tabs.order'] = newOrder
+        return newOrder
+
     def __init__(self, parent):
         wx.Notebook.__init__(self, parent)
         balt.TabDragMixin.__init__(self)
         #--Pages
-        # Ensure the 'Mods' tab is always shown
-        if 'Mods' not in settings['bash.tabs.order']:
-            settings['bash.tabs.order'] = ['Mods']+settings['bash.tabs.order']
         iInstallers = iMods = -1
-        for page in settings.getChanged('bash.tabs.order'):
-            className, title, item = tabInfo.get(page, [None, None, None])
-            if title is None: # panel does not exist anymore
-                del settings['bash.tabs.order'][page]
-                try:
-                    del settings['bash.tabs'][page]
-                    settings.setChanged('bash.tabs')
-                except KeyError:
-                    pass # should not happen
-                continue
-            enabled = settings['bash.tabs'].get(page, False)
+        for page, enabled in self._tabOrder().items():
             if not enabled: continue
+            className, title, item = tabInfo[page]
             panel = globals().get(className,None)
             if panel is None: continue
             # Some page specific stuff
@@ -3608,10 +3630,9 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                     deprint(_(u"Fatal error constructing '%s' panel.") % title)
                     raise
                 deprint(_(u"Error constructing '%s' panel.") % title,traceback=True)
-                if page in settings['bash.tabs']:
-                    settings['bash.tabs'][page] = False
+                settings['bash.tabs.order'][page] = False
         #--Selection
-        pageIndex = max(min(settings['bash.page'],self.GetPageCount()-1),0)
+        pageIndex = max(min(settings['bash.page'], self.GetPageCount() - 1), 0)
         if settings['bash.installers.fastStart'] and pageIndex == iInstallers:
             pageIndex = iMods
         self.SetSelection(pageIndex)
@@ -3626,44 +3647,46 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
         self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
 
+    @staticmethod
+    def tabLinks(menu):
+        for key in BashNotebook._tabOrder(): # use tabOrder here - it is used in
+            # InitLinks which runs _before_ settings['bash.tabs.order'] is set!
+            canDisable = bool(key != 'Mods')
+            menu.append(_Tab_Link(key, canDisable))
+        return menu
+
     def DoTabMenu(self,event):
         pos = event.GetPosition()
         pos = self.ScreenToClient(pos)
         tabId = self.HitTest(pos)
         if tabId != wx.NOT_FOUND and tabId[0] != wx.NOT_FOUND:
-            menu = Links()
-            for key in settings['bash.tabs.order']:
-                canDisable = bool(key != 'Mods')
-                menu.append(Tab_Link(key,canDisable))
+            menu = self.tabLinks(Links())
             menu.PopupMenu(self, Link.Frame, None)
         else:
             event.Skip()
 
     def OnTabDragged(self, event):
-        oldPos = event.fromIndex
         newPos = event.toIndex
-        # Update the settings
+        # Find the key
         removeTitle = self.GetPageText(newPos)
-        oldOrder = settings['bash.tabs.order']
+        oldOrder = settings['bash.tabs.order'].keys()
         for removeKey in oldOrder:
             if tabInfo[removeKey][1] == removeTitle:
                 break
         oldOrder.remove(removeKey)
-        if newPos == 0:
-            # Moved to the front
-            newOrder = [removeKey]+oldOrder
-        elif newPos == self.GetPageCount() - 1:
-            # Moved to the end
-            newOrder = oldOrder+[removeKey]
-        else:
-            # Moved somewhere in the middle
-            beforeTitle = self.GetPageText(newPos+1)
-            for beforeKey in oldOrder:
-                if tabInfo[beforeKey][1] == beforeTitle:
+        if newPos == 0: # Moved to the front
+            newOrder = [removeKey] + oldOrder
+        elif newPos == self.GetPageCount() - 1: # Moved to the end
+            newOrder = oldOrder + [removeKey]
+        else: # Moved somewhere in the middle
+            nextTabTitle = self.GetPageText(newPos+1)
+            for nextTabKey in oldOrder:
+                if tabInfo[nextTabKey][1] == nextTabTitle:
                     break
-            beforeIndex = oldOrder.index(beforeKey)
-            newOrder = oldOrder[:beforeIndex]+[removeKey]+oldOrder[beforeIndex:]
-        settings['bash.tabs.order'] = newOrder
+            nextTabIndex = oldOrder.index(nextTabKey)
+            newOrder = oldOrder[:nextTabIndex]+[removeKey]+oldOrder[nextTabIndex:]
+        settings['bash.tabs.order'] = OrderedDict(
+            (k, settings['bash.tabs.order'][k]) for k in newOrder)
         event.Skip()
 
     def OnShowPage(self,event):

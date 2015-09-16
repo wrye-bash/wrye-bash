@@ -184,27 +184,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.bsaRedirection':True,
     #--Wrye Bash: Load Lists
     'bash.loadLists.data': {},
-    #--Wrye Bash: Tabs
-    'bash.tabs': {
-        'Installers': True,
-        'Mods': True,
-        'Saves': True,
-        'INI Edits': True,
-        'Screenshots': True,
-        'PM Archive': False,
-        'People': False,
-        # 'BSAs': False,
-        },
-    'bash.tabs.order': [
-        'Installers',
-        'Mods',
-        'Saves',
-        'INI Edits',
-        'Screenshots',
-        'PM Archive',
-        'People',
-        # 'BSAs',
-        ],
     #--Wrye Bash: StatusBar
     'bash.statusbar.iconSize': 16,
     'bash.statusbar.hide': set(),
