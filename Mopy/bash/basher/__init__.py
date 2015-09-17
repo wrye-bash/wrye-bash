@@ -64,7 +64,6 @@ from types import ClassType
 #--wxPython
 import collections
 import wx
-import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
@@ -245,8 +244,7 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
     def __init__(self, parent, sashGravity=0.5, isVertical=True,
                  style=splitterStyle):
         NotebookPanel.__init__(self, parent)
-        self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
-                                                                style=style)
+        self.splitter = splitter = wx.SplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -1142,8 +1140,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
         self.top, self.bottom = self.left, self.right
-        self.subSplitter = wx.gizmos.ThinSplitterWindow(self.bottom,
-                                                        style=splitterStyle)
+        self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
         #--Masters
@@ -2494,9 +2491,9 @@ class InstallersPanel(SashTankPanel):
         SashTankPanel.__init__(self, parent)
         left,right = self.left,self.right
         self.commentsSplitter = commentsSplitter = \
-            wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            wx.SplitterWindow(right, style=splitterStyle)
+        subSplitter = wx.SplitterWindow(commentsSplitter, style=splitterStyle)
+        checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
         self._data_dir_scanned = False
         self.refreshing = False
