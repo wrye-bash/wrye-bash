@@ -73,7 +73,6 @@ class DocBrowser(wx.Frame):
         self.modNameList = balt.listBox(self, choices=sorted(
             x.s for x in self.docs.keys()), isSort=True)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
-        #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc

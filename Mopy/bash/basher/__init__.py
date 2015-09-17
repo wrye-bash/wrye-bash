@@ -3567,7 +3567,7 @@ class BashStatusBar(wx.StatusBar):
         self.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
-        wx.EVT_SIZE(self,self.OnSize)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
         #--Setup Drag-n-Drop reordering
         self.dragging = wx.NOT_FOUND
         self.dragStart = 0
