@@ -389,15 +389,14 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-class button(wx.Button):
+class Button(wx.Button):
     _id = defId
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', id=None, onClick=None, tip=None,
                  default=False):
-        """Creates a button, binds click function, then returns bound
-        button."""
+        """Create a button and bind its click function."""
         if  not label and self.__class__.label: label = self.__class__.label
         wx.Button.__init__(self, parent, id or self.__class__._id,
                            label, pos, size, style, val, name)
@@ -405,8 +404,8 @@ class button(wx.Button):
         if tip: self.SetToolTip(tooltip(tip))
         if default: self.SetDefault()
 
-class OkButton(button): _id = wx.ID_OK
-class CancelButton(button):
+class OkButton(Button): _id = wx.ID_OK
+class CancelButton(Button):
     _id = wx.ID_CANCEL
     label = _(u'Cancel')
 
@@ -415,15 +414,15 @@ def ok_and_cancel_sizer(parent, onOk=None):
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
-class SaveButton(button):
+class SaveButton(Button):
     _id = wx.ID_SAVE
     label = _(u'Save')
 
-class SaveAsButton(button): _id = wx.ID_SAVEAS
-class RevertButton(button): _id = wx.ID_SAVE
-class RevertToSavedButton(button): _id = wx.ID_REVERT_TO_SAVED
-class OpenButton(button): _id = wx.ID_OPEN
-class SelectAllButton(button): _id = wx.wx.ID_SELECTALL
+class SaveAsButton(Button): _id = wx.ID_SAVEAS
+class RevertButton(Button): _id = wx.ID_SAVE
+class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
+class OpenButton(Button): _id = wx.ID_OPEN
+class SelectAllButton(Button): _id = wx.wx.ID_SELECTALL
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -613,7 +612,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = button(dialog,id=id,label=lable)
+            but = Button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
@@ -1243,7 +1242,7 @@ class ListEditor(Dialog):
             for (flag,defLabel,func) in buttonSet:
                 if not flag: continue
                 label = (flag == True and defLabel) or flag
-                buttons.Add(button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
+                buttons.Add(Button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
         else:
             buttons = None
         #--Layout

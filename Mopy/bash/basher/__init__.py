@@ -1497,9 +1497,9 @@ class INIPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = balt.button(right,_(u'Remove'),onClick=self.OnRemove)
+        self.button = balt.Button(right,_(u'Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.editButton = balt.button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = balt.Button(right,_(u'Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -2359,9 +2359,9 @@ class InstallersList(balt.Tank):
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
                         spacer,
-                        balt.button(dialog,label=_(u'Move'),
+                        balt.Button(dialog,label=_(u'Move'),
                                onClick=lambda x: dialog.EndModal(1)),
-                        (balt.button(dialog,label=_(u'Copy'),
+                        (balt.Button(dialog,label=_(u'Copy'),
                                 onClick=lambda x: dialog.EndModal(2)),
                          0,wx.LEFT,4),
                         (CancelButton(dialog),0,wx.LEFT,4),
@@ -3364,8 +3364,8 @@ class MessagePanel(SashPanel):
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Search ##: move to textCtrl subclass
         gSearchBox = self.gSearchBox = TextCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
-        gSearchButton = balt.button(gBottom,_(u'Search'),onClick=self.DoSearch)
-        gClearButton = balt.button(gBottom,_(u'Clear'),onClick=self.DoClear)
+        gSearchButton = balt.Button(gBottom,_(u'Search'),onClick=self.DoSearch)
+        gClearButton = balt.Button(gBottom,_(u'Clear'),onClick=self.DoClear)
         #--Events
         #--Following line should use EVT_COMMAND_TEXT_ENTER, but that seems broken.
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)

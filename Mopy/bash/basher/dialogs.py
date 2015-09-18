@@ -29,7 +29,7 @@ from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
-from ..balt import button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
+from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, staticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton
 
@@ -58,12 +58,12 @@ class ColorDialog(balt.Dialog):
         help = colorInfo[choiceKey][1]
         self.textCtrl = RoTextCtrl(self, help)
         #--Buttons
-        self.default = button(self,_(u'Default'),onClick=self.OnDefault)
-        self.defaultAll = button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
-        self.apply = button(self,id=wx.ID_APPLY,onClick=self.OnApply)
-        self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
-        self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
-        self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
+        self.default = Button(self,_(u'Default'),onClick=self.OnDefault)
+        self.defaultAll = Button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
+        self.apply = Button(self,id=wx.ID_APPLY,onClick=self.OnApply)
+        self.applyAll = Button(self,_(u'Apply All'),onClick=self.OnApplyAll)
+        self.exportConfig = Button(self,_(u'Export...'),onClick=self.OnExport)
+        self.importConfig = Button(self,_(u'Import...'),onClick=self.OnImport)
         self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
@@ -273,7 +273,7 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText  = staticText(self,u'')
         self.classText  = staticText(self,u'')
         #--Other
-        importButton = button(self, label=_(u'Import'), onClick=self.DoImport,
+        importButton = Button(self, label=_(u'Import'), onClick=self.DoImport,
                               default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout

@@ -28,7 +28,7 @@ import string
 import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
-from ..balt import TextCtrl, staticText, vSizer, hSizer, spacer, button, \
+from ..balt import TextCtrl, staticText, vSizer, hSizer, spacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
@@ -76,17 +76,17 @@ class DocBrowser(wx.Frame):
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
-        self.setButton = button(self,_(u'Set Doc...'),onClick=self.DoSet)
+        self.setButton = Button(self,_(u'Set Doc...'),onClick=self.DoSet)
         #--Forget Doc
-        self.forgetButton = button(self, _(u'Forget Doc...'),
+        self.forgetButton = Button(self, _(u'Forget Doc...'),
                                    onClick=self.DoForget)
         #--Rename Doc
-        self.renameButton = button(self, _(u'Rename Doc...'),
+        self.renameButton = Button(self, _(u'Rename Doc...'),
                                    onClick=self.DoRename)
         #--Edit Doc
         self.editButton = toggleButton(self, label=_(u'Edit Doc...'),
                                        onClick=self.DoEdit)
-        self.openButton = button(self, _(u'Open Doc...'), onClick=self.DoOpen,
+        self.openButton = Button(self, _(u'Open Doc...'), onClick=self.DoOpen,
                                  tip=_(u'Open doc in external editor.'))
         #--Doc Name
         self.docNameBox = RoTextCtrl(self, multiline=False)
@@ -404,7 +404,7 @@ class ModChecker(wx.Frame):
             self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
-        gUpdateButton = button(self, _(u'Update'),
+        gUpdateButton = Button(self, _(u'Update'),
                                onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self, _(u'Mod List'),
                                          onClick=self.CheckMods)
@@ -425,7 +425,7 @@ class ModChecker(wx.Frame):
         else:
             self.gScanDirty = toggleButton(self, _(u"Scan for UDR's"),
                                            onClick=self.CheckMods)
-        self.gCopyText = button(self, _(u'Copy Text'), onClick=self.OnCopyText)
+        self.gCopyText = Button(self, _(u'Copy Text'), onClick=self.OnCopyText)
         self.gShowModList.SetValue(
             bosh.settings.get('bash.modChecker.showModList', False))
         self.gShowNotes.SetValue(
