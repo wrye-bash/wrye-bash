@@ -91,7 +91,7 @@ class DocBrowser(wx.Frame):
         #--Doc Name
         self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
-        self.plainText = RoTextCtrl(self, special=True)
+        self.plainText = RoTextCtrl(self, special=True, autotooltip=False)
         if bHaveComTypes:
             self.htmlText = wx.lib.iewin.IEHtmlWindow(
                 self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
