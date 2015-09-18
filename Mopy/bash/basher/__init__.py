@@ -1521,7 +1521,7 @@ class INIPanel(SashPanel):
         self.listData = bosh.iniInfos
         self.uiList = BashFrame.iniList = INIList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
+        self.comboBox = balt.ComboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)

@@ -362,7 +362,7 @@ class RoTextCtrl(TextCtrl):
         kwargs['multiline'] = kwargs.pop('multiline', True)
         super(RoTextCtrl, self).__init__(*args, **kwargs)
 
-class comboBox(wx.ComboBox):
+class ComboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
         autotooltip = kwdargs.pop('autotooltip', True)
