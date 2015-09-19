@@ -312,7 +312,7 @@ def tooltip(text,wrap=50):
     text = textwrap.fill(text,wrap)
     return wx.ToolTip(text)
 
-class textCtrl(wx.TextCtrl):
+class TextCtrl(wx.TextCtrl):
     """wx.TextCtrl with automatic tooltip if text goes past the width of the
     control."""
 
@@ -343,7 +343,7 @@ class textCtrl(wx.TextCtrl):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
 
-class roTextCtrl(textCtrl):
+class RoTextCtrl(TextCtrl):
     """Set some styles to a read only textCtrl.
 
     Name intentionally ugly - tmp class to accommodate current code - do not
@@ -360,9 +360,9 @@ class roTextCtrl(textCtrl):
         kwargs['style'] = style
         # override default 'multiline' parameter value, 'False', with 'True'
         kwargs['multiline'] = kwargs.pop('multiline', True)
-        super(roTextCtrl, self).__init__(*args, **kwargs)
+        super(RoTextCtrl, self).__init__(*args, **kwargs)
 
-class comboBox(wx.ComboBox):
+class ComboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
         autotooltip = kwdargs.pop('autotooltip', True)
@@ -389,15 +389,14 @@ def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-class button(wx.Button):
+class Button(wx.Button):
     _id = defId
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', id=None, onClick=None, tip=None,
                  default=False):
-        """Creates a button, binds click function, then returns bound
-        button."""
+        """Create a button and bind its click function."""
         if  not label and self.__class__.label: label = self.__class__.label
         wx.Button.__init__(self, parent, id or self.__class__._id,
                            label, pos, size, style, val, name)
@@ -405,8 +404,8 @@ class button(wx.Button):
         if tip: self.SetToolTip(tooltip(tip))
         if default: self.SetDefault()
 
-class OkButton(button): _id = wx.ID_OK
-class CancelButton(button):
+class OkButton(Button): _id = wx.ID_OK
+class CancelButton(Button):
     _id = wx.ID_CANCEL
     label = _(u'Cancel')
 
@@ -415,15 +414,15 @@ def ok_and_cancel_sizer(parent, onOk=None):
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
-class SaveButton(button):
+class SaveButton(Button):
     _id = wx.ID_SAVE
     label = _(u'Save')
 
-class SaveAsButton(button): _id = wx.ID_SAVEAS
-class RevertButton(button): _id = wx.ID_SAVE
-class RevertToSavedButton(button): _id = wx.ID_REVERT_TO_SAVED
-class OpenButton(button): _id = wx.ID_OPEN
-class SelectAllButton(button): _id = wx.wx.ID_SELECTALL
+class SaveAsButton(Button): _id = wx.ID_SAVEAS
+class RevertButton(Button): _id = wx.ID_SAVE
+class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
+class OpenButton(Button): _id = wx.ID_OPEN
+class SelectAllButton(Button): _id = wx.wx.ID_SELECTALL
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -444,7 +443,7 @@ def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     gCheckBox.SetValue(checked)
     return gCheckBox
 
-class staticText(wx.StaticText):
+class StaticText(wx.StaticText):
     """Static text element."""
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
@@ -562,7 +561,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             ok_and_cancel_sizer(dialog),
@@ -613,11 +612,11 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = button(dialog,id=id,label=lable)
+            but = Button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             ok_and_cancel_sizer(dialog),
@@ -824,7 +823,7 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
     window.Bind(wx.EVT_CLOSE,_showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    txtCtrl = roTextCtrl(window, logText, special=True, autotooltip=False)
+    txtCtrl = RoTextCtrl(window, logText, special=True, autotooltip=False)
     txtCtrl.SetValue(logText)
     if fixedFont:
         fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
@@ -1213,7 +1212,7 @@ class ListEditor(Dialog):
         self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
         if data.caption:
-            captionText = staticText(self,data.caption)
+            captionText = StaticText(self,data.caption)
         else:
             captionText = None
         #--List Box
@@ -1221,7 +1220,7 @@ class ListEditor(Dialog):
         self.listBox.SetSizeHints(125,150)
         #--Infobox
         if data.showInfo:
-            self.gInfoBox = textCtrl(self,size=(130,-1),
+            self.gInfoBox = TextCtrl(self,size=(130,-1),
                 style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
                       wx.TE_MULTILINE | wx.SUNKEN_BORDER)
             if not self._listEditorData.infoReadOnly:
@@ -1243,7 +1242,7 @@ class ListEditor(Dialog):
             for (flag,defLabel,func) in buttonSet:
                 if not flag: continue
                 label = (flag == True and defLabel) or flag
-                buttons.Add(button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
+                buttons.Add(Button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
         else:
             buttons = None
         #--Layout
@@ -2748,7 +2747,7 @@ class ListBoxes(Dialog):
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
         sizer = wx.FlexGridSizer(len(lists) + 2, 1)
-        self.text = staticText(self, message)
+        self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
         sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
         sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)

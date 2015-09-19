@@ -32,7 +32,7 @@ from datetime import timedelta
 from . import SetUAC, BashFrame
 from .. import bosh, bolt, balt
 from ..bass import Resources
-from ..balt import staticText, vSizer, hSizer, spacer, Link, OkButton, \
+from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
     RevertToSavedButton, RevertButton
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
@@ -99,7 +99,7 @@ class PatchDialog(balt.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
-        self.gTipText = staticText(self,self.defaultTipText)
+        self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
         self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)

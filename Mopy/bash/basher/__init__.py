@@ -80,9 +80,9 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
+    Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton
-from ..balt import checkBox, staticText, spinCtrl, textCtrl
+from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
@@ -1178,19 +1178,19 @@ class ModDetails(_SashDetailsPanel):
         self.modInfo = None
         textWidth = 200
         #--Version
-        self.version = staticText(top,u'v0.00')
+        self.version = StaticText(top,u'v0.00')
         #--File Name
-        self.file = textCtrl(top, onKillFocus=self.OnEditFile,
+        self.file = TextCtrl(top, onKillFocus=self.OnEditFile,
                              onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
-        self.author = textCtrl(top, onKillFocus=self.OnEditAuthor,
+        self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
                                onText=self.OnAuthorEdit, maxChars=512) # size=(textWidth,-1))
         #--Modified
-        self.modified = textCtrl(top,size=(textWidth, -1),
+        self.modified = TextCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
                                  onText=self.OnModifiedEdit, maxChars=32)
         #--Description
-        self.description = textCtrl(top, size=(textWidth, 150),
+        self.description = TextCtrl(top, size=(textWidth, 150),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=512)
@@ -1200,21 +1200,21 @@ class ModDetails(_SashDetailsPanel):
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
-        self.gTags = roTextCtrl(tagPanel, autotooltip=False,
+        self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
                                 size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
-                (staticText(top,_(u"File:")),0,wx.TOP,4),
+                (StaticText(top,_(u"File:")),0,wx.TOP,4),
                 spacer,
                 (self.version,0,wx.TOP|wx.RIGHT,4)
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
@@ -1222,14 +1222,14 @@ class ModDetails(_SashDetailsPanel):
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
         mastersSizer = vSizer(
-            (hSizer((staticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4)
                 ),0,wx.EXPAND|wx.TOP,4),)
         tagsSizer = vSizer(
-            (staticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
+            (StaticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
         mastersSizer.SetSizeHints(masterPanel)
         masterPanel.SetSizer(mastersSizer)
@@ -1497,9 +1497,9 @@ class INIPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = balt.button(right,_(u'Remove'),onClick=self.OnRemove)
+        self.button = balt.Button(right,_(u'Remove'),onClick=self.OnRemove)
         #--Edit button
-        self.editButton = balt.button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = balt.Button(right,_(u'Edit...'),onClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -1516,12 +1516,12 @@ class INIPanel(SashPanel):
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
-        self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
+        self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
         self.listData = bosh.iniInfos
         self.uiList = BashFrame.iniList = INIList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.comboBox = balt.comboBox(right, value=self.GetChoiceString(),
+        self.comboBox = balt.ComboBox(right, value=self.GetChoiceString(),
                                       choices=self.sortKeys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -1866,12 +1866,12 @@ class SaveDetails(_SashDetailsPanel):
         self.saveInfo = None
         textWidth = 200
         #--File Name
-        self.file = textCtrl(top, size=(textWidth, -1),
+        self.file = TextCtrl(top, size=(textWidth, -1),
                              onKillFocus=self.OnEditFile,
                              onText=self.OnTextEdit, maxChars=256)
         #--Player Info
-        self.playerInfo = staticText(top,u" \n \n ")
-        self.gCoSaves = staticText(top,u'--\n--')
+        self.playerInfo = StaticText(top,u" \n \n ")
+        self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         notePanel = wx.Panel(subSplitter)
@@ -1879,7 +1879,7 @@ class SaveDetails(_SashDetailsPanel):
         self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
                                  panel=savePanel, detailsPanel=self)
         #--Save Info
-        self.gInfo = textCtrl(notePanel, size=(textWidth, 100), multiline=True,
+        self.gInfo = TextCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
         detailsSizer = vSizer(
@@ -2354,14 +2354,14 @@ class InstallersList(balt.Tank):
                 sizer = vSizer(
                     (hSizer(
                         (icon,0,wx.ALL,6),
-                        (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        (StaticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
                         ),1,wx.EXPAND|wx.ALL,6),
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
                         spacer,
-                        balt.button(dialog,label=_(u'Move'),
+                        balt.Button(dialog,label=_(u'Move'),
                                onClick=lambda x: dialog.EndModal(1)),
-                        (balt.button(dialog,label=_(u'Copy'),
+                        (balt.Button(dialog,label=_(u'Copy'),
                                 onClick=lambda x: dialog.EndModal(2)),
                          0,wx.LEFT,4),
                         (CancelButton(dialog),0,wx.LEFT,4),
@@ -2534,7 +2534,7 @@ class InstallersPanel(SashTankPanel):
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
                                      panel=self)
         #--Package
-        self.gPackage = roTextCtrl(right, noborder=True)
+        self.gPackage = RoTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
@@ -2551,7 +2551,7 @@ class InstallersPanel(SashTankPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = roTextCtrl(self.gNotebook, name=name, hscroll=True,
+            gPage = RoTextCtrl(self.gNotebook, name=name, hscroll=True,
                                autotooltip=False)
             self.gNotebook.AddPage(gPage,title)
             self.infoPages.append([gPage,False])
@@ -2559,14 +2559,14 @@ class InstallersPanel(SashTankPanel):
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
         #--Sub-Installers
         subPackagesPanel = wx.Panel(checkListSplitter)
-        subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+        subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist')
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(checkListSplitter)
-        espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+        espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist')
@@ -2574,8 +2574,8 @@ class InstallersPanel(SashTankPanel):
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
         commentsPanel = wx.Panel(commentsSplitter)
-        commentsLabel = staticText(commentsPanel, _(u'Comments'))
-        self.gComments = textCtrl(commentsPanel, multiline=True)
+        commentsLabel = StaticText(commentsPanel, _(u'Comments'))
+        self.gComments = TextCtrl(commentsPanel, multiline=True)
         #--Splitter settings
         checkListSplitter.SetMinimumPaneSize(50)
         checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
@@ -3174,15 +3174,15 @@ class BSADetails(_EditableMixin, SashPanel):
         #--Data
         self.BSAInfo = None
         #--File Name
-        self.file = textCtrl(self.top, onText=self.OnTextEdit,
+        self.file = TextCtrl(self.top, onText=self.OnTextEdit,
                              onKillFocus=self.OnEditFile, maxChars=256)
 
         #--BSA Info
-        self.gInfo = textCtrl(self.bottom, multiline=True,
+        self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
         nameSizer = vSizer(
-            (hSizer((staticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
+            (hSizer((StaticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
             wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
         nameSizer.SetSizeHints(self.top)
         self.top.SetSizer(nameSizer)
@@ -3363,9 +3363,9 @@ class MessagePanel(SashPanel):
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
             gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Search ##: move to textCtrl subclass
-        gSearchBox = self.gSearchBox = textCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
-        gSearchButton = balt.button(gBottom,_(u'Search'),onClick=self.DoSearch)
-        gClearButton = balt.button(gBottom,_(u'Clear'),onClick=self.DoClear)
+        gSearchBox = self.gSearchBox = TextCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
+        gSearchButton = balt.Button(gBottom,_(u'Search'),onClick=self.DoSearch)
+        gClearButton = balt.Button(gBottom,_(u'Clear'),onClick=self.DoClear)
         #--Events
         #--Following line should use EVT_COMMAND_TEXT_ENTER, but that seems broken.
         gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)
@@ -3450,8 +3450,8 @@ class PeoplePanel(SashTankPanel):
         self.detailsPanel = self # YAK
         self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
                                  panel=self)
-        self.gName = roTextCtrl(right, multiline=False)
-        self.gText = textCtrl(right, multiline=True)
+        self.gName = RoTextCtrl(right, multiline=False)
+        self.gText = TextCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
         #--Layout

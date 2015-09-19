@@ -28,8 +28,8 @@ import string
 import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
-from ..balt import textCtrl, staticText, vSizer, hSizer, spacer, button, \
-    roTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
+from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
+    RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
 
@@ -50,14 +50,14 @@ class DocBrowser(wx.Frame):
         modName -- current modname (or None)."""
         #--Data
         self.modName = GPath(modName or u'')
-        self.data = bosh.modInfos.table.getColumn('doc')
+        self.docs = bosh.modInfos.table.getColumn('doc')
         self.docEdit = bosh.modInfos.table.getColumn('docEdit')
         self.docType = None
         self.docIsWtxt = False
         #--Clean data
-        for key,doc in self.data.items():
+        for key,doc in self.docs.items():
             if not isinstance(doc,bolt.Path):
-                self.data[key] = GPath(doc)
+                self.docs[key] = GPath(doc)
         #--Singleton
         Link.Frame.docBrowser = self
         #--Window
@@ -68,30 +68,30 @@ class DocBrowser(wx.Frame):
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
         #--Mod Name
-        self.modNameBox = roTextCtrl(self, multiline=False)
+        self.modNameBox = RoTextCtrl(self, multiline=False)
         self.modNameList = balt.listBox(self, choices=sorted(
-            x.s for x in self.data.keys()), isSort=True)
+            x.s for x in self.docs.keys()), isSort=True)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
         #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
-        self.setButton = button(self,_(u'Set Doc...'),onClick=self.DoSet)
+        self.setButton = Button(self,_(u'Set Doc...'),onClick=self.DoSet)
         #--Forget Doc
-        self.forgetButton = button(self, _(u'Forget Doc...'),
+        self.forgetButton = Button(self, _(u'Forget Doc...'),
                                    onClick=self.DoForget)
         #--Rename Doc
-        self.renameButton = button(self, _(u'Rename Doc...'),
+        self.renameButton = Button(self, _(u'Rename Doc...'),
                                    onClick=self.DoRename)
         #--Edit Doc
         self.editButton = toggleButton(self, label=_(u'Edit Doc...'),
                                        onClick=self.DoEdit)
-        self.openButton = button(self, _(u'Open Doc...'), onClick=self.DoOpen,
+        self.openButton = Button(self, _(u'Open Doc...'), onClick=self.DoOpen,
                                  tip=_(u'Open doc in external editor.'))
         #--Doc Name
-        self.docNameBox = roTextCtrl(self, multiline=False)
+        self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
-        self.plainText = roTextCtrl(self, special=True)
+        self.plainText = RoTextCtrl(self, special=True)
         if bHaveComTypes:
             self.htmlText = wx.lib.iewin.IEHtmlWindow(
                 self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
@@ -141,7 +141,7 @@ class DocBrowser(wx.Frame):
 
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
-        docPath = docPath or GPath(self.data.get(self.modName,u''))
+        docPath = docPath or GPath(self.docs.get(self.modName,u''))
         if not docPath.exists():
             return False
         try:
@@ -161,7 +161,7 @@ class DocBrowser(wx.Frame):
 
     def DoOpen(self,event):
         """Handle "Open Doc" button."""
-        docPath = self.data.get(self.modName)
+        docPath = self.docs.get(self.modName)
         if not docPath:
             return bell()
         if not docPath.isfile():
@@ -186,12 +186,12 @@ class DocBrowser(wx.Frame):
         Sets help document for current mod name to None."""
         #--Already have mod data?
         modName = self.modName
-        if modName not in self.data:
+        if modName not in self.docs:
             return
         index = self.modNameList.FindString(modName.s)
         if index != wx.NOT_FOUND:
             self.modNameList.Delete(index)
-        del self.data[modName]
+        del self.docs[modName]
         self.SetMod(modName)
 
     def DoSelectMod(self,event):
@@ -202,8 +202,8 @@ class DocBrowser(wx.Frame):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
         modName = self.modName
-        if modName in self.data:
-            (docsDir,fileName) = self.data[modName].headTail
+        if modName in self.docs:
+            (docsDir,fileName) = self.docs[modName].headTail
         else:
             docsDir = bosh.settings['bash.modDocs.dir'] or bosh.dirs['mods']
             fileName = GPath(u'')
@@ -212,15 +212,15 @@ class DocBrowser(wx.Frame):
             docsDir,fileName, u'*.*',mustExist=True)
         if not path: return
         bosh.settings['bash.modDocs.dir'] = path.head
-        if modName not in self.data:
+        if modName not in self.docs:
             self.modNameList.Append(modName.s)
-        self.data[modName] = path
+        self.docs[modName] = path
         self.SetMod(modName)
 
     def DoRename(self,event):
         """Handle "Rename Doc" button click."""
         modName = self.modName
-        oldPath = self.data[modName]
+        oldPath = self.docs[modName]
         (workDir,fileName) = oldPath.headTail
         #--Dialog
         path = balt.askSave(self, _(u'Rename file to:'), workDir, fileName,
@@ -234,13 +234,13 @@ class DocBrowser(wx.Frame):
             if oldHtml.exists(): oldHtml.moveTo(newHtml)
             else: newHtml.remove()
         #--Remember change
-        self.data[modName] = path
+        self.docs[modName] = path
         self.SetMod(modName)
 
     def DoSave(self):
         """Saves doc, if necessary."""
         if not self.plainText.IsModified(): return
-        docPath = self.data.get(self.modName)
+        docPath = self.docs.get(self.modName)
         self.plainText.DiscardEdits()
         if not docPath:
             raise BoltError(_(u'Filename not defined.'))
@@ -267,7 +267,7 @@ class DocBrowser(wx.Frame):
             self.modNameList.SetSelection(wx.NOT_FOUND)
             self.setButton.Enable(False)
         #--Doc Data
-        docPath = self.data.get(modName) or GPath(u'')
+        docPath = self.docs.get(modName) or GPath(u'')
         docExt = docPath.cext
         self.docNameBox.SetValue(docPath.stail)
         self.forgetButton.Enable(docPath != u'')
@@ -401,10 +401,10 @@ class ModChecker(wx.Frame):
             gForwardButton = bitmapButton(self, bitmap, onClick=lambda
                 evt: self.gTextCtrl.GoForward())
         else:
-            self.gTextCtrl = roTextCtrl(self, special=True)
+            self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
-        gUpdateButton = button(self, _(u'Update'),
+        gUpdateButton = Button(self, _(u'Update'),
                                onClick=lambda event: self.CheckMods())
         self.gShowModList = toggleButton(self, _(u'Mod List'),
                                          onClick=self.CheckMods)
@@ -425,7 +425,7 @@ class ModChecker(wx.Frame):
         else:
             self.gScanDirty = toggleButton(self, _(u"Scan for UDR's"),
                                            onClick=self.CheckMods)
-        self.gCopyText = button(self, _(u'Copy Text'), onClick=self.OnCopyText)
+        self.gCopyText = Button(self, _(u'Copy Text'), onClick=self.OnCopyText)
         self.gShowModList.SetValue(
             bosh.settings.get('bash.modChecker.showModList', False))
         self.gShowNotes.SetValue(
@@ -552,27 +552,27 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
-        self.gName = textCtrl(self, config.name, maxChars=100)
-        self.gVersion = textCtrl(self, u'%d.%02d' % (
+        self.gName = TextCtrl(self, config.name, maxChars=100)
+        self.gVersion = TextCtrl(self, u'%d.%02d' % (
             config.vMajor, config.vMinor), maxChars=32)
-        self.gWebsite = textCtrl(self, config.website, maxChars=512)
-        self.gAuthor = textCtrl(self, config.author, maxChars=512)
-        self.gEmail = textCtrl(self, config.email, maxChars=512)
-        self.gAbstract = textCtrl(self, config.abstract, multiline=True,
+        self.gWebsite = TextCtrl(self, config.website, maxChars=512)
+        self.gAuthor = TextCtrl(self, config.author, maxChars=512)
+        self.gEmail = TextCtrl(self, config.email, maxChars=512)
+        self.gAbstract = TextCtrl(self, config.abstract, multiline=True,
                                   maxChars=4 * 1024)
         #--Layout
         fgSizer = wx.FlexGridSizer(0,2,4,4)
         fgSizer.AddGrowableCol(1,1)
         fgSizer.AddMany([
-            staticText(self,_(u"Name:")), (self.gName,1,wx.EXPAND),
-            staticText(self,_(u"Version:")),(self.gVersion,1,wx.EXPAND),
-            staticText(self,_(u"Website:")),(self.gWebsite,1,wx.EXPAND),
-            staticText(self,_(u"Author:")),(self.gAuthor,1,wx.EXPAND),
-            staticText(self,_(u"Email:")),(self.gEmail,1,wx.EXPAND),
+            StaticText(self,_(u"Name:")), (self.gName,1,wx.EXPAND),
+            StaticText(self,_(u"Version:")),(self.gVersion,1,wx.EXPAND),
+            StaticText(self,_(u"Website:")),(self.gWebsite,1,wx.EXPAND),
+            StaticText(self,_(u"Author:")),(self.gAuthor,1,wx.EXPAND),
+            StaticText(self,_(u"Email:")),(self.gEmail,1,wx.EXPAND),
             ])
         sizer = vSizer(
             (fgSizer,0,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
-            (staticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
+            (StaticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
                 spacer,

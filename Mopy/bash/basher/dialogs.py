@@ -29,8 +29,8 @@ from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
-from ..balt import button, hSizer, Link, colors, roTextCtrl, vSizer, spacer, \
-    checkBox, staticText, Image, bell, textCtrl, tooltip, OkButton, \
+from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
+    checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton
 
 class ColorDialog(balt.Dialog):
@@ -50,20 +50,20 @@ class ColorDialog(balt.Dialog):
             text = colorInfo[key][0]
             self.text_key[text] = key
         choiceKey = self.text_key[choice]
-        self.comboBox = balt.comboBox(self, value=choice, choices=choices)
+        self.comboBox = balt.ComboBox(self, value=choice, choices=choices)
         #--Color Picker
         self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])
         #--Description
         help = colorInfo[choiceKey][1]
-        self.textCtrl = roTextCtrl(self, help)
+        self.textCtrl = RoTextCtrl(self, help)
         #--Buttons
-        self.default = button(self,_(u'Default'),onClick=self.OnDefault)
-        self.defaultAll = button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
-        self.apply = button(self,id=wx.ID_APPLY,onClick=self.OnApply)
-        self.applyAll = button(self,_(u'Apply All'),onClick=self.OnApplyAll)
-        self.exportConfig = button(self,_(u'Export...'),onClick=self.OnExport)
-        self.importConfig = button(self,_(u'Import...'),onClick=self.OnImport)
+        self.default = Button(self,_(u'Default'),onClick=self.OnDefault)
+        self.defaultAll = Button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
+        self.apply = Button(self,id=wx.ID_APPLY,onClick=self.OnApply)
+        self.applyAll = Button(self,_(u'Apply All'),onClick=self.OnApplyAll)
+        self.exportConfig = Button(self,_(u'Export...'),onClick=self.OnExport)
+        self.importConfig = Button(self,_(u'Import...'),onClick=self.OnImport)
         self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
@@ -267,13 +267,13 @@ class ImportFaceDialog(balt.Dialog):
         self.statsCheck = checkBox(self, _(u'Stats'), checked=flags.stats)
         self.classCheck = checkBox(self, _(u'Class'), checked=flags.iclass)
         #--Name,Race,Gender Text
-        self.nameText  = staticText(self,u'-----------------------------')
-        self.raceText  = staticText(self,u'')
-        self.genderText  = staticText(self,u'')
-        self.statsText  = staticText(self,u'')
-        self.classText  = staticText(self,u'')
+        self.nameText  = StaticText(self,u'-----------------------------')
+        self.raceText  = StaticText(self,u'')
+        self.genderText  = StaticText(self,u'')
+        self.statsText  = StaticText(self,u'')
+        self.classText  = StaticText(self,u'')
         #--Other
-        importButton = button(self, label=_(u'Import'), onClick=self.DoImport,
+        importButton = Button(self, label=_(u'Import'), onClick=self.DoImport,
                               default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout
@@ -358,7 +358,7 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = textCtrl(self, _(u'New Project Name-#####'),
+        self.textName = TextCtrl(self, _(u'New Project Name-#####'),
                                  onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
@@ -378,9 +378,9 @@ class CreateNewProject(balt.Dialog):
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer = wx.BoxSizer(wx.VERTICAL)
-        vsizer.Add(staticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(StaticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
-        vsizer.Add(staticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)

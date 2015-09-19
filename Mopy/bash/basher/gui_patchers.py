@@ -25,7 +25,7 @@
 import string
 import wx
 from .. import bosh, bush, balt
-from ..balt import fill, staticText, vSizer, checkBox, button, hsbSizer, Links, \
+from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, \
     SeparatorLink, CheckLink, Link
 from ..bolt import GPath
 
@@ -58,7 +58,7 @@ class Patcher:
             self.gTipText = gTipText
             gConfigPanel = self.gConfigPanel = wx.Window(parent)
             text = fill(self.text,70)
-            gText = staticText(self.gConfigPanel,text)
+            gText = StaticText(self.gConfigPanel,text)
             gSizer = vSizer(gText)
             gConfigPanel.SetSizer(gSizer)
             gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
@@ -82,11 +82,11 @@ class _AliasesPatcher(Patcher):
         # -        text = fill(self.__class__.text,70)
         # +        text = fill(self.text,70)
         text = fill(self.text,70)
-        gText = staticText(gConfigPanel,text)
-        #gExample = staticText(gConfigPanel,
+        gText = StaticText(gConfigPanel,text)
+        #gExample = StaticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
-        self.gAliases = balt.textCtrl(gConfigPanel, multiline=True,
+        self.gAliases = balt.TextCtrl(gConfigPanel, multiline=True,
                                       onKillFocus=self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
@@ -126,7 +126,7 @@ class ListPatcher(Patcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         if self.forceItemCheck:
             self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
@@ -146,8 +146,8 @@ class ListPatcher(Patcher):
             self.gAuto = checkBox(gConfigPanel, _(u'Automatic'),
                                   onCheck=self.OnAutomatic,
                                   checked=self.autoIsChecked)
-            self.gAdd = button(gConfigPanel,_(u'Add'),onClick=self.OnAdd)
-            self.gRemove = button(gConfigPanel,_(u'Remove'),onClick=self.OnRemove)
+            self.gAdd = Button(gConfigPanel,_(u'Add'),onClick=self.OnAdd)
+            self.gRemove = Button(gConfigPanel,_(u'Remove'),onClick=self.OnRemove)
             self.OnAutomatic()
             gManualSizer = (vSizer(
                 (self.gAuto,0,wx.TOP,2),
@@ -155,8 +155,8 @@ class ListPatcher(Patcher):
                 (self.gRemove,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         if self.selectCommands:
-            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+            self.gSelectAll= Button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
+            self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
@@ -338,7 +338,7 @@ class TweakPatcher(Patcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
@@ -349,8 +349,8 @@ class TweakPatcher(Patcher):
         self.mouseItem = -1
         self.mouseState = None
         if self.selectCommands:
-            self.gSelectAll= button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
-            self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+            self.gSelectAll= Button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+            self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
@@ -569,7 +569,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         #--Import List
         self.gList = balt.listBox(gConfigPanel, kind='checklist')
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
@@ -585,14 +585,14 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.mouseItem = -1
         self.mouseState = None
         #--Buttons
-        self.gSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-        self.gDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+        self.gSelectAll = Button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
+        self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
         gSelectSizer = (vSizer(
             (self.gSelectAll,0,wx.TOP,12),
             (self.gDeselectAll,0,wx.TOP,4),
             ),0,wx.EXPAND|wx.LEFT,4)
-        self.gTweakSelectAll = button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
-        self.gTweakDeselectAll = button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+        self.gTweakSelectAll = Button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
+        self.gTweakDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
         gTweakSelectSizer = (vSizer(
             (self.gTweakSelectAll,0,wx.TOP,12),
             (self.gTweakDeselectAll,0,wx.TOP,4),

@@ -31,8 +31,8 @@ import copy
 import os
 from .. import bosh, bolt, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, \
-    staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
+from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
+    StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash, exportConfig
@@ -1953,18 +1953,18 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        gskip = textCtrl(dialog)
-        gdeprefix = textCtrl(dialog)
+        gskip = TextCtrl(dialog)
+        gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
             tip=_(u"If active doesn't export comments in the scripts"))
         gskip.SetValue(bosh.settings['bash.mods.export.skip'])
         gdeprefix.SetValue(bosh.settings['bash.mods.export.deprefix'])
         gskipcomments.SetValue(bosh.settings['bash.mods.export.skipcomments'])
         sizer = vSizer(
-            staticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
+            StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
             gskip,
             spacer,
-            staticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
+            StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
                                + u'\n' +
                                _(u'as DenockInit.ext rather than as cobDenockInit.ext')
                                + u'\n' +
