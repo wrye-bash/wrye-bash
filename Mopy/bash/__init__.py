@@ -18,7 +18,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <http://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
