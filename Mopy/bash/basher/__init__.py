@@ -80,7 +80,7 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, roTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
+    Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton
 from ..balt import checkBox, staticText, spinCtrl, textCtrl
 from ..balt import spacer, hSizer, vSizer
@@ -1200,7 +1200,7 @@ class ModDetails(_SashDetailsPanel):
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
-        self.gTags = roTextCtrl(tagPanel, autotooltip=False,
+        self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
                                 size=(textWidth, 100))
         #--Layout
         detailsSizer = vSizer(
@@ -1516,7 +1516,7 @@ class INIPanel(SashPanel):
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
-        self.tweakName = roTextCtrl(right, noborder=True, multiline=False)
+        self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.GetChoice())
         self.listData = bosh.iniInfos
         self.uiList = BashFrame.iniList = INIList(
@@ -2534,7 +2534,7 @@ class InstallersPanel(SashTankPanel):
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
                                      panel=self)
         #--Package
-        self.gPackage = roTextCtrl(right, noborder=True)
+        self.gPackage = RoTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
@@ -2551,7 +2551,7 @@ class InstallersPanel(SashTankPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = roTextCtrl(self.gNotebook, name=name, hscroll=True,
+            gPage = RoTextCtrl(self.gNotebook, name=name, hscroll=True,
                                autotooltip=False)
             self.gNotebook.AddPage(gPage,title)
             self.infoPages.append([gPage,False])
@@ -3450,7 +3450,7 @@ class PeoplePanel(SashTankPanel):
         self.detailsPanel = self # YAK
         self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
                                  panel=self)
-        self.gName = roTextCtrl(right, multiline=False)
+        self.gName = RoTextCtrl(right, multiline=False)
         self.gText = textCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)

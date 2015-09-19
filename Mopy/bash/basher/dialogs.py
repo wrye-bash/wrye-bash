@@ -29,7 +29,7 @@ from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
-from ..balt import button, hSizer, Link, colors, roTextCtrl, vSizer, spacer, \
+from ..balt import button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, staticText, Image, bell, textCtrl, tooltip, OkButton, \
     CancelButton
 
@@ -56,7 +56,7 @@ class ColorDialog(balt.Dialog):
         self.picker.SetColour(colors[choiceKey])
         #--Description
         help = colorInfo[choiceKey][1]
-        self.textCtrl = roTextCtrl(self, help)
+        self.textCtrl = RoTextCtrl(self, help)
         #--Buttons
         self.default = button(self,_(u'Default'),onClick=self.OnDefault)
         self.defaultAll = button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)

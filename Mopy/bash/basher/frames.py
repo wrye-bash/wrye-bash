@@ -29,7 +29,7 @@ import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
 from ..balt import textCtrl, staticText, vSizer, hSizer, spacer, button, \
-    roTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
+    RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
 
@@ -68,7 +68,7 @@ class DocBrowser(wx.Frame):
         self.SetBackgroundColour(wx.NullColour)
         self.SetSizeHints(250,250)
         #--Mod Name
-        self.modNameBox = roTextCtrl(self, multiline=False)
+        self.modNameBox = RoTextCtrl(self, multiline=False)
         self.modNameList = balt.listBox(self, choices=sorted(
             x.s for x in self.docs.keys()), isSort=True)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
@@ -89,9 +89,9 @@ class DocBrowser(wx.Frame):
         self.openButton = button(self, _(u'Open Doc...'), onClick=self.DoOpen,
                                  tip=_(u'Open doc in external editor.'))
         #--Doc Name
-        self.docNameBox = roTextCtrl(self, multiline=False)
+        self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
-        self.plainText = roTextCtrl(self, special=True)
+        self.plainText = RoTextCtrl(self, special=True)
         if bHaveComTypes:
             self.htmlText = wx.lib.iewin.IEHtmlWindow(
                 self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
@@ -401,7 +401,7 @@ class ModChecker(wx.Frame):
             gForwardButton = bitmapButton(self, bitmap, onClick=lambda
                 evt: self.gTextCtrl.GoForward())
         else:
-            self.gTextCtrl = roTextCtrl(self, special=True)
+            self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
         gUpdateButton = button(self, _(u'Update'),

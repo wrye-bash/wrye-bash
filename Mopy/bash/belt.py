@@ -230,7 +230,7 @@ class PageError(PageInstaller):
 
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
-        textError = balt.roTextCtrl(self, errorMsg)
+        textError = balt.RoTextCtrl(self, errorMsg)
         sizerMain.Add(balt.staticText(parent, label=title))
         sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
         sizerMain.AddGrowableCol(0)
@@ -268,7 +268,7 @@ class PageSelect(PageInstaller):
         sizerMain.Add(balt.staticText(self, _(u'Options:')))
 
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
-        self.textItem = balt.roTextCtrl(self)
+        self.textItem = balt.RoTextCtrl(self)
         self.bmpItem = balt.Picture(self,0,0,background=None)
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
@@ -462,7 +462,7 @@ class PageFinish(PageInstaller):
 
         #--Notes
         sizerMain.Add(balt.staticText(self, _(u'Notes:')),0,wx.BOTTOM,2)
-        sizerMain.Add(balt.roTextCtrl(self,u''.join(notes)),1,wx.EXPAND)
+        sizerMain.Add(balt.RoTextCtrl(self,u''.join(notes)),1,wx.EXPAND)
 
         checkSizer = wx.BoxSizer(wx.HORIZONTAL)
         checkSubSizer = wx.BoxSizer(wx.VERTICAL)

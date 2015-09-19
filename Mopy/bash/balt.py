@@ -343,7 +343,7 @@ class textCtrl(wx.TextCtrl):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
 
-class roTextCtrl(textCtrl):
+class RoTextCtrl(textCtrl):
     """Set some styles to a read only textCtrl.
 
     Name intentionally ugly - tmp class to accommodate current code - do not
@@ -360,7 +360,7 @@ class roTextCtrl(textCtrl):
         kwargs['style'] = style
         # override default 'multiline' parameter value, 'False', with 'True'
         kwargs['multiline'] = kwargs.pop('multiline', True)
-        super(roTextCtrl, self).__init__(*args, **kwargs)
+        super(RoTextCtrl, self).__init__(*args, **kwargs)
 
 class comboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
@@ -824,7 +824,7 @@ def showLog(parent, logText, title=u'', style=0, asDialog=True,
     window.Bind(wx.EVT_CLOSE,_showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    txtCtrl = roTextCtrl(window, logText, special=True, autotooltip=False)
+    txtCtrl = RoTextCtrl(window, logText, special=True, autotooltip=False)
     txtCtrl.SetValue(logText)
     if fixedFont:
         fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
