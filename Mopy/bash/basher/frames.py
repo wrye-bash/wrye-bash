@@ -50,14 +50,14 @@ class DocBrowser(wx.Frame):
         modName -- current modname (or None)."""
         #--Data
         self.modName = GPath(modName or u'')
-        self.data = bosh.modInfos.table.getColumn('doc')
+        self.docs = bosh.modInfos.table.getColumn('doc')
         self.docEdit = bosh.modInfos.table.getColumn('docEdit')
         self.docType = None
         self.docIsWtxt = False
         #--Clean data
-        for key,doc in self.data.items():
+        for key,doc in self.docs.items():
             if not isinstance(doc,bolt.Path):
-                self.data[key] = GPath(doc)
+                self.docs[key] = GPath(doc)
         #--Singleton
         Link.Frame.docBrowser = self
         #--Window
@@ -70,7 +70,7 @@ class DocBrowser(wx.Frame):
         #--Mod Name
         self.modNameBox = roTextCtrl(self, multiline=False)
         self.modNameList = balt.listBox(self, choices=sorted(
-            x.s for x in self.data.keys()), isSort=True)
+            x.s for x in self.docs.keys()), isSort=True)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
         #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
@@ -141,7 +141,7 @@ class DocBrowser(wx.Frame):
 
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
-        docPath = docPath or GPath(self.data.get(self.modName,u''))
+        docPath = docPath or GPath(self.docs.get(self.modName,u''))
         if not docPath.exists():
             return False
         try:
@@ -161,7 +161,7 @@ class DocBrowser(wx.Frame):
 
     def DoOpen(self,event):
         """Handle "Open Doc" button."""
-        docPath = self.data.get(self.modName)
+        docPath = self.docs.get(self.modName)
         if not docPath:
             return bell()
         if not docPath.isfile():
@@ -186,12 +186,12 @@ class DocBrowser(wx.Frame):
         Sets help document for current mod name to None."""
         #--Already have mod data?
         modName = self.modName
-        if modName not in self.data:
+        if modName not in self.docs:
             return
         index = self.modNameList.FindString(modName.s)
         if index != wx.NOT_FOUND:
             self.modNameList.Delete(index)
-        del self.data[modName]
+        del self.docs[modName]
         self.SetMod(modName)
 
     def DoSelectMod(self,event):
@@ -202,8 +202,8 @@ class DocBrowser(wx.Frame):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
         modName = self.modName
-        if modName in self.data:
-            (docsDir,fileName) = self.data[modName].headTail
+        if modName in self.docs:
+            (docsDir,fileName) = self.docs[modName].headTail
         else:
             docsDir = bosh.settings['bash.modDocs.dir'] or bosh.dirs['mods']
             fileName = GPath(u'')
@@ -212,15 +212,15 @@ class DocBrowser(wx.Frame):
             docsDir,fileName, u'*.*',mustExist=True)
         if not path: return
         bosh.settings['bash.modDocs.dir'] = path.head
-        if modName not in self.data:
+        if modName not in self.docs:
             self.modNameList.Append(modName.s)
-        self.data[modName] = path
+        self.docs[modName] = path
         self.SetMod(modName)
 
     def DoRename(self,event):
         """Handle "Rename Doc" button click."""
         modName = self.modName
-        oldPath = self.data[modName]
+        oldPath = self.docs[modName]
         (workDir,fileName) = oldPath.headTail
         #--Dialog
         path = balt.askSave(self, _(u'Rename file to:'), workDir, fileName,
@@ -234,13 +234,13 @@ class DocBrowser(wx.Frame):
             if oldHtml.exists(): oldHtml.moveTo(newHtml)
             else: newHtml.remove()
         #--Remember change
-        self.data[modName] = path
+        self.docs[modName] = path
         self.SetMod(modName)
 
     def DoSave(self):
         """Saves doc, if necessary."""
         if not self.plainText.IsModified(): return
-        docPath = self.data.get(self.modName)
+        docPath = self.docs.get(self.modName)
         self.plainText.DiscardEdits()
         if not docPath:
             raise BoltError(_(u'Filename not defined.'))
@@ -267,7 +267,7 @@ class DocBrowser(wx.Frame):
             self.modNameList.SetSelection(wx.NOT_FOUND)
             self.setButton.Enable(False)
         #--Doc Data
-        docPath = self.data.get(modName) or GPath(u'')
+        docPath = self.docs.get(modName) or GPath(u'')
         docExt = docPath.cext
         self.docNameBox.SetValue(docPath.stail)
         self.forgetButton.Enable(docPath != u'')
