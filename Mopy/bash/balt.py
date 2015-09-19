@@ -312,7 +312,7 @@ def tooltip(text,wrap=50):
     text = textwrap.fill(text,wrap)
     return wx.ToolTip(text)
 
-class textCtrl(wx.TextCtrl):
+class TextCtrl(wx.TextCtrl):
     """wx.TextCtrl with automatic tooltip if text goes past the width of the
     control."""
 
@@ -343,7 +343,7 @@ class textCtrl(wx.TextCtrl):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
 
-class RoTextCtrl(textCtrl):
+class RoTextCtrl(TextCtrl):
     """Set some styles to a read only textCtrl.
 
     Name intentionally ugly - tmp class to accommodate current code - do not
@@ -1221,7 +1221,7 @@ class ListEditor(Dialog):
         self.listBox.SetSizeHints(125,150)
         #--Infobox
         if data.showInfo:
-            self.gInfoBox = textCtrl(self,size=(130,-1),
+            self.gInfoBox = TextCtrl(self,size=(130,-1),
                 style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
                       wx.TE_MULTILINE | wx.SUNKEN_BORDER)
             if not self._listEditorData.infoReadOnly:

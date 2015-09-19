@@ -86,7 +86,7 @@ class _AliasesPatcher(Patcher):
         #gExample = staticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
-        self.gAliases = balt.textCtrl(gConfigPanel, multiline=True,
+        self.gAliases = balt.TextCtrl(gConfigPanel, multiline=True,
                                       onKillFocus=self.OnEditAliases)
         self.SetAliasText()
         #--Sizing

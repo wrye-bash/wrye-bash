@@ -31,7 +31,7 @@ import copy
 import os
 from .. import bosh, bolt, balt, bush
 from ..bass import Resources
-from ..balt import ItemLink, Link, textCtrl, toggleButton, vSizer, \
+from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
@@ -1953,8 +1953,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        gskip = textCtrl(dialog)
-        gdeprefix = textCtrl(dialog)
+        gskip = TextCtrl(dialog)
+        gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
             tip=_(u"If active doesn't export comments in the scripts"))
         gskip.SetValue(bosh.settings['bash.mods.export.skip'])

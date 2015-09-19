@@ -28,7 +28,7 @@ import string
 import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
-from ..balt import textCtrl, staticText, vSizer, hSizer, spacer, button, \
+from ..balt import TextCtrl, staticText, vSizer, hSizer, spacer, button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
@@ -552,13 +552,13 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSizeHints(300,300)
         self.SetBackgroundColour(wx.NullColour)
         #--Fields
-        self.gName = textCtrl(self, config.name, maxChars=100)
-        self.gVersion = textCtrl(self, u'%d.%02d' % (
+        self.gName = TextCtrl(self, config.name, maxChars=100)
+        self.gVersion = TextCtrl(self, u'%d.%02d' % (
             config.vMajor, config.vMinor), maxChars=32)
-        self.gWebsite = textCtrl(self, config.website, maxChars=512)
-        self.gAuthor = textCtrl(self, config.author, maxChars=512)
-        self.gEmail = textCtrl(self, config.email, maxChars=512)
-        self.gAbstract = textCtrl(self, config.abstract, multiline=True,
+        self.gWebsite = TextCtrl(self, config.website, maxChars=512)
+        self.gAuthor = TextCtrl(self, config.author, maxChars=512)
+        self.gEmail = TextCtrl(self, config.email, maxChars=512)
+        self.gAbstract = TextCtrl(self, config.abstract, multiline=True,
                                   maxChars=4 * 1024)
         #--Layout
         fgSizer = wx.FlexGridSizer(0,2,4,4)

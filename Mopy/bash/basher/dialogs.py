@@ -30,7 +30,7 @@ from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
 from ..balt import button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
-    checkBox, staticText, Image, bell, textCtrl, tooltip, OkButton, \
+    checkBox, staticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton
 
 class ColorDialog(balt.Dialog):
@@ -358,7 +358,7 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = textCtrl(self, _(u'New Project Name-#####'),
+        self.textName = TextCtrl(self, _(u'New Project Name-#####'),
                                  onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
