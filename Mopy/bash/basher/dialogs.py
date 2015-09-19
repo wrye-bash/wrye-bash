@@ -30,7 +30,7 @@ from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import balt, bosh, bolt, bush
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
-    checkBox, staticText, Image, bell, TextCtrl, tooltip, OkButton, \
+    checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton
 
 class ColorDialog(balt.Dialog):
@@ -267,11 +267,11 @@ class ImportFaceDialog(balt.Dialog):
         self.statsCheck = checkBox(self, _(u'Stats'), checked=flags.stats)
         self.classCheck = checkBox(self, _(u'Class'), checked=flags.iclass)
         #--Name,Race,Gender Text
-        self.nameText  = staticText(self,u'-----------------------------')
-        self.raceText  = staticText(self,u'')
-        self.genderText  = staticText(self,u'')
-        self.statsText  = staticText(self,u'')
-        self.classText  = staticText(self,u'')
+        self.nameText  = StaticText(self,u'-----------------------------')
+        self.raceText  = StaticText(self,u'')
+        self.genderText  = StaticText(self,u'')
+        self.statsText  = StaticText(self,u'')
+        self.classText  = StaticText(self,u'')
         #--Other
         importButton = Button(self, label=_(u'Import'), onClick=self.DoImport,
                               default=True)
@@ -378,9 +378,9 @@ class CreateNewProject(balt.Dialog):
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer = wx.BoxSizer(wx.VERTICAL)
-        vsizer.Add(staticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(StaticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
-        vsizer.Add(staticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
+        vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)

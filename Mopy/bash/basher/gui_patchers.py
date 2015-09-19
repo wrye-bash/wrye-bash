@@ -25,7 +25,7 @@
 import string
 import wx
 from .. import bosh, bush, balt
-from ..balt import fill, staticText, vSizer, checkBox, Button, hsbSizer, Links, \
+from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, \
     SeparatorLink, CheckLink, Link
 from ..bolt import GPath
 
@@ -58,7 +58,7 @@ class Patcher:
             self.gTipText = gTipText
             gConfigPanel = self.gConfigPanel = wx.Window(parent)
             text = fill(self.text,70)
-            gText = staticText(self.gConfigPanel,text)
+            gText = StaticText(self.gConfigPanel,text)
             gSizer = vSizer(gText)
             gConfigPanel.SetSizer(gSizer)
             gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
@@ -82,8 +82,8 @@ class _AliasesPatcher(Patcher):
         # -        text = fill(self.__class__.text,70)
         # +        text = fill(self.text,70)
         text = fill(self.text,70)
-        gText = staticText(gConfigPanel,text)
-        #gExample = staticText(gConfigPanel,
+        gText = StaticText(gConfigPanel,text)
+        #gExample = StaticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = balt.TextCtrl(gConfigPanel, multiline=True,
@@ -126,7 +126,7 @@ class ListPatcher(Patcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         if self.forceItemCheck:
             self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
@@ -338,7 +338,7 @@ class TweakPatcher(Patcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent,style=wx.TAB_TRAVERSAL)
         text = fill(self.__class__.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
@@ -569,7 +569,7 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.gTipText = gTipText
         gConfigPanel = self.gConfigPanel = wx.Window(parent)
         text = fill(self.text,70)
-        gText = staticText(self.gConfigPanel,text)
+        gText = StaticText(self.gConfigPanel,text)
         #--Import List
         self.gList = balt.listBox(gConfigPanel, kind='checklist')
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)

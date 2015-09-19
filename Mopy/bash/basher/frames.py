@@ -28,7 +28,7 @@ import string
 import wx
 from .. import balt, bosh, bolt
 from ..bass import Resources
-from ..balt import TextCtrl, staticText, vSizer, hSizer, spacer, Button, \
+from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
@@ -564,15 +564,15 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         fgSizer = wx.FlexGridSizer(0,2,4,4)
         fgSizer.AddGrowableCol(1,1)
         fgSizer.AddMany([
-            staticText(self,_(u"Name:")), (self.gName,1,wx.EXPAND),
-            staticText(self,_(u"Version:")),(self.gVersion,1,wx.EXPAND),
-            staticText(self,_(u"Website:")),(self.gWebsite,1,wx.EXPAND),
-            staticText(self,_(u"Author:")),(self.gAuthor,1,wx.EXPAND),
-            staticText(self,_(u"Email:")),(self.gEmail,1,wx.EXPAND),
+            StaticText(self,_(u"Name:")), (self.gName,1,wx.EXPAND),
+            StaticText(self,_(u"Version:")),(self.gVersion,1,wx.EXPAND),
+            StaticText(self,_(u"Website:")),(self.gWebsite,1,wx.EXPAND),
+            StaticText(self,_(u"Author:")),(self.gAuthor,1,wx.EXPAND),
+            StaticText(self,_(u"Email:")),(self.gEmail,1,wx.EXPAND),
             ])
         sizer = vSizer(
             (fgSizer,0,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
-            (staticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
+            (StaticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
                 spacer,

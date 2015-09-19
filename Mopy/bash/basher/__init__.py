@@ -82,7 +82,7 @@ from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton
-from ..balt import checkBox, staticText, spinCtrl, TextCtrl
+from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
@@ -1178,7 +1178,7 @@ class ModDetails(_SashDetailsPanel):
         self.modInfo = None
         textWidth = 200
         #--Version
-        self.version = staticText(top,u'v0.00')
+        self.version = StaticText(top,u'v0.00')
         #--File Name
         self.file = TextCtrl(top, onKillFocus=self.OnEditFile,
                              onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
@@ -1205,16 +1205,16 @@ class ModDetails(_SashDetailsPanel):
         #--Layout
         detailsSizer = vSizer(
             (hSizer(
-                (staticText(top,_(u"File:")),0,wx.TOP,4),
+                (StaticText(top,_(u"File:")),0,wx.TOP,4),
                 spacer,
                 (self.version,0,wx.TOP|wx.RIGHT,4)
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((staticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
@@ -1222,14 +1222,14 @@ class ModDetails(_SashDetailsPanel):
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
         mastersSizer = vSizer(
-            (hSizer((staticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
+            (hSizer((StaticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             (hSizer(
                 self.save,
                 (self.cancel,0,wx.LEFT,4)
                 ),0,wx.EXPAND|wx.TOP,4),)
         tagsSizer = vSizer(
-            (staticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
+            (StaticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
         mastersSizer.SetSizeHints(masterPanel)
         masterPanel.SetSizer(mastersSizer)
@@ -1870,8 +1870,8 @@ class SaveDetails(_SashDetailsPanel):
                              onKillFocus=self.OnEditFile,
                              onText=self.OnTextEdit, maxChars=256)
         #--Player Info
-        self.playerInfo = staticText(top,u" \n \n ")
-        self.gCoSaves = staticText(top,u'--\n--')
+        self.playerInfo = StaticText(top,u" \n \n ")
+        self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         notePanel = wx.Panel(subSplitter)
@@ -2354,7 +2354,7 @@ class InstallersList(balt.Tank):
                 sizer = vSizer(
                     (hSizer(
                         (icon,0,wx.ALL,6),
-                        (staticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        (StaticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
                         ),1,wx.EXPAND|wx.ALL,6),
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
@@ -2559,14 +2559,14 @@ class InstallersPanel(SashTankPanel):
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
         #--Sub-Installers
         subPackagesPanel = wx.Panel(checkListSplitter)
-        subPackagesLabel = staticText(subPackagesPanel, _(u'Sub-Packages'))
+        subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist')
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(checkListSplitter)
-        espmsLabel = staticText(espmsPanel, _(u'Esp/m Filter'))
+        espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist')
@@ -2574,7 +2574,7 @@ class InstallersPanel(SashTankPanel):
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
         commentsPanel = wx.Panel(commentsSplitter)
-        commentsLabel = staticText(commentsPanel, _(u'Comments'))
+        commentsLabel = StaticText(commentsPanel, _(u'Comments'))
         self.gComments = TextCtrl(commentsPanel, multiline=True)
         #--Splitter settings
         checkListSplitter.SetMinimumPaneSize(50)
@@ -3182,7 +3182,7 @@ class BSADetails(_EditableMixin, SashPanel):
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
         nameSizer = vSizer(
-            (hSizer((staticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
+            (hSizer((StaticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
             wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
         nameSizer.SetSizeHints(self.top)
         self.top.SetSizer(nameSizer)

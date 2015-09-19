@@ -32,7 +32,7 @@ import os
 from .. import bosh, bolt, balt, bush
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
-    staticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
+    StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash, exportConfig
@@ -1961,10 +1961,10 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         gdeprefix.SetValue(bosh.settings['bash.mods.export.deprefix'])
         gskipcomments.SetValue(bosh.settings['bash.mods.export.skipcomments'])
         sizer = vSizer(
-            staticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
+            StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
             gskip,
             spacer,
-            staticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
+            StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
                                + u'\n' +
                                _(u'as DenockInit.ext rather than as cobDenockInit.ext')
                                + u'\n' +

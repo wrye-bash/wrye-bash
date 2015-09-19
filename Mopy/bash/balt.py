@@ -443,7 +443,7 @@ def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
     gCheckBox.SetValue(checked)
     return gCheckBox
 
-class staticText(wx.StaticText):
+class StaticText(wx.StaticText):
     """Static text element."""
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
@@ -561,7 +561,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             ok_and_cancel_sizer(dialog),
@@ -616,7 +616,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),
-                (staticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                 ),1,wx.EXPAND|wx.ALL,6),
             (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             ok_and_cancel_sizer(dialog),
@@ -1212,7 +1212,7 @@ class ListEditor(Dialog):
         self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
         if data.caption:
-            captionText = staticText(self,data.caption)
+            captionText = StaticText(self,data.caption)
         else:
             captionText = None
         #--List Box
@@ -2747,7 +2747,7 @@ class ListBoxes(Dialog):
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
         sizer = wx.FlexGridSizer(len(lists) + 2, 1)
-        self.text = staticText(self, message)
+        self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
         sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
         sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)
