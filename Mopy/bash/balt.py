@@ -1087,16 +1087,16 @@ def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
                           confirm=askOverwrite, renameOnCollision=autoRename,
                           silent=False, parent=parent)
 
-def shellMakeDirs(dirName,parent=None):
-    if not dirName:
-        return
-    elif not isinstance(dirName,(list,tuple,set)):
-        dirName = [dirName]
+def shellMakeDirs(dirs, parent=None):
+    if not dirs: return
+    dirName = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
     #--Skip dirs that already exist
     dirName = [x for x in dirName if not x.exists()]
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
-    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    def _filterUnixPaths(path):
+        return not path.s.startswith(u"\\") and not path.drive().exists()
+    errorPaths = [d for d in dirName if _filterUnixPaths(d)]
     if errorPaths:
         raise BoltError(errorPaths)
     #--Checks complete, start working

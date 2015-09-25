@@ -10080,7 +10080,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 def testUAC(gameDataPath):
-    print 'testing UAC'
+    print 'testing UAC' # TODO(ut): bypass in Linux !
     tmpDir = bolt.Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
@@ -10224,7 +10224,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
                     + u'  ' +
                     _(u'Check your setup to see if you are using symbolic links or NTFS Junctions')
                     + u':\n\n')
-            msg += u'\n'.join(relativePathError)
+            msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 
     # Setup LOOT API
