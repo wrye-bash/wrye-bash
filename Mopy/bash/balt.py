@@ -380,10 +380,10 @@ class ComboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
-        name=u'button',id=defId,onClick=None,tip=None,onRClick=None):
+def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
+        style=wx.BU_AUTODRAW, val=defVal, name=u'button',onClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
+    gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
@@ -394,11 +394,11 @@ class Button(wx.Button):
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', id=None, onClick=None, tip=None,
+                 val=defVal, name='button', onClick=None, tip=None,
                  default=False):
         """Create a button and bind its click function."""
         if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, id or self.__class__._id,
+        wx.Button.__init__(self, parent, self.__class__._id,
                            label, pos, size, style, val, name)
         if onClick: self.Bind(wx.EVT_BUTTON,onClick)
         if tip: self.SetToolTip(tooltip(tip))
@@ -409,8 +409,8 @@ class CancelButton(Button):
     _id = wx.ID_CANCEL
     label = _(u'Cancel')
 
-def ok_and_cancel_sizer(parent, onOk=None):
-    return (hSizer(spacer, OkButton(parent, onClick=onOk),
+def ok_and_cancel_sizer(parent, okButton=None):
+    return (hSizer(spacer, okButton or OkButton(parent),
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
@@ -423,6 +423,7 @@ class RevertButton(Button): _id = wx.ID_SAVE
 class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
 class OpenButton(Button): _id = wx.ID_OPEN
 class SelectAllButton(Button): _id = wx.ID_SELECTALL
+class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -434,10 +435,10 @@ def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='checkBox',id=defId,onCheck=None,tip=None,checked=False):
+def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
+             name='checkBox', onCheck=None, tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent,id,label,pos,size,style,val,name)
+    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
     if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX,onCheck)
     if tip: gCheckBox.SetToolTip(tooltip(tip))
     gCheckBox.SetValue(checked)
@@ -460,10 +461,12 @@ class StaticText(wx.StaticText):
         self.Wrap(width or self.GetSize().width)
         self.Thaw()
 
-def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
-        min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
+def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
+             style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
+             name=u'wxSpinctrl', onSpin=None, tip=None):
     """Spin control with event and tip setting."""
-    gSpinCtrl=wx.SpinCtrl(parent,id,value,pos,size,style,min,max,initial,name)
+    gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
+                            initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL,onSpin)
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
@@ -535,8 +538,11 @@ def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
 
 #------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
-    """Shows a modal continue query if value of continueKey is false. Returns True to continue.
-    Also provides checkbox "Don't show this in future." to set continueKey to true."""
+    """Show a modal continue query if value of continueKey is false. Return
+    True to continue.
+    Also provides checkbox "Don't show this in future." to set continueKey
+    to true. continueKey must end in '.continue' - should be enforced
+    """
     #--ContinueKey set?
     if _settings.get(continueKey): return wx.ID_OK
     #--Generate/show dialog
@@ -554,28 +560,14 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200))
-        icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-        #--Layout
-        sizer = vSizer(
-            (hSizer(
-                (icon,0,wx.ALL,6),
-                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            ok_and_cancel_sizer(dialog),
-            )
-        dialog.SetSizer(sizer)
-        #--Get continue key setting and return
-        result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
-        dialog.Destroy()
+        result, check = _continueDialog(parent, message, title,
+                                        _(u"Don't show this in the future."))
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
 
 def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
+    # labels are OBSOLETE, we must never mess with ids outside balt
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
@@ -599,38 +591,34 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200))
+        result, check = _continueDialog(parent, message, title, _(
+            u"Don't show this for rest of operation."))
+    if result in (wx.ID_OK, wx.ID_YES):
+        if check:
+            return 2
+        return True
+    return False
+
+def _continueDialog(parent, message, title, checkBoxText):
+    with Dialog(parent, title, size=(350, 200)) as dialog:
         icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
+        gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
-        buttonSizer = hSizer(spacer)
-        if wx.ID_OK in labels:
-            okButton = OkButton(dialog,label=labels[wx.ID_OK])
-        else:
-            okButton = OkButton(dialog)
-        buttonSizer.Add(okButton,0,wx.RIGHT,4)
-        for id,lable in labels.itervalues():
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            but = Button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
-                (icon,0,wx.ALL,6),
-                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                (icon, 0, wx.ALL, 6),
+                (StaticText(dialog, message, noAutoResize=True), 1,
+                    wx.EXPAND | wx.LEFT, 6), ),
+             1, wx.EXPAND | wx.ALL, 6),
+            (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
             ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
-        dialog.Destroy()
-    if result in (wx.ID_OK,wx.ID_YES):
-        if check:
-            return 2
-        return True
-    return False
+        return result, check
+
 #------------------------------------------------------------------------------
 def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
@@ -2150,7 +2138,7 @@ class UIList(wx.Panel):
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
-            'bash.maxItemsOpen'): return
+            'bash.maxItemsOpen.continue'): return
         for file_ in selected:
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()

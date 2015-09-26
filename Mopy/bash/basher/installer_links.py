@@ -688,7 +688,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
     regexp = bosh.reTesNexus
     text = _(u'Google...')
-    key = 'bash.installers.opensearch'
+    key = 'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
     message = _(u"Open a search for this on Google?")
 
@@ -699,7 +699,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
     text = _(u'TES Alliance...')
-    key = 'bash.installers.openTESA'
+    key = 'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
     message = _(
         u"Attempt to open this as a mod at TES Alliance? This assumes that "
@@ -712,7 +712,7 @@ class Installer_OpenTESA(_Installer_OpenAt):
 class Installer_OpenPES(_Installer_OpenAt):
     regexp = bosh.reTESA
     text = _(u'Planet Elderscrolls...')
-    key = 'bash.installers.openPES'
+    key = 'bash.installers.openPES.continue'
     askTitle = _(u'Open at Planet Elderscrolls')
     message = _(
         u"Attempt to open this as a mod at Planet Elderscrolls? This assumes "

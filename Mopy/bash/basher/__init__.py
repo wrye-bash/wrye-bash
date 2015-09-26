@@ -378,8 +378,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
     @allowEdit.setter
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
-               balt.askContinue(self, self.message, self.keyPrefix + '.update',
-                                _(u'Update Masters') + u' ' + _(u'BETA'))):
+               balt.askContinue(
+                   self, self.message, self.keyPrefix + '.update.continue',
+                   _(u'Update Masters') + u' ' + _(u'BETA'))):
             return
         bosh.settings[self._allowEditKey] = val
         if val:
@@ -654,8 +655,8 @@ class INIList(balt.UIList):
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
-            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
-                return
+            if not balt.askContinue(self, message, 'bash.iniTweaks.continue',
+                                    _(u"INI Tweaks")): return
         #--No point applying a tweak that's already applied
         file_ = tweak.dir.join(self.GetItem(hitItem))
         self.data.ini.applyTweakFile(file_)
@@ -1384,7 +1385,7 @@ class ModDetails(_SashDetailsPanel):
             if (bosh.modInfos.isBadFileName(newName.s) and
                 not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
                                      % (newName.s,bush.game.displayName),
-                                     'bash.rename.isBadFileName')
+                                     'bash.rename.isBadFileName.continue')
                 ):
                 return
             settings.getChanged('bash.mods.renames')[oldName] = newName
@@ -1831,7 +1832,8 @@ class SaveList(balt.UIList):
                 u"(disabled). Autosaves and quicksaves will be left alone."
                  % {'ess': bush.game.ess.ext})
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            if not balt.askContinue(self, msg, 'bash.saves.askDisable'): return
+            if not balt.askContinue(self, msg,
+                                    'bash.saves.askDisable.continue'): return
             fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
@@ -3888,15 +3890,17 @@ class BashStatusBar(wx.StatusBar):
             if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
-                # update self.buttons
                 button = self.buttons[self.dragging]
-                self.buttons.remove(button)
-                self.buttons.insert(over,button)
                 # update settings
                 uid = self.GetLink(button=button).uid
+                overUid = self.GetLink(index=over).uid
                 settings['bash.statusbar.order'].remove(uid)
-                settings['bash.statusbar.order'].insert(over,uid)
+                overIndex = settings['bash.statusbar.order'].index(overUid)
+                settings['bash.statusbar.order'].insert(overIndex, uid)
                 settings.setChanged('bash.statusbar.order')
+                # update self.buttons
+                self.buttons.remove(button)
+                self.buttons.insert(over,button)
                 self.dragging = over
                 # Refresh button positions
                 self.OnSize()
@@ -4497,6 +4501,15 @@ def InitImages():
     images['doc.16'] = _png(u'DocBrowser16.png')
     images['doc.24'] = _png(u'DocBrowser24.png')
     images['doc.32'] = _png(u'DocBrowser32.png')
+    images['settingsbutton.16'] = _png(u'settingsbutton16.png')
+    images['settingsbutton.24'] = _png(u'settingsbutton24.png')
+    images['settingsbutton.32'] = _png(u'settingsbutton32.png')
+    images['modchecker.16'] = _png(u'ModChecker16.png')
+    images['modchecker.24'] = _png(u'ModChecker24.png')
+    images['modchecker.32'] = _png(u'ModChecker32.png')
+    images['pickle.16'] = _png(u'pickle16.png')
+    images['pickle.24'] = _png(u'pickle24.png')
+    images['pickle.32'] = _png(u'pickle32.png')
     #--UAC icons
     #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
     #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)

@@ -33,7 +33,8 @@ from .. import bosh, bolt, balt, bush
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
+    OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
@@ -402,7 +403,8 @@ class Mod_Groups(_Mod_Labels):
         """Set the list of groups to groups currently assigned to mods."""
         msg = _(u'This will set the list of available groups to the groups '
                 u'currently assigned to mods. Continue ?')
-        if not balt.askContinue(self.listEditor, msg, 'bash.groups.sync',
+        if not balt.askContinue(self.listEditor, msg,
+                                'bash.groups.sync.continue',
                                 _(u'Sync Groups')): return
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
 
@@ -415,7 +417,8 @@ class Mod_Groups(_Mod_Labels):
         msg = _(u"This will reset the list of available groups to the default "
                 u"group list. It won't however remove non default groups from "
                 u"mods that are already tagged with them. Continue ?")
-        if not balt.askContinue(self.listEditor, msg, 'bash.groups.reset',
+        if not balt.askContinue(self.listEditor, msg,
+                                'bash.groups.reset.continue',
                                 _(u'Reset Groups')): return
         self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
 
@@ -839,7 +842,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 u"things to be handled, but it is still in BETA.  If you "
                 u"have problems, post them in the official thread, then use "
                 u"the non-CBash build function."),
-            'bash.patch.ReallyUseCBash.295'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
+            'bash.patch.ReallyUseCBash.295.continue'):
             return
         importConfig = True
         msg = _(u"The patch you are rebuilding (%s) was created in %s "
@@ -1995,6 +1998,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
+        okButton = OkButton(dialog, onClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
@@ -2015,7 +2019,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             gdeprefix,
             spacer,
             gskipcomments,
-            balt.ok_and_cancel_sizer(dialog, onOk=OnOk),
+            balt.ok_and_cancel_sizer(dialog, okButton=okButton),
             )
         dialog.SetSizer(sizer)
         with dialog: questions = dialog.ShowModal()
