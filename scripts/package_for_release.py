@@ -39,7 +39,6 @@ from __future__ import print_function
 import subprocess
 import os
 import shutil
-import re
 import sys
 import argparse
 import binascii
@@ -50,16 +49,14 @@ import traceback
 try:
     #--Needed for the Installer version to find NSIS
     import _winreg
-    have_winreg = True
 except ImportError:
-    have_winreg = False
+    _winreg = False
 
 try:
     #--Needed for the StandAlone version
     import py2exe
-    have_py2exe = True
 except:
-    have_py2exe = False
+    py2exe = False
 
 try:
     #--Needed to ensure non-repo file don't get packaged
@@ -92,12 +89,12 @@ pipe = None
 
 
 def GetVersionInfo(version, padding=4):
-    '''Gets generates version strings from the passed parameter.
+    """Gets generates version strings from the passed parameter.
        Returns the a string used for the 'File Version' property
        of the built WBSA.
        For example, a
        version of 291 would with default padding would return:
-       ('291','0.2.9.1')'''
+       ('291','0.2.9.1')"""
     file_version = (u'0.' * abs(padding))[:-1]
 
     v = version
@@ -110,16 +107,16 @@ def GetVersionInfo(version, padding=4):
     return file_version
 
 
-def rm(file):
-    """Removes a file if it exitsts"""
-    if os.path.isfile(file): os.remove(file)
-    elif os.path.isdir(file): shutil.rmtree(file)
+def rm(node):
+    """Removes a file or directory if it exitsts"""
+    if os.path.isfile(node): os.remove(node)
+    elif os.path.isdir(node): shutil.rmtree(node)
 
 
-def mv(file, dst):
-    """Moves a file if it exists"""
-    if os.path.exists(file):
-        shutil.move(file, dst)
+def mv(node, dst):
+    """Moves a file or directory if it exists"""
+    if os.path.exists(node):
+        shutil.move(node, dst)
 
 
 def lprint(*args, **kwdargs):
@@ -181,14 +178,6 @@ def BuildManualVersion(args, all_files):
     rm(listFile)
 
 
-def BuildStandaloneVersion(args, file_version):
-    """Builds the standalone exe, packages into the standalone manual install
-       version, then cleans up the extra files created."""
-    if CreateStandaloneExe(args, file_version, pipe):
-        PackStandaloneVersion(args)
-        CleanupStandaloneFiles()
-
-
 def CleanupStandaloneFiles():
     """Removes standalone exe files that are not needed after packaging"""
     rm(os.path.join(mopy, u'Wrye Bash.exe'))
@@ -198,7 +187,7 @@ def CleanupStandaloneFiles():
 def CreateStandaloneExe(args, file_version):
     """Builds the standalone exe"""
     # Check for build requirements
-    if not have_py2exe:
+    if not py2exe:
         lprint(" Could not find python module 'py2exe', aborting standalone "
                "creation.")
         return False
@@ -234,9 +223,8 @@ def CreateStandaloneExe(args, file_version):
         return False
 
     # Read in the manifest file
-    file = open(manifest, 'r')
-    manifest = '"""\n' + file.read() + '\n"""'
-    file.close()
+    with open(manifest, 'r') as man:
+        manifest = '"""\n' + man.read() + '\n"""'
 
     # Include the game package and subpackages (because py2exe wont
     # automatically detect these)
@@ -400,7 +388,7 @@ def RestoreNonRepoFiles():
 def BuildInstallerVersion(args, all_files, file_version):
     """Compiles the NSIS script, creating the installer version"""
     nsis = args.nsis
-    if not have_winreg and nsis is None:
+    if not _winreg and nsis is None:
         lprint(" Could not find python module '_winreg', aborting installer "
                "creation.")
         return
@@ -727,7 +715,7 @@ def main():
     # Parse command line, show help if invalid arguments are present
     try:
         args, extra = parser.parse_known_args()
-    except Exception as e:
+    except:
         parser.print_help()
         return
     if len(extra) > 0:
