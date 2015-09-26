@@ -85,11 +85,11 @@ def InitStatusBar():
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Game_Button(
-            bosh.dirs['app'].join(bush.game.exe),
-            imageList(u'%s%%s.png' % bush.game.fsName.lower()),
-            u' '.join((_(u"Launch"),bush.game.displayName)),
-            u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s')),
-            u'',
+            exePathArgs=bosh.dirs['app'].join(bush.game.exe),
+            images=imageList(u'%s%%s.png' % bush.game.fsName.lower()),
+            tip=u' '.join((_(u"Launch"),bush.game.displayName)),
+            obseTip=u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s')),
+            obseArg=u'',
             uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(

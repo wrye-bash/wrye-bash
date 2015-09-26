@@ -380,10 +380,10 @@ class ComboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
-        name=u'button',id=defId,onClick=None,tip=None,onRClick=None):
+def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
+        style=wx.BU_AUTODRAW, val=defVal, name=u'button',onClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
+    gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))

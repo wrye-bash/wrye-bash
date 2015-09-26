@@ -30,7 +30,6 @@ from .. import bosh, bolt, balt, bush
 from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
-# TODO(ut): GetBitmapButton factor out duplicate code
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_Button', 'Tooldir_Button', 'App_Tes4View',
@@ -53,6 +52,10 @@ class StatusBar_Hide(ItemLink):
 
 class StatusBar_Button(ItemLink):
     """Launch an application."""
+    _tip = u''
+    @property
+    def tip(self): return self._tip
+
     def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
                and whether they are hidden/shown.
@@ -61,18 +64,20 @@ class StatusBar_Button(ItemLink):
         self.mainMenu = Links()
         self.canHide = canHide
         self.gButton = None
-        self._tip = tip
-        if uid is None: uid = (self.__class__.__name__,tip)
+        self._tip = tip or self.__class__._tip
+        if uid is None: uid = (self.__class__.__name__, self._tip)
         self.uid = uid
 
-    def createButton(self, *args, **kwdargs):
-        if len(args) < 11 and 'onRClick' not in kwdargs:
-            kwdargs['onRClick'] = self.DoPopupMenu
-        if len(args) < 9 and 'onClick' not in kwdargs:
-            kwdargs['onClick'] = self.Execute
+    def GetBitmapButton(self, window, style, **kwdargs):
+        """Create and return gui button - you must define imageKey - WIP overrides"""
+        image = kwdargs.pop('image', None) or images[self.imageKey %
+                        bosh.settings['bash.statusbar.iconSize']].GetBitmap()
+        kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
+        kwdargs['onClick'] = kwdargs.pop('onClick', None) or self.Execute
         if self.gButton is not None:
             self.gButton.Destroy()
-        self.gButton = bitmapButton(*args, **kwdargs)
+        self.gButton = bitmapButton(window, image, style=style, tip=self.tip,
+                                    **kwdargs)
         return self.gButton
 
     def DoPopupMenu(self,event):
@@ -105,12 +110,13 @@ class App_Button(StatusBar_Button):
 
     @property
     def version(self):
+        if not bosh.settings['bash.statusbar.showversion']: return u''
         if not self.isJava and self.IsPresent():
             version = self.exePath.strippedVersion
             if version != (0,):
                 version = u'.'.join([u'%s'%x for x in version])
                 return version
-        return ''
+        return u''
 
     @property
     def tip(self):
@@ -120,10 +126,8 @@ class App_Button(StatusBar_Button):
 
     @property
     def obseTip(self):
-        if self._obseTip is not None:
-            if not bosh.settings['bash.statusbar.showversion']: return self._obseTip % (dict(version=u''))
-            else: return self._obseTip % (dict(version=self.version))
-        else: return None
+        if self._obseTip is None: return None
+        return self._obseTip % (dict(version=self.version))
 
     @staticmethod
     def getJava():
@@ -199,20 +203,18 @@ class App_Button(StatusBar_Button):
                 return False
             return self.exePath.exists()
 
-    def GetBitmapButton(self,window,style=0):
-        if self.IsPresent():
-            size = bosh.settings['bash.statusbar.iconSize']
-            idex = (size/8)-2
-            self.createButton(window,self.images[idex].GetBitmap(),
-                              style=style,tip=self.tip)
-            if self.obseTip is not None:
-                App_Button.obseButtons.append(self)
-                exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-                if bosh.settings.get('bash.obse.on',False) and exeObse.exists():
-                    self.gButton.SetToolTip(tooltip(self.obseTip))
-            return self.gButton
-        else:
-            return None
+    def GetBitmapButton(self, window, style, **kwdargs):
+        if not self.IsPresent(): return None
+        size = bosh.settings['bash.statusbar.iconSize']
+        idex = (size / 8) - 2
+        super(App_Button, self).GetBitmapButton(window, style=style,
+              image=self.images[idex].GetBitmap())
+        if self.obseTip is not None:
+            App_Button.obseButtons.append(self)
+            exeObse = bosh.dirs['app'].join(bush.game.se.exe)
+            if bosh.settings.get('bash.obse.on',False) and exeObse.exists():
+                self.gButton.SetToolTip(tooltip(self.obseTip))
+        return self.gButton
 
     def ShowError(self,error):
         balt.showError(Link.Frame,
@@ -465,10 +467,7 @@ class Game_Button(App_Button):
     """Will close app on execute if autoquit is on."""
     @property
     def tip(self):
-        if not bosh.settings['bash.statusbar.showversion']:
-            tip = self._tip
-        else:
-            tip = self._tip + u' ' + self.version
+        tip = self._tip + u' ' + self.version if self.version else self._tip
         if bosh.dirs['app'].join(bush.game.laa.exe).exists() and bosh.settings.get('bash.laa.on',True):
             tip += u' + ' + bush.game.laa.name
         return tip
@@ -476,10 +475,7 @@ class Game_Button(App_Button):
     @property
     def obseTip(self):
         # Oblivion (version)
-        if bosh.settings['bash.statusbar.showversion']:
-            tip = self._obseTip % (dict(version=self.version))
-        else:
-            tip = self._obseTip % (dict(version=''))
+        tip = self._obseTip % (dict(version=self.version))
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + LAA
@@ -498,10 +494,7 @@ class TESCS_Button(App_Button):
     @property
     def obseTip(self):
         # TESCS (version)
-        if bosh.settings['bash.statusbar.showversion']:
-            tip = self._obseTip % (dict(version=self.version))
-        else:
-            tip = self._obseTip % (dict(version=''))
+        tip = self._obseTip % (dict(version=self.version))
         if not self.obseArg: return tip
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
@@ -517,8 +510,23 @@ class TESCS_Button(App_Button):
         return tip
 
 #------------------------------------------------------------------------------
-class Obse_Button(StatusBar_Button):
+class _StatefulButton(StatusBar_Button):
+    def SetState(self, state=None): raise bolt.AbstractError
+    @property
+    def _present(self): return True
+
+    def GetBitmapButton(self, window, style, **kwdargs):
+        if not self._present: return None
+        super(_StatefulButton, self).GetBitmapButton(window, style, **kwdargs)
+        self.SetState()
+        return self.gButton
+
+class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
+    imageKey = u'checkbox.green.off.%s'
+    @property
+    def _present(self): return bosh.dirs['app'].join(bush.game.se.exe).exists()
+
     def SetState(self,state=None):
         """Sets state related info. If newState != none, sets to new state first.
         For convenience, returns state when done."""
@@ -548,22 +556,17 @@ class Obse_Button(StatusBar_Button):
             button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
         return state
 
-    def GetBitmapButton(self,window,style=0):
-        exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-        if exeObse.exists():
-            bitmap = images[u'checkbox.green.off.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap()
-            self.createButton(window,bitmap,style=style)
-            self.SetState()
-            return self.gButton
-        else:
-            return None
-
     def Execute(self,event):
         """Invert state."""
         self.SetState(-1)
 
-class LAA_Button(Obse_Button):
+class LAA_Button(_StatefulButton):
     """4GB Launcher on/off state button."""
+    imageKey = u'checkbox.blue.off.%s'
+    @property
+    def _present(self):
+        return bosh.dirs['app'].join(bush.game.laa.exe).exists()
+
     def SetState(self,state=None):
         """Sets state related info.  If newState != none, sets to new state first.
         For convenience, returns state when done."""
@@ -588,19 +591,11 @@ class LAA_Button(Obse_Button):
             self.gButton.SetToolTip(tooltip(tip))
         return state
 
-    def GetBitmapButton(self,window,style=0):
-        exeLAA = bosh.dirs['app'].join(bush.game.laa.exe)
-        if exeLAA.exists():
-            bitmap = images[u'checkbox.blue.off.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap()
-            self.createButton(window,bitmap,style=style)
-            self.SetState()
-            return self.gButton
-        else:
-            return None
-
 #------------------------------------------------------------------------------
-class AutoQuit_Button(StatusBar_Button):
+class AutoQuit_Button(_StatefulButton):
     """Button toggling application closure when launching Oblivion."""
+    imageKey = u'checkbox.red.off.%s'
+
     def SetState(self,state=None):
         """Sets state related info. If newState != none, sets to new state first.
         For convenience, returns state when done."""
@@ -615,12 +610,6 @@ class AutoQuit_Button(StatusBar_Button):
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
 
-    def GetBitmapButton(self,window,style=0):
-        bitmap = images[u'checkbox.red.off.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap()
-        self.createButton(window,bitmap,style=style)
-        self.SetState()
-        return self.gButton
-
     def Execute(self,event):
         """Invert state."""
         self.SetState(-1)
@@ -628,13 +617,7 @@ class AutoQuit_Button(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
     """Show help browser."""
-    def GetBitmapButton(self,window,style=0):
-        self.createButton(
-            window,
-            images[u'help.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap(),
-            style=style,
-            tip=_(u"Help File"))
-        return self.gButton
+    imageKey, _tip = u'help.%s', _(u"Help File")
 
     def Execute(self,event):
         """Handle menu selection."""
@@ -647,13 +630,7 @@ class App_Help(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
-    def GetBitmapButton(self,window,style=0):
-        self.createButton(
-            window,
-            images[u'doc.%s'%bosh.settings['bash.statusbar.iconSize']].GetBitmap(),
-            style=style,
-            tip=_(u"Doc Browser"))
-        return self.gButton
+    imageKey, _tip = u'doc.%s', _(u"Doc Browser")
 
     def Execute(self,event):
         """Handle menu selection."""
@@ -665,15 +642,12 @@ class App_DocBrowser(StatusBar_Button):
 
 #------------------------------------------------------------------------------
 class App_Settings(StatusBar_Button):
-    """Show color configuration dialog."""
-    def GetBitmapButton(self,window,style=0):
-        self.createButton(
-            window,
-            Image(GPath(bosh.dirs['images'].join(u'settingsbutton%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
-            style=style,
-            tip=_(u'Settings'),
-            onRClick=self.Execute)
-        return self.gButton
+    """Show settings dialog."""
+    imageKey, _tip = 'settingsbutton.%s', _(u'Settings')
+
+    def GetBitmapButton(self, window, style, **kwdargs):
+        return super(App_Settings, self).GetBitmapButton(window, style,
+                                                         onRClick=self.Execute)
 
     def Execute(self,event):
         BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
@@ -682,28 +656,19 @@ class App_Settings(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
-    def GetBitmapButton(self,window,style=0):
-        if self.gButton is not None: self.gButton.Destroy()
+    _tip = _(u"Restart")
+
+    def GetBitmapButton(self, window, style, **kwdargs):
         size = bosh.settings['bash.statusbar.iconSize']
-        self.gButton = bitmapButton(window,
-            staticBitmap(window, special='undo', size=(size,size)),
-            style=style,
-            tip=_(u'Restart'),
-            onClick = self.Execute,
-            onRClick = self.DoPopupMenu)
-        return self.gButton
+        return super(App_Restart, self).GetBitmapButton(window, style,
+            image=staticBitmap(window, special='undo', size=(size,size)))
 
     def Execute(self,event): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
 class App_GenPickle(StatusBar_Button):
     """Generate PKL File. Ported out of bish.py which wasn't working."""
-    def GetBitmapButton(self,window,style=0):
-        return self.createButton(
-            window,
-            Image(GPath(bosh.dirs['images'].join(u'pickle%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
-            style=style,
-            tip=_(u"Generate PKL File"))
+    imageKey, _tip = 'pickle.%s', _(u"Generate PKL File")
 
     def Execute(self,event,fileName=None):
         """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
@@ -754,12 +719,7 @@ class App_GenPickle(StatusBar_Button):
 #------------------------------------------------------------------------------
 class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
-    def GetBitmapButton(self,window,style=0):
-        return self.createButton(
-            window,
-            Image(GPath(bosh.dirs['images'].join(u'ModChecker%s.png'%bosh.settings['bash.statusbar.iconSize']))).GetBitmap(),
-            style=style,
-            tip=_(u"Mod Checker"))
+    imageKey, _tip = 'modchecker.%s', _(u"Mod Checker")
 
     def Execute(self,event):
         """Handle menu selection."""
