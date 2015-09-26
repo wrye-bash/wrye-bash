@@ -557,23 +557,8 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200))
-        icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-        #--Layout
-        sizer = vSizer(
-            (hSizer(
-                (icon,0,wx.ALL,6),
-                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            ok_and_cancel_sizer(dialog),
-            )
-        dialog.SetSizer(sizer)
-        #--Get continue key setting and return
-        result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
-        dialog.Destroy()
+        result, check = _continueDialog(parent, message, title,
+                                        _(u"Don't show this in the future."))
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
@@ -602,38 +587,42 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         check = result[1]
         result = result[0]
     else:
-        dialog = Dialog(parent, title, size=(350, 200))
+        result, check = _continueDialog(parent, message, title, _(
+            u"Don't show this for rest of operation."), labels)
+    if result in (wx.ID_OK, wx.ID_YES):
+        if check:
+            return 2
+        return True
+    return False
+
+def _continueDialog(parent, message, title, checkBoxText, labels={}):
+    with Dialog(parent, title, size=(350, 200)) as dialog:
         icon = staticBitmap(dialog)
-        gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
+        gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
-        buttonSizer = hSizer(spacer)
         if wx.ID_OK in labels:
             okButton = OkButton(dialog,label=labels[wx.ID_OK])
         else:
             okButton = OkButton(dialog)
-        buttonSizer.Add(okButton,0,wx.RIGHT,4)
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
             but = Button(dialog, wxId=id, label=lable)
         sizer = vSizer(
             (hSizer(
-                (icon,0,wx.ALL,6),
-                (StaticText(dialog,message,noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                (icon, 0, wx.ALL, 6),
+                (StaticText(dialog, message, noAutoResize=True), 1,
+                    wx.EXPAND | wx.LEFT, 6), ),
+             1, wx.EXPAND | wx.ALL, 6),
+            (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
             ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
-        dialog.Destroy()
-    if result in (wx.ID_OK,wx.ID_YES):
-        if check:
-            return 2
-        return True
-    return False
+        return result, check
+
 #------------------------------------------------------------------------------
 def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
