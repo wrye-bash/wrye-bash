@@ -394,11 +394,11 @@ class Button(wx.Button):
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', wxId=None, onClick=None, tip=None,
+                 val=defVal, name='button', onClick=None, tip=None,
                  default=False):
         """Create a button and bind its click function."""
         if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, wxId or self.__class__._id,
+        wx.Button.__init__(self, parent, self.__class__._id,
                            label, pos, size, style, val, name)
         if onClick: self.Bind(wx.EVT_BUTTON,onClick)
         if tip: self.SetToolTip(tooltip(tip))
@@ -564,6 +564,7 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     return result in (wx.ID_OK,wx.ID_YES)
 
 def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
+    # labels are OBSOLETE, we must never mess with ids outside balt
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
@@ -588,26 +589,18 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         result = result[0]
     else:
         result, check = _continueDialog(parent, message, title, _(
-            u"Don't show this for rest of operation."), labels)
+            u"Don't show this for rest of operation."))
     if result in (wx.ID_OK, wx.ID_YES):
         if check:
             return 2
         return True
     return False
 
-def _continueDialog(parent, message, title, checkBoxText, labels={}):
+def _continueDialog(parent, message, title, checkBoxText):
     with Dialog(parent, title, size=(350, 200)) as dialog:
         icon = staticBitmap(dialog)
         gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
-        if wx.ID_OK in labels:
-            okButton = OkButton(dialog,label=labels[wx.ID_OK])
-        else:
-            okButton = OkButton(dialog)
-        for id,lable in labels.itervalues():
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            but = Button(dialog, wxId=id, label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon, 0, wx.ALL, 6),
