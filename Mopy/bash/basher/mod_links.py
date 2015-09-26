@@ -842,7 +842,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 u"things to be handled, but it is still in BETA.  If you "
                 u"have problems, post them in the official thread, then use "
                 u"the non-CBash build function."),
-            'bash.patch.ReallyUseCBash.295'): # We'll re-enable this warning for each release, until CBash isn't beta anymore
+            'bash.patch.ReallyUseCBash.295.continue'):
             return
         importConfig = True
         msg = _(u"The patch you are rebuilding (%s) was created in %s "

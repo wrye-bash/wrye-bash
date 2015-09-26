@@ -1385,7 +1385,7 @@ class ModDetails(_SashDetailsPanel):
             if (bosh.modInfos.isBadFileName(newName.s) and
                 not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
                                      % (newName.s,bush.game.displayName),
-                                     'bash.rename.isBadFileName')
+                                     'bash.rename.isBadFileName.continue')
                 ):
                 return
             settings.getChanged('bash.mods.renames')[oldName] = newName
