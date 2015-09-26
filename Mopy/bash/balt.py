@@ -422,7 +422,7 @@ class SaveAsButton(Button): _id = wx.ID_SAVEAS
 class RevertButton(Button): _id = wx.ID_SAVE
 class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
 class OpenButton(Button): _id = wx.ID_OPEN
-class SelectAllButton(Button): _id = wx.wx.ID_SELECTALL
+class SelectAllButton(Button): _id = wx.ID_SELECTALL
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -1089,49 +1089,44 @@ def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
 
 def shellMakeDirs(dirs, parent=None):
     if not dirs: return
-    dirName = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
+    dirs = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
     #--Skip dirs that already exist
-    dirName = [x for x in dirName if not x.exists()]
+    dirs = [x for x in dirs if not x.exists()]
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
     def _filterUnixPaths(path):
         return not path.s.startswith(u"\\") and not path.drive().exists()
-    errorPaths = [d for d in dirName if _filterUnixPaths(d)]
+    errorPaths = [d for d in dirs if _filterUnixPaths(d)]
     if errorPaths:
         raise BoltError(errorPaths)
     #--Checks complete, start working
-    tempDirs = []
-    tempDirsAppend = tempDirs.append
-    fromDirs = []
-    fromDirsAppend = fromDirs.append
-    toDirs =[]
-    toDirsAppend = toDirs.append
+    tempDirs, fromDirs, toDirs = [], [], []
     try:
-        for dir in dirName:
+        for folder in dirs:
             # Attempt creating the directory via normal methods,
             # only, fall back to shellMove if UAC or something else
             # stopped it
             try:
-                dir.makedirs()
+                folder.makedirs()
             except:
                 # Failed, try the UAC workaround
                 tmpDir = bolt.Path.tempDir()
-                tempDirsAppend(tmpDir)
+                tempDirs.append(tmpDir)
                 toMake = []
                 toMakeAppend = toMake.append
-                while not dir.exists() and dir != dir.head:
+                while not folder.exists() and folder != folder.head:
                     # Need to test agains dir == dir.head to prevent
                     # infinite recursion if the final bit doesn't exist
-                    toMakeAppend(dir.tail)
-                    dir = dir.head
+                    toMakeAppend(folder.tail)
+                    folder = folder.head
                 if not toMake:
                     continue
                 toMake.reverse()
                 base = tmpDir.join(toMake[0])
-                toDir = dir.join(toMake[0])
+                toDir = folder.join(toMake[0])
                 tmpDir.join(*toMake).makedirs()
-                fromDirsAppend(base)
-                toDirsAppend(toDir)
+                fromDirs.append(base)
+                toDirs.append(toDir)
         if fromDirs:
             # fromDirs will only get filled if dir.makedirs() failed
             shellMove(fromDirs, toDirs, parent=parent)

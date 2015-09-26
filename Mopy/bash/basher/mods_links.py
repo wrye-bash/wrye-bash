@@ -154,8 +154,8 @@ class Mods_LoadList(ChoiceLink):
         bosh.settings.setChanged('bash.loadLists.data')
 
     def DoEdit(self,event):
-        data = _Mods_LoadListData(self.window)
-        balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
+        editorData = _Mods_LoadListData(self.window)
+        balt.ListEditor.Display(self.window, _(u'Load Lists'), editorData)
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):

@@ -3735,30 +3735,25 @@ class BashStatusBar(wx.StatusBar):
     def UpdateIconSizes(self):
         self.size = settings['bash.statusbar.iconSize']
         self.size += 8
-        self.buttons = []
-        buttons = BashStatusBar.buttons
+        self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings['bash.statusbar.order']
         orderChanged = False
         hide = settings['bash.statusbar.hide']
         hideChanged = False
-        remove = set()
-        # Add buttons in order that is saved
-        for uid in order:
+        # Add buttons in order that is saved - on first run order = [] !
+        for uid in order[:]:
             link = self.GetLink(uid=uid)
             # Doesn't exist?
             if link is None:
-                remove.add(uid)
+                order.remove(uid)
+                orderChanged = True
                 continue
             # Hidden?
             if uid in hide: continue
             # Add it
             self._addButton(link)
-        for uid in remove:
-            order.remove(uid)
-        if remove:
-            orderChanged = True
         # Add any new buttons
-        for link in buttons:
+        for link in BashStatusBar.buttons:
             # Already tested?
             uid = link.uid
             if uid in order: continue
@@ -3805,17 +3800,16 @@ class BashStatusBar(wx.StatusBar):
             self._addButton(link)
         else:
             # Specified, but now factor in hidden buttons, etc
-            thisIndex = order.index(link.uid)
             self._addButton(link)
             button = self.buttons.pop()
-            insertBefore = 0
+            thisIndex, insertBefore = order.index(link.uid), 0
             for i in range(len(self.buttons)):
                 otherlink = self.GetLink(index=i)
                 indexOther = order.index(otherlink.uid)
                 if indexOther > thisIndex:
                     insertBefore = i
                     break
-            self.buttons.insert(i,button)
+            self.buttons.insert(insertBefore,button)
         # Refresh
         self.SetStatusWidths([self.size*len(self.buttons),-1,130])
         self.GetParent().SendSizeEvent()
@@ -3836,7 +3830,7 @@ class BashStatusBar(wx.StatusBar):
                     return link
         return None
 
-    def HitTest(self,mouseEvent):
+    def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i,button in enumerate(self.buttons):
             if button.GetId() == id_:
@@ -3851,7 +3845,7 @@ class BashStatusBar(wx.StatusBar):
         return wx.NOT_FOUND
 
     def OnDragStart(self,event):
-        self.dragging = self.HitTest(event)
+        self.dragging = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
             self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
@@ -3880,7 +3874,7 @@ class BashStatusBar(wx.StatusBar):
             # The button will never get a EVT_BUTTON event if you
             # just click it.  Can't figure out a good way for the
             # two to play nicely, so we'll just simulate it for now
-            released = self.HitTest(event)
+            released = self._getButtonIndex(event)
             if released != self.dragging: released = wx.NOT_FOUND
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
@@ -3898,7 +3892,7 @@ class BashStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-            over = self.HitTest(event)
+            over = self._getButtonIndex(event)
             if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
