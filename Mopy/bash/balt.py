@@ -947,10 +947,39 @@ class AccessDeniedError(FileOperationError):
         self.errno = 120
         Exception.__init__(self,u'FileOperationError: Access Denied')
 
+class DirectoryFileCollisionError(FileOperationError):
+    def __init__(self, source, dest):
+        self.errno = -1
+        Exception.__init__(self,u'FileOperationError: colision: moving %s to %s', (source, dest))
+
 FileOperationErrorMap = {
     120: AccessDeniedError,
     1223: CancelError,
 }
+
+import shutil
+def __copyOrMove(operation, source, target, allowUndo, confirm,
+                 renameOnCollision, silent, parent):
+    doIt = shutil.copytree if operation == FO_COPY else shutil.move
+    for fileFrom, fileTo in zip(source, target):
+        if fileFrom.isdir():
+            if fileTo.exists():
+                if not fileTo.isdir():
+                    raise DirectoryFileCollisionError(fileFrom, fileTo)
+                # dir exists at target, copy contents individually/recursively
+                for content in os.listdir(fileFrom):
+                    _fileOperation(operation, fileFrom.join(content),
+                                   fileTo.join(content), allowUndo,
+                                   confirm, renameOnCollision, silent,
+                                   parent)
+            else:  # dir doesn't exist at the target, copy it
+                doIt(fileFrom.s, fileTo.s)
+        # copy the file, overwrite as needed
+        elif fileFrom.isfile():  # or os.path.islink(file):
+            # move may not work if the target exists, copy instead...
+            shutil.copy2(fileFrom.s, fileTo.s) # ...and overwrite as needed
+            if operation == FO_MOVE: fileFrom.remove() # then remove original
+    return {} ##: the renames map ?
 
 def _fileOperation(operation, source, target=None, allowUndo=True,
                    confirm=True, renameOnCollision=False, silent=False,
@@ -982,7 +1011,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         target = u'\x00'.join(x.s for x in target)
         # get the handle to parent window to feed to win api
         parent = parent.GetHandle() if parent else None
-        # Do it ##: document return values
+        # Do it ##: document return values, especially mapping !
         result,nAborted,mapping = shell.SHFileOperation(
             (parent,operation,source,target,flags,None,None))
         if result == 0:
@@ -994,10 +1023,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             return dict(mapping)
         else:
             raise FileOperationErrorMap.get(result,FileOperationError(result))
-    else:
-        # Use custom dialogs and such
-        # TODO: implement this
-        # Delete
+    else: # Use custom dialogs and such
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
             # confirm - ask if confirm is True
@@ -1009,29 +1035,28 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                 if not askYes(parent,message,_(u'Delete Multiple Items')):
                     return {}
             # Do deletion
-            for file in source:
-                if not file.exists():
-                    continue
-                if file.isdir():
-                    file.rmtree(file.stail)
+            for toDelete in source:
+                if not toDelete.exists(): continue
+                if toDelete.isdir():
+                    toDelete.rmtree(toDelete.stail)
                 else:
-                    file.remove()
+                    toDelete.remove()
             return {}
-        # Only Delete is implemented so far
-        raise Exception(u'Not Implemented')
-        # Move
-        if operation == FO_MOVE:
-            # allowUndo - no effect, we're not going to track file movements manually
-            # confirm - no real effect when moving
-            # renameOnCollision - if moving collision, auto rename, otherwise ask
-            # silent - no real effect, since we're not showing visuals
-            collisions = []
-            for fileFrom,fileTo in zip(source,target):
-                if ((fileFrom.isdir() and fileTo.exists() and fileTo.isdir()) or
-                    (fileFrom.isfile() and fileTo.exists() and fileTo.isfile())):
-                    collisions.append(fileTo)
-            if collisions:
-                pass
+        # Comments - return values, parameters etc ............................
+        # if operation == FO_MOVE:
+        #     # allowUndo - no effect, we're not going to track file movements manually
+        #     # confirm - no real effect when moving
+        #     # renameOnCollision - if moving collision, auto rename, otherwise ask
+        #     # silent - no real effect, since we're not showing visuals
+        #     collisions = []
+        #     for fileFrom,fileTo in zip(source,target):
+        #         if ((fileFrom.isdir() and fileTo.exists() and fileTo.isdir()) or
+        #             (fileFrom.isfile() and fileTo.exists() and fileTo.isfile())):
+        #             collisions.append(fileTo)
+        #     if collisions:
+        #         pass
+        return __copyOrMove(operation, source, target, allowUndo, confirm,
+                            renameOnCollision, silent, parent)
 
 def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
@@ -1062,16 +1087,16 @@ def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
                           confirm=askOverwrite, renameOnCollision=autoRename,
                           silent=False, parent=parent)
 
-def shellMakeDirs(dirName,parent=None):
-    if not dirName:
-        return
-    elif not isinstance(dirName,(list,tuple,set)):
-        dirName = [dirName]
+def shellMakeDirs(dirs, parent=None):
+    if not dirs: return
+    dirName = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
     #--Skip dirs that already exist
     dirName = [x for x in dirName if not x.exists()]
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
-    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    def _filterUnixPaths(path):
+        return not path.s.startswith(u"\\") and not path.drive().exists()
+    errorPaths = [d for d in dirName if _filterUnixPaths(d)]
     if errorPaths:
         raise BoltError(errorPaths)
     #--Checks complete, start working
