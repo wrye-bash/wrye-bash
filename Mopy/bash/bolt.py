@@ -96,7 +96,7 @@ def _getbestencoding(text):
     #print '%s: %s (%s)' % (repr(text),encoding,confidence)
     return encoding,confidence
 
-def _unicode(text,encoding=None,avoidEncodings=()):
+def decode(text,encoding=None,avoidEncodings=()):
     if isinstance(text,unicode) or text is None: return text
     # Try the user specified encoding first
     if encoding:
@@ -113,7 +113,7 @@ def _unicode(text,encoding=None,avoidEncodings=()):
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
-def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
     if isinstance(text,str) or text is None:
         if returnEncoding: return text,None
         else: return text
@@ -274,7 +274,7 @@ def initTranslator(language=None,path=None):
     if not language:
         try:
             language = locale.getlocale()[0].split('_',1)[0]
-            language = _unicode(language)
+            language = decode(language)
         except UnicodeError:
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
@@ -454,7 +454,7 @@ def GPath(name):
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
     elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(_unicode(name))
+    else: norm = os.path.normpath(decode(name))
     path = _gpaths.get(norm)
     if path is not None: return path
     else: return _gpaths.setdefault(norm,Path(norm))
@@ -494,7 +494,7 @@ class Path(object):
     def get(name):
         """Returns path object for specified name/path."""
         if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(_unicode(name))
+        elif isinstance(name,str): norm = os.path.normpath(decode(name))
         else: norm = os.path.normpath(name)
         return Path.norm_path.setdefault(norm,Path(norm))
 
@@ -503,7 +503,7 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if isinstance(name,Path): return name._s
         elif not name: return name
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = decode(name)
         return os.path.normpath(name)
 
     @staticmethod
@@ -511,7 +511,7 @@ class Path(object):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
         if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = decode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -543,7 +543,7 @@ class Path(object):
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = _unicode(norm)
+        if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)

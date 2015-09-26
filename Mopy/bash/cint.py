@@ -46,8 +46,8 @@ try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
     from bolt import GPath, deprint, Path
-    from bolt import _encode as _enc
-    from bolt import _unicode as _uni
+    from bolt import encode as _enc
+    from bolt import decode as _uni
     import bolt
     def _encode(text,*args,**kwdargs):
         if len(args) > 1:

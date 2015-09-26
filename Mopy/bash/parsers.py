@@ -33,7 +33,7 @@ import struct
 import bush # for game and actorValues
 import bosh # for modInfos
 from balt import Progress
-from bolt import GPath, _unicode, deprint, CsvReader, csvFormat
+from bolt import GPath, decode, deprint, CsvReader, csvFormat
 from bosh import LoadFactory, ModFile, dirs, inisettings
 from brec import MreRecord, MelObject, _coerce, genFid, ModReader
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \
@@ -1846,7 +1846,7 @@ class CBash_ScriptText:
         with Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
-                text = _unicode(text)
+                text = decode(text)
                 if skipcomments:
                     tmp = u''
                     for line in text.split(u'\n'):
@@ -2551,64 +2551,64 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                 if type_ == 'ALCH':
                     alch[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'AMMO':
                     ammo[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, damage, speed, enchantPoints)
-                        zip((_unicode,sfloat,int,int,sfloat,int,_unicode),
+                        zip((decode,sfloat,int,int,sfloat,int,decode),
                             fields[4:11]))
                 elif type_ == 'APPA':
                     appa[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight,value,quantity)
-                        zip((_unicode,sfloat,int,sfloat,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,sfloat,decode),fields[4:9]))
                 elif type_ == 'ARMO':
                     armor[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, health, strength)
-                        zip((_unicode,sfloat,int,int,int,_unicode,_unicode),
+                        zip((decode,sfloat,int,int,int,decode,decode),
                             fields[4:10]))
                 elif type_ == 'BOOK':
                     books[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'CLOT':
                     clothing[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((_unicode,sfloat,int,int,_unicode,_unicode),
+                        zip((decode,sfloat,int,int,decode,decode),
                             fields[4:10]))
                 elif type_ == 'INGR':
                     ingredients[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'KEYM':
                     keys[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'LIGH':
                     lights[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, duration)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'MISC':
                     misc[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'SGST':
                     sigilstones[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value, uses)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'SLGM':
                     soulgems[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'WEAP':
                     weapons[longid] = (eid,) + tuple(func(field) for func,field
                         in #--(weight, value, health, damage, speed, reach,
                         #  epoints)
-                        zip((_unicode,sfloat,int,int,int,sfloat,sfloat,int,
-                             _unicode),fields[4:13]))
+                        zip((decode,sfloat,int,int,int,sfloat,sfloat,int,
+                             decode),fields[4:13]))
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""

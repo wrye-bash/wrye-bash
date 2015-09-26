@@ -60,7 +60,7 @@ from bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError
 from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
-from bolt import _unicode, _encode
+from bolt import decode, encode
 # cint
 from _ctypes import POINTER
 from ctypes import cast, c_ulong
@@ -114,11 +114,11 @@ def getPatchesList():
 
 def formatInteger(value):
     """Convert integer to string formatted to locale."""
-    return _unicode(locale.format('%d',int(value),True),locale.getpreferredencoding())
+    return decode(locale.format('%d',int(value),True),locale.getpreferredencoding())
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
-    return _unicode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
+    return decode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
 
 def unformatDate(date, formatStr):
     """Basically a wrapper around time.strptime. Exists to get around bug in
@@ -875,7 +875,7 @@ class PluggyFile:
             count, = unpack('=I',4)
             for x in range(count):
                 espid,index,modLen = unpack('=2BI',6)
-                modName = GPath(_unicode(ins.read(modLen)))
+                modName = GPath(decode(ins.read(modLen)))
                 self.plugins.append((espid,index,modName))
             #--Other
             self.other = ins.getvalue()[ins.tell():]
@@ -898,7 +898,7 @@ class PluggyFile:
             pack('=B',0)
             pack('=I',len(self.plugins))
             for (espid,index,modName) in self.plugins:
-                modName = _encode(modName.cs)
+                modName = encode(modName.cs)
                 pack('=2BI',espid,index,len(modName))
                 buff.write(modName)
             #--Other
@@ -1057,9 +1057,9 @@ class SaveHeader:
         try:
             with path.open('rb') as ins:
                 bush.game.ess.load(ins,self)
-            self.pcName = _unicode(cstrip(self.pcName))
-            self.pcLocation = _unicode(cstrip(self.pcLocation),bolt.pluginEncoding,avoidEncodings=('utf8','utf-8'))
-            self.masters = [GPath(_unicode(x)) for x in self.masters]
+            self.pcName = decode(cstrip(self.pcName))
+            self.pcLocation = decode(cstrip(self.pcLocation),bolt.pluginEncoding,avoidEncodings=('utf8','utf-8'))
+            self.masters = [GPath(decode(x)) for x in self.masters]
         #--Errors
         except:
             deprint(u'save file error:',traceback=True)
@@ -1072,7 +1072,7 @@ class SaveHeader:
         with path.open('rb') as ins:
             with path.temp.open('wb') as out:
                 oldMasters = bush.game.ess.writeMasters(ins,out,self)
-        oldMasters = [GPath(_unicode(x)) for x in oldMasters]
+        oldMasters = [GPath(decode(x)) for x in oldMasters]
         path.untemp()
         #--Cosaves
         masterMap = dict((x,y) for x,y in zip(oldMasters,self.masters) if x != y)
@@ -1166,7 +1166,7 @@ class SaveFile:
             #--Save Header, pcName
             gameHeaderSize, = ins.unpack('I',4)
             self.saveNum,pcNameSize, = ins.unpack('=IB',5)
-            self.pcName = _unicode(cstrip(ins.read(pcNameSize)))
+            self.pcName = decode(cstrip(ins.read(pcNameSize)))
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
@@ -1174,7 +1174,7 @@ class SaveFile:
             numMasters, = ins.unpack('B',1)
             for count in range(numMasters):
                 size, = ins.unpack('B',1)
-                self.masters.append(GPath(_unicode(ins.read(size))))
+                self.masters.append(GPath(decode(ins.read(size))))
 
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
@@ -1250,7 +1250,7 @@ class SaveFile:
             progress(0,_(u'Writing Header.'))
             out.write(self.header)
             #--Save Header
-            pcName = _encode(self.pcName)
+            pcName = encode(self.pcName)
             pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
                 self.saveNum, len(pcName)+1)
             out.write(pcName)
@@ -1259,7 +1259,7 @@ class SaveFile:
             #--Masters
             pack('B',len(self.masters))
             for master in self.masters:
-                name = _encode(master.s)
+                name = encode(master.s)
                 pack('B',len(name))
                 out.write(name)
             #--Fids Pointer, num records
@@ -1541,7 +1541,7 @@ class SaveFile:
                             if chunkType == 'RVTS':
                                 #--OBSE String
                                 modIndex,stringID,stringLength, = unpack('=BIH',7)
-                                stringData = _unicode(ins.read(stringLength))
+                                stringData = decode(ins.read(stringLength))
                                 log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
                                 log(u'    '+_(u'ID  :')+u'  %u' % stringID)
                                 log(u'    '+_(u'Data:')+u'  %s' % stringData)
@@ -1581,7 +1581,7 @@ class SaveFile:
                                     elif keyType == 3:
                                         keyLen, = unpack('=H',2)
                                         key = ins.read(keyLen)
-                                        keyStr = _unicode(key)
+                                        keyStr = decode(key)
                                     else:
                                         keyStr = 'BAD'
                                     dataType, = unpack('=B',1)
@@ -1594,7 +1594,7 @@ class SaveFile:
                                     elif dataType == 3:
                                         dataLen, = unpack('=H',2)
                                         data = ins.read(dataLen)
-                                        dataStr = _unicode(data)
+                                        dataStr = decode(data)
                                     elif dataType == 4:
                                         data, = unpack('=I',4)
                                         dataStr = u'%u' % data
@@ -1653,7 +1653,7 @@ class SaveFile:
                                     ch = refName[i] if ((refName[i] >= chr(0x20)) and (refName[i] < chr(0x80))) else '.'
                                     newName = newName + ch
                                 log(_(u'      RefID : %08X') % refId)
-                                log(_(u'      Name  : %s') % _unicode(newName))
+                                log(_(u'      Name  : %s') % decode(newName))
                             elif chunkTypeNum == 5:
                                 #--Pluggy TypeScr
                                 log(_(u'    Pluggy ScreenSize'))
@@ -1668,7 +1668,7 @@ class SaveFile:
                                 #UNTESTED - uncomment following line to skip this record type
                                 #continue
                                 hudSid,modId,hudFlags,hudRootID,hudShow,hudPosX,hudPosY,hudDepth,hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale, = unpack('=IBBBBffhffBBB',29)
-                                hudFileName = _unicode(ins.read(len(chunkBuff) - ins.tell()))
+                                hudFileName = decode(ins.read(len(chunkBuff) - ins.tell()))
                                 log(u'      '+_(u'HudSID :')+u' %u' % hudSid)
                                 log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
@@ -1689,9 +1689,9 @@ class SaveFile:
                                 hudTid,modId,hudFlags,hudShow,hudPosX,hudPosY,hudDepth, = unpack('=IBBBffh',17)
                                 hudScaleX,hudScaleY,hudAlpha,hudAlignment,hudAutoScale,hudWidth,hudHeight,hudFormat, = unpack('=ffBBBIIB',20)
                                 hudFontNameLen, = unpack('=I',4)
-                                hudFontName = _unicode(ins.read(hudFontNameLen))
+                                hudFontName = decode(ins.read(hudFontNameLen))
                                 hudFontHeight,hudFontWidth,hudWeight,hudItalic,hudFontR,hudFontG,hudFontB, = unpack('=IIhBBBB',14)
-                                hudText = _unicode(ins.read(len(chunkBuff) - ins.tell()))
+                                hudText = decode(ins.read(len(chunkBuff) - ins.tell()))
                                 log(u'      '+_(u'HudTID :')+u' %u' % hudTid)
                                 log(u'      '+_(u'ModID  :')+u' %02X %s' % (modId,espMap[modId] if modId in espMap else u'ERROR',))
                                 log(u'      '+_(u'Flags  :')+u' %02X' % hudFlags)
@@ -1935,7 +1935,7 @@ class BsaFile:
                     hash,size,offset = ins.unpack('Q2I',16)
                     fileInfos.append([hash,size,offset,u'',filePos])
             #--File Names
-            fileNames = [_unicode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
+            fileNames = [decode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
             namesIter = iter(fileNames)
             for folderInfo in folderInfos:
                 fileInfos = folderInfo[-1]
@@ -2687,17 +2687,17 @@ class OmodFile:
         """Read info about the omod from the 'config' file"""
         with bolt.BinaryFile(path.s) as file:
             self.version = file.readByte() # OMOD version
-            self.modName = _unicode(file.readNetString()) # Mod name
+            self.modName = decode(file.readNetString()) # Mod name
             self.major = file.readInt32() # Mod major version - getting weird numbers here though
             self.minor = file.readInt32() # Mod minor version
-            self.author = _unicode(file.readNetString()) # author
-            self.email = _unicode(file.readNetString()) # email
-            self.website = _unicode(file.readNetString()) # website
-            self.desc = _unicode(file.readNetString()) # description
+            self.author = decode(file.readNetString()) # author
+            self.email = decode(file.readNetString()) # email
+            self.website = decode(file.readNetString()) # website
+            self.desc = decode(file.readNetString()) # description
             if self.version >= 2:
                 self.ftime = file.readInt64() # creation time
             else:
-                self.ftime = _unicode(file.readNetString())
+                self.ftime = decode(file.readNetString())
             self.compType = file.readByte() # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = file.readInt32()
@@ -2706,19 +2706,19 @@ class OmodFile:
 
     def writeInfo(self, path, filename, readme, script):
         with path.open('w') as file:
-            file.write(_encode(filename))
+            file.write(encode(filename))
             file.write('\n\n[basic info]\n')
             file.write('Name: ')
-            file.write(_encode(filename[:-5]))
+            file.write(encode(filename[:-5]))
             file.write('\nAuthor: ')
-            file.write(_encode(self.author))
+            file.write(encode(self.author))
             file.write('\nVersion:') # TODO, fix this?
             file.write('\nContact: ')
-            file.write(_encode(self.email))
+            file.write(encode(self.email))
             file.write('\nWebsite: ')
-            file.write(_encode(self.website))
+            file.write(encode(self.website))
             file.write('\n\n')
-            file.write(_encode(self.desc))
+            file.write(encode(self.desc))
             file.write('\n\n')
             #fTime = time.gmtime(self.ftime) #-error
             #file.write('Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
@@ -4905,7 +4905,7 @@ class SaveInfos(FileInfos):
                 bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
                 u'Saves\\')
             # Hopefully will solve issues with unicode usernames # TODO(ut) test
-            self.localSave = _unicode(self.localSave) # encoding = 'cp1252' ?
+            self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
             self.iniMTime = oblivionIni.path.mtime
 
     def __init__(self):
@@ -6127,7 +6127,7 @@ class Installer(object):
         if hasattr(self,'fileSizeCrcs'):
             # Older pickle files didn't store filenames in unicode,
             # convert them here.
-            self.fileSizeCrcs = [(_unicode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
+            self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
         self.refreshDataSizeCrc()
 
     def __copy__(self,iClass=None):
@@ -7464,11 +7464,11 @@ class InstallerProject(Installer):
             with bolt.StructFile(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = _unicode(ins.readNetString(),encoding='utf-8')
+                config.name = decode(ins.readNetString(),encoding='utf-8')
                 config.vMajor, = ins.unpack('i',4)
                 config.vMinor, = ins.unpack('i',4)
                 for attr in ('author','email','website','abstract'):
-                    setattr(config,attr,_unicode(ins.readNetString(),encoding='utf-8'))
+                    setattr(config,attr,decode(ins.readNetString(),encoding='utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -8736,7 +8736,7 @@ class PCFaces:
         #--Player ACHR
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,data,_encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,data,encode(saveFile.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
             face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct.unpack(
             '=200s120s200s3If3BsB',data[namePos-542:namePos-1])
@@ -8857,7 +8857,7 @@ class PCFaces:
                 buff.seek(4,1)
         oldRecord = saveFile.getRecord(0x14)
         oldData = oldRecord[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,oldData,_encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,oldData,encode(saveFile.pcName))
         buff.write(oldData)
         #--Modify buffer with face data.
         buff.seek(namePos-542)
@@ -8881,7 +8881,7 @@ class PCFaces:
             postName = buff.getvalue()[buff.tell()+len(saveFile.pcName)+2:]
             buffPack('B',len(face.pcName)+1)
             buff.write(
-                _encode(face.pcName, firstEncoding=Path.sys_fs_enc) + '\x00')
+                encode(face.pcName, firstEncoding=Path.sys_fs_enc) + '\x00')
             buff.write(postName)
             buff.seek(-len(postName),1)
             saveFile.pcName = face.pcName
@@ -8936,7 +8936,7 @@ class PCFaces:
         saveFile.load()
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveInfo.name,data,_encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveInfo.name,data,encode(saveFile.pcName))
         raceRef,hairRef = struct.unpack('2I',data[namePos-22:namePos-14])
         if hairRef != 0: return False
         raceForm = raceRef and saveFile.fids[raceRef]
@@ -9400,7 +9400,7 @@ class ModCleaner:
                                             x,y = (0,0)
                                             for subrec in record.subrecords:
                                                 if subrec.subType == 'EDID':
-                                                    eid = _unicode(subrec.data)
+                                                    eid = decode(subrec.data)
                                                 elif subrec.subType == 'XCLC':
                                                     pos = structUnpack('=2i',subrec.data[:8])
                                             for udrFid in parents_to_scan[fid]:
@@ -9721,7 +9721,7 @@ class Save_NPCEdits:
         saveFile.load()
         (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
-        npc.full = _encode(newName)
+        npc.full = encode(newName)
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()

@@ -33,7 +33,7 @@ import cPickle
 from operator import attrgetter
 
 import bolt
-from bolt import _unicode, _encode, sio, GPath
+from bolt import decode, encode, sio, GPath
 from bass import null1
 
 # Util Functions ---------------------------------------------------------------
@@ -51,7 +51,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
                 return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
             else: return bool(value)
         elif base: retValue = newtype(value, base)
-        elif newtype is unicode: retValue = _unicode(value)
+        elif newtype is unicode: retValue = decode(value)
         else: retValue = newtype(value)
         if (AllowNone and
             (isinstance(retValue,str) and retValue.lower() == 'none') or
@@ -275,12 +275,12 @@ class ModReader:
 
     def readString(self,size,recType='----'):
         """Read string from file, stripping zero terminator."""
-        return u'\n'.join(_unicode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
+        return u'\n'.join(decode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                           bolt.cstrip(self.read(size,recType)).split('\n'))
 
     def readStrings(self,size,recType='----'):
         """Read strings from file, stripping zero terminator."""
-        return [_unicode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
+        return [decode(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
     def unpack(self,format,size,recType='----'):
@@ -380,7 +380,7 @@ class ModWriter:
         stream."""
         if data is None: return
         elif isinstance(data,unicode):
-            data = _encode(data,firstEncoding=bolt.pluginEncoding)
+            data = encode(data,firstEncoding=bolt.pluginEncoding)
         lenData = len(data) + 1
         outWrite = self.out.write
         structPack = struct.pack
@@ -838,7 +838,7 @@ class MelString(MelBase):
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,firstEncoding=firstEncoding,returnEncoding=True)
+                test,encoding = encode(value,firstEncoding=firstEncoding,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -848,11 +848,11 @@ class MelString(MelBase):
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding)
                 else:
                     value = test
             else:
-                value = _encode(value,firstEncoding=firstEncoding)
+                value = encode(value,firstEncoding=firstEncoding)
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -865,7 +865,7 @@ class MelUnicode(MelString):
 
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute"""
-        value = u'\n'.join(_unicode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
+        value = u'\n'.join(decode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
                            for x in bolt.cstrip(ins.read(size,readId)).split('\n'))
         record.__setattr__(self.attr,value)
 
@@ -876,7 +876,7 @@ class MelUnicode(MelString):
             if self.maxSize:
                 value = bolt.winNewLines(value.strip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,firstEncoding=firstEncoding,returnEncoding=True)
+                test,encoding = encode(value,firstEncoding=firstEncoding,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -886,11 +886,11 @@ class MelUnicode(MelString):
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding)
                 else:
                     value = test
             else:
-                value = _encode(value,firstEncoding=firstEncoding)
+                value = encode(value,firstEncoding=firstEncoding)
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -923,7 +923,7 @@ class MelStrings(MelString):
         """Dumps data from record to outstream."""
         strings = record.__getattribute__(self.attr)
         if strings:
-            out.packSub0(self.subType,null1.join(_encode(x,firstEncoding=bolt.pluginEncoding) for x in strings)+null1)
+            out.packSub0(self.subType,null1.join(encode(x,firstEncoding=bolt.pluginEncoding) for x in strings)+null1)
 
 #------------------------------------------------------------------------------
 class MelStruct(MelBase):
@@ -1578,7 +1578,7 @@ class MreRecord(object):
                         value = bolt.cstrip(readRead(size))
                         break
         #--Return it
-        return _unicode(value)
+        return decode(value)
 
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):
@@ -1629,14 +1629,14 @@ class MreHeaderBase(MelRecord):
             # Don't use ins.readString, becuase it will try to use bolt.pluginEncoding
             # for the filename.  This is one case where we want to use Automatic
             # encoding detection
-            name = _unicode(bolt.cstrip(ins.read(size,readId)),avoidEncodings=('utf8','utf-8'))
+            name = decode(bolt.cstrip(ins.read(size,readId)),avoidEncodings=('utf8','utf-8'))
             name = GPath(name)
             record.masters.append(name)
         def dumpData(self,record,out):
             pack1 = out.packSub0
             pack2 = out.packSub
             for name in record.masters:
-                pack1('MAST',_encode(name.s))
+                pack1('MAST',encode(name.s))
                 pack2('DATA','Q',0)
 
     def getNextObject(self):
@@ -1670,7 +1670,7 @@ class MreGmstBase(MelRecord):
     classType = 'GMST'
     class MelGmstValue(MelBase):
         def loadData(self,record,ins,type,size,readId):
-            format = _encode(record.eid[0]) #-- s|i|f|b
+            format = encode(record.eid[0]) #-- s|i|f|b
             if format == u's':
                 record.value = ins.readLString(size,readId)
                 return
@@ -1678,7 +1678,7 @@ class MreGmstBase(MelRecord):
                 format = u'I'
             record.value, = ins.unpack(format,size,readId)
         def dumpData(self,record,out):
-            format = _encode(record.eid[0]) #-- s|i|f
+            format = encode(record.eid[0]) #-- s|i|f
             if format == u's':
                 out.packSub0(self.subType,record.value)
                 return

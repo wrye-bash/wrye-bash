@@ -28,7 +28,7 @@ import struct
 import itertools
 from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
-    _encode
+    encode
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
     ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -575,7 +575,7 @@ class MelMODS(MelBase):
             outData = structPack('I',len(data))
             for (string,fid,unk) in data:
                 outData += structPack('I',len(string))
-                outData += _encode(string)
+                outData += encode(string)
                 outData += structPack('=2I',fid,unk)
             out.packSub(self.subType,outData)
 
@@ -656,7 +656,7 @@ class MelString16(MelString):
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,returnEncoding=True)
+                test,encoding = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -666,11 +666,11 @@ class MelString16(MelString):
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding)
                 else:
                     value = test
             else:
-                value = _encode(value)
+                value = encode(value)
             value = struct.pack('H',len(value))+value
             out.packSub0(self.subType,value)
 
@@ -691,7 +691,7 @@ class MelString32(MelString):
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,returnEncoding=True)
+                test,encoding = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
@@ -701,11 +701,11 @@ class MelString32(MelString):
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding)
                 else:
                     value = test
             else:
-                value = _encode(value)
+                value = encode(value)
             value = struct.pack('I',len(value))+value
             out.packSub0(self.subType,value)
 
@@ -742,7 +742,7 @@ class MelVmad(MelBase):
 
         def dumpData(self,Type,count):
             structPack = struct.pack
-            fileName = _encode(self.fileName)
+            fileName = encode(self.fileName)
             if Type == 'INFO':
                 raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
             elif Type == 'PACK':
@@ -777,8 +777,8 @@ class MelVmad(MelBase):
 
         def dumpData(self):
             structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
+            scriptName = encode(self.scriptName)
+            fragmentName = encode(self.fragmentName)
             data = structPack('=bH',self.unk,len(scriptName)) + scriptName
             data += structPack('=H',len(fragmentName)) + fragmentName
             return data
@@ -799,8 +799,8 @@ class MelVmad(MelBase):
 
         def dumpData(self):
             structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
+            scriptName = encode(self.scriptName)
+            fragmentName = encode(self.fragmentName)
             data = structPack('=HhbH',self.index,self.unk1,self.unk2,len(scriptName)) + scriptName
             data += structPack('=H',len(fragmentName)) + fragmentName
             return data
@@ -822,8 +822,8 @@ class MelVmad(MelBase):
 
         def dumpData(self):
             structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
+            scriptName = encode(self.scriptName)
+            fragmentName = encode(self.fragmentName)
             data = structPack('=HhibH',self.index,self.unk1,self.unk2,self.unk3,len(scriptName)) + scriptName
             data += structPack('=H',len(fragmentName)) + fragmentName
             return data
@@ -906,7 +906,7 @@ class MelVmad(MelBase):
             structPack = struct.pack
             ## Property Entry
             # Property Name
-            name = _encode(self.name)
+            name = encode(self.name)
             data = structPack('=H',len(name))+name
             # Property Type
             value = self.value
@@ -916,7 +916,7 @@ class MelVmad(MelBase):
                 data += structPack('=BBIHH',1,self.unk,value[0],value[1],0)
             # Type 2 - String
             elif isinstance(value,basestring):
-                value = _encode(value)
+                value = encode(value)
                 data += structPack('=BBH',2,self.unk,len(value))+value
             # Type 3 - Int
             elif isinstance(value,(int,long)):
@@ -944,7 +944,7 @@ class MelVmad(MelBase):
                     elif isinstance(Type,basestring):
                         data += structPack('=BBI',12,self.unk,count)
                         for string in value:
-                            string = _encode(string)
+                            string = encode(string)
                             data += structPack('=H',len(string))+string
                     # Type 13 - Ints
                     elif isinstance(Type,(int,long)):
@@ -989,7 +989,7 @@ class MelVmad(MelBase):
             structPack = struct.pack
             ## Script Entry
             # scriptName
-            name = _encode(self.name)
+            name = encode(self.name)
             data = structPack('=H',len(name))+name
             # unkown, property count
             data += structPack('=BH',self.unk,len(self.properties))
