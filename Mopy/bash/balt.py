@@ -538,8 +538,11 @@ def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
 
 #------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
-    """Shows a modal continue query if value of continueKey is false. Returns True to continue.
-    Also provides checkbox "Don't show this in future." to set continueKey to true."""
+    """Show a modal continue query if value of continueKey is false. Return
+    True to continue.
+    Also provides checkbox "Don't show this in future." to set continueKey
+    to true. continueKey must end in '.continue' - should be enforced
+    """
     #--ContinueKey set?
     if _settings.get(continueKey): return wx.ID_OK
     #--Generate/show dialog
@@ -2135,7 +2138,7 @@ class UIList(wx.Panel):
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
-            'bash.maxItemsOpen'): return
+            'bash.maxItemsOpen.continue'): return
         for file_ in selected:
             file_ = dataDir.join(file_)
             if file_.exists(): file_.start()

@@ -403,7 +403,8 @@ class Mod_Groups(_Mod_Labels):
         """Set the list of groups to groups currently assigned to mods."""
         msg = _(u'This will set the list of available groups to the groups '
                 u'currently assigned to mods. Continue ?')
-        if not balt.askContinue(self.listEditor, msg, 'bash.groups.sync',
+        if not balt.askContinue(self.listEditor, msg,
+                                'bash.groups.sync.continue',
                                 _(u'Sync Groups')): return
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
 
@@ -416,7 +417,8 @@ class Mod_Groups(_Mod_Labels):
         msg = _(u"This will reset the list of available groups to the default "
                 u"group list. It won't however remove non default groups from "
                 u"mods that are already tagged with them. Continue ?")
-        if not balt.askContinue(self.listEditor, msg, 'bash.groups.reset',
+        if not balt.askContinue(self.listEditor, msg,
+                                'bash.groups.reset.continue',
                                 _(u'Reset Groups')): return
         self.listEditor.SetItemsTo(list(settingDefaults['bash.mods.groups']))
 

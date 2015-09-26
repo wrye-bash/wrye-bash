@@ -378,8 +378,9 @@ class MasterList(_ModsSortMixin, balt.UIList):
     @allowEdit.setter
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
-               balt.askContinue(self, self.message, self.keyPrefix + '.update',
-                                _(u'Update Masters') + u' ' + _(u'BETA'))):
+               balt.askContinue(
+                   self, self.message, self.keyPrefix + '.update.continue',
+                   _(u'Update Masters') + u' ' + _(u'BETA'))):
             return
         bosh.settings[self._allowEditKey] = val
         if val:
@@ -654,8 +655,8 @@ class INIList(balt.UIList):
                        + u'\n\n' +
                        _(u"WARNING: Incorrect tweaks can result in CTDs and even damage to you computer!")
                        )
-            if not balt.askContinue(self,message,'bash.iniTweaks.continue',_(u"INI Tweaks")):
-                return
+            if not balt.askContinue(self, message, 'bash.iniTweaks.continue',
+                                    _(u"INI Tweaks")): return
         #--No point applying a tweak that's already applied
         file_ = tweak.dir.join(self.GetItem(hitItem))
         self.data.ini.applyTweakFile(file_)
@@ -1831,7 +1832,8 @@ class SaveList(balt.UIList):
                 u"(disabled). Autosaves and quicksaves will be left alone."
                  % {'ess': bush.game.ess.ext})
         if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            if not balt.askContinue(self, msg, 'bash.saves.askDisable'): return
+            if not balt.askContinue(self, msg,
+                                    'bash.saves.askDisable.continue'): return
             fileName = GPath(self.GetItem(hitItem))
             newEnabled = not self.data.isEnabled(fileName)
             newName = self.data.enable(fileName,newEnabled)
