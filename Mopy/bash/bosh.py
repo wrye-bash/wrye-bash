@@ -4436,7 +4436,7 @@ class ModInfos(FileInfos):
                     log(bul+u'xx '+mod.s)
                 log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
                 present = set(x for x in masters if x in self)
-                if fileInfo.name in self: #--In case is bashed patch
+                if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
                 merged,imported = self.getSemiActive(present)
             else:
@@ -4447,7 +4447,7 @@ class ModInfos(FileInfos):
             allMods = self.getOrdered([x for x in allMods if x in self])
             #--List
             modIndex = 0
-            if not wtxt: log(u'[spoiler][xml]\n', False)
+            if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
             for name in allMods:
                 if name in masters:
                     prefix = bul+u'%02X' % modIndex

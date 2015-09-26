@@ -508,6 +508,9 @@
         <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official BOSS thread.
         <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
+        <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
+            mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
+            <code>++</code>, <code>**</code> and <code>__</code> respectively.
         <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
         <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag if set. Note that, if Auto-Ghost is enabled, <i>manually unghosting a plugin <b>will be reverted</b> on refresh</i> - mark the plugin as <a href="#modsDontGhost">disallow ghosting</a> if you want your changes to persist.
         <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
