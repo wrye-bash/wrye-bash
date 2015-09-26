@@ -33,7 +33,8 @@ from .. import bosh, bolt, balt, bush
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes
+    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
+    OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
 from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
@@ -1995,6 +1996,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
+        okButton = OkButton(dialog, onClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
@@ -2015,7 +2017,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             gdeprefix,
             spacer,
             gskipcomments,
-            balt.ok_and_cancel_sizer(dialog, onOk=OnOk),
+            balt.ok_and_cancel_sizer(dialog, okButton=okButton),
             )
         dialog.SetSizer(sizer)
         with dialog: questions = dialog.ShowModal()

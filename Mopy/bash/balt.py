@@ -409,8 +409,8 @@ class CancelButton(Button):
     _id = wx.ID_CANCEL
     label = _(u'Cancel')
 
-def ok_and_cancel_sizer(parent, onOk=None):
-    return (hSizer(spacer, OkButton(parent, onClick=onOk),
+def ok_and_cancel_sizer(parent, okButton=None):
+    return (hSizer(spacer, okButton or OkButton(parent),
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
