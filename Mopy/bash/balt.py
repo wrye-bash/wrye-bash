@@ -394,11 +394,11 @@ class Button(wx.Button):
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', id=None, onClick=None, tip=None,
+                 val=defVal, name='button', wxId=None, onClick=None, tip=None,
                  default=False):
         """Create a button and bind its click function."""
         if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, id or self.__class__._id,
+        wx.Button.__init__(self, parent, wxId or self.__class__._id,
                            label, pos, size, style, val, name)
         if onClick: self.Bind(wx.EVT_BUTTON,onClick)
         if tip: self.SetToolTip(tooltip(tip))
@@ -423,6 +423,7 @@ class RevertButton(Button): _id = wx.ID_SAVE
 class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
 class OpenButton(Button): _id = wx.ID_OPEN
 class SelectAllButton(Button): _id = wx.ID_SELECTALL
+class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onClick=None, tip=None):
@@ -434,10 +435,10 @@ def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='checkBox',id=defId,onCheck=None,tip=None,checked=False):
+def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
+             name='checkBox', onCheck=None, tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent,id,label,pos,size,style,val,name)
+    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
     if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX,onCheck)
     if tip: gCheckBox.SetToolTip(tooltip(tip))
     gCheckBox.SetValue(checked)
@@ -460,10 +461,12 @@ class StaticText(wx.StaticText):
         self.Wrap(width or self.GetSize().width)
         self.Thaw()
 
-def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
-        min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
+def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
+             style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
+             name=u'wxSpinctrl', onSpin=None, tip=None):
     """Spin control with event and tip setting."""
-    gSpinCtrl=wx.SpinCtrl(parent,id,value,pos,size,style,min,max,initial,name)
+    gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
+                            initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL,onSpin)
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
@@ -612,7 +615,7 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
         for id,lable in labels.itervalues():
             if id in (wx.ID_OK,wx.ID_CANCEL):
                 continue
-            but = Button(dialog,id=id,label=lable)
+            but = Button(dialog, wxId=id, label=lable)
         sizer = vSizer(
             (hSizer(
                 (icon,0,wx.ALL,6),

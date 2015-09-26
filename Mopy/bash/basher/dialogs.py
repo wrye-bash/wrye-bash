@@ -31,7 +31,7 @@ from .. import balt, bosh, bolt, bush
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton
+    CancelButton, ApplyButton
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -60,7 +60,7 @@ class ColorDialog(balt.Dialog):
         #--Buttons
         self.default = Button(self,_(u'Default'),onClick=self.OnDefault)
         self.defaultAll = Button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
-        self.apply = Button(self,id=wx.ID_APPLY,onClick=self.OnApply)
+        self.apply = ApplyButton(self, onClick=self.OnApply)
         self.applyAll = Button(self,_(u'Apply All'),onClick=self.OnApplyAll)
         self.exportConfig = Button(self,_(u'Export...'),onClick=self.OnExport)
         self.importConfig = Button(self,_(u'Import...'),onClick=self.OnImport)
