@@ -54,19 +54,23 @@ class LoadOrder(object):
 
     def __init__(self, loadOrder=__empty, active=__none):
         if set(active) - set(loadOrder):
-            raise bolt.BoltError('Setting active with no load order')
+            raise bolt.BoltError(
+                u'Active mods with no load order: ' + u', '.join(
+                    [x.s for x in (set(active) - set(loadOrder))]))
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
         self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
         # would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
             sorted(active, key=self.__mod_loIndex.__getitem__))
+        self.__mod_actIndex = dict(
+            (a, i) for i, a in enumerate(self._activeOrdered))
 
     @property
     def loadOrder(self): return self._loadOrder # test if empty
     @property
     def active(self): return self._active  # test if none
-    @property # sugar - API: maybe drop:
+    @property
     def activeOrdered(self): return self._activeOrdered
 
     def __eq__(self, other):
@@ -78,6 +82,7 @@ class LoadOrder(object):
     def lindex(self, path): return self.__mod_loIndex[path] # KeyError
     def lorder(self, paths): # API: sort in place ? see usages
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
+    def activeIndex(self, path): return self.__mod_actIndex[path]
 
 # Module level cache
 __empty = LoadOrder()

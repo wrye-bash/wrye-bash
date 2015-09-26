@@ -329,10 +329,10 @@ class MasterList(_ModsSortMixin, balt.UIList):
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
-    _sort_keys = {'Num': None, # sort_keys['Save Order'] =
+    _sort_keys = {'Num': None, # sort by master index, the key itself
                   'File': lambda self, a: self.data[a].name.s.lower(),
                   'Current Order': lambda self, a: self.loadOrderNames.index(
-                     self.data[a].name), # sort_keys['Load Order'] =
+                     self.data[a].name), #missing mods sort last alphabetically
                  }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -364,7 +364,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = [] # needed as masters may be renamed
+        self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
         if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
             self.message += self.saves192warn
@@ -413,20 +413,18 @@ class MasterList(_ModsSortMixin, balt.UIList):
         masterInfo = self.data[mi]
         masterName = masterInfo.name
         status = masterInfo.getStatus()
-        if status == 30:
-            return status
-        fileOrderIndex = mi
+        if status == 30: return status # does not exist
+        # current load order of master relative to other masters
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.activeCached
-        if fileOrderIndex != loadOrderIndex:
-            return 20
+        if mi != loadOrderIndex: # there are active masters out of order
+            return 20  # orange
         elif status > 0:
-            return status
-        elif ((fileOrderIndex < len(ordered)) and
-            (ordered[fileOrderIndex] == masterName)):
-            return -10
+            return status  # never happens
+        elif (mi < len(ordered)) and (ordered[mi] == masterName):
+            return -10  # Blue
         else:
-            return status
+            return status  # 0, Green
 
     def getLabels(self, mi):
         labels, masterInfo = {}, self.data[mi]
@@ -437,11 +435,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             if voCurrent: value += u' ['+voCurrent+u']'
         labels['File'] = value
         labels['Num'] = u'%02X' % mi
-        if bosh.modInfos.isActiveCached(masterName):
-            value = u'%02X' % (bosh.modInfos.activeCached.index(masterName),)
-        else:
-            value = u''
-        labels['Current Order'] = value
+        labels['Current Order'] = bosh.modInfos.hexIndexString(masterName)
         return labels
 
     @staticmethod
@@ -839,9 +833,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         labels['Modified'] = formatDate(fileInfo.getPath().mtime)
         labels['Size'] = self._round(fileInfo.size)
         labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
-        value = u'%02X' % bosh.modInfos.activeCached.index(fileName) \
-            if bosh.modInfos.isActiveCached(fileName) else u''
-        labels['Load Order'] = value
+        labels['Load Order'] = bosh.modInfos.hexIndexString(fileName)
         labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
         labels['Mod Status'] = fileInfo.txt_status()
         return labels
