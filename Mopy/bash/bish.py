@@ -848,7 +848,7 @@ def modCheck(fileName=None):
     reBadVarName = re.compile('^[_0-9]')
     init(3)
     loadFactory = bosh.LoadFactory(False,MreWeap)
-    for modInfo in bosh.modInfos.data.values():
+    for modInfo in bosh.modInfos.values():
         print '\n',modInfo.name
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)

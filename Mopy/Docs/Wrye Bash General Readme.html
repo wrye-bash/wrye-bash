@@ -240,7 +240,39 @@
 </ol>
 <p>If you install a package then later change the sub-packages or esp/m files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (eg. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
-<p>To uninstall any package, simply right-click the package in the package list and select <a href="#bainUninstall">Uninstall</a>. You can also uninstall packages that BAIN hasn't installed, which will remove any installed files that match the ones in the package. This is useful for cleaning out mods that were manually installed. Uninstalling via BAIN respects the ownership of files, ie. uninstalling a mod that contains files also installed by a mod listed lower down will not uninstall the lower mod's files. See the next section, <a href="#bain-order">BAIN Package Order</a> for more on this. If the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> option is enabled (the default), then files from other packages previously overriden by the uninstalled package's files will be automatically restored.
+<p>To uninstall any package from the Installers tab select the package
+and right click on it, then select <a href="#bainUninstall">Uninstall</a>.
+This will uninstall
+all Matched files. However, BAIN will not uninstall Mismatched files.
+A Mismatched file is a file that has been altered after it was
+installed. The reason BAIN does not uninstall Mismatched files is BAIN
+ has no way of tracking the source of the alteration if it was not
+done through BAIN. For example, if the file was altered because it was
+ replaced by another mod that was installed manually,
+then uninstallation of the Mismatched file may not be desirable. On
+the other hand, if the file was altered because it was cleaned or
+edited with TESxEdit, or because it was an ini file that was edited
+with a text editor, then it may be desired to uninstall the Mismatched
+ file along with the package that it came from. Such files could be
+deleted from the data folder manually, but there is an easy way to do
+this through BAIN. Before uninstalling the mod, first select the
+package and right click on it, then select <a href="#bainInstall">Install</a>.
+This will
+overwrite any Mismatched files with the version of the file contained
+in the package, making them Matched. Now select <a href="#bainUninstall">Uninstall</a>
+and BAIN
+will uninstall all installed files associated with this package.
+You can also uninstall packages that BAIN hasn't installed, which will
+ remove any installed files that match the ones in the package. This
+is useful for cleaning out mods that were manually installed. Of course you
+	need to add the packages to BAIN first.
+Uninstalling via BAIN respects the ownership of files,
+ie. uninstalling a mod that contains files also installed by a mod
+listed lower in the installation order will not uninstall the lower
+mod's files. See the next section, BAIN Package Order for more on
+this. However, if the Auto-Anneal option is enabled (the default), then files
+from other packages previously overridden by the uninstalled package's
+ files will be automatically restored.
 
 <h3 id="bain-order">BAIN Package Order</h3>
 <p>The install order of packages in BAIN is important as this decides which mod gets its files installed in the case of resource conflicts. Packages may be listed in install order by left-clicking on the <q>Order</q> column header. If two mods try to install the same file, then the mod lower down in the list will have its file overwrite the file of the mod higher up in the list.

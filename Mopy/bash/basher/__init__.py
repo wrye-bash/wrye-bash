@@ -329,10 +329,10 @@ class MasterList(_ModsSortMixin, balt.UIList):
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
-    _sort_keys = {'Num': None, # sort_keys['Save Order'] =
+    _sort_keys = {'Num': None, # sort by master index, the key itself
                   'File': lambda self, a: self.data[a].name.s.lower(),
                   'Current Order': lambda self, a: self.loadOrderNames.index(
-                     self.data[a].name), # sort_keys['Load Order'] =
+                     self.data[a].name), #missing mods sort last alphabetically
                  }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -364,7 +364,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = [] # needed as masters may be renamed
+        self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
         if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
             self.message += self.saves192warn
@@ -413,20 +413,18 @@ class MasterList(_ModsSortMixin, balt.UIList):
         masterInfo = self.data[mi]
         masterName = masterInfo.name
         status = masterInfo.getStatus()
-        if status == 30:
-            return status
-        fileOrderIndex = mi
+        if status == 30: return status # does not exist
+        # current load order of master relative to other masters
         loadOrderIndex = self.loadOrderNames.index(masterName)
         ordered = bosh.modInfos.activeCached
-        if fileOrderIndex != loadOrderIndex:
-            return 20
+        if mi != loadOrderIndex: # there are active masters out of order
+            return 20  # orange
         elif status > 0:
-            return status
-        elif ((fileOrderIndex < len(ordered)) and
-            (ordered[fileOrderIndex] == masterName)):
-            return -10
+            return status  # never happens
+        elif (mi < len(ordered)) and (ordered[mi] == masterName):
+            return -10  # Blue
         else:
-            return status
+            return status  # 0, Green
 
     def getLabels(self, mi):
         labels, masterInfo = {}, self.data[mi]
@@ -437,11 +435,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             if voCurrent: value += u' ['+voCurrent+u']'
         labels['File'] = value
         labels['Num'] = u'%02X' % mi
-        if bosh.modInfos.isActiveCached(masterName):
-            value = u'%02X' % (bosh.modInfos.activeCached.index(masterName),)
-        else:
-            value = u''
-        labels['Current Order'] = value
+        labels['Current Order'] = bosh.modInfos.hexIndexString(masterName)
         return labels
 
     @staticmethod
@@ -839,9 +833,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         labels['Modified'] = formatDate(fileInfo.getPath().mtime)
         labels['Size'] = self._round(fileInfo.size)
         labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
-        value = u'%02X' % bosh.modInfos.activeCached.index(fileName) \
-            if bosh.modInfos.isActiveCached(fileName) else u''
-        labels['Load Order'] = value
+        labels['Load Order'] = bosh.modInfos.hexIndexString(fileName)
         labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
         labels['Mod Status'] = fileInfo.txt_status()
         return labels
@@ -3735,30 +3727,25 @@ class BashStatusBar(wx.StatusBar):
     def UpdateIconSizes(self):
         self.size = settings['bash.statusbar.iconSize']
         self.size += 8
-        self.buttons = []
-        buttons = BashStatusBar.buttons
+        self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings['bash.statusbar.order']
         orderChanged = False
         hide = settings['bash.statusbar.hide']
         hideChanged = False
-        remove = set()
-        # Add buttons in order that is saved
-        for uid in order:
+        # Add buttons in order that is saved - on first run order = [] !
+        for uid in order[:]:
             link = self.GetLink(uid=uid)
             # Doesn't exist?
             if link is None:
-                remove.add(uid)
+                order.remove(uid)
+                orderChanged = True
                 continue
             # Hidden?
             if uid in hide: continue
             # Add it
             self._addButton(link)
-        for uid in remove:
-            order.remove(uid)
-        if remove:
-            orderChanged = True
         # Add any new buttons
-        for link in buttons:
+        for link in BashStatusBar.buttons:
             # Already tested?
             uid = link.uid
             if uid in order: continue
@@ -3805,17 +3792,16 @@ class BashStatusBar(wx.StatusBar):
             self._addButton(link)
         else:
             # Specified, but now factor in hidden buttons, etc
-            thisIndex = order.index(link.uid)
             self._addButton(link)
             button = self.buttons.pop()
-            insertBefore = 0
+            thisIndex, insertBefore = order.index(link.uid), 0
             for i in range(len(self.buttons)):
                 otherlink = self.GetLink(index=i)
                 indexOther = order.index(otherlink.uid)
                 if indexOther > thisIndex:
                     insertBefore = i
                     break
-            self.buttons.insert(i,button)
+            self.buttons.insert(insertBefore,button)
         # Refresh
         self.SetStatusWidths([self.size*len(self.buttons),-1,130])
         self.GetParent().SendSizeEvent()
@@ -3836,7 +3822,7 @@ class BashStatusBar(wx.StatusBar):
                     return link
         return None
 
-    def HitTest(self,mouseEvent):
+    def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()
         for i,button in enumerate(self.buttons):
             if button.GetId() == id_:
@@ -3851,7 +3837,7 @@ class BashStatusBar(wx.StatusBar):
         return wx.NOT_FOUND
 
     def OnDragStart(self,event):
-        self.dragging = self.HitTest(event)
+        self.dragging = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
             self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
@@ -3880,7 +3866,7 @@ class BashStatusBar(wx.StatusBar):
             # The button will never get a EVT_BUTTON event if you
             # just click it.  Can't figure out a good way for the
             # two to play nicely, so we'll just simulate it for now
-            released = self.HitTest(event)
+            released = self._getButtonIndex(event)
             if released != self.dragging: released = wx.NOT_FOUND
             self.dragging = wx.NOT_FOUND
             self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
@@ -3898,7 +3884,7 @@ class BashStatusBar(wx.StatusBar):
         if self.dragging != wx.NOT_FOUND:
             if abs(event.GetPosition()[0] - self.dragStart) > 4:
                 self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-            over = self.HitTest(event)
+            over = self._getButtonIndex(event)
             if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True

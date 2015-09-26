@@ -693,8 +693,7 @@ class App_Restart(StatusBar_Button):
             onRClick = self.DoPopupMenu)
         return self.gButton
 
-    def Execute(self,event):
-        Link.Frame.Restart()
+    def Execute(self,event): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
 class App_GenPickle(StatusBar_Button):

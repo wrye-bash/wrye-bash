@@ -64,7 +64,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_CleanMod',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
-           'Mod_SetVersion']
+           'Mod_SetVersion', 'Mod_ListDependent']
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -591,6 +591,48 @@ class Mod_CopyModInfo(ItemLink):
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False,
+                      icons=Resources.bashBlue)
+
+class Mod_ListDependent(OneItemLink):
+    """Copies list of masters to clipboard."""
+    text = _(u"List Dependencies")
+
+    def _initData(self, window, selection):
+        super(Mod_ListDependent, self)._initData(window, selection)
+        self.help = _(u"Displays and copies to the clipboard a list of mods "
+                      u"that have %(filename)s as master.") % (
+                        {'filename': selection[0]})
+        self.legend = _(u'Mods dependent on %(filename)s') % (
+                        {'filename': selection[0]})
+
+    def Execute(self,event):
+        masterName = GPath(self.selected[0])
+        ##: HACK - refactor getModList
+        modInfos = self.window.data
+        merged, imported = modInfos.merged, modInfos.imported
+        head, bul = u'=== ', u'* '
+        with bolt.sio() as out:
+            log = bolt.LogFile(out)
+            log(u'[spoiler][xml]')
+            log.setHeader(head + self.legend + u': ')
+            loOrder =  lambda tup: modInfos.loIndexCachedOrMax(tup[0])
+            text = u''
+            for mod, info in sorted(modInfos.items(), key=loOrder):
+                if masterName in info.header.masters:
+                    hexIndex = modInfos.hexIndexString(mod)
+                    if hexIndex:
+                        prefix = bul + hexIndex
+                    elif mod in merged:
+                        prefix = bul + u'++'
+                    else:
+                        prefix = bul + (u'**' if mod in imported else u'__')
+                    text = u'%s  %s' % (prefix, mod.s,)
+                    log(text)
+            if not text:  log(u'None')
+            log(u'[/xml][/spoiler]')
+            text = bolt.winNewLines(log.out.getvalue())
+        balt.copyToClipboard(text)
+        self._showLog(text, title=self.legend, fixedFont=False,
                       icons=Resources.bashBlue)
 
 # Ghosting --------------------------------------------------------------------

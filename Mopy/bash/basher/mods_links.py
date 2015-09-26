@@ -92,12 +92,22 @@ class Mods_LoadList(ChoiceLink):
         self.loadListsDict = _getLoadListsDict()
         #--Links
         _self = self
+        class __Activate(ItemLink):
+            def _selectExact(self, mods):
+                errorMessage = bosh.modInfos.selectExact(mods)
+                _self._refresh()
+                if errorMessage: self._showError(errorMessage, self.text)
         class _All(ItemLink):
             text = _(u'All')
             def Execute(self, event): _self.DoAll(event)
-        class _None(ItemLink):
+        class _None(__Activate):
             text = _(u'None')
-            def Execute(self, event): _self.DoNone(event)
+            def Execute(self, event): self._selectExact([])
+        class _Selected(__Activate):
+            text = _(u'Selected')
+            help = _(u'Activate only the mods selected in the list')
+            def Execute(self, event):
+                self._selectExact(_self.window.GetSelected())
         class _Edit(ItemLink):
             text = _(u'Edit Lists...')
             def Execute(self, event): _self.DoEdit(event)
@@ -105,26 +115,19 @@ class Mods_LoadList(ChoiceLink):
             text = _(u'Save List...')
             def _enable(self): return bool(bosh.modInfos.activeCached)
             def Execute(self, event): _self.DoSave(event)
-        self.extraItems = [_All(), _None(), _SaveLink(), _Edit(),
+        self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]
-        class _LoListLink(ItemLink):
+        class _LoListLink(__Activate):
             def Execute(self, event):
                 """Select mods in list."""
                 mods = filter(lambda m: m in _self.loadListsDict[self.text],
                               map(GPath, self.window.GetItems()))
-                errorMessage = bosh.modInfos.selectExact(mods)
-                _self._refresh()
-                if errorMessage: self._showError(errorMessage, self.text)
+                self._selectExact(mods)
         self.__class__.cls = _LoListLink
 
     @property
     def _choices(self):
         return sorted(self.loadListsDict.keys(), key=lambda a: a.lower())
-
-    def DoNone(self,event):
-        """Unselect all mods."""
-        bosh.modInfos.selectExact([])
-        self._refresh()
 
     def DoAll(self,event):
         """Select all mods."""
@@ -154,8 +157,8 @@ class Mods_LoadList(ChoiceLink):
         bosh.settings.setChanged('bash.loadLists.data')
 
     def DoEdit(self,event):
-        data = _Mods_LoadListData(self.window)
-        balt.ListEditor.Display(self.window, _(u'Load Lists'), data)
+        editorData = _Mods_LoadListData(self.window)
+        balt.ListEditor.Display(self.window, _(u'Load Lists'), editorData)
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):

@@ -4104,9 +4104,13 @@ class ModInfos(FileInfos):
         return self.plugins.lord.activeOrdered
     def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
     def loIndexCachedOrMax(self, mod):
-        try: return self.plugins.lord.lindex(mod)
+        try: return self.loIndexCached(mod)
         except KeyError:
             return sys.maxint # sort mods that do not have a load order LAST
+    def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
+    def hexIndexString(self, masterName):
+        return u'%02X' % (self.activeIndexCached(masterName),) \
+            if self.isActiveCached(masterName) else u''
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
@@ -4432,7 +4436,7 @@ class ModInfos(FileInfos):
                     log(bul+u'xx '+mod.s)
                 log.setHeader(head+_(u'Masters for %s: ') % fileInfo.name.s)
                 present = set(x for x in masters if x in self)
-                if fileInfo.name in self: #--In case is bashed patch
+                if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
                     present.add(fileInfo.name)
                 merged,imported = self.getSemiActive(present)
             else:
@@ -4443,7 +4447,7 @@ class ModInfos(FileInfos):
             allMods = self.getOrdered([x for x in allMods if x in self])
             #--List
             modIndex = 0
-            if not wtxt: log(u'[spoiler][xml]\n', False)
+            if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
             for name in allMods:
                 if name in masters:
                     prefix = bul+u'%02X' % modIndex

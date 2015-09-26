@@ -26,3 +26,8 @@ scripts/dist/*.7z
 # translation files
 Mopy/bash/l10n/*.mo
 Mopy/bash/l10n/*NEW.txt
+
+# IDE files
+.idea/
+# if a symlink
+.idea
