@@ -3888,15 +3888,17 @@ class BashStatusBar(wx.StatusBar):
             if over >= len(self.buttons): over -= 1
             if over not in (wx.NOT_FOUND, self.dragging):
                 self.moved = True
-                # update self.buttons
                 button = self.buttons[self.dragging]
-                self.buttons.remove(button)
-                self.buttons.insert(over,button)
                 # update settings
                 uid = self.GetLink(button=button).uid
+                overUid = self.GetLink(index=over).uid
                 settings['bash.statusbar.order'].remove(uid)
-                settings['bash.statusbar.order'].insert(over,uid)
+                overIndex = settings['bash.statusbar.order'].index(overUid)
+                settings['bash.statusbar.order'].insert(overIndex, uid)
                 settings.setChanged('bash.statusbar.order')
+                # update self.buttons
+                self.buttons.remove(button)
+                self.buttons.insert(over,button)
                 self.dragging = over
                 # Refresh button positions
                 self.OnSize()
