@@ -43,8 +43,7 @@ def exportConfig(patchName, config, isCBash, win):
         defaultDir=outDir, defaultFile=outFile,
         wildcard=u'*_Configuration.dat')
     if outPath:
-        pklPath = outPath + u'.pkl'
-        table = bolt.Table(bosh.PickleDict(outPath, pklPath))
+        table = bolt.Table(bosh.PickleDict(outPath))
         table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (%s)' % (
             [u'Python', u'CBash'][isCBash])), 'bash.patch.configs', config)
         table.save()

@@ -129,13 +129,12 @@ def listArchiveContents(fileName):
 # Util Classes ----------------------------------------------------------------
 class PickleDict(bolt.PickleDict):
     """Dictionary saved in a pickle file."""
-    def __init__(self,path,oldPath=None,readOnly=False):
+    def __init__(self,path,readOnly=False):
         bolt.PickleDict.__init__(self,path,readOnly)
-        self.oldPath = oldPath or GPath(u'')
 
     def exists(self):
         """See if pickle file exists."""
-        return bolt.PickleDict.exists(self) or self.oldPath.exists()
+        return bolt.PickleDict.exists(self)
 
     def load(self):
         """Loads vdata and data from file or backup file.
@@ -153,13 +152,6 @@ class PickleDict(bolt.PickleDict):
           2: Data read from backup file
         """
         result = bolt.PickleDict.load(self)
-        if not result and self.oldPath.exists():
-            try:
-                with self.oldPath.open('r') as ins:
-                    self.data.update(cPickle.load(ins))
-                result = 1
-            except EOFError:
-                pass
         #--Update paths
         # def textDump(path):
         #     deprint(u'Text dump:',path)
@@ -173,11 +165,7 @@ class PickleDict(bolt.PickleDict):
 
     def save(self):
         """Save to pickle file."""
-        saved = bolt.PickleDict.save(self)
-        if saved:
-            self.oldPath.remove()
-            self.oldPath.backup.remove()
-        return saved
+        return bolt.PickleDict.save(self)
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -3744,8 +3732,7 @@ class FileInfos(DataDict):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
         # the type of the table keys is always bolt.Path
-        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
-                                           self.bashDir.join(u'Table.pkl')))
+        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat')))
 
     def __init__(self, dir_, factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
@@ -4859,8 +4846,7 @@ class SaveInfos(FileInfos):
         FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(PickleDict(
-            dirs['saveBase'].join(u'BashProfiles.dat'),
-            dirs['userApp'].join(u'Profiles.pkl')))
+            dirs['saveBase'].join(u'BashProfiles.dat')))
 
     def getBashDir(self):
         """Return the Bash save settings directory, creating it if it does
@@ -10241,13 +10227,11 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
-    ##(178): drop .pkl support
 
-    def _load(dat_file=_dat, oldPath=u'bash config.pkl'):
+    def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            PickleDict(dirs['saveBase'].join(dat_file),
-                       dirs['userApp'].join(oldPath), readOnly))
+            PickleDict(dirs['saveBase'].join(dat_file), readOnly))
 
     _dat = dirs['saveBase'].join(_dat)
     _bak = dirs['saveBase'].join(_bak)

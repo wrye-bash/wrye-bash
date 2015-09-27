@@ -340,9 +340,7 @@ class PatchDialog(balt.Dialog):
         #--File dialog
         textPath = balt.askOpen(self.parent,_(u'Import Bashed Patch configuration from:'),textDir,patchName, u'*.dat',mustExist=True)
         if not textPath: return
-        pklPath = textPath+u'.pkl'
-        table = bolt.Table(bosh.PickleDict(
-            textPath, pklPath))
+        table = bolt.Table(bosh.PickleDict(textPath))
         #try the current Bashed Patch mode.
         patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
         if not patchConfigs: #try the old format:
