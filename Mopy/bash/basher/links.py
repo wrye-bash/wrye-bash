@@ -30,7 +30,7 @@ import os
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard,  PeopleList,\
     BashStatusBar, BashNotebook
-from .pm_tab import MessageList
+from .pm_tab import InitMessageLinks
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
@@ -763,16 +763,6 @@ def InitScreenLinks():
         convertMenu.links.append(Screen_ConvertTo(u'bmp',BMP))
         convertMenu.links.append(Screen_ConvertTo(u'tif',TIF))
         ScreensList.itemMenu.append(convertMenu)
-
-#------------------------------------------------------------------------------
-def InitMessageLinks():
-    """Initialize messages tab menus."""
-    #--SaveList: Column Links
-    MessageList.mainMenu.append(Messages_Archive_Import())
-    MessageList.mainMenu.append(SeparatorLink())
-    MessageList.mainMenu.append(ColumnsMenu())
-    #--ScreensList: Item Links
-    MessageList.itemMenu.append(Message_Delete())
 
 #------------------------------------------------------------------------------
 def InitPeopleLinks():

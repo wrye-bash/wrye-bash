@@ -33,8 +33,7 @@ from ..bolt import GPath, LString
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screen_JpgQuality',
            'Screen_JpgQualityCustom', 'Screen_Rename', 'Screen_ConvertTo',
-           'Messages_Archive_Import', 'Message_Delete', 'People_AddNew',
-           'People_Import', 'People_Karma', 'People_Export',
+           'People_AddNew', 'People_Import', 'People_Karma', 'People_Export',
            'Master_AllowEdit', 'Master_ClearRenames']
 
 # Screen Links ----------------------------------------------------------------
@@ -149,29 +148,6 @@ class Screen_Rename(EnabledLink):
     def _enable(self): return len(self.selected) > 0
 
     def Execute(self,event): self.window.Rename(selected=self.selected)
-
-# Messages Links --------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Messages_Archive_Import(ItemLink):
-    """Import messages from html message archive."""
-    text = _(u'Import Archives...')
-    help = _(u'Import messages from html message archive')
-
-    def Execute(self,event):
-        textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
-        #--File dialog
-        paths = self._askOpenMulti(title=_(u'Import message archive(s):'),
-                                   defaultDir=textDir, wildcard=u'*.html')
-        if not paths: return
-        bosh.settings['bash.workDir'] = paths[0].head
-        for path in paths:
-            bosh.messages.importArchive(path)
-        self.window.RefreshUI()
-
-#------------------------------------------------------------------------------
-class Message_Delete(balt.UIList_Delete):
-    """Delete messages."""
-    help = _(u'Permanently delete messages')
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------

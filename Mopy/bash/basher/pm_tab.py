@@ -25,8 +25,9 @@ from collections import defaultdict
 import re
 from .. import balt
 from .. import bosh
-from ..balt import Links, TextCtrl, hSizer, vSizer
+from ..balt import Links, TextCtrl, hSizer, vSizer, ItemLink, SeparatorLink
 from . import SashPanel
+from .misc_links import ColumnsMenu
 from ..bosh import formatDate, msgs
 
 class MessageList(balt.UIList):
@@ -141,3 +142,36 @@ class MessagePanel(SashPanel):
         self.gSearchBox.SetValue(u'')
         self.uiList.searchResults = None
         self.uiList.RefreshUI()
+
+#------------------------------------------------------------------------------
+# Messages Links --------------------------------------------------------------
+#------------------------------------------------------------------------------
+class Messages_Archive_Import(ItemLink):
+    """Import messages from html message archive."""
+    text = _(u'Import Archives...')
+    help = _(u'Import messages from html message archive')
+
+    def Execute(self,event):
+        textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
+        #--File dialog
+        paths = self._askOpenMulti(title=_(u'Import message archive(s):'),
+                                   defaultDir=textDir, wildcard=u'*.html')
+        if not paths: return
+        bosh.settings['bash.workDir'] = paths[0].head
+        for path in paths:
+            bosh.messages.importArchive(path)
+        self.window.RefreshUI()
+
+class Message_Delete(balt.UIList_Delete):
+    """Delete messages."""
+    help = _(u'Permanently delete messages')
+
+#------------------------------------------------------------------------------
+def InitMessageLinks():
+    """Initialize messages tab menus."""
+    #--SaveList: Column Links
+    MessageList.mainMenu.append(Messages_Archive_Import())
+    MessageList.mainMenu.append(SeparatorLink())
+    MessageList.mainMenu.append(ColumnsMenu())
+    #--ScreensList: Item Links
+    MessageList.itemMenu.append(Message_Delete())
