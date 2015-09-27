@@ -69,7 +69,7 @@ import wx.gizmos
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
 from ..bass import Resources
-from ..bosh import formatInteger,formatDate
+from ..bosh import formatInteger, formatDate, msgs
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError
 from ..cint import CBash
@@ -3351,7 +3351,7 @@ class MessagePanel(SashPanel):
         SashPanel.__init__(self, parent, isVertical=False)
         gTop,gBottom = self.left,self.right
         #--Contents
-        self.listData = bosh.messages = bosh.Messages()
+        self.listData = bosh.messages = bosh.msgs.Messages()
         self.uiList = MessageList(
             gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
         self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
