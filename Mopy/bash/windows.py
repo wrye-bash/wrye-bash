@@ -3,7 +3,7 @@
 #
 # Contains routines for Windows UI and API functions not found in pywin32.
 #
-# TaskDailog stuff is from taskdialog.py, license below:
+# TaskDialog stuff is from taskdialog.py, license below:
 #
 #       taskdialog.py
 #
@@ -253,32 +253,31 @@ try:
     stockiconinfo.restype = c_uint32
     STOCK_ICON_AVAILABLE = True
 
-    def GetStockIcon(id,flags=0):
+    def GetStockIcon(id_,flags=0):
         flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
         info = SHSTOCKICONINFO()
         info.cbSize = sizeof(info)
-        result = stockiconinfo(id,flags,byref(info))
+        result = stockiconinfo(id_,flags,byref(info))
         if result != 0:
             raise Exception(result)
         return info.hIcon
 
-    def GetStockIconLocation(id,flags=0):
+    def GetStockIconLocation(id_,flags=0):
         flags = ~(~flags|SHGSI_ICON)|SHGSI_ICONLOCATION
         info = SHSTOCKICONINFO()
         info.cbSize = sizeof(info)
-        result = stockiconinfo(id,flags,byref(info))
+        result = stockiconinfo(id_,flags,byref(info))
         if result != 0:
             raise Exception(result)
-        return (info.szPath,info.iIcon)
-
+        return info.szPath,info.iIcon
 except AttributeError:
     STOCK_ICON_AVAILABLE = False
 
-    def GetStockIcon(id,flags=0):
+    def GetStockIcon(id_,flags=0):
         return None
 
-    def GetStockIconLocation(id,flags=0):
-        return (u'',0)
+    def GetStockIconLocation(id_,flags=0):
+        return u'',0
 
 #--Set a Button as a UAC button
 def setUAC(handle,uac=True):
@@ -324,19 +323,16 @@ _HEADING = 3
 class TaskDialog(object):
     """Wrapper class for the Win32 task dialog."""
 
-
     stock_icons = {'warning' : 65535,
                   'error' : 65534,
                   'information' : 65533,
                   'shield' : 65532}
-
     stock_buttons = {'ok' : 0x01, #1
                     'yes' : 0x02, #2
                     'no' : 0x04, #4
                     'cancel' : 0x08, #8
                     'retry' : 0x10, #16
                     'close' : 0x20} #32
-
     stock_button_ids = {'ok': 1,
                        'cancel': 2,
                        'retry': 4,
@@ -347,9 +343,6 @@ class TaskDialog(object):
     def __init__(self, title, heading, content, buttons=[], icon=None,
                  parenthwnd=None):
         """Initialize the dialog."""
-
-
-
         self.__events = {CREATED:[],
                          NAVIGATED:[],
                          BUTTON_CLICKED:[],
@@ -361,13 +354,9 @@ class TaskDialog(object):
                          VERIFICATION_CLICKED:[],
                          HELP:[],
                          EXPANDER_BUTTON_CLICKED:[]}
-
         self.__stockb_indices = []
-
         self.__shield_buttons = []
-
         self.__handle = None
-
 
         self.set_title(title)
         self.set_heading(heading)
@@ -399,21 +388,21 @@ class TaskDialog(object):
     def set_heading(self, heading):
         """Set the heading / main instruction of the dialog."""
         self._heading = heading
-        if self.__handle != None:
+        if self.__handle is not None:
             self.__update_element_text(_HEADING, heading)
         return self
 
     def set_content(self, content):
         """Set the text content or message that the dialog conveys."""
         self._content = content
-        if self.__handle != None:
+        if self.__handle is not None:
             self.__update_element_text(_CONTENT, content)
         return self
 
     def set_footer(self, footer):
         """Set the footer text of the dialog."""
         self._footer = footer
-        if self.__handle != None:
+        if self.__handle is not None:
             self.__update_element_text(_FOOTER, footer)
         return self
 
@@ -443,7 +432,7 @@ class TaskDialog(object):
 
     def set_main_icon(self, icon):
         """Set the icon that appears at the top of the dialog."""
-        if icon == None: return self
+        if icon is None: return self
         if icon in self.stock_icons.keys():
             self._main_icon = self.stock_icons[icon]
             self._main_is_stock = True
@@ -483,7 +472,6 @@ class TaskDialog(object):
         self._progress_bar = {'func':callback, 'range': _range, 'pos':pos}
         return self
 
-
     def set_check_box(self, label, checked=False):
         """Set up a verification check box that appears on the task dialog."""
         self._cbox_label = label
@@ -503,13 +491,10 @@ class TaskDialog(object):
         """Build and display the dialog box."""
         conf = self.__configure(command_links, centered, can_cancel,
                                 can_minimize, hyperlinks, additional_flags)
-
         button = c_int()
         radio = c_int()
         checkbox = c_int()
-
         indirect(byref(conf), byref(button), byref(radio), byref(checkbox))
-
         if button.value >= BUTTONID_OFFSET:
             button = self.__custom_buttons[button.value - BUTTONID_OFFSET][0]
         else:
@@ -519,32 +504,29 @@ class TaskDialog(object):
                     break
             else:
                 button = 0
-
         if getattr(self, '_radio_buttons', False):
             radio = self._radio_buttons[radio.value]
         else:
             radio = radio.value
-
         if checkbox.value == 0:
             checkbox = False
         else:
             checkbox = True
-
-        return (button, radio, checkbox)
+        return button, radio, checkbox
 
     def __configure(self, c_links, centered, close, minimize, h_links, flags):
         conf = TASKDIALOGCONFIG()
 
         if c_links and len(getattr(self, '_buttons', [])) > 0:
-            flags = flags | USE_COMMAND_LINKS
+            flags |= USE_COMMAND_LINKS
         if centered:
-            flags = flags | POSITION_RELATIVE_TO_WINDOW
+            flags |= POSITION_RELATIVE_TO_WINDOW
         if close:
-            flags = flags | ALLOW_DIALOG_CANCELLATION
+            flags |= ALLOW_DIALOG_CANCELLATION
         if minimize:
-            flags = flags | CAN_BE_MINIMIZED
+            flags |= CAN_BE_MINIMIZED
         if h_links:
-            flags = flags | ENABLE_HYPERLINKS
+            flags |= ENABLE_HYPERLINKS
 
         conf.cbSize = sizeof(TASKDIALOGCONFIG)
         conf.hwndParent = self._parent
@@ -552,7 +534,7 @@ class TaskDialog(object):
         conf.pszMainInstruction = self._heading
         conf.pszContent = self._content
 
-        attrs = dir(self)
+        attrs = dir(self) # FIXME(ut): unpythonic
 
         if '_width' in attrs:
             conf.cxWidth = self._width
@@ -564,13 +546,13 @@ class TaskDialog(object):
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
                 conf.uFooterIcon.hFooterIcon = self._footer_icon
-                flags = flags | USE_HICON_FOOTER
+                flags |= USE_HICON_FOOTER
         if '_main_icon' in attrs:
             if self._main_is_stock:
                 conf.uMainIcon.pszMainIcon = self._main_icon
             else:
                 conf.uMainIcon.hMainIcon = self._main_icon
-                flags = flags | USE_HICON_MAIN
+                flags |= USE_HICON_MAIN
 
         if '_buttons' in attrs:
             custom_buttons = []
@@ -612,8 +594,8 @@ class TaskDialog(object):
                 c_array[i] = TASKDIALOG_BUTTON(i, button)
             conf.pRadioButtons = c_array
 
-            if self._default_radio == None:
-                flags = flags | NO_DEFAULT_RADIO_BUTTON
+            if self._default_radio is None:
+                flags |= NO_DEFAULT_RADIO_BUTTON
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
@@ -623,22 +605,22 @@ class TaskDialog(object):
             conf.pszExpandedInformation = self._expander_data[2]
 
             if self._expander_expanded:
-                flags = flags | EXPANDED_BY_DEFAULT
+                flags |= EXPANDED_BY_DEFAULT
             if self._expands_at_footer:
-                flags = flags | EXPAND_FOOTER_AREA
+                flags |= EXPAND_FOOTER_AREA
 
         if '_cbox_label' in attrs:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
-                flags = flags | VERIFICATION_FLAG_CHECKED
+                flags |= VERIFICATION_FLAG_CHECKED
 
         if '_marquee_progress_bar' in attrs:
-            flags = flags | SHOW_MARQUEE_PROGRESS_BAR
-            flags = flags | CALLBACK_TIMER
+            flags |= SHOW_MARQUEE_PROGRESS_BAR
+            flags |= CALLBACK_TIMER
 
         if '_progress_bar' in attrs:
-            flags = flags | SHOW_PROGRESS_BAR
-            flags = flags | CALLBACK_TIMER
+            flags |= SHOW_PROGRESS_BAR
+            flags |= CALLBACK_TIMER
 
         conf.dwFlags = flags
         conf.pfCallback = PFTASKDIALOGCALLBACK(self.__callback)
@@ -647,13 +629,11 @@ class TaskDialog(object):
     def __parse_button(self, text):
         elevation = False
         default = False
-
         if text.startswith('+') and len(text) > 1:
             text = text[1:]
             elevation = True
         elif text.startswith(r'\+'):
             text = text[1:]
-
         if text.startswith('+\\') and text.isupper():
             text = text[0] + text[2:]
         elif text.startswith('\\') and text.isupper():
@@ -665,20 +645,16 @@ class TaskDialog(object):
                 text = splits[1] + splits[2].capitalize()
             else:
                 text = splits[0].capitalize() + splits[1] + splits[2]
-
         return text, elevation, default
 
     def __callback(self, handle, notification, wparam, lparam, refdata):
         args = [self]
         if notification == CREATED:
             self.__handle = handle
-
             for bID in self.__shield_buttons:
                 windll.user32.SendMessageW(self.__handle, _SETSHIELD, bID, 1)
-
             if getattr(self, '_marquee_progress_bar', False):
                 self.__set_marquee_speed()
-
         elif notification == BUTTON_CLICKED:
             if wparam >= BUTTONID_OFFSET:
                 button = self.__custom_buttons[wparam - BUTTONID_OFFSET][0]
@@ -691,39 +667,31 @@ class TaskDialog(object):
                 else:
                     button = 0
                 args.append(button)
-
         elif notification == HYPERLINK_CLICKED:
             args.append(wstring_at(lparam))
-
         elif notification == RADIO_BUTTON_CLICKED:
             if getattr(self, '_radio_buttons', False):
                 radio = self._radio_buttons[wparam]
             else:
                 radio = wparam
             args.append(radio)
-
         elif notification == VERIFICATION_CLICKED:
             args.append(wparam)
-
         elif notification == EXPANDER_BUTTON_CLICKED:
             if wparam == 0:
                 collapsed = True
             else:
                 collapsed = False
             args.append(collapsed)
-
         elif notification == DESTROYED:
             self.__handle = None
-
         elif notification == TIMER:
             args.append(wparam)
-
             if getattr(self, '_progress_bar', False):
                 callback = self._progress_bar['func']
                 new_pos = callback(self)
                 self._progress_bar['pos'] = new_pos
                 self.__update_progress_bar()
-
         for func in self.__events[notification]:
             func(*args)
 
@@ -732,7 +700,7 @@ class TaskDialog(object):
                                    1, self._marquee_speed)
 
     def __update_element_text(self, element, text):
-        if self.__handle == None:
+        if self.__handle is None:
             raise Exception("Dialog is not yet created, or has been destroyed.")
         windll.user32.SendMessageW(self.__handle, _SETELEMENT, element, text)
 
