@@ -667,14 +667,6 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
 import windows
 canVista = windows.TASK_DIALOG_AVAILABLE
 
-def getUACIcon(size='small'):
-    if size == 'small':
-        flag = windows.SHGSI_SMALLICON
-    else:
-        flag = windows.SHGSI_LARGEICON
-    path,idex = windows.GetStockIconLocation(windows.SIID_SHIELD,flag)
-    return path+u';%s' % idex
-
 def setUAC(button_,uac=True):
     windows.setUAC(button_.GetHandle(),uac)
 
