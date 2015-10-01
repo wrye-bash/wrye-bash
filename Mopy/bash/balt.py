@@ -932,33 +932,41 @@ class FileOperationError(Exception):
 
 class AccessDeniedError(FileOperationError):
     def __init__(self):
-        self.errno = 120
+        self.errno = 5
         Exception.__init__(self,u'FileOperationError: Access Denied')
 
-class DirectoryFileCollisionError(FileOperationError):
+class CallNotImplementedError(FileOperationError):
+    def __init__(self):
+        self.errno = 120
+        Exception.__init__(self, u'FileOperationError: Call Not Implemented')
+
+class _DirectoryFileCollisionError(FileOperationError):
     def __init__(self, source, dest):
         self.errno = -1
         Exception.__init__(self,u'FileOperationError: colision: moving %s to %s', (source, dest))
 
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
 FileOperationErrorMap = {
-    120: AccessDeniedError,
+    5   : AccessDeniedError,
+    120 : CallNotImplementedError,
     1223: CancelError,
 }
 
 import shutil
-def __copyOrMove(operation, source, target, allowUndo, confirm,
-                 renameOnCollision, silent, parent):
+def __copyOrMove(operation, source, target, renameOnCollision, parent):
+    """WIP shutil shutil move and copy adapted from #96"""
+    # renameOnCollision - if True auto-rename on moving collision, else ask
+    # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = shutil.copytree if operation == FO_COPY else shutil.move
     for fileFrom, fileTo in zip(source, target):
         if fileFrom.isdir():
             if fileTo.exists():
                 if not fileTo.isdir():
-                    raise DirectoryFileCollisionError(fileFrom, fileTo)
+                    raise _DirectoryFileCollisionError(fileFrom, fileTo)
                 # dir exists at target, copy contents individually/recursively
                 for content in os.listdir(fileFrom):
                     _fileOperation(operation, fileFrom.join(content),
-                                   fileTo.join(content), allowUndo,
-                                   confirm, renameOnCollision, silent,
+                                   fileTo.join(content), renameOnCollision,
                                    parent)
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
@@ -972,6 +980,20 @@ def __copyOrMove(operation, source, target, allowUndo, confirm,
 def _fileOperation(operation, source, target=None, allowUndo=True,
                    confirm=True, renameOnCollision=False, silent=False,
                    parent=None):
+    """Docs WIP
+    :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
+    :param source: a Path, basestring or an iterable of those (yak, only accept iterables)
+    :param target: as above, if iterable I guess should have the same length as source
+    :param allowUndo: FOF_ALLOWUNDO: "Preserve undo information, if possible"
+    :param confirm: the opposite of FOF_NOCONFIRMATION ("Respond with Yes to
+    All for any dialog box that is displayed")
+    :param renameOnCollision: FOF_RENAMEONCOLLISION
+    :param silent: FOF_SILENT ("Do not display a progress dialog box")
+    :param parent: HWND to the dialog's parent window
+    .. seealso:
+        `SHFileOperation <http://msdn.microsoft.com/en-us/library/windows
+        /desktop/bb762164(v=vs.85).aspx>`
+    """
     if not source:
         return {}
     abspath = os.path.abspath
@@ -988,8 +1010,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         target = [GPath(abspath(GPath(x).s)) for x in target]
     if shell is not None:
         # flags
-        multiDestFiles = (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
-        flags = (shellcon.FOF_WANTMAPPINGHANDLE| multiDestFiles)
+        flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flags |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
         if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
@@ -999,18 +1021,20 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         target = u'\x00'.join(x.s for x in target)
         # get the handle to parent window to feed to win api
         parent = parent.GetHandle() if parent else None
-        # Do it ##: document return values, especially mapping !
-        result,nAborted,mapping = shell.SHFileOperation(
-            (parent,operation,source,target,flags,None,None))
+        # See SHFILEOPSTRUCT for deciphering return values
+        # result: a windows error code (or 0 for success)
+        # aborted: True if any operations aborted, False otherwise
+        # mapping: maps the old and new names of the renamed files
+        result, aborted, mapping = shell.SHFileOperation(
+            (parent, operation, source, target, flags, None, None))
         if result == 0:
-            if nAborted:
-                raise SkipError(nAborted if nAborted is not True else None)
+            if aborted: raise SkipError()
             return dict(mapping)
         elif result == 2 and operation == FO_DELETE:
             # Delete failed because file didnt exist
             return dict(mapping)
         else:
-            raise FileOperationErrorMap.get(result,FileOperationError(result))
+            raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
@@ -1030,21 +1054,11 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                 else:
                     toDelete.remove()
             return {}
-        # Comments - return values, parameters etc ............................
-        # if operation == FO_MOVE:
-        #     # allowUndo - no effect, we're not going to track file movements manually
-        #     # confirm - no real effect when moving
-        #     # renameOnCollision - if moving collision, auto rename, otherwise ask
-        #     # silent - no real effect, since we're not showing visuals
-        #     collisions = []
-        #     for fileFrom,fileTo in zip(source,target):
-        #         if ((fileFrom.isdir() and fileTo.exists() and fileTo.isdir()) or
-        #             (fileFrom.isfile() and fileTo.exists() and fileTo.isfile())):
-        #             collisions.append(fileTo)
-        #     if collisions:
-        #         pass
-        return __copyOrMove(operation, source, target, allowUndo, confirm,
-                            renameOnCollision, silent, parent)
+        # allowUndo - no effect, we're not going to manually track file moves
+        # confirm - no real effect when moving
+        # silent - no real effect, since we're not showing visuals
+        return __copyOrMove(operation, source, target, renameOnCollision,
+                            parent)
 
 def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
