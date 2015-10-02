@@ -682,13 +682,12 @@ def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
     """Always guard with canVista == True"""
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
-    dialog = _win.TaskDialog(title,heading,message,
-                                buttons=[x[1] for x in buttons],
-                                icon=icon,
-                                parenthwnd=parent.GetHandle() if parent else None)
+    dialog = _win.TaskDialog(title, heading, message,
+                             buttons=[x[1] for x in buttons],
+                             main_icon=icon,
+                             parenthwnd=parent.GetHandle() if parent else None,
+                             footer=footer)
     dialog.bindHyperlink()
-    if footer:
-        dialog.set_footer(footer)
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
@@ -696,15 +695,15 @@ def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
             dialog.set_check_box(checkBoxTxt,False)
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
-    result = dialog.show(commandLinks)
-    for id,title in buttons:
+    button, radio, checkbox = dialog.show(commandLinks)
+    for id_, title in buttons:
         if title.startswith(u'+'): title = title[1:]
-        if title == result[0]:
+        if title == button:
             if checkBoxTxt:
-                return id,result[2]
+                return id_,checkbox
             else:
-                return id
-    return None,result[2]
+                return id_
+    return None, checkbox
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.

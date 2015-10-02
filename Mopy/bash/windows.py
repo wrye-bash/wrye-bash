@@ -340,8 +340,8 @@ class TaskDialog(object):
                        'no': 7,
                        'close': 8}
 
-    def __init__(self, title, heading, content, buttons=[], icon=None,
-                 parenthwnd=None):
+    def __init__(self, title, heading, content, buttons=[], main_icon=None,
+                 parenthwnd=None, footer=None):
         """Initialize the dialog."""
         self.__events = {CREATED:[],
                          NAVIGATED:[],
@@ -357,13 +357,19 @@ class TaskDialog(object):
         self.__stockb_indices = []
         self.__shield_buttons = []
         self.__handle = None
-
-        self.set_title(title)
-        self.set_heading(heading)
-        self.set_content(content)
+        # properties
+        self._title = title
+        self._heading = heading
+        self._content = content
+        self._footer = footer
+        # main icon
+        self._main_is_stock = main_icon in self.stock_icons
+        self._main_icon = self.stock_icons[
+            main_icon] if self._main_is_stock else main_icon
+        # buttons
         self.set_buttons(buttons)
-        self.set_main_icon(icon)
-        self._set_parent_hwnd(parenthwnd)
+        # parent handle
+        self._parent = parenthwnd
 
     def close(self):
         """Close the task dialog."""
@@ -379,32 +385,32 @@ class TaskDialog(object):
     def bindHyperlink(self):
         self.bind(HYPERLINK_CLICKED, lambda *args: StartURL(args[1]))
 
-    def set_title(self, title):
-        """Set the window title of the dialog. Calling this has not effect after
-           show has been called."""
-        self._title = title
-        return self
-
-    def set_heading(self, heading):
+    @property
+    def heading(self): return self._heading
+    @heading.setter
+    def heading(self, heading):
         """Set the heading / main instruction of the dialog."""
         self._heading = heading
         if self.__handle is not None:
             self.__update_element_text(_HEADING, heading)
-        return self
 
-    def set_content(self, content):
+    @property
+    def content(self): return self._content
+    @content.setter
+    def content(self, content):
         """Set the text content or message that the dialog conveys."""
         self._content = content
         if self.__handle is not None:
             self.__update_element_text(_CONTENT, content)
-        return self
 
-    def set_footer(self, footer):
+    @property
+    def footer(self): return self._footer
+    @footer.setter
+    def footer(self, footer):
         """Set the footer text of the dialog."""
         self._footer = footer
         if self.__handle is not None:
             self.__update_element_text(_FOOTER, footer)
-        return self
 
     def set_buttons(self, buttons, convert_stock_buttons=True):
         """
@@ -430,25 +436,11 @@ class TaskDialog(object):
         self._default_radio = default
         return self
 
-    def set_main_icon(self, icon):
-        """Set the icon that appears at the top of the dialog."""
-        if icon is None: return self
-        if icon in self.stock_icons.keys():
-            self._main_icon = self.stock_icons[icon]
-            self._main_is_stock = True
-        else:
-            self._main_icon = icon
-            self._main_is_stock = False
-        return self
-
     def set_footer_icon(self, icon):
         """Set the icon that appears in the footer of the dialog."""
-        if icon in self.stock_icons.keys():
-            self._footer_icon = self.stock_icons[icon]
-            self._footer_is_stock = True
-        else:
-            self._footer_icon = icon
-            self._footer_is_stock = False
+        self._footer_is_stock = icon in self.stock_icons.keys()
+        self._footer_icon = self.stock_icons[
+            icon] if self._footer_is_stock else icon
         return self
 
     def set_expander(self, expander_data, expanded=False, at_footer=False):
@@ -483,9 +475,6 @@ class TaskDialog(object):
         self._width = width
         return self
 
-    def _set_parent_hwnd(self, hwnd):
-        self._parent = hwnd
-
     def show(self, command_links=False, centered=True, can_cancel=False,
              can_minimize=False, hyperlinks=True, additional_flags=0):
         """Build and display the dialog box."""
@@ -508,12 +497,12 @@ class TaskDialog(object):
             radio = self._radio_buttons[radio.value]
         else:
             radio = radio.value
-        if checkbox.value == 0:
-            checkbox = False
-        else:
-            checkbox = True
+        checkbox = not (checkbox.value == 0)
         return button, radio, checkbox
 
+    ###############################
+    # Windows windll.user32 calls #
+    ###############################
     def __configure(self, c_links, centered, close, minimize, h_links, flags):
         conf = TASKDIALOGCONFIG()
 
@@ -534,12 +523,12 @@ class TaskDialog(object):
         conf.pszMainInstruction = self._heading
         conf.pszContent = self._content
 
-        attrs = dir(self) # FIXME(ut): unpythonic
+        attrs = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
 
         if '_width' in attrs:
             conf.cxWidth = self._width
 
-        if '_footer' in attrs:
+        if self._footer:
             conf.pszFooter = self._footer
         if '_footer_icon' in attrs:
             if self._footer_is_stock:
@@ -547,7 +536,7 @@ class TaskDialog(object):
             else:
                 conf.uFooterIcon.hFooterIcon = self._footer_icon
                 flags |= USE_HICON_FOOTER
-        if '_main_icon' in attrs:
+        if self._main_icon is not None:
             if self._main_is_stock:
                 conf.uMainIcon.pszMainIcon = self._main_icon
             else:
@@ -626,7 +615,8 @@ class TaskDialog(object):
         conf.pfCallback = PFTASKDIALOGCALLBACK(self.__callback)
         return conf
 
-    def __parse_button(self, text):
+    @staticmethod
+    def __parse_button(text):
         elevation = False
         default = False
         if text.startswith('+') and len(text) > 1:
