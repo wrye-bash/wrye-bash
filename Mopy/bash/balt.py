@@ -664,34 +664,30 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
-import windows
-canVista = windows.TASK_DIALOG_AVAILABLE
+try:
+    import windows as _win # only import here !
+    from windows import win32gui
+    canVista = _win.TASK_DIALOG_AVAILABLE
+except ImportError: # bare linux (in wine it's imported but malfunctions)
+    deprint('Importing windows.py failed', traceback=True)
+    _win = win32gui = None
+    canVista = False
 
-def getUACIcon(size='small'):
-    if size == 'small':
-        flag = windows.SHGSI_SMALLICON
-    else:
-        flag = windows.SHGSI_LARGEICON
-    path,idex = windows.GetStockIconLocation(windows.SIID_SHIELD,flag)
-    return path+u';%s' % idex
+def setUAC(button_, uac=True):
+    if _win: _win.setUAC(button_.GetHandle(), uac)
 
-def setUAC(button_,uac=True):
-    windows.setUAC(button_.GetHandle(),uac)
-
-def _vistaDialog_Hyperlink(*args):
-    file = args[1]
-    windows.StartURL(file)
-
-def vistaDialog(parent,message,title,buttons=[],checkBoxTxt=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
+                icon=None, commandLinks=True, footer=u'', expander=[],
+                heading=u''):
+    """Always guard with canVista == True"""
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
-    dialog = windows.TaskDialog(title,heading,message,
-                                buttons=[x[1] for x in buttons],
-                                icon=icon,
-                                parenthwnd=parent.GetHandle() if parent else None)
-    dialog.bind(windows.HYPERLINK_CLICKED,_vistaDialog_Hyperlink)
-    if footer:
-        dialog.set_footer(footer)
+    dialog = _win.TaskDialog(title, heading, message,
+                             buttons=[x[1] for x in buttons],
+                             main_icon=icon,
+                             parenthwnd=parent.GetHandle() if parent else None,
+                             footer=footer)
+    dialog.bindHyperlink()
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
@@ -699,15 +695,15 @@ def vistaDialog(parent,message,title,buttons=[],checkBoxTxt=None,icon=None,comma
             dialog.set_check_box(checkBoxTxt,False)
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
-    result = dialog.show(commandLinks)
-    for id,title in buttons:
+    button, radio, checkbox = dialog.show(commandLinks)
+    for id_, title in buttons:
         if title.startswith(u'+'): title = title[1:]
-        if title == result[0]:
+        if title == button:
             if checkBoxTxt:
-                return id,result[2]
+                return id_,checkbox
             else:
-                return id
-    return None,result[2]
+                return id_
+    return None, checkbox
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.

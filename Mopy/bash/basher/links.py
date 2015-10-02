@@ -27,14 +27,14 @@ attributes which are populated here. Therefore the order of menu items is
 also defined in these functions."""
 
 import os
-import win32gui
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MessageList, MasterList, bEnableWizard,  PeopleList,\
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink
+from ..balt import Image, MenuLink, SeparatorLink, win32gui
+from ..bass import winreg # yak
 from ..bolt import deprint, GPath
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -190,7 +190,7 @@ def InitStatusBar():
             target = GPath(target)
         if target.exists():
             icon,idex = icon.split(u',')
-            if icon == u'':
+            if icon == u'' and win32gui is not None:
                 if target.cext == u'.exe':
                     # Use the icon embedded in the exe
                     try:
@@ -201,31 +201,30 @@ def InitStatusBar():
                 else:
                     # Use the default icon for that file type
                     try:
-                        import _winreg
                         if target.isdir():
                             if folderIcon is None:
                                 # Special handling of the Folder icon
-                                folderkey = _winreg.OpenKey(
-                                    _winreg.HKEY_CLASSES_ROOT,
+                                folderkey = winreg.OpenKey(
+                                    winreg.HKEY_CLASSES_ROOT,
                                     u'Folder')
-                                iconkey = _winreg.OpenKey(
+                                iconkey = winreg.OpenKey(
                                     folderkey,
                                     u'DefaultIcon')
-                                filedata = _winreg.EnumValue(
+                                filedata = winreg.EnumValue(
                                     iconkey,0)
                                 filedata = filedata[1]
                                 folderIcon = filedata
                             else:
                                 filedata = folderIcon
                         else:
-                            icon_path = _winreg.QueryValue(
-                                _winreg.HKEY_CLASSES_ROOT,
+                            icon_path = winreg.QueryValue(
+                                winreg.HKEY_CLASSES_ROOT,
                                 target.cext)
-                            pathKey = _winreg.OpenKey(
-                                _winreg.HKEY_CLASSES_ROOT,
+                            pathKey = winreg.OpenKey(
+                                winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
-                            filedata = _winreg.EnumValue(pathKey, 0)[1]
-                            _winreg.CloseKey(pathKey)
+                            filedata = winreg.EnumValue(pathKey, 0)[1]
+                            winreg.CloseKey(pathKey)
                         icon,idex = filedata.split(u',')
                         icon = os.path.expandvars(icon)
                         if not os.path.isabs(icon):

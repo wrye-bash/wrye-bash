@@ -4510,9 +4510,6 @@ def InitImages():
     images['pickle.16'] = _png(u'pickle16.png')
     images['pickle.24'] = _png(u'pickle24.png')
     images['pickle.32'] = _png(u'pickle32.png')
-    #--UAC icons
-    #images['uac.small'] = Image(GPath(balt.getUACIcon('small')),ICO)
-    #images['uac.large'] = Image(GPath(balt.getUACIcon('large')),ICO)
     #--Applications Icons
     Resources.bashRed = balt.ImageBundle()
     Resources.bashRed.Add(images['bash.16'])
