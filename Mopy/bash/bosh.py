@@ -9912,12 +9912,16 @@ except ImportError:
             if not envDefs.get(key):
                 raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             return envDefs[key]
-        def getShellPath(folderKey):
-            import _winreg
-            regKey = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+        def getShellPath(folderKey): # move to env.py, mkdirs
+            from bass import winreg
+            if not winreg:  # unix _ HACK
+                return GPath({'Personal'     : os.path.expanduser("~"),
+                              'Local AppData': os.path.expanduser(
+                                  "~") + u'/.local/share'}[folderKey])
+            regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                 u'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders')
             try:
-                path = _winreg.QueryValueEx(regKey,folderKey)[0]
+                path = winreg.QueryValueEx(regKey,folderKey)[0]
             except WindowsError:
                 raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             regKey.Close()
@@ -10248,25 +10252,23 @@ def initDefaultTools():
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        try:
-            import _winreg
-            for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
-                for wow6432 in (u'',u'Wow6432Node\\'):
-                    try:
-                        key = _winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
-                        value = _winreg.QueryValueEx(key,u'Installed Path')
-                    except:
-                        continue
-                    if value[1] != _winreg.REG_SZ: continue
-                    installedPath = GPath(value[0])
-                    if not installedPath.exists(): continue
-                    tooldirs['boss'] = installedPath.join(u'BOSS.exe')
-                    break
-                else:
+        from bass import winreg
+        if not winreg: return
+        for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            for wow6432 in (u'',u'Wow6432Node\\'):
+                try:
+                    key = winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
+                    value = winreg.QueryValueEx(key,u'Installed Path')
+                except:
                     continue
+                if value[1] != winreg.REG_SZ: continue
+                installedPath = GPath(value[0])
+                if not installedPath.exists(): continue
+                tooldirs['boss'] = installedPath.join(u'BOSS.exe')
                 break
-        except ImportError:
-            pass
+            else:
+                continue
+            break
 
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools',u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')

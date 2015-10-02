@@ -29,7 +29,7 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
-import _winreg
+from bass import winreg
 
 from bolt import GPath, Path, deprint, BoltError
 
@@ -63,15 +63,18 @@ def _supportedGames(useCache=True):
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
         _allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
-        for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+        if not winreg:
+            del module
+            continue
+        for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):
                 for (subkey,entry) in submod.regInstallKeys:
                     try:
-                        key = _winreg.OpenKey(hkey,
+                        key = winreg.OpenKey(hkey,
                             u'Software\\%s%s' % (wow6432,subkey))
-                        value = _winreg.QueryValueEx(key,entry)
+                        value = winreg.QueryValueEx(key,entry)
                     except: continue
-                    if value[1] != _winreg.REG_SZ: continue
+                    if value[1] != winreg.REG_SZ: continue
                     installPath = GPath(value[0])
                     if not installPath.exists(): continue
                     exePath = installPath.join(submod.exe)

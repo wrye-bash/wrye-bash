@@ -23,9 +23,10 @@
 # =============================================================================
 
 """This module just stores some data that all modules have to be able to access
-without worrying about circular imports."""
+without worrying about circular imports. Currently used to expose layout
+and environment issues - do not modify or imitate (ut)."""
 import os as _os
-import ConfigParser
+import ConfigParser as _cp
 
 language = None
 AppVersion = u"306"
@@ -42,7 +43,7 @@ def GetBashIni(iniPath=None, reload_=False): ##: needs work
     global bashIni
     if reload_ or bashIni is None:
         if _os.path.exists(iniPath):
-            bashIni = ConfigParser.ConfigParser()
+            bashIni = _cp.ConfigParser()
             bashIni.read(iniPath)
     return bashIni
 
@@ -53,3 +54,9 @@ class Resources: # this belongs to basher but leads to cyclic imports, so...
     bashBlue = None
     bashDocBrowser = None
     bashMonkey = None
+
+# move with its uses to a cross platform 'env.py' module - maybe add bashIni
+try:
+    import _winreg as winreg
+except ImportError:
+    winreg = None

@@ -30,7 +30,7 @@
 from ctypes import *
 from ctypes.wintypes import MAX_PATH
 import win32gui
-import _winreg
+from bass import winreg
 import subprocess
 
 BUTTONID_OFFSET                 = 1000
@@ -279,8 +279,8 @@ def StartURL(url):
         url = url.s
     # Get default browser location
     try:
-        key = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
-        value = _winreg.EnumValue(key,0)
+        key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
+        value = winreg.EnumValue(key,0)
         cmd = value[1]
         cmd = cmd.replace(u'%1',url)
         subprocess.Popen(cmd)

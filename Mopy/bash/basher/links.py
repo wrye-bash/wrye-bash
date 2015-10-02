@@ -35,6 +35,7 @@ from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink
+from ..bass import winreg # yak
 from ..bolt import deprint, GPath
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -201,31 +202,30 @@ def InitStatusBar():
                 else:
                     # Use the default icon for that file type
                     try:
-                        import _winreg
                         if target.isdir():
                             if folderIcon is None:
                                 # Special handling of the Folder icon
-                                folderkey = _winreg.OpenKey(
-                                    _winreg.HKEY_CLASSES_ROOT,
+                                folderkey = winreg.OpenKey(
+                                    winreg.HKEY_CLASSES_ROOT,
                                     u'Folder')
-                                iconkey = _winreg.OpenKey(
+                                iconkey = winreg.OpenKey(
                                     folderkey,
                                     u'DefaultIcon')
-                                filedata = _winreg.EnumValue(
+                                filedata = winreg.EnumValue(
                                     iconkey,0)
                                 filedata = filedata[1]
                                 folderIcon = filedata
                             else:
                                 filedata = folderIcon
                         else:
-                            icon_path = _winreg.QueryValue(
-                                _winreg.HKEY_CLASSES_ROOT,
+                            icon_path = winreg.QueryValue(
+                                winreg.HKEY_CLASSES_ROOT,
                                 target.cext)
-                            pathKey = _winreg.OpenKey(
-                                _winreg.HKEY_CLASSES_ROOT,
+                            pathKey = winreg.OpenKey(
+                                winreg.HKEY_CLASSES_ROOT,
                                 u'%s\\DefaultIcon' % icon_path)
-                            filedata = _winreg.EnumValue(pathKey, 0)[1]
-                            _winreg.CloseKey(pathKey)
+                            filedata = winreg.EnumValue(pathKey, 0)[1]
+                            winreg.CloseKey(pathKey)
                         icon,idex = filedata.split(u',')
                         icon = os.path.expandvars(icon)
                         if not os.path.isabs(icon):
