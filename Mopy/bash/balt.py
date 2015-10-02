@@ -1382,7 +1382,6 @@ class TabDragMixin(object):
     def __OnDragEndForced(self, event):
         self.__dragging = wx.NOT_FOUND
         self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-        event.Skip()
 
     def __OnDragEnd(self, event):
         if self.__dragging != wx.NOT_FOUND:
@@ -1390,8 +1389,11 @@ class TabDragMixin(object):
             self.__dragging = wx.NOT_FOUND
             try:
                 self.ReleaseMouse()
-            except:
-                pass
+            except AssertionError:
+                """PyAssertionError: C++ assertion "GetCapture() == this"
+                failed at ..\..\src\common\wincmn.cpp(2536) in
+                wxWindowBase::ReleaseMouse(): attempt to release mouse,
+                but this window hasn't captured it""" # assertion error...
         event.Skip()
 
     def __OnDragging(self, event):

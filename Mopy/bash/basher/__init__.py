@@ -3639,7 +3639,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
         self.Bind(wx.EVT_CONTEXT_MENU, self.DoTabMenu)
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._onMouseCaptureLost)
 
     @staticmethod
     def tabLinks(menu):
@@ -3690,12 +3689,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             self.currentPage = self.GetPage(event.GetSelection())
             self.currentPage.ShowPanel()
             event.Skip() ##: shouldn't this always be called ?
-
-    def _onMouseCaptureLost(self, event):
-        """Handle the onMouseCaptureLost event
-        Currently does nothing, but is necessary because without it the first run dialog in OnShow will throw an exception.
-        """
-        pass
 
 #------------------------------------------------------------------------------
 class BashStatusBar(wx.StatusBar):
