@@ -29,19 +29,23 @@
 
 from ctypes import *
 from bolt import deprint
+import subprocess
 
 try:
     from ctypes.wintypes import MAX_PATH
 except ValueError:
     deprint("ctypes.wintypes import failure", traceback=True)
-    MAX_PATH = 1026 # FIXME
+    try:
+        MAX_PATH = int(subprocess.check_output(['getconf', 'PATH_MAX', '/']))
+    except (ValueError, subprocess.CalledProcessError, OSError):
+        deprint('calling getconf failed - error:', traceback=True)
+        MAX_PATH = 4096
 try:
     import win32gui
 except ImportError: # linux
     win32gui = None
     raise
 from bass import winreg
-import subprocess
 
 BUTTONID_OFFSET                 = 1000
 
