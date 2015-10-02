@@ -27,14 +27,13 @@ attributes which are populated here. Therefore the order of menu items is
 also defined in these functions."""
 
 import os
-import win32gui
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MessageList, MasterList, bEnableWizard,  PeopleList,\
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink
+from ..balt import Image, MenuLink, SeparatorLink, win32gui
 from ..bass import winreg # yak
 from ..bolt import deprint, GPath
 # modules below define the __all__ directive
@@ -191,7 +190,7 @@ def InitStatusBar():
             target = GPath(target)
         if target.exists():
             icon,idex = icon.split(u',')
-            if icon == u'':
+            if icon == u'' and win32gui is not None:
                 if target.cext == u'.exe':
                     # Use the icon embedded in the exe
                     try:

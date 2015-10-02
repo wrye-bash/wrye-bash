@@ -28,8 +28,18 @@
 #
 
 from ctypes import *
-from ctypes.wintypes import MAX_PATH
-import win32gui
+from bolt import deprint
+
+try:
+    from ctypes.wintypes import MAX_PATH
+except ValueError:
+    deprint("ctypes.wintypes import failure", traceback=True)
+    MAX_PATH = 1026 # FIXME
+try:
+    import win32gui
+except ImportError: # linux
+    win32gui = None
+    raise
 from bass import winreg
 import subprocess
 
@@ -269,7 +279,7 @@ except AttributeError:
 #--Set a Button as a UAC button
 def setUAC(handle,uac=True):
     """Calls the Windows API to set a button as UAC"""
-    win32gui.SendMessage(handle,0x0000160C,None,uac)
+    if win32gui: win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 #--Start a webpage with an anchor ---------------------------------------------
 # Need to do this specially, because doing it via os.startfile, ShellExecute,
@@ -372,6 +382,9 @@ class TaskDialog(object):
             raise Exception("The control does not support the event.")
         self.__events[event].append(func)
         return self
+
+    def bindHyperlink(self):
+        self.bind(HYPERLINK_CLICKED, lambda *args: StartURL(args[1]))
 
     def set_title(self, title):
         """Set the window title of the dialog. Calling this has not effect after
