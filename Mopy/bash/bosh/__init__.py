@@ -45,7 +45,7 @@ import string
 import struct
 import sys
 from operator import attrgetter
-from functools import wraps
+from functools import wraps, partial
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
@@ -5329,8 +5329,54 @@ class Installer(object):
             _skips.append(lambda f: f.startswith(u'sound\\voice'))
         return _skips
 
-    def _message(self, fileLower, full, archiveRoot, desc, ext, badDlls,
-                    goodDlls):
+    @staticmethod
+    def _init_executables_skips(checkOBSE):
+    # TODO(ut) call ONCE - access settings directly - optimize out !
+        goodDlls = collections.defaultdict(list)
+        goodDlls.update(settings['bash.installers.goodDlls'])
+        badDlls = collections.defaultdict(list)
+        badDlls.update(settings['bash.installers.badDlls'])
+        def __skipExecutable(fileLower, full, archiveRoot, size, crc, extens,
+                             desc, ext, bSkip, exeDir, dialogTitle):
+            if not (os.path.splitext(fileLower)[1] in extens): return False
+            if bSkip or not fileLower.startswith(exeDir): return True
+            if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
+                fileLower]: return True
+            if not checkOBSE: return False
+            elif fileLower in goodDlls and [archiveRoot, size, crc] in \
+                    goodDlls[fileLower]: return False
+            message = Installer._dllMsg(fileLower, full, archiveRoot,
+                                        desc, ext, badDlls, goodDlls)
+            if not balt.askYes(balt.Link.Frame,message, dialogTitle):
+                badDlls[fileLower].append([archiveRoot,size,crc])
+                return True
+            goodDlls[fileLower].append([archiveRoot,size,crc])
+            return False
+        skipObse = not settings['bash.installers.allowOBSEPlugins']
+        obseDir = bush.game.se.shortName.lower() + u'\\'
+        tit = bush.game.se.shortName + _(u' DLL Warning')
+        _obse = partial(__skipExecutable, extens={u'.dll',u'.dlx'},
+            desc=_(u'%s plugin DLL') % bush.game.se.shortName,
+            ext=(_(u'a dll')), bSkip=skipObse, exeDir=obseDir, dialogTitle=tit)
+        skipSd = bush.game.sd.shortName and skipObse
+        sdDir = bush.game.sd.installDir.lower() + u'\\'
+        tit = bush.game.sd.longName + _(u' ASI Warning')
+        _asi = partial(__skipExecutable, extens={u'.asi'},
+            desc=_(u'%s plugin ASI') % bush.game.sd.longName,
+            ext=(_(u'an asi')), bSkip=skipSd, exeDir=sdDir, dialogTitle=tit)
+        skipSp = bush.game.sp.shortName and skipObse
+        spDir = bush.game.sp.installDir.lower() + u'\\'
+        tit = bush.game.sp.longName + _(u' JAR Warning')
+        _jar = partial(__skipExecutable, extens={u'.jar'},
+            desc=_(u'%s patcher JAR') % bush.game.sp.longName,
+            ext=(_(u'a jar')), bSkip=skipSp, exeDir=spDir, dialogTitle=tit)
+        return goodDlls, badDlls, (
+            lambda f, *a: skipObse and f.startswith(obseDir), # optimization ?
+            _obse, _asi, _jar)
+
+
+    @staticmethod
+    def _dllMsg(fileLower, full, archiveRoot, desc, ext, badDlls, goodDlls):
         message = u'\n'.join((
             _(u'This installer (%s) has an %s.'), _(u'The file is %s'),
             _(u'Such files can be malicious and hence you should be very '
@@ -5377,12 +5423,8 @@ class Installer(object):
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
-        skipObse = not settings['bash.installers.allowOBSEPlugins']
-        obseDir = bush.game.se.shortName.lower()+u'\\'
-        skipSd = bush.game.sd.shortName and skipObse
-        sdDir = bush.game.sd.installDir.lower()+u'\\'
-        skipSp = bush.game.sp.shortName and skipObse
-        spDir = bush.game.sp.installDir.lower()+u'\\'
+        goodDlls, badDlls, dll_skips = Installer._init_executables_skips(
+            checkOBSE)
         hasExtraData = self.hasExtraData
         type_    = self.type
         if type_ == 2:
@@ -5407,7 +5449,6 @@ class Installer(object):
             trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
         else:
             trackedInfosTrack = lambda a: None
-        goodDlls, badDlls = settings['bash.installers.goodDlls'],settings['bash.installers.badDlls']
         espms = self.espms
         espmsAdd = espms.add
         espmMap = self.espmMap = collections.defaultdict(list)
@@ -5501,65 +5542,13 @@ class Installer(object):
                     _out = True
                     break
             if _out: continue
-            if skipObse and fileStartsWith(obseDir):
-                continue
-            elif fileExt in {u'.dll',u'.dlx'}:
-                if skipObse: continue
-                if not fileStartsWith(obseDir):
-                    continue
-                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
-                if not checkOBSE:
-                    pass
-                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
-                elif checkOBSE:
-                    desc =  _(u'%s plugin DLL') % bush.game.se.shortName
-                    ext = _(u'a dll')
-                    message = self._message(fileLower, full, archiveRoot,
-                                            desc, ext, badDlls, goodDlls)
-                    if not balt.askYes(balt.Link.Frame,message,bush.game.se.shortName + _(u' DLL Warning')):
-                        badDlls.setdefault(fileLower,[])
-                        badDlls[fileLower].append([archiveRoot,size,crc])
-                        continue
-                    goodDlls.setdefault(fileLower,[])
-                    goodDlls[fileLower].append([archiveRoot,size,crc])
-            elif fileExt == u'.asi':
-                if skipSd: continue
-                if not fileStartsWith(sdDir): continue
-                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
-                if not checkOBSE:
-                    pass
-                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
-                elif checkOBSE:
-                    desc =  _(u'%s plugin ASI') % bush.game.sd.longName
-                    ext = _(u'an asi')
-                    message = self._message(fileLower, full, archiveRoot,
-                                               desc, ext, badDlls, goodDlls)
-                    if not balt.askYes(balt.Link.Frame,message,bush.game.sd.longName + _(u' ASI Warning')):
-                        badDlls.setdefault(fileLower,[])
-                        badDlls[fileLower].append([archiveRoot,size,crc])
-                        continue
-                    goodDlls.setdefault(fileLower,[])
-                    goodDlls[fileLower].append([archiveRoot,size,crc])
-            elif fileExt == u'.jar':
-                if skipSp: continue
-                if not fileStartsWith(spDir): continue
-                if fileLower in badDlls and [archiveRoot,size,crc] in badDlls[fileLower]: continue
-                if not checkOBSE:
-                    pass
-                elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
-                elif checkOBSE:
-                    desc =  _(u'%s patcher JAR') % bush.game.sp.longName
-                    ext = _(u'a jar')
-                    message = self._message(fileLower, full, archiveRoot,
-                                            desc, ext, badDlls, goodDlls)
-                    if not balt.askYes(balt.Link.Frame,message,bush.game.sp.longName + _(u' JAR Warning')):
-                        badDlls.setdefault(fileLower,[])
-                        badDlls[fileLower].append([archiveRoot,size,crc])
-                        continue
-                    goodDlls.setdefault(fileLower,[])
-                    goodDlls[fileLower].append([archiveRoot,size,crc])
+            for lam in dll_skips:
+                if lam(fileLower, full, archiveRoot, size, crc):
+                    _out = True
+                    break
+            if _out: continue
             #--Noisy skips
-            elif fileLower in bethFilesSkip:
+            if fileLower in bethFilesSkip:
                 self.hasBethFiles = True
                 skipDirFilesAdd(full)
                 continue
