@@ -40,6 +40,7 @@ from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
 from .base import ImportPatcher, CBash_ImportPatcher, CountDict
+from ...patcher.base import Patcher
 
 # Functions -------------------------------------------------------------------
 # Factor out common code in the patchers. Serve as a document on the patcher
