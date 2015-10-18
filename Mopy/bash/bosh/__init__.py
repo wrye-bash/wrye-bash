@@ -5280,10 +5280,13 @@ class Installer(object):
         # here the original version checked voices skip - - DOES order matter ?
         if settings['bash.installers.skipScreenshots']: _globalSkips += [
             _compile("fileLower.startswith(u'screenshots')")]
-        if settings['bash.installers.skipTESVBsl']:
-             _globalSkips += [_compile("os.path.splitext(fileLower)[1] == u'.bsl'")]
+        skipExts = ''
+        if settings['bash.installers.skipTESVBsl']: skipExts = "{'.bsl'}"
         if settings['bash.installers.skipImages']:
-            _globalSkips +=  [_compile("os.path.splitext(fileLower)[1] in Installer.imageExts")]
+            if skipExts: skipExts += '|Installer.imageExts'
+            else: skipExts = 'Installer.imageExts'
+        if skipExts: _globalSkips += [
+                _compile("os.path.splitext(fileLower)[1] in " + skipExts)]
         Installer._globalSkips = _globalSkips
 
     def _initComplexSkips(self):
