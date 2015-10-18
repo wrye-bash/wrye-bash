@@ -5261,35 +5261,29 @@ class Installer(object):
     @staticmethod
     def initGlobalSkips():
         _globalSkips = []
-        if settings['bash.installers.skipDistantLOD']:
-             _globalSkips += [lambda f: f.startswith(u'distantlod')]
-        if settings['bash.installers.skipLandscapeLODMeshes']:
-            _globalSkips += [lambda f: f.startswith(u'meshes\\landscape\\lod')]
+        def _compile(s): return compile(s, '<string>', 'eval')
+        if settings['bash.installers.skipDistantLOD']: _globalSkips += [
+            _compile("fileLower.startswith(u'distantlod')")]
+        if settings['bash.installers.skipLandscapeLODMeshes']:_globalSkips += [
+            _compile("fileLower.startswith(u'meshes\\landscape\\lod')")]
         # LOD textures
-        skipLandscapeLODTextures = settings[
-            'bash.installers.skipLandscapeLODTextures']
-        skipLandscapeLODNormals = settings[
-            'bash.installers.skipLandscapeLODNormals']
-        skipAllTextures = skipLandscapeLODTextures and skipLandscapeLODNormals
+        skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
+        skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
+        skipAllTextures = skipLODTextures and skipLODNormals
+        head = "fileLower.startswith(u'textures\\landscapelod\\generated')"
         if skipAllTextures:
-            _globalSkips += [lambda f: f.startswith(
-                    u'textures\\landscapelod\\generated')]
-        elif skipLandscapeLODTextures:
-            _globalSkips += [lambda f:
-                f.startswith(u'textures\\landscapelod\\generated') and
-                                 not f.endswith(u'_fn.dds')]
-        elif skipLandscapeLODNormals:
-            _globalSkips += [lambda f:
-                f.startswith(u'textures\\landscapelod\\generated') and
-                                f.endswith(u'_fn.dds')]
+            _globalSkips += [_compile(head)]
+        elif skipLODTextures: _globalSkips += [
+            _compile(head + " and not fileLower.endswith(u'_fn.dds')")]
+        elif skipLODNormals: _globalSkips += [
+            _compile(head + " and fileLower.endswith(u'_fn.dds')")]
         # here the original version checked voices skip - - DOES order matter ?
-        if settings['bash.installers.skipScreenshots']:
-             _globalSkips += [lambda f: f.startswith(u'screenshots')]
+        if settings['bash.installers.skipScreenshots']: _globalSkips += [
+            _compile("fileLower.startswith(u'screenshots')")]
         if settings['bash.installers.skipTESVBsl']:
-             _globalSkips += [lambda f: os.path.splitext(f)[1] == u'.bsl']
+             _globalSkips += [_compile("os.path.splitext(fileLower)[1] == u'.bsl'")]
         if settings['bash.installers.skipImages']:
-            _globalSkips += [
-                lambda f: os.path.splitext(f)[1] in Installer.imageExts]
+            _globalSkips +=  [_compile("os.path.splitext(fileLower)[1] in Installer.imageExts")]
         Installer._globalSkips = _globalSkips
 
     def _initComplexSkips(self):
@@ -5323,10 +5317,10 @@ class Installer(object):
 
     def _init_skips(self):
         if self.overrideSkips: # DOCS !
-            _skips = []
-        else: _skips = list(Installer._globalSkips)
-        if not self.overrideSkips and self.skipVoices:
-            _skips.append(lambda f: f.startswith(u'sound\\voice'))
+           return []
+        _skips = list(Installer._globalSkips)
+        if self.skipVoices:
+            _skips.append(compile("fileLower.startswith(u'sound\\voice')", '<string>', 'eval'))
         return _skips
 
     @staticmethod
@@ -5533,7 +5527,7 @@ class Installer(object):
             fileStartsWith = fileLower.startswith
             #--Skips
             for lam in _skips:
-                if lam(fileLower):
+                if eval(lam):
                     _out = True
                     break
             if _out: continue
