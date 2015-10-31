@@ -91,6 +91,7 @@
     <li><a href="#screenshots">Screenshots Tab</a>
     <ol>
         <li><a href="#screenshots-overview">Overview</a>
+        <li><a href="#screenshots-alt-path">Change screenshots directory (Oblivion)</a>
         <li><a href="#screenshots-commands">Context Menu Commands</a>
     </ol>
     <li><a href="#launchers">Advanced Launchers</a>
@@ -1563,6 +1564,30 @@
 </figure>
 <h3 id="screenshots-overview">Overview</h3>
 <p>The Screenshots tab allows you to preview any screenshots taken in-game using the built-in Print Screen functionality. These screenshots are saved as bitmap files (.bmp). Selecting a screenshot from the list on the left will display it on the right. Screenshots can be converted from bitmaps into a few other formats using context menu commands.
+
+<h3 id="screenshots-alt-path">Change screenshots directory (Oblivion)</h3>
+<p>By default, Oblivion stores its screenshots in Oblivion's root folder but allows you to change the default directory via an ini setting.
+    You can change the ini setting by directly editing Oblivion.ini or by using the "Next Shot" column menu item in the Screenshots tab.
+    For instance Oblivion Reloaded uses Oblivion\Screenshots. To change the screenshots directory to Oblivion\Screenshots by editing the
+    Oblivion.ini find the following line under the <code>[Display]</code> heading:</p>
+
+    <code>SScreenShotBaseName=ScreenShot</code>
+
+<p>and add the path to the Oblivion\Screenshots folder, i.e.:</p>
+
+    <code>SScreenShotBaseName=C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot</code>
+
+<p>Alternatively hit "Next Shot" and supply the path as in:</p>
+
+    <code>C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot0</code>
+
+<p>where 0 is the (optional) Screenshot base number (it will set the <code>iScreenShotIndex</code> ini setting). A relative path will
+    also work (as in <code>Screenshots\Screenshot</code>). Bash will go ahead and edit the ini for you. You may also create an ini
+    tweak to readily switch directories.
+
+<p><b>IMPORTANT</b>: The base filename "Screenshot" (or any other base name you like) must be included in the path or Oblivion's
+    native screenshots will not work - that is pressing the Prt Scr key will do nothing.
+
 <h3 id="screenshots-commands">Context Menu Commands</h3>
 <table>
     <thead>
@@ -1570,7 +1595,7 @@
         <tr><th>Command<th>Description
     <tbody>
         <tr><td>Open<td>View the screenshot directory in Windows Explorer.
-        <tr><td>Next Shot<td>Set the name and number of the next screenshot.
+        <tr><td>Next Shot<td>Set any or all of the base name and number of the next screenshot as well as the screenshot directory
         <tr><td>JPEG Quality<td>Set the quality of JPEGs created during conversion.
 </table>
 <table>
