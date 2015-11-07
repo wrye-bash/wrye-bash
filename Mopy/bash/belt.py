@@ -17,20 +17,18 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
-#===================================================
-# Specific parser for Wrye Bash
-#===================================================
+"""Specific parser for Wrye Bash."""
+
 import ScriptParser         # generic parser class
 from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
-import bosh, balt, bolt, basher, bush
-import struct, string
+import bosh, balt, bolt, bush
 import win32api
 import StringIO
 import traceback
@@ -68,18 +66,19 @@ class WizardReturn(object):
         self.SelectSubPackages = []
         self.IniEdits = {}
         self.Install = False
-        self.PageSize = wx.DefaultSize
-        self.Pos = wx.DefaultPosition
+        self.PageSize = balt.defSize
+        self.Pos = balt.defPos
 
 # InstallerWizard ----------------------------------
 #  Class used by Wrye Bash, creates a wx Wizard that
 #  dynamically creates pages based on a script
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
-    def __init__(self, link, subs, pageSize, pos):
-        wiz.Wizard.__init__(self, link.gTank, wx.ID_ANY, _(u'Installer Wizard'),
-                            pos=pos,
-                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER|wx.MAXIMIZE_BOX)
+    def __init__(self, parentWindow, idata, path, bAuto, bArchive, subs,
+                 pageSize, pos):
+        wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
+                            pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
+                                           wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
 
         #'dummy' page tricks the wizard into always showing the "Next" button,
         #'next' will be set by the parser
@@ -94,9 +93,7 @@ class InstallerWizard(wiz.Wizard):
         self.finishing = False
 
         #parser that will spit out the pages
-        path = link.selected[0]
-        installer = link.data[path]
-        bArchive = link.isSingleArchive()
+        installer = idata[path]
         if bArchive:
             with balt.Progress(_(u'Extracting wizard files...'),u'\n'+u' '*60,abort=True) as progress:
                 # Extract the wizard, and any images as well
@@ -117,8 +114,8 @@ class InstallerWizard(wiz.Wizard):
                     ], bosh.SubProgress(progress,0,0.9), recurse=True)
             self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
-            self.wizard_file = link.data.dir.join(path.s, installer.hasWizard)
-        self.parser = WryeParser(self, installer, subs, bArchive, path, link.bAuto)
+            self.wizard_file = idata.dir.join(path.s, installer.hasWizard)
+        self.parser = WryeParser(self, installer, subs, bArchive, path, bAuto)
 
         #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
@@ -199,10 +196,14 @@ class InstallerWizard(wiz.Wizard):
 #  a couple simple things here
 #-------------------------------------------------------------
 class PageInstaller(wiz.PyWizardPage):
+
     def __init__(self, parent):
         wiz.PyWizardPage.__init__(self, parent)
         self.parent = parent
-        parent.FindWindowById(wx.ID_FORWARD).Enable(True)
+        self._enableForward(True)
+
+    def _enableForward(self, enable):
+        self.parent.FindWindowById(wx.ID_FORWARD).Enable(enable)
 
     def GetNext(self): return self.parent.dummy
     def GetPrev(self):
@@ -217,7 +218,7 @@ class PageInstaller(wiz.PyWizardPage):
 # End PageInstaller ------------------------------------------
 
 # PageError --------------------------------------------------
-#  Page that shows an error message, hase only a "Cancel"
+#  Page that shows an error message, has only a "Cancel"
 #  button enabled, and cancels any changes made
 #-------------------------------------------------------------
 class PageError(PageInstaller):
@@ -225,12 +226,12 @@ class PageError(PageInstaller):
         PageInstaller.__init__(self, parent)
 
         #Disable the "Finish"/"Next" button
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+        self._enableForward(False)
 
         #Layout stuff
         sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
-        textError = wx.TextCtrl(self, wx.ID_ANY, errorMsg, style=wx.TE_READONLY|wx.TE_MULTILINE)
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, title))
+        textError = balt.RoTextCtrl(self, errorMsg, autotooltip=False)
+        sizerMain.Add(balt.StaticText(parent, label=title))
         sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
         sizerMain.AddGrowableCol(0)
         sizerMain.AddGrowableRow(1)
@@ -250,7 +251,7 @@ class PageError(PageInstaller):
 class PageSelect(PageInstaller):
     def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
         PageInstaller.__init__(self, parent)
-        self.items = listItems
+        self.listItems = listItems
         self.images = listImages
         self.descs = listDescs
         self.bMany = bMany
@@ -259,26 +260,28 @@ class PageSelect(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
-        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
-        self.TitleDesc = wx.StaticText(self, wx.ID_ANY, desc)
+        sizerTitle = balt.hsbSizer((self,))
+        self.TitleDesc = balt.StaticText(self, desc)
         self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
         sizerMain.Add(sizerTitle, 0, wx.EXPAND)
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _(u'Options:')))
+        sizerMain.Add(balt.StaticText(self, _(u'Options:')))
 
         sizerBoxes = wx.GridSizer(1, 2, 5, 5)
-        self.textItem = wx.TextCtrl(self, wx.ID_ANY, u'', style=wx.TE_READONLY|wx.TE_MULTILINE)
+        self.textItem = balt.RoTextCtrl(self, autotooltip=False)
         self.bmpItem = balt.Picture(self,0,0,background=None)
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
         if bMany:
-            self.listOptions = wx.CheckListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
+            self.listOptions = balt.listBox(self, choices=listItems,
+                                            isHScroll=True, kind='checklist')
             for index, default in enumerate(defaultMap):
                 self.listOptions.Check(index, default)
         else:
-            self.listOptions = wx.ListBox(self, wx.ID_ANY, choices=listItems, style=wx.LB_HSCROLL)
-            self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+            self.listOptions = balt.listBox(self, choices=listItems,
+                                            isHScroll=True)
+            self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
                     self.listOptions.Select(index)
@@ -288,7 +291,7 @@ class PageSelect(PageInstaller):
         sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
         sizerMain.Add(sizerBoxes, wx.ID_ANY, wx.EXPAND)
 
-        sizerMain.Add(wx.StaticText(self, wx.ID_ANY, _(u'Description:')))
+        sizerMain.Add(balt.StaticText(self, _(u'Description:')))
         sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
 
         self.SetSizer(sizerMain)
@@ -313,9 +316,8 @@ class PageSelect(PageInstaller):
         except:
             pass
 
-
     def Selection(self, index):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(True)
+        self._enableForward(True)
         self.index = index
         self.textItem.SetValue(self.descs[index])
         # Don't want the bitmap to resize until we call self.Layout()
@@ -335,13 +337,13 @@ class PageSelect(PageInstaller):
         temp = []
         if self.bMany:
             index = -1
-            for item in self.items:
+            for item in self.listItems:
                 index += 1
                 if self.listOptions.IsChecked(index):
                     temp.append(item)
         else:
             for i in self.listOptions.GetSelections():
-                temp.append(self.items[i])
+                temp.append(self.listItems[i])
         if self.parent.parser.choiceIdex < len(self.parent.parser.choices):
             oldChoices = self.parent.parser.choices[self.parent.parser.choiceIdex]
             if temp == oldChoices:
@@ -355,8 +357,8 @@ class PageSelect(PageInstaller):
 # End PageSelect -----------------------------------------
 
 def generateTweakLines(wizardEdits, target):
-    lines = []
-    lines.append(_(u'; Generated by Wrye Bash %s for \'%s\' via wizard') % (basher.settings['bash.version'], target.s))
+    lines = [_(u'; Generated by Wrye Bash %s for \'%s\' via wizard') % (
+        bosh.settings['bash.version'], target.s)]
     for realSection in wizardEdits:
         if realSection == u']set[':
             modFormat = wizardEdits[realSection][0]+u' %(setting)s to %(value)s%(comment)s'
@@ -410,8 +412,8 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
 
         #--Heading
-        sizerTitle = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, u''))
-        textTitle = wx.StaticText(self, wx.ID_ANY, _(u"The installer script has finished, and will apply the following settings:"))
+        sizerTitle = balt.hsbSizer((self,))
+        textTitle = balt.StaticText(self, _(u"The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
         sizerMain.Add(sizerTitle,0,wx.EXPAND)
@@ -419,8 +421,8 @@ class PageFinish(PageInstaller):
         #--Subpackages and Espms
         sizerSubsEspms = wx.BoxSizer(wx.HORIZONTAL)
         subPackageSizer = wx.BoxSizer(wx.VERTICAL)
-        subPackageSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Sub-Packages')),0,wx.BOTTOM,2)
-        self.listSubs = wx.CheckListBox(self, wx.ID_ANY, choices=subs)
+        subPackageSizer.Add(balt.StaticText(self, _(u'Sub-Packages')),0,wx.BOTTOM,2)
+        self.listSubs = balt.listBox(self, choices=subs, kind='checklist')
         self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
@@ -429,8 +431,8 @@ class PageFinish(PageInstaller):
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = wx.BoxSizer(wx.VERTICAL)
-        espmSizer.Add(wx.StaticText(self, wx.ID_ANY, _(u'Esp/ms')),0,wx.BOTTOM,2)
-        self.listEspms = wx.CheckListBox(self, wx.ID_ANY, choices=espmShow)
+        espmSizer.Add(balt.StaticText(self, _(u'Esp/ms')),0,wx.BOTTOM,2)
+        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist')
         self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
@@ -445,13 +447,13 @@ class PageFinish(PageInstaller):
         #--Ini tweaks
         sizerIniTweaks = wx.BoxSizer(wx.HORIZONTAL)
         sizerTweaks = wx.BoxSizer(wx.VERTICAL)
-        sizerTweaks.Add(wx.StaticText(self,wx.ID_ANY,_(u'Ini Tweaks:')),0,wx.BOTTOM,2)
-        self.listInis = wx.ListBox(self, wx.ID_ANY, style=wx.LB_SINGLE, choices=[x.s for x in iniedits.keys()])
+        sizerTweaks.Add(balt.StaticText(self, _(u'Ini Tweaks:')),0,wx.BOTTOM,2)
+        self.listInis = balt.listBox(self, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
         sizerContents = wx.BoxSizer(wx.VERTICAL)
-        sizerContents.Add(wx.StaticText(self,wx.ID_ANY,u''),0,wx.BOTTOM,2)
-        self.listTweaks = wx.ListBox(self,wx.ID_ANY,style=wx.LB_SINGLE)
+        sizerContents.Add(balt.StaticText(self, u''),0,wx.BOTTOM,2)
+        self.listTweaks = balt.listBox(self)
         sizerContents.Add(self.listTweaks,1,wx.EXPAND)
         sizerIniTweaks.Add(sizerTweaks,1,wx.EXPAND|wx.RIGHT,5)
         sizerIniTweaks.Add(sizerContents,1,wx.EXPAND)
@@ -459,27 +461,30 @@ class PageFinish(PageInstaller):
         self.parent.ret.IniEdits = iniedits
 
         #--Notes
-        sizerMain.Add(wx.StaticText(self,wx.ID_ANY,_(u'Notes:')),0,wx.BOTTOM,2)
-        sizerMain.Add(wx.TextCtrl(self,wx.ID_ANY,u''.join(notes),style=wx.TE_READONLY|wx.TE_MULTILINE),1,wx.EXPAND)
+        sizerMain.Add(balt.StaticText(self, _(u'Notes:')),0,wx.BOTTOM,2)
+        sizerMain.Add(
+            balt.RoTextCtrl(self, u''.join(notes), autotooltip=False), 1,
+            wx.EXPAND)
 
         checkSizer = wx.BoxSizer(wx.HORIZONTAL)
         checkSubSizer = wx.BoxSizer(wx.VERTICAL)
         checkSizer.AddStretchSpacer()
         # Apply the selections
-        self.checkApply = wx.CheckBox(self, wx.ID_ANY, _(u'Apply these selections'))
-        self.checkApply.SetValue(bAuto)
-        self.checkApply.Bind(wx.EVT_CHECKBOX, self.OnCheckApply)
+        self.checkApply = balt.checkBox(self, _(u'Apply these selections'),
+                                        onCheck=self.OnCheckApply,
+                                        checked=bAuto)
         checkSubSizer.Add(self.checkApply,0,wx.BOTTOM,2)
         # Also install/anneal the package
-        self.checkInstall = wx.CheckBox(self, wx.ID_ANY, _(u'Install this package'))
-        self.checkInstall.SetValue(basher.settings['bash.installers.autoWizard'])
-        self.checkInstall.Bind(wx.EVT_CHECKBOX, self.OnCheckInstall)
-        self.parent.ret.Install = basher.settings['bash.installers.autoWizard']
+        auto = bosh.settings['bash.installers.autoWizard']
+        self.checkInstall = balt.checkBox(self, _(u'Install this package'),
+                                          onCheck=self.OnCheckInstall,
+                                          checked=auto)
+        self.parent.ret.Install = auto
         checkSubSizer.Add(self.checkInstall)
         checkSizer.Add(checkSubSizer,0,wx.EXPAND)
         sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
 
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(bAuto)
+        self._enableForward(bAuto)
         self.parent.finishing = True
 
         sizerMain.SetSizeHints(self)
@@ -487,7 +492,7 @@ class PageFinish(PageInstaller):
         self.Layout()
 
     def OnCheckApply(self, event):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkApply.IsChecked())
+        self._enableForward(self.checkApply.IsChecked())
 
     def OnCheckInstall(self, event):
         self.parent.ret.Install = self.checkInstall.IsChecked()
@@ -526,58 +531,59 @@ class PageVersions(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
-        self.textWarning = wx.StaticText(self, wx.ID_ANY, _(u'WARNING: The following version requirements are not met for using this installer.'))
+        self.textWarning = balt.StaticText(self, _(u'WARNING: The following version requirements are not met for using this installer.'))
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
-        sizerVersionsTop = wx.StaticBoxSizer(wx.StaticBox(self, wx.ID_ANY, _(u'Version Requirements')))
+        sizerVersionsTop = balt.hsbSizer(
+            (self, wx.ID_ANY, _(u'Version Requirements')))
         sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
         sizerVersions.AddStretchSpacer()
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _(u'Need')))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, _(u'Have')))
+        sizerVersions.Add(balt.StaticText(self, _(u'Need')))
+        sizerVersions.Add(balt.StaticText(self, _(u'Have')))
         sizerVersions.AddStretchSpacer()
 
         # Game
         if bush.game.patchURL != u'':
-            linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.name, bush.game.patchURL)
+            linkGame = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
-            linkGame = wx.StaticText(self, wx.ID_ANY, bush.game.name)
-        linkGame.SetToolTip(wx.ToolTip(bush.game.patchTip))
+            linkGame = balt.StaticText(self, bush.game.displayName)
+        linkGame.SetToolTip(balt.tooltip(bush.game.patchTip))
         sizerVersions.Add(linkGame)
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameNeed))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, gameHave))
-        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGameOk]))
+        sizerVersions.Add(balt.StaticText(self, gameNeed))
+        sizerVersions.Add(balt.StaticText(self, gameHave))
+        sizerVersions.Add(balt.staticBitmap(self, bmp[bGameOk]))
 
         # Script Extender
         if bush.game.se.shortName != u'':
             linkSE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.se.longName, bush.game.se.url)
             linkSE.SetVisitedColour(linkSE.GetNormalColour())
-            linkSE.SetToolTip(wx.ToolTip(bush.game.se.urlTip))
+            linkSE.SetToolTip(balt.tooltip(bush.game.se.urlTip))
             sizerVersions.Add(linkSE)
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seNeed))
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, seHave))
-            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bSEOk]))
+            sizerVersions.Add(balt.StaticText(self, seNeed))
+            sizerVersions.Add(balt.StaticText(self, seHave))
+            sizerVersions.Add(balt.staticBitmap(self, bmp[bSEOk]))
 
         # Graphics extender
         if bush.game.ge.shortName != u'':
             linkGE = wx.HyperlinkCtrl(self, wx.ID_ANY, bush.game.ge.longName, bush.game.ge.url)
             linkGE.SetVisitedColour(linkGE.GetNormalColour())
-            linkGE.SetToolTip(wx.ToolTip(bush.game.ge.urlTip))
+            linkGE.SetToolTip(balt.tooltip(bush.game.ge.urlTip))
             sizerVersions.Add(linkGE)
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geNeed))
-            sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, geHave))
-            sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bGEOk]))
+            sizerVersions.Add(balt.StaticText(self, geNeed))
+            sizerVersions.Add(balt.StaticText(self, geHave))
+            sizerVersions.Add(balt.staticBitmap(self, bmp[bGEOk]))
 
         linkWB = wx.HyperlinkCtrl(self, wx.ID_ANY, u'Wrye Bash', u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(wx.ToolTip(u'http://oblivion.nexusmods.com/'))
+        linkWB.SetToolTip(balt.tooltip(u'http://oblivion.nexusmods.com/'))
         sizerVersions.Add(linkWB)
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbNeed))
-        sizerVersions.Add(wx.StaticText(self, wx.ID_ANY, wbHave))
-        sizerVersions.Add(wx.StaticBitmap(self, wx.ID_ANY, bmp[bWBOk]))
+        sizerVersions.Add(balt.StaticText(self, wbNeed))
+        sizerVersions.Add(balt.StaticText(self, wbHave))
+        sizerVersions.Add(balt.staticBitmap(self, bmp[bWBOk]))
 
         sizerVersions.AddGrowableCol(0)
         sizerVersions.AddGrowableCol(1)
@@ -588,9 +594,9 @@ class PageVersions(PageInstaller):
         sizerMain.AddStretchSpacer()
 
         sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
-        self.checkOk = wx.CheckBox(self, wx.ID_ANY, _(u'Install anyway.'))
-        self.checkOk.Bind(wx.EVT_CHECKBOX, self.OnCheck)
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(False)
+        self.checkOk = balt.checkBox(self, _(u'Install anyway.'),
+                                     onCheck=self.OnCheck)
+        self._enableForward(False)
         sizerCheck.AddStretchSpacer()
         sizerCheck.Add(self.checkOk)
         sizerCheck.AddGrowableRow(0)
@@ -604,7 +610,7 @@ class PageVersions(PageInstaller):
         self.Layout()
 
     def OnCheck(self, event):
-        self.parent.FindWindowById(wx.ID_FORWARD).Enable(self.checkOk.IsChecked())
+        self._enableForward(self.checkOk.IsChecked())
 # END PageVersions -----------------------------------------------
 
 # WryeParser -----------------------------------------------------
@@ -1114,7 +1120,7 @@ class WryeParser(ScriptParser.Parser):
             # No graphics extender available for this game
             return 1
     def fnCompareWBVersion(self, wbWant):
-        wbHave = basher.settings['bash.version']
+        wbHave = bosh.settings['bash.version']
         return cmp(float(wbHave), float(wbWant))
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
@@ -1127,7 +1133,7 @@ class WryeParser(ScriptParser.Parser):
     def fnGetEspmStatus(self, filename):
         file = bolt.GPath(filename)
         if file in bosh.modInfos.merged: return 3   # Merged
-        if file in bosh.modInfos.ordered: return 2  # Active
+        if bosh.modInfos.isActiveCached(file): return 2  # Active
         if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
         if file in bosh.modInfos: return 0          # Inactive
         return -1                                   # Not found
@@ -1586,7 +1592,7 @@ class WryeParser(ScriptParser.Parser):
         geWant = self._TestVersion_Want(ge)
         if geWant == u'None': ge = u'None'
         if not wbWant: wbWant = u'0.0'
-        wbHave = basher.settings['bash.version']
+        wbHave = bosh.settings['bash.version']
 
         ret = self._TestVersion(gameWant, bosh.dirs['app'].join(bush.game.exe))
         bGameOk = ret[0] >= 0

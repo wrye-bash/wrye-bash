@@ -134,7 +134,7 @@
 	<li><b>Resource Conflicts</b> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.
 	<li><b>Data Conflicts</b> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins.
 	<li><b>BSAs</b> are Bethesda Softwork Archives, with <code>.bsa</code> file extensions. They can be used to store resource files such as textures and meshes.
-	<li><b>ITMs</b> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overriden by an ITM record.
+	<li><b>ITMs</b> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
 	<li><b>UDRs</b> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
 </ul>
 <p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q> or <q>Skyrim</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
@@ -146,15 +146,20 @@
 <p><b>Windows Vista &amp; Windows 7 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
 <ol>
-	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q> or <q>skyrim</q> depending on the game) so that the Mopy directory appears in the game folder.
+	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
+		directory appears in the game folder.
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
 <p>Manual Python Version Install:
-<p style="font-style:italic;font-weight:bold;font-size:1em;color:red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
 <ol>
-	<li>Download and install the Wrye Python package from the location Wrye Bash was downloaded from. This package contains all the required Python libraries. If you have previously installed Python and any Python libraries, or the Wrye Python package itself, you may not need to install it again. See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install">Advanced Installation</a> section for the list of included libraries and their versions to check if you need to install any of the libraries bundled in the Wrye Python package.
-	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>skyrim</q> depending on the game) so that the Mopy directory appears in your game folder.
-	<li>Run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q> in the new Mopy folder.
+	<li>Download and install all the required Python libraries and python itself.
+		See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
+		for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
+		you may not need to install them again.
+	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
+	directory appears by the game executable. See the
+	<a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
+	<li>Navigate to the Mopy directory and run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q>.
 </ol>
 
 <h2 id="uninstall">Uninstallation</h2>
@@ -240,7 +245,39 @@
 </ol>
 <p>If you install a package then later change the sub-packages or esp/m files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (eg. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
-<p>To uninstall any package, simply right-click the package in the package list and select <a href="#bainUninstall">Uninstall</a>. You can also uninstall packages that BAIN hasn't installed, which will remove any installed files that match the ones in the package. This is useful for cleaning out mods that were manually installed. Uninstalling via BAIN respects the ownership of files, ie. uninstalling a mod that contains files also installed by a mod listed lower down will not uninstall the lower mod's files. See the next section, <a href="#bain-order">BAIN Package Order</a> for more on this. If the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> option is enabled (the default), then files from other packages previously overriden by the uninstalled package's files will be automatically restored.
+<p>To uninstall any package from the Installers tab select the package
+and right click on it, then select <a href="#bainUninstall">Uninstall</a>.
+This will uninstall
+all Matched files. However, BAIN will not uninstall Mismatched files.
+A Mismatched file is a file that has been altered after it was
+installed. The reason BAIN does not uninstall Mismatched files is BAIN
+ has no way of tracking the source of the alteration if it was not
+done through BAIN. For example, if the file was altered because it was
+ replaced by another mod that was installed manually,
+then uninstallation of the Mismatched file may not be desirable. On
+the other hand, if the file was altered because it was cleaned or
+edited with TESxEdit, or because it was an ini file that was edited
+with a text editor, then it may be desired to uninstall the Mismatched
+ file along with the package that it came from. Such files could be
+deleted from the data folder manually, but there is an easy way to do
+this through BAIN. Before uninstalling the mod, first select the
+package and right click on it, then select <a href="#bainInstall">Install</a>.
+This will
+overwrite any Mismatched files with the version of the file contained
+in the package, making them Matched. Now select <a href="#bainUninstall">Uninstall</a>
+and BAIN
+will uninstall all installed files associated with this package.
+You can also uninstall packages that BAIN hasn't installed, which will
+ remove any installed files that match the ones in the package. This
+is useful for cleaning out mods that were manually installed. Of course you
+	need to add the packages to BAIN first.
+Uninstalling via BAIN respects the ownership of files,
+ie. uninstalling a mod that contains files also installed by a mod
+listed lower in the installation order will not uninstall the lower
+mod's files. See the next section, BAIN Package Order for more on
+this. However, if the Auto-Anneal option is enabled (the default), then files
+from other packages previously overridden by the uninstalled package's
+ files will be automatically restored.
 
 <h3 id="bain-order">BAIN Package Order</h3>
 <p>The install order of packages in BAIN is important as this decides which mod gets its files installed in the case of resource conflicts. Packages may be listed in install order by left-clicking on the <q>Order</q> column header. If two mods try to install the same file, then the mod lower down in the list will have its file overwrite the file of the mod higher up in the list.
@@ -320,8 +357,8 @@
 		<tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
 		<tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
 		<tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors according to the package configuration.
-		<tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package as configured except for files that would be overriden by later packages.
-		<tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active (the default) then files from earlier packages that were previously overriden will be installed as required.
+		<tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package as configured except for files that would be overridden by later packages.
+		<tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active (the default) then files from earlier packages that were previously overridden will be installed as required.
 		<tr><td id="bainApply">Conversions<td>Apply<td>Applies a BAIN Conversion File.
 		<tr><td colspan="2">List Structure<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
 </table>
@@ -397,11 +434,18 @@
 		<tr><th colspan="3">Column Header Context Menu
 		<tr><th colspan="2">Command<th>Description
 	<tbody>
-		<tr><td>File<td>New Bashed Patch...<td>Creates a new <a href="#patch">Bashed Patch</a> plugin. Useful if you accidently delete your current one or wish to have more than one.
+		<tr><td>File<td>New Bashed Patch...<td>Creates a new <a href="#patch">Bashed Patch</a> plugin. Useful if you accidentally delete your current one or wish to have more than one.
 		<tr><td colspan="2" id="modsListMods">List Mods<td>This lists the load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
 		<tr><td colspan="2" id="modsListBashTags">List Bash Tags<td>This lists all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
-		<tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that most other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-		<tr><td colspan="2" id="modsLockLoadOrder">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin load order. More accurately, it detects changes to load order when Wrye Bash is focussed (ie. on top of all other program windows) and reverses those changes.
+		<tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The Oblivion game engine has a bug where it reads all the plugins in the Data folder,
+			and this can affect performance when the number of plugins is around 300+. In Skyrim there is a different problem, namely if you have over
+			508 mod files in your data directory, the engine just plain refuses to load any of them, active or not (see here:
+			http://forums.bethsoft.com/topic/1369136-thrashing-thread-1/?hl=+508). Auto-Ghosting adds a <q>.ghost</q> extension to all
+			inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted
+			plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that most other utilities will not
+			recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
+		Bash displays a warning if a lot of mods and BSAs are detected that you can disable via the ini.
+		<tr><td colspan="2" id="modsLockLoadOrder">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin load order. More accurately, it detects changes to load order when Wrye Bash is focused (ie. on top of all other program windows) and reverses those changes.
 </table>
 <table>
 	<thead>
@@ -456,7 +500,11 @@
 
 <h3 id="patch-merging">Merging Plugins</h3>
 <p>Plugins that contain only certain types of data records can be merged into the Bashed Patch. This then allows these plugins to be deactivated, freeing up space in your load order.
-<p>You should check the checkboxes of all the plugins listed in the <q>Merge Patches</q> section, and ensure the section is checked too. Once the Bashed Patch is built, these plugins can then be deactivated (Wrye Bash will ask to do this for you).
+<p>If you're merging plugins in, you do not need the plugins active to do so.  In fact, trying to merge them in Bash will 1 - ask you to deactivate them
+	before hand, and 2 - deactivate them even if you refused that prompt after the Bashed Patch has been created.
+	So if you're merging plugins, leave them inactive before building, then select to merge them in the Bashed Patch build dialog.  Don't worry,
+	all the algorithms for the rest of the patchers still work as you'd expect on plugins merged this way.
+<p>You should check the checkboxes of all the plugins listed in the <q>Merge Patches</q> section, and ensure the section is checked too.
 <p><b>Do not remove merged mods from your Data folder.</b> They will need to be present when you next rebuild your Bashed Patch.
 
 <h3 id="patch-importing">Importing From Plugins</h3>
@@ -630,20 +678,20 @@
 		<tr><th>Icon<th>Application<th>Icon<th>Application
 	<tbody>
 		<tr><td><img src="../bash/images/obmm32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/2097">Oblivion Mod Manager</a>
-			<td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://skyrim.nexusmods.com/mods/6">BOSS</a>
-		<tr><td><img src="../bash/images/tools/isobl32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
+			<td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://boss-developers.github.io">BOSS</a>
+		<tr><td><img src="../bash/images/tools/isobl32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
+		<tr><td><img src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tools/insanity'srng32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
+		<tr><td><img src="../bash/images/tools/insanity'srng32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tools/randomnpc32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
+		<tr><td><img src="../bash/images/tools/randomnpc32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
 			<td><td>
 		<tr><td><img src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/7808">Oblivion Face Exchange Lite</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tools/modlistgenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
+		<tr><td><img src="../bash/images/tools/modlistgenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
 			<td><td>
-		<tr><td><img src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.invision.tesalliance.org/forums/index.php?app=downloads&amp;showfile=258">Oblivion Book Creator</a>
+		<tr><td><img src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nexusmods.com/oblivion/mods/42132">Oblivion Book Creator</a>
 			<td><td>
 		<tr><td><img src="../bash/images/tools/bsacommander32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3311">BSA Commander</a>
 			<td><td>
@@ -661,7 +709,7 @@
 			<td><td>
 		<tr><td><img src="../bash/images/tools/tes4lodgen32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/15781">Tes4LodGen</a>
 			<td><td>
-		<tr><td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/20516">BOSS</a>
+		<tr><td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://boss-developers.github.io">BOSS</a>
 			<td><td>
 		<tr><td><img src="../bash/images/tools/interactivemapofcyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="http://oblivion.nexusmods.com/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
 			<td><td>
@@ -828,13 +876,13 @@
 	<li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
 	<li>Deactivate UAC. This can be done from the Control Panel, and will turn UAC off across the whole of your computer. It is up to you whether you feel that you have adequate security measures in place to do this without risk.
 	<li>Give yourself <q>Full Control</q> permissions over your game install folder. This will allow you to make any edits you desire while keeping UAC active and on guard for any edits made by programs you do not run, and also means that you do not need to reinstall your game to a new location.
-	<li>Do nothing.  Wrye Bash will detect if it needs to run as Administrator, and give you a dialog with a few opotions:
+	<li>Do nothing.  Wrye Bash will detect if it needs to run as Administrator, and give you a dialog with a few options:
 		<ol>
 			<li>Start Wrye Bash as Administrator:  This will give Wrye Bash full Administrator Rights, allowing it to function fully with no further action, with one exception:
 			    <ul>
 				    <li>You will not be able to drag and drop archives into the Installers window to move or copy those archives into BAIN.  This is because non-Admin processes (explorer.exe) are not allowed to communicate with Admin processes (Wrye Bash) in this manner.
 				</ul>
-			<li>Start normally.  This will start Wrye Bash without Administartor Rights.
+			<li>Start normally.  This will start Wrye Bash without Administrator Rights.
 				<ul>
 					<li>Many actions that require Administrator Privileges will cause a UAC prompt to be shown.  Commonly, these are:
 						<ul>
@@ -898,10 +946,9 @@
 </ul>
 
 <h3 id="trouble-known">Known Bugs</h3>
-<p>Wrye Bash, being a complex program, has a few bugs that are known to its developers. The team is aware of the issues below and will fix them if possible.
-<ul>
-	<li>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors. Avoid using mapped paths and junction links for your game install.
-</ul>
+<p>Wrye Bash, being a complex program, has its share of bugs.
+	Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for know bugs and enhancement requests.
+Respect developer's time - keep discussions there short, sweet and technical. No walls of text or forum chit chat.
 
 <h3 id="trouble-mistakes">Common Issues</h3>
 <table>
@@ -937,17 +984,15 @@ MemoryError</code>
 				<li>If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
 			</ul>
 		<tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
+		<tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
 </table>
 
 
 <h2 id="credits">Credits</h2>
 <img alt="Monkey God of Modding" src="../bash/images/wrye_monkey_87.jpg">
-<h3>Current Maintainers</h3>
+<h3>Current Maintainer</h3>
 <ul>
-	<li>Pacific Morrowind: New imports, exports, tweaks, etc.
-	<li>Lojack: Wizard based install system, Ini tab, etc.
-	<li>myk002: Project management, Asynchronous installer tab, etc.
-	<li>Waruddar: Extensive additions/improvements/fixes, primary author of CBash
+	<li>Utumno: Complete refactoring of the codebase, performance.
 </ul>
 
 <h3>Past Authors</h3>
@@ -958,6 +1003,10 @@ MemoryError</code>
 	<li>Haama: OBSE cofile definitions, various fixes, improvements etc
 	<li>Badhair: OBSE cofile reading code, various optimizations etc.
 	<li>Breeze582000: Bashmon
+	<li>Pacific Morrowind: New imports, exports, tweaks, etc.
+	<li>Lojack: Wizard based install system, Ini tab, etc.
+	<li>myk002: Project management, Asynchronous installer tab, etc.
+	<li>Waruddar: Extensive additions/improvements/fixes, primary author of CBash
 </ul>
 
 <h3>Additional Credits</h3>
@@ -1061,7 +1110,7 @@ MemoryError</code>
 	<ul>
 		<li>Website: <a href="https://github.com/loot/loot">GitHub</a>
 		<li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
-		<li>Usage: Wrye Bash uses this libarary to retrieve Bash Tag suggestions and Dirty mod information from LOOT's plugin databases.
+		<li>Usage: Wrye Bash uses this library to retrieve Bash Tag suggestions and Dirty mod information from LOOT's plugin databases.
 	</ul>
     <li>libloadorder
     <ul>

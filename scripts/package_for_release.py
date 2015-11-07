@@ -18,7 +18,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,7 +39,6 @@ from __future__ import print_function
 import subprocess
 import os
 import shutil
-import re
 import sys
 import argparse
 import binascii
@@ -50,16 +49,14 @@ import traceback
 try:
     #--Needed for the Installer version to find NSIS
     import _winreg
-    have_winreg = True
 except ImportError:
-    have_winreg = False
+    _winreg = False
 
 try:
     #--Needed for the StandAlone version
     import py2exe
-    have_py2exe = True
 except:
-    have_py2exe = False
+    py2exe = False
 
 try:
     #--Needed to ensure non-repo file don't get packaged
@@ -92,12 +89,12 @@ pipe = None
 
 
 def GetVersionInfo(version, padding=4):
-    '''Gets generates version strings from the passed parameter.
+    """Gets generates version strings from the passed parameter.
        Returns the a string used for the 'File Version' property
        of the built WBSA.
        For example, a
        version of 291 would with default padding would return:
-       ('291','0.2.9.1')'''
+       ('291','0.2.9.1')"""
     file_version = (u'0.' * abs(padding))[:-1]
 
     v = version
@@ -110,16 +107,16 @@ def GetVersionInfo(version, padding=4):
     return file_version
 
 
-def rm(file):
-    """Removes a file if it exitsts"""
-    if os.path.isfile(file): os.remove(file)
-    elif os.path.isdir(file): shutil.rmtree(file)
+def rm(node):
+    """Removes a file or directory if it exitsts"""
+    if os.path.isfile(node): os.remove(node)
+    elif os.path.isdir(node): shutil.rmtree(node)
 
 
-def mv(file, dst):
-    """Moves a file if it exists"""
-    if os.path.exists(file):
-        shutil.move(file, dst)
+def mv(node, dst):
+    """Moves a file or directory if it exists"""
+    if os.path.exists(node):
+        shutil.move(node, dst)
 
 
 def lprint(*args, **kwdargs):
@@ -181,14 +178,6 @@ def BuildManualVersion(args, all_files):
     rm(listFile)
 
 
-def BuildStandaloneVersion(args, file_version):
-    """Builds the standalone exe, packages into the standalone manual install
-       version, then cleans up the extra files created."""
-    if CreateStandaloneExe(args, file_version, pipe):
-        PackStandaloneVersion(args)
-        CleanupStandaloneFiles()
-
-
 def CleanupStandaloneFiles():
     """Removes standalone exe files that are not needed after packaging"""
     rm(os.path.join(mopy, u'Wrye Bash.exe'))
@@ -198,7 +187,7 @@ def CleanupStandaloneFiles():
 def CreateStandaloneExe(args, file_version):
     """Builds the standalone exe"""
     # Check for build requirements
-    if not have_py2exe:
+    if not py2exe:
         lprint(" Could not find python module 'py2exe', aborting standalone "
                "creation.")
         return False
@@ -234,18 +223,12 @@ def CreateStandaloneExe(args, file_version):
         return False
 
     # Read in the manifest file
-    file = open(manifest, 'r')
-    manifest = '"""\n' + file.read() + '\n"""'
-    file.close()
+    with open(manifest, 'r') as man:
+        manifest = '"""\n' + man.read() + '\n"""'
 
-    # Determine the extra includes needed (because py2exe wont automatically
-    # detect these)
-    includes = []
-    for file in os.listdir(os.path.join(mopy, u'bash', u'game')):
-        if file.lower()[-3:] == u'.py':
-            if file.lower() != u'__init__.py':
-                includes.append("'bash.game.%s'" % file[:-3])
-    includes = u','.join(includes)
+    # Include the game package and subpackages (because py2exe wont
+    # automatically detect these)
+    packages = "'bash.game'" # notice the double quotes
 
     try:
         # Ensure comtypes is generated, so the required files for wx.lib.iewin
@@ -263,7 +246,7 @@ def CreateStandaloneExe(args, file_version):
             script = ins.read()
         script = script % dict(version=args.version, file_version=file_version,
                                manifest=manifest, upx=None,
-                               upx_compression='-9', includes=includes,
+                               upx_compression='-9', packages=packages,
                                )
         with open(setup, 'w') as out:
             out.write(script)
@@ -338,9 +321,9 @@ def PackStandaloneVersion(args, all_files):
 
 def RelocateNonRepoFiles(all_files):
     """Moves any non-repository files/directories to scripts/temp"""
-    tempDir = os.path.join(u'scripts', u'temp')
-    rm(tempDir)
-    os.makedirs(tempDir)
+    tmpDir = os.path.join(u'scripts', u'temp')
+    rm(tmpDir)
+    os.makedirs(tmpDir)
 
     non_repo = GetNonRepoFiles(all_files)
     if non_repo:
@@ -348,7 +331,7 @@ def RelocateNonRepoFiles(all_files):
     for path in non_repo:
         lprint(" ", path)
         src = os.path.join(mopy, path)
-        dst = os.path.join(tempDir, path)
+        dst = os.path.join(tmpDir, path)
         if os.path.isdir(src):
             shutil.move(src, dst)
         elif os.path.isfile(src):
@@ -372,32 +355,32 @@ def WarnNonRepoFiles(all_files):
 def RestoreNonRepoFiles():
     """Returns non-repository files scripts/temp to their proper locations"""
     failed = []
-    tempDir = os.path.join(u'scripts', u'temp')
-    if os.listdir(tempDir):
+    tmpDir = os.path.join(u'scripts', u'temp')
+    if os.listdir(tmpDir):
         lprint(" Restoring non-repository files")
-    for top, dirs, files in os.walk(tempDir):
-        for dir in dirs:
-            src = os.path.join(top, dir)
+    for top, dirs, files in os.walk(tmpDir):
+        for dir_ in dirs:
+            src = os.path.join(top, dir_)
             dst = os.path.join(mopy, src[13:])
             if not os.path.isdir(dst):
                 try:
                     os.makedirs(dst)
                 except:
                     failed.append(src)
-        for file in files:
-            src = os.path.join(top, file)
+        for file_ in files:
+            src = os.path.join(top, file_)
             dst = os.path.join(mopy, src[13:])
             try:
                 shutil.move(src, dst)
             except:
                 failed.append(src)
     if failed:
-        lprint(" Filed to restore the following moved files:")
-        for file in sorted(failed):
-            lprint(" ", file)
+        lprint(" Failed to restore the following moved files:")
+        for file_ in sorted(failed):
+            lprint(" ", file_)
     else:
         try:
-            rm(tempDir)
+            rm(tmpDir)
         except:
             pass
 
@@ -405,7 +388,7 @@ def RestoreNonRepoFiles():
 def BuildInstallerVersion(args, all_files, file_version):
     """Compiles the NSIS script, creating the installer version"""
     nsis = args.nsis
-    if not have_winreg and nsis is None:
+    if not _winreg and nsis is None:
         lprint(" Could not find python module '_winreg', aborting installer "
                "creation.")
         return
@@ -534,7 +517,7 @@ def GetGitFiles(gitDir, version):
                     # Found, no changes necessary
                     break
             else:
-                # Not found in PATH, try user supplied directory, as well as 
+                # Not found in PATH, try user supplied directory, as well as
                 # common install paths
                 pfiles = os.path.join(os.path.expandvars(u'%PROGRAMFILES%'),
                                       u'Git', u'bin')
@@ -732,7 +715,7 @@ def main():
     # Parse command line, show help if invalid arguments are present
     try:
         args, extra = parser.parse_known_args()
-    except Exception as e:
+    except:
         parser.print_help()
         return
     if len(extra) > 0:

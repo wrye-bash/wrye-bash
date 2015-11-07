@@ -16,8 +16,18 @@ __pycache__/
 # the user ini
 Mopy/bash.ini
 
-# I add a top level folder for dumping local files
-~/*
+# Windows etc
+desktop.ini
+.dropbox
 
 # Release archives.
 scripts/dist/*.7z
+
+# translation files
+Mopy/bash/l10n/*.mo
+Mopy/bash/l10n/*NEW.txt
+
+# IDE files
+.idea/
+# if a symlink
+.idea

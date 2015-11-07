@@ -8,7 +8,7 @@
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
 #
-#  Wrye Bolt is distributed in the hope that it will be useful,
+#  Wrye Bash is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
@@ -17,27 +17,18 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Thin python wrapper around LOOT's API library.
 
-
-"""Python wrapper around LOOT's API library."""
-
-
+To use outside of Bash replace the Bash import below with:
+class Path: pass
+"""
 from ctypes import *
 import os
-import platform
-
-try:
-    # Wrye Bash specific support
-    import bolt
-    from bolt import Path, GPath
-except:
-    class Path:
-        pass
-    def GPath(x): return x
+from bolt import Path
 
 LootApi = None
 version = None
@@ -167,9 +158,9 @@ def Init(path):
         loot_game_tes4:loot_game_tes4,
         'Skyrim':loot_game_tes5,
         loot_game_tes5:loot_game_tes5,
-        'Fallout 3':loot_game_fo3,
+        'Fallout3':loot_game_fo3,
         loot_game_fo3:loot_game_fo3,
-        'Fallout: New Vegas':loot_game_fonv,
+        'FalloutNV':loot_game_fonv,
         loot_game_fonv:loot_game_fonv,
         }
 
@@ -204,8 +195,8 @@ def Init(path):
         details = c_char_p()
         ret = _CGetLastErrorDetails(byref(details))
         if ret != loot_ok:
-            raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % (ret))
-        return unicode(details.value,'utf8')
+            raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % ret)
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     def RegisterCallback(errorCode,callback):
         """Used to setup callback functions for whenever specific error codes
@@ -323,7 +314,7 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self.tags = {}   # BashTag map
             self._DB = loot_db()
-            print gamePath
+            # print gamePath
             _CCreateLootDb(byref(self._DB),game,_enc(gamePath))
 
         def __del__(self):
@@ -373,15 +364,15 @@ def Init(path):
                              byref(userlist))
             added = set([self.tags[tagIds_added[i]] for i in xrange(numAdded.value)])
             removed = set([self.tags[tagIds_removed[i]] for i in xrange(numRemoved.value)])
-            return (added, removed, userlist.value)
+            return added, removed, userlist.value
 
         def GetDirtyMessage(self,plugin):
             clean = c_uint()
             _CGetDirtyMessage(self._DB,_enc(plugin),byref(clean))
             if clean.value == loot_needs_cleaning_yes:
-                return ('Contains dirty edits, needs cleaning.',clean.value)
+                return 'Contains dirty edits, needs cleaning.',clean.value
             else:
-                return ('',clean.value)
+                return '',clean.value
 
         def DumpMinimal(self,file,overwrite):
             _CDumpMinimal(self._DB,_enc(file),overwrite)

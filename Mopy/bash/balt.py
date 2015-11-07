@@ -8,7 +8,7 @@
 #  as published by the Free Software Foundation; either version 2
 #  of the License, or (at your option) any later version.
 #
-#  Wrye Bolt is distributed in the hope that it will be useful,
+#  Wrye Bash is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,49 +27,22 @@
 #..Handled by bolt, so import that.
 import bolt
 import bosh
-from bolt import GPath, deprint
-from bolt import BoltError, AbstractError, ArgumentError, StateError, UncodedError, CancelError, SkipError
-
+from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
+    StateError, CancelError, SkipError
+from bass import Resources
 #--Python
 import cPickle
-import StringIO
 import string
-import struct
-import sys
 import os
 import textwrap
 import time
+import threading
+from functools import partial, wraps
+#--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
-
-# Basics ---------------------------------------------------------------------
-class IdList:
-    """Provides sequences of semi-unique ids. Useful for choice menus.
-
-    Sequence ids come in range from baseId up through (baseId + size - 1).
-    Named ids will be assigned ids starting at baseId + size.
-
-    Example:
-      loadIds = IdList(10000, 90,'SAVE','EDIT','NONE')
-    sequence ids are accessed by an iterator: i.e. iter(loadIds), and
-    named ids accessed by name. e.g. loadIds.SAVE, loadIds.EDIT, loadIds.NONE
-    """
-
-    def __init__(self,baseId,size,*names):
-        self.BASE = baseId
-        self.MAX = baseId + size - 1
-        #--Extra
-        nextNameId = baseId + size
-        for name in names:
-            setattr(self,name,nextNameId)
-            nextNameId += 1
-
-    def __iter__(self):
-        """Return iterator."""
-        for id in xrange(self.BASE,self.MAX+1):
-            yield id
 
 # Constants -------------------------------------------------------------------
 defId = wx.ID_ANY
@@ -77,19 +50,19 @@ defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
-wxListAligns = [wx.LIST_FORMAT_LEFT, wx.LIST_FORMAT_RIGHT, wx.LIST_FORMAT_CENTRE]
+splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
+
+# wx Types
+wxPoint = wx.Point
+wxSize = wx.Size
 
 def fonts():
     font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    try:
-        font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
-        font_italic.SetStyle(wx.FONTSTYLE_SLANT)
-    except: #OLD wxpython!
-        font_bold.SetWeight(wx.BOLD)
-        font_italic.SetStyle(wx.SLANT)
-    return (font_default, font_bold, font_italic)
+    font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
+    font_italic.SetStyle(wx.FONTSTYLE_SLANT)
+    return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
 _settings = {} #--Using applications should override this.
@@ -100,25 +73,25 @@ class Colors:
     """Colour collection and wrapper for wx.ColourDatabase.
     Provides dictionary syntax access (colors[key]) and predefined colours."""
     def __init__(self):
-        self.data = {}
+        self._colors = {}
 
     def __setitem__(self,key,value):
         """Add a color to the database."""
         if not isinstance(value,str):
-            self.data[key] = wx.Colour(*value)
+            self._colors[key] = wx.Colour(*value)
         else:
-            self.data[key] = value
+            self._colors[key] = value
 
     def __getitem__(self,key):
         """Dictionary syntax: color = colours[key]."""
-        if key in self.data:
-            key = self.data[key]
+        if key in self._colors:
+            key = self._colors[key]
             if not isinstance(key,str):
                 return key
         return wx.TheColourDatabase.Find(key)
 
     def __iter__(self):
-        for key in self.data:
+        for key in self._colors:
             yield key
 
 #--Singleton
@@ -144,9 +117,17 @@ class Image:
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
-    def __init__(self,file,type=wx.BITMAP_TYPE_ANY,iconSize=16):
-        self.file = GPath(file)
-        self.type = type
+
+    typesDict = {'png': wx.BITMAP_TYPE_PNG,
+                 'jpg': wx.BITMAP_TYPE_JPEG,
+                 'ico': wx.BITMAP_TYPE_ICO,
+                 'bmp': wx.BITMAP_TYPE_BMP,
+                 'tif': wx.BITMAP_TYPE_TIF,
+                }
+
+    def __init__(self, filename, imageType=wx.BITMAP_TYPE_ANY, iconSize=16):
+        self.file = GPath(filename)
+        self.type = imageType
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -177,6 +158,22 @@ class Image:
                 self.icon.CopyFromBitmap(self.GetBitmap())
         return self.icon
 
+    @staticmethod
+    def GetImage(data, height, width):
+        """Hasty wrapper around wx.EmptyImage - absorb to GetBitmap."""
+        image = wx.EmptyImage(width, height)
+        image.SetData(data)
+        return image
+
+    @staticmethod
+    def Load(srcPath, quality):
+        """Hasty wrapper around wx.Image - loads srcPath with specified
+        quality if a jpeg."""
+        bitmap = wx.Image(srcPath.s)
+        # This only has an effect on jpegs, so it's ok to do it on every kind
+        bitmap.SetOptionInt(wx.IMAGE_OPTION_QUALITY, quality)
+        return bitmap
+
 #------------------------------------------------------------------------------
 class ImageBundle:
     """Wrapper for bundle of images.
@@ -205,24 +202,71 @@ class ImageList:
     def __init__(self,width,height):
         self.width = width
         self.height = height
-        self.data = []
+        self.images = []
         self.indices = {}
         self.imageList = None
 
     def Add(self,image,key):
-        self.data.append((key,image))
+        self.images.append((key,image))
 
     def GetImageList(self):
         if not self.imageList:
             indices = self.indices
             imageList = self.imageList = wx.ImageList(self.width,self.height)
-            for key,image in self.data:
+            for key,image in self.images:
                 indices[key] = imageList.Add(image.GetBitmap())
         return self.imageList
 
     def __getitem__(self,key):
         self.GetImageList()
         return self.indices[key]
+
+# Images ----------------------------------------------------------------------
+class ColorChecks(ImageList):
+    """ColorChecks ImageList. Used by several List classes."""
+    def __init__(self):
+        ImageList.__init__(self, 16, 16)
+        for state in (u'on', u'off', u'inc', u'imp'):
+            for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
+                           u'red'):
+                shortKey = status + u'.' + state
+                imageKey = u'checkbox.' + shortKey
+                file = GPath(bosh.dirs['images'].join(
+                    u'checkbox_' + status + u'_' + state + u'.png'))
+                image = images[imageKey] = Image(file, Image.typesDict['png'])
+                self.Add(image, shortKey)
+
+    def Get(self,status,on):
+        self.GetImageList()
+        if on == 3:
+            if status <= -20: shortKey = 'purple.imp'
+            elif status <= -10: shortKey = 'blue.imp'
+            elif status <= 0: shortKey = 'green.imp'
+            elif status <=10: shortKey = 'yellow.imp'
+            elif status <=20: shortKey = 'orange.imp'
+            else: shortKey = 'red.imp'
+        elif on == 2:
+            if status <= -20: shortKey = 'purple.inc'
+            elif status <= -10: shortKey = 'blue.inc'
+            elif status <= 0: shortKey = 'green.inc'
+            elif status <=10: shortKey = 'yellow.inc'
+            elif status <=20: shortKey = 'orange.inc'
+            else: shortKey = 'red.inc'
+        elif on:
+            if status <= -20: shortKey = 'purple.on'
+            elif status <= -10: shortKey = 'blue.on'
+            elif status <= 0: shortKey = 'green.on'
+            elif status <=10: shortKey = 'yellow.on'
+            elif status <=20: shortKey = 'orange.on'
+            else: shortKey = 'red.on'
+        else:
+            if status <= -20: shortKey = 'purple.off'
+            elif status <= -10: shortKey = 'blue.off'
+            elif status == 0: shortKey = 'green.off'
+            elif status <=10: shortKey = 'yellow.off'
+            elif status <=20: shortKey = 'orange.off'
+            else: shortKey = 'red.off'
+        return self.indices[shortKey]
 
 # Functions -------------------------------------------------------------------
 def fill(text,width=60):
@@ -236,24 +280,26 @@ def ensureDisplayed(frame,x=100,y=100):
         topLeft = wx.Display(0).GetGeometry().GetTopLeft()
         frame.MoveXY(topLeft.x+x,topLeft.y+y)
 
-def setCheckListItems(gList,names,values):
-    """Convenience method for setting a bunch of wxCheckListBox items. The main advantage
-    of this is that it doesn't clear the list unless it needs to. Which is good if you want
-    to preserve the scroll position of the list."""
+def setCheckListItems(checkListBox, names, values):
+    """Convenience method for setting a bunch of wxCheckListBox items. The
+    main advantage of this is that it doesn't clear the list unless it needs
+    to. Which is good if you want to preserve the scroll position of the list.
+    """
     if not names:
-        gList.Clear()
+        checkListBox.Clear()
     else:
-        for index,(name,value) in enumerate(zip(names,values)):
-            if index >= gList.GetCount():
-                gList.Append(name)
+        for index, (name, value) in enumerate(zip(names, values)):
+            if index >= checkListBox.GetCount():
+                checkListBox.Append(name)
             else:
                 if index == -1:
-                    deprint(u"index = -1, name = %s, value = %s" % (name, value))
+                    deprint(
+                        u"index = -1, name = %s, value = %s" % (name, value))
                     continue
-                gList.SetString(index,name)
-            gList.Check(index,value)
-        for index in range(gList.GetCount(),len(names),-1):
-            gList.Delete(index-1)
+                checkListBox.SetString(index, name)
+            checkListBox.Check(index, value)
+        for index in range(checkListBox.GetCount(), len(names), -1):
+            checkListBox.Delete(index - 1)
 
 # Elements --------------------------------------------------------------------
 def bell(arg=None):
@@ -266,13 +312,23 @@ def tooltip(text,wrap=50):
     text = textwrap.fill(text,wrap)
     return wx.ToolTip(text)
 
-class textCtrl(wx.TextCtrl):
-    """wx.TextCtrl with automatic tooltip if text goes past the width of the control."""
-    def __init__(self, parent, id=defId, name='', size=defSize, style=0, autotooltip=True):
-        wx.TextCtrl.__init__(self,parent,id,name,size=size,style=style)
+class TextCtrl(wx.TextCtrl):
+    """wx.TextCtrl with automatic tooltip if text goes past the width of the
+    control."""
+
+    def __init__(self, parent, value=u'', size=defSize, style=0,
+                 multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
+                 maxChars=None, onKillFocus=None, onText=None):
+        if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
+        wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
+                             name=name)
+        if maxChars: self.SetMaxLength(maxChars)
         if autotooltip:
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
+        # event handlers must call event.Skip()
+        if onKillFocus: self.Bind(wx.EVT_KILL_FOCUS, onKillFocus)
+        if onText: self.Bind(wx.EVT_TEXT, onText)
 
     def UpdateToolTip(self, text):
         if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
@@ -287,12 +343,31 @@ class textCtrl(wx.TextCtrl):
         self.UpdateToolTip(self.GetValue())
         event.Skip()
 
-class comboBox(wx.ComboBox):
+class RoTextCtrl(TextCtrl):
+    """Set some styles to a read only textCtrl.
+
+    Name intentionally ugly - tmp class to accommodate current code - do not
+    use - do not imitate my fishing in kwargs."""
+    def __init__(self, *args, **kwargs):
+        """"To accommodate for common text boxes in Bash code - borderline"""
+        # set some styles
+        style = kwargs.get('style', 0)
+        style |= wx.TE_READONLY
+        special = kwargs.pop('special', False) # used in places
+        if special: style |= wx.TE_RICH2 | wx.SUNKEN_BORDER
+        if kwargs.pop('noborder', False): style |= wx.NO_BORDER
+        if kwargs.pop('hscroll', False): style |= wx.HSCROLL
+        kwargs['style'] = style
+        # override default 'multiline' parameter value, 'False', with 'True'
+        kwargs['multiline'] = kwargs.pop('multiline', True)
+        super(RoTextCtrl, self).__init__(*args, **kwargs)
+
+class ComboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
-        autotooltip = kwdargs.get('autotooltip',True)
-        if 'autotooltip' in kwdargs:
-            del kwdargs['autotooltip']
+        autotooltip = kwdargs.pop('autotooltip', True)
+        if kwdargs.pop('readonly', True):
+            kwdargs['style'] = kwdargs.get('style', 0) | wx.CB_READONLY
         wx.ComboBox.__init__(self, *args, **kwdargs)
         if autotooltip:
             self.Bind(wx.EVT_SIZE, self.OnChange)
@@ -305,50 +380,123 @@ class comboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent,bitmap,pos=defPos,size=defSize,style=wx.BU_AUTODRAW,val=defVal,
-        name=u'button',id=defId,onClick=None,tip=None,onRClick=None):
+def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
+        style=wx.BU_AUTODRAW, val=defVal, name=u'button',onClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.BitmapButton(parent,id,bitmap,pos,size,style,val,name)
+    gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
     if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def button(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='button',id=defId,onClick=None,tip=None):
-    """Creates a button, binds click function, then returns bound button."""
-    gButton = wx.Button(parent,id,label,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
+class Button(wx.Button):
+    _id = defId
+    label = u''
+
+    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
+                 val=defVal, name='button', onClick=None, tip=None,
+                 default=False):
+        """Create a button and bind its click function."""
+        if  not label and self.__class__.label: label = self.__class__.label
+        wx.Button.__init__(self, parent, self.__class__._id,
+                           label, pos, size, style, val, name)
+        if onClick: self.Bind(wx.EVT_BUTTON,onClick)
+        if tip: self.SetToolTip(tooltip(tip))
+        if default: self.SetDefault()
+
+class OkButton(Button): _id = wx.ID_OK
+class CancelButton(Button):
+    _id = wx.ID_CANCEL
+    label = _(u'Cancel')
+
+def ok_and_cancel_sizer(parent, okButton=None):
+    return (hSizer(spacer, okButton or OkButton(parent),
+                   (CancelButton(parent), 0, wx.LEFT, 4), )
+            , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
+
+class SaveButton(Button):
+    _id = wx.ID_SAVE
+    label = _(u'Save')
+
+class SaveAsButton(Button): _id = wx.ID_SAVEAS
+class RevertButton(Button): _id = wx.ID_SAVE
+class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
+class OpenButton(Button): _id = wx.ID_OPEN
+class SelectAllButton(Button): _id = wx.ID_SELECTALL
+class ApplyButton(Button): _id = wx.ID_APPLY
+
+def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
+                 val=defVal, name='button', onClick=None, tip=None):
+    """Creates a toggle button, binds toggle function, then returns bound
+    button."""
+    gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
+                              name)
+    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON, onClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
-def toggleButton(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='button',id=defId,onClick=None,tip=None):
-    """Creates a toggle button, binds toggle function, then returns bound button."""
-    gButton = wx.ToggleButton(parent,id,label,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON,onClick)
-    if tip: gButton.SetToolTip(tooltip(tip))
-    return gButton
-
-def checkBox(parent,label=u'',pos=defPos,size=defSize,style=0,val=defVal,
-        name='checkBox',id=defId,onCheck=None,tip=None):
+def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
+             name='checkBox', onCheck=None, tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent,id,label,pos,size,style,val,name)
+    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
     if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX,onCheck)
     if tip: gCheckBox.SetToolTip(tooltip(tip))
+    gCheckBox.SetValue(checked)
     return gCheckBox
 
-def staticText(parent,label=u'',pos=defPos,size=defSize,style=0,name=u"staticText",id=defId,):
+class StaticText(wx.StaticText):
     """Static text element."""
-    return wx.StaticText(parent,id,label,pos,size,style,name)
 
-def spinCtrl(parent,value=u'',pos=defPos,size=defSize,style=wx.SP_ARROW_KEYS,
-        min=0,max=100,initial=0,name=u'wxSpinctrl',id=defId,onSpin=None,tip=None):
+    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
+                 noAutoResize=False, name=u"staticText"):
+        if noAutoResize: style |= wx.ST_NO_AUTORESIZE
+        wx.StaticText.__init__(self, parent, defId, label, pos, size, style,
+                               name)
+        self._label = label # save the unwrapped text
+        self.Rewrap()
+
+    def Rewrap(self, width=None):
+        self.Freeze()
+        self.SetLabel(self._label)
+        self.Wrap(width or self.GetSize().width)
+        self.Thaw()
+
+def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
+             style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
+             name=u'wxSpinctrl', onSpin=None, tip=None):
     """Spin control with event and tip setting."""
-    gSpinCtrl=wx.SpinCtrl(parent,id,value,pos,size,style,min,max,initial,name)
+    gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
+                            initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL,onSpin)
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
+
+def listBox(parent, choices=None, **kwargs):
+    kind = kwargs.pop('kind', 'list')
+    # cater for existing CheckListBox and ListBox style variations
+    style = 0
+    if kwargs.pop('isSingle', kind == 'list'): style |= wx.LB_SINGLE
+    if kwargs.pop('isSort', False): style |= wx.LB_SORT
+    if kwargs.pop('isHScroll', False): style |= wx.LB_HSCROLL
+    if kwargs.pop('isExtended', False): style |= wx.LB_EXTENDED
+    cls = wx.ListBox if kind=='list' else wx.CheckListBox
+    gListBox = cls(parent, choices=choices, style=style) if choices else cls(
+        parent, style=style)
+    callback = kwargs.pop('onSelect', None)
+    if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
+    return gListBox
+
+def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
+    """Tailored to current usages - IAW: do not use."""
+    if bitmap is None:
+        bmp = wx.ArtProvider_GetBitmap
+        if special == 'warn':
+            bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
+        elif special == 'undo':
+            return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
+        else: raise ArgumentError(u'special must be either warn or undo: ' +
+                                  unicode(special, "utf-8") + u' given')
+    return wx.StaticBitmap(parent, defId, bitmap)
 
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
@@ -357,9 +505,9 @@ def aSizer(sizer,*elements):
     """Adds elements to a sizer."""
     for element in elements:
         if isinstance(element,tuple):
-            if element[0] != None:
+            if element[0] is not None:
                 sizer.Add(*element)
-        elif element != None:
+        elif element is not None:
             sizer.Add(element)
     return sizer
 
@@ -383,19 +531,18 @@ def vsbSizer(boxArgs,*elements):
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
     """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    dialog = wx.DirDialog(parent,message,GPath(defaultPath).s,style=wx.DD_NEW_DIR_BUTTON)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        path = GPath(dialog.GetPath())
-        dialog.Destroy()
-        return path
+    with wx.DirDialog(parent, message, GPath(defaultPath).s,
+                      style=wx.DD_NEW_DIR_BUTTON) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return GPath(dialog.GetPath())
 
 #------------------------------------------------------------------------------
-def askContinue(parent,message,continueKey,title=_(u'Warning')):
-    """Shows a modal continue query if value of continueKey is false. Returns True to continue.
-    Also provides checkbox "Don't show this in future." to set continueKey to true."""
+def askContinue(parent, message, continueKey, title=_(u'Warning')):
+    """Show a modal continue query if value of continueKey is false. Return
+    True to continue.
+    Also provides checkbox "Don't show this in future." to set continueKey
+    to true. continueKey must end in '.continue' - should be enforced
+    """
     #--ContinueKey set?
     if _settings.get(continueKey): return wx.ID_OK
     #--Generate/show dialog
@@ -406,39 +553,21 @@ def askContinue(parent,message,continueKey,title=_(u'Warning')):
                              buttons=[(wx.ID_OK,'ok'),
                                       (wx.ID_CANCEL,'cancel'),
                                       ],
-                             checkBox=_(u"Don't show this in the future."),
+                             checkBoxTxt=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
                              )
         check = result[1]
         result = result[0]
     else:
-        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
-        gCheckBox = checkBox(dialog,_(u"Don't show this in the future."))
-        #--Layout
-        sizer = vSizer(
-            (hSizer(
-                (icon,0,wx.ALL,6),
-                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            (hSizer( #--Save/Cancel
-                spacer,
-                button(dialog,id=wx.ID_OK),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            )
-        dialog.SetSizer(sizer)
-        #--Get continue key setting and return
-        result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
+        result, check = _continueDialog(parent, message, title,
+                                        _(u"Don't show this in the future."))
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
 
 def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
+    # labels are OBSOLETE, we must never mess with ids outside balt
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
@@ -455,49 +584,41 @@ def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
                              title=title,
                              message=message,
                              buttons=buttons,
-                             checkBox=_(u"Don't show this for the rest of operation."),
+                             checkBoxTxt=_(u"Don't show this for the rest of operation."),
                              icon='warning',
                              heading=u'',
                              )
         check = result[1]
         result = result[0]
     else:
-        dialog = wx.Dialog(parent,defId,title,size=(350,200),style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        icon = wx.StaticBitmap(dialog,defId,
-            wx.ArtProvider_GetBitmap(wx.ART_WARNING,wx.ART_MESSAGE_BOX, (32,32)))
-        gCheckBox = checkBox(dialog,_(u"Don't show this for rest of operation."))
+        result, check = _continueDialog(parent, message, title, _(
+            u"Don't show this for rest of operation."))
+    if result in (wx.ID_OK, wx.ID_YES):
+        if check:
+            return 2
+        return True
+    return False
+
+def _continueDialog(parent, message, title, checkBoxText):
+    with Dialog(parent, title, size=(350, 200)) as dialog:
+        icon = staticBitmap(dialog)
+        gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
-        buttonSizer = hSizer(spacer)
-        if wx.ID_OK in labels:
-            okButton = button(dialog,id=wx.ID_OK,label=labels[wx.ID_OK])
-        else:
-            okButton = button(dialog,id=wx.ID_OK)
-        buttonSizer.Add(okButton,0,wx.RIGHT,4)
-        for id,lable in labels.itervalues():
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            but = button(dialog,id=id,label=lable)
         sizer = vSizer(
             (hSizer(
-                (icon,0,wx.ALL,6),
-                (staticText(dialog,message,style=wx.ST_NO_AUTORESIZE),1,wx.EXPAND|wx.LEFT,6),
-                ),1,wx.EXPAND|wx.ALL,6),
-            (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
-            (hSizer( #--Save/Cancel
-                spacer,
-                button(dialog,id=wx.ID_OK),
-                (button(dialog,id=wx.ID_CANCEL),0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                (icon, 0, wx.ALL, 6),
+                (StaticText(dialog, message, noAutoResize=True), 1,
+                    wx.EXPAND | wx.LEFT, 6), ),
+             1, wx.EXPAND | wx.ALL, 6),
+            (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
+            ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
-    if result in (wx.ID_OK,wx.ID_YES):
-        if check:
-            return 2
-        return True
-    return False
+        return result, check
+
 #------------------------------------------------------------------------------
 def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
     """Show as file dialog and return selected path(s)."""
@@ -530,75 +651,59 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
 #------------------------------------------------------------------------------
 def askText(parent,message,title=u'',default=u''):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.TextEntryDialog(parent,message,title,default)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.TextEntryDialog(parent, message, title, default) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
     """Shows a text entry dialog and returns result or None if canceled."""
-    dialog = wx.NumberEntryDialog(parent,message,prompt,title,value,min,max)
-    if dialog.ShowModal() != wx.ID_OK:
-        dialog.Destroy()
-        return None
-
-    else:
-        value = dialog.GetValue()
-        dialog.Destroy()
-        return value
+    with wx.NumberEntryDialog(parent, message, prompt, title, value, min,
+                              max) as dialog:
+        if dialog.ShowModal() != wx.ID_OK: return None
+        return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
-import win32gui
-import win32api
-import windows
-canVista = windows.TASK_DIALOG_AVAILABLE
+try:
+    import windows as _win # only import here !
+    from windows import win32gui
+    canVista = _win.TASK_DIALOG_AVAILABLE
+except ImportError: # bare linux (in wine it's imported but malfunctions)
+    deprint('Importing windows.py failed', traceback=True)
+    _win = win32gui = None
+    canVista = False
 
-def getUACIcon(size='small'):
-    if size == 'small':
-        flag = windows.SHGSI_SMALLICON
-    else:
-        flag = windows.SHGSI_LARGEICON
-    path,idex = windows.GetStockIconLocation(windows.SIID_SHIELD,flag)
-    return path+u';%s' % idex
+def setUAC(button_, uac=True):
+    if _win: _win.setUAC(button_.GetHandle(), uac)
 
-def setUAC(button,uac=True):
-    windows.setUAC(button.GetHandle(),uac)
-
-def _vistaDialog_Hyperlink(*args):
-    file = args[1]
-    windows.StartURL(file)
-
-def vistaDialog(parent,message,title,buttons=[],checkBox=None,icon=None,commandLinks=True,footer=u'',expander=[],heading=u''):
+def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
+                icon=None, commandLinks=True, footer=u'', expander=[],
+                heading=u''):
+    """Always guard with canVista == True"""
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
-    dialog = windows.TaskDialog(title,heading,message,
-                                buttons=[x[1] for x in buttons],
-                                icon=icon,
-                                parenthwnd=parent.GetHandle() if parent else None)
-    dialog.bind(windows.HYPERLINK_CLICKED,_vistaDialog_Hyperlink)
-    if footer:
-        dialog.set_footer(footer)
+    dialog = _win.TaskDialog(title, heading, message,
+                             buttons=[x[1] for x in buttons],
+                             main_icon=icon,
+                             parenthwnd=parent.GetHandle() if parent else None,
+                             footer=footer)
+    dialog.bindHyperlink()
     if expander:
         dialog.set_expander(expander,False,not footer)
-    if checkBox:
-        if isinstance(checkBox,basestring):
-            dialog.set_check_box(checkBox,False)
+    if checkBoxTxt:
+        if isinstance(checkBoxTxt,basestring):
+            dialog.set_check_box(checkBoxTxt,False)
         else:
-            dialog.set_check_box(checkBox[0],checkBox[1])
-    result = dialog.show(commandLinks)
-    for id,title in buttons:
+            dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
+    button, radio, checkbox = dialog.show(commandLinks)
+    for id_, title in buttons:
         if title.startswith(u'+'): title = title[1:]
-        if title == result[0]:
-            if checkBox:
-                return (id,result[2])
+        if title == button:
+            if checkBoxTxt:
+                return id_,checkbox
             else:
-                return id
-    return (None,result[2])
+                return id_
+    return None, checkbox
 
 def askStyled(parent,message,title,style,**kwdargs):
     """Shows a modal MessageDialog.
@@ -638,8 +743,10 @@ def askOk(parent,message,title=u'',**kwdargs):
     """Shows a modal error message."""
     return askStyled(parent,message,title,wx.OK|wx.CANCEL,**kwdargs)
 
-def askYes(parent,message,title=u'',default=True,icon=wx.ICON_EXCLAMATION,**kwdargs):
+def askYes(parent, message, title=u'', default=True, questionIcon=False,
+           **kwdargs):
     """Shows a modal warning or question message."""
+    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_EXCLAMATION
     style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
     return askStyled(parent,message,title,style,**kwdargs)
 
@@ -674,7 +781,7 @@ def showList(parent,header,items,maxItems=0,title=u'',**kwdargs):
     return askStyled(parent,message,title,wx.OK,**kwdargs)
 
 #------------------------------------------------------------------------------
-def showLogClose(evt=None):
+def _showLogClose(evt=None):
     """Handle log message closing."""
     window = evt.GetEventObject()
     if not window.IsIconized() and not window.IsMaximized():
@@ -682,25 +789,8 @@ def showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
-def showQuestionLogCloseYes(Event,window):
-    """Handle log message closing."""
-    if window:
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
-        window.Destroy()
-    bosh.question = True
-
-def showQuestionLogCloseNo(Event,window):
-    """Handle log message closing."""
-    if window:
-        if not window.IsIconized() and not window.IsMaximized():
-            _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-            _settings['balt.LogMessage.size'] = window.GetSizeTuple()
-        window.Destroy()
-    bosh.question = False
-
-def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons=None,size=True,question=False):
+def showLog(parent, logText, title=u'', style=0, asDialog=True,
+            fixedFont=False, icons=None, size=True):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -708,62 +798,39 @@ def showLog(parent,logText,title=u'',style=0,asDialog=True,fixedFont=False,icons
         size = _settings.get('balt.LogMessage.size',(400,400))
     #--Dialog or Frame
     if asDialog:
-        window = wx.Dialog(parent,defId,title,pos=pos,size=size,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        window = Dialog(parent, title, pos=pos, size=size)
     else:
         window = wx.Frame(parent,defId,title,pos=pos,size=size,
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
         if icons: window.SetIcons(icons)
     window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,showLogClose)
+    window.Bind(wx.EVT_CLOSE,_showLogClose)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
-    textCtrl = wx.TextCtrl(window,defId,logText,style=wx.TE_READONLY|wx.TE_MULTILINE|wx.TE_RICH2|wx.SUNKEN_BORDER)
-    textCtrl.SetValue(logText)
+    txtCtrl = RoTextCtrl(window, logText, special=True, autotooltip=False)
+    txtCtrl.SetValue(logText)
     if fixedFont:
         fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
         fixedFont.SetPointSize(8)
         fixedStyle = wx.TextAttr()
         #fixedStyle.SetFlags(0x4|0x80)
         fixedStyle.SetFont(fixedFont)
-        textCtrl.SetStyle(0,textCtrl.GetLastPosition(),fixedStyle)
-    if question:
-        bosh.question = False
-        #--Buttons
-        gYesButton = button(window,id=wx.ID_YES)
-        gYesButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseYes(evt, temp) )
-        gYesButton.SetDefault()
-        gNoButton = button(window,id=wx.ID_NO)
-        gNoButton.Bind(wx.EVT_BUTTON, lambda evt, temp=window: showQuestionLogCloseNo(evt, temp) )
-        #--Layout
-        window.SetSizer(
-            vSizer(
-                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                hSizer((gYesButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-                    (gNoButton,0,wx.ALIGN_RIGHT|wx.ALL,4))
-                )
-            )
-    else:
-        #--Buttons
-        gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
-        gOkButton.SetDefault()
-        #--Layout
-        window.SetSizer(
-            vSizer(
-                (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-                )
-            )
+        txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
+    #--Buttons
+    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
+                         default=True)
+    #--Layout
+    window.SetSizer(
+        vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+               (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+        ))
     #--Show
     if asDialog:
-        window.ShowModal()
-        window.Destroy()
-    else:
-        window.Show()
-    return bosh.question
+        with window: window.ShowModal()
+    else: window.Show()
 
 #------------------------------------------------------------------------------
-def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
+def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
     try:
         import wx.lib.iewin
@@ -774,10 +841,9 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
         if not isinstance(logText,bolt.Path):
             logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
             cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-            ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-            with logPath.open('w',encoding='utf-8-sig') as out:
+            with logPath.open('w',encoding='utf-8-sig') as out, \
+                 bolt.sio(logText+u'\n{{CSS:wtxt_sand_small.css}}') as ins:
                 bolt.WryeText.genHtml(ins,out,cssDir)
-            ins.close()
             logText = logPath
         webbrowser.open(logText.s)
         return
@@ -787,38 +853,36 @@ def showWryeLog(parent,logText,title=u'',style=0,asDialog=True,icons=None):
     size = _settings.get('balt.WryeLog.size',(400,400))
     #--Dialog or Frame
     if asDialog:
-        window = wx.Dialog(parent,defId,title,pos=pos,size=size,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        window = Dialog(parent, title, pos=pos, size=size)
     else:
         window = wx.Frame(parent,defId,title,pos=pos,size=size,
             style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
         if icons: window.SetIcons(icons)
     window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,showLogClose)
+    window.Bind(wx.EVT_CLOSE,_showLogClose)
     #--Text
-    textCtrl = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+    textCtrl_ = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
     if not isinstance(logText,bolt.Path):
         logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
         cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-        ins = StringIO.StringIO(logText+u'\n{{CSS:wtxt_sand_small.css}}')
-        with logPath.open('w',encoding='utf-8-sig') as out:
+        with logPath.open('w',encoding='utf-8-sig') as out, \
+             bolt.sio(logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
             bolt.WryeText.genHtml(ins,out,cssDir)
-        ins.close()
         logText = logPath
-    textCtrl.Navigate(logText.s,0x2) #--0x2: Clear History
+    textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoBack())
+    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl.GoForward())
-    gOkButton = button(window,id=wx.ID_OK,onClick=lambda event: window.Close())
-    gOkButton.SetDefault()
+    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
+    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
+                         default=True)
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
     #--Layout
     window.SetSizer(
         vSizer(
-            (textCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+            (textCtrl_,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
             (hSizer(
                 gBackButton,
                 gForwardButton,
@@ -847,16 +911,15 @@ def playSound(parent,sound):
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
-try:
+try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
     from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
-
 except ImportError:
-    shellcon = None
-    FO_DELETE = 0
+    shellcon = shell = None
     FO_MOVE = 1
     FO_COPY = 2
-    FO_RENAME = 3
+    FO_DELETE = 3
+    FO_RENAME = 4
 
 class FileOperationError(Exception):
     def __init__(self,errorCode):
@@ -865,186 +928,218 @@ class FileOperationError(Exception):
 
 class AccessDeniedError(FileOperationError):
     def __init__(self):
-        self.errno = 120
+        self.errno = 5
         Exception.__init__(self,u'FileOperationError: Access Denied')
 
-FileOperationErrorMap = {
-    120: AccessDeniedError,
-    1223: CancelError,
-    }
+class CallNotImplementedError(FileOperationError):
+    def __init__(self):
+        self.errno = 120
+        Exception.__init__(self, u'FileOperationError: Call Not Implemented')
 
-def fileOperation(operation,source,target=None,allowUndo=True,noConfirm=False,renameOnCollision=False,silent=False,parent=None):
+class _DirectoryFileCollisionError(FileOperationError):
+    def __init__(self, source, dest):
+        self.errno = -1
+        Exception.__init__(self,u'FileOperationError: colision: moving %s to %s', (source, dest))
+
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
+FileOperationErrorMap = {
+    5   : AccessDeniedError,
+    120 : CallNotImplementedError,
+    1223: CancelError,
+}
+
+import shutil
+def __copyOrMove(operation, source, target, renameOnCollision, parent):
+    """WIP shutil shutil move and copy adapted from #96"""
+    # renameOnCollision - if True auto-rename on moving collision, else ask
+    # TODO(241): renameOnCollision NOT IMPLEMENTED
+    doIt = shutil.copytree if operation == FO_COPY else shutil.move
+    for fileFrom, fileTo in zip(source, target):
+        if fileFrom.isdir():
+            if fileTo.exists():
+                if not fileTo.isdir():
+                    raise _DirectoryFileCollisionError(fileFrom, fileTo)
+                # dir exists at target, copy contents individually/recursively
+                for content in os.listdir(fileFrom):
+                    _fileOperation(operation, fileFrom.join(content),
+                                   fileTo.join(content), renameOnCollision,
+                                   parent)
+            else:  # dir doesn't exist at the target, copy it
+                doIt(fileFrom.s, fileTo.s)
+        # copy the file, overwrite as needed
+        elif fileFrom.isfile():  # or os.path.islink(file):
+            # move may not work if the target exists, copy instead...
+            shutil.copy2(fileFrom.s, fileTo.s) # ...and overwrite as needed
+            if operation == FO_MOVE: fileFrom.remove() # then remove original
+    return {} ##: the renames map ?
+
+def _fileOperation(operation, source, target=None, allowUndo=True,
+                   confirm=True, renameOnCollision=False, silent=False,
+                   parent=None):
+    """Docs WIP
+    :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
+    :param source: a Path, basestring or an iterable of those (yak, only accept iterables)
+    :param target: as above, if iterable I guess should have the same length as source
+    :param allowUndo: FOF_ALLOWUNDO: "Preserve undo information, if possible"
+    :param confirm: the opposite of FOF_NOCONFIRMATION ("Respond with Yes to
+    All for any dialog box that is displayed")
+    :param renameOnCollision: FOF_RENAMEONCOLLISION
+    :param silent: FOF_SILENT ("Do not display a progress dialog box")
+    :param parent: HWND to the dialog's parent window
+    .. seealso:
+        `SHFileOperation <http://msdn.microsoft.com/en-us/library/windows
+        /desktop/bb762164(v=vs.85).aspx>`
+    """
     if not source:
         return {}
-
     abspath = os.path.abspath
-
+    # source may be anything - see SHFILEOPSTRUCT - accepts list or item
     if isinstance(source,(bolt.Path,basestring)):
-        source = GPath(abspath(GPath(source).s))
+        source = [GPath(abspath(GPath(source).s))]
     else:
         source = [GPath(abspath(GPath(x).s)) for x in source]
-
-    target = target if target else u''
+    # target may be anything ...
+    target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
     if isinstance(target,(bolt.Path,basestring)):
-        target = GPath(abspath(GPath(target).s))
+        target = [GPath(abspath(GPath(target).s))]
     else:
         target = [GPath(abspath(GPath(x).s)) for x in target]
-
-    parent = parent.GetHandle() if parent else None
-
     if shell is not None:
-        if isinstance(source,bolt.Path):
-            source = source.s
-        else:
-            source = u'\x00'.join(x.s for x in source)
-
-        if isinstance(target,bolt.Path):
-            target = target.s
-            multiDestFiles = 0
-        else:
-            target = u'\x00'.join(x.s for x in target)
-            multiDestFiles = shellcon.FOF_MULTIDESTFILES
-
-        flags = (shellcon.FOF_WANTMAPPINGHANDLE|
-                 multiDestFiles)
+        # flags
+        flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flags |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
-        if noConfirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flags |= shellcon.FOF_SILENT
-
-        result,nAborted,mapping = shell.SHFileOperation(
-            (parent,operation,source,target,flags,None,None))
-
+        # null terminated strings
+        source = u'\x00'.join(x.s for x in source)
+        target = u'\x00'.join(x.s for x in target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # See SHFILEOPSTRUCT for deciphering return values
+        # result: a windows error code (or 0 for success)
+        # aborted: True if any operations aborted, False otherwise
+        # mapping: maps the old and new names of the renamed files
+        result, aborted, mapping = shell.SHFileOperation(
+            (parent, operation, source, target, flags, None, None))
         if result == 0:
-            if nAborted:
-                raise SkipError(nAborted if nAborted is not True else None)
+            if aborted: raise SkipError()
             return dict(mapping)
         elif result == 2 and operation == FO_DELETE:
             # Delete failed because file didnt exist
             return dict(mapping)
         else:
-            raise FileOperationErrorMap.get(result,FileOperationError(result))
-
-    else:
-        # Use custom dialogs and such
-        # TODO: implement this
-        if not isinstance(source,list):
-            source = [source]
-        if not isinstance(target,list):
-            target = [target]
-
-        # Delete
+            raise FileOperationErrorMap.get(result, FileOperationError(result))
+    else: # Use custom dialogs and such
         if operation == FO_DELETE:
-            # allowUndo - no effect, can't use recyle bin this way
-            # noConfirm - ask if noConfirm is False
+            # allowUndo - no effect, can't use recycle bin this way
+            # confirm - ask if confirm is True
             # renameOnCollision - no effect, deleting files
             # silent - no real effect, since we don't show visuals when deleting this way
-            if not noConfirm:
+            if confirm:
                 message = _(u'Are you sure you want to permanently delete these %(count)d items?') % {'count':len(source)}
                 message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
                 if not askYes(parent,message,_(u'Delete Multiple Items')):
                     return {}
             # Do deletion
-            for file in source:
-                if not file.exists():
-                    continue
-                if file.isdir():
-                    file.rmtree(file.stail)
+            for toDelete in source:
+                if not toDelete.exists(): continue
+                if toDelete.isdir():
+                    toDelete.rmtree(toDelete.stail)
                 else:
-                    file.remove()
+                    toDelete.remove()
             return {}
-        # Only Delete is implemented so far
-        raise Exception(u'Not Implemented')
-        # Move
-        if operation == FO_MOVE:
-            # allowUndo - no effect, we're not going to track file movements manually
-            # noConfirm - no real effect when moving
-            # renameOnCollision - if moving collision, auto rename, otherwise ask
-            # silent - no real effect, since we're not showing visuals
-            collisions = []
-            for fileFrom,fileTo in zip(source,target):
-                if ((fileFrom.isdir() and fileTo.exists() and fileTo.isdir()) or
-                    (fileFrom.isfile() and fileTo.exists() and fileTo.isfile())):
-                    collisions.append(fileTo)
-            if collisions:
-                pass
+        # allowUndo - no effect, we're not going to manually track file moves
+        # confirm - no real effect when moving
+        # silent - no real effect, since we're not showing visuals
+        return __copyOrMove(operation, source, target, renameOnCollision,
+                            parent)
 
-def shellDelete(files,parent=None,askOk=True,recycle=True):
+def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
-        return fileOperation(FO_DELETE,files,None,recycle,not askOk,True,False,parent)
+        return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
+                              confirm=confirm, renameOnCollision=True,
+                              silent=False, parent=parent)
     except CancelError:
-        if askOk:
+        if confirm:
             return None
         raise
 
-def shellMove(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_MOVE,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+def shellDeletePass(folder, parent=None):
+    """Delete tmp dirs/files - ignore errors (but log them)."""
+    if folder.exists():
+        try: shellDelete(folder, parent=parent, confirm=False, recycle=False)
+        except:
+            deprint(u"Error deleting %s:" % folder, traceback=True)
 
-def shellCopy(filesFrom,filesTo,parent=None,askOverwrite=True,allowUndo=True,autoRename=True):
-    return fileOperation(FO_COPY,filesFrom,filesTo,allowUndo,not askOverwrite,autoRename,False,parent)
+def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False, silent=False):
+    return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
+                          confirm=askOverwrite, allowUndo=allowUndo,
+                          renameOnCollision=autoRename, silent=silent)
 
-def shellMakeDirs(dirName,parent=None):
-    if not dirName:
-        return
-    elif not isinstance(dirName,(list,tuple,set)):
-        dirName = [dirName]
+def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False):
+    return _fileOperation(FO_COPY, filesFrom, filesTo, allowUndo=allowUndo,
+                          confirm=askOverwrite, renameOnCollision=autoRename,
+                          silent=False, parent=parent)
+
+def shellMakeDirs(dirs, parent=None):
+    if not dirs: return
+    dirs = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
     #--Skip dirs that already exist
-    dirName = [x for x in dirName if not x.exists()]
+    dirs = [x for x in dirs if not x.exists()]
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
-    errorPaths = [dir for dir in dirName if not dir.drive().exists()]
+    def _filterUnixPaths(path):
+        return not path.s.startswith(u"\\") and not path.drive().exists()
+    errorPaths = [d for d in dirs if _filterUnixPaths(d)]
     if errorPaths:
         raise BoltError(errorPaths)
     #--Checks complete, start working
-    tempDirs = []
-    tempDirsAppend = tempDirs.append
-    fromDirs = []
-    fromDirsAppend = fromDirs.append
-    toDirs =[]
-    toDirsAppend = toDirs.append
+    tempDirs, fromDirs, toDirs = [], [], []
     try:
-        for dir in dirName:
+        for folder in dirs:
             # Attempt creating the directory via normal methods,
             # only, fall back to shellMove if UAC or something else
             # stopped it
             try:
-                dir.makedirs()
+                folder.makedirs()
             except:
                 # Failed, try the UAC workaround
-                tempDir = bolt.Path.tempDir(u'WryeBash_')
-                tempDirsAppend(tempDir)
+                tmpDir = bolt.Path.tempDir()
+                tempDirs.append(tmpDir)
                 toMake = []
                 toMakeAppend = toMake.append
-                while not dir.exists() and dir != dir.head:
+                while not folder.exists() and folder != folder.head:
                     # Need to test agains dir == dir.head to prevent
                     # infinite recursion if the final bit doesn't exist
-                    toMakeAppend(dir.tail)
-                    dir = dir.head
+                    toMakeAppend(folder.tail)
+                    folder = folder.head
                 if not toMake:
                     continue
                 toMake.reverse()
-                base = tempDir.join(toMake[0])
-                toDir = dir.join(toMake[0])
-                tempDir.join(*toMake).makedirs()
-                fromDirsAppend(base)
-                toDirsAppend(toDir)
+                base = tmpDir.join(toMake[0])
+                toDir = folder.join(toMake[0])
+                tmpDir.join(*toMake).makedirs()
+                fromDirs.append(base)
+                toDirs.append(toDir)
         if fromDirs:
             # fromDirs will only get filled if dir.makedirs() failed
-            shellMove(fromDirs,toDirs,parent,False,False,False)
+            shellMove(fromDirs, toDirs, parent=parent)
     finally:
-        for tempDir in tempDirs:
-            tempDir.rmtree(safety=tempDir.stail)
+        for tmpDir in tempDirs:
+            tmpDir.rmtree(safety=tmpDir.stail)
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class ListEditorData:
-    """Data capsule for ListEditor. [Abstract]"""
+    """Data capsule for ListEditor. [Abstract]
+    DEPRECATED: nest into ListEditor"""
     def __init__(self,parent):
-        """Initialize."""
         self.parent = parent #--Parent window.
-        self.showAction = False
         self.showAdd = False
-        self.showEdit = False
         self.showRename = False
         self.showRemove = False
         self.showSave = False
@@ -1056,30 +1151,18 @@ class ListEditorData:
         self.infoReadOnly = True #--Controls whether info pane is editable
 
     #--List
-    def action(self,item):
-        """Called when action button is used.."""
-        pass
-    def select(self,item):
-        """Called when an item is selected."""
-        pass
     def getItemList(self):
         """Returns item list in correct order."""
         raise AbstractError # return []
     def add(self):
-        """Peforms add operation. Return new item on success."""
+        """Performs add operation. Return new item on success."""
         raise AbstractError # return None
-    def edit(self,item=None):
-        """Edits specified item. Return true on success."""
-        raise AbstractError # return False
     def rename(self,oldItem,newItem):
         """Renames oldItem to newItem. Return true on success."""
         raise AbstractError # return False
     def remove(self,item):
         """Removes item. Return true on success."""
         raise AbstractError # return False
-    def close(self):
-        """Called when dialog window closes."""
-        pass
 
     #--Info box
     def getInfo(self,item):
@@ -1089,200 +1172,182 @@ class ListEditorData:
         """Sets string info on specified item."""
         raise AbstractError
 
-    #--Checklist
-    def getChecks(self):
-        """Returns checked state of items as array of True/False values matching Item list."""
-        raise AbstractError # return []
-    def check(self,item):
-        """Checks items. Return true on success."""
-        raise AbstractError # return False
-    def uncheck(self,item):
-        """Unchecks item. Return true on success."""
-        raise AbstractError # return False
-
     #--Save/Cancel
     def save(self):
         """Handles save button."""
         pass
 
-    def cancel(self):
-        """Handles cancel button."""
-        pass
-
 #------------------------------------------------------------------------------
-class ListEditor(wx.Dialog):
+class Dialog(wx.Dialog):
+    title = u'OVERRIDE'
+
+    def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
+                 style=0, resize=True, caption=False, *args, **kwargs):
+        ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
+        self.sizesKey = self.__class__.__name__
+        self.title = title or self.__class__.title
+        style |= wx.DEFAULT_DIALOG_STYLE
+        self.resizable = resize
+        if resize: style |= wx.RESIZE_BORDER
+        if caption: style |= wx.CAPTION
+        super(Dialog, self).__init__(parent, wx.ID_ANY, self.title, size=size,
+                                     pos=pos, style=style, *args, **kwargs)
+        wx.EVT_CLOSE(self, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
+
+    def OnCloseWindow(self, event):
+        """Handle window close event.
+        Remember window size, position, etc."""
+        if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
+        event.Skip()
+
+    @classmethod
+    def Display(cls, *args, **kwargs):
+        """Instantiate a dialog, display it and return the ShowModal result."""
+        with cls(*args, **kwargs) as dialog:
+            return dialog.ShowModal()
+
+    def EndModalOK(self): self.EndModal(wx.ID_OK)
+
+class ListEditor(Dialog):
     """Dialog for editing lists."""
-    def __init__(self,parent,id,title,data,type='list'):
+
+    def __init__(self, parent, title, data, orderedDict=None):
+        """A gui list, with buttons that act on the list items.
+
+        Added kwargs to provide extra buttons - this class is built around a
+        ListEditorData instance which needlessly complicates things - mainly
+        a bunch of booleans to enable buttons but also the list of data that
+        corresponds to (read is duplicated by) ListEditor._list_items.
+        ListEditorData should be nested here.
+        :param orderedDict: orderedDict['ButtonLabel']=buttonAction
+        """
         #--Data
-        self.data = data #--Should be subclass of ListEditorData
-        self.items = data.getItemList()
+        self._listEditorData = data #--Should be subclass of ListEditorData
+        self._list_items = data.getItemList()
         #--GUI
-        wx.Dialog.__init__(self,parent,id,title,
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        super(ListEditor, self).__init__(parent, title)
+        # overrides Dialog.sizesKey
+        self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
         if data.caption:
-            captionText = staticText(self,data.caption)
+            captionText = StaticText(self,data.caption)
         else:
             captionText = None
         #--List Box
-        if type == 'checklist':
-            self.list = wx.CheckListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
-            for index,checked in enumerate(self.data.getChecks()):
-                self.list.Check(index,checked)
-            self.Bind(wx.EVT_CHECKLISTBOX, self.DoCheck, self.list)
-        else:
-            self.list = wx.ListBox(self,wx.ID_ANY,choices=self.items,style=wx.LB_SINGLE)
-        self.list.SetSizeHints(125,150)
-        self.list.Bind(wx.EVT_LISTBOX,self.OnSelect)
+        self.listBox = listBox(self, choices=self._list_items)
+        self.listBox.SetSizeHints(125,150)
         #--Infobox
         if data.showInfo:
-            self.gInfoBox = wx.TextCtrl(self,wx.ID_ANY,u" ",size=(130,-1),
-                style=(self.data.infoReadOnly*wx.TE_READONLY)|wx.TE_MULTILINE|wx.SUNKEN_BORDER)
-            if not self.data.infoReadOnly:
+            self.gInfoBox = TextCtrl(self,size=(130,-1),
+                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
+                      wx.TE_MULTILINE | wx.SUNKEN_BORDER)
+            if not self._listEditorData.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
         else:
             self.gInfoBox = None
         #--Buttons
-        buttonSet = (
-            (data.showAction, _(u'Action'), self.DoAction),
+        buttonSet = [
             (data.showAdd,    _(u'Add'),    self.DoAdd),
-            (data.showEdit,   _(u'Edit'),   self.DoEdit),
             (data.showRename, _(u'Rename'), self.DoRename),
             (data.showRemove, _(u'Remove'), self.DoRemove),
             (data.showSave,   _(u'Save'),   self.DoSave),
             (data.showCancel, _(u'Cancel'), self.DoCancel),
-            )
+            ]
+        for k,v in (orderedDict or {}).items():
+            buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             buttons = vSizer()
             for (flag,defLabel,func) in buttonSet:
                 if not flag: continue
                 label = (flag == True and defLabel) or flag
-                buttons.Add(button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
+                buttons.Add(Button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
         else:
             buttons = None
         #--Layout
         sizer = vSizer(
             (captionText,0,wx.LEFT|wx.TOP,4),
             (hSizer(
-                (self.list,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self.data.infoWeight,wx.EXPAND|wx.TOP,4),
+                (self.listBox,1,wx.EXPAND|wx.TOP,4),
+                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
                 (buttons,0,wx.EXPAND),
                 ),1,wx.EXPAND)
             )
         #--Done
-        className = data.__class__.__name__
-        if className in sizes:
+        if self.sizesKey in sizes:
             self.SetSizer(sizer)
-            self.SetSize(sizes[className])
+            self.SetSize(sizes[self.sizesKey])
         else:
             self.SetSizerAndFit(sizer)
 
     def GetSelected(self):
-        return self.list.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
-
-    #--Checklist commands
-    def DoCheck(self,event):
-        """Handles check/uncheck of listbox item."""
-        index = event.GetSelection()
-        item = self.items[index]
-        if self.list.IsChecked(index):
-            self.data.check(item)
-        else:
-            self.data.uncheck(item)
-        #self.list.SetSelection(index)
+        return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
     #--List Commands
-    def DoAction(self,event):
-        """Acts on the selected item."""
-        selections = self.list.GetSelections()
-        if not selections: return bell()
-        itemDex = selections[0]
-        item = self.items[itemDex]
-        self.data.action(item)
-
     def DoAdd(self,event):
         """Adds a new item."""
-        newItem = self.data.add()
-        if newItem and newItem not in self.items:
-            self.items = self.data.getItemList()
-            index = self.items.index(newItem)
-            self.list.InsertItems([newItem],index)
+        newItem = self._listEditorData.add()
+        if newItem and newItem not in self._list_items:
+            self._list_items = self._listEditorData.getItemList()
+            index = self._list_items.index(newItem)
+            self.listBox.InsertItems([newItem],index)
 
-    def DoEdit(self,event):
-        """Edits the selected item."""
-        raise UncodedError
+    def SetItemsTo(self, items):
+        if self._listEditorData.setTo(items):
+            self._list_items = self._listEditorData.getItemList()
+            self.listBox.Set(self._list_items)
 
     def DoRename(self,event):
         """Renames selected item."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
         #--Rename it
         itemDex = selections[0]
-        curName = self.list.GetString(itemDex)
+        curName = self.listBox.GetString(itemDex)
         #--Dialog
         newName = askText(self,_(u'Rename to:'),_(u'Rename'),curName)
         if not newName or newName == curName:
             return
-        elif newName in self.items:
+        elif newName in self._list_items:
             showError(self,_(u'Name must be unique.'))
-        elif self.data.rename(curName,newName):
-            self.items[itemDex] = newName
-            self.list.SetString(itemDex,newName)
+        elif self._listEditorData.rename(curName,newName):
+            self._list_items[itemDex] = newName
+            self.listBox.SetString(itemDex,newName)
 
     def DoRemove(self,event):
         """Removes selected item."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
         #--Data
         itemDex = selections[0]
-        item = self.items[itemDex]
-        if not self.data.remove(item): return
+        item = self._list_items[itemDex]
+        if not self._listEditorData.remove(item): return
         #--GUI
-        del self.items[itemDex]
-        self.list.Delete(itemDex)
+        del self._list_items[itemDex]
+        self.listBox.Delete(itemDex)
         if self.gInfoBox:
             self.gInfoBox.DiscardEdits()
             self.gInfoBox.SetValue(u'')
 
     #--Show Info
-    def OnSelect(self,event):
-        """Handle show info (item select) event."""
-        index = event.GetSelection()
-        item = self.items[index]
-        self.data.select(item)
-        if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(self.data.getInfo(item))
-
     def OnInfoEdit(self,event):
         """Info box text has been edited."""
-        selections = self.list.GetSelections()
+        selections = self.listBox.GetSelections()
         if not selections: return bell()
-        item = self.items[selections[0]]
+        item = self._list_items[selections[0]]
         if self.gInfoBox.IsModified():
-            self.data.setInfo(item,self.gInfoBox.GetValue())
+            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
     #--Save/Cancel
     def DoSave(self,event):
         """Handle save button."""
-        self.data.save()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        self._listEditorData.save()
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self,event):
-        """Handle save button."""
-        self.data.cancel()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
+        """Handle cancel button."""
+        sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
-
-    #--Window Closing
-    def OnCloseWindow(self, event):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        self.data.close()
-        sizes[self.data.__class__.__name__] = self.GetSizeTuple()
-        self.Destroy()
 
 #------------------------------------------------------------------------------
 NoteBookDraggedEvent, EVT_NOTEBOOK_DRAGGED = wx.lib.newevent.NewEvent()
@@ -1297,7 +1362,7 @@ class TabDragMixin(object):
     __slots__=('__dragX','__dragging','__justSwapped')
 
     def __init__(self):
-        self.__dragX = 0;
+        self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
         self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
@@ -1317,7 +1382,6 @@ class TabDragMixin(object):
     def __OnDragEndForced(self, event):
         self.__dragging = wx.NOT_FOUND
         self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-        event.Skip()
 
     def __OnDragEnd(self, event):
         if self.__dragging != wx.NOT_FOUND:
@@ -1325,8 +1389,11 @@ class TabDragMixin(object):
             self.__dragging = wx.NOT_FOUND
             try:
                 self.ReleaseMouse()
-            except:
-                pass
+            except AssertionError:
+                """PyAssertionError: C++ assertion "GetCapture() == this"
+                failed at ..\..\src\common\wincmn.cpp(2536) in
+                wxWindowBase::ReleaseMouse(): attempt to release mouse,
+                but this window hasn't captured it""" # assertion error...
         event.Skip()
 
     def __OnDragging(self, event):
@@ -1499,6 +1566,9 @@ class Progress(bolt.Progress):
 #------------------------------------------------------------------------------
 class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     """List control extended with the wxPython auto-width mixin class.
+
+    ALWAYS add new items via InsertListCtrlItem() and delete them via
+    RemoveItemAt().
     Also extended to support drag-and-drop.  To define custom drag-and-drop
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
@@ -1537,10 +1607,10 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window.OnDragging(x,y,dragResult)
             return wx.DropTarget.OnDragOver(self,x,y,dragResult)
 
-    def __init__(self, parent, id, pos=defPos, size=defSize, style=0,
+    def __init__(self, parent, pos=defPos, size=defSize, style=0,
                  dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
                  fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
-        wx.ListCtrl.__init__(self, parent, id, pos, size, style=style)
+        wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
             self.SetDropTarget(ListCtrl.DropFileOrList(self, dndFiles, dndList))
@@ -1551,6 +1621,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
         self.doDnD = True
+        #--Item/Id mapping
+        self._item_itemId = {}
+        self._itemId_item = {}
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
@@ -1592,7 +1665,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                     start = index
                 indexes.append(index)
             else:
-                if start >=0 and stop < 0:
+                if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
 
@@ -1637,7 +1710,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         else:
             # Dropped on top of an item
             target = index
-            if target >= start and target <= stop:
+            if start <= target <= stop:
                 # Trying to drop it back on itself
                 return
             elif target < start:
@@ -1661,365 +1734,283 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
 
     def dndAllow(self):
-        if self.doDnD:
-            if self.fnDndAllow: return self.fnDndAllow()
-            return True
-        return False
+        return self.doDnD and (not self.fnDndAllow or self.fnDndAllow())
+
+    # API (alpha) -------------------------------------------------------------
+
+    # Internal id <-> item mappings used in SortItems for now
+    # Ripped from Tank - _Monkey patch_ - we need a proper ListCtrl subclass
+
+    def __id(self, item):
+        i = long(wx.NewId())
+        self._item_itemId[item] = i
+        self._itemId_item[i] = item
+        return i
+
+    def InsertListCtrlItem(self, index, value, item):
+        """Insert an item to the list control giving it an internal id."""
+        i = self.__id(item)
+        some_long = self.InsertStringItem(index, value) # index ?
+        gItem = self.GetItem(index) # that's what Tank did
+        gItem.SetData(i)  # Associate our id with that row.
+        self.SetItem(gItem) # this is needed too - yak
+        return some_long
+
+    def RemoveItemAt(self, index):
+        """Remove item at specified list index."""
+        itemId = self.GetItemData(index)
+        item = self._itemId_item[itemId]
+        del self._item_itemId[item]
+        del self._itemId_item[itemId]
+        self.DeleteItem(index)
+
+    def DeleteAll(self):
+        self._item_itemId.clear()
+        self._itemId_item.clear()
+        self.DeleteAllItems()
+
+    def FindIndexOf(self, item):
+        """Return index of specified item."""
+        return self.FindItemData(-1, self._item_itemId[item])
+
+    def FindItemAt(self, index):
+        """Return item for specified list index."""
+        return self._itemId_item[self.GetItemData(index)]
+
+    def ReorderDisplayed(self, inorder):
+        """Reorder the list control displayed items to match inorder."""
+        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
+        self.SortItems(lambda x, y: cmp(sortDict[x], sortDict[y]))
+
 #------------------------------------------------------------------------------
-class Tank(wx.Panel):
-    """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
-    multiple columns and (optionally) column and item menus."""
-    #--Class-------------------------------------------------------------------
+_depth = 0
+_lock = threading.Lock() # threading not needed (I just can't omit it)
+def conversation(func):
+    """Decorator to temporarily unbind RefreshData Link.Frame callback."""
+    @wraps(func)
+    def _conversation_wrapper(*args, **kwargs):
+        global _depth
+        try:
+            with _lock: _depth += 1 # hack: allow sequences of conversations
+            Link.Frame.BindRefresh(bind=False)
+            return func(*args, **kwargs)
+        finally:
+            with _lock: # atomic
+                _depth -= 1
+                if not _depth: Link.Frame.BindRefresh(bind=True)
+    return _conversation_wrapper
+
+class UIList(wx.Panel):
+    """Offspring of basher.List and balt.Tank, ate its parents."""
+    # optional menus
     mainMenu = None
     itemMenu = None
+    #--gList image collection
+    __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
+    # yet initialized when balt is imported, so I can't use ColorChecks here
+    icons = __icons
+    _shellUI = False # only True in Screens/INIList/Installers
+    _recycle = True # False on tabs that recycle makes no sense (People, PM)
+    max_items_open = 7 # max number of items one can open without prompt
+    #--Cols
+    _min_column_width = 24
+    #--Style params
+    _editLabels = False # allow editing the labels - also enables F2 shortcut
+    _sunkenBorder = True
+    _singleCell = False
+    #--Sorting
+    nonReversibleCols = {'Load Order', 'Current Order'}
+    _default_sort_col = 'File' # override as needed
+    _sort_keys = {} # sort_keys[col] provides the sort key for this col
+    _extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    #--DnD
+    _dndFiles = _dndList = False
+    _dndColumns = ()
 
-    #--Instance ---------------------------------------------------------------
-    def __init__(self,parent,data,icons=None,mainMenu=None,itemMenu=None,
-            details=None,id=wx.ID_ANY,style=(wx.LC_REPORT | wx.LC_SINGLE_SEL),
-            dndList=False,dndFiles=False,dndColumns=[]):
-        wx.Panel.__init__(self,parent,id,style=wx.WANTS_CHARS)
-        #--Data
-        if icons == None: icons = {}
-        self.data = data
-        self.icons = icons #--Default to balt image collection.
-        self.mainMenu = mainMenu or self.__class__.mainMenu
-        self.itemMenu = itemMenu or self.__class__.itemMenu
-        self.details = details
-        self.dndColumns = dndColumns
-        #--Item/Id mapping
-        self.nextItemId = 1
-        self.item_itemId = {}
-        self.itemId_item = {}
+    def __init__(self, parent, keyPrefix, data=None, panel=None):
+        wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
+        self.data = data # yak, encapsulate (_data)
+        self.panel = panel
         #--Layout
         sizer = vSizer()
         self.SetSizer(sizer)
-        self.SetSizeHints(50,50)
-        #--ListCtrl
-        self.gList = gList = ListCtrl(self, wx.ID_ANY, style=style,
-                                      dndFiles=dndFiles, dndList=dndList,
-                                      fnDndAllow=self.dndAllow, fnDropIndexes=self.OnDropIndexes, fnDropFiles=self.OnDropFiles)
-        if self.icons:
-            gList.SetImageList(icons.GetImageList(),wx.IMAGE_LIST_SMALL)
-        #--State info
-        self.mouseItem = None
-        self.mouseTexts = {}
-        self.mouseTextPrev = u''
+        #--Settings key
+        self.keyPrefix = keyPrefix
         #--Columns
-        self.UpdateColumns()
-        #--Items
-        self.sortDirty = False
-        self.UpdateItems()
-        #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
-        #--Events: Items
-        gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
-        gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        gList.Bind(wx.EVT_LIST_ITEM_SELECTED,self.OnItemSelected)
-        gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self.__class__.persistent_columns = {self._default_sort_col}
+        self._colDict = {} # used in setting column sort indicator
+        #--gList image collection
+        self.__class__.icons = ColorChecks() \
+            if self.__class__.icons is self.__icons else self.__class__.icons
+        #--gList
+        ctrlStyle = wx.LC_REPORT
+        if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
+        if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
+        if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
+        self._gList = ListCtrl(self, style=ctrlStyle,
+                               dndFiles=self.__class__._dndFiles,
+                               dndList=self.__class__._dndList,
+                               fnDndAllow=self.dndAllow,
+                               fnDropFiles=self.OnDropFiles,
+                               fnDropIndexes=self.OnDropIndexes)
+        if self.icons:
+            # Image List: Column sorting order indicators
+            # explorer style ^ == ascending
+            checkboxesIL = self.icons.GetImageList()
+            self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
+            self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
+            self._gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+        if self.__class__._editLabels:
+            self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+        # gList callbacks
+        self._gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self._gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
+        self._gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self._gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self._gList.Bind(wx.EVT_CHAR, self.OnChar)
         #--Events: Columns
-        gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self._gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        #--Events: Items
+        self._gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
-        gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        gList.Bind(wx.EVT_SCROLLWIN, self.OnScroll)
-        #--ScrollPos
-        gList.ScrollLines(data.getParam('vScrollPos',0))
-        data.setParam('vScrollPos', gList.GetScrollPos(wx.VERTICAL))
-        #--Hack: Default text item background color
-        self.defaultTextBackground = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        self.mouseItem = None
+        self.mouseTexts = {} # dictionary item->mouse text
+        self.mouseTextPrev = u''
+        self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        # Panel callbacks
+        self.Bind(wx.EVT_SIZE,self.OnSize)
+        # Columns
+        self.PopulateColumns()
+        #--Items
+        self._defaultTextBackground = wx.SystemSettings.GetColour(
+            wx.SYS_COLOUR_WINDOW)
+        self.PopulateItems()
 
-    #--Drag and Drop-----------------------------------------------------------
-    def dndAllow(self):
-        # Only allow drag an drop when sorting by the columns specified in dndColumns
-        if self.sort not in self.dndColumns: return False
-        return True
+    # Column properties
+    @property
+    def colWidths(self):
+        return bosh.settings.getChanged(self.keyPrefix + '.colWidths', {})
+    @property
+    def colReverse(self): # not sure why it gets it changed but no harm either
+        """Dictionary column->isReversed."""
+        return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
+    @property
+    def cols(self): return bosh.settings.getChanged(self.keyPrefix + '.cols')
+    @property
+    def allCols(self): return bosh.settings[self.keyPrefix + '.allCols']
+    @property
+    def autoColWidths(self): return bosh.settings.get(
+        'bash.autoSizeListColumns', 0)
+    @autoColWidths.setter
+    def autoColWidths(self, val):
+        bosh.settings['bash.autoSizeListColumns'] = val
+    # the current sort column
+    @property
+    def sort(self):
+        return bosh.settings.get(self.keyPrefix + '.sort',
+                                 self._default_sort_col)
+    @sort.setter
+    def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
 
-    def OnDropIndexes(self, indexes, newPos):
-        # See if the column is reverse sorted first
-        data = self.data
-        column = self.sort
-        reverse = self.colReverse.get(column,False)
-        if reverse:
-            newPos = self.gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
-            if newPos < 0: newPos = 0
+    def OnItemSelected(self, event):
+        modName = self.GetItem(event.m_itemIndex)
+        self._select(modName)
+    def _select(self, item): self.panel.SetDetails(item)
 
-        # Move the given indexes to the new position
-        self.data.moveArchives(self.GetSelected(), newPos)
-        self.data.refresh(what='N')
-        self.RefreshUI()
-
-    def OnDropFiles(self, x, y, filenames):
+    #--ABSTRACT
+    def getLabels(self, item):
+        """Returns text labels for item to populate list control."""
         raise AbstractError
 
-    #--Item/Id/Index Translation ----------------------------------------------
-    def GetItem(self,index):
-        """Returns item for specified list index."""
-        return self.itemId_item[self.gList.GetItemData(index)]
+    #--Items ----------------------------------------------
+    @staticmethod
+    def _gpath(item): return GPath(item)
 
-    def GetId(self,item):
-        """Returns id for specified item, creating id if necessary."""
-        id = self.item_itemId.get(item)
-        if id: return id
-        #--Else get a new item id.
-        id = self.nextItemId
-        self.nextItemId += 1
-        self.item_itemId[item] = id
-        self.itemId_item[id] = item
-        return id
-
-    def GetIndex(self,item):
-        """Returns index for specified item."""
-        return self.gList.FindItemData(-1,self.GetId(item))
-
-    def UpdateIds(self):
-        """Updates item/id mappings to account for removed items."""
-        removed = set(self.item_itemId.keys()) - set(self.data.keys())
-        for item in removed:
-            itemId = self.item_itemId[item]
-            del self.item_itemId[item]
-            del self.itemId_item[itemId]
-
-    #--Updating/Sorting/Refresh -----------------------------------------------
-    def PopulateColumns(self):
-        """Alias for UpdateColumns, for List_Columns"""
-        self.UpdateColumns()
-
-    def UpdateColumns(self):
-        """Create/name columns in ListCtrl."""
+    def PopulateItem(self, itemDex=-1, item=None):
+        """Populate ListCtrl for specified item."""
+        insert = False
+        if item is not None:
+            fileName = item
+            try:
+                itemDex = self.GetIndex(item)
+            except KeyError:
+                itemDex = self._gList.GetItemCount() # insert at the end
+                insert = True
+        else: # no way we're inserting with a None item
+            fileName = self.GetItem(itemDex)
+        fileName = self._gpath(fileName)
         cols = self.cols
-        numCols = len(cols)
-        for colDex in range(numCols):
-            colKey = cols[colDex]
-            colName = self.colNames.get(colKey,colKey)
-            colWidth = self.colWidths.get(colKey,30)
-            colAlign = wxListAligns[self.colAligns.get(colKey,0)]
-            if colDex >= self.gList.GetColumnCount():
-                # Make a new column
-                self.gList.InsertColumn(colDex,colName,colAlign)
-                self.gList.SetColumnWidth(colDex,colWidth)
+        labels = self.getLabels(fileName)
+        for colDex in range(len(cols)):
+            col = cols[colDex]
+            if insert and colDex == 0:
+                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
             else:
-                # Update an existing column
-                column = self.gList.GetColumn(colDex)
-                if column.GetText() == colName:
-                    # Don't change it, just make sure the width is correct
-                    self.gList.SetColumnWidth(colDex,colWidth)
-                elif column.GetText() not in self.cols:
-                    # Column that doesn't exist anymore
-                    self.gList.DeleteColumn(colDex)
-                    colDex -= 1
-                else:
-                    # New column
-                    self.gList.InsertColumn(colDex,colName,colAlign)
-                    self.gList.SetColumnWidth(colDex,colWidth)
-        while self.gList.GetColumnCount() > numCols:
-            self.gList.DeleteColumn(numCols)
-        self.gList.SetColumnWidth(numCols, wx.LIST_AUTOSIZE_USEHEADER)
+                self._gList.SetStringItem(itemDex, colDex, labels[col])
+        self.setUI(fileName, itemDex)
 
-    def UpdateItem(self,index,item=None,selected=tuple()):
-        """Populate Item for specified item."""
-        if index < 0: return
-        data,gList = self.data,self.gList
-        item = item or self.GetItem(index)
-        for iColumn,column in enumerate(self.cols):
-            colDex = self.GetColumnDex(column)
-            gList.SetStringItem(index,iColumn,data.getColumns(item)[colDex])
-        gItem = gList.GetItem(index)
-        iconKey,textKey,backKey = data.getGuiKeys(item)
-        self.mouseTexts[item] = data.getMouseText(iconKey,textKey,backKey)
-        if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
-        if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(gList.GetTextColour())
-        if backKey: gItem.SetBackgroundColour(colors[backKey])
-        else: gItem.SetBackgroundColour(self.defaultTextBackground)
-##        gItem.SetState((0,wx.LIST_STATE_SELECTED)[item in selected])
-        gItem.SetData(self.GetId(item))
-        gList.SetItem(gItem)
+    def setUI(self, fileName, itemDex):
+        """Set font, status icon, background text etc."""
 
-    def GetColumnDex(self,column):
-        raise AbstractError
-
-    def UpdateItems(self,selected='SAME'):
-        """Update all items."""
-        gList = self.gList
-        items = set(self.data.keys())
-        index = 0
-        #--Items to select afterwards. (Defaults to current selection.)
-        if selected == 'SAME': selected = set(self.GetSelected())
-        #--Update existing items.
+    def PopulateItems(self):
+        """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        while index < gList.GetItemCount():
+        items = set(self.GetItems())
+        #--Update existing items.
+        index = 0
+        while index < self._gList.GetItemCount():
             item = self.GetItem(index)
-            if item not in items:
-                gList.DeleteItem(index)
+            if item not in items: self._gList.RemoveItemAt(index)
             else:
-                self.UpdateItem(index,item,selected)
+                self.PopulateItem(index)
                 items.remove(item)
                 index += 1
         #--Add remaining new items
-        for item in items:
-            gList.InsertStringItem(index,u'')
-            self.UpdateItem(index,item,selected)
-            index += 1
-        #--Cleanup
-        self.UpdateIds()
-        self.SortItems()
-
-    def SortItems(self,column=None,reverse='CURRENT'):
-        """Sort items. Real work is done by data object, and that completed
-        sort is then "cloned" list through an intermediate cmp function.
-
-        column: column to sort. Defaults to current sort column.
-
-        reverse:
-        * True: Reverse order
-        * False: Normal order
-        * 'CURRENT': Same as current order for column.
-        * 'INVERT': Invert if column is same as current sort column.
-        """
-        #--Parse column and reverse arguments.
-        data = self.data
-        if self.sortDirty:
-            self.sortDirty = False
-            (column, reverse) = (None,'CURRENT')
-        curColumn = self.sort
-        column = column or curColumn
-        curReverse = self.colReverse.get(column,False)
-        if reverse == 'INVERT' and column == curColumn:
-            reverse = not curReverse
-        elif reverse in ('INVERT','CURRENT'):
-            reverse = curReverse
-        self.SetColumnReverse(column, reverse)
-        self.SetSort(column)
+        for item in items: self.PopulateItem(item=item)
         #--Sort
-        items = self.data.getSorted(column,reverse)
-        sortDict = dict((self.item_itemId[y],x) for x,y in enumerate(items))
-        self.gList.SortItems(lambda x,y: cmp(sortDict[x],sortDict[y]))
-        #--Done
+        self.SortItems()
+        self.autosizeColumns()
 
-    def SetColumnReverse(self,column,reverse):
-        pass
-    def SetSort(self,sort):
-        pass
+    __all = ()
+    def RefreshUI(self, **kwargs):
+        """Populate specified files or ALL files, set status bar count.
 
-    def RefreshData(self):
-        """Refreshes underlying data."""
-        self.data.refresh()
+        If there are any deleted (applies also to renamed) items leave files
+        parameter alone.
+        """
+        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
+        # parameters and get rid of ModList override(move part to PopulateItem)
+        # Refresh UI uses must be optimized - pass in ONLY the items we need
+        # refreshed - most of the time Refresh UI calls PopulateItems on ALL
+        # items - a nono. Refresh UI has 106 uses...
+        # B) Rework details: add 'select' tuple parameter (ex 'detail', duh) to
+        # allow specifying detail item - for now use heuristics (len(files))
+        files = kwargs.pop('files', self.__all)
+        if files is self.__all:
+            self.PopulateItems()
+        else:  #--Iterable
+            for file_ in files:
+                self.PopulateItem(item=file_)
+            #--Sort
+            self.SortItems()
+            self.autosizeColumns()
+        # Details HACK: if it was a single item then refresh details for it:
+        if len(files) == 1: self.panel.SetDetails(files[0])
+        else: self.panel.RefreshDetails()
+        self.panel.SetStatusCount()
 
-    def RefreshReport(self):
-        """(Optionally) Shows a report of changes after a data refresh."""
-        report = self.data.getRefreshReport()
-        if report: showInfo(self,report,self.data.title)
-
-    def RefreshUI(self,items='ALL',details='SAME'):
-        """Refreshes UI for specified file."""
-        selected = self.GetSelected()
-        if details == 'SAME':
-            details = self.GetDetailsItem()
-        elif details:
-            selected = tuple(details)
-        if items == 'ALL':
-            self.UpdateItems(selected=selected)
-        elif items in self.data:
-            self.UpdateItem(self.GetIndex(items),items,selected=selected)
-        else: #--Iterable
-            for index in xrange(self.gList.GetItemCount()):
-                if self.GetItem(index) in set(items):
-                    self.UpdateItem(index,None,selected=selected)
-        self.RefreshDetails(details)
-
-    #--Details view (if it exists)
-    def GetDetailsItem(self):
-        """Returns item currently being shown in details view."""
-        if self.details: return self.details.GetDetailsItem()
-        return None
-
-    def RefreshDetails(self,item=None):
-        """Refreshes detail view associated with data from item."""
-        if self.details: return self.details.RefreshDetails(item)
-        item = item or self.GetDetailsItem()
-        if item not in self.data: item = None
-
-    #--Selected items
-    def GetSelected(self):
-        """Return list of items selected (hilighted) in the interface."""
-        gList = self.gList
-        return [self.GetItem(x) for x in xrange(gList.GetItemCount())
-            if gList.GetItemState(x,wx.LIST_STATE_SELECTED)]
-
-    def ClearSelected(self):
-        """Unselect all items."""
-        gList = self.gList
-        for index in range(gList.GetItemCount()):
-            if gList.GetItemState(index,wx.LIST_STATE_SELECTED):
-                gList.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-
-    #--Event Handlers -------------------------------------
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            (mouseItem,mouseHitFlag) = self.gList.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseOverItem(mouseItem)
-        elif event.Leaving() and self.mouseItem != None:
-            self.mouseItem = None
-            self.MouseOverItem(None)
-        event.Skip()
-
-    def MouseOverItem(self,item):
-        """Handle mouse over item by showing tip or similar."""
-        pass
-
-    def OnItemSelected(self,event):
-        """Item Selected: Refresh details."""
-        self.RefreshDetails(self.GetItem(event.m_itemIndex))
-
-    def OnSize(self, event):
-        """Panel size was changed. Change gList size to match."""
-        size = self.GetClientSizeTuple()
-        self.gList.SetSize(size)
-
-    def OnScroll(self,event):
-        """Event: List was scrolled. Save so can be accessed later."""
-        if event.GetOrientation() == wx.VERTICAL:
-            self.data.setParam('vScrollPos',event.GetPosition())
-        event.Skip()
-
-    def OnColumnResize(self,event):
-        """Column resized. Save column size info."""
-        colDex = event.GetColumn()
-        colName = self.cols[colDex]
-        width = self.gList.GetColumnWidth(colDex)
-        if width < 5:
-            width = 5
-            self.gList.SetColumnWidth(colDex, 5)
-            event.Veto()
-            self.gList.resizeLastColumn(0)
-        else:
-            event.Skip()
-        self.colWidths[colName] = width
-
-    def OnLeftDown(self,event):
-        """Left mouse button was pressed."""
-        #self.hitTest = self.gList.HitTest((event.GetX(),event.GetY()))
-        event.Skip()
-
-    def OnDClick(self,event):
-        """Left mouse double click."""
-        event.Skip()
-
-    def OnColumnClick(self, event):
-        """Column header was left clicked on. Sort on that column."""
-        self.SortItems(self.cols[event.GetColumn()],'INVERT')
-
-    def DoColumnMenu(self,event,iColumn=None):
+    #--Column Menu
+    def DoColumnMenu(self, event, column=None):
         """Show column menu."""
         if not self.mainMenu: return
-        if iColumn is None: iColumn = event.GetColumn()
-        self.mainMenu.PopupMenu(self,Link.Frame,iColumn)
+        if column is None: column = event.GetColumn()
+        self.mainMenu.PopupMenu(self, Link.Frame, column)
 
+    #--Item Menu
     def DoItemMenu(self,event):
         """Show item menu."""
         selected = self.GetSelected()
@@ -2029,208 +2020,855 @@ class Tank(wx.Panel):
         if not self.itemMenu: return
         self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
-    #--Standard data commands -------------------------------------------------
-    def DeleteSelected(self,shellUI=False,noRecycle=False):
-        """Deletes selected items."""
-        items = self.GetSelected()
-        if not items: return
-        if not shellUI:
-            message = _(u'Delete these items? This operation cannot be undone.')
-            message += u'\n* ' + u'\n* '.join([self.data.getName(x) for x in items])
-            if not askYes(self,message,_(u'Delete Items')): return False
-            for item in items:
-                del self.data[item]
-        else:
+    #-- Callbacks -------------------------------------------------------------
+    def OnSize(self, event):
+        """Panel size was changed. Change gList size to match."""
+        size = self.GetClientSizeTuple()
+        self._gList.SetSize(size)
+
+    def OnMouse(self,event):
+        """Check mouse motion to detect right click event."""
+        if event.Moving():
+            (mouseItem,mouseHitFlag) = self._gList.HitTest(event.GetPosition())
+            if mouseItem != self.mouseItem:
+                self.mouseItem = mouseItem
+                self.MouseOverItem(mouseItem)
+        elif event.Leaving() and self.mouseItem is not None:
+            self.mouseItem = None
+            self.MouseOverItem(None)
+        event.Skip()
+
+    def MouseOverItem(self, itemDex):
+        """Handle mouse entered item by showing tip or similar."""
+        if itemDex is None:
+            Link.Frame.SetStatusInfo(u'')
+            return
+        if itemDex < 0: return
+        item = self.GetItem(itemDex) # get the item (bolt Path) for this index
+        text = self.mouseTexts.get(item, u'')
+        if text != self.mouseTextPrev:
+            Link.Frame.SetStatusInfo(text)
+            self.mouseTextPrev = text
+
+    def OnKeyUp(self, event):
+        """Char event: select all items, delete selected items, rename."""
+        code = event.GetKeyCode()
+        if event.CmdDown() and code == ord('A'): # Ctrl+A
             try:
-                self.data.delete(items,askOk=True,dontRecycle=noRecycle)
-            except (CancelError,SkipError):
-                pass
-        self.RefreshUI()
-        self.data.setChanged()
+                self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                self.panel.ClearDetails() #omit this to leave displayed details
+                self.SelectAll()
+            finally:
+                self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
+        elif code in wxDelete:
+            with BusyCursor(): self.DeleteItems(event=event)
+        event.Skip()
+
+    ##: Columns callbacks - belong to a ListCtrl mixin
+    def OnColumnClick(self, event):
+        """Column header was left clicked on. Sort on that column."""
+        self.SortItems(self.cols[event.GetColumn()],'INVERT')
+
+    def OnColumnResize(self, event):
+        """Column resized: enforce minimal width and save column size info."""
+        colDex = event.GetColumn()
+        colName = self.cols[colDex]
+        width = self._gList.GetColumnWidth(colDex)
+        if width < self._min_column_width:
+            width = self._min_column_width
+            self._gList.SetColumnWidth(colDex, self._min_column_width)
+            event.Veto() # if we do not veto the column will be resized anyway!
+            self._gList.resizeLastColumn(0) # resize last column to fill
+        else:
+            event.Skip()
+        self.colWidths[colName] = width
+
+    # gList columns autosize---------------------------------------------------
+    def autosizeColumns(self):
+        if self.autoColWidths:
+            colCount = xrange(self._gList.GetColumnCount())
+            for i in colCount:
+                self._gList.SetColumnWidth(i, -self.autoColWidths)
+
+    #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
+    def OnLeftDown(self,event): event.Skip()
+    def OnDClick(self,event): event.Skip()
+    def OnChar(self,event): event.Skip()
+    #--Edit labels - only registered if _editLabels != False
+    def OnBeginEditLabel(self,event):
+        """Start renaming: deselect the extension."""
+        to = len(GPath(event.GetLabel()).sbody)
+        (self._gList.GetEditControl()).SetSelection(0,to)
+    def OnLabelEdited(self,event): event.Skip()
+
+    #-- Item selection --------------------------------------------------------
+    def GetItems(self): return self.data.keys()
+
+    def GetSelected(self):
+        """Return list of items selected (highlighted) in the interface."""
+        listCtrl = self._gList
+        return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
+    def GetSelectedIndexes(self):
+        """Return list of indexes highlighted in the interface in display order."""
+        listCtrl = self._gList
+        return [dex for dex in xrange(listCtrl.GetItemCount())
+            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+
+    def SelectItemAtIndex(self, index, select=True,
+                          _select=wx.LIST_STATE_SELECTED):
+        self._gList.SetItemState(index, select * _select, _select)
+
+    def SelectItem(self, item, deselectOthers=False):
+        dex = self.GetIndex(item)
+        if deselectOthers: self.ClearSelected()
+        else: self.SelectItemAtIndex(dex, select=False)
+        self.SelectItemAtIndex(dex)
+
+    def ClearSelected(self):
+        """Unselect all items."""
+        listCtrl = self._gList
+        for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
+
+    def SelectAll(self):
+        for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
+
+    def SelectLast(self):
+        self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
+
+    def DeleteAll(self): self._gList.DeleteAll()
+
+    def EnsureVisible(self, name):
+        self._gList.EnsureVisible(self.GetIndex(name))
+
+    def OpenSelected(self, selected=None):
+        """Open selected files with default program."""
+        dataDir = self.data.dir
+        selected = selected if selected else self.GetSelected()
+        num = len(selected)
+        if num > UIList.max_items_open and not askContinue(self,
+            _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
+            'bash.maxItemsOpen.continue'): return
+        for file_ in selected:
+            file_ = dataDir.join(file_)
+            if file_.exists(): file_.start()
+
+    #--Sorting ----------------------------------------------------------------
+    def SortItems(self, column=None, reverse='CURRENT'):
+        """Sort items. Real work is done by _SortItems, and that completed
+        sort is then "cloned" to the list control.
+
+        :param column: column to sort. Defaults to current sort column.
+        :param reverse:
+        * True: Reverse order
+        * False: Normal order
+        * 'CURRENT': Same as current order for column.
+        * 'INVERT': Invert if column is same as current sort column.
+        """
+        column, reverse, oldcol = self._GetSortSettings(column, reverse)
+        items = self._SortItems(column, reverse)
+        self._gList.ReorderDisplayed(items)
+        self._setColumnSortIndicator(column, oldcol, reverse)
+
+    def _GetSortSettings(self, column, reverse):
+        """Return parsed col, reverse arguments. Used by SortItems.
+        col: sort variable.
+          Defaults to last sort. (self.sort)
+        reverse: sort order
+          True: Descending order
+          False: Ascending order
+         'CURRENT': Use current reverse setting for sort variable.
+         'INVERT': Use current reverse settings for sort variable, unless
+             last sort was on same sort variable -- in which case,
+             reverse the sort order.
+        """
+        curColumn = self.sort
+        column = column or curColumn
+        curReverse = self.colReverse.get(column, False)
+        if column in self.nonReversibleCols: #--Disallow reverse for load
+            reverse = False
+        elif reverse == 'INVERT' and column == curColumn:
+            reverse = not curReverse
+        elif reverse in {'INVERT','CURRENT'}:
+            reverse = curReverse
+        #--Done
+        self.sort = column
+        self.colReverse[column] = reverse
+        return column, reverse, curColumn
+
+    def _SortItems(self, col, reverse, items=None, sortSpecial=True):
+        """Sort and return items by specified column, possibly in reverse
+        order.
+
+        If items are not specified, sort what is returned by GetItems() and
+        return that. If sortSpecial is False do not apply extra sortings."""
+        items = items if items is not None else self.GetItems()
+        def key(k): # if key is None then keep it None else provide self
+            k = self._sort_keys[k]
+            return k if k is None else partial(k, self)
+        defaultKey = key(self._default_sort_col)
+        defSort = col == self._default_sort_col
+        # always apply default sort
+        items.sort(key=defaultKey, reverse=defSort and reverse)
+        if not defSort: items.sort(key=key(col), reverse=reverse)
+        if sortSpecial:
+            for lamda in self._extra_sortings: lamda(self, items)
+        return items
+
+    def _setColumnSortIndicator(self, col, oldcol, reverse):
+        # set column sort image
+        try:
+            listCtrl = self._gList
+            try: listCtrl.ClearColumnImage(self._colDict[oldcol])
+            except KeyError:
+                pass # if old column no longer is active this will fail but
+                #  not a problem since it doesn't exist anyways.
+            listCtrl.SetColumnImage(self._colDict[col],
+                                    self.sm_dn if reverse else self.sm_up)
+        except KeyError: pass
+
+    #--Item/Index Translation -------------------------------------------------
+    def GetItem(self,index):
+        """Returns item for specified list index."""
+        return self._gList.FindItemAt(index)
+
+    def GetIndex(self,item):
+        """Return index for item, raise KeyError if item not present."""
+        return self._gList.FindIndexOf(item)
+
+    #--Populate Columns -------------------------------------------------------
+    def PopulateColumns(self):
+        """Create/name columns in ListCtrl."""
+        cols = self.cols # this may have been updated in ColumnsMenu.Execute()
+        numCols = len(cols)
+        names = set(bosh.settings['bash.colNames'].get(key) for key in cols)
+        self._colDict.clear()
+        colDex, listCtrl = 0, self._gList
+        while colDex < numCols: ##: simplify!
+            colKey = cols[colDex]
+            colName = bosh.settings['bash.colNames'].get(colKey, colKey)
+            colWidth = self.colWidths.get(colKey, 30)
+            if colDex >= listCtrl.GetColumnCount(): # Make a new column
+                listCtrl.InsertColumn(colDex, colName)
+                listCtrl.SetColumnWidth(colDex, colWidth)
+            else: # Update an existing column
+                column = listCtrl.GetColumn(colDex)
+                text = column.GetText()
+                if text == colName:
+                    # Don't change it, just make sure the width is correct
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+                elif text not in names:
+                    # Column that doesn't exist anymore
+                    listCtrl.DeleteColumn(colDex)
+                    continue # do not increment colDex or update colDict
+                else: # New column
+                    listCtrl.InsertColumn(colDex, colName)
+                    listCtrl.SetColumnWidth(colDex, colWidth)
+            self._colDict[colKey] = colDex
+            colDex += 1
+        while listCtrl.GetColumnCount() > numCols:
+            listCtrl.DeleteColumn(numCols)
+        self.autosizeColumns()
+
+    #--Drag and Drop-----------------------------------------------------------
+    def dndAllow(self):
+        # Only allow drag an drop when sorting by the columns specified in dndColumns
+        return self.sort in self._dndColumns
+
+    def OnDropFiles(self, x, y, filenames): raise AbstractError
+    def OnDropIndexes(self, indexes, newPos): raise AbstractError
+
+    # gList scroll position----------------------------------------------------
+    def SaveScrollPosition(self, isVertical=True):
+        bosh.settings[
+            self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
+            wx.VERTICAL if isVertical else wx.HORIZONTAL)
+
+    def SetScrollPosition(self):
+        self._gList.ScrollLines(
+            bosh.settings.get(self.keyPrefix + '.scrollPos', 0))
+
+    # Data commands (WIP)------------------------------------------------------
+    def Rename(self, selected=None):
+        if not selected: selected = self.GetSelected()
+        if len(selected) > 0:
+            index = self._gList.FindItem(0, selected[0].s)
+            if index != -1: self._gList.EditLabel(index)
+
+    @conversation
+    def DeleteItems(self, event=None, items=None,
+                    dialogTitle=_(u'Delete Items'), order=True):
+        recycle = (self.__class__._recycle and
+        # menu items fire 'CommandEvent' - I need a workaround to detect Shift
+            (True if event is None else not event.ShiftDown()))
+        items = self._toDelete(items)
+        if not self.__class__._shellUI:
+            items = self._promptDelete(items, dialogTitle, order, recycle)
+        if not items: return
+        for i in items: ##: simplify and make sure delete_Refresh() runs !
+            try:
+                if not self.__class__._shellUI: # non shellUI path used to
+                    # delete as many as possible, I kept this behavior
+                    self.data.delete(i, doRefresh=False, recycle=recycle)
+                else: # shellUI path tries to delete all at once
+                    self.data.delete(items, confirm=True, recycle=recycle)
+            except bolt.BoltError as e: showError(self, u'%r' % e)
+            except (AccessDeniedError, CancelError, SkipError): pass
+            finally:
+                if self.__class__._shellUI: break # could delete fail mid-way ?
+        else: self.data.delete_Refresh(items)
+        self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
+
+    def _toDelete(self, items):
+        return items if items is not None else self.GetSelected()
+
+    def _promptDelete(self, items, dialogTitle, order, recycle):
+        if not items: return items
+        message = [u'', _(u'Uncheck items to skip deleting them if desired.')]
+        if order: items.sort()
+        message.extend(items)
+        msg = _(u'Delete these items to the recycling bin ?') if recycle else \
+            _(u'Delete these items?  This operation cannot be undone.')
+        with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
+            if not dialog.askOkModal(): return []
+            return dialog.getChecked(message[0], items)
+
+    #--Helpers ----------------------------------------------------------------
+    @staticmethod
+    def _round(siz):
+        """Round non zero sizes to 1 KB."""
+        siz = u'0' if siz == 0 else bosh.formatInteger(max(siz, 1024) / 1024)
+        return siz + u' KB'
+
+#------------------------------------------------------------------------------
+class Tank(UIList):
+    """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
+    multiple columns and (optionally) column and item menus."""
+    _sunkenBorder = False
+
+    #--Updating/Sorting/Refresh -----------------------------------------------
+    @staticmethod
+    def _gpath(item): return item ##: maybe in installers use GPath ??
+
+    def getGuiKeys(self, item):
+        """Returns keys for icon and text and background colors."""
+        iconKey = textKey = backKey = None
+        return iconKey, textKey, backKey
+
+    def getMouseText(self, *args, **kwdargs): return u''
+
+    def setUI(self, fileName, itemDex):
+        gItem = self._gList.GetItem(itemDex)
+        iconKey, textKey, backKey = self.getGuiKeys(fileName)
+        self.mouseTexts[fileName] = self.getMouseText(
+            iconKey, textKey, backKey)
+        if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
+        if textKey: gItem.SetTextColour(colors[textKey])
+        else: gItem.SetTextColour(self._gList.GetTextColour())
+        if backKey: gItem.SetBackgroundColour(colors[backKey])
+        else: gItem.SetBackgroundColour(self._defaultTextBackground)
+        self._gList.SetItem(gItem)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Links(list):
     """List of menu or button links."""
-    class LinksPoint:
-        """Point in a link list. For inserting, removing, appending items."""
-        def __init__(self,list,index):
-            self._list = list
-            self._index = index
-        def remove(self):
-            del self._list[self._index]
-        def replace(self,item):
-            self._list[self._index] = item
-        def insert(self,item):
-            self._list.insert(self._index,item)
-            self._index += 1
-        def append(self,item):
-            self._list.insert(self._index+1,item)
-            self._index += 1
-
-    #--Access functions:
-    def getClassPoint(self,classObj):
-        """Returns index"""
-        for index,item in enumerate(self):
-            if isinstance(item,classObj):
-                return Links.LinksPoint(self,index)
-        else:
-            return None
 
     #--Popup a menu from the links
-    def PopupMenu(self,parent,eventWindow=None,*args):
+    def PopupMenu(self, parent=None, eventWindow=None, *args):
+        parent = parent or Link.Frame
         eventWindow = eventWindow or parent
         menu = wx.Menu()
+        Link.Popup = menu
         for link in self:
             link.AppendToMenu(menu,parent,*args)
         eventWindow.PopupMenu(menu)
         menu.Destroy()
+        Link.Popup = None # do not leak the menu reference
 
 #------------------------------------------------------------------------------
-class Link:
-    """Link is a command to be encapsulated in a graphic element (menu item, button, etc.)"""
-    Frame = None    # Frame to update the statusbar of
-    Popup = None    # Current popup menu
+class Link(object):
+    """Link is a command to be encapsulated in a graphic element (menu item,
+    button, etc.).
 
-    def __init__(self):
-        self.id = None
+    Subclasses MUST define a text attribute (the menu label) preferably as a
+    class attribute, or if it depends on current state by overriding
+    _initData().
+    Link objects are _not_ menu items. They are instantiated _once_ in
+    InitLinks(). Their AppendToMenu() is responsible for creating a wx MenuItem
+    or wx submenu and append this to the currently popped up wx menu.
+    Contract:
+    - Link.__init__() is called _once_, _before the Bash app is initialized_,
+    except for "local" Link subclasses used in ChoiceLink related code.
+    - Link.AppendToMenu() overrides stay confined in balt.
+    - Link.Frame is set once and for all to the (ex) basher.bashFrame
+      singleton. Use (sparingly) as the 'link' between menus and data layer.
+    """
+    Frame = None   # BashFrame singleton, set once and for all in BashFrame()
+    Popup = None   # Current popup menu, set in Links.PopupMenu()
+    text = u''     # Menu label (may depend on UI state when the menu is shown)
 
-    def AppendToMenu(self,menu,window,data):
-        """Append self to menu as menu item."""
-        if isinstance(window,Tank):
-            self.gTank = window
-            self.window = window
-            self.selected = window.GetSelected()
-            self.data = window.data
-            self.title = window.data.title
-        else:
-            self.window = window
-            self.data = data
-        #--Generate self.id if necessary (i.e. usually)
-        if not self.id: self.id = wx.NewId()
-        Link.Popup = menu
+    def __init__(self, _text=None):
+        """Assign a wx Id.
+
+        Parameter _text underscored cause its use should be avoided - prefer to
+        specify text as a class attribute (or set in it _initData()).
+        """
+        super(Link, self).__init__()
+        self.id = wx.NewId() # register wx callbacks in AppendToMenu overrides
+        self.text = _text or self.__class__.text # menu label
+
+    def _initData(self, window, selection):
+        """Initialize the Link instance data based on UI state when the
+        menu is Popped up.
+
+        Called from AppendToMenu - DO NOT call directly. If you need to use the
+        initialized data in setting instance attributes (such as text) override
+        and always _call super_ when overriding.
+        :param window: the element the menu is being popped from (usually a
+        UIList subclass)
+        :param selection: the selected items when the menu is appended or None.
+        In modlist/installers it's a list<Path> while in subpackage it's the
+        index of the right-clicked item. In main (column header) menus it's
+        the column clicked on or the first column. Set in Links.PopupMenu().
+        """
+        # Tank, List, Panel, wx.Button, BashStatusbar etc instances
+        self.window = window
+        self.selected = selection
+
+    def AppendToMenu(self, menu, window, selection):
+        """Creates a wx menu item and appends it to :menu.
+
+        Link implementation calls _initData and returns None.
+        """
+        self._initData(window, selection)
+
+    # Wrappers around balt dialogs - used to single out non trivial uses of
+    # self->window
+    ##: avoid respecifying default params
+    def _showWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return showWarning(self.window, message, title=title, **kwdargs)
+
+    def _askYes(self, message, title=u'', default=True, questionIcon=False):
+        if not title: title = self.text
+        return askYes(self.window, message, title=title, default=default,
+                      questionIcon=questionIcon)
+
+    def _askContinue(self, message, continueKey, title=_(u'Warning')):
+        return askContinue(self.window, message, continueKey, title=title)
+
+    def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', mustExist=False):
+        return askOpen(self.window, title=title, defaultDir=defaultDir,
+                       defaultFile=defaultFile, wildcard=wildcard,
+                       mustExist=mustExist)
+
+    def _askOk(self, message, title=u''):
+        if not title: title = self.text
+        return askOk(self.window, message, title)
+
+    def _showOk(self, message, title=u'', **kwdargs):
+        return showOk(self.window, message, title, **kwdargs)
+
+    def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
+        return askWarning(self.window, message, title, **kwdargs)
+
+    def _askText(self, message, title=u'', default=u''):
+        if not title: title = self.text
+        return askText(self.window, message, title=title, default=default)
+
+    def _showError(self, message, title=_(u'Error'), **kwdargs):
+        return showError(self.window, message, title, **kwdargs)
+
+    def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
+                 wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
+        return askSave(self.window, title, defaultDir, defaultFile, wildcard,
+                       style)
+
+    def _showLog(self, logText, title=u'', style=0, asDialog=False,
+                 fixedFont=False, icons=None, size=True):
+        showLog(self.window, logText, title, style, asDialog, fixedFont, icons,
+                size)
+
+    def _showInfo(self, message, title=_(u'Information'), **kwdargs):
+        return showInfo(self.window, message, title, **kwdargs)
+
+    def _showWryeLog(self, logText, title=u'', asDialog=True, icons=None):
+        return showWryeLog(self.window, logText, title, asDialog, icons)
+
+    def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
+                   max=10000):
+        return askNumber(self.window, message, prompt, title, value, min, max)
+
+    def _askOpenMulti(self, title=u'', defaultDir=u'', defaultFile=u'',
+                      wildcard=u''):
+        return askOpenMulti(self.window, title, defaultDir, defaultFile,
+                            wildcard)
+
+    def _askDirectory(self, message=_(u'Choose a directory.'),
+                      defaultPath=u''):
+        return askDirectory(self.window, message, defaultPath)
+
+    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+        return askContinueShortTerm(self.window, message, title=title)
+
+# Link subclasses -------------------------------------------------------------
+class ItemLink(Link):
+    """Create and append a wx menu item.
+
+    Subclasses MUST define text (preferably class) attribute and should
+    override help. Registers the Execute() and ShowHelp methods on menu events.
+    """
+    kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
+    help = None
+
+    def AppendToMenu(self, menu, window, selection):
+        """Append self as menu item and set callbacks to be executed when
+        selected."""
+        super(ItemLink, self).AppendToMenu(menu, window, selection)
         wx.EVT_MENU(Link.Frame,self.id,self.Execute)
-        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,Link.ShowHelp)
-        wx.EVT_MENU_OPEN(Link.Frame,Link.OnMenuOpen)
+        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
+        menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
+                               self.__class__.kind)
+        menu.AppendItem(menuItem)
+        return menuItem
 
+    # Callbacks ---------------------------------------------------------------
     def Execute(self, event):
         """Event: link execution."""
         raise AbstractError
 
     @staticmethod
-    def OnMenuOpen(event):
-        """Hover over a submenu, clear the status bar text"""
-        Link.Frame.GetStatusBar().SetText('')
-
-    @staticmethod
-    def ShowHelp(event):
+    def ShowHelp(event): # <wx._core.MenuEvent>
         """Hover over an item, set the statusbar text"""
         if Link.Popup:
-            item = Link.Popup.FindItemById(event.GetId())
-            if item:
-                Link.Frame.GetStatusBar().SetText(item.GetHelp())
-            else:
-                Link.Frame.GetStatusBar().SetText(u'')
+            item = Link.Popup.FindItemById(event.GetId()) # <wx._core.MenuItem>
+            Link.Frame.SetStatusInfo(item.GetHelp() if item else u'')
 
-#------------------------------------------------------------------------------
-class SeparatorLink(Link):
-    """Link that acts as a separator item in menus."""
-
-    def AppendToMenu(self,menu,window,data):
-        """Add separator to menu."""
-        menu.AppendSeparator()
-
-#------------------------------------------------------------------------------
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
+    help = u'UNUSED'
 
-    def __init__(self,name,oneDatumOnly=False):
-        """Initialize. Submenu items should append to self.links."""
-        Link.__init__(self)
-        self.name = name
+    def __init__(self, name=None, oneDatumOnly=False):
+        """Initialize. Submenu items should append themselves to self.links."""
+        super(MenuLink, self).__init__()
+        self.text = name or self.__class__.text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
-    def AppendToMenu(self,menu,window,data):
-        """Add self as submenu (along with submenu items) to menu."""
+    def append(self, link): self.links.append(link) ##: MenuLink(Link, Links) !
+
+    def _enable(self): return not self.oneDatumOnly or len(self.selected) == 1
+
+    def AppendToMenu(self, menu, window, selection):
+        """Append self as submenu (along with submenu items) to menu."""
+        super(MenuLink, self).AppendToMenu(menu, window, selection)
+        wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        for link in self.links:
-            link.AppendToMenu(subMenu,window,data)
-        menu.AppendMenu(-1,self.name,subMenu)
-        if self.oneDatumOnly and len(data) != 1:
-            id = menu.FindItem(self.name)
-            menu.Enable(id,False)
+        menu.AppendMenu(self.id, self.text, subMenu)
+        if not self._enable():
+            menu.Enable(self.id, False)
+        else: # do not append sub links unless submenu enabled
+            for link in self.links: link.AppendToMenu(subMenu, window,
+                                                      selection)
+        return subMenu
 
-# Tanks Links -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class Tanks_Open(Link):
-    """Opens data directory in explorer."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),_(u"Open '%s'") % self.data.dir.tail)
-        menu.AppendItem(menuItem)
+    @staticmethod
+    def OnMenuOpen(event):
+        """Hover over a submenu, clear the status bar text"""
+        Link.Frame.SetStatusInfo(u'')
+
+class ChoiceLink(Link):
+    """List of Choices with optional menu items to edit etc those choices."""
+    extraItems = [] # list<Link>
+    cls = ItemLink
+
+    def _range(self):
+        for choice in self._choices: yield self.__class__.cls(_text=choice)
+
+    @property
+    def _choices(self): return []
+
+    def AppendToMenu(self, menu, window, selection):
+        """Append Link items."""
+        submenu = super(ChoiceLink, self).AppendToMenu(menu, window, selection)
+        if isinstance(submenu, wx.Menu): # we inherit a Menu, append to it
+            menu = submenu
+        for link in self.extraItems:
+            link.AppendToMenu(menu, window, selection)
+        for link in self._range():
+            link.AppendToMenu(menu, window, selection)
+        # returns None
+
+class TransLink(Link):
+    """Transcendental link, can't quite make up its mind."""
+    # No state
+
+    def _decide(self, window, selection):
+        """Return a Link subclass instance to call AppendToMenu on."""
+        raise AbstractError
+
+    def AppendToMenu(self, menu, window, selection):
+        return self._decide(window, selection).AppendToMenu(menu, window,
+                                                            selection)
+
+class SeparatorLink(Link):
+    """Link that acts as a separator item in menus."""
+
+    def AppendToMenu(self, menu, window, selection):
+        """Add separator to menu."""
+        menu.AppendSeparator()
+
+# Link Mixin ------------------------------------------------------------------
+class AppendableLink(Link):
+    """A menu item or submenu that may be appended to a Menu or not.
+
+    Mixin to be used with Link subclasses that override Link.AppendToMenu.
+    Could use a metaclass in Link and replace AppendToMenu with one that
+    returns if _append() == False.
+    """
+
+    def _append(self, window):
+        """"Override as needed to append or not the menu item."""
+        raise AbstractError
+
+    def AppendToMenu(self, menu, window, selection):
+        if not self._append(window): return
+        return super(AppendableLink, self).AppendToMenu(menu, window,
+                                                        selection)
+
+# ItemLink subclasses ---------------------------------------------------------
+class EnabledLink(ItemLink):
+    """A menu item that may be disabled.
+
+    The item is by default enabled. Override _enable() to disable\enable
+    based on some condition. Subclasses MUST define self.text, preferably as
+    a class attribute.
+    """
+
+    def _enable(self):
+        """"Override as needed to enable or disable the menu item (enabled
+        by default)."""
+        return True
+
+    def AppendToMenu(self, menu, window, selection):
+        menuItem = super(EnabledLink, self).AppendToMenu(menu, window,
+                                                         selection)
+        menuItem.Enable(self._enable())
+        return menuItem
+
+class OneItemLink(EnabledLink):
+    """Link enabled only when there is one and only one selected item.
+
+    To be used in Link subclasses where self.selected is a list instance.
+    """
+    ##: maybe edit help to add _(u'. Select one item only')
+    def _enable(self): return len(self.selected) == 1
+
+class CheckLink(ItemLink):
+    kind = wx.ITEM_CHECK
+
+    def _check(self): raise AbstractError
+
+    def AppendToMenu(self, menu, window, selection):
+        menuItem = super(CheckLink, self).AppendToMenu(menu, window, selection)
+        menuItem.Check(self._check())
+        return menuItem
+
+class RadioLink(CheckLink):
+    kind = wx.ITEM_RADIO
+
+class BoolLink(CheckLink):
+    """Simple link that just toggles a setting."""
+    text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
+    opposite = False
+
+    def _check(self):
+        # check if not the same as self.opposite (so usually check if True)
+        return bosh.settings[self.key] ^ self.__class__.opposite
+
+    def Execute(self,event): bosh.settings[self.key] ^= True # toggle
+
+# UIList Links ----------------------------------------------------------------
+class UIList_Delete(ItemLink):
+    """Delete selected item(s) from UIList."""
+    text = _(u'Delete')
+    help = _(u'Delete selected item(s)')
 
     def Execute(self,event):
-        """Handle selection."""
-        dir = self.data.dir
-        dir.makedirs()
-        dir.start()
+        # event is a 'CommandEvent' and I can't check if shift is pressed - duh
+        with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
-# Tank Links ------------------------------------------------------------------
+# wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Tank_Delete(Link):
-    """Deletes selected file from tank."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menu.AppendItem(wx.MenuItem(menu,self.id,_(u'Delete')))
+def copyToClipboard(text):
+    if wx.TheClipboard.Open():
+        wx.TheClipboard.SetData(wx.TextDataObject(text))
+        wx.TheClipboard.Close()
+
+def copyListToClipboard(selected):
+    if selected and not wx.TheClipboard.IsOpened():
+        wx.TheClipboard.Open()
+        clipData = wx.FileDataObject()
+        for mod in selected: clipData.AddFile(mod)
+        wx.TheClipboard.SetData(clipData)
+        wx.TheClipboard.Close()
+
+def clipboardDropFiles(millis, callable_):
+    if wx.TheClipboard.Open():
+        if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
+            obj = wx.FileDataObject()
+            wx.TheClipboard.GetData(obj)
+            wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
+        wx.TheClipboard.Close()
+
+def getKeyState(key): return wx.GetKeyState(key)
+def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
+def getKeyState_Control(): return wx.GetKeyState(wx.WXK_CONTROL)
+
+wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
+wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
+wxArrows = wxArrowUp | wxArrowDown
+wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
+wxDelete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
+
+# ListBoxes -------------------------------------------------------------------
+class _CheckList_SelectAll(ItemLink):
+    """Menu item used in ListBoxes."""
+    def __init__(self,select=True):
+        super(_CheckList_SelectAll, self).__init__()
+        self.select = select
+        self.text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self,event):
-        try:
-            wx.BeginBusyCursor()
-            self.gTank.DeleteSelected()
-        finally:
-            wx.EndBusyCursor()
-#------------------------------------------------------------------------------
-class Tank_Open(Link):
-    """Open selected file(s)."""
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        if len(data) == 1:
-            help = _(u"Open '%s'") % data[0]
+        for i in xrange(self.window.GetCount()):
+            self.window.Check(i,self.select)
+
+class ListBoxes(Dialog):
+    """A window with 1 or more lists."""
+
+    def __init__(self, parent, title, message, lists, liststyle='check',
+                 style=0, bOk=_(u'OK'), bCancel=_(u'Cancel'), canCancel=True):
+        """lists is in this format:
+        if liststyle == 'check' or 'list'
+        [title,tooltip,item1,item2,itemn],
+        [title,tooltip,....],
+        elif liststyle == 'tree'
+        [title,tooltip,{item1:[subitem1,subitemn],item2:[subitem1,subitemn],itemn:[subitem1,subitemn]}],
+        [title,tooltip,....],
+        """
+        super(ListBoxes, self).__init__(parent, title=title, style=style,
+                                        resize=True)
+        self.itemMenu = Links()
+        self.itemMenu.append(_CheckList_SelectAll())
+        self.itemMenu.append(_CheckList_SelectAll(False))
+        self.SetIcons(Resources.bashBlue)
+        minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
+        sizer = wx.FlexGridSizer(len(lists) + 2, 1)
+        self.text = StaticText(self, message)
+        self.text.Rewrap(minWidth) # otherwise self.text expands to max width
+        sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
+        sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)
+        self._ids = {}
+        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
+        self.SetSize(wxSize(minWidth, -1))
+        for i,group in enumerate(lists):
+            title = group[0] # also serves as key in self._ids dict
+            tip = group[1]
+            try: strings = [x.s for x in group[2:]]
+            except AttributeError: strings = [x for x in group[2:]]
+            if len(strings) == 0: continue
+            subsizer = hsbSizer((self, wx.ID_ANY, title))
+            if liststyle == 'check':
+                checksCtrl = listBox(self, choices=strings, isSingle=True,
+                                     isHScroll=True, kind='checklist')
+                checksCtrl.Bind(wx.EVT_KEY_UP,self.OnKeyUp)
+                checksCtrl.Bind(wx.EVT_CONTEXT_MENU,self.OnContext)
+                # check all - for range and set see wx._controls.CheckListBox
+                checksCtrl.SetChecked(set(range(len(strings))))
+            elif liststyle == 'list':
+                checksCtrl = listBox(self, choices=strings, isHScroll=True)
+            else:
+                checksCtrl = wx.TreeCtrl(self, size=(150, 200),
+                                         style=wx.TR_DEFAULT_STYLE |
+                                               wx.TR_FULL_ROW_HIGHLIGHT |
+                                               wx.TR_HIDE_ROOT)
+                root = checksCtrl.AddRoot(title)
+                wx.EVT_MOTION(checksCtrl, self.OnMotion)
+                for item, subitems in group[2].iteritems():
+                    child = checksCtrl.AppendItem(root,item.s)
+                    for subitem in subitems:
+                        checksCtrl.AppendItem(child,subitem.s)
+            self._ids[title] = checksCtrl.GetId()
+            checksCtrl.SetToolTip(tooltip(tip))
+            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
+            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
+            sizer.AddGrowableRow(i + 1)
+        okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
+        buttonSizer = hSizer(spacer,
+                             (okButton,0,wx.ALIGN_RIGHT),
+                             )
+        if canCancel:
+            buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
+        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        sizer.AddGrowableCol(0)
+        sizer.SetSizeHints(self)
+        self.SetSizer(sizer)
+        #make sure that minimum size is at least the size of title
+        if self.GetSize()[0] < minWidth:
+            self.SetSize(wxSize(minWidth,-1))
+        self.text.Rewrap(self.GetSize().width)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+
+    def OnMotion(self, event): return
+
+    def OnSize(self, event):
+        self.text.Rewrap(self.GetSize().width)
+        event.Skip()
+
+    def OnKeyUp(self,event):
+        """Char events"""
+        ##Ctrl-A - check all
+        obj = event.GetEventObject()
+        if event.CmdDown() and event.GetKeyCode() == ord('A'):
+            check = not event.ShiftDown()
+            for i in xrange(len(obj.GetStrings())):
+                    obj.Check(i,check)
         else:
-            help = _(u"Open selected files.")
-        menuItem = wx.MenuItem(menu,self.id,_(u'Open...'),help)
-        menu.AppendItem(menuItem)
-        menuItem.Enable(bool(self.selected))
+            event.Skip()
 
-    def Execute(self,event):
-        """Handle selection."""
-        dir = self.data.dir
-        for file in self.selected:
-            dir.join(file).start()
+    def OnContext(self,event):
+        """Context Menu"""
+        self.itemMenu.PopupMenu(event.GetEventObject(), Link.Frame,
+                                event.GetEventObject().GetSelections())
+        event.Skip()
 
-#------------------------------------------------------------------------------
-class Tank_Duplicate(Link):
-    """Create a duplicate of a tank item, assuming that tank item is a file,
-    and using a SaveAs dialog."""
+    def OnClick(self,event):
+        id_ = event.GetId()
+        if id_ not in (wx.ID_OK,wx.ID_CANCEL):
+            self.EndModal(id_)
+        else:
+            event.Skip()
 
-    def AppendToMenu(self,menu,window,data):
-        Link.AppendToMenu(self,menu,window,data)
-        menuItem = wx.MenuItem(menu,self.id,_(u'Duplicate...'))
-        menu.AppendItem(menuItem)
-        menuItem.Enable(len(self.selected) == 1)
+    def askOkModal(self): return self.ShowModal() != wx.ID_CANCEL
 
-    def Execute(self,event):
-        srcDir = self.data.dir
-        srcName = self.selected[0]
-        (root,ext) = srcName.rootExt
-        (destDir,destName,wildcard) = (srcDir, root+u' Copy'+ext,u'*'+ext)
-        destPath = askSave(self.gTank,_(u'Duplicate as:'),destDir,destName,wildcard)
-        if not destPath: return
-        destDir,destName = destPath.headTail
-        if (destDir == srcDir) and (destName == srcName):
-            self.showError(self.window,_(u"Files cannot be duplicated to themselves!"))
-            return
-        self.data.copy(srcName,destName,destDir)
-        if destDir == srcDir:
-            self.gTank.RefreshUI()
+    def getChecked(self, key, items, checked=True):
+        """Return a sublist of 'items' containing (un)checked items.
+
+        The control only displays the string names of items, that is why items
+        needs to be passed in. If items is empty it will return an empty list.
+        :param key: a key for the private _ids dictionary
+        :param items: the items that correspond to the _ids[key] checksCtrl
+        :param checked: keep checked items if True (default) else unchecked
+        :rtype : list
+        :return: the items in 'items' for (un)checked checkboxes in _ids[key]
+        """
+        if not items: return []
+        select = []
+        checkList = self.FindWindowById(self._ids[key])
+        if checkList:
+            for i, mod in enumerate(items):
+                if checkList.IsChecked(i) ^ (not checked): select.append(mod)
+        return select

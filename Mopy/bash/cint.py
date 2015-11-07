@@ -46,8 +46,8 @@ try:
     #See if cint is being used by Wrye Bash
     from bolt import CBash as CBashEnabled
     from bolt import GPath, deprint, Path
-    from bolt import _encode as _enc
-    from bolt import _unicode as _uni
+    from bolt import encode as _enc
+    from bolt import decode as _uni
     import bolt
     def _encode(text,*args,**kwdargs):
         if len(args) > 1:
@@ -204,7 +204,7 @@ if CBash:
         print "CBash encountered an error", raisedString, "Check the log."
 ##        raise CBashError("Check the log.")
         return
-    
+
     try:
         _CGetVersionMajor = CBash.GetVersionMajor
         _CGetVersionMinor = CBash.GetVersionMinor
@@ -1143,7 +1143,7 @@ class MGEFCode(object):
            Raw MGEFCode       = (int(MGEFCode)   , None)
            Raw MGEFCode       = (string(MGEFCode), None)
            Empty MGEFCode     = (None            , None))"""
-        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(GPath(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(master, objectID) if objectID < 0x80000000 else None
+        self.mgefCode = MGEFCode.EmptyMGEFCode() if master is None else master.mgefCode if isinstance(master, MGEFCode) else MGEFCode.RawMGEFCode(master) if objectID is None else MGEFCode.RawMGEFCode(objectID) if isinstance(objectID, basestring) else MGEFCode.UnvalidatedMGEFCode(GPath(master), objectID) if isinstance(master, (basestring, Path)) else MGEFCode.RawMGEFCode(objectID) if objectID < 0x80000000 else None
         if self.mgefCode is None:
             masterstr = _CGetLongIDName(master, objectID, 1)
             self.mgefCode = MGEFCode.ValidMGEFCode(GPath(masterstr), objectID, objectID, _CGetCollectionIDByRecordID(master)) if masterstr else MGEFCode.InvalidMGEFCode(objectID)
@@ -10591,7 +10591,7 @@ class ObBaseRecord(object):
 
     def HasInvalidFormIDs(self):
         return _CIsRecordFormIDsInvalid(self._RecordID) > 0
-    
+
     def Conflicts(self, GetExtendedConflicts=False):
         numRecords = _CGetNumRecordConflicts(self._RecordID, c_ulong(GetExtendedConflicts)) #gives upper bound
         if(numRecords > 1):
@@ -12754,14 +12754,14 @@ class ObMGEFRecord(ObBaseRecord):
     IsFogType = CBashMaskedType('flags', 0x06000000, 0x06000000, 'IsBallType')  #Changeable
 
     def get_IsSprayType(self):
-        return self.flags != None and not self.IsFogType and (self.flags & 0x02000000) != 0
+        return self.flags is not None and not self.IsFogType and (self.flags & 0x02000000) != 0
     def set_IsSprayType(self, nValue):
         if nValue: self.flags = (self.flags & ~0x06000000) | 0x02000000
         elif self.IsSprayType: self.IsBallType = True
     IsSprayType = property(get_IsSprayType, set_IsSprayType)  #Changeable
 
     def get_IsBoltType(self):
-        return self.flags != None and not self.IsFogType and (self.flags & 0x04000000) != 0
+        return self.flags is not None and not self.IsFogType and (self.flags & 0x04000000) != 0
     def set_IsBoltType(self, nValue):
         if nValue: self.flags = (self.flags & ~0x06000000) | 0x04000000
         elif self.IsBoltType: self.IsBallType = True
@@ -14065,17 +14065,17 @@ class ObWTHRRecord(ObBaseRecord):
     exportattrs.remove('modt_p')
 
 #Helper functions
-validTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
-                  'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
-                  'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
-                  'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
-                  'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
-                  'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
-                  'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
-                  'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
-                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+validTypes = {'GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+              'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
+              'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
+              'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
+              'FLOR','FURN','WEAP','AMMO','NPC_','CREA','LVLC',
+              'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
+              'CLMT','REGN','WRLD','CELL','ACHR','ACRE','REFR',
+              'PGRD','LAND','ROAD','DIAL','INFO','QUST','IDLE',
+              'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'}
 
-aggregateTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
+aggregateTypes = {'GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'SOUN','SKIL','MGEF','SCPT','LTEX','ENCH','SPEL',
                   'BSGN','ACTI','APPA','ARMO','BOOK','CLOT','CONT',
                   'DOOR','INGR','LIGH','MISC','STAT','GRAS','TREE',
@@ -14083,10 +14083,10 @@ aggregateTypes = set(['GMST','GLOB','CLAS','FACT','HAIR','EYES','RACE',
                   'SLGM','KEYM','ALCH','SBSP','SGST','LVLI','WTHR',
                   'CLMT','REGN','WRLD','CELLS','ACHRS','ACRES','REFRS',
                   'PGRDS','LANDS','ROADS','DIAL','INFOS','QUST','IDLE',
-                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'])
+                  'PACK','CSTY','LSCR','LVSP','ANIO','WATR','EFSH'}
 
-pickupables = set(['APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
-                   'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'])
+pickupables = {'APPA','ARMO','BOOK','CLOT','INGR','LIGH','MISC',
+               'WEAP','AMMO','SLGM','KEYM','ALCH','SGST'}
 
 type_record = dict([('BASE',ObBaseRecord),(None,None),('',None),
                     ('GMST',ObGMSTRecord),('GLOB',ObGLOBRecord),('CLAS',ObCLASRecord),

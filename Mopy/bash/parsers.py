@@ -17,26 +17,26 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
-"""This module contains the utility classes used by the oblivion patchers,
- originally in bosh.py. It should be further split into a package and the
- classes unified under Abstract Base classes (see
- https://github.com/wrye-bash/wrye-bash/issues/1)."""
+"""This module contains the parser classes used by the importer patcher classes
+and the Mod_Import/Export Mods menu."""
 
 import ctypes
 from operator import attrgetter, itemgetter
 import re
 import struct
-
-from bash import bolt, bush, balt
-from bash.bolt import GPath, _unicode, deprint
-from bash.bosh import LoadFactory, ModFile, dirs, inisettings
-from bash.brec import MreRecord, MelObject, _coerce, genFid, ModReader
-from bash.cint import ObCollection, FormID, aggregateTypes, validTypes, \
+# Internal
+import bush # for game and actorValues
+import bosh # for modInfos
+from balt import Progress
+from bolt import GPath, decode, deprint, CsvReader, csvFormat
+from bosh import LoadFactory, ModFile, dirs, inisettings
+from brec import MreRecord, MelObject, _coerce, genFid, ModReader
+from cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
 
@@ -55,10 +55,9 @@ class ActorFactions:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in self.gotFactions: continue
-            modFile = ModFile(modInfos[modName],loadFactory)
+            modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
             for record in modFile.FACT.getActiveRecords():
@@ -128,7 +127,7 @@ class ActorFactions:
         """Imports faction data from specified text file."""
         type_id_factions = self.type_id_factions
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 type_,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
@@ -245,7 +244,7 @@ class CBash_ActorFactions:
         """Imports faction data from specified text file."""
         group_fid_factions = self.group_fid_factions
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 group,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
@@ -296,10 +295,9 @@ class ActorLevels:
         """Imports actor level data from the specified mod and its masters."""
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'])
-        from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in gotLevels: continue
-            modFile = ModFile(modInfos[modName],loadFactory)
+            modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
             for record in modFile.NPC_.getActiveRecords():
@@ -340,7 +338,7 @@ class ActorLevels:
         """Imports NPC level data from specified text file."""
         mod_id_levels = self.mod_id_levels
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if fields[0][:2] == u'0x': #old format
                     fid,eid,offset,calcMin,calcMax = fields[:5]
@@ -460,7 +458,7 @@ class CBash_ActorLevels:
         """Imports NPC level data from specified text file."""
         mod_fid_levels = self.mod_fid_levels
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if fields[0][:2] == u'0x': #old format
                     fid,eid,offset,calcMin,calcMax = fields[:5]
@@ -634,7 +632,7 @@ class EditorIds:
         """Imports eids from specified text file."""
         type_id_eid = self.type_id_eid
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             reValidEid = re.compile(u'^[a-zA-Z0-9]+$')
             reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
@@ -765,7 +763,7 @@ class CBash_EditorIds:
         """Imports eids from specified text file."""
         group_fid_eid = self.group_fid_eid
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             reValidEid = re.compile(u'^[a-zA-Z0-9]+$')
             reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
@@ -816,10 +814,9 @@ class FactionRelations:
     def readFactionEids(self,modInfo):
         """Extracts faction editor ids from modInfo and its masters."""
         loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        from bash.bosh import modInfos
         for modName in (modInfo.header.masters + [modInfo.name]):
             if modName in self.gotFactions: continue
-            modFile = ModFile(modInfos[modName],loadFactory)
+            modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
             mapper = modFile.getLongMapper()
             for record in modFile.FACT.getActiveRecords():
@@ -851,7 +848,7 @@ class FactionRelations:
         """Imports faction relations from specified text file."""
         id_relations = self.id_relations
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
@@ -962,7 +959,7 @@ class CBash_FactionRelations:
         """Imports faction relations from specified text file."""
         fid_faction_mod = self.fid_faction_mod
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med,mmod,mobj,oed,omod,oobj,disp = fields[:9]
@@ -1045,7 +1042,7 @@ class FidReplacer:
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             # pack,unpack = struct.pack,struct.unpack   # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
@@ -1125,7 +1122,7 @@ class CBash_FidReplacer:
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             # pack,unpack = struct.pack,struct.unpack  # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
@@ -1148,15 +1145,14 @@ class CBash_FidReplacer:
         """Updates specified mod file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         #Filter the fid replacements to only include existing mods
-        from bash.bosh import modInfos
-        existing = modInfos.keys()
+        existing = bosh.modInfos.keys()
         old_new = dict((oldId,newId) for oldId,newId in old_new.iteritems() if
                        oldId[0] in existing and newId[0] in existing)
         if not old_new: return False
         # old_count = {} # unused - was meant to be used ?
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             for newId in set(old_new.values()):
-                Current.addMod(modInfos[newId[0]].getPath().stail,
+                Current.addMod(bosh.modInfos[newId[0]].getPath().stail,
                                Saveable=False)
             modFile = Current.addMod(modInfo.getPath().stail)
             Current.load()
@@ -1229,7 +1225,7 @@ class FullNames:
         textPath = GPath(textPath)
         type_id_name = self.type_id_name
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid,full = fields[:5]
@@ -1321,7 +1317,7 @@ class CBash_FullNames:
         textPath = GPath(textPath)
         group_fid_name = self.group_fid_name
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 5 or fields[2][:2] != u'0x': continue
                 group,mod,objectIndex,eid,full = fields[:5]
@@ -1439,7 +1435,7 @@ class ItemStats:
         """Reads stats from specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
@@ -1575,7 +1571,7 @@ class CBash_ItemStats:
         """Reads stats from specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
@@ -1601,7 +1597,7 @@ class CBash_ItemStats:
         with textPath.open('w',encoding='utf-8-sig') as out:
             def write(out, attrs, values):
                 attr_type = self.attr_type
-                csvFormat = u''
+                _csvFormat = u''
                 sstr = self.sstr
                 sint = self.sint
                 snoneint = self.snoneint
@@ -1610,13 +1606,13 @@ class CBash_ItemStats:
                     stype = attr_type[attr]
                     values[index] = stype(values[index]) #sanitize output
                     if values[index] is None:
-                        csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sstr: csvFormat += u',"{0[%d]}"' % index
-                    elif stype is sint or stype is snoneint: csvFormat += \
+                        _csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sstr: _csvFormat += u',"{0[%d]}"' % index
+                    elif stype is sint or stype is snoneint: _csvFormat += \
                         u',"{0[%d]:d}"' % index
-                    elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
-                csvFormat = csvFormat[1:] #--Chop leading comma
-                out.write(csvFormat.format(values) + u'\n')
+                    elif stype is sfloat: _csvFormat += u',"{0[%d]:f}"' % index
+                _csvFormat = _csvFormat[1:] #--Chop leading comma
+                out.write(_csvFormat.format(values) + u'\n')
             for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
@@ -1643,7 +1639,7 @@ class ScriptText:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        with balt.Progress(_(u"Export Scripts")) as progress:
+        with Progress(_(u"Export Scripts")) as progress:
             records = modFile.SCPT.getActiveRecords()
             y = len(records)
             z = 0
@@ -1691,7 +1687,7 @@ class ScriptText:
         patches folder."""
         eid_data = self.eid_data
         textPath = GPath(textPath)
-        with balt.Progress(_(u"Import Scripts")) as progress:
+        with Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
@@ -1726,7 +1722,7 @@ class ScriptText:
         z = 0
         num = 0
         r = len(deprefix)
-        with balt.Progress(_(u"Export Scripts")) as progress:
+        with Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
                 if skipcomments:
@@ -1772,7 +1768,7 @@ class CBash_ScriptText:
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-            with balt.Progress(_(u"Export Scripts")) as progress:
+            with Progress(_(u"Export Scripts")) as progress:
                 records = modFile.SCPT
                 y = len(records)
                 z = 0
@@ -1815,7 +1811,7 @@ class CBash_ScriptText:
         patches folder."""
         eid_data = self.eid_data
         textPath = GPath(textPath)
-        with balt.Progress(_(u"Import Scripts")) as progress:
+        with Progress(_(u"Import Scripts")) as progress:
             for root, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
@@ -1847,10 +1843,10 @@ class CBash_ScriptText:
         z = 0
         num = 0
         r = len(deprefix)
-        with balt.Progress(_(u"Export Scripts")) as progress:
+        with Progress(_(u"Export Scripts")) as progress:
             for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
                 text, longid = eid_data[eid]
-                text = _unicode(text)
+                text = decode(text)
                 if skipcomments:
                     tmp = u''
                     for line in text.split(u'\n'):
@@ -2129,7 +2125,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats,self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,\
@@ -2233,7 +2229,7 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats,self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,\
@@ -2338,7 +2334,7 @@ class ItemPrices:
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
@@ -2354,7 +2350,7 @@ class ItemPrices:
         """Writes stats to specified text file."""
         class_fid_stats = self.class_fid_stats
         with textPath.open('w',encoding='utf-8-sig') as out:
-            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
+            format_,header = csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
                 _(u'Name'),_(u'Type'))) + u'"\n')
             for group, fid_stats in sorted(class_fid_stats.iteritems()):
@@ -2411,7 +2407,7 @@ class CBash_ItemPrices:
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_stats, aliases = self.class_fid_stats, self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
                 mmod,mobj,value,eid,name,group = fields[:6]
@@ -2428,7 +2424,7 @@ class CBash_ItemPrices:
         """Writes stats to specified text file."""
         class_fid_stats = self.class_fid_stats
         with textPath.open('w',encoding='utf-8-sig') as out:
-            format_,header = bolt.csvFormat(u'iss'),(u'"' + u'","'.join((
+            format_,header = csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
                 _(u'Name'),_(u'Type'))) + u'"\n')
             for group,fid_stats in sorted(class_fid_stats.iteritems()):
@@ -2542,7 +2538,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                 'ALCH','AMMO','APPA','ARMO','BOOK','CLOT','INGR','KEYM','LIGH',
                 'MISC','SGST','SLGM','WEAP')]
         aliases = self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             pack,unpack = struct.pack,struct.unpack
             sfloat = lambda a:unpack('f',pack('f',float(a)))[
                 0] #--Force standard precision
@@ -2555,64 +2551,64 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                 if type_ == 'ALCH':
                     alch[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'AMMO':
                     ammo[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight, value, damage, speed, enchantPoints)
-                        zip((_unicode,sfloat,int,int,sfloat,int,_unicode),
+                        zip((decode,sfloat,int,int,sfloat,int,decode),
                             fields[4:11]))
                 elif type_ == 'APPA':
                     appa[longid] = (eid,) + tuple(func(field) for func,field in
                         #--(weight,value,quantity)
-                        zip((_unicode,sfloat,int,sfloat,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,sfloat,decode),fields[4:9]))
                 elif type_ == 'ARMO':
                     armor[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, health, strength)
-                        zip((_unicode,sfloat,int,int,int,_unicode,_unicode),
+                        zip((decode,sfloat,int,int,int,decode,decode),
                             fields[4:10]))
                 elif type_ == 'BOOK':
                     books[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'CLOT':
                     clothing[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, echantPoints)
-                        zip((_unicode,sfloat,int,int,_unicode,_unicode),
+                        zip((decode,sfloat,int,int,decode,decode),
                             fields[4:10]))
                 elif type_ == 'INGR':
                     ingredients[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'KEYM':
                     keys[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'LIGH':
                     lights[longid] = (eid,) + tuple(
                         func(field) for func,field in
                         #--(weight, value, duration)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'MISC':
                     misc[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'SGST':
                     sigilstones[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value, uses)
-                        zip((_unicode,sfloat,int,int,_unicode),fields[4:9]))
+                        zip((decode,sfloat,int,int,decode),fields[4:9]))
                 elif type_ == 'SLGM':
                     soulgems[longid] = (eid,) + tuple(
                         func(field) for func,field in #--(weight, value)
-                        zip((_unicode,sfloat,int,_unicode),fields[4:8]))
+                        zip((decode,sfloat,int,decode),fields[4:8]))
                 elif type_ == 'WEAP':
                     weapons[longid] = (eid,) + tuple(func(field) for func,field
                         in #--(weight, value, health, damage, speed, reach,
                         #  epoints)
-                        zip((_unicode,sfloat,int,int,int,sfloat,sfloat,int,
-                             _unicode),fields[4:13]))
+                        zip((decode,sfloat,int,int,int,sfloat,sfloat,int,
+                             decode),fields[4:13]))
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -2624,7 +2620,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
         with textPath.open('w',encoding='utf-8-sig') as out:
             for type_,format_,header in (
                     #--Alch
-                    ('ALCH',bolt.csvFormat(u'ssfiss') + u'\n',(
+                    ('ALCH',csvFormat(u'ssfiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2632,7 +2628,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Ammo
-                    ('AMMO',bolt.csvFormat(u'ssfiifiss') + u'\n',(
+                    ('AMMO',csvFormat(u'ssfiifiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2641,7 +2637,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Apparatus
-                    ('APPA',bolt.csvFormat(u'ssfifss') + u'\n',(
+                    ('APPA',csvFormat(u'ssfifss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2649,7 +2645,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Quantity'),_(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Armor
-                    ('ARMO',bolt.csvFormat(u'ssfiiissssss') + u'\n',(
+                    ('ARMO',csvFormat(u'ssfiiissssss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2662,7 +2658,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Male World Model Path'),
                                         _(u'Female World Model '
                                           u'Path'))) + u'"\n')),#Books
-                    ('BOOK',bolt.csvFormat(u'ssfiiss') + u'\n',(
+                    ('BOOK',csvFormat(u'ssfiiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2670,7 +2666,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'EPoints'),_(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Clothing
-                    ('CLOT',bolt.csvFormat(u'ssfiissssss') + u'\n',(
+                    ('CLOT',csvFormat(u'ssfiissssss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2683,7 +2679,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Female World Model '
                                           u'Path'))) + u'"\n')),
                     #--Ingredients
-                    ('INGR',bolt.csvFormat(u'ssfiss') + u'\n',(
+                    ('INGR',csvFormat(u'ssfiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2691,7 +2687,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Keys
-                    ('KEYM',bolt.csvFormat(u'ssfiss') + u'\n',(
+                    ('KEYM',csvFormat(u'ssfiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2699,7 +2695,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Lights
-                    ('LIGH',bolt.csvFormat(u'ssfiiss') + u'\n',(
+                    ('LIGH',csvFormat(u'ssfiiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2707,15 +2703,14 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Duration'),_(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Misc
-                    ('MISC',bolt.csvFormat(u'ssfiss') + u'\n',(
-                                    u'"' + u'","'.join((
+                    ('MISC',csvFormat(u'ssfiss') + u'\n',(u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
                                         _(u'Name'),_(u'Weight'),_(u'Value'),
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Sigilstones
-                    ('SGST',bolt.csvFormat(u'ssfiiss') + u'\n',(
+                    ('SGST',csvFormat(u'ssfiiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2723,7 +2718,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Uses'),_(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Soulgems
-                    ('SLGM',bolt.csvFormat(u'ssfiss') + u'\n',(
+                    ('SLGM',csvFormat(u'ssfiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2731,7 +2726,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                                         _(u'Icon Path'),
                                         _(u'Model'))) + u'"\n')),
                     #--Weapons
-                    ('WEAP',bolt.csvFormat(u'ssfiiiffiss') + u'\n',(
+                    ('WEAP',csvFormat(u'ssfiiiffiss') + u'\n',(
                                     u'"' + u'","'.join((
                                         _(u'Type'),_(u'Mod Name'),
                                         _(u'ObjectIndex'),_(u'Editor Id'),
@@ -2893,7 +2888,7 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
         class_fid_attr_value,aliases = self.class_fid_attr_value,self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
                 group,modName,objectStr = fields[:3]
@@ -2911,8 +2906,8 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
 
     # noinspection PyUnreachableCode
     def writeToText(self,textPath):
-        return
         """Writes stats to specified text file."""
+        return
         class_fid_attr_value = self.class_fid_attr_value
         with textPath.open('w',encoding='utf-8-sig') as out:
             def write(out,attrs,values):
@@ -3135,7 +3130,7 @@ class SpellRecords(_UsesEffectsMixin):
             self.detailed,self.aliases,self.spellTypeName_Number,\
             self.levelTypeName_Number
         fid_stats = self.fid_stats
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
@@ -3281,7 +3276,7 @@ class CBash_SpellRecords(_UsesEffectsMixin):
             self.detailed,self.aliases,self.spellTypeName_Number,\
             self.levelTypeName_Number
         fid_stats = self.fid_stats
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 group,mmod,mobj,eid,full,cost,levelType,spellType = fields[:8]
@@ -3452,7 +3447,7 @@ class IngredientDetails(_UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
@@ -3553,7 +3548,7 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
         fid_stats,aliases = self.fid_stats, self.aliases
-        with bolt.CsvReader(textPath) as ins:
+        with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
@@ -3704,7 +3699,7 @@ class CBash_MapMarkers:
         """Imports type_id_name from specified text file."""
         fid_markerdata,aliases,markerTypeName_Number = self.fid_markerdata,\
                                         self.aliases,self.markerTypeName_Number
-        with bolt.CsvReader(GPath(textPath)) as ins:
+        with CsvReader(GPath(textPath)) as ins:
             for fields in ins:
                 if len(fields) < 13 or fields[1][:2] != u'0x': continue
                 mod,objectIndex,eid,markerName,_markerType,IsVisible,\

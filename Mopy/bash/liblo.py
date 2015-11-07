@@ -17,33 +17,32 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Thin python wrapper around libloadorder.
 
+To use outside of Bash replace the Bash imports below with:
 
-"""Python wrapper around libloadorder"""
-
+class Path: pass
+class BoltError(Exception): pass
+def GPath(x): return u'' if x is None else unicode(x, 'utf8')
+def deprint(x, traceback=False):
+    import traceback
+    traceback.print_exc()
+"""
 
 from ctypes import *
 import os
-import platform
-
-try:
-    # Wrye Bash specific support
-    import bolt
-    from bolt import Path, GPath
-except:
-    class Path:
-        pass
-    def GPath(x): return x
+import sys
+from bolt import Path, GPath, BoltError, deprint
 
 liblo = None
 version = None
 
 # Version of libloadorder this Python script is written for.
-PythonLibloVersion = (4,0)
+PythonLibloVersion = (7, 6)
 
 DebugLevel = 0
 # DebugLevel
@@ -69,13 +68,12 @@ def Init(path):
             path = os.path.join(path,u'loadorder32.dll')
 
     global liblo
-
     # First unload any libloadorder dll previously loaded
     del liblo
     liblo = None
 
     if not os.path.exists(path):
-        return
+        return None, None
 
     try:
         # CDLL doesn't play with unicode path strings nicely on windows :(
@@ -98,6 +96,9 @@ def Init(path):
     c_char_p_p_p = POINTER(c_char_p_p)
     c_size_t_p = POINTER(c_size_t)
 
+    # helpers
+    def _uint(name): return c_uint.in_dll(liblo, name).value
+
     def list_of_strings(strings):
         lst = (c_char_p * len(strings))()
         lst = cast(lst,c_char_p_p)
@@ -106,7 +107,6 @@ def Init(path):
         return lst
 
     # utility unicode functions
-    def _uni(x): return u'' if x is None else unicode(x,'utf8')
     def _enc(x): return (x.encode('utf8') if isinstance(x,unicode)
                          else x.s.encode('utf8') if isinstance(x,Path)
                          else x)
@@ -127,56 +127,53 @@ def Init(path):
         try:
             liblo.lo_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
-            raise LibbsaVersionError('liblo.py is not compatible with the specified libloadorder DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
+            raise LibloVersionError('liblo.py is not compatible with the specified libloadorder DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
 
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    LIBLO_GAME_TES4 = c_uint.in_dll(liblo,'LIBLO_GAME_TES4').value
-    LIBLO_GAME_TES5 = c_uint.in_dll(liblo,'LIBLO_GAME_TES5').value
-    LIBLO_GAME_FO3 = c_uint.in_dll(liblo,'LIBLO_GAME_FO3').value
-    LIBLO_GAME_FNV=c_uint.in_dll(liblo,'LIBLO_GAME_FNV').value
+    LIBLO_GAME_TES4 = _uint('LIBLO_GAME_TES4')
+    LIBLO_GAME_TES5 = _uint('LIBLO_GAME_TES5')
+    LIBLO_GAME_FO3 = _uint('LIBLO_GAME_FO3')
+    LIBLO_GAME_FNV = _uint('LIBLO_GAME_FNV')
     games = {
         'Oblivion':LIBLO_GAME_TES4,
         LIBLO_GAME_TES4:LIBLO_GAME_TES4,
         'Skyrim':LIBLO_GAME_TES5,
         LIBLO_GAME_TES5:LIBLO_GAME_TES5,
-        'Fallout 3':LIBLO_GAME_FO3,
+        'Fallout3':LIBLO_GAME_FO3,
         LIBLO_GAME_FO3:LIBLO_GAME_FO3,
-        'Fallout: New Vegas':LIBLO_GAME_FNV,
+        'FalloutNV':LIBLO_GAME_FNV,
         LIBLO_GAME_FNV:LIBLO_GAME_FNV,
         }
 
     # =========================================================================
     # API Constants - Load Order Method
     # =========================================================================
-    LIBLO_METHOD_TIMESTAMP = c_uint.in_dll(liblo,'LIBLO_METHOD_TIMESTAMP').value
-    LIBLO_METHOD_TEXTFILE = c_uint.in_dll(liblo,'LIBLO_METHOD_TEXTFILE').value
+    LIBLO_METHOD_TIMESTAMP = _uint('LIBLO_METHOD_TIMESTAMP')
+    LIBLO_METHOD_TEXTFILE = _uint('LIBLO_METHOD_TEXTFILE')
 
     # =========================================================================
     # API Constants - Return codes
     # =========================================================================
-    errors = {}
-    ErrorCallbacks = {}
-    for name in ['OK',
-                 'WARN_BAD_FILENAME',
-                 'WARN_LO_MISMATCH',
-                 'ERROR_FILE_READ_FAIL',
-                 'ERROR_FILE_WRITE_FAIL',
-                 'ERROR_FILE_RENAME_FAIL',
-                 'ERROR_FILE_PARSE_FAIL',
-                 'ERROR_FILE_NOT_UTF8',
-                 'ERROR_FILE_NOT_FOUND',
-                 'ERROR_TIMESTAMP_READ_FAIL',
-                 'ERROR_TIMESTAMP_WRITE_FAIL',
-                 'ERROR_NO_MEM',
-                 'ERROR_INVALID_ARGS',
-                 ]:
-        name = 'LIBLO_'+name
-        errors[name] = c_uint.in_dll(liblo,name).value
-        ErrorCallbacks[errors[name]] = None
-    LIBLO_RETURN_MAX = c_uint.in_dll(liblo,'LIBLO_RETURN_MAX').value
-    globals().update(errors)
+    LIBLO_OK = _uint('LIBLO_OK')
+    LIBLO_WARN_BAD_FILENAME = _uint('LIBLO_WARN_BAD_FILENAME')
+    LIBLO_ERROR_FILE_READ_FAIL = _uint('LIBLO_ERROR_FILE_READ_FAIL')
+    LIBLO_ERROR_FILE_WRITE_FAIL = _uint('LIBLO_ERROR_FILE_WRITE_FAIL')
+    LIBLO_ERROR_FILE_RENAME_FAIL = _uint('LIBLO_ERROR_FILE_RENAME_FAIL')
+    LIBLO_ERROR_FILE_PARSE_FAIL = _uint('LIBLO_ERROR_FILE_PARSE_FAIL')
+    LIBLO_ERROR_FILE_NOT_UTF8 = _uint('LIBLO_ERROR_FILE_NOT_UTF8')
+    LIBLO_ERROR_FILE_NOT_FOUND = _uint('LIBLO_ERROR_FILE_NOT_FOUND')
+    LIBLO_ERROR_TIMESTAMP_READ_FAIL = _uint('LIBLO_ERROR_TIMESTAMP_READ_FAIL')
+    LIBLO_ERROR_NO_MEM = _uint('LIBLO_ERROR_NO_MEM')
+    LIBLO_ERROR_TIMESTAMP_WRITE_FAIL = _uint(
+        'LIBLO_ERROR_TIMESTAMP_WRITE_FAIL')
+    LIBLO_WARN_LO_MISMATCH = _uint('LIBLO_WARN_LO_MISMATCH')
+    LIBLO_WARN_INVALID_LIST = _uint('LIBLO_WARN_INVALID_LIST')
+    LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
+    errors = dict((name, value) for name, value in locals().iteritems() if
+                  name.startswith('LIBLO_'))
+    LIBLO_RETURN_MAX = _uint('LIBLO_RETURN_MAX')
 
     # =========================================================================
     # API Functions - Error Handling
@@ -189,36 +186,29 @@ def Init(path):
         details = c_char_p()
         ret = _Clo_get_error_message(byref(details))
         if ret != LIBLO_OK:
-            raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % (ret))
-        return unicode(details.value,'utf8')
-
-    def RegisterCallback(errorCode,callback):
-        """Used to setup callback functions for whenever specific error codes
-           are encountered"""
-        ErrorCallbacks[errorCode] = callback
+            raise Exception(u'An error occurred while getting the details of a libloadorder error: %i' % ret)
+        return unicode(details.value if details.value else 'None', 'utf8')
 
     class LibloError(Exception):
         def __init__(self,value):
             self.code = value
-            msg = 'UNKNOWN(%i)' % value
-            for code in errors:
-                if errors[code] == value:
-                    msg = code
+            for errorName, errorCode in errors.iteritems():
+                if errorCode == value:
+                    msg = errorName
                     break
+            else: msg = 'UNKNOWN(%i)' % value
             msg += ':'
             try:
                 msg += GetLastErrorDetails()
             except Exception as e:
-                msg += '%s' % e
+                msg += 'GetLastErrorDetails FAILED (%s)' % e
             self.msg = msg
             Exception.__init__(self,msg)
 
-        def __repr__(self): return '<LibloError: %s>' % self.msg
+        def __repr__(self): return '<LibloError: %r>' % self.msg
         def __str__(self): return 'LibloError: %s' % self.msg
 
     def LibloErrorCheck(result):
-        callback = ErrorCallbacks.get(result,None)
-        if callback: callback()
         if result == LIBLO_OK: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
@@ -229,6 +219,7 @@ def Init(path):
     # =========================================================================
     ## unsigned int lo_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
     _Clo_get_version = liblo.lo_get_version
+    _Clo_get_version.restype = LibloErrorCheck
     _Clo_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
     try:
@@ -247,7 +238,7 @@ def Init(path):
     ## unsigned int lo_create_handle(lo_game_handle * const gh, const unsigned int gameId, const char * const gamePath);
     _Clo_create_handle = liblo.lo_create_handle
     _Clo_create_handle.restype = LibloErrorCheck
-    _Clo_create_handle.argtypes = [lo_game_handle_p, c_uint, c_char_p]
+    _Clo_create_handle.argtypes = [lo_game_handle_p, c_uint, c_char_p, c_char_p]
     ## void lo_destroy_handle(lo_game_handle gh);
     _Clo_destroy_handle = liblo.lo_destroy_handle
     _Clo_destroy_handle.restype = None
@@ -272,23 +263,10 @@ def Init(path):
     _Clo_set_load_order = liblo.lo_set_load_order
     _Clo_set_load_order.restype = LibloErrorCheck
     _Clo_set_load_order.argtypes = [lo_game_handle, c_char_p_p, c_size_t]
-    ## unsigned int lo_get_plugin_position(lo_game_handle gh, const char * const plugin, size_t * const index);
-    _Clo_get_plugin_position = liblo.lo_get_plugin_position
-    _Clo_get_plugin_position.restype = LibloErrorCheck
-    _Clo_get_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t_p]
-    ## unsigned int lo_set_plugin_position(lo_game_handle gh, const char * const plugin, size_t index);
-    _Clo_set_plugin_position = liblo.lo_set_plugin_position
-    _Clo_set_plugin_position.restype = LibloErrorCheck
-    _Clo_set_plugin_position.argtypes = [lo_game_handle, c_char_p, c_size_t]
-    ## unsigned int lo_get_indexed_plugin(lo_game_handle gh, const size_t index, char ** const plugin);
-    _Clo_get_indexed_plugin = liblo.lo_get_indexed_plugin
-    _Clo_get_indexed_plugin.restype = LibloErrorCheck
-    _Clo_get_indexed_plugin.argtypes = [lo_game_handle, c_size_t, c_char_p_p]
 
     # =========================================================================
     # API Functions - Active Plugins
     # =========================================================================
-
     ## unsigned int lo_get_active_plugins(lo_game_handle gh, char *** const plugins, size_t * const numPlugins);
     _Clo_get_active_plugins = liblo.lo_get_active_plugins
     _Clo_get_active_plugins.restype = LibloErrorCheck
@@ -297,20 +275,28 @@ def Init(path):
     _Clo_set_active_plugins = liblo.lo_set_active_plugins
     _Clo_set_active_plugins.restype = LibloErrorCheck
     _Clo_set_active_plugins.argtypes = [lo_game_handle, c_char_p_p, c_size_t]
-    ## unsigned int lo_set_plugin_active(lo_game_handle gh, const char * const plugin, const bool active);
-    _Clo_set_plugin_active = liblo.lo_set_plugin_active
-    _Clo_set_plugin_active.restype = LibloErrorCheck
-    _Clo_set_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool]
-    ## unsigned int lo_get_plugin_active(lo_game_handle gh, const char * const plugin, bool * const result);
-    _Clo_get_plugin_active = liblo.lo_get_plugin_active
-    _Clo_get_plugin_active.restype = LibloErrorCheck
-    _Clo_get_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool_p]
+    # ## unsigned int lo_set_plugin_active(lo_game_handle gh, const char * const plugin, const bool active);
+    # _Clo_set_plugin_active = liblo.lo_set_plugin_active
+    # _Clo_set_plugin_active.restype = LibloErrorCheck
+    # _Clo_set_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool]
+    # ## unsigned int lo_get_plugin_active(lo_game_handle gh, const char * const plugin, bool * const result);
+    # _Clo_get_plugin_active = liblo.lo_get_plugin_active
+    # _Clo_get_plugin_active.restype = LibloErrorCheck
+    # _Clo_get_plugin_active.argtypes = [lo_game_handle, c_char_p, c_bool_p]
+
+    # =========================================================================
+    # API Functions - Misc
+    # =========================================================================
+    # # unsigned int lo_fix_plugin_lists(lo_game_handle gh);
+    # _Clo_fix_plugin_lists = liblo.lo_fix_plugin_lists
+    # _Clo_fix_plugin_lists.restype = LibloErrorCheck
+    # _Clo_fix_plugin_lists.argtypes = [lo_game_handle]
 
     # =========================================================================
     # Class Wrapper
     # =========================================================================
     class LibloHandle(object):
-        def __init__(self,gamePath,game='Oblivion'):
+        def __init__(self,gamePath,game='Oblivion',userPath=None):
             """ game can be one of the LIBLO_GAME_*** codes, or one of the
                 aliases defined above in the 'games' dictionary."""
             if isinstance(game,basestring):
@@ -320,21 +306,24 @@ def Init(path):
                     raise Exception('Game "%s" is not recognized' % game)
             self._DB = lo_game_handle()
             try:
-                _Clo_create_handle(byref(self._DB),game,_enc(gamePath))
+                _Clo_create_handle(byref(self._DB),game,_enc(gamePath),_enc(userPath))
             except LibloError as err:
-                if err.args[0].startswith("LIBLO_WARN_LO_MISMATCH"):
-                    # If there is a Mismatch between loadorder.txt and plugns.txt finish initialization
-                    # and fix the missmatch at a later time
+                if (err.code == LIBLO_WARN_LO_MISMATCH
+                    or err.code == LIBLO_WARN_INVALID_LIST):
+                    # If there is a Mismatch between loadorder.txt and
+                    # plugins.txt, or one of them is invalid, finish
+                    # initialization and fix the mismatch at a later time
                     pass
                 else:
-                    raise err
+                    raise
             # Get Load Order Method
             method = c_uint32()
             _Clo_get_load_order_method(self._DB,byref(method))
             self._LOMethod = method.value
 
-        @property
-        def LoadOrderMethod(self): return self._LOMethod
+        def usingTxtFile(self):
+            """Should be made private !"""
+            return self._LOMethod == LIBLO_METHOD_TEXTFILE
 
         def SetGameMaster(self, plugin):
             _Clo_set_game_master(self._DB,_enc(plugin))
@@ -344,223 +333,60 @@ def Init(path):
                 _Clo_destroy_handle(self._DB)
                 self._DB = None
 
-        # 'with' statement
-        def __enter__(self): return self
-        def __exit__(self,exc_type,exc_value,traceback): self.__del__()
-
         # ---------------------------------------------------------------------
         # Load Order management
         # ---------------------------------------------------------------------
-        class LoadOrderList(list):
-            """list-like object for manipulating load order"""
-            def SetHandle(self,db):
-                self._DB = db # LibloHandle python class.
-
-            # Block the following 'list' functions, since they don't make sense
-            # for use with libloadorder and Load Order
-            ## LoadOrder[i] = x
-            def __setitem__(self,key,value): raise Exception('LibloHandle.LoadOrder does not support item setting')
-            ## del LoadOrder[i]
-            def __delitem__(self,key): raise Exception('LibloHandle.LoadOrder does not support item deletion')
-            ## LoadOrder += [s,3,5]
-            ##  and other compound assignment operators
-            def __iadd__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __isub__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __imul__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __idiv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __itruediv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ifloordiv__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __imod__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ipow__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ilshift__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __irshift__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __iand__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ixor__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            def __ior__(self,other): raise Exception('LibloHandle.LoadOrder does not support compound assignment')
-            ## LoadOrder.append('ahalal')
-            def append(self,item): raise Exception('LibloHandle.LoadOrder does not support append.')
-            ## LoadOrder.extend(['kkjjhk','kjhaskjd'])
-            def extend(self,items): raise Exception('LibloHandle.LoadOrder does not support extend.')
-            def remove(self,item): raise Exception('LibloHandle.LoadOrder does not support remove.')
-            def pop(self,item): raise Exception('LibloHandle.LoadOrder does not support pop.')
-            def sort(self,*args,**kwdargs): raise Exception('LibloHandle.LoadOrder does not support sort.')
-            def reverse(self,*args,**kwdargs): raise Exception('LibloHandle.LoadOrder does not support reverse.')
-
-            # Override the following with custom functions
-            def insert(self,i,x):
-                # Change Load Order of single plugin
-                self._DB.SetPluginLoadOrder(x, i)
-            def index(self,x):
-                # Get Load Order of single plugin
-                return self._DB.GetPluginLoadOrder(x)
-            def count(self,x):
-                # 1 if the plugin is in the Load Order, 0 otherwise
-                # (plugins can't be in the load order multiple times)
-                return 1 if x in self else 0
-
         def GetLoadOrder(self):
             plugins = c_char_p_p()
             num = c_size_t()
-            _Clo_get_load_order(self._DB, byref(plugins), byref(num))
-            return [GPath(_uni(plugins[i])) for i in xrange(num.value)]
-        def _GetLoadOrder(self):
-            ret = self.LoadOrderList(self.GetLoadOrder())
-            ret.SetHandle(self)
-            return ret
+            try:
+                _Clo_get_load_order(self._DB, byref(plugins), byref(num))
+            except LibloError as err:
+                if err.code != LIBLO_WARN_INVALID_LIST: raise
+                deprint(u'lo_get_load_order WARN_INVALID_LIST:',
+                        traceback=True)
+            return map(GPath, plugins[:num.value])
         def SetLoadOrder(self, plugins):
             plugins = [_enc(x) for x in plugins]
             num = len(plugins)
             plugins = list_of_strings(plugins)
-            _Clo_set_load_order(self._DB, plugins, num)
-        LoadOrder = property(_GetLoadOrder,SetLoadOrder)
+            try:
+                _Clo_set_load_order(self._DB, plugins, num)
+            except LibloError as ex: # must notify the user that lo was not set
+                deprint(u'lo_set_load_order failed:', traceback=True)
+                raise BoltError(ex.msg), None, sys.exc_info()[2]
 
-        def GetPluginLoadOrder(self, plugin):
-            plugin = _enc(plugin)
-            index = c_size_t()
-            _Clo_get_plugin_position(self._DB,plugin,byref(index))
-            return index.value
-
-        def SetPluginLoadOrder(self, plugin, index):
-            plugin = _enc(plugin)
-            _Clo_set_plugin_position(self._DB,plugin,index)
-
-        def GetIndexedPlugin(self, index):
-            plugin = c_char_p()
-            _Clo_get_indexed_plugin(self._DB,index,byref(plugin))
-            return GPath(_uni(plugin.value))
 
         # ---------------------------------------------------------------------
         # Active plugin management
         # ---------------------------------------------------------------------
-        class ActivePluginsList(list):
-            """list-like object for modiying which plugins are active.
-               Currently, you cannot change the Load Order through this
-               object, perhaps in the future."""
-            def SetHandle(self,db):
-                self._DB = db
-
-            def ReSync(self):
-                """Resync's contents with libloadorder"""
-                list.__setslice__(self,0,len(self),self._DB.ActivePlugins)
-
-            # Block the following 'list' functions, since they don't make sense
-            # for use with libloadorder and Active Plugins
-            ## ActivePlugins[i] = x
-            def __setitem__(self,key,value): raise Exception('LibloHandle.ActivePlugins does not support item setting')
-            ## LoadOrder *= 3
-            ##  and other compound assignment operators
-            def __imul__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __idiv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __itruediv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ifloordiv__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __imod__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ipow__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ilshift__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __irshift__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __iand__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ixor__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def __ior__(self,other): raise Exception('LibloHandle.ActivePlugins does not support compound assignment')
-            def pop(self,item): raise Exception('LibloHandle.ActivePlugins does not support pop.')
-            def sort(self,*args,**kwdargs): raise Exception('LibloHandle.ActivePlugins does not support sort.')
-            def reverse(self,*args,**kwdargs): raise Exception('LibloHandle.ActivePlugins does not support reverse.')
-
-
-            ## del ActivePlugins[i]
-            def __delitem__(self,key):
-                # Deactivate the plugin
-                self._DB.SetPluginActive(self[key],False)
-                self.ReSync()
-
-            ## ActivePlugins += ['test.esp','another.esp']
-            def __iadd__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-                return self
-            ## ActivePlugins -= ['test.esp','another.esp']
-            def __isub__(self,other):
-                for plugin in other:
-                    self._DB.SetPluginActive(plugin,False)
-                self.ReSync()
-                return self
-
-            ## ActivePlugins.append('test.esp')
-            def append(self,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
-            ## ActivePlugins.extend(['test.esp','another.esp'])
-            def extend(self,items):
-                for plugin in items:
-                    self._DB.SetPluginActive(plugin,True)
-                self.ReSync()
-
-            ## ActivePlugins.remove('test.esp')
-            def remove(self,item):
-                self._DB.SetPluginActive(item,False)
-                self.ReSync()
-
-            ## ActivePlugins.insert('test.esp')
-            def insert(self,index,item):
-                self._DB.SetPluginActive(item,True)
-                self.ReSync()
-
-            ## ActivePlugins.count('test.esp')
-            def count(self,item):
-                return 1 if item in self else 0
-
         def GetActivePlugins(self):
             plugins = c_char_p_p()
             num = c_size_t()
-            _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
-            return self.GetOrdered([GPath(_uni(plugins[i])) for i in xrange(num.value)])
-        def _GetActivePlugins(self):
-            ret = self.ActivePluginsList(self.GetActivePlugins())
-            ret.SetHandle(self)
-            return ret
+            try:
+                _Clo_get_active_plugins(self._DB, byref(plugins), byref(num))
+            except LibloError as err:
+                if err.code != LIBLO_WARN_INVALID_LIST: raise
+                deprint(u'lo_get_active_plugins WARN_INVALID_LIST:',
+                        traceback=True)
+            return map(GPath, plugins[:num.value])
         def SetActivePlugins(self,plugins):
             plugins = [_enc(x) for x in plugins]
-            if (self._LOMethod == LIBLO_METHOD_TEXTFILE and u'Update.esm' not in plugins):
-                plugins.append(u'Update.esm')
             num = len(plugins)
             plugins = list_of_strings(plugins)
-            _Clo_set_active_plugins(self._DB, plugins, num)
-        ActivePlugins = property(_GetActivePlugins,SetActivePlugins)
+            try:
+                _Clo_set_active_plugins(self._DB, plugins, num)
+            except LibloError as ex: # plugins.txt not written !
+                deprint(u'lo_set_active_plugins failed:', traceback=True)
+                raise BoltError(ex.msg), None, sys.exc_info()[2]
 
-        def SetPluginActive(self,plugin,active=True):
-            _Clo_set_plugin_active(self._DB,_enc(plugin),active)
-
-        def IsPluginActive(self,plugin):
-            active = c_bool()
-            _Clo_get_plugin_active(self._DB,_enc(plugin),byref(active))
-            return active.value
-
-        # ---------------------------------------------------------------------
-        # Utility Functions (not added by the API, pure Python)
-        # ---------------------------------------------------------------------
-        def FilterActive(self,plugins,active=True):
-            """Given a list of plugins, returns the subset of that list,
-               consisting of:
-                - only active plugins if 'active' is True
-                - only inactive plugins if 'active' is False"""
-            return [x for x in plugins if self.IsPluginActive(x)]
-
-        def DeactivatePlugins(self,plugins):
-            for plugin in plugins:
-                self.SetPluginActive(plugin,False)
-
-        def GetOrdered(self,plugins):
-            """Returns a list of the given plugins, sorted accoring to their
-               load order"""
-            return [x for x in self.LoadOrder if x in plugins]
-
-    # Put the locally defined functions, classes, etc into the module global namespace
-    globals().update(locals())
+    # shadowing, must move LibloHandle, LibloError to module scope
+    return LibloHandle, LibloError # return the public API
 
 # Initialize libloadorder, assuming that loadorder32.dll and loadorder64.dll are in the same directory
 # Call Init again with the path to these dll's if this assumption is incorrect.
 # liblo will be None if this is the case.
 try:
-    Init(os.getcwdu())
+    LibloHandle, LibloError = Init(os.getcwdu())
 except LibloVersionError:
-    pass
+    LibloHandle, LibloError = None, None

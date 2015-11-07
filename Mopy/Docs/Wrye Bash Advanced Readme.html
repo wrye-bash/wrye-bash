@@ -63,6 +63,7 @@
     <ol>
         <li><a href="#mods-exclusion">Exclusion Groups</a>
         <li><a href="#mods-details">The Plugin Details Panel</a>
+        <li><a href="#mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</a>
         <li><a href="#mods-csv">CSV Files</a>
         <li><a href="#mods-commands">Context Menu Commands</a>
     </ol>
@@ -79,9 +80,10 @@
     <li><a href="#saves">Saves Tab</a>
     <ol>
         <li><a href="#saves-overview">Overview</a>
+        <li><a href="#saves-symbols">Color scheme for Save Game Files</a>
+        <li><a href="#saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO)</a>
         <li><a href="#saves-profiles">Save Profiles</a>
         <li><a href="#saves-face">Face Import</a>
-        <li><a href="#saves-symbols">What Symbols &amp; Colours Mean</a>
         <li><a href="#saves-commands">Context Menu Commands</a>
     </ol>
 </ol>
@@ -89,6 +91,7 @@
     <li><a href="#screenshots">Screenshots Tab</a>
     <ol>
         <li><a href="#screenshots-overview">Overview</a>
+        <li><a href="#screenshots-alt-path">Change screenshots directory (Oblivion)</a>
         <li><a href="#screenshots-commands">Context Menu Commands</a>
     </ol>
     <li><a href="#launchers">Advanced Launchers</a>
@@ -193,7 +196,7 @@
         <tr><td>Missing<td>Files which are missing from the Data directory.
         <tr><td>Mismatched<td>Files which are present in the data directory, but which aren't identical to the selected package's version of those files.
         <tr><td>Conflicts<td>Shows which other packages will conflict the current package and for what files. Note that if a given file is mismatched, but the mismatch isn't due to other packages, then it won't appear. This report can be modified to show inactive conflicts and lower order conflicts by enabling the <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options respectively.
-        <tr><td>Underriden<td>Shows packages which should be overridden, but are not, due to install order errors. This can be corrected by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+        <tr><td>Underidden<td>Shows packages which should be overridden, but are not, due to install order errors. This can be corrected by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td>Dirty<td>Shows files which the selected package previously installed, but which now should be removed or altered due to a reconfiguration of the package. Dirty files can be cleared by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td>Skipped<td>Shows which files in the selected package were <a href="#bain-skipped">skipped</a> by Bain.
 </table>
@@ -309,6 +312,7 @@
         <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
         <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
         <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr><td colspan="2" id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
         <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">
@@ -337,10 +341,10 @@
         <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.
         <tr><td colspan="2" id="bainOpenReadme">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
         <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
-        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overriden by later packages.
+        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overridden by later packages.
         <tr><td colspan="2" id="bainInstallLast">Install Last<td>Moves the package to the end of the order list and installs it.
         <tr><td colspan="2" id="bainInstallMissing">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
-        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overriden will be installed as required.
+        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.
         <tr><td rowspan="2" id="bainConversion">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
         <tr><td>Apply->[BCF]<td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.
         <tr><td colspan="2" id="bainUnpackToProject">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
@@ -378,7 +382,7 @@
 <h2 id="mods">Mods Tab</h2>
 <h3 id="mods-exclusion">Exclusion Groups</h3>
 <p>Exclusion groups can be used to help flag plugins that are incompatible. Incompatible plugins can be placed into exclusion groups, and when more than one plugin in a group is present, the plugins will be highlighted in orange.
-<p>An exlusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
+<p>An exclusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
 <p><b>Note:</b> The usage of exclusion groups is not recommended. Renaming plugins will cause them to become unrecognised by features such as BAIN or utilities such as BOSS that expect plugins to have the names they are distributed with. Renaming plugins will also break any plugins that are dependent on them.
 
 <h3 id="mods-details">The Plugin Details Panel</h3>
@@ -394,8 +398,31 @@
         <tr><td>Modification Time<td>For Oblivion, this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file versions.
         <tr><td>Author<td>Who made the selected plugin.
         <tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
-        <tr><td>Masters List<td>The plugins (.esm or .esp) that the selected plugin depends on, and their indices (positions in load order). Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. Renaming can be done by left-clicking the plugin entry and editing in the column display, or right-clicking the plugin and selecting <q>Change To...</q> then selecting the replacement plugin. <b>Do not</b> use this to change a plugin's masters to unrelated plugins, as this will cause file corruption.
+        <tr><td>Masters List<td>The Masters list show the plugins (.esm or .esp) that the currently selected plugin depends on, the load order
+        (Mod Index) of that master in the plugin file, and the current load order of the master plugin if present and active.<br /><br />
+        Plugins' entries in the Masters List may be renamed to reflect name changes of the plugins themselves. To rename a master, first allow editing from the
+        masters list column context menu and then either left-click the plugin entry and edit it in the column display, or right-click the
+        plugin and select <q>Change To...</q> then select the replacement plugin. <b>Do not</b> use this to change a plugin's masters to
+        unrelated plugins, as this will cause file corruption.<br />
+        If editing is allowed, items that are renamed inside Bash internal dictionaries appear <b>bolded</b> - on clicking on the masterlist they
+        take their renamed values and the <i>Save</i> and <i>Cancel</i> buttons are enabled. You may click on Save to save the new master list,
+        or on Cancel to revert displaying the non renamed masters.<br />
+        Disallowing edits will revert the list to the original and disable Save and Cancel buttons (if no other fields are edited).<br />
+        <tr><td>MI<td>Master Index of the mod. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Bash Tags<td>This field lists any Bash Tags that are assigned to the selected plugin. Right-clicking will display a list of Bash Tags and allow you to add or remove tags by checking or unchecking them.
+</table>
+
+<h3 id="mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the the Current load order.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Master Index differs from the Current load order. Masters of this plugin still exist in the Data folder but plugins are out of order compared to the order of its masters when the mod was saved.<br />
+        <br />If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the "winner". But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A Master is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
 <h3 id="mods-csv">CSV Files</h3>
@@ -431,20 +458,21 @@
     <tbody>
         <tr><td rowspan="5">Load<td id="modsLoadAll">All<td>Activates all the plugins in the mod list.
         <tr><td>None<td>Deactivates all the plugins in the mod list.
+        <tr><td>Selected<td>Activate only the mods selected in the mod list - warning: their masters won't be activated !
         <tr><td>Save List...<td>Saves the current load order to a new load list.
         <tr><td>Edit Lists...<td>Allows the deletion and renaming of load lists.
         <tr><td>[Load List]<td>[Load List] is the name of a load list, which are listed below the separator in the Load submenu. Clicking a load list will apply it, deactivating any plugins that are not listed as active in it.
         <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
         <tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
         <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
-        <tr><td rowspan="4">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidently delete your current one or wish to have more than one.
+        <tr><td rowspan="4">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.
         <tr><td>New Mod...<td>Creates an empty plugin.
         <tr><td>Open...<td>Opens the Data folder in Windows Explorer.
         <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide.
         <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
         <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-        <tr><td colspan="2">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focussed (ie. on top of all other program windows) and reverses those changes.
+        <tr><td colspan="2">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focused (ie. on top of all other program windows) and reverses those changes.
         <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
         <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
         <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
@@ -466,7 +494,15 @@
         <tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
         <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
         <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
-        <tr><td colspan="2">Group<td>Set a group for the selected plugin(s). This group is not an <a href="#mods-exclusion">Exlusion Group</a>, but is instead a leftover from a feature known as <abbr title="Bash Auto Load Ordering">BALO</abbr> that has been disabled, as it was superceded by BOSS. Some references to these groups still remain, but they provide no functionality other than to place hidden plugins in group folders provided those folders already exist.
+        <tr><td rowspan="9">Groups<td>Export Group<td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.
+            <tr><td>Import Group<td>This will set the groups for selected mods as specified in a csv file (as created by the Export Groups command). If selected mods are not assigned a group in the file nothing happens.
+            <tr><td rowspan="6">Edit Groups...<td>Add: add a new group to existing groups. Group names can be in Unicode.
+            <tr><td>Rename: rename selected group. Mods that belong to it will have the group renamed.
+            <tr><td>Remove: delete selected group. Deleting a group removes it from mods that belong to it.
+            <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available groups.
+            <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.
+            <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature. Use Refresh to pick up your groups and add them to the defaults.
+            <tr><td>Groups Menu<td>Set a group for the selected plugin(s) (do not confuse with an <a href="#mods-exclusion">Exclusion Group</a>). Groups that are assigned to the selected plugins appear checked. They provide no functionality other than to place hidden plugins in group folders provided those folders already exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:  <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember them shed a tear goodbye.
         <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
         <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
         <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
@@ -474,20 +510,23 @@
         <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official BOSS thread.
         <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
-        <tr><td colspan="2" id="modsDontGhost">Don't Ghost<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled.
-        <tr><td colspan="2">Ghost<td>Displayed if a single plugin is selected. Ghost this plugin when it is inactive even if Auto-Ghost is disabled.
-        <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
-        <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
-        <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Don't Ghost</a> for the selected plugins.
+        <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
+            mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
+            <code>++</code>, <code>**</code> and <code>__</code> respectively.
+        <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
+        <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag if set. Note that, if Auto-Ghost is enabled, <i>manually unghosting a plugin <b>will be reverted</b> on refresh</i> - mark the plugin as <a href="#modsDontGhost">disallow ghosting</a> if you want your changes to persist.
+        <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
+        <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+        <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+        <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
         <tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
         <tr><td colspan="2">Mark Mergeable (CBash)...<td><i>Oblivion only.</i> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
         <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
         <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
         <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
         <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-        <tr><td rowspan="14">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
+        <tr><td rowspan="13">Export<td>Cell Block Info...<td><i>Oblivion only.</i> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
         <tr><td id="modsExportEditorIDs">Editor Ids...<td><b>For advanced mod authors only.</b> Exports the Editor IDs of the records in the selected plugin to a CSV file.
-        <tr><td>Groups...<td>Exports the selected plugin's groups to a CSV file.
         <tr><td id="modsExportFactions">Factions...<td><b>For advanced mod authors only.</b> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
         <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
         <tr><td id="modsExportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
@@ -522,9 +561,8 @@
                 <li>Soulgem
                 <li>Weapon
             </ul>
-        <tr><td rowspan="15">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
+        <tr><td rowspan="14">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
         <p>If you wish to update script references <i>after</i> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
-        <tr><td>Groups...<td>Imports groups for the selected plugin from a CSV file as created by the Export Groups command.
         <tr><td id="modsImportFactions">Factions...<td><b>For advanced mod authors only.</b> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
         <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
         <tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
@@ -567,13 +605,57 @@
         <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
         <tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001. <b>It is advised that mod authors use this on their mods before release.</b>
         <tr><td id="modsUndeleteRefs">Undelete Refs<td><b>This is an experimental feature for advanced mod authors. If you're trying to undelete references, you should probably use TES4Edit instead.</b> Deleted references can cause crashes. This command undeletes references and disables them instead. However, the undeleted reference does not contain the missing data caused by deletion. TES4Edit can add this data back in.
-        <tr><td colspan="2">Add Master...<td>Add a master to the list of masters for the selected plugin. <b>Warning:</b> For advanced mod authors only. You should only use this if you know exactly what you're doing.
+        <tr><td colspan="2">Add Master...<td>Adds specified master to the list of masters for the selected plugin, thus ceding ownership of new content
+            of this mod to the new master. Useful for splitting mods into esm/esp pairs. <b>Warning:</b> For advanced mod authors only.
+            You should only use this if you know exactly what you're doing: adding a master through Bash does not update record FormIDs,
+            so new content added by the mod will now seem added by the mod's new master (the "cedes ownership" part above) - resulting in
+            the mod marked as mergeable - info from Arthmoor and Lojack here: http://forums.bethsoft.com/topic/1536340-wrye-bash-thread-105/page-3#entry24345148
+            see previous posts for the confusion that this might cause. As Lojack points out if you're doing that sort of low level adding of masters,
+            you should be using xEdit.
         <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
         <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
-        <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file extensions, but by a bit in the file. This command toggles that bit so that .esp files behave as .esm files and vice versa. It is useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise. Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise savegames will get confused, possibly causing bugs and corruption.
-        <tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does, but toggles a plugin's masters rather than the plugin itself.
+        <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file
+            extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
+            useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
+            Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. NB: the file extension won't change
+            and this is used by Bash so do not mess with it. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise
+            savegames will get confused, possibly causing bugs and corruption. To toggle the masters back use the same command on the plugin which
+            should now be named Espify Self.
+        <tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does,
+            but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
+            since the modification time won't change they will revert back to their original positions for modification time based load orders.
+            Be sure to backup your load order for Skyrim.
         <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set. <b>Warning:</b> It is possible that this may cause data loss.
 </table>
+
+<table>
+    <thead>
+        <tr><th colspan="3">Mod's Masters List Column Header Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the masters list is sorted.
+            This is equivalent to clicking on a column header.
+        <tr><td colspan="2">Allow editing<td>Allow (or disallow) editing of the masters list.
+            Enables (or disables) the items' context menu entries.
+        <tr><td colspan="2">Clear Renames<td>Clear internal Bash renames dictionary
+</table>
+
+
+<table>
+    <thead>
+        <tr><th colspan="3">Mod's Masters List Items Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Change To...<td>Rename a master by selecting the desired replacement esp/esm from the mods directory. It will add the
+            plugin to the internal renames dictionary of Bash and bold it on any master list that it appears. Hit Save to edit the selected file
+            permanently. Equivalent to left clicking the selected master for a second time, just allows you to select the mod from the Data
+            directory instead of entering the name manually.<br />
+            <ul>
+                <li>Note that you should only do this if the new name is a new version of the same mod. Replacing a mod with an unrelated mod will cause
+                file corruption.
+            </ul>
+</table>
+
 
 <h2 id="patch">Advanced Bashed Patch</h2>
 <p>You can have multiple Bashed Patches, though one is generally enough per <a href="#saves-profiles">save profile</a> or character. The only requirement for Wrye Bash recognising a plugin as a Bashed Patch is that its <q>Author</q> field is set to <q>BASHED PATCH</q>, so you can name a Bashed Patch whatever you want.
@@ -1176,15 +1258,15 @@
         <tr><td>Companions: Max Number<td>Sets the maximum number of companions that will follow the player.
         <tr><td>Compass: Disable<td>Disables POI's (Points of Interest), Quest Markers, or both on the compass. This may not work with some UI mods, and make some quests very hard to complete.
         <tr><td>Compass: POI Recognition<td>Distance at which Points of Interest become visible on the compass. Default is 12,000 units. Lowest setting (x 0.25) is just a little farther than unvisited locations will be "found."
-        <tr><td>Cost Multplier: Enchantment<td>The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
-        <tr><td>Cost Multplier: Recharge<td>The cost multiplier factor for recharging.
-        <tr><td>Cost Multplier: Repair<td>The cost multiplier factor for repairing.
-        <tr><td>Cost Multplier: Spell Making<td>The cost multiplier factor for spellmaking.
+        <tr><td>Cost Multiplier: Enchantment<td>The cost multiplier factor for enchanting, OOO default: 120, vanilla default: 10.
+        <tr><td>Cost Multiplier: Recharge<td>The cost multiplier factor for recharging.
+        <tr><td>Cost Multiplier: Repair<td>The cost multiplier factor for repairing.
+        <tr><td>Cost Multiplier: Spell Making<td>The cost multiplier factor for spellmaking.
         <tr><td>Crime: Alarm Distance<td>The distance from the player that NPCs will be alerted to crimes.
         <tr><td>Crime: Pickpocketing Fine<td>The fine for pickpocketing.
         <tr><td>Crime: Trespass Fine<td>The fine for trespassing.
         <tr><td>Drag: Max Moveable Weight<td>The max weight that can be dragged.
-        <tr><td>Essential NPC Unconciousness<td>Time for which an essential NPC stays unconscious after being knocked out.
+        <tr><td>Essential NPC Unconsciousness<td>Time for which an essential NPC stays unconscious after being knocked out.
         <tr><td>Fatigue from Running/Encumbrance<td>Fatigue cost multiplier for running or encumbrance.
         <tr><td>Greeting Distance<td>Distance at which NPCs will greet the player.
         <tr><td>Horse Turning Speed<td>Default Horse turning speed is rather slow. This allows you to increase it by 1.5 or 2.0 times normal speed.
@@ -1240,7 +1322,7 @@
                 <li>Crowded Cities 15/30 by Gratis_monsta
                 <li>PT_RoamingNPCs by Gratis_monsta
             </ul>
-        <tr><td>Rational_Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shiveriing Isles, Oscuro's Oblivion Overhaul and a few more mods.
+        <tr><td>Rational_Names<td>Renames various items in the game to have more rational names. Based on Rational Names 2, minus the GMST settings for soulgem names, and expanded to cover the Shivering Isles, Oscuro's Oblivion Overhaul and a few more mods.
         <tr><td rowspan="2">Cobl Exhaustion<td>Assorted_Exhaust<td>Defines power exhaustion levels for greater powers from Oblivion, the Orrery DLC and Cobl.
         <tr><td>Kmacg94_Exhaust<td>Defines power exhaustion levels for greater powers from Race Balancing Project, Oblivion WarCry, Oscuro's Oblivion Overhaul and several other mods.
         <tr><td>Morph Factions<td>Bash_MFact<td>Used with Wrye Morph to provide faction morphing.
@@ -1280,12 +1362,51 @@
         <tr><td>Player Info<td>These three lines give the player character's name, their level, days have passed in-game, hours played and current location.
         <tr><td>O/P Flags<td> These two flags appear to the right of the player info, and indicate the presence of cosave files: O is for OBSE cosaves, and P is for Pluggy cosaves.
         <tr><td>Screenshot<td>The screenshot embedded in the save file, taken at the moment of saving.
-        <tr><td>Masters List<td>The plugins that the save file depends on, and their load order.<br />
-        Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired replacement plugin from the Data directory.<br />
-        Masters can also be disabled if they have been removed and are preventing your save from loading, as may sometimes happen, by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of the plugin dependency, but this will let the game <i>try</i> to remove the dependency.
+        <tr><td>Masters List<td>The Masters list show the plugins (.esm or .esp) that the currently selected save file depends on, the load order
+        (Mod Index) of that master in the save file, and the current load order of the master plugin if present and active.<br /><br />
+        Masters in the list can be renamed if the corresponding plugin has been renamed. To rename a master, first allow editing from the
+        masters list column context menu and then either left-click it and edit it in the column display, or right-click it and select <q>Change To...</q> to select the desired
+        replacement plugin from the Data directory. Note that you should only do this if the new name is a new version of the same mod.
+        Replacing a mod with an unrelated mod will cause file corruption.<br />
+        If editing is allowed, items that are renamed inside Bash internal dictionaries appear <b>bolded</b> - on clicking on the masterlist they
+        take their renamed values and the <i>Save</i> and <i>Cancel</i> buttons are enabled. You may click on Save to save the new master list,
+        or on Cancel to revert displaying the non renamed masters.<br />
+        Disallowing edits will revert the list to the original and disable Save and Cancel buttons (if no other fields are edited).<br />
+            <ul>
+                <li>Note that currently renaming the master in the OBSE/SKSE cosave is NOT supported (except for very old OBSE versions). If the
+        save has a cosave this will most probably corrupt the cosave.
+                See <a href="https://github.com/wrye-bash/wrye-bash/issues/236">the related issue</a> (help wanted).
+            </ul>
+        Masters can also be disabled (again if editing is allowed) if they have been removed and are preventing your save from loading, as may sometimes happen,
+        by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of
+        the plugin dependency, but this will let the game <i>try</i> to remove the dependency.<br />
+        <tr><td>MI<td>Master Index of the save game. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Notes<td>This section can be used to keep notes on the save file.
 </table>
 
+<h3 id="saves-symbols">Color scheme for Save Game Files</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_purple_on.png" alt="Purple"/><td>Excellent. Exactly synced with the current load order.
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+</table>
+
+<h3 id="saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO)</h3>
+<table>
+    <thead>
+        <tr><th>Checkbox Colour<th>Meaning
+    <tbody>
+        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the save game at the time it was saved.
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. The plugin still exists in the Data folder but a plugin was added or removed before of after this plugin.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A plugin is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
+</table>
 
 <h3 id="saves-profiles">Save Profiles</h3>
 <p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="#tools-swapping">Oblivion.esm Swapping</a>.
@@ -1336,19 +1457,6 @@
         <li>Now import the face as normal. The eyes/hair should also be imported.
     </ul>
 </ul>
-
-
-<h3 id="saves-symbols">What Symbols &amp; Colours Mean</h3>
-<table>
-    <thead>
-        <tr><th>Checkbox Colour<th>Meaning
-    <tbody>
-        <tr><td><img src="../bash/images/checkbox_purple_on.png" alt="Purple"/><td>Good. Exactly synced with the current load order.
-        <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
-        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
-        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
-        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
-</table>
 
 <h3 id="saves-commands">Context Menu Commands</h3>
 <table>
@@ -1407,10 +1515,45 @@
                 <li>Null references are caused when objects from a mod that is removed are present in the game world. These objects then get replaced with null references when the game is next saved with the mod missing.
             </ul>
         <tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><i>Oblivion only.</i> <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs around 225 hours into the game, though it may occur earlier or later. This is an engine bug, and this command avoids its effects by resetting a related counter (TesClass Abomb counter is reset to 0x41000000).
-        <tr><td colspan="2" id="savesRepairFactions">Repair Factions<td><i>Oblivion only.</i> Attempts to repair the damage caused by a bug in <a href="#savesUpdateNPCLevels">Update NPC Levels</a> that was introduced in v105 and fixed in v116 of Wrye Bash. This also optionally updates NPC factions to reflect the faction changes by mods. <b>Do not use this function unless you know you have to.</b> It is better to revert to a recent save.
         <tr><td colspan="2">Repair Hair<td><i>Oblivion only.</i> Oblivion has a bug that will cause a crash if your PC's hair comes from a mod that has been removed and you then run showRaceMenu. This command resets your hair to the default for that race and gender, so you can then use showRaceMenu to select a new hair again if you wish.
 </table>
 
+
+<table>
+    <thead>
+        <tr><th colspan="3">Save's Masters List Column Header Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the masters list is sorted.
+            This is equivalent to clicking on a column header.
+        <tr><td colspan="2">Allow editing<td>Allow (or disallow) editing of the masters list.
+            Enables (or disables) the items' context menu entries.
+        <tr><td colspan="2">Clear Renames<td>Clear internal Bash renames dictionary
+</table>
+
+
+<table>
+    <thead>
+        <tr><th colspan="3">Save's Masters List Items Context Menu
+        <tr><th colspan="2">Command<th>Description
+    <tbody>
+        <tr><td colspan="2">Change To...<td>Rename a master by selecting the desired replacement esp/esm from the mods directory. It will add the
+            plugin to the internal renames dictionary of Bash and bold it on any master list that it appears. Hit Save to edit the selected file
+            permanently. Equivalent to left clicking the selected master for a second time, just allows you to select the mod from the Data
+            directory instead of entering the name manually.<br />
+            <ul>
+                <li>Note that you should only do this if the new name is a new version of the same mod. Replacing a mod with an unrelated mod will cause
+                file corruption.
+                <li>Note also that currently renaming the master in the OBSE/SKSE cosave is NOT supported (except for very old OBSE versions). If the
+        save has a cosave this will most probably corrupt the cosave.
+                See <a href="https://github.com/wrye-bash/wrye-bash/issues/236">the related issue</a> (help wanted).
+            </ul>
+        <tr><td colspan="2">Disable<td>If you want to remove a mod from active use, you can usually just start
+            playing without the mod loaded. However, this won't work if the mod is an esm. You can get around this
+            by right clicking on the name and selecting Disable. This will rename the master to a non-existent esp.
+            Note that you still may run into logical errors which prevent the esm from being removed. But at least
+            this way the game will try to run without the master.
+</table>
 
 
 <h2 id="screenshots">Screenshots Tab</h2>
@@ -1421,6 +1564,30 @@
 </figure>
 <h3 id="screenshots-overview">Overview</h3>
 <p>The Screenshots tab allows you to preview any screenshots taken in-game using the built-in Print Screen functionality. These screenshots are saved as bitmap files (.bmp). Selecting a screenshot from the list on the left will display it on the right. Screenshots can be converted from bitmaps into a few other formats using context menu commands.
+
+<h3 id="screenshots-alt-path">Change screenshots directory (Oblivion)</h3>
+<p>By default, Oblivion stores its screenshots in Oblivion's root folder but allows you to change the default directory via an ini setting.
+    You can change the ini setting by directly editing Oblivion.ini or by using the "Next Shot" column menu item in the Screenshots tab.
+    For instance Oblivion Reloaded uses Oblivion\Screenshots. To change the screenshots directory to Oblivion\Screenshots by editing the
+    Oblivion.ini find the following line under the <code>[Display]</code> heading:</p>
+
+    <code>SScreenShotBaseName=ScreenShot</code>
+
+<p>and add the path to the Oblivion\Screenshots folder, i.e.:</p>
+
+    <code>SScreenShotBaseName=C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot</code>
+
+<p>Alternatively hit "Next Shot" and supply the path as in:</p>
+
+    <code>C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot0</code>
+
+<p>where 0 is the (optional) Screenshot base number (it will set the <code>iScreenShotIndex</code> ini setting). A relative path will
+    also work (as in <code>Screenshots\Screenshot</code>). Bash will go ahead and edit the ini for you. You may also create an ini
+    tweak to readily switch directories.
+
+<p><b>IMPORTANT</b>: The base filename "Screenshot" (or any other base name you like) must be included in the path or Oblivion's
+    native screenshots will not work - that is pressing the Prt Scr key will do nothing.
+
 <h3 id="screenshots-commands">Context Menu Commands</h3>
 <table>
     <thead>
@@ -1428,7 +1595,7 @@
         <tr><th>Command<th>Description
     <tbody>
         <tr><td>Open<td>View the screenshot directory in Windows Explorer.
-        <tr><td>Next Shot<td>Set the name and number of the next screenshot.
+        <tr><td>Next Shot<td>Set any or all of the base name and number of the next screenshot as well as the screenshot directory
         <tr><td>JPEG Quality<td>Set the quality of JPEGs created during conversion.
 </table>
 <table>
@@ -1642,10 +1809,10 @@
 <figcaption>Wrye Bash's Mod Checker</figcaption>
 </figure>
 <p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
-<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regardinng missing masters or delinquent masters.
+<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regarding missing masters or delinquent masters.
 <ul>
     <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
-    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This shoud be fixed to prevent issues in-game.
+    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
 </ul>
 <p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found at <a href="http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
 <p>The rest of the report details any plugin groups that have been set up. Each group's section contains the following information:
@@ -1703,7 +1870,7 @@
 
 <h3 id="tools-arguments">Command Line Arguments</h3>
 <p>The following table lists all command-line arguments Wrye Bash
-	supports.
+	understands.
 <p>
 <table>
 	<thead>
@@ -1713,15 +1880,21 @@
 	<tbody>
 		<tr>
 			<td><code>-g&nbsp;GAMENAME, --game=GAMENAME</code>
-			<td>Specifies the game Wrye Bash should try to manage. Use this
-				argument if more than one game Wrye Bash supports is installed.
+			<td>Bash reads the windows registry to find supported games and
+			checks the <code>-o</code> argument, the sOblivionPath ini option
+			and the position of the Mopy folder (namely checks if Mopy's parent
+			folder contains a supported game exe). If via any of the last three
+			methods a path to a supported game is found then this game will be
+			used, even if <code>-g</code> is not set. But in case those options
+			are not set or a supported game exe (NB: only exe name is checked)
+			is not found using them, Bash will prompt you to choose amongst the
+			games found in the registry (if any) except if <code>-g</code> is
+			set. <code>-g</code> takes precedence on the heuristics above which
+			may lead to surprises.
 		<tr>
 			<td><code>-d, --debug</code>
 			<td>Useful if bash is crashing on startup or if you want to
 				print a lot of information (e.g. while developing or debugging).
-		<tr>
-			<td><code>--no-psyco</code>
-			<td>Disables import of Psyco.
 		<tr>
 			<td><code>-C, --Cbash-mode</code>
 			<td>enables CBash and uses CBash to build the bashed patch.
@@ -1739,20 +1912,25 @@
 			<th>All path arguments must be absolute paths and use either
 				forward slashes (/) or two backward slashes (\\). All of these can
 				also be set in the ini (where you can also use relative paths) and
-				if set in both cmd line takes pecedence.
+				if set in both cmd line takes precedence.
     <tbody>
 		<tr>
 			<td><code>-o&nbsp;OBLIVIONPATH,
 					--oblivionPath=OBLIVIONPATH</code>
 			<td>Specifies the game directory (the one containing the game's
-				exe). Use this argument if Bash is located outside of the game
-				directory, and the <code>--game</code> argument failed to find it.
+			exe). Use this argument if Bash is located outside of the game
+			directory and you have no ini option (or want to override it).
+			Bash reads the windows registry to find supported games
+			so this is not needed if the game entry is present in the registry.
+			If however more than one game entries are present in the registry
+			consider providing the <code>--game</code> argument to specify
+			which one to use - otherwise Bash will prompt you.
     <thead>
 		<tr>
 			<th>User Directory Arguments
 			<th>These arguments allow you to specify your user directories
-				in several wasy. These are only useful if the regular procedure for
-				geting the user directory fails. And even in that case, the user is
+				in several ways. These are only useful if the regular procedure for
+				getting the user directory fails. And even in that case, the user is
 				probably better off installing win32com.
     <tbody>
 		<tr>
@@ -1785,7 +1963,7 @@
 		<tr>
 			<td><code>-r, --restore</code>
 			<td>Backup all Bash settings to an archive file before the app
-				launches. Either specify the filepath with the <code>-f/--filname</code>
+				launches. Either specify the filepath with the <code>-f/--filename</code>
 				options or Wrye Bash will prompt the user for the backup file path.
 
 		<tr>
@@ -1806,7 +1984,6 @@
 			<td>Include all images from mopy/bash/images in the
 				backup/restore (if present in backup file).</td>
 		</tr>
-	</tbody>
 </table>
 
 <h2 id="international">Internationalisation</h2>

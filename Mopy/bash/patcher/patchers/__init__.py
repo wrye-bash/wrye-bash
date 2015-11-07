@@ -17,10 +17,33 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
-"""This module contains the oblivion patchers code. WIP - detailed docs when
- done"""
+"""This module contains the patcher classes
+
+# Patchers 1 ------------------------------------------------------------------
+In patchers/base.py except Patcher and CBash_Patcher which are in
+patcher/base.py
+
+# Patchers 10 -----------------------------------------------------------------
+In patchers/base.py
+
+# Patchers: 20 ----------------------------------------------------------------
+importers.py
+
+# Patchers: 30 ----------------------------------------------------------------
+# MultiTweakItem and MultiTweaker classes except from races_multitweaks
+multitweak_actors.py
+multitweak_assorted.py
+multitweak_clothes.py
+multitweak_names.py
+multitweak_settings.py
+
+# Patchers: 40 ----------------------------------------------------------------
+# SpecialPatcher is used in those
+races_multitweaks.py
+special.py
+"""

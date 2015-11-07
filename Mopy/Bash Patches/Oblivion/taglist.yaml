@@ -698,6 +698,8 @@ plugins:
       - Relev
       - Scripts
       - Stats
+      - name: "-C.Water"
+        condition: version("Unofficial Oblivion Patch.esp","3.4.0",>=)
   - name: Unofficial Oblivion Patch DV.esp
     tag:
       - Actors.ACBS
@@ -721,6 +723,8 @@ plugins:
       - Relev
       - Scripts
       - Stats
+      - name: "-C.Water"
+        condition: version("Unofficial Oblivion Patch.esp","3.4.0",>=)
   - name: Unofficial Oblivion Patch-mobs.esp
     tag:
       - Actors.ACBS
@@ -744,8 +748,8 @@ plugins:
       - Relev
       - Scripts
       - Stats
-      - "-"
-      - C.Water
+      - name: "-C.Water"
+        condition: version("Unofficial Oblivion Patch.esp","3.4.0",>=)
   - name: UOPS Additional Changes.esp
     tag:
       - Relev
@@ -933,6 +937,10 @@ plugins:
     tag:
       - Delev
       - Relev
+  - name: Francescos Dark Seducer Weapons Patch.esp
+    tag:
+      - Delev
+      - Relev
   - name: FranDarkSeducerWeapFix.esp
     tag:
       - Delev
@@ -1011,6 +1019,11 @@ plugins:
     tag:
       - Graphics
       - NoMerge
+  - name: Natural_Weather_HDR_by_Max_Tael_RD.esp
+    dirty:
+      - crc: 0x9233fd80
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: All Natural.esp
     tag:
       - C.Climate
@@ -1234,7 +1247,7 @@ plugins:
   - name: SnakeLightningSpeed.esp
     tag:
       - Graphics
-  - name: Rainbows(_1C)?\.esp
+  - name: Rainbows.esp
     dirty:
       - crc: 0x71bddec0
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
@@ -1293,6 +1306,11 @@ plugins:
       - Factions
       - Invent
       - Relev
+  - name: AkaviriBattleCat.esp
+    dirty:
+      - crc: 0x63948b30
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 3
   - name: Anvil beach retexture.esp
     tag:
       - Graphics
@@ -1588,7 +1606,7 @@ plugins:
     dirty:
       - crc: 0x6d3b25d4
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
-        itm: 2154
+        itm: 54
   - name: Lyn-StoriesFromTheSeaMod.esp
     tag:
       - Invent
@@ -1637,6 +1655,8 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 18
   - name: Oblivion Collectible Cards.esp
+    tag:
+      - Invent
     dirty:
       - crc: 0xac9752e5
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
@@ -1835,6 +1855,14 @@ plugins:
   - name: the punished girlbox.esp
     tag:
       - Graphics
+  - name: Treasure Hunt.esp
+    dirty:
+      - crc: 0x1402e41f
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 6
+      - crc: 0x4fd118f2
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: BetterGold Rus.esp
     tag:
       - Graphics
@@ -2007,6 +2035,8 @@ plugins:
   - name: C&C - The Blackwood Company.esp
     tag:
       - C.Owner
+      - Factions
+      - Invent
       - Relations
     dirty:
       - crc: 0x56c59ac2
@@ -2077,7 +2107,7 @@ plugins:
         udr: 1
       - crc: 0x74d2ca6f
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
-        itm: 16
+        itm: 26
         udr: 1
   - name: DLCVileLair - Unofficial Patch.esp
     tag:
@@ -2284,6 +2314,11 @@ plugins:
   - name: ArenaEyeCandyArmor.esp
     tag:
       - Graphics
+  - name: ArchmageSorceress.esp
+    dirty:
+      - crc: 0xa18bb8a9
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 3
   - name: Armblade.esp
     tag:
       - Invent
@@ -2302,6 +2337,11 @@ plugins:
       - Invent
     dirty:
       - crc: 0xbdd952be
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 4
+  - name: ArynnsDemonatrixHGEC.esp
+    dirty:
+      - crc: 0xcb5bd995
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 4
   - name: MODAssassinsCreed2_Revisited.esp
@@ -2331,6 +2371,16 @@ plugins:
       - crc: 0x12cd76a5
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 13
+  - name: Altessian.esp
+    dirty:
+      - crc: 0xe0be005d
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 21
+  - name: Armamentarium_MOBS.esp
+    dirty:
+      - crc: 0x65265f23
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 10
   - name: AGEHA Tortured Souls.esp
     tag:
       - Delev
@@ -2413,6 +2463,16 @@ plugins:
   - name: Blades Ceremonial Armour.esp
     tag:
       - Graphics
+  - name: BlackPuppetLight.esp
+    dirty:
+      - crc: 0xadcd53a4
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
+  - name: BlackPuppetUltraLight.esp
+    dirty:
+      - crc: 0x50d6e645
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: Brigand's Gear.esp
     tag:
       - Invent
@@ -2520,6 +2580,11 @@ plugins:
   - name: dragon weapons.esp
     tag:
       - Invent
+  - name: Dynasty Armor DM-BBB.esp
+    dirty:
+      - crc: 0x3da8158c
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 8
   - name: doofdillas_potions_recolored_unsorted_v0_2_1.esp
     tag:
       - Graphics
@@ -2543,6 +2608,14 @@ plugins:
       - crc: 0xa71070b4
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 4
+  - name: EmpressRobes.esp
+    dirty:
+      - crc: 0x99705812
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
+      - crc: 0xd51dd701
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: Fable Swords.esp
     tag:
       - Invent
@@ -2579,6 +2652,14 @@ plugins:
       - crc: 0xb0fdf6f
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 4
+  - name: Frill Short Dress and Halloween Backpack.esp
+    tag:
+      - Graphics
+  - name: Full Metal Bikini Mark II.esp
+    dirty:
+      - crc: 0xc5ce3717
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 9
   - name: Garak's Staff Replacer Artefacts.esp
     tag:
       - Graphics
@@ -2666,6 +2747,9 @@ plugins:
       - crc: 0x4355daba
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 3
+  - name: Kusanagi.esp
+    tag:
+      - Invent
   - name: Lady Dark.esp
     dirty:
       - crc: 0xa18d358b
@@ -2920,6 +3004,11 @@ plugins:
     tag:
       - Graphics
       - Invent
+  - name: RomanLegion.esp
+    dirty:
+      - crc: 0x8edd4373
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2286
   - name: royal garb.esp
     tag:
       - Graphics
@@ -2963,6 +3052,11 @@ plugins:
       - crc: 0xc078a0f2
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 4
+  - name: Sexy Daedric Priestess.esp
+    dirty:
+      - crc: 0x4be5bba2
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 1
   - name: Shdw_Armor Set_Sotonhorian.esp
     dirty:
       - crc: 0x1c75b309
@@ -3259,6 +3353,21 @@ plugins:
   - name: RealSwords - Redguard LO.esp
     tag:
       - Invent
+  - name: Mage Equipment.esp
+    tag:
+      - Delev
+      - Graphics
+      - Invent
+      - Relev
+      - Stats
+    dirty:
+      - crc: 0x60c24030
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        udr: 23
+  - name: MEQ_NakakitaPatch.esp
+    tag:
+      - Graphics
+      - NoMerge
   - name: All Manly.esp
     tag:
       - Graphics
@@ -3362,6 +3471,11 @@ plugins:
     tag:
       - Graphics
       - NoMerge
+  - name: Dollparts' Wild Flower Corsets of Cyrodiil.esp
+    dirty:
+      - crc: 0xbe9bea03
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 4
   - name: Dragon Princess.esp
     dirty:
       - crc: 0xdc820ea9
@@ -3381,6 +3495,11 @@ plugins:
   - name: HGEC_AmazonArmor.esp
     tag:
       - Graphics
+  - name: HGEC_Companionmail.esp
+    dirty:
+      - crc: 0xe43eeefb
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: HGEC Glass Replacement.esp
     tag:
       - Graphics
@@ -3513,6 +3632,11 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 10
         udr: 1
+  - name: Velveteen_Armor_HGEC.esp
+    dirty:
+      - crc: 0x5ede9a39
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 1
   - name: YAARM_Steel.esp
     tag:
       - Graphics
@@ -3680,6 +3804,12 @@ plugins:
     tag:
       - Invent
       - Names
+  - name: The Last Queen Of The Ayleids.esp
+    dirty:
+      - crc: 0x8e806bb1
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 6
+        udr: 164
   - name: Ranokoas Organized Potions.esp
     tag:
       - Deactivate
@@ -3762,10 +3892,6 @@ plugins:
       - Delev
       - Relev
   - name: Francesco's Optional Files 4.esp
-    tag:
-      - Delev
-      - Relev
-  - name: Francescos Dark Seducer Weapons Patch.esp
     tag:
       - Delev
       - Relev
@@ -4061,6 +4187,11 @@ plugins:
   - name: OOO-Better_Priced_Clutter.esp
     tag:
       - Stats
+  - name: OOOEquipmentAddon.esp
+    dirty:
+      - crc: 0xb951292d
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 1
   - name: RealitySpectreStars2HeavenBetterPotionsOOOEffects.esp
     tag:
       - Graphics
@@ -4401,16 +4532,14 @@ plugins:
       - Delev
       - Filter
       - Relev
-      - "-"
-      - NoMerge
+      - "-NoMerge"
   - name: TamrielTravellersItemsVendor.esp
     tag:
       - Deactivate
       - Delev
       - Filter
       - Relev
-      - "-"
-      - NoMerge
+      - "-NoMerge"
   - name: ShiveringIsleTravellers.esp
     dirty:
       - crc: 0x36dd18e
@@ -4484,6 +4613,10 @@ plugins:
     tag:
       - NoMerge
       - Relations
+  - name: Cobl Patch - MMM Gems and Gem Dust.esp
+    tag:
+      - Delev
+      - Invent
   - name: WAC - ItemLootFix4v1.0bTIE.esp
     tag:
       - Delev
@@ -4560,6 +4693,9 @@ plugins:
     tag:
       - Delev
       - Relev
+  - name: Oblivion Intensity.esp
+    tag:
+      - Names
   - name: Dangerous_Overhaul_v0.2.esp
     tag:
       - Relev
@@ -5064,6 +5200,27 @@ plugins:
   - name: Morroblivion item rebalance.esp
     tag:
       - Stats
+  - name: Morrowind_ob - Morroblivion_Chargen_And_Transport_Mod_v10.esp
+    dirty:
+      - crc: 0x51563805
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 3
+  - name: Morrowind_ob - MorroblivionTreeReplacer.esp
+    dirty:
+      - crc: 0x7af5966f
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 3043
+  - name: Morrowind_ob - ClothingReplacer.esp
+    tag:
+      - Names
+  - name: Morrowind_ob - UCWUS.esp
+    tag:
+      - Invent
+      - Names
+    dirty:
+      - crc: 0x9f7f8d5f
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 4
   - name: Enhanced Quest Roleplaying.esp
     tag:
       - Factions
@@ -5084,6 +5241,10 @@ plugins:
         udr: 118
   - name: KvatchAftermath.esp
     dirty:
+      - crc: 0x435d607c
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 5202
+        udr: 390
       - crc: 0x8997d4f1
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 5240
@@ -5192,6 +5353,15 @@ plugins:
       - crc: 0x2ab190d0
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 420
+  - name: A Family Problem.esp
+    tag:
+      - Eyes
+      - Hair
+    dirty:
+      - crc: 0x14617e55
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 28
+        udr: 39
   - name: AHP.esp
     tag:
       - Invent
@@ -5212,6 +5382,22 @@ plugins:
       - crc: 0xf39e2389
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 9
+  - name: Alexis_Magiergilde.esp
+    dirty:
+      - crc: 0x55de75f7
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 25
+        udr: 48
+  - name: Albae+Gefährten.esp
+    dirty:
+      - crc: 0x57563a26
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 14
+        udr: 21
+      - crc: 0x78c10a9a
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 78
+        udr: 21
   - name: Ald-Khull.esp
     dirty:
       - crc: 0x9585ac0c
@@ -5869,6 +6055,9 @@ plugins:
     tag:
       - Actors.Anims
       - NoMerge
+  - name: GoldenCrestTGND.esp
+    tag:
+      - Graphics
   - name: GreatForestMarket Vwalk.esp
     tag:
       - Actors.Anims
@@ -5878,6 +6067,12 @@ plugins:
       - crc: 0x15fc9306
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 7
+  - name: Guards.esp
+    dirty:
+      - crc: 0x84c20e98
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 71
+        udr: 20
   - name: GwedenBrothel.esp
     dirty:
       - crc: 0x1433b9e8
@@ -6578,6 +6773,12 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 4440
         udr: 1
+  - name: RuinsofEvendallMod.esp
+    dirty:
+      - crc: 0xc320276c
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 46
+        udr: 36
   - name: RumpleMod Vwalk.esp
     tag:
       - Actors.Anims
@@ -6716,6 +6917,11 @@ plugins:
     tag:
       - Actors.Anims
       - NoMerge
+  - name: BetterInns + NewHomeOwners.esp
+    tag:
+      - Actors.AIPackages
+      - C.Name
+      - Scripts
   - name: TamrielSnacks11-EV.esp
     dirty:
       - crc: 0x36e6cbaa
@@ -6838,6 +7044,11 @@ plugins:
   - name: The forgotten Castle.esp
     tag:
       - Hair
+  - name: The Power of the North.esp
+    dirty:
+      - crc: 0x2eb9a944
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        udr: 20
   - name: The Retreat-AN compatible.esp
     tag:
       - C.Climate
@@ -7344,10 +7555,8 @@ plugins:
       - C.Name
       - C.Owner
       - Creatures.Blood
-      - "-"
-      - C.Climate
-      - "-"
-      - C.Light
+      - "-C.Climate"
+      - "-C.Light"
   - name: BrumaMGRestored.esp
     dirty:
       - crc: 0x2610b3ea
@@ -7450,6 +7659,10 @@ plugins:
       - Actors.Anims
       - NoMerge
   - name: Knights Vwalk UOP.esp
+    tag:
+      - Actors.Anims
+      - NoMerge
+  - name: Knights - Revelation Vwalk.esp
     tag:
       - Actors.Anims
       - NoMerge
@@ -7810,12 +8023,33 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 15
   - name: MannimarcoRevisited.esp
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.Anims
+      - Actors.CombatStyle
+      - Actors.Spells
+      - Actors.Stats
+      - Factions
+      - Invent
+      - NPC.Race
     dirty:
       - crc: 0xe2be41da
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         udr: 261
   - name: MannimarcoRevisitedOOO.esp
     tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.Anims
+      - Actors.CombatStyle
+      - Actors.Spells
+      - Actors.Stats
+      - Factions
+      - Invent
+      - NPC.Race
       - NpcFaces
   - name: Shadowcrest_Vineyard.esp
     dirty:
@@ -7841,6 +8075,9 @@ plugins:
   - name: FCOM_SlofsRobeTrader.esp
     tag:
       - Delev
+      - Graphics
+      - Invent
+      - Names
       - Relev
   - name: FCOM_OMG.esp
     tag:
@@ -8159,6 +8396,10 @@ plugins:
       - crc: 0x128c5f11
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 1
+  - name: Oblivifall - Losing My Religion Vwalk.esp
+    tag:
+      - Actors.Anims
+      - NoMerge
   - name: Unique Forts Fort Strand.esp
     dirty:
       - crc: 0x5aaf40dc
@@ -8974,6 +9215,11 @@ plugins:
       - Actors.Stats
       - Invent
       - Stats
+  - name: ApparatusIcons.esp
+    tag:
+      - Deactivate
+      - Graphics
+      - NoMerge
   - name: Arkestar - Name Rat 1 - Potions.esp
     tag:
       - Names
@@ -9305,6 +9551,11 @@ plugins:
   - name: gq Chapel Altars become Wayshrines.esp
     tag:
       - Scripts
+  - name: Grass Overhaul.esp
+    tag:
+      - Deactivate
+      - Graphics
+      - NoMerge
   - name: GuardEquipAndStatFix.esp
     tag:
       - Actors.Stats
@@ -9424,12 +9675,20 @@ plugins:
       - crc: 0xcbb991e4
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 1
+  - name: Oblivifall - Closing Time.esp
+    tag:
+      - Actors.AIPackages
   - name: Oblivifall - New Classes.esp
     tag:
       - R.Description
   - name: Oblivifall - New Classes Regular Fonts.esp
     tag:
       - R.Description
+  - name: Oblivion grass overhaul.esp
+    tag:
+      - Deactivate
+      - Graphics
+      - NoMerge
   - name: OriginalLeather.esp
     tag:
       - Names
@@ -9603,6 +9862,10 @@ plugins:
   - name: Soulgem Magic.esp
     tag:
       - Scripts
+  - name: SPTDiverseGuards-Core Vwalk.esp
+    tag:
+      - Actors.Anims
+      - NoMerge
   - name: SPTDiverseBandits.esp
     tag:
       - Relev
@@ -9616,6 +9879,9 @@ plugins:
   - name: StrongerAllies.esp
     tag:
       - Invent
+  - name: SOC-Wildlife Variety.esp
+    tag:
+      - Relev
   - name: Things Found Fence.esp
     tag:
       - Actors.AIData
@@ -9625,11 +9891,18 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 3
         udr: 587
+  - name: TrollResurrection.esp
+    tag:
+      - SpellStats
   - name: undercover.esp
     dirty:
       - crc: 0x757f1f42
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 1
+  - name: UnleveledQuestRewards.esp
+    tag:
+      - Delev
+      - Relev
   - name: upperGothicClutter.esp
     tag:
       - Graphics
@@ -10118,9 +10391,17 @@ plugins:
   - name: immersive_caves_manual.esp
     tag:
       - Sound
+  - name: Immersive Caves.esp
+    tag:
+      - Names
+  - name: Immersive Caves Auto.esp
+    tag:
+      - Names
+      - Sound
   - name: immersive_caves_auto.esp
     tag:
       - Graphics
+      - Names
       - Sound
   - name: Dark Dungeons.esp
     tag:
@@ -10271,6 +10552,15 @@ plugins:
     tag:
       - Deactivate
       - Filter
+  - name: Capes4NPCs - Extraction.esp
+    tag:
+      - Deactivate
+      - Filter
+  - name: Capes4NPCs - Placement.esp
+    tag:
+      - Filter
+      - IIM
+      - Invent
   - name: Item interchange - Placement for FCOM.esp
     tag:
       - Deactivate
@@ -10794,6 +11084,12 @@ plugins:
       - Hair
       - NpcFaces
       - R.Relations
+  - name: High Rock's Sorcerers.esp
+    tag:
+      - Eyes
+      - Hair
+      - NpcFaces
+      - R.Relations
   - name: kaleen.esp
     tag:
       - Eyes
@@ -11111,6 +11407,12 @@ plugins:
       - Hair
       - NpcFaces
   - name: _Ren_BeautyPack_full_-_DV_Eshme_Compatible.esp
+    tag:
+      - Eyes
+      - Graphics
+      - Hair
+      - NpcFaces
+  - name: Ren_Beauty_Pack_Expanded_Compilation.esp
     tag:
       - Eyes
       - Graphics
@@ -13156,6 +13458,15 @@ plugins:
       - NpcFaces
       - R.Head
       - R.Mouth
+  - name: Oblivion_Character_Overhaul Vwalk.esp
+    tag:
+      - Actors.Anims
+      - NoMerge
+  - name: OCOv2-BR.esp
+    tag:
+      - NpcFaces
+      - R.Body
+      - R.Head
   - name: Jjiinx_Long Ears.esp
     tag:
       - Body-F
@@ -13455,12 +13766,21 @@ plugins:
     tag:
       - Actors.Anims
       - NoMerge
+  - name: Better Cities - Leyawiin Flooded.esp
+    tag:
+      - C.Water
   - name: Better Cities - No LEYAWIIN Flooding.esp
     tag:
       - C.Water
   - name: Better Cities - Open Better Cities.esp
     tag:
       - Actors.AIPackages
+  - name: OSPS-BC_IC-II_UL-II_RRLR_Patch.esp
+    tag:
+      - C.Water
+  - name: OSPS_BC_IC-II_UL-II_TalosBridge_RRLR_Patch.esp
+    tag:
+      - C.Water
   - name: Cyrodiil Rebuild.esp
     tag:
       - Actors.ACBS
@@ -14000,6 +14320,9 @@ plugins:
       - Relations
       - Relev
       - Stats
+  - name: TES4Merged.esp
+    tag:
+      - NoMerge
   - name: Creeper.esp
     dirty:
       - crc: 0x8a4423ba
@@ -14039,6 +14362,12 @@ plugins:
       - crc: 0x60f25fb1
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 2
+      - crc: 0x657795e2
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
+      - crc: 0xa01e2b64
+        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
+        itm: 2
   - name: R18PN - Bikini Re-Textured.esp
     dirty:
       - crc: 0x170fe3cc
@@ -14065,22 +14394,11 @@ plugins:
       - crc: 0x9c67e42a
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         udr: 173
-  - name: BetterInns + NewHomeOwners.esp
-    tag:
-      - Actors.AIPackages
   - name: Glowing Wonders.esp
     dirty:
       - crc: 0x1d521050
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 1
-  - name: Knights - Revelation Vwalk.esp
-    tag:
-      - Actors.Anims
-      - NoMerge
-  - name: SPTDiverseGuards-Core Vwalk.esp
-    tag:
-      - Actors.Anims
-      - NoMerge
   - name: MerryBellInn.esp
     dirty:
       - crc: 0x46126974
@@ -14114,27 +14432,6 @@ plugins:
         util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
         itm: 140
         udr: 1
-  - name: Morrowind_ob - UCWUS.esp
-    tag:
-      - Invent
-      - Names
-    dirty:
-      - crc: 0x9f7f8d5f
-        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
-        itm: 4
-  - name: Morrowind_ob - Morroblivion_Chargen_And_Transport_Mod_v10.esp
-    dirty:
-      - crc: 0x51563805
-        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
-        itm: 3
-  - name: Morrowind_ob - MorroblivionTreeReplacer.esp
-    dirty:
-      - crc: 0x7af5966f
-        util: "[TES4Edit](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide)"
-        itm: 3043
-  - name: Morrowind_ob - ClothingReplacer.esp
-    tag:
-      - Names
   - name: Morrowind_ob - Conversation.esp
     tag:
       - Factions

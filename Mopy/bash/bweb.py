@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,6 +26,7 @@
    parsing a TESNexus page for files available.  Since items here will be used
    with the multiprocessing module, it needs to not have any dependancies on
    the rest of Wrye Bash's files."""
+# CRUFT, unused - use or bin
 
 import os
 import re
@@ -40,6 +41,8 @@ if os.name == u'nt':
 
 class Nexus:
     #--Regex's for parsing Nexus site URLs
+    # http://www.nexusmods.com/skyrim/mods/25859/?tab=2&navtag=http%3A%2F%2Fwww.nexusmods.com%2Fskyrim%2Fajax%2Fmodfiles%2F%3Fid%3D25859&pUp=1
+    # http://www.nexusmods.com/oblivion/mods/22368/?tab=2&navtag=http%3A%2F%2Fwww.nexusmods.com%2Foblivion%2Fajax%2Fmodfiles%2F%3Fid%3D22368&pUp=1
     reFileGroupStart = re.compile(
         u'.*?<h3>\s*(.+?)\s*</h3>\s*<ol\s+class\s*=\s*"files-tab-files-list"\s*>(.*)',
         re.I|re.U)
@@ -52,6 +55,10 @@ class Nexus:
         re.I|re.U)
 
     # Class for interacting with TES/Skyrim Nexus
+    # http://www.nexusmods.com/skyrim/mods/25859/?
+    # http://www.nexusmods.com/oblivion/mods/22368/?
+    # http://www.nexusmods.com/oblivion/?
+    # http://www.nexusmods.com/skyrim/?
     def __init__(self,nexusSite='tesnexus',fileId=None):
         self.urlBase = 'http://'+nexusSite+'nexusmods.com'
         self.fileId = fileId

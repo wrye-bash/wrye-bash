@@ -17,7 +17,34 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import namedtuple
+from .. import balt, bolt
+
+PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twinPatcher'])
+
+def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
+    for key in patchConfigs:
+        if 'CBash' in key:
+            return True
+    return False
+
+def exportConfig(patchName, config, isCBash, win):
+    from .. import bosh ##: cyclic import
+    outFile = patchName + u'_Configuration.dat'
+    outDir = bosh.dirs['patches']
+    outDir.makedirs()
+    #--File dialog
+    outPath = balt.askSave(win,
+        title=_(u'Export Bashed Patch configuration to:'),
+        defaultDir=outDir, defaultFile=outFile,
+        wildcard=u'*_Configuration.dat')
+    if outPath:
+        pklPath = outPath + u'.pkl'
+        table = bolt.Table(bosh.PickleDict(outPath, pklPath))
+        table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (%s)' % (
+            [u'Python', u'CBash'][isCBash])), 'bash.patch.configs', config)
+        table.save()

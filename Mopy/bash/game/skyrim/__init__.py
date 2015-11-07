@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,28 +25,20 @@
 """This modules defines static data for use by bush, when TES V:
    Skyrim is set at the active game."""
 
-import struct
-from .. import brec
-from .. import bolt
-from ..bolt import _encode
-from ..brec import *
-from skyrim_const import bethDataFiles, allBethFiles
+from constants import bethDataFiles, allBethFiles
+from ... import brec
+from ...brec import *
 
-import itertools
-from_iterable = itertools.chain.from_iterable
-
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
-#--Name of the game
-name = u'Skyrim'
+#--Name of the game to use in UI.
+displayName = u'Skyrim'
+#--Name of the game's filesystem folder.
+fsName = u'Skyrim'
+#--Alternate display name to use instead of "Wrye Bash for ***"
 altName = u'Wrye Smash'
+#--Name of game's default ini file.
+defaultIniFile = u'Skyrim_default.ini'
 
-#--exe to look for to see if this is the right game
+#--Exe to look for to see if this is the right game
 exe = u'TESV.exe'
 
 #--Registry keys to read to find the install location
@@ -61,7 +53,7 @@ patchTip = u'Update via Steam'
 #--URL to the Nexus site for this game
 nexusUrl = u'http://www.nexusmods.com/skyrim/'
 nexusName = u'Skyrim Nexus'
-nexusKey = 'bash.installers.openSkyrimNexus'
+nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
 #--Creation Kit Set information
 class cs:
@@ -92,7 +84,7 @@ class sp:
     longName = u'SkyProc'
     installDir = u'SkyProc Patchers'
 
-#--Quick shortcut for combining both the SE and SD names
+#--Quick shortcut for combining the SE and SD names
 se_sd = se.shortName+u'/'+sd.longName
 
 #--Graphics Extender information
@@ -137,10 +129,10 @@ dontSkipDirs = {
 }
 
 #Folders BAIN should never check
-SkipBAINRefresh = set ((
+SkipBAINRefresh = {
     #Use lowercase names
     u'tes5edit backups',
-))
+}
 
 #--Some stuff dealing with INI files
 class ini:
@@ -157,6 +149,7 @@ class ess:
     canReadBasic = True         # All the basic stuff needed for the Saves Tab
     canEditMasters = True       # Adjusting save file masters
     canEditMore = False         # No advanced editing
+    ext = u'.ess'               # Save file extension
 
     @staticmethod
     def load(ins,header):
@@ -256,7 +249,7 @@ iniFiles = [
 #--INI setting to setup Save Profiles
 saveProfilesKey = (u'General',u'SLocalSavePath')
 
-#--The main plugin file Wrye Bash should look for
+#--The main plugin Wrye Bash should look for
 masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
@@ -268,6 +261,11 @@ nonDeactivatableFiles = [
     u'Update.esm',
     ]
 
+namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
+
+#The pickle file for this game. Holds encoded GMST IDs from the big list below.
+pklfile = r'bash\db\Skyrim_ids.pkl'
+
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
 # bethDataFiles = set()
@@ -278,7 +276,7 @@ nonDeactivatableFiles = [
 # Moved to skyrim_const
 
 #--BAIN: Directories that are OK to install to
-dataDirs = set((
+dataDirs = {
     u'bash patches',
     u'dialogueviews',
     u'docs',
@@ -293,20 +291,18 @@ dataDirs = set((
     u'shadersfx',
     u'music',
     u'sound',
-    u'seq',
-    ))
-dataDirsPlus = set((
+    u'seq',}
+dataDirsPlus = {
     u'ini tweaks',
     u'skse',
     u'ini',
     u'asi',
-    u'skyproc patchers',
-    ))
+    u'skyproc patchers',}
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of
 #   accidental escape sequences
-wryeBashDataFiles = set((
+wryeBashDataFiles = {
     u'Bashed Patch.esp',
     u'Bashed Patch, 0.esp',
     u'Bashed Patch, 1.esp',
@@ -330,458 +326,18 @@ wryeBashDataFiles = set((
     u'Docs\\Bash Readme Template.txt',
     u'Docs\\Bashed Patch, 0.html',
     u'Docs\\Bashed Patch, 0.txt',
-    ))
-wryeBashDataDirs = set((
+}
+wryeBashDataDirs = {
     u'Bash Patches',
     u'INI Tweaks'
-    ))
-ignoreDataFiles = set((
-    ))
-ignoreDataFilePrefixes = set((
-    ))
-ignoreDataDirs = set((
+}
+ignoreDataFiles = {
+}
+ignoreDataFilePrefixes = {
+}
+ignoreDataDirs = {
     u'LSData'
-    ))
-
-# Function Info ----------------------------------------------------------------
-conditionFunctionData = ( #--0: no param; 1: int param; 2 formid param
-    (  0, 'GetWantBlocking', 0, 0),
-    (  1, 'GetDistance', 2, 0),
-    (  5, 'GetLocked', 0, 0),
-    (  6, 'GetPos', 1, 0),
-    (  8, 'GetAngle', 1, 0),
-    ( 10, 'GetStartingPos', 1, 0),
-    ( 11, 'GetStartingAngle', 1, 0),
-    ( 12, 'GetSecondsPassed', 0, 0),
-    ( 14, 'GetActorValue', 1, 0),
-    ( 18, 'GetCurrentTime', 0, 0),
-    ( 24, 'GetScale', 0, 0),
-    ( 25, 'IsMoving', 0, 0),
-    ( 26, 'IsTurning', 0, 0),
-    ( 27, 'GetLineOfSight', 2, 0),
-    ( 31, 'GetButtonPressed', 0, 0),
-    ( 32, 'GetInSameCell', 2, 0),
-    ( 35, 'GetDisabled', 0, 0),
-    ( 36, 'MenuMode', 1, 0),
-    ( 39, 'GetDisease', 0, 0),
-    ( 41, 'GetClothingValue', 0, 0),
-    ( 42, 'SameFction', 2, 0),
-    ( 43, 'SameRace', 2, 0),
-    ( 44, 'SameSex', 2, 0),
-    ( 45, 'GetDetected', 2, 0),
-    ( 46, 'GetDead', 0, 0),
-    ( 47, 'GetItemCount', 2, 0),
-    ( 48, 'GetGold', 0, 0),
-    ( 49, 'GetSleeping', 0, 0),
-    ( 50, 'GetTalkedToPC', 0, 0),
-    ( 53, 'GetScriptVariable', 2, 1),
-    ( 56, 'GetQuestRunning', 2, 0),
-    ( 58, 'GetStage', 2, 0),
-    ( 59, 'GetStageDone', 2, 1),
-    ( 60, 'GetFactionRankDifference', 2, 2),
-    ( 61, 'GetAlarmed', 0, 0),
-    ( 62, 'IsRaining', 0, 0),
-    ( 63, 'GetAttacked', 0, 0),
-    ( 64, 'GetIsCreature', 0, 0),
-    ( 65, 'GetLockLevel', 0, 0),
-    ( 66, 'GetShouldAttack', 2, 0),
-    ( 67, 'GetInCell', 2, 0),
-    ( 68, 'GetIsClass', 2, 0),
-    ( 69, 'GetIsRace', 2, 0),
-    ( 70, 'GetIsSex', 2, 0),
-    ( 71, 'GetInFaction', 2, 0),
-    ( 72, 'GetIsID', 2, 0),
-    ( 73, 'GetFactionRank', 2, 0),
-    ( 74, 'GetGlobalValue', 2, 0),
-    ( 75, 'IsSnowing', 0, 0),
-    ( 77, 'GetRandomPercent', 0, 0),
-    ( 79, 'GetQuestVvariable', 2, 1),
-    ( 80, 'GetLevel', 0, 0),
-    ( 81, 'IsRotating', 0, 0),
-    ( 83, 'GetLeveledEncounterValue', 1, 0),
-    ( 84, 'GetDeadCount', 2, 0),
-    ( 91, 'GetIsAlerted', 0, 0),
-    ( 98, 'GetPlayerControlsDisabled', 0, 0),
-    ( 99, 'GetHeadingAngle', 2, 0),
-    (101, 'IsWeaponMagicOut', 0, 0),
-    (102, 'IsTorchOut', 0, 0),
-    (103, 'IsShieldOut', 0, 0),
-    (105, 'IsActionRef', 2, 0),
-    (106, 'IsFacingUp', 0, 0),
-    (107, 'GetKnockedState', 0, 0),
-    (108, 'GetWeaponAnimType', 0, 0),
-    (109, 'IsWeaponSkillType', 1, 0),
-    (110, 'GetCurrentAIPackage', 0, 0),
-    (111, 'IsWaiting', 0, 0),
-    (112, 'IsIdlePlaying', 0, 0),
-    (116, 'IsIntimidatedbyPlayer', 0, 0),
-    (117, 'IsPlayerInRegion', 2, 0),
-    (118, 'GetActorAggroRadiusViolated', 0, 0),
-    (119, 'GetCrimeKnown', 1, 2),
-    (122, 'GetCrime', 2, 1),
-    (123, 'IsGreetingPlayer', 0, 0),
-    (125, 'IsGuard', 0, 0),
-    (127, 'HasBeenEaten', 0, 0),
-    (128, 'GetStaminaPercentage', 0, 0),
-    (129, 'GetPCIsClass', 2, 0),
-    (130, 'GetPCIsRace', 2, 0),
-    (131, 'GetPCIsSex', 2, 0),
-    (132, 'GetPCInFaction', 2, 0),
-    (133, 'SameFactionAsPC', 0, 0),
-    (134, 'SameRaceAsPC', 0, 0),
-    (135, 'SameSexAsPC', 0, 0),
-    (136, 'GetIsReference', 2, 0),
-    (141, 'IsTalking', 0, 0),
-    (142, 'GetWalkSpeed', 0, 0),
-    (143, 'GetCurrentAIProcedure', 0, 0),
-    (144, 'GetTrespassWarningLevel', 0, 0),
-    (145, 'IsTresPassing', 0, 0),
-    (146, 'IsInMyOwnedCell', 0, 0),
-    (147, 'GetWindSpeed', 0, 0),
-    (148, 'GetCurrentWeatherPercent', 0, 0),
-    (149, 'GetIsCurrentWeather', 2, 0),
-    (150, 'IsContinuingPackagePCNear', 0, 0),
-    (152, 'GetIsCrimeFaction', 2, 0),
-    (153, 'CanHaveFlames', 0, 0),
-    (154, 'HasFlames', 0, 0),
-    (157, 'GetOpenState', 0, 0),
-    (159, 'GetSitting', 0, 0),
-    (160, 'GetFurnitureMarkerID', 0, 0),
-    (161, 'GetIsCurrentPackage', 2, 0),
-    (162, 'IsCurrentFurnitureRef', 2, 0),
-    (163, 'IsCurrentFurnitureObj', 2, 0),
-    (167, 'GetFactionReaction', 2, 2),
-    (170, 'GetDayOfWeek', 0, 0),
-    (172, 'GetTalkedToPCParam', 2, 0),
-    (175, 'IsPCSleeping', 0, 0),
-    (176, 'IsPCAMurderer', 0, 0),
-    (180, 'HasSameEditorLocAsRef', 2, 2),
-    (181, 'HasSameEditorLocAsRefAlias', 2, 2),
-    (182, 'GetEquiped', 2, 0),
-    (185, 'IsSwimming', 0, 0),
-    (188, 'GetPCSleepHours', 0, 0),
-    (190, 'GetAmountSoldStolen', 0, 0),
-    (192, 'GetIgnoreCrime', 0, 0),
-    (193, 'GetPCExpelled', 2, 0),
-    (195, 'GetPCFactionMurder', 2, 0),
-    (197, 'GetPCEnemyofFaction', 2, 0),
-    (199, 'GetPCFactionAttack', 2, 0),
-    (203, 'GetDestroyed', 0, 0),
-    (205, 'GetActionRef', 0, 0),
-    (206, 'GetSelf', 0, 0),
-    (207, 'GetContainer', 0, 0),
-    (208, 'GetForceRun', 0, 0),
-    (210, 'GetForceSneak', 0, 0),
-    (214, 'HasMagicEffect', 2, 0),
-    (215, 'GetDefaultOpen', 0, 0),
-    (219, 'GetAnimAction', 0, 0),
-    (223, 'IsSpellTarget', 2, 0),
-    (224, 'GetVATSMode', 0, 0),
-    (225, 'GetPersuationNumber', 0, 0),
-    (226, 'GetVampireFeed', 0, 0),
-    (227, 'GetCannibal', 0, 0),
-    (228, 'GetIsClassDefault', 2, 0),
-    (229, 'GetClassDefaultMatch', 0, 0),
-    (230, 'GetInCellParam', 2, 2),
-    (232, 'GetCombatTarget', 0, 0),
-    (233, 'GetPackageTarget', 0, 0),
-    (235, 'GetVatsTargetHeight', 0, 0),
-    (237, 'GetIsGhost', 0, 0),
-    (242, 'GetUnconscious', 0, 0),
-    (244, 'GetRestrained', 0, 0),
-    (246, 'GetIsUsedItem', 2, 0),
-    (247, 'GetIsUsedItemType', 2, 0),
-    (248, 'IsScenePlaying', 2, 0),
-    (249, 'IsInDialogWithPlayer', 0, 0),
-    (250, 'GetLocationCleared', 2, 0),
-    (254, 'GetIsPlayableRace', 0, 0),
-    (255, 'GetOffersServicesNow', 0, 0),
-    (256, 'GetGameSetting', 1, 0),
-    (258, 'HasAssociationType', 2, 2),
-    (259, 'HasFamilyRelationship', 2, 0),
-    (261, 'HasParentRelationship', 2, 0),
-    (262, 'IsWarningAbout', 2, 0),
-    (263, 'IsWeaponOut', 0, 0),
-    (264, 'HasSpell', 2, 0),
-    (265, 'IsTimePassing', 0, 0),
-    (266, 'IsPleasant', 0, 0),
-    (267, 'IsCloudy', 0, 0),
-    (274, 'IsSmallBump', 0, 0),
-    (275, 'GetParentRef', 0, 0),
-    (277, 'GetBaseActorValue', 1, 0),
-    (278, 'IsOwner', 2, 0),
-    (280, 'IsCellOwner', 2, 2),
-    (282, 'IsHorseStolen', 0, 0),
-    (285, 'IsLeftUp', 0, 0),
-    (286, 'IsSneaking', 0, 0),
-    (287, 'IsRunning', 0, 0),
-    (288, 'GetFriendHit', 0, 0),
-    (289, 'IsInCombat', 1, 0),
-    (296, 'IsAnimPlaying', 2, 0),
-    (300, 'IsInInterior', 0, 0),
-    (303, 'IsActorsAIOff', 0, 0),
-    (304, 'IsWaterObject', 0, 0),
-    (305, 'GetPlayerAction', 0, 0),
-    (306, 'IsActorUsingATorch', 0, 0),
-    (309, 'IsXBox', 0, 0),
-    (310, 'GetInWorldspace', 2, 0),
-    (312, 'GetPCMiscStat', 1, 0),
-    (313, 'GetPairedAnimation', 0, 0),
-    (314, 'IsActorAVictim', 0, 0),
-    (315, 'GetTotalPersuationNumber', 0, 0),
-    (318, 'GetIdleDoneOnce', 0, 0),
-    (320, 'GetNoRumors', 0, 0),
-    (323, 'GetCombatState', 0, 0),
-    (325, 'GetWithinPackageLocation', 2, 0),
-    (327, 'IsRidingHorse', 0, 0),
-    (329, 'IsFleeing', 0, 0),
-    (332, 'IsInDangerousWater', 0, 0),
-    (338, 'GetIgnoreFriendlyHits', 0, 0),
-    (339, 'IsPlayersLastRiddenHorse', 0, 0),
-    (353, 'IsActor', 0, 0),
-    (354, 'IsEssential', 0, 0),
-    (358, 'IsPlayerMovingIntoNewSpace', 0, 0),
-    (359, 'GetInCurrentLoc', 2, 0),
-    (360, 'GetInCurrentLocAlias', 2, 0),
-    (361, 'GetTimeDead', 0, 0),
-    (362, 'HasLinkedRef', 2, 0),
-    (363, 'GetLinkedRef', 2, 0),
-    (365, 'IsChild', 0, 0),
-    (366, 'GetStolenItemValueNoCrime', 2, 0),
-    (367, 'GetLastPlayerAction', 0, 0),
-    (368, 'IsPlayerActionActive', 1, 0),
-    (370, 'IsTalkingActivatorActor', 2, 0),
-    (372, 'IsInList', 2, 0),
-    (373, 'GetStolenItemValue', 2, 0),
-    (375, 'GetCrimeGoldViolent', 2, 0),
-    (376, 'GetCrimeGoldNonviolent', 2, 0),
-    (378, 'HasShout', 2, 0),
-    (381, 'GetHasNote', 2, 0),
-    (387, 'GetObjectiveFailed', 2, 1),
-    (390, 'GetHitLocation', 0, 0),
-    (391, 'IsPC1stPerson', 0, 0),
-    (396, 'GetCauseofDeath', 0, 0),
-    (397, 'IsLimbGone', 1, 0),
-    (398, 'IsWeaponInList', 2, 0),
-    (402, 'IsBribedbyPlayer', 0, 0),
-    (403, 'GetRelationshipRank', 2, 0),
-    (407, 'GetVATSValue', 1, 1),
-    (408, 'IsKiller', 2, 0),
-    (409, 'IsKillerObject', 2, 0),
-    (410, 'GetFactionCombatReaction', 2, 2),
-    (414, 'Exists', 2, 0),
-    (415, 'GetGroupMemberCount', 0, 0),
-    (416, 'GetGroupTargetCount', 0, 0),
-    (419, 'GetObjectiveCompleted', 2, 1),
-    (420, 'GetObjectiveDisplayed', 2, 1),
-    (425, 'GetIsFormType', 2, 0),
-    (426, 'GetIsVoiceType', 2, 0),
-    (427, 'GetPlantedExplosive', 0, 0),
-    (429, 'IsScenePackageRunning', 0, 0),
-    (430, 'GetHealthPercentage', 0, 0),
-    (432, 'GetIsObjectType', 2, 0),
-    (434, 'GetDialogEmotion', 0, 0),
-    (435, 'GetDialogEmotionValue', 0, 0),
-    (437, 'GetIsCreatureType', 1, 0),
-    (444, 'GetInCurrentLocFormList', 2, 0),
-    (445, 'GetInZone', 2, 0),
-    (446, 'GetVelocity', 1, 0),
-    (447, 'GetGraphVariableFloat', 1, 0),
-    (448, 'HasPerk', 2, 0),
-    (449, 'GetFactionRelation', 2, 0),
-    (450, 'IsLastIdlePlayed', 2, 0),
-    (453, 'GetPlayerTeammate', 0, 0),
-    (458, 'GetActorCrimePlayerEnemy', 0, 0),
-    (459, 'GetCrimeGold', 2, 0),
-    (462, 'GetPlayerGrabbedRef', 0, 0),
-    (463, 'IsPlayerGrabbedRef', 2, 0),
-    (465, 'GetKeywordItemCount', 2, 0),
-    (467, 'GetBroadcastState', 0, 0),
-    (470, 'GetDestructionStage', 0, 0),
-    (473, 'GetIsAlignment', 2, 0),
-    (476, 'IsProtected', 0, 0),
-    (477, 'GetThreatRatio', 2, 0),
-    (479, 'GetIsUsedItemEquipType', 2, 0),
-    (480, 'GetPlayerName', 0, 0),
-    (487, 'IsCarryable', 0, 0),
-    (488, 'GetConcussed', 0, 0),
-    (491, 'GetMapMarkerVisible', 0, 0),
-    (494, 'GetPermanentActorValue', 1, 0),
-    (495, 'GetKillingBlowLimb', 0, 0),
-    (497, 'CanPayCrimeGold', 2, 0),
-    (499, 'GetDaysInJail', 0, 0),
-    (500, 'EPAlchemyGetMakingPoison', 0, 0),
-    (501, 'EPAlchemyEffectHasKeyword', 2, 0),
-    (503, 'GetAllowWorldInteractions', 0, 0),
-    (508, 'GetLastHitCritical', 0, 0),
-    (513, 'IsCombatTarget', 2, 0),
-    (515, 'GetVATSRightAreaFree', 2, 0),
-    (516, 'GetVATSLeftAreaFree', 2, 0),
-    (517, 'GetVATSBackAreaFree', 2, 0),
-    (518, 'GetVATSFrontAreaFree', 2, 0),
-    (519, 'GetIsLockBroken', 0, 0),
-    (520, 'IsPS3', 0, 0),
-    (521, 'IsWin32', 0, 0),
-    (522, 'GetVATSRightTargetVisible', 2, 0),
-    (523, 'GetVATSLeftTargetVisible', 2, 0),
-    (524, 'GetVATSBackTargetVisible', 2, 0),
-    (525, 'GetVATSFrontTargetVisible', 2, 0),
-    (528, 'IsInCriticalStage', 2, 0),
-    (530, 'GetXPForNextLevel', 0, 0),
-    (533, 'GetInfamy', 2, 0),
-    (534, 'GetInfamyViolent', 2, 0),
-    (535, 'GetInfamyNonViolent', 2, 0),
-    (543, 'GetQuestCompleted', 2, 0),
-    (547, 'IsGoreDisabled', 0, 0),
-    (550, 'IsSceneActionComplete', 2, 1),
-    (552, 'GetSpellUsageNum', 2, 0),
-    (554, 'GetActorsInHigh', 0, 0),
-    (555, 'HasLoaded3D', 0, 0),
-    (559, 'IsImageSpaceActive', 2, 0),
-    (560, 'HasKeyword', 2, 0),
-    (561, 'HasRefType', 2, 0),
-    (562, 'LocationHasKeyword', 2, 0),
-    (563, 'LocationHasRefType', 2, 0),
-    (565, 'GetIsEditorLocation', 2, 0),
-    (566, 'GetIsAliasRef', 2, 0),
-    (567, 'GetIsEditorLocAlias', 2, 0),
-    (568, 'IsSprinting', 0, 0),
-    (569, 'IsBlocking', 0, 0),
-    (570, 'HasEquippedSpell', 2, 0),
-    (571, 'GetCurrentCastingType', 2, 0),
-    (572, 'GetCurrentDeliveryType', 2, 0),
-    (574, 'GetAttackState', 0, 0),
-    (575, 'GetAliasedRef', 2, 0),
-    (576, 'GetEventData', 2, 2),
-    (577, 'IsCloserToAThanB', 2, 2),
-    (579, 'GetEquippedShout', 2, 0),
-    (580, 'IsBleedingOut', 0, 0),
-    (584, 'GetRelativeAngle', 2, 1),
-    (589, 'GetMovementDirection', 0, 0),
-    (590, 'IsInScene', 0, 0),
-    (591, 'GetRefTypeDeadCount', 2, 2),
-    (592, 'GetRefTypeAliveCount', 2, 2),
-    (594, 'GetIsFlying', 0, 0),
-    (595, 'IsCurrentSpell', 2, 2),
-    (596, 'SpellHasKeyword', 2, 2),
-    (597, 'GetEquippedItemType', 2, 0),
-    (598, 'GetLocationAliasCleared', 2, 0),
-    (600, 'GetLocAliasRefTypeDeadCount', 2, 2),
-    (601, 'GetLocAliasRefTypeAliveCount', 2, 2),
-    (602, 'IsWardState', 2, 0),
-    (603, 'IsInSameCurrentLocAsRef', 2, 2),
-    (604, 'IsInSameCurrentLocAsRefAlias', 2, 2),
-    (605, 'LocAliasIsLocation', 2, 2),
-    (606, 'GetKeywordDataForLocation', 2, 2),
-    (608, 'GetKeywordDataForAlias', 2, 2),
-    (610, 'LocAliasHasKeyword', 2, 2),
-    (611, 'IsNullPackageData', 1, 0),
-    (612, 'GetNumericPackageData', 1, 0),
-    (613, 'IsFurnitureAnimType', 2, 0),
-    (614, 'IsFurnitureEntryType', 2, 0),
-    (615, 'GetHighestRelationshipRank', 0, 0),
-    (616, 'GetLowestRelationshipRank', 0, 0),
-    (617, 'HasAssociationTypeAny', 2, 0),
-    (618, 'HasFamilyRelationshipAny', 0, 0),
-    (619, 'GetPathingTargetOffset', 1, 0),
-    (620, 'GetPathingTargetAngleOffset', 1, 0),
-    (621, 'GetPathingTargetSpeed', 0, 0),
-    (622, 'GetPathingTargetSpeedAngle', 1, 0),
-    (623, 'GetMovementSpeed', 0, 0),
-    (624, 'GetInContainer', 2, 0),
-    (625, 'IsLocationLoaded', 2, 0),
-    (626, 'IsLocAliasLoaded', 2, 0),
-    (627, 'IsDualCasting', 0, 0),
-    (629, 'GetVMQuestVariable', 2, 1),
-    (630, 'GetVMScriptVariable', 2, 1),
-    (631, 'IsEnteringInteractionQuick', 0, 0),
-    (632, 'IsCasting', 0, 0),
-    (633, 'GetFlyingState', 0, 0),
-    (635, 'IsInFavorState', 0, 0),
-    (636, 'HasTwoHandedWeaponEquipped', 0, 0),
-    (637, 'IsExitingInstant', 0, 0),
-    (638, 'IsInFriendStatewithPlayer', 0, 0),
-    (639, 'GetWithinDistance', 2, 1),
-    (640, 'GetActorValuePercent', 1, 0),
-    (641, 'IsUnique', 0, 0),
-    (642, 'GetLastBumpDirection', 0, 0),
-    (644, 'IsInFurnitureState', 2, 0),
-    (645, 'GetIsInjured', 0, 0),
-    (646, 'GetIsCrashLandRequest', 0, 0),
-    (647, 'GetIsHastyLandRequest', 0, 0),
-    (650, 'IsLinkedTo', 2, 2),
-    (651, 'GetKeywordDataForCurrentLocation', 2, 0),
-    (652, 'GetInSharedCrimeFaction', 2, 0),
-    (653, 'GetBribeAmount', 0, 0),
-    (654, 'GetBribeSuccess', 0, 0),
-    (655, 'GetIntimidateSuccess', 0, 0),
-    (656, 'GetArrestedState', 0, 0),
-    (657, 'GetArrestingActor', 0, 0),
-    (659, 'EPTemperingItemIsEnchanted', 0, 0),
-    (660, 'EPTemperingItemHasKeyword', 2, 0),
-    (661, 'GetReceivedGiftValue', 0, 0),
-    (662, 'GetGiftGivenValue', 0, 0),
-    (664, 'GetReplacedItemType', 2, 0),
-    (672, 'IsAttacking', 0, 0),
-    (673, 'IsPowerAttacking', 0, 0),
-    (674, 'IsLastHostileActor', 0, 0),
-    (675, 'GetGraphVariableInt', 1, 0),
-    (676, 'GetCurrentShoutVariation', 0, 0),
-    (678, 'ShouldAttackKill', 2, 0),
-    (680, 'GetActivationHeight', 0, 0),
-    (681, 'EPModSkillUsage_IsAdvancedSkill', 1, 0),
-    (682, 'WornHasKeyword', 2, 0),
-    (683, 'GetPathingCurrentSpeed', 0, 0),
-    (684, 'GetPathingCurrentSpeedAngle', 1, 0),
-    (691, 'EPModSkillUsage_AdvancedObjectHasKeyword', 2, 0),
-    (692, 'EPModSkillUsage_IsAdvancedAction', 2, 0),
-    (693, 'EPMagic_SpellHasKeyword', 2, 0),
-    (694, 'GetNoBleedoutRecovery', 0, 0),
-    (696, 'EPMagic_SpellHasSkill', 1, 0),
-    (697, 'IsAttackType', 2, 0),
-    (698, 'IsAllowedToFly', 0, 0),
-    (699, 'HasMagicEffectKeyword', 2, 0),
-    (700, 'IsCommandedActor', 0, 0),
-    (701, 'IsStaggered', 0, 0),
-    (702, 'IsRecoiling', 0, 0),
-    (703, 'IsExitingInteractionQuick', 0, 0),
-    (704, 'IsPathing', 0, 0),
-    (705, 'GetShouldHelp', 2, 0),
-    (706, 'HasBoundWeaponEquipped', 2, 0),
-    (707, 'GetCombatTargetHasKeyword', 2, 0),
-    (709, 'GetCombatGroupMemberCount', 0, 0),
-    (710, 'IsIgnoringCombat', 0, 0),
-    (711, 'GetLightLevel', 0, 0),
-    (713, 'SpellHasCastingPerk', 2, 0),
-    (714, 'IsBeingRidden', 0, 0),
-    (715, 'IsUndead', 0, 0),
-    (716, 'GetRealHoursPassed', 0, 0),
-    (718, 'IsUnlockedDoor', 0, 0),
-    (719, 'IsHostileToActor', 2, 0),
-    (720, 'GetTargetHeight', 0, 0),
-    (721, 'IsPoison', 0, 0),
-    (722, 'WornApparelHasKeywordCount', 2, 0),
-    (723, 'GetItemHealthPercent', 0, 0),
-    (724, 'EffectWasDualCast', 0, 0),
-    (725, 'GetKnockStateEnum', 0, 0),
-    )
-
-allConditions = set(entry[0] for entry in conditionFunctionData)
-fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
-fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
-
-# Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
-#The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = r'bash\db\Skyrim_ids.pkl'
+}
 
 #--List of GMST's in the main plugin (Skyrim.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
@@ -1436,9 +992,6 @@ gmstEids = ['bAutoAimBasedOnDistance','fActionPointsAttackMagic','fActionPointsA
     'sRSMFinishedWarning','sVerletCape','uiMuteMusicPauseTime',
     ]
 
-#--Tags supported by this game
-allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
-
 #--GLOB record tweaks used by bosh's GmstTweaker
 #  Each entry is a tuple in the following format:
 #    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
@@ -1688,19 +1241,37 @@ GmstTweaks = [
         (u'10',       10),
         (_(u'Custom'), 5),
         ),
+    (_(u'NPC Vertical Object Detection'),_(u'Change the vertical range in which NPCs detect objects. For custom values, fSandboxCylinderTop must be >= 0 and fSandboxCylinderBottom must be <= 0.'),
+        (u'fSandboxCylinderTop',u'fSandboxCylinderBottom',),
+        (u'[x 1.0]',   150,         -100),
+        (u'x 2.0',     150*2.0, -100*2.0),
+        (u'x 3.0',     150*3.0, -100*3.0),
+        (u'x 4.0',     150*4.0, -100*4.0),
+        (u'x 5.0',     150*5.0, -100*5.0),
+        (_(u'Custom'), 150,         -100),
+        ),
     ]
 
-#--Patchers available when building a Bashed Patch
+#--Tags supported by this game
+allTags = sorted((u'Relev',u'Delev',u'Filter',u'NoMerge',u'Deactivate',u'Names',u'Stats'))
+
+#--Gui patcher classes available when building a Bashed Patch
 patchers = (
     u'AliasesPatcher', u'PatchMerger', u'ListsMerger', u'GmstTweaker',
     u'NamesPatcher', u'StatsPatcher'
     )
 
+#--CBash Gui patcher classes available when building a Bashed Patch
+CBash_patchers = tuple()
+
 # For ListsMerger
 listTypes = ('LVLI','LVLN','LVSP',)
 
-namesTypes = set(('ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',))
+namesTypes = {'ACTI', 'AMMO', 'ARMO', 'APPA', 'MISC',}
 pricesTypes = {'AMMO':{},'ARMO':{},'APPA':{},'MISC':{}}
+#-------------------------------------------------------------------------------
+# StatsImporter
+#-------------------------------------------------------------------------------
 statsTypes = {
             'AMMO':('eid', 'value', 'damage'),
             'ARMO':('eid', 'weight', 'value', 'armorRating'),
@@ -1724,13 +1295,20 @@ statsHeaders = (
                     _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
                 )
 
-#--CBash patchers available when building a Bashed Patch
-CBash_patchers = tuple()
-
 # Mod Record Elements ----------------------------------------------------------
 #-------------------------------------------------------------------------------
 # Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
+
+# Magic Info ------------------------------------------------------------------
+weaponTypes = (
+    _(u'Blade (1 Handed)'),
+    _(u'Blade (2 Handed)'),
+    _(u'Blunt (1 Handed)'),
+    _(u'Blunt (2 Handed)'),
+    _(u'Staff'),
+    _(u'Bow'),
+    )
 
 # Race Info -------------------------------------------------------------------
 raceNames = {
@@ -1788,8 +1366,8 @@ raceHairFemale = {
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
-    canBash = True         # No Bashed Patch creation
-    canCBash = False        # CBash cannot handle this game's records
+    canBash = True          # Can create Bashed Patches
+    canCBash = False        # CBash can handle this game's records
     canEditHeader = True    # Can edit anything in the TES4 record
 
     #--Valid ESM/ESP header versions
@@ -1823,1288 +1401,38 @@ class esp:
     #-> this needs updating for Skyrim
     recordTypes = set(topTypes + 'GRUP,TES4,REFR,ACHR,ACRE,LAND,INFO,NAVM,PHZD,PGRE'.split(','))
 
-#--Mod I/O
-class RecordHeader(brec.BaseRecordHeader):
-    size = 24
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg3
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the niput stream."""
-        type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
-        #--Bad type?
-        if type not in esp.recordTypes:
-            raise brec.ModError(ins.inName,u'Bad header type: '+repr(type))
-        #--Record
-        if type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: #groupType == 0 (Top Type)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise brec.ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        #--Other groups
-        return RecordHeader(type,size,uint0,uint1,uint2,uint3)
-
-    def pack(self):
-        """Return the record header packed into a bitstream to be written to file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label,str):
-                return struct.pack('=4sI4sIII',self.recType,self.size,
-                                   self.label,self.groupType,self.stamp,
-                                   self.extra)
-            elif isinstance(self.label,tuple):
-                return struct.pack('=4sIhhIII',self.recType,self.size,
-                                   self.label[0],self.label[1],self.groupType,
-                                   self.stamp,self.extra)
-            else:
-                return struct.pack('=4s5I',self.recType,self.size,self.label,
-                                   self.groupType,self.stamp,self.extra)
-        else:
-            return struct.pack('=4s5I',self.recType,self.size,self.flags1,
-                               self.fid,self.flags2,self.extra)
-
-# Record Elements --------------------------------------------------------------
-#-------------------------------------------------------------------------------
-class MelVmad(MelBase):
-    """Virtual Machine data (VMAD)"""
-    # Maybe use this later for better access to Fid,Aid pairs?
-    ##ObjectRef = collections.namedtuple('ObjectRef',['fid','aid'])
-    class FragmentInfo(object):
-        __slots__ = ('unk','fileName',)
-        def __init__(self):
-            self.unk = 0
-            self.fileName = u''
-
-        def loadData(self,ins,Type,readId):
-            if Type == 'INFO':
-                raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
-            elif Type == 'PACK':
-                self.unk,count = ins.unpack('=bB',2,readId)
-                self.fileName = ins.readString16(-1,readId)
-                count = bin(count).count('1')
-            elif Type == 'PERK':
-                self.unk, = ins.unpack('=b',1,readId)
-                self.fileName = ins.readString16(-1,readId)
-                count, = ins.unpack('=H',2,readId)
-            elif Type == 'QUST':
-                self.unk,count = ins.unpack('=bH',3,readId)
-                self.fileName = ins.readString16(-1,readId)
-            elif Type == 'SCEN':
-                raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
-            else:
-                raise Exception(u"Unexpected Fragment Scripts for record type '%s'." % Type)
-            return count
-
-        def dumpData(self,Type,count):
-            structPack = struct.pack
-            fileName = _encode(self.fileName)
-            if Type == 'INFO':
-                raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
-            elif Type == 'PACK':
-                # TODO: check if this is right!
-                count = int(count*'1',2)
-                data = structPack('=bBH',self.unk,count,len(fileName)) + fileName
-            elif Type == 'PERK':
-                data = structPack('=bH',self.unk,len(fileName)) + fileName
-                data += structPack('=H',count)
-            elif Type == 'QUST':
-                data = structPack('=bHH',self.unk,count,len(fileName)) + fileName
-            elif Type == 'SCEN':
-                raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
-            else:
-                raise Exception(u"Unexpected Fragment Scripts for record type '%s'." % Type)
-            return data
-
-    class INFOFragment(object):
-        pass
-
-    class PACKFragment(object):
-        __slots__ = ('unk','scriptName','fragmentName',)
-        def __init__(self):
-            self.unk = 0
-            self.scriptName = u''
-            self.fragmentName = u''
-
-        def loadData(self,ins,readId):
-            self.unk = ins.unpack('=b',1,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
-
-        def dumpData(self):
-            structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
-            data = structPack('=bH',self.unk,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
-            return data
-
-    class PERKFragment(object):
-        __slots__ = ('index','unk1','unk2','scriptName','fragmentName',)
-        def __init__(self):
-            self.index = -1
-            self.unk1 = 0
-            self.unk2 = 0
-            self.scriptName = u''
-            self.fragmentName= u''
-
-        def loadData(self,ins,readId):
-            self.index,self.unk1,self.unk2 = ins.unpack('=Hhb',4,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
-
-        def dumpData(self):
-            structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
-            data = structPack('=HhbH',self.index,self.unk1,self.unk2,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
-            return data
-
-    class QUSTFragment(object):
-        __slots__ = ('index','unk1','unk2','unk3','scriptName','fragmentName',)
-        def __init__(self):
-            self.index = -1
-            self.unk1 = 0
-            self.unk2 = 0
-            self.unk3 = 0
-            self.scriptName = u''
-            self.fragmentName = u''
-
-        def loadData(self,ins,readId):
-            self.index,self.unk1,self.unk2,self.unk3 = ins.unpack('=Hhib',9,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
-
-        def dumpData(self):
-            structPack = struct.pack
-            scriptName = _encode(self.scriptName)
-            fragmentName = _encode(self.fragmentName)
-            data = structPack('=HhibH',self.index,self.unk1,self.unk2,self.unk3,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
-            return data
-
-    class SCENFragment(object):
-        pass
-
-    FragmentMap = {'INFO': INFOFragment,
-                   'PACK': PACKFragment,
-                   'PERK': PERKFragment,
-                   'QUST': QUSTFragment,
-                   'SCEN': SCENFragment,
-                   }
-
-    class Property(object):
-        __slots__ = ('name','unk','value',)
-        def __init__(self):
-            self.name = u''
-            self.unk = 1
-            self.value = None
-
-        def loadData(self,ins,version,objFormat,readId):
-            insUnpack = ins.unpack
-            # Script Property
-            self.name = ins.readString16(-1,readId)
-            if version >= 4:
-                Type,self.unk = insUnpack('=2B',2,readId)
-            else:
-                Type, = insUnpack('=B',1,readId)
-                self.unk = 1
-            # Data
-            if Type == 1:
-                # Object (8 Bytes)
-                if objFormat == 1:
-                    fid,aid,nul = insUnpack('=IHH',8,readId)
-                else:
-                    nul,aid,fid = insUnpack('=HHI',8,readId)
-                self.value = (fid,aid)
-            elif Type == 2:
-                # String
-                self.value = ins.readString16(-1,readId)
-            elif Type == 3:
-                # Int32
-                self.value, = insUnpack('=i',4,readId)
-            elif Type == 4:
-                # Float
-                self.value, = insUnpack('=f',4,readId)
-            elif Type == 5:
-                # Bool (Int8)
-                self.value = bool(insUnpack('=b',1,readId)[0])
-            elif Type == 11:
-                # List of Objects
-                count, = insUnpack('=I',4,readId)
-                if objFormat == 1: # (fid,aid,nul)
-                    value = insUnpack('='+count*'IHH',count*8,readId)
-                    self.value = zip(value[::3],value[1::3]) # list of (fid,aid)'s
-                else: # (nul,aid,fid)
-                    value = insUnpack('='+count*'HHI',count*8,readId)
-                    self.value = zip(value[2::3],value[1::3]) # list of (fid,aid)'s
-            elif Type == 12:
-                # List of Strings
-                count, = insUnpack('=I',4,readId)
-                self.value = [ins.readString16(-1,readId) for i in xrange(count)]
-            elif Type == 13:
-                # List of Int32s
-                count, = insUnpack('=I',4,readId)
-                self.value = list(insUnpack('='+`count`+'i',count*4,readId))
-            elif Type == 14:
-                # List of Floats
-                count, = insUnpack('=I',4,readId)
-                self.value = list(insUnpack('='+`count`+'f',count*4,readId))
-            elif Type == 15:
-                # List of Bools (int8)
-                count, = insUnpack('=I',4,readId)
-                self.value = map(bool,insUnpack('='+`count`+'b',count,readId))
-            else:
-                raise Exception(u'Unrecognized VM Data property type: %i' % Type)
-
-        def dumpData(self):
-            structPack = struct.pack
-            ## Property Entry
-            # Property Name
-            name = _encode(self.name)
-            data = structPack('=H',len(name))+name
-            # Property Type
-            value = self.value
-            # Type 1 - Object Reference
-            if isinstance(value,tuple):
-                # Object Format 1 - (Fid, Aid, NULL)
-                data += structPack('=BBIHH',1,self.unk,value[0],value[1],0)
-            # Type 2 - String
-            elif isinstance(value,basestring):
-                value = _encode(value)
-                data += structPack('=BBH',2,self.unk,len(value))+value
-            # Type 3 - Int
-            elif isinstance(value,(int,long)):
-                data += structPack('=BBi',3,self.unk,value)
-            # Type 4 - Float
-            elif isinstance(value,float):
-                data += structPack('=BBf',4,self.unk,value)
-            # Type 5 - Bool
-            elif isinstance(value,bool):
-                data += structPack('=BBb',5,self.unk,value)
-            # Type 11 -> 15 - lists
-            elif isinstance(value,list):
-                # Empty list, fail to object refereneces?
-                count = len(value)
-                if not count:
-                    data += structPack('=BBI',11,self.unk,count)
-                else:
-                    Type = value[0]
-                    # Type 11 - Object References
-                    if isinstance(Type,tuple):
-                        value = list(from_iterable([x+(0,) for x in value]))
-                        # value = [fid,aid,NULL, fid,aid,NULL, ...]
-                        data += structPack('=BBI'+count*'IHH',11,self.unk,count,*value)
-                    # Type 12 - Strings
-                    elif isinstance(Type,basestring):
-                        data += structPack('=BBI',12,self.unk,count)
-                        for string in value:
-                            string = _encode(string)
-                            data += structPack('=H',len(string))+string
-                    # Type 13 - Ints
-                    elif isinstance(Type,(int,long)):
-                        data += structPack('=BBI'+`count`+'i',13,self.unk,count,*value)
-                    # Type 14 - Floats
-                    elif isinstance(Type,float):
-                        data += structPack('=BBI'+`count`+'f',14,self.unk,count,*value)
-                    # Type 15 - Bools
-                    elif isinstance(Type,bool):
-                        data += structPack('=BBI'+`count`+'b',15,self.unk,count,*value)
-                    else:
-                        raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
-            else:
-                raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
-            return data
-
-    class Script(object):
-        __slots__ = ('name','unk','properties',)
-        def __init__(self):
-            self.name = u''
-            self.unk = 0
-            self.properties = []
-
-        def loadData(self,ins,version,objFormat,readId):
-            Property = MelVmad.Property
-            self.properties = []
-            propAppend = self.properties.append
-            # Script Entry
-            self.name = ins.readString16(-1,readId)
-            if version >= 4:
-                self.unk,propCount = ins.unpack('=BH',3,readId)
-            else:
-                self.unk = 0
-                propCount, = ins.unpack('=H',2,readId)
-            # Properties
-            for x in xrange(propCount):
-                prop = Property()
-                prop.loadData(ins,version,objFormat,readId)
-                propAppend(prop)
-
-        def dumpData(self):
-            structPack = struct.pack
-            ## Script Entry
-            # scriptName
-            name = _encode(self.name)
-            data = structPack('=H',len(name))+name
-            # unkown, property count
-            data += structPack('=BH',self.unk,len(self.properties))
-            # properties
-            for prop in self.properties:
-                data += prop.dumpData()
-            return data
-
-        def mapFids(self,record,function,save=False):
-            for prop in self.properties:
-                value = prop.value
-                # Type 1 - Object Reference
-                if isinstance(value,tuple):
-                    value = (function(value[0]),value[1])
-                    if save:
-                        prop.value = value
-                # Type 11 - List of Object References
-                elif isinstance(value,list) and value and isinstance(value[0],tuple):
-                    value = [(function(x[0]),x[1]) for x in value]
-                    if save:
-                        prop.value = value
-
-    class Alias(object):
-        __slots__ = ('unk1','aid','unk2','unk3','scripts',)
-        def __init__(self):
-            self.unk1 = 0
-            self.aid = 0
-            self.unk2 = 0
-            self.unk3 = 0
-            self.scripts = []
-
-        def loadData(self,ins,version,readId):
-            self.unk1,self.aid,self.unk2,self.unk3,objFormat,count = ins.unpack('=hHihhH',14)
-            Script = MelVmad.Script
-            self.scripts = []
-            scriptAppend = self.scripts.append
-            for x in xrange(count):
-                script = Script()
-                script.loadData(ins,version,objFormat,readId)
-                scriptAppend(script)
-
-        def mapFids(self,record,function,save=False):
-            for script in self.scripts:
-                script.mapFids(record,function,save)
-
-    class Vmad(object):
-        __slots__ = ('scripts','fragmentInfo','fragments','aliases',)
-        def __init__(self):
-            self.scripts = []
-            self.fragmentInfo = None
-            self.fragments = None
-            self.aliases = None
-
-        def loadData(self,record,ins,size,readId):
-            insTell = ins.tell
-            endOfField = insTell() + size
-            self.scripts = []
-            scriptsAppend = self.scripts.append
-            Script = MelVmad.Script
-            # VMAD Header
-            version,objFormat,scriptCount = ins.unpack('=3H',6,readId)
-            # Primary Scripts
-            for x in xrange(scriptCount):
-                script = Script()
-                script.loadData(ins,version,objFormat,readId)
-                scriptsAppend(script)
-            # Script Fragments
-            if insTell() < endOfField:
-                self.fragmentInfo = MelVmad.FragmentInfo()
-                Type = record._Type
-                fragCount = self.fragmentInfo.loadData(ins,Type,readId)
-                self.fragments = []
-                fragAppend = self.fragments.append
-                Fragment = MelVmad.FragmentMap[Type]
-                for x in xrange(fragCount):
-                    frag = Fragment()
-                    frag.loadData(ins,readId)
-                    fragAppend(frag)
-                # Alias Scripts
-                if Type == 'QUST':
-                    aliasCount = ins.unpack('=H',2,readId)
-                    Alias = MelVmad.Alias
-                    self.aliases = []
-                    aliasAppend = self.aliases.append
-                    for x in xrange(aliasCount):
-                        alias = Alias()
-                        alias.loadData(ins,version,readId)
-                        aliasAppend(alias)
-                else:
-                    self.aliases = None
-            else:
-                self.fragmentInfo = None
-                self.fragments = None
-                self.aliases = None
-
-        def dumpData(self,record):
-            structPack = struct.pack
-            # Header
-            data = structPack('=3H',4,1,len(self.scripts)) # vmad version, object format, script count
-            # Primary Scripts
-            for script in self.scripts:
-                data += script.dumpData()
-            # Script Fragments
-            if self.fragments:
-                Type = record._Type
-                data += self.fragmentInfo.dumpData(Type,len(self.fragments))
-                for frag in self.fragments:
-                    data += frag.dumpData()
-                if Type == 'QUST':
-                    # Alias Scripts
-                    aliases = self.aliases
-                    data += structPack('=H',2,len(aliases))
-                    for alias in aliases:
-                        data += alias.dumpData()
-            return data
-
-        def mapFids(self,record,function,save=False):
-            for script in self.scripts:
-                script.mapFids(record,function,save)
-            if not self.aliases:
-                return
-            for alias in self.aliases:
-                alias.mapFids(record,function,save)
-
-    def __init__(self,type='VMAD',attr='vmdata'):
-        MelBase.__init__(self,type,attr)
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def setDefault(self,record):
-        record.__setattr__(self.attr,None)
-
-    def getDefault(self):
-        target = MelObject()
-        return self.setDefault(target)
-
-    def loadData(self,record,ins,type,size,readId):
-        vmad = MelVmad.Vmad()
-        vmad.loadData(record,ins,size,readId)
-        record.__setattr__(self.attr,vmad)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream"""
-        vmad = record.__getattribute__(self.attr)
-        if vmad is None: return
-        # Write
-        out.packSub(self.subType,vmad.dumpData(record))
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save is true, then fid is set
-           to result of function."""
-        vmad = record.__getattribute__(self.attr)
-        if vmad is None: return
-        vmad.mapFids(record,function,save)
-
-#-------------------------------------------------------------------------------
-class MelBounds(MelStruct):
-    def __init__(self):
-        MelStruct.__init__(self,'OBND','=6h',
-            'x1','y1','z1',
-            'x2','y2','z2')
-
 #------------------------------------------------------------------------------
-class MelColorN(MelStruct):
-        def __init__(self):
-                MelStruct.__init__(self,'CNAM','=4B',
-                        'red','green','blue','unused')
-
+from records import * # MUST BE HERE otherwise all hell breaks loose
 #------------------------------------------------------------------------------
-class MelCoed(MelOptStruct):
-    def __init__(self):
-        MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'rank_or_glob_or_unk'), ('rank'))
-
-#function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
-#var
-#  Container  : IwbContainer;
-#  LinksTo    : IwbElement;
-#  MainRecord : IwbMainRecord;
-#begin
-#  Result := 0;
-#  if aElement.ElementType = etValue then
-#    Container := aElement.Container
-#  else
-#    Container := aElement as IwbContainer;
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# CLDC ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# HAIR ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# PWAT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# RGDL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# SCOL ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Unused records, they have empty GRUP in skyrim.esm---------------------------
+# SCPT ------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# These Are normally not mergable but added to brec.MreRecord.type_class
 #
-#  LinksTo := Container.ElementByName['Owner'].LinksTo;
+#       MreCell,
+#------------------------------------------------------------------------------
+# These have undefined FormIDs Do not merge them
 #
+#       MreNavi, MreNavm,
+#------------------------------------------------------------------------------
+# These need syntax revision but can be merged once that is corrected
 #
-#  if Supports(LinksTo, IwbMainRecord, MainRecord) then
-#    if MainRecord.Signature = 'NPC_' then
-#      Result := 1
-#    else if MainRecord.Signature = 'FACT' then
-#      Result := 2;
-#end;
-#Basically the Idea is if it is it's an NPC_ then it's a FormID of a [GLOB]
-#if it is it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
-#If it's not NPC_ or FACT then it's unknown and just a 4Byte integer
-
-#class MelCoed(MelStruct):
-# wbCOED := wbStructExSK(COED, [2], [0, 1], 'Extra Data', [
-#    {00} wbFormIDCkNoReach('Owner', [NPC_, FACT, NULL]),
-#    {04} wbUnion('Global Variable / Required Rank', wbCOEDOwnerDecider, [
-#           wbByteArray('Unknown', 4, cpIgnore),
-#           wbFormIDCk('Global Variable', [GLOB, NULL]),
-#           wbInteger('Required Rank', itS32)
-#         ]),
-#    {08} wbFloat('Item Condition')
-#  ]);
-#-------------------------------------------------------------------------------
-class MelKeywords(MelFidList):
-    """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
-    def dumpData(self,record,out):
-        keywords = record.__getattribute__(self.attr)
-        if keywords:
-            # Only write the KSIZ/KWDA subrecords if count > 0
-            out.packSub('KSIZ','I',len(keywords))
-            MelFidList.dumpData(self,record,out)
-
-#-------------------------------------------------------------------------------
-class MelComponents(MelStructs):
-    """Handle writing COCT subrecord for the CNTO subrecord"""
-    def dumpData(self,record,out):
-        components = record.__getattribute__(self.attr)
-        if components:
-            # Only write the COCT/CNTO subrecords if count > 0
-            out.packSub('COCT','I',len(components))
-            MelStructs.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-class MelString16(MelString):
-    """Represents a mod record string element."""
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        strLen = ins.unpack('H',2,readId)
-        value = ins.readString(strLen,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value != None:
-            if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
-                else:
-                    value = test
-            else:
-                value = _encode(value)
-            value = struct.pack('H',len(value))+value
-            out.packSub0(self.subType,value)
-
-#-------------------------------------------------------------------------------
-class MelString32(MelString):
-    """Represents a mod record string element."""
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        strLen = ins.unpack('I',4,readId)
-        value = ins.readString(strLen,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value != None:
-            if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
-                test,encoding = _encode(value,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = _encode(value,firstEncoding=encoding)
-                else:
-                    value = test
-            else:
-                value = _encode(value)
-            value = struct.pack('I',len(value))+value
-            out.packSub0(self.subType,value)
-
-#-------------------------------------------------------------------------------
-class MelMODS(MelBase):
-    """MODS/MO2S/etc/DMDS subrecord"""
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,None)
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        insUnpack = ins.unpack
-        insRead32 = ins.readString32
-        count, = insUnpack('I',4,readId)
-        data = []
-        dataAppend = data.append
-        for x in xrange(count):
-            string = ins.readString32(size,readId)
-            fid = ins.unpackRef(readId)
-            unk, = ins.unpack('I',4,readId)
-            dataAppend((string,fid,unk))
-        record.__setattr__(self.attr,data)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        data = record.__getattribute__(self.attr)
-        if data is not None:
-            structPack = struct.pack
-            data = record.__getattribute__(self.attr)
-            outData = structPack('I',len(data))
-            for (string,fid,unk) in data:
-                outData += structPack('I',len(string))
-                outData += _encode(string)
-                outData += structPack('=2I',fid,unk)
-            out.packSub(self.subType,outData)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save is true, then fid is set
-           to result of function."""
-        attr = self.attr
-        data = record.__getattribute__(attr)
-        if data is not None:
-            data = [(string,function(fid),unk) for (string,fid,unk) in record.__getattribute__(attr)]
-            if save: record.__setattr__(attr,data)
-
-#-------------------------------------------------------------------------------
-
-# Verified Correct for Skyrim
-#-------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    typeSets = {
-        'MODL': ('MODL','MODT','MODS'),
-        'MOD2': ('MOD2','MO2T','MO2S'),
-        'MOD3': ('MOD3','MO3T','MO3S'),
-        'MOD4': ('MOD4','MO4T','MO4S'),
-        'MOD5': ('MOD5','MO5T','MO5S'),
-        'DMDL': ('DMDL','DMDT','DMDS'),
-        }
-    def __init__(self,attr='model',type='MODL'):
-        """Initialize."""
-        types = self.__class__.typeSets[type]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelBase(types[1],'modt_p'),
-            MelMODS(types[2],'mod_s'),
-            )
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
-
-#-------------------------------------------------------------------------------
-class MelConditions(MelStructs):
-    """Represents a set of quest/dialog/etc conditions. Difficulty is that FID
-    state of parameters depends on function index."""
-    def __init__(self):
-        """Initialize."""
-        MelStructs.__init__(self,'CTDA','=B3sfH2sii4sII','conditions',
-            'operFlag',('unused1',null3),'compValue',
-            'ifunc',('unused2',null2),'param1','param2',
-            ('unused3',null4),'reference','unknown')
-
-    def getDefault(self):
-        """Returns a default copy of object."""
-        target = MelStructs.getDefault(self)
-        target.form12 = 'ii'
-        return target
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def loadData(self,record,ins,type,size,readId):
-        """Reads data from ins into record attribute."""
-        target = MelObject()
-        record.conditions.append(target)
-        target.__slots__ = self.attrs
-        unpacked1 = ins.unpack('=B3sfH2s',12,readId)
-        (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
-        #--Get parameters
-        if ifunc not in allConditions:
-            raise bolt.BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
-        form1 = 'I' if ifunc in fid1Conditions else 'i'
-        form2 = 'I' if ifunc in fid2Conditions else 'i'
-        form12 = form1+form2
-        unpacked2 = ins.unpack(form12,8,readId)
-        (target.param1,target.param2) = unpacked2
-        target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
-        (target.ifunc,target.form12) = (ifunc,form12)
-        if self._debug:
-            unpacked = unpacked1+unpacked2
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        for target in record.conditions:
-            ##format = 'B3sfI'+target.form12+'4s'
-            out.packSub('CTDA','=B3sfH2s'+target.form12+'4s2I',
-                target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.unused2, target.param1,
-                target.param2, target.unused3, target.reference, target.unused4)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        for target in record.conditions:
-            form12 = target.form12
-            if form12[0] == 'I':
-                result = function(target.param1)
-                if save: target.param1 = result
-            if form12[1] == 'I':
-                result = function(target.param2)
-                if save: target.param2 = result
-            if target.reference:
-                result = function(target.reference)
-                if save: target.reference = result
-
-# Skyrim Records ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
-class MreHeader(MreHeaderBase):
-    """TES4 Record.  File header."""
-    classType = 'TES4'
-
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
-        MelUnicode('CNAM','author',u'',512),
-        MelUnicode('SNAM','description',u'',512),
-        # How do I know this is an array MAST DATA MAST DATA MAST DATA MAST DATA
-        # For each Master File in the esm/esp
-        # Why is MelGroups Not needed?
-        MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'), # 8 Bytes in Length
-        MelFidList('ONAM','overrides'),
-        MelBase('INTV','ingv_p'),
-        MelBase('INCC', 'ingv_p'),
-        )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
-
-# MAST and DATA need to be grouped together like MAST DATA MAST DATA, are they that way already?
-#------------------------------------------------------------------------------
-class MreAact(MelRecord):
-    """Action record."""
-    classType = 'AACT'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelColorN(),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreActi(MelRecord):
-    """Activator."""
-    classType = 'ACTI'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelVmad(),
-        MelBounds(),
-        MelLString('FULL','full'),
-        MelModel(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        MelBase('PNAM','pnam_p'),
-        MelOptStruct('SNAM','I',(FID,'dropSound')),
-        MelOptStruct('VNAM','I',(FID,'pickupSound')),
-        MelOptStruct('WNAM','I',(FID,'water')),
-        MelLString('RNAM','rnam'),
-        MelBase('FNAM','fnam_p'),
-        MelOptStruct('KNAM','I',(FID,'keyword')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAddn(MelRecord):
-    """Addon"""
-    classType = 'ADDN'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelModel(),
-        MelBase('DATA','data_p'),
-        MelOptStruct('SNAM','I',(FID,'ambientSound')),
-        MelBase('DNAM','addnFlags'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MelBipedObjectData(MelStruct):
-    """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    BipedFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'head'),
-            (1, 'hair'),
-            (2, 'body'),
-            (3, 'hands'),
-            (4, 'forearms'),
-            (5, 'amulet'),
-            (6, 'ring'),
-            (7, 'feet'),
-            (8, 'calves'),
-            (9, 'shield'),
-            (10, 'bodyaddon1_tail'),
-            (11, 'long_hair'),
-            (12, 'circlet'),
-            (13, 'bodyaddon2'),
-            (14, 'dragon_head'),
-            (15, 'dragon_lwing'),
-            (16, 'dragon_rwing'),
-            (17, 'dragon_body'),
-            (18, 'bodyaddon7'),
-            (19, 'bodyaddon8'),
-            (20, 'decapate_head'),
-            (21, 'decapate'),
-            (22, 'bodyaddon9'),
-            (23, 'bodyaddon10'),
-            (24, 'bodyaddon11'),
-            (25, 'bodyaddon12'),
-            (26, 'bodyaddon13'),
-            (27, 'bodyaddon14'),
-            (28, 'bodyaddon15'),
-            (29, 'bodyaddon16'),
-            (30, 'bodyaddon17'),
-            (31, 'fx01'),
-        ))
-
-    ## Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
-    LegacyFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'modulates_voice'), #{>>> From ARMA <<<}
-            (1, 'unknown_2'),
-            (2, 'unknown_3'),
-            (3, 'unknown_4'),
-            (4, 'non_playable'), #{>>> From ARMO <<<}
-        ))
-
-    ArmorTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'light_armor'),
-        (1, 'heavy_armor'),
-        (2, 'clothing'),
-        ))
-
-    def __init__(self):
-        MelStruct.__init__(self,'BOD2','=2I',(MelBipedObjectData.BipedFlags,'bipedFlags',0L),(MelBipedObjectData.ArmorTypeFlags,'armorFlags',0L))
-
-    def getLoaders(self,loaders):
-        # Loads either old style BODT or new style BOD2 records
-        loaders['BOD2'] = self
-        loaders['BODT'] = self
-
-    def loadData(self,record,ins,type,size,readId):
-        if type == 'BODT':
-            # Old record type, use alternate loading routine
-            if size == 8:
-                # Version 20 of this subrecord is only 8 bytes (armorType omitted)
-                bipedFlags,legacyData = ins.unpack('=2I',size,readId)
-                armorFlags = 0
-            elif size != 12:
-                raise ModSizeError(ins.inName,readId,12,size,True)
-            else:
-                bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
-            # legacyData is discarded except for non-playable status
-            setter = record.__setattr__
-            setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
-            legacyFlags = MelBipedObjectData.LegacyFlags(legacyData)
-            record.flags1[2] = legacyFlags[4]
-            setter('armorFlags',MelBipedObjectData.ArmorTypeFlags(armorFlags))
-        else:
-            # BOD2 - new style, MelStruct can handle it
-            MelStruct.loadData(self,record,ins,type,size,readId)
-
-#------------------------------------------------------------------------------
-class MreArma(MelRecord):
-    """Armor addon?"""
-    classType = 'ARMA'
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBipedObjectData(),
-        MelFid('RNAM','race'),
-        MelBase('DNAM','dnam_p'),
-        MelModel('male_model','MOD2'),
-        MelModel('female_model','MOD3'),
-        MelModel('male_model_1st','MOD4'),
-        MelModel('female_model_1st','MOD5'),
-        MelOptStruct('NAM0','I',(FID,'skin0')),
-        MelOptStruct('NAM1','I',(FID,'skin1')),
-        MelOptStruct('NAM2','I',(FID,'skin2')),
-        MelOptStruct('NAM3','I',(FID,'skin3')),
-        MelFids('MODL','races'),
-        MelOptStruct('SNDD','I',(FID,'footstepSound')),
-        MelOptStruct('ONAM','I',(FID,'art_object')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreArmo(MelRecord):
-    """Armor"""
-    classType = 'ARMO'
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelVmad(),
-        MelBounds(),
-        MelLString('FULL','full'),
-        MelOptStruct('EITM','I',(FID,'enchantment')),
-        MelOptStruct('EAMT','H','enchantmentAmount',),
-        MelModel(),
-        MelModel('model1','MOD2'),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelModel('model3','MOD4'),
-        MelString('ICO2','ico2_n'),
-        MelString('MIC2','mic2_n'),
-        MelBipedObjectData(),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelString('BMCT','ragConTemp'), #Ragdoll Constraint Template
-        MelOptStruct('ETYP','I',(FID,'equipType')),
-        MelOptStruct('BIDS','I',(FID,'bashImpact')),
-        MelOptStruct('BAMT','I',(FID,'material')),
-        MelOptStruct('RNAM','I',(FID,'race')),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        MelLString('DESC','description'),
-        MelFids('MODL','addons'),
-        MelStruct('DATA','=If','value','weight'),
-        MelStruct('DNAM','I','armorRating'),
-        MelFid('TNAM','baseItem'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAmmo(MelRecord):
-    """Ammo record (arrows)"""
-    classType = 'AMMO'
-
-    AmmoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'notNormalWeapon'),
-        (1, 'nonPlayable'),
-        (2, 'nonBolt'),
-    ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelLString('FULL','full'),
-        MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelFid('YNAM','pickupSound'),
-        MelFid('ZNAM','dropSound'),
-        MelLString('DESC','description'),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','IIfI',(FID,'projectile'),(AmmoTypeFlags,'flags',0L),'damage','value'),
-        MelString('ONAM','onam_n'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAnio(MelRecord):
-    """Anio record (Animated Object)"""
-    classType = 'ANIO'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelModel(),
-        MelString('BNAM','unloadEvent'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAppa(MelRecord):
-    """Appa record (Alchemical Apparatus)"""
-    classType = 'APPA'
-    AppaTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-        (0, 'novice'),
-        (1, 'apprentice'),
-        (2, 'journeyman'),
-        (3, 'expert'),
-        (4, 'master'),
-    ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelVmad(),
-        MelBounds(),
-        MelLString('FULL','full'),
-        MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelFid('YNAM','pickupSound'),
-        MelFid('ZNAM','dropSound'),
-        MelStruct('QUAL','I',(AppaTypeFlags,'flags',0L)),
-        MelLString('DESC','description'),
-        MelStruct('DATA','If','value','weight'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreArto(MelRecord):
-    """Arto record (Art effect object)"""
-    classType = 'ARTO'
-
-    #{0x00000001} 'Magic Casting',
-    #{0x00000002} 'Magic Hit Effect',
-    #{0x00000004} 'Enchantment Effect'
-    ArtoTypeFlags = bolt.Flags(0L,bolt.Flags.getNames(
-            (0, 'magic_casting'),
-            (1, 'magic_hit_effect'),
-            (2, 'enchantment_effect'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelModel(),
-        MelStruct('DNAM','I',(ArtoTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAspc(MelRecord):
-    """Aspc record (Acoustic Space)"""
-    classType = 'ASPC'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelOptStruct('SNAM','I',(FID,'ambientSound')),
-        MelOptStruct('RDAT','I',(FID,'regionData')),
-        MelOptStruct('BNAM','I',(FID,'reverb')),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreAstp(MelRecord):
-    """Astp record (Association type)"""
-    classType = 'ASTP'
-
-    # DATA Flags
-    # {0x00000001} 'Related'
-    AstpTypeFlags = bolt.Flags(0L,bolt.Flags.getNames('related'))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MPRT','maleParent'),
-        MelString('FPRT','femaleParent'),
-        MelString('MCHT','maleChild'),
-        MelString('FCHT','femaleChild'),
-        MelStruct('DATA','I',(AstpTypeFlags,'flags',0L)),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreCobj(MelRecord):
-    """Constructible Object record (recipies)"""
-    classType = 'COBJ'
-    isKeyedByEid = True # NULL fids are acceptible
-
-    class MelCobjCnto(MelGroups):
-        def __init__(self):
-            MelGroups.__init__(self,'components',
-                MelStruct('CNTO','=2I',(FID,'item',None),'count'),
-                MelCoed(),
-                )
-
-        def dumpData(self,record,out):
-            # Only write the COCT/CNTO/COED subrecords if count > 0
-            out.packSub('COCT','I',len(record.components))
-            MelGroups.dumpData(self,record,out)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelNull('COCT'), # Handled by MelCobjCnto
-        MelCobjCnto(),
-        MelConditions(),
-        MelFid('CNAM','resultingItem'),
-        MelFid('BNAM','craftingStation'),
-        MelStruct('NAM1','H','resultingQuantity'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
-    """Skyrim GMST record"""
-    Master = u'Skyrim'
-    isKeyedByEid = True # NULL fids are acceptable.
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Skryim Leveled item/creature/spell list."""
-
-    class MelLevListLvlo(MelGroups):
-        def __init__(self):
-            MelGroups.__init__(self,'entries',
-                MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
-                MelCoed(),
-                )
-        def dumpData(self,record,out):
-            out.packSub('LLCT','B',len(record.entries))
-            MelGroups.dumpData(self,record,out)
-
-    __slots__ = MreLeveledListBase.__slots__
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
-    classType = 'LVLI'
-    copyAttrs = ('chanceNone','glob',)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelStruct('LVLD','B','chanceNone'),
-        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
-        MelOptStruct('LVLG','I',(FID,'glob')),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
-        )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreLvln(MreLeveledList):
-    classType = 'LVLN'
-    copyAttrs = ('chanceNone','model','modt_p',)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelStruct('LVLD','B','chanceNone'),
-        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
-        MelString('MODL','model'),
-        MelBase('MODT','modt_p'),
-        )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreLvsp(MreLeveledList):
-    classType = 'LVSP'
-    copyAttrs = ('chanceNone',)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBounds(),
-        MelStruct('LVLD','B','chanceNone'),
-        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
-        MelNull('LLCT'),
-        MreLeveledList.MelLevListLvlo(),
-        )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
-
-# Verified Correct for Skyrim 1.8
-#------------------------------------------------------------------------------
-class MreMisc(MelRecord):
-    """Misc. Item"""
-    classType = 'MISC'
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelVmad(),
-        MelBounds(),
-        MelLString('FULL','full'),
-        MelModel(),
-        MelString('ICON','icon'),
-        MelString('MICO','mico_n'),
-        MelBase('DEST','dest_p'),
-        MelGroups('destructionData',
-            MelBase('DSTD','dstd_p'),
-            MelModel('model','DMDL'),
-            ),
-        MelBase('DSTF','dstf_p'), # Appears just to signal the end of the destruction data
-        MelOptStruct('YNAM','I',(FID,'pickupSound')),
-        MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelNull('KSIZ'),
-        MelKeywords('KWDA','keywords'),
-        MelStruct('DATA','=If','value','weight'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-# If VMAD correct then Verified Correct for Skyrim 1.8
+#       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
@@ -3113,7 +1441,10 @@ mergeClasses = (
         MreLvsp, MreMisc,
     )
 
-#--Extra read/write classes
+#--Extra read classes: these record types will always be loaded, even if
+# patchers don't need them directly (for example, MGEF for magic effects info)
+# MreScpt is Oblivion/FO3/FNV Only
+# MreMgef, has not been verified to be used here for Skyrim
 readClasses = ()
 writeClasses = ()
 
@@ -3134,5 +1465,6 @@ def init():
         ))
 
     #--Simple records
-    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) -
-        set(('TES4')))
+    brec.MreRecord.simpleTypes = (
+        set(brec.MreRecord.type_class) - {'TES4',})
+

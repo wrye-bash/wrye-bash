@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -36,17 +36,15 @@ import struct
 import sys
 import time
 import subprocess
-import collections
 import codecs
 import gettext
 import traceback
 import csv
 import tempfile
-from subprocess import Popen, PIPE
+import pkgutil
 close_fds = True
 import types
 from binascii import crc32
-import ConfigParser
 import bass
 import chardet
 #-- To make commands executed with Popen hidden
@@ -54,9 +52,6 @@ startupinfo = None
 if os.name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-#-- Forward declarations
-class Path(object): pass
 
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
@@ -92,7 +87,7 @@ pluginEncoding = None
 
 def _getbestencoding(text):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
-       detection library to find the best match (heurisitcs)"""
+       detection library to find the best match (heuristics)"""
     result = chardet.detect(text)
     encoding,confidence = result['encoding'],result['confidence']
     encoding = _encodingSwap.get(encoding,encoding)
@@ -101,7 +96,7 @@ def _getbestencoding(text):
     #print '%s: %s (%s)' % (repr(text),encoding,confidence)
     return encoding,confidence
 
-def _unicode(text,encoding=None,avoidEncodings=()):
+def decode(text,encoding=None,avoidEncodings=()):
     if isinstance(text,unicode) or text is None: return text
     # Try the user specified encoding first
     if encoding:
@@ -118,15 +113,15 @@ def _unicode(text,encoding=None,avoidEncodings=()):
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
-def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
+def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
     if isinstance(text,str) or text is None:
-        if returnEncoding: return (text,None)
+        if returnEncoding: return text,None
         else: return text
     # Try user specified encoding
     if firstEncoding:
         try:
             text = text.encode(firstEncoding)
-            if returnEncoding: return (text,firstEncoding)
+            if returnEncoding: return text,firstEncoding
             else: return text
         except UnicodeEncodeError:
             pass
@@ -140,7 +135,7 @@ def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,
                 # which means use it!
-                if returnEncoding: return (temp,encoding)
+                if returnEncoding: return temp,encoding
                 else: return temp
             # The encoding detector didn't detect it, but
             # it works, so save it for later
@@ -155,17 +150,44 @@ def _encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
 # Localization ----------------------------------------------------------------
+# noinspection PyDefaultArgument
+def _findAllBashModules(files=[], bashPath=None, cwd=None,
+                        exts=('.py', '.pyw'), exclude=(u'chardet',),
+                        _firstRun=False):
+    """Return a list of all Bash files as relative paths to the Mopy
+    directory.
+
+    :param files: files list cache - populated in first run. In the form: [
+    u'Wrye Bash Launcher.pyw', u'bash\\balt.py', ..., u'bash\\__init__.py',
+    u'bash\\basher\\app_buttons.py', ...]
+    :param bashPath: the relative path from Mopy
+    :param cwd: initially C:\...\Mopy - but not at the time def is executed !
+    :param exts: extensions to keep in listdir()
+    :param exclude: tuple of excluded packages
+    :param _firstRun: internal use
+    """
+    if not _firstRun and files:
+        return files # cache, not likely to change during execution
+    cwd = cwd or os.getcwdu()
+    files.extend([(bashPath or Path(u'')).join(m).s for m in
+                  os.listdir(cwd) if m.lower().endswith(exts)])
+    # find subpackages -- p=(module_loader, name, ispkg)
+    for p in pkgutil.iter_modules([cwd]):
+        if not p[2] or p[1] in exclude: continue
+        _findAllBashModules(
+            files, bashPath.join(p[1]) if bashPath else GPath(u'bash'),
+            cwd=os.path.join(cwd, p[1]), _firstRun=True)
+    return files
+
 def dumpTranslator(outPath,language,*files):
-    """Dumps all tranlatable strings in python source files to a new text file.
+    """Dumps all translatable strings in python source files to a new text file.
        as this requires the source files, it will not work in WBSA mode, unless
        the source files are also installed"""
     outTxt = u'%sNEW.txt' % language
     fullTxt = os.path.join(outPath,outTxt)
     tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
     oldTxt = os.path.join(outPath,u'%s.txt' % language)
-    if not files:
-        file = os.path.split(__file__)[1]
-        files = [x for x in os.listdir(os.getcwdu()) if (x.lower().endswith(u'.py') or x.lower().endswith(u'.pyw'))]
+    if not files: files = _findAllBashModules()
     args = [u'p',u'-a',u'-o',fullTxt]
     args.extend(files)
     if hasattr(sys,'frozen'):
@@ -252,7 +274,7 @@ def initTranslator(language=None,path=None):
     if not language:
         try:
             language = locale.getlocale()[0].split('_',1)[0]
-            language = _unicode(language)
+            language = decode(language)
         except UnicodeError:
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
@@ -296,542 +318,6 @@ if locale.getlocale() == (None,None):
 initTranslator(bass.language)
 
 CBash = 0
-images_list = {
-    295 : {
-        u'3dsmax16.png' : 1176,
-        u'3dsmax24.png' : 2152,
-        u'3dsmax32.png' : 3225,
-        u'3dsmaxblack16.png' : 1085,
-        u'3dsmaxblack24.png' : 1925,
-        u'3dsmaxblack32.png' : 2669,
-        u'abcamberaudioconverter16.png' : 1271,
-        u'abcamberaudioconverter24.png' : 2468,
-        u'abcamberaudioconverter32.png' : 3888,
-        u'andreamosaic16.png' : 807,
-        u'andreamosaic24.png' : 1111,
-        u'andreamosaic32.png' : 1191,
-        u'anifx16.png' : 1204,
-        u'anifx24.png' : 2192,
-        u'anifx32.png' : 3292,
-        u'artofillusion16.png' : 1086,
-        u'artofillusion24.png' : 1975,
-        u'artofillusion32.png' : 2869,
-        u'artweaver05_16.png' : 1159,
-        u'artweaver05_24.png' : 2097,
-        u'artweaver05_32.png' : 3178,
-        u'artweaver16.png' : 1193,
-        u'artweaver24.png' : 2286,
-        u'artweaver32.png' : 3565,
-        u'audacity16.png' : 1175,
-        u'audacity24.png' : 2269,
-        u'audacity32.png' : 3319,
-        u'autocad16.png' : 1083,
-        u'autocad24.png' : 1906,
-        u'autocad32.png' : 2539,
-        u'bashmon16.png' : 1212,
-        u'bashmon24.png' : 2311,
-        u'bashmon32.png' : 3025,
-        u'bash_16.png' : 1198,
-        u'bash_16_blue.png' : 1198,
-        u'bash_24.png' : 1230,
-        u'bash_24_2.png' : 1230,
-        u'bash_24_blue.png' : 1230,
-        u'bash_32.ico' : 2238,
-        u'bash_32.png' : 1338,
-        u'bash_32_2.png' : 1338,
-        u'bash_32_blue.png' : 1338,
-        u'blender16.png' : 3504,
-        u'blender24.png' : 1967,
-        u'blender32.png' : 2668,
-        u'boss16.png' : 362,
-        u'boss24.png' : 679,
-        u'boss32.png' : 579,
-        u'brick16.png' : 452,
-        u'brick24.png' : 2248,
-        u'brick32.png' : 2092,
-        u'bricksntiles16.png' : 1258,
-        u'bricksntiles24.png' : 2441,
-        u'bricksntiles32.png' : 3410,
-        u'brick_edit16.png' : 775,
-        u'brick_edit24.png' : 4562,
-        u'brick_edit32.png' : 5880,
-        u'brick_error16.png' : 798,
-        u'brick_error24.png' : 4599,
-        u'brick_error32.png' : 5383,
-        u'brick_go16.png' : 790,
-        u'brick_go24.png' : 4534,
-        u'brick_go32.png' : 5857,
-        u'bsacommander16.png' : 685,
-        u'bsacommander24.png' : 2276,
-        u'bsacommander32.png' : 2864,
-        u'calculator16.png' : 952,
-        u'calculator24.png' : 1646,
-        u'calculator32.png' : 2328,
-        u'cancel.png' : 36780,
-        u'check.png' : 689,
-        u'checkbox_blue_imp.png' : 162,
-        u'checkbox_blue_inc.png' : 875,
-        u'checkbox_blue_off.png' : 115,
-        u'checkbox_blue_on.png' : 180,
-        u'checkbox_blue_on_24.png' : 405,
-        u'checkbox_blue_on_32.png' : 254,
-        u'checkbox_green_imp.png' : 156,
-        u'checkbox_green_inc.png' : 875,
-        u'checkbox_green_inc_wiz.png' : 420,
-        u'checkbox_green_off.png' : 116,
-        u'checkbox_green_off_24.png' : 2887,
-        u'checkbox_green_off_32.png' : 2883,
-        u'checkbox_green_off_wiz.png' : 393,
-        u'checkbox_green_on.png' : 174,
-        u'checkbox_green_on_24.png' : 403,
-        u'checkbox_green_on_32.png' : 248,
-        u'checkbox_grey_inc.png' : 159,
-        u'checkbox_grey_off.png' : 125,
-        u'checkbox_grey_on.png' : 173,
-        u'checkbox_orange_imp.png' : 156,
-        u'checkbox_orange_inc.png' : 875,
-        u'checkbox_orange_inc_wiz.png' : 421,
-        u'checkbox_orange_off.png' : 116,
-        u'checkbox_orange_off_wiz.png' : 392,
-        u'checkbox_orange_on.png' : 181,
-        u'checkbox_purple_imp.png' : 168,
-        u'checkbox_purple_inc.png' : 875,
-        u'checkbox_purple_off.png' : 136,
-        u'checkbox_purple_on.png' : 194,
-        u'checkbox_red_imp.png' : 155,
-        u'checkbox_red_inc.png' : 875,
-        u'checkbox_red_inc_wiz.png' : 418,
-        u'checkbox_red_off.png' : 115,
-        u'checkbox_red_off_24.png' : 2889,
-        u'checkbox_red_off_32.png' : 2883,
-        u'checkbox_red_off_wiz.png' : 395,
-        u'checkbox_red_on.png' : 174,
-        u'checkbox_red_x.png' : 875,
-        u'checkbox_red_x_24.png' : 3037,
-        u'checkbox_red_x_32.png' : 2989,
-        u'checkbox_white_inc.png' : 159,
-        u'checkbox_white_inc_wiz.png' : 416,
-        u'checkbox_white_off.png' : 125,
-        u'checkbox_white_off_wiz.png' : 400,
-        u'checkbox_white_on.png' : 174,
-        u'checkbox_yellow_imp.png' : 161,
-        u'checkbox_yellow_inc.png' : 173,
-        u'checkbox_yellow_inc_wiz.png' : 421,
-        u'checkbox_yellow_off.png' : 114,
-        u'checkbox_yellow_off_wiz.png' : 393,
-        u'checkbox_yellow_on.png' : 184,
-        u'crazybump16.png' : 1031,
-        u'crazybump24.png' : 1768,
-        u'crazybump32.png' : 2483,
-        u'custom1016.png' : 349,
-        u'custom1024.png' : 782,
-        u'custom1032.png' : 723,
-        u'custom1116.png' : 299,
-        u'custom1124.png' : 679,
-        u'custom1132.png' : 610,
-        u'custom116.png' : 289,
-        u'custom1216.png' : 359,
-        u'custom1224.png' : 768,
-        u'custom1232.png' : 717,
-        u'custom124.png' : 625,
-        u'custom1316.png' : 362,
-        u'custom132.png' : 576,
-        u'custom1324.png' : 778,
-        u'custom1332.png' : 710,
-        u'custom1416.png' : 334,
-        u'custom1424.png' : 741,
-        u'custom1432.png' : 683,
-        u'custom1516.png' : 357,
-        u'custom1524.png' : 771,
-        u'custom1532.png' : 726,
-        u'custom1616.png' : 372,
-        u'custom1624.png' : 790,
-        u'custom1632.png' : 751,
-        u'custom1716.png' : 334,
-        u'custom1724.png' : 726,
-        u'custom1732.png' : 665,
-        u'custom1816.png' : 365,
-        u'custom1824.png' : 783,
-        u'custom1832.png' : 736,
-        u'custom216.png' : 364,
-        u'custom224.png' : 679,
-        u'custom232.png' : 668,
-        u'custom316.png' : 390,
-        u'custom324.png' : 700,
-        u'custom332.png' : 678,
-        u'custom416.png' : 344,
-        u'custom424.png' : 675,
-        u'custom432.png' : 629,
-        u'custom516.png' : 387,
-        u'custom524.png' : 699,
-        u'custom532.png' : 675,
-        u'custom616.png' : 392,
-        u'custom624.png' : 725,
-        u'custom632.png' : 703,
-        u'custom716.png' : 332,
-        u'custom724.png' : 662,
-        u'custom732.png' : 619,
-        u'custom816.png' : 402,
-        u'custom824.png' : 717,
-        u'custom832.png' : 690,
-        u'custom916.png' : 406,
-        u'custom924.png' : 732,
-        u'custom932.png' : 709,
-        u'database_connect16.png' : 763,
-        u'database_connect24.png' : 4548,
-        u'database_connect32.png' : 5079,
-        u'ddsconverter16.png' : 1123,
-        u'ddsconverter24.png' : 2134,
-        u'ddsconverter32.png' : 2809,
-        u'debug16.png' : 1133,
-        u'debug24.png' : 2167,
-        u'debug32.png' : 3142,
-        u'deeppaint16.png' : 1039,
-        u'deeppaint24.png' : 1664,
-        u'deeppaint32.png' : 2300,
-        u'diamond_green_inc.png' : 208,
-        u'diamond_green_inc_wiz.png' : 457,
-        u'diamond_green_off.png' : 189,
-        u'diamond_green_off_wiz.png' : 431,
-        u'diamond_grey_inc.png' : 189,
-        u'diamond_grey_off.png' : 189,
-        u'diamond_orange_inc.png' : 217,
-        u'diamond_orange_inc_wiz.png' : 455,
-        u'diamond_orange_off.png' : 195,
-        u'diamond_orange_off_wiz.png' : 430,
-        u'diamond_red_inc.png' : 210,
-        u'diamond_red_inc_wiz.png' : 451,
-        u'diamond_red_off.png' : 191,
-        u'diamond_red_off_wiz.png' : 430,
-        u'diamond_white_inc.png' : 190,
-        u'diamond_white_off.png' : 190,
-        u'diamond_white_off_wiz.png' : 429,
-        u'diamond_yellow_inc.png' : 209,
-        u'diamond_yellow_inc_wiz.png' : 451,
-        u'diamond_yellow_off.png' : 189,
-        u'diamond_yellow_off_wiz.png' : 428,
-        u'docbrowser16.png' : 1010,
-        u'docbrowser24.png' : 1979,
-        u'docbrowser32.png' : 2845,
-        u'doc_on.png' : 149,
-        u'dogwaffle16.png' : 921,
-        u'dogwaffle24.png' : 1515,
-        u'dogwaffle32.png' : 2123,
-        u'dos.png' : 362,
-        u'eggtranslator16.png' : 1101,
-        u'eggtranslator24.png' : 2059,
-        u'eggtranslator32.png' : 3267,
-        u'error.jpg' : 45270,
-        u'evgaprecision16.png' : 1185,
-        u'evgaprecision24.png' : 2123,
-        u'evgaprecision32.png' : 3267,
-        u'exclamation.png' : 701,
-        u'faststoneimageviewer16.png' : 1116,
-        u'faststoneimageviewer24.png' : 2125,
-        u'faststoneimageviewer32.png' : 3202,
-        u'filezilla16.png' : 853,
-        u'filezilla24.png' : 1448,
-        u'filezilla32.png' : 1601,
-        u'finish.png' : 42978,
-        u'fraps16.png' : 1153,
-        u'fraps24.png' : 2075,
-        u'fraps32.png' : 2857,
-        u'freemind16.png' : 1215,
-        u'freemind24.png' : 2223,
-        u'freemind32.png' : 3279,
-        u'freemind8.1custom_16.png' : 1244,
-        u'freemind8.1custom_24.png' : 2359,
-        u'freemind8.1custom_32.png' : 3605,
-        u'freeplane16.png' : 1165,
-        u'freeplane24.png' : 2139,
-        u'freeplane32.png' : 3176,
-        u'genetica16.png' : 1254,
-        u'genetica24.png' : 2424,
-        u'genetica32.png' : 3697,
-        u'geneticaviewer16.png' : 1230,
-        u'geneticaviewer24.png' : 2237,
-        u'geneticaviewer32.png' : 3073,
-        u'geniuxphotoefx16.png' : 1259,
-        u'geniuxphotoefx24.png' : 2405,
-        u'geniuxphotoefx32.png' : 3674,
-        u'gimp16.png' : 997,
-        u'gimp24.png' : 1740,
-        u'gimp32.png' : 2489,
-        u'gimpshop16.png' : 1135,
-        u'gimpshop24.png' : 2435,
-        u'gimpshop32.png' : 2895,
-        u'gmax16.png' : 913,
-        u'gmax24.png' : 1639,
-        u'gmax32.png' : 2419,
-        u'group_gear16.png' : 824,
-        u'group_gear24.png' : 4698,
-        u'group_gear32.png' : 6136,
-        u'help16.png' : 3730,
-        u'help24.png' : 4660,
-        u'help32.png' : 5518,
-        u'icofx16.png' : 1227,
-        u'icofx24.png' : 2266,
-        u'icofx32.png' : 3285,
-        u'ini-all natural.png' : 121810,
-        u'ini-oblivion.png' : 126961,
-        u'inkscape16.png' : 1125,
-        u'inkscape24.png' : 1976,
-        u'inkscape32.png' : 2906,
-        u"insanity'sreadmegenerator16.png" : 1187,
-        u"insanity'sreadmegenerator24.png" : 2227,
-        u"insanity'sreadmegenerator32.png" : 3436,
-        u"insanity'srng16.png" : 1164,
-        u"insanity'srng24.png" : 2223,
-        u"insanity'srng32.png" : 3343,
-        u'interactivemapofcyrodiil16.png' : 960,
-        u'interactivemapofcyrodiil24.png' : 1840,
-        u'interactivemapofcyrodiil32.png' : 2860,
-        u'irfanview16.png' : 1124,
-        u'irfanview24.png' : 2016,
-        u'irfanview32.png' : 2828,
-        u'isobl16.png' : 1056,
-        u'isobl24.png' : 2088,
-        u'isobl32.png' : 3314,
-        u'itemizer16.png' : 972,
-        u'itemizer24.png' : 1733,
-        u'itemizer32.png' : 2472,
-        u'k-3d16.png' : 1183,
-        u'k-3d24.png' : 2130,
-        u'k-3d32.png' : 3173,
-        u'list16.png' : 1153,
-        u'list24.png' : 2061,
-        u'list32.png' : 2902,
-        u'logitechkeyboard16.png' : 622,
-        u'logitechkeyboard24.png' : 1625,
-        u'logitechkeyboard32.png' : 2154,
-        u'mapzone16.png' : 1021,
-        u'mapzone24.png' : 1767,
-        u'mapzone32.png' : 2576,
-        u'maya16.png' : 960,
-        u'maya24.png' : 1755,
-        u'maya32.png' : 2748,
-        u'mcowavi32.png' : 3921,
-        u'mcowbash16.png' : 1092,
-        u'mediamonkey16.png' : 1127,
-        u'mediamonkey24.png' : 2076,
-        u'mediamonkey32.png' : 2975,
-        u'meshlab16.png' : 1079,
-        u'meshlab24.png' : 1860,
-        u'meshlab32.png' : 2573,
-        u'milkshape3d16.png' : 988,
-        u'milkshape3d24.png' : 1694,
-        u'milkshape3d32.png' : 2422,
-        u'modchecker16.png' : 1120,
-        u'modchecker24.png' : 1763,
-        u'modchecker32.png' : 3161,
-        u'modlistgenerator16.png' : 1203,
-        u'modlistgenerator24.png' : 2265,
-        u'modlistgenerator32.png' : 3321,
-        u'mtes4manager16.png' : 1182,
-        u'mtes4manager24.png' : 2479,
-        u'mtes4manager32.png' : 3246,
-        u'mudbox16.png' : 1066,
-        u'mudbox24.png' : 1997,
-        u'mudbox32.png' : 2869,
-        u'mypaint16.png' : 1081,
-        u'mypaint24.png' : 1986,
-        u'mypaint32.png' : 2787,
-        u'nifskope16.png' : 1233,
-        u'nifskope24.png' : 2331,
-        u'nifskope32.png' : 3583,
-        u'niftools16.png' : 974,
-        u'niftools24.png' : 1968,
-        u'niftools32.png' : 2503,
-        u'notepad++16.png' : 1203,
-        u'notepad++24.png' : 2234,
-        u'notepad++32.png' : 3490,
-        u'nvidia16.png' : 988,
-        u'nvidia24.png' : 1823,
-        u'nvidia32.png' : 2814,
-        u'nvidiamelody16.png' : 865,
-        u'nvidiamelody24.png' : 1481,
-        u'nvidiamelody32.png' : 2187,
-        u'oblivion16.png' : 3542,
-        u'oblivion24.png' : 1528,
-        u'oblivion32.png' : 3090,
-        u'oblivionbookcreator16.png' : 945,
-        u'oblivionbookcreator24.png' : 1676,
-        u'oblivionbookcreator32.png' : 2405,
-        u'oblivionfaceexchangerlite16.png' : 910,
-        u'oblivionfaceexchangerlite24.png' : 1550,
-        u'oblivionfaceexchangerlite32.png' : 2208,
-        u'obmm16.png' : 1093,
-        u'obmm24.png' : 2101,
-        u'obmm32.png' : 3176,
-        u'obse16.png' : 281,
-        u'openoffice16.png' : 1090,
-        u'openoffice24.png' : 1945,
-        u'openoffice32.png' : 2735,
-        u'page_find16.png' : 879,
-        u'page_find24.png' : 4768,
-        u'page_find32.png' : 5269,
-        u'paint.net16.png' : 1134,
-        u'paint.net24.png' : 2072,
-        u'paint.net32.png' : 2984,
-        u'paintshopprox316.png' : 3588,
-        u'paintshopprox324.png' : 4575,
-        u'paintshopprox332.png' : 5241,
-        u'pes16.png' : 955,
-        u'pes24.png' : 1834,
-        u'pes32.png' : 2735,
-        u'photobie16.png' : 1060,
-        u'photobie24.png' : 1826,
-        u'photobie32.png' : 2544,
-        u'photofiltre16.png' : 1006,
-        u'photofiltre24.png' : 1777,
-        u'photofiltre32.png' : 2616,
-        u'photoscape16.png' : 983,
-        u'photoscape24.png' : 1722,
-        u'photoscape32.png' : 2224,
-        u'photoseam16.png' : 1271,
-        u'photoseam24.png' : 2441,
-        u'photoseam32.png' : 3775,
-        u'photoshop16.png' : 1275,
-        u'photoshop24.png' : 2490,
-        u'photoshop32.png' : 3929,
-        u'pixelformer16.png' : 1045,
-        u'pixelformer24.png' : 1088,
-        u'pixelformer32.png' : 1121,
-        u'pixelstudiopro16.png' : 1088,
-        u'pixelstudiopro24.png' : 1886,
-        u'pixelstudiopro32.png' : 2371,
-        u'pixia16.png' : 1236,
-        u'pixia24.png' : 2332,
-        u'pixia32.png' : 3547,
-        u'pythonlogo16.png' : 1145,
-        u'pythonlogo24.png' : 1963,
-        u'pythonlogo32.png' : 2625,
-        u'questionmarksquare16.png' : 363,
-        u'radvideotools16.png' : 1182,
-        u'radvideotools24.png' : 2117,
-        u'radvideotools32.png' : 3072,
-        u'randomnpc16.png' : 928,
-        u'randomnpc24.png' : 1751,
-        u'randomnpc32.png' : 2434,
-        u'red_x.png' : 178,
-        u'save_off.png' : 908,
-        u'save_on.png' : 177,
-        u'sculptris16.png' : 1229,
-        u'sculptris24.png' : 2352,
-        u'sculptris32.png' : 3646,
-        u'selectmany.jpg' : 110594,
-        u'selectone.jpg' : 85738,
-        u'skype16.png' : 1164,
-        u'skype24.png' : 2129,
-        u'skype32.png' : 2897,
-        u'softimagemodtool16.png' : 927,
-        u'softimagemodtool24.png' : 1626,
-        u'softimagemodtool32.png' : 2413,
-        u'sourceforge16.png' : 680,
-        u'speedtree16.png' : 993,
-        u'speedtree24.png' : 1970,
-        u'speedtree32.png' : 2806,
-        u'steam16.png' : 537,
-        u'steam24.png' : 836,
-        u'steam32.png' : 1004,
-        u'switch16.png' : 1041,
-        u'switch24.png' : 1800,
-        u'switch32.png' : 2538,
-        u'table_error16.png' : 687,
-        u'table_error24.png' : 4714,
-        u'table_error32.png' : 4978,
-        u'tabula16.png' : 1019,
-        u'tabula24.png' : 1899,
-        u'tabula32.png' : 3041,
-        u'tes4edit16.png' : 1156,
-        u'tes4edit24.png' : 2000,
-        u'tes4edit32.png' : 2547,
-        u'tes4files16.png' : 849,
-        u'tes4files24.png' : 2262,
-        u'tes4files32.png' : 3789,
-        u'tes4gecko16.png' : 1197,
-        u'tes4gecko24.png' : 2230,
-        u'tes4gecko32.png' : 2803,
-        u'tesvgecko16.png' : 639,
-        u'tesvgecko24.png' : 954,
-        u'tesvgecko32.png' : 1535,
-        u'tes4lodgen16.png' : 1227,
-        u'tes4lodgen24.png' : 2467,
-        u'tes4lodgen32.png' : 3721,
-        u'tes4trans16.png' : 1095,
-        u'tes4trans24.png' : 1923,
-        u'tes4trans32.png' : 2503,
-        u'tes4view16.png' : 1131,
-        u'tes4view24.png' : 2071,
-        u'tes4view32.png' : 2778,
-        u'tes4wizbain16.png' : 1182,
-        u'tes4wizbain24.png' : 2161,
-        u'tes4wizbain32.png' : 3324,
-        u'tesa16.png' : 1175,
-        u'tesa24.png' : 2173,
-        u'tesa32.png' : 3083,
-        u'tescs16.png' : 1078,
-        u'tescs24.png' : 1894,
-        u'tescs32.png' : 2505,
-        u'tesnexus16.png' : 272,
-        u'texturemaker16.png' : 1158,
-        u'texturemaker24.png' : 2137,
-        u'texturemaker32.png' : 3277,
-        u'treed16.png' : 807,
-        u'treed24.png' : 1738,
-        u'treed32.png' : 2121,
-        u'truespace16.png' : 1244,
-        u'truespace24.png' : 2328,
-        u'truespace32.png' : 3541,
-        u'twistedbrush16.png' : 1089,
-        u'twistedbrush24.png' : 2112,
-        u'twistedbrush32.png' : 3159,
-        u'unofficialelderscrollspages16.png' : 1216,
-        u'unofficialelderscrollspages24.png' : 2277,
-        u'unofficialelderscrollspages32.png' : 3685,
-        u'versions.png' : 42287,
-        u'winamp16.png' : 1098,
-        u'winamp24.png' : 2043,
-        u'winamp32.png' : 2787,
-        u'wings3d16.png' : 1015,
-        u'wings3d24.png' : 1779,
-        u'wings3d32.png' : 2324,
-        u'winmerge16.png' : 1136,
-        u'winmerge24.png' : 2085,
-        u'winmerge32.png' : 2981,
-        u'winsnap16.png' : 1268,
-        u'winsnap24.png' : 2474,
-        u'winsnap32.png' : 3706,
-        u'wizard.png' : 442,
-        u'wizardscripthighlighter.jpg' : 175127,
-        u'wryebash_01.png' : 128009,
-        u'wryebash_02.png' : 13209,
-        u'wryebash_03.png' : 130445,
-        u'wryebash_04.png' : 91759,
-        u'wryebash_05.png' : 237791,
-        u'wryebash_06.png' : 452714,
-        u'wryebash_07.png' : 32293,
-        u'wryebash_08.png' : 20960,
-        u'wryebash_docbrowser.png' : 37078,
-        u'wryebash_peopletab.png' : 83310,
-        u'wryemonkey16.jpg' : 721,
-        u'wryemonkey16.png' : 1011,
-        u'wryemonkey24.png' : 1982,
-        u'wryemonkey32.png' : 3222,
-        u'wrye_monkey_87.jpg' : 2682,
-        u'wtv16.png' : 990,
-        u'wtv24.png' : 1902,
-        u'wtv32.png' : 2937,
-        u'x.png' : 655,
-        u'xnormal16.png' : 806,
-        u'xnormal24.png' : 1355,
-        u'xnormal32.png' : 1827,
-        u'xnview16.png' : 1101,
-        u'xnview24.png' : 2145,
-        u'xnview32.png' : 2926,
-        u'zoom_on.png' : 237
-        },
-    }
 # Errors ----------------------------------------------------------------------
 class BoltError(Exception):
     """Generic error with a string message."""
@@ -961,14 +447,14 @@ class sio(StringIO.StringIO):
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
-#Path = None
+
 def GPath(name):
-    """Returns common path object for specified name/path."""
+    """Path factory and cache."""
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
     elif isinstance(name,unicode): norm = os.path.normpath(name)
-    else: norm = os.path.normpath(_unicode(name))
+    else: norm = os.path.normpath(decode(name))
     path = _gpaths.get(norm)
     if path is not None: return path
     else: return _gpaths.setdefault(norm,Path(norm))
@@ -997,18 +483,18 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 class Path(object):
-    """A file path. May be just a directory, filename or full path."""
-    """Paths are immutable objects that represent file directory paths."""
+    """Paths are immutable objects that represent file directory paths.
+     May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
     norm_path = {} #--Dictionary of paths
-    mtimeResets = [] #--Used by getmtime
+    sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
 
     @staticmethod
     def get(name):
         """Returns path object for specified name/path."""
         if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(_unicode(name))
+        elif isinstance(name,str): norm = os.path.normpath(decode(name))
         else: norm = os.path.normpath(name)
         return Path.norm_path.setdefault(norm,Path(norm))
 
@@ -1017,7 +503,7 @@ class Path(object):
         """Return the normpath for specified name/path object."""
         if isinstance(name,Path): return name._s
         elif not name: return name
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = decode(name)
         return os.path.normpath(name)
 
     @staticmethod
@@ -1025,7 +511,7 @@ class Path(object):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
         if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = _unicode(name)
+        elif isinstance(name,str): name = decode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -1057,7 +543,7 @@ class Path(object):
     def __setstate__(self,norm):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = _unicode(norm)
+        if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
@@ -1080,70 +566,70 @@ class Path(object):
     #--String/unicode versions.
     @property
     def s(self):
-        "Path as string."
+        """Path as string."""
         return self._s
     @property
     def cs(self):
-        "Path as string in normalized case."
+        """Path as string in normalized case."""
         return self._cs
     @property
     def csroot(self):
-        "Root as string."
+        """Root as string."""
         return self._csroot
     @property
     def sroot(self):
-        "Root as string."
+        """Root as string."""
         return self._sroot
     @property
     def shead(self):
-        "Head as string."
+        """Head as string."""
         return self._shead
     @property
     def stail(self):
-        "Tail as string."
+        """Tail as string."""
         return self._stail
     @property
     def sbody(self):
-        "For alpha\beta.gamma returns beta as string."
+        """For alpha\beta.gamma returns beta as string."""
         return self._sbody
     @property
     def csbody(self):
-        "For alpha\beta.gamma returns beta as string in normalized case."
+        """For alpha\beta.gamma returns beta as string in normalized case."""
         return self._csbody
 
     #--Head, tail
     @property
     def headTail(self):
-        "For alpha\beta.gamma returns (alpha,beta.gamma)"
+        """For alpha\beta.gamma returns (alpha,beta.gamma)"""
         return map(GPath,(self._shead,self._stail))
     @property
     def head(self):
-        "For alpha\beta.gamma, returns alpha."
+        """For alpha\beta.gamma, returns alpha."""
         return GPath(self._shead)
     @property
     def tail(self):
-        "For alpha\beta.gamma, returns beta.gamma."
+        """For alpha\beta.gamma, returns beta.gamma."""
         return GPath(self._stail)
     @property
     def body(self):
-        "For alpha\beta.gamma, returns beta."
+        """For alpha\beta.gamma, returns beta."""
         return GPath(self._sbody)
 
     #--Root, ext
     @property
     def rootExt(self):
-        return (GPath(self._sroot),self._ext)
+        return GPath(self._sroot),self._ext
     @property
     def root(self):
-        "For alpha\beta.gamma returns alpha\beta"
+        """For alpha\beta.gamma returns alpha\beta"""
         return GPath(self._sroot)
     @property
     def ext(self):
-        "Extension (including leading period, e.g. '.txt')."
+        """Extension (including leading period, e.g. '.txt')."""
         return self._ext
     @property
     def cext(self):
-        "Extension in normalized case."
+        """Extension in normalized case."""
         return self._cext
     @property
     def temp(self,unicodeSafe=True):
@@ -1164,8 +650,26 @@ class Path(object):
             return dirJoin(self.tail+u'.tmp')
 
     @staticmethod
-    def tempDir(prefix=None):
-        return GPath(tempfile.mkdtemp(prefix=prefix))
+    def tempDir(prefix=u'WryeBash_'):
+        try: # workaround for http://bugs.python.org/issue1681974 see there
+            return GPath(tempfile.mkdtemp(prefix=prefix))
+        except UnicodeDecodeError:
+            try:
+                traceback.print_exc()
+                print 'Trying to pass temp dir in...'
+                tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
+                return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
+            except UnicodeDecodeError:
+                try:
+                    traceback.print_exc()
+                    print 'Trying to encode temp dir prefix...'
+                    return GPath(tempfile.mkdtemp(
+                        prefix=prefix.encode(Path.sys_fs_enc)).decode(
+                        Path.sys_fs_enc))
+                except:
+                    traceback.print_exc()
+                    print 'Failed to create tmp dir, Bash will not function ' \
+                          'correctly.'
 
     @staticmethod
     def baseTempDir():
@@ -1173,13 +677,13 @@ class Path(object):
 
     @property
     def backup(self):
-        "Backup file path."
+        """Backup file path."""
         return self+u'.bak'
 
     #--size, atime, ctime
     @property
     def size(self):
-        "Size of file or directory."
+        """Size of file or directory."""
         if self.isdir():
             join = os.path.join
             getSize = os.path.getsize
@@ -1230,14 +734,6 @@ class Path(object):
                 if werr.winerror != 123: raise
                 deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
                 mtime = 1146007898.0 #0blivion.exe's time... random basically.
-        #--Y2038 bug? (os.path.getmtime() can't handle years over unix epoch)
-        if mtime <= 0:
-            import random
-            #--Kludge mtime to a random time within 10 days of 1/1/2037
-            mtime = time.mktime((2037,1,1,0,0,0,3,1,0))
-            mtime += random.randint(0,10*24*60*60) #--10 days in seconds
-            self.mtime = mtime
-            Path.mtimeResets.append(self)
         return mtime
     def setmtime(self,mtime):
         try:
@@ -1380,8 +876,7 @@ class Path(object):
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
-                cmd = ur'attrib -R "%s\*" /S /D' % self._s
-                subprocess.call(cmd,stdout=subprocess.PIPE,startupinfo=startupinfo)
+                clearReadOnly(self)
             except UnicodeError:
                 flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
@@ -1515,7 +1010,8 @@ class Path(object):
                 except:
                     pass
 
-    #--Hash/Compare
+    #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
+    # directly compare to strings
     def __hash__(self):
         return hash(self._cs)
     def __cmp__(self, other):
@@ -1523,6 +1019,11 @@ class Path(object):
             return cmp(self._cs, other._cs)
         else:
             return cmp(self._cs, Path.getCase(other))
+
+def clearReadOnly(dirPath):
+    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
+    cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
+    subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -1691,22 +1192,20 @@ class DataDict:
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
+        """Return value for key or modinfo (?) of the game master file."""
         if self.data.has_key(key):
             return self.data[key]
         else:
             if isinstance(key, Path):
-                try:
+                try: # TODO(ut): why? data may not contain ModInfos necessarily
                     import bush
                     return self.data[Path(bush.game.masterFiles[0])]
                 except:
-                    try:
-                        return self.data[Path(u'Oblivion.esm')]
-                    except:
-                        print
-                        print "An error occurred trying to access data for mod file:", key
-                        print "This can occur when the game's main ESM file is corrupted."
-                        print
-                        raise
+                    print
+                    print "An error occurred trying to access data for mod file:", key
+                    print "This can occur when the game's main ESM file is corrupted."
+                    print
+                    raise
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
@@ -1734,6 +1233,11 @@ class DataDict:
     def itervalues(self):
         return self.data.itervalues()
 
+    def delete(self, itemOrItems, **kwargs):
+        raise NotImplementedError('Only use in UIList data stores.')
+    def delete_Refresh(self, deleted):
+        raise NotImplementedError('Only use in UIList data stores.')
+
 #------------------------------------------------------------------------------
 from collections import MutableSet
 class OrderedSet(list, MutableSet):
@@ -1746,7 +1250,7 @@ class OrderedSet(list, MutableSet):
        to the end of the set.
     """
     def update(self, *args, **kwdargs):
-        if kwdargs: raise TypeError(("update() takes no keyword arguments"))
+        if kwdargs: raise TypeError("update() takes no keyword arguments")
         for s in args:
             for e in s:
                 self.add(e)
@@ -1910,7 +1414,7 @@ class MainFunctions:
                 keywords[keyword] = True
                 del args[argDex]
             else:
-                argDex = argDex + 1
+                argDex += 1
         #--Apply
         apply(func,args,keywords)
 
@@ -1956,18 +1460,17 @@ class PickleDict:
         self.data.clear()
         for path in (self.path,self.backup):
             if path.exists():
-                ins = None
                 try:
                     with path.open('rb') as ins:
                         try:
-                            header = cPickle.load(ins)
+                            firstPickle = cPickle.load(ins)
                         except ValueError:
                             os.remove(path)
                             continue # file corrupt - try next file
-                        if header == 'VDATA2':
+                        if firstPickle == 'VDATA2':
                             self.vdata.update(cPickle.load(ins))
                             self.data.update(cPickle.load(ins))
-                        elif header == 'VDATA':
+                        elif firstPickle == 'VDATA':
                             # translate data types to new hierarchy
                             class _Translator:
                                 def __init__(self, fileToWrap):
@@ -1985,8 +1488,8 @@ class PickleDict:
                             except:
                                 deprint(u'unable to unpickle data', traceback=True)
                                 raise
-                        else:
-                            self.data.update(header)
+                        else: # no version string or vdata
+                            self.data.update(firstPickle)
                     return 1 + (path == self.backup)
                 except (EOFError, ValueError):
                     pass
@@ -1994,13 +1497,17 @@ class PickleDict:
         return 0
 
     def save(self):
-        """Save to pickle file."""
+        """Save to pickle file.
+
+        Three objects are writen - a version string and the vdata and data
+        dictionaries, in this order.
+        """
         if self.readOnly: return False
         #--Pickle it
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
                 cPickle.dump(data,out,-1)
-        self.path.untemp(True)
+        self.path.untemp(doBackup=True)
         return True
 
 #------------------------------------------------------------------------------
@@ -2016,19 +1523,21 @@ class Settings(DataDict):
     to be archived). However, an indirect change (e.g., to a value that is a
     list) must be manually marked as changed by using the setChanged method."""
 
-    def __init__(self,dictFile):
+    def __init__(self, dictFile):
         """Initialize. Read settings from dictFile."""
         self.dictFile = dictFile
+        self.cleanSave = False
         if self.dictFile:
-            dictFile.load()
+            res = dictFile.load()
+            self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
             self.data = dictFile.data.copy()
         else:
             self.vdata = {}
             self.data = {}
         self.defaults = {}
-        self.changed = []
-        self.deleted = []
+        self.changed = set()
+        self.deleted = set()
 
     def loadDefaults(self,defaults):
         """Add default settings to dictionary. Will not replace values that are already set."""
@@ -2044,7 +1553,8 @@ class Settings(DataDict):
         """Save to pickle file. Only key/values marked as changed are saved."""
         dictFile = self.dictFile
         if not dictFile or dictFile.readOnly: return
-        dictFile.load()
+        # on a clean save ignore BashSettings.dat.bak possibly corrupt
+        if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
         for key in self.deleted:
             dictFile.data.pop(key,None)
@@ -2059,12 +1569,11 @@ class Settings(DataDict):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
         if key not in self.data:
             raise ArgumentError(u'No settings data for '+key)
-        if key not in self.changed:
-            self.changed.append(key)
+        self.changed.add(key)
 
     def getChanged(self,key,default=None):
         """Gets and marks as changed."""
-        if default != None and key not in self.data:
+        if default is not None and key not in self.data:
             self.data[key] = default
         self.setChanged(key)
         return self.data.get(key)
@@ -2073,13 +1582,13 @@ class Settings(DataDict):
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         if key in self.deleted: self.deleted.remove(key)
-        if key not in self.changed: self.changed.append(key)
+        self.changed.add(key)
         self.data[key] = value
 
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
         if key in self.changed: self.changed.remove(key)
-        if key not in self.deleted: self.deleted.append(key)
+        self.deleted.add(key)
         del self.data[key]
 
     def setdefault(self,key,value):
@@ -2093,7 +1602,7 @@ class Settings(DataDict):
     def pop(self,key,default=None):
         """Dictionary emulation: extract value and delete from dictionary."""
         if key in self.changed: self.changed.remove(key)
-        if key not in self.deleted: self.deleted.append(key)
+        self.deleted.add(key)
         return self.data.pop(key,default)
 
 #------------------------------------------------------------------------------
@@ -2196,8 +1705,7 @@ class TableColumn:
         """Dictionary emulation."""
         tableData = self.table.data
         column = self.column
-        return [(key,tableData[key][column]) for key in tableData.keys()
-            if (column in tableData[key])]
+        return [(key,tableData[key][column]) for key in self]
     def has_key(self,key):
         """Dictionary emulation."""
         return self.__contains__(key)
@@ -2235,12 +1743,12 @@ class Table(DataDict):
     ('propName')."""
 
     def __init__(self,dictFile):
-        """Intialize and read data from dictFile, if available."""
+        """Initialize and read data from dictFile, if available."""
         self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
         self.data = dictFile.data
-        self.hasChanged = False
+        self.hasChanged = False ##: move to PickleDict
 
     def save(self):
         """Saves to pickle file."""
@@ -2327,81 +1835,6 @@ class Table(DataDict):
         self.hasChanged = True
         return self.data.pop(key,default)
 
-#------------------------------------------------------------------------------
-class TankData:
-    """Data source for a Tank table."""
-
-    def __init__(self,params):
-        """Initialize."""
-        self.tankParams = params
-        #--Default settings. Subclasses should define these.
-        self.tankKey = self.__class__.__name__
-        self.tankColumns = [] #--Full possible set of columns.
-        self.title = self.__class__.__name__
-        self.hasChanged = False
-
-    #--Parameter access
-    def getParam(self,key,default=None):
-        """Get a GUI parameter.
-        Typical Parameters:
-        * columns: list of current columns.
-        * colNames: column_name dict
-        * colWidths: column_width dict
-        * colAligns: column_align dict
-        * colReverse: column_reverse dict (colReverse[column] = True/False)
-        * colSort: current column being sorted on
-        """
-        return self.tankParams.get(self.tankKey+'.'+key,default)
-
-    def defaultParam(self,key,value):
-        """Works like setdefault for dictionaries."""
-        return self.tankParams.setdefault(self.tankKey+'.'+key,value)
-
-    def updateParam(self,key,default=None):
-        """Get a param, but also mark it as changed.
-        Used for deep params like lists and dictionaries."""
-        return self.tankParams.getChanged(self.tankKey+'.'+key,default)
-
-    def setParam(self,key,value):
-        """Set a GUI parameter."""
-        self.tankParams[self.tankKey+'.'+key] = value
-
-    #--Collection
-    def setChanged(self,hasChanged=True):
-        """Mark as having changed."""
-        pass
-
-    def refresh(self):
-        """Refreshes underlying data as needed."""
-        pass
-
-    def getRefreshReport(self):
-        """Returns a (string) report on the refresh operation."""
-        return None
-
-    def getSorted(self,column,reverse):
-        """Returns items sorted according to column and reverse."""
-        raise AbstractError
-
-    #--Item Info
-    def getColumns(self,item=None):
-        """Returns text labels for item or for row header if item == None."""
-        columns = self.getParam('columns',self.tankColumns)
-        if item == None: return columns[:]
-        raise AbstractError
-
-    def getName(self,item):
-        """Returns a string name of item for use in dialogs, etc."""
-        return item
-
-    def getGuiKeys(self,item):
-        """Returns keys for icon and text and background colors."""
-        iconKey = textKey = backKey = None
-        return (iconKey,textKey,backKey)
-
-    def getMouseText(self,*args,**kwdargs):
-        pass
-
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
 def copyattrs(source,dest,attrs):
@@ -2429,7 +1862,7 @@ def csvFormat(format):
 deprintOn = False
 
 class tempDebugMode(object):
-    __slots__=('_old')
+    __slots__= '_old'
     def __init__(self):
         global deprintOn
         self._old = deprintOn
@@ -2440,20 +1873,20 @@ class tempDebugMode(object):
         global deprintOn
         deprintOn = self._old
 
+import inspect
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
     if not deprintOn and not keyargs.get('on'): return
 
-    if keyargs.get('trace',True):
-        import inspect
+    if keyargs.get('trace', True):
         stack = inspect.stack()
-        file,line,function = stack[1][1:4]
-
-        msg = u'%s %4d %s: ' % (GPath(file).tail.s,line,function)
+        file_, line, function = stack[1][1:4]
+        msg = u'%s %4d %s: ' % (GPath(file_).tail.s, line, function)
     else:
         msg = u''
+
     try:
-        msg += u' '.join([u'%s'%x for x in args])
+        msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
@@ -2464,51 +1897,21 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % repr(x)
 
     if keyargs.get('traceback',False):
-        o = StringIO.StringIO(msg)
-        o.write(u'\n')
+        o = StringIO.StringIO()
         traceback.print_exc(file=o)
         value = o.getvalue()
         try:
-            msg += u'%s' % value
+            msg += u'\n%s' % unicode(value, 'utf-8')
         except UnicodeError:
-            msg += u'%s' % repr(value)
+            traceback.print_exc()
+            msg += u'\n%s' % repr(value)
         o.close()
     try:
         # Should work if stdout/stderr is going to wxPython output
         print msg
     except UnicodeError:
         # Nope, it's going somewhere else
-        print msg.encode('mbcs')
-
-#def delist(header,items,on=False):
-#    """Prints list as header plus items."""
-#    if not deprintOn and not on: return
-#    import inspect
-#    stack = inspect.stack()
-#    file,line,function = stack[1][1:4]
-#    msg = u'%s %4d %s: %s' % (GPath(file).tail.s,line,function,header)
-#    try:
-#        print msg
-#    except UnicodeError:
-#        print msg.encode('mbcs')
-#    if items == None:
-#        print u'> None'
-#    else:
-#        for indexItem in enumerate(items):
-#            msg = u'>%2d: %s' % indexItem
-#            try:
-#                print msg
-#            except UnicodeError:
-#                print msg.encode('mbcs')
-
-#def dictFromLines(lines,sep=None):
-#    """Generate a dictionary from a string with lines, stripping comments and skipping empty strings."""
-#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-#    if sep == None or type(sep) == type(u''):
-#        temp = dict([x.split(sep,1) for x in temp if x])
-#    else: #--Assume re object.
-#        temp = dict([sep.split(x,1) for x in temp if x])
-#    return temp
+        print msg.encode(Path.sys_fs_enc)
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2517,7 +1920,7 @@ def getMatch(reMatch,group=0):
 
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
-    if arg == None: return default
+    if arg is None: return default
     elif isinstance(arg,types.StringTypes): return int(arg,0)
     else: return int(arg)
 
@@ -2525,50 +1928,88 @@ def invertDict(indict):
     """Invert a dictionary."""
     return dict((y,x) for x,y in indict.iteritems())
 
-#def listFromLines(lines):
-#    """Generate a list from a string with lines, stripping comments and skipping empty strings."""
-#    temp = [reComment.sub(u'',x).strip() for x in lines.split(u'\n')]
-#    temp = [x for x in temp if x]
-#    return temp
-
-def listSubtract(alist,blist):
+def listSubtract(alist, blist):
     """Return a copy of first list minus items in second list."""
-    result = []
-    for item in alist:
-        if item not in blist:
-            result.append(item)
-    return result
-
-#def listJoin(*inLists):
-#    """Joins multiple lists into a single list."""
-#    outList = []
-#    for inList in inLists:
-#        outList.extend(inList)
-#    return outList
-
-#def listGroup(items):
-#    """Joins items into a list for use in a regular expression.
-#    E.g., a list of ('alpha','beta') becomes '(alpha|beta)'"""
-#    return u'('+(u'|'.join(items))+u')'
-
-#def rgbString(red,green,blue):
-#    """Converts red, green blue ints to rgb string."""
-#    return chr(red)+chr(green)+chr(blue)
-
-#def rgbTuple(rgb):
-#    """Converts red, green, blue string to tuple."""
-#    return struct.unpack('BBB',rgb)
-
-#def unQuote(inString):
-#    """Removes surrounding quotes from string."""
-#    if len(inString) >= 2 and inString[0] == u'"' and inString[-1] == u'"':
-#        return inString[1:-1]
-#    else:
-#        return inString
+    s = set(blist)
+    return [a for a in alist if a not in s]
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
     return reUnixNewLine.sub(u'\r\n',inString)
+
+# Archives --------------------------------------------------------------------
+regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
+regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
+regErrMatch = re.compile(
+    u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U).match
+
+def compress7z(command, outDir, destArchive, srcDir, progress=None):
+    outFile = outDir.join(destArchive)
+    if progress is not None: #--Used solely for the progress bar
+        length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+        progress(0, destArchive.s + u'\n' + _(u'Compressing files...'))
+        progress.setFull(1 + length)
+    #--Pack the files
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, # needed for some commands
+                            startupinfo=startupinfo)
+    #--Error checking and progress feedback
+    index, errorLine = 0, u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8') # utf-8 is ok see bosh.compressCommand
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            if progress is None: continue
+            maCompressing = regCompressMatch(line)
+            if maCompressing:
+                progress(index, destArchive.s + u'\n' + _(
+                    u'Compressing files...') + u'\n' + maCompressing.group(
+                    1).strip())
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        outFile.temp.remove()
+        raise StateError(destArchive.s + u': Compression failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    #--Finalize the file, and cleanup
+    outFile.untemp()
+
+def extract7z(command, srcFile, progress=None, readExtensions=None):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    # Error checking, progress feedback and subArchives for recursive unpacking
+    index, errorLine, subArchives = 0, u'', []
+    with proc.stdout as out:
+        for line in iter(out.readline, b''):
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+            maExtracting = regExtractMatch(line)
+            if maExtracting:
+                extracted = GPath(maExtracting.group(1).strip())
+                if readExtensions and extracted.cext in readExtensions:
+                    subArchives.append(extracted)
+                if not progress: continue
+                progress(index, srcFile.s + u'\n' + _(
+                    u'Extracting files...') + u'\n' + extracted.s)
+                index += 1
+    returncode = proc.wait()
+    if returncode or errorLine:
+        raise StateError(srcFile.s + u': Extraction failed:\n' +
+                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+    return subArchives
+
+def wrapPopenOut(command, wrapper, errorMsg):
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
+                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    out, unused_err = proc.communicate()
+    wrapper(out)
+    returncode = proc.returncode
+    if returncode:
+        raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2679,7 +2120,7 @@ class SubProgress(Progress):
         full: Full meter by this progress' scale."""
         Progress.__init__(self,full)
         if baseTo == '+1': baseTo = baseFrom + 1
-        if (baseFrom < 0 or baseFrom >= baseTo):
+        if baseFrom < 0 or baseFrom >= baseTo:
             raise ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
         self.parent = parent
         self.baseFrom = baseFrom
@@ -2693,7 +2134,7 @@ class SubProgress(Progress):
         self.state = state
 
 #------------------------------------------------------------------------------
-class ProgressFile(Progress):
+class ProgressFile(Progress): # CRUFT
     """Prints progress to file (stdout by default)."""
     def __init__(self,full=1.0,out=None):
         Progress.__init__(self,full)
@@ -2754,12 +2195,12 @@ class StringTable(dict):
                     deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
-                id = -1
+                id_ = -1
                 offset = -1
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id,offset = insUnpack('=2I',8)
+                        id_,offset = insUnpack('=2I',8)
                         pos = insTell()
                         insSeek(stringsStart+offset)
                         if format:
@@ -2773,10 +2214,10 @@ class StringTable(dict):
                         except UnicodeDecodeError:
                             value = unicode(value,backupEncoding)
                         insSeek(pos)
-                        self[id] = value
+                        self[id_] = value
                     except:
                         deprint(u'Error reading string file:')
-                        deprint(u'id:', id)
+                        deprint(u'id:', id_)
                         deprint(u'offset:', offset)
                         deprint(u'filePos:',  insTell())
                         raise
@@ -2964,7 +2405,7 @@ class WryeText:
             else:
                 newWindow = u''
             if not reFullLink.search(address):
-                address = address+u'.html'
+                address += u'.html'
             return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)

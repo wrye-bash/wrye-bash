@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -231,7 +231,7 @@ class Parser(object):
             self.passTokens = passTokens
             self.passCommas = passCommas
             if max_args == KEY.NA: max_args = min_args
-            if max_args < min_args and max_args >= 0: max_args = min_args
+            if min_args > max_args >= 0: max_args = min_args
             self.minArgs = min_args
             self.maxArgs = max_args
 

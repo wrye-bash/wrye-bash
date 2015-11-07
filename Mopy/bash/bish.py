@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -51,11 +51,11 @@ import cStringIO
 import StringIO
 import sys
 import types
-from subprocess import *
+from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
-from patcher.RecordGroups import MobCell, MobWorld
-from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, MreWeap,\
-MreSkil, MreInfo, MreDial, MreRegn
+from record_groups import MobCell, MobWorld
+from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, \
+    MreWeap, MreSkil, MreInfo, MreDial, MreRegn
 
 #--Local
 import bolt
@@ -848,7 +848,7 @@ def modCheck(fileName=None):
     reBadVarName = re.compile('^[_0-9]')
     init(3)
     loadFactory = bosh.LoadFactory(False,MreWeap)
-    for modInfo in bosh.modInfos.data.values():
+    for modInfo in bosh.modInfos.values():
         print '\n',modInfo.name
         modFile = bosh.ModFile(modInfo,loadFactory)
         modFile.load(True)
@@ -1503,11 +1503,12 @@ class Archive:
         """Refreshes file list from archive."""
         files = {}
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
-        path = size = crc = isDir = 0
+        path = size = isDir = 0
 
-        command = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
-        command = command.encode('mbcs')
-        out = Popen(command, stdout=PIPE, stdin=PIPE).stdout
+        cmd = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
+        cmd = cmd.encode('mbcs')
+        proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
+        out = proc.stdout
         for line in out:
             print line,
             maList = reList.match(line)
@@ -1525,9 +1526,10 @@ class Archive:
                     if path and not isDir:
                         files[path] = (size,crc)
                         #print '%8d %8X %s' % (size,crc,path.s)
-                    path = size = crc = 0
-        result = out.close()
-        print 'result',result
+                    path = size = 0
+        out.close()
+        returncode = proc.wait()
+        print 'result', returncode
 
     def extract(self):
         """Extracts specified files from archive."""

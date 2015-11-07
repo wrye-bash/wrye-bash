@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,7 +25,6 @@
 """This module parses the command line that was used to start Wrye Bash."""
 
 import optparse
-import sys
 
 def parse():
     parser = optparse.OptionParser()
@@ -107,11 +106,6 @@ def parse():
                         dest='debug',
                         help='Useful if bash is crashing on startup or if you want to print a lot of '
                              'information (e.g. while developing or debugging).')
-    parser.add_option('--no-psyco',
-                        action='store_false',
-                        default=True,
-                        dest='Psyco',
-                        help='Disables import of Psyco')
     parser.set_defaults(mode=0)
     parser.add_option('-C', '--Cbash-mode',
                         action='store_const',

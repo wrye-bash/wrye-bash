@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,13 +27,6 @@
 # Imports ----------------------------------------------------------------------
 from .. import brec
 from ..brec import *
-
-# Util Constants ---------------------------------------------------------------
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
 
 # Mod Record Elements ----------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -89,13 +82,13 @@ class se:
     steamExe = u''        # Exe to run if a steam install
     url = u''             # URL to download from
     urlTip = u''          # Tooltip for mouse over the URL
-	
+
 #--Script Dragon
 class sd:
     shortName = u''
     longName = u''
     installDir = u''
-	
+
 #--SkyProc Patchers
     shortName = u''
     longName = u''
@@ -149,6 +142,7 @@ class ess:
     canReadBasic = False        # Can read the info needed for the Save Tab display
     canEditMasters = False      # Can adjust save file masters
     canEditMore = False         # Advanced editing
+    ext = u'.ess'               # Save file extension
 
     @staticmethod
     def load(ins,header):
@@ -288,7 +282,7 @@ class RecordHeader(brec.BaseRecordHeader):
     def pack(self):
         """Returns the record header packed into a string for writing to file."""
         pass
-	
+
 #--The pickle file for this game.  Holds encoded GMST IDs from the big list below
 pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
 

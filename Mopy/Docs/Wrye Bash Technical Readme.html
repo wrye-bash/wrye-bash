@@ -96,15 +96,15 @@
 <h3 id="wizards-dialog">Dialogues</h3>
 <p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.
 
-<p><dfn>SelectOne</dfn> - This <a href="../bash/images/readme/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#SelectOne1">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
+<p><dfn>SelectOne</dfn> - This <a href="../bash/images/readme/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
 
-<p><dfn>SelectMany</dfn> - This <a href="../bash/images/readme/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#SelectMany1">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
+<p><dfn>SelectMany</dfn> - This <a href="../bash/images/readme/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#wizardsSelectMany">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
 
-<p><dfn>Cancel</dfn> - This <a href="../bash/images/readme/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#Cancel1">Cancel</a> keyword.  If a reason is given, it will be displayed.
+<p><dfn>Cancel</dfn> - This <a href="../bash/images/readme/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#wizardsCancel">Cancel</a> keyword.  If a reason is given, it will be displayed.
 
 <p><dfn>Error</dfn> - This <a href="../bash/images/readme/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
 
-<p><dfn>Finish</dfn> - This <a href="../bash/images/readme/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#Return">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod auther to be displayed.
+<p><dfn>Finish</dfn> - This <a href="../bash/images/readme/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.
 
 <p><dfn>Version Warning</dfn> - This <a href="../bash/images/readme/versions.png">dialog</a> is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements.
 
@@ -179,7 +179,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existance of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
 	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example using "test.esp" would test for "<var>[path to game]</var>\Data\test.esp"
@@ -211,10 +211,10 @@
 	<li><var>value</var> - The value to set the setting to.
 	<li><var>comment</var> - Optional comment to include with this tweak.
 </ul>
-<p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is usefull for creating dynamically generated menus.
+<p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is useful for creating dynamically generated menus.
 <code class="box">Exec(lines)</code>
 <ul>
-	<li><var>lines</var> - A string containing lines to execute, seperated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
+	<li><var>lines</var> - A string containing lines to execute, separated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
 </ul>
 <p><dfn>str</dfn> - Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 <code class="box">str(value)</code>
@@ -287,30 +287,30 @@
 	<li><var>string</var> converted to lowercase if possible.
 	<li>The original <var>string</var> if an error occurred.
 </ul>
-<p><dfn id="wizardsfind">find</dfn> - Return index of first occurrance of a substring.
+<p><dfn id="wizardsfind">find</dfn> - Return index of first occurrence of a substring.
 <code class="box">find(string, substring [, start, stop])</code>
 <ul>
 	<li><var>string</var> - A string or variable to search in.
 	<li><var>substring</var> - A string or variable to search for.
-	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beggining of <var>string</var>.
+	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beginning of <var>string</var>.
 	<li><var>stop</var> - Index at which to stop searching. Optional. If not specified, searching will stop at the end of <var>string</var>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
-	<li>The index of the first occurance of <var>substring</var> in <var>string</var>.
+	<li>The index of the first occurrence of <var>substring</var> in <var>string</var>.
 	<li><code>-1</code> - If <var>substring</var> could not be found.
 </ul>
-<p><dfn id="wizardsrfind">rfind</dfn> - Return index of last occurrance of a substring.
+<p><dfn id="wizardsrfind">rfind</dfn> - Return index of last occurrence of a substring.
 <code class="box">rfind(string, substring [, start, stop])</code>
 <ul>
 	<li><var>string</var> - A string or variable to search in.
 	<li><var>substring</var> - A string or variable to search for.
-	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beggining of <var>string</var>.
+	<li><var>start</var> - Index at which to start searching in <var>string</var>. If not specified, searching will start at the beginning of <var>string</var>.
 	<li><var>stop</var> - Index at which to stop searching. Optional. If not specified, searching will stop at the end of <var>string</var>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
-	<li>The index of the last occurance of <var>substring</var> in <var>string</var>.
+	<li>The index of the last occurrence of <var>substring</var> in <var>string</var>.
 	<li><code>-1</code> - If <var>substring</var> could not be found.
 </ul>
 <p><dfn id="wizardsGetFilename">GetFilename</dfn> - For a string that contains a path, returns the filename part of the string.
@@ -336,33 +336,33 @@
 
 <h3 id="wizards-keywords">Keywords</h3>
 <p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
-<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivilant to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
+<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
 <code class="box">SelectSubPackage name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the sub-package to select.
 </ul>
-<p><dfn>DeSelectSubPackage</dfn> - Cause the specified sub-package to be de-selected from installation. This is equivilant to un-checking the sub-package in the BAIN window.
+<p><dfn>DeSelectSubPackage</dfn> - Cause the specified sub-package to be de-selected from installation. This is equivalent to un-checking the sub-package in the BAIN window.
 <code class="box">DeSelectSubPackage name</code>
 <ul>
 	<li><code>name</code> - A string or variable holding the name of the sub-package to de-select.
 </ul>
-<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivilant to checking the esp or esm from the BAIN window.
+<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivalent to checking the esp or esm from the BAIN window.
 <code class="box">SelectEspm name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the esp or esm to select.
 </ul>
-<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivilant to un-checking the esp or esm from the BAIN window.
+<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivalent to un-checking the esp or esm from the BAIN window.
 <code class="box">DeSelectEspm name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the esp or esm to de-select.
 </ul>
-<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivilant to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
+<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivalent to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
 <code class="box">SelectAll</code>
-<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivilant to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
+<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivalent to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
 <code class="box">DeSelectAll</code>
-<p><dfn>SelectAllEspms</dfn> - Cause all esps and esms to be selected for installation. This is equivilant to checking all esps and esms in the BAIN window.
+<p><dfn>SelectAllEspms</dfn> - Cause all esps and esms to be selected for installation. This is equivalent to checking all esps and esms in the BAIN window.
 <code class="box">SelectAllEspms</code>
-<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivilant to un-checking all esps and esms in the BAIN window.
+<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivalent to un-checking all esps and esms in the BAIN window.
 <code class="box">DeSelectAllEspms</code>
 <p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - Change the installed name of an esp or esm.
 <code class="box">RenameEspm original_name, new_name</code>
@@ -380,16 +380,16 @@
 <p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically.
 <code class="box">Note text</code>
 <ul>
-	<li><var>text</var> - A string, string variable, or expression that evalutates to a string, to be displayed on the finish page.
+	<li><var>text</var> - A string, string variable, or expression that evaluates to a string, to be displayed on the finish page.
 </ul>
-<p><dfn>Return</dfn> - Signals completion of the wizard. This will jump right to the finish page.
+<p><dfn id="wizardsReturn">Return</dfn> - Signals completion of the wizard. This will jump right to the finish page.
 <code class="box">Return</code>
-<p><dfn>Cancel</dfn> - Cancels the wizard, with an optional text to display in a dialog as to why the wizard was canceled.
+<p><dfn id="wizardsCancel">Cancel</dfn> - Cancels the wizard, with an optional text to display in a dialog as to why the wizard was canceled.
 <code class="box">Cancel [text]</code>
 <ul>
 	<li><var>text</var> - Optional. Text to display in a dialog as to why the wizard was canceled.
 </ul>
-<p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system agains version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway.
+<p><dfn id="wizardsRequireVersions">RequireVersions</dfn> - Tests the users system against version requirements you specify. If the requirements are not met, a warning dialog will be shown asking if you wish to continue anyway.
 <code class="box">RequireVersions game_version [, se_version, ge_version, wrye_bash_version]</code>
 <ul>
 	<li><var>game_version</var> - Version of the game to test for. See <a href="#wizardsCompareGameVersion">CompareGameVersion</a> for the proper format of the string.
@@ -416,7 +416,7 @@ EndIf</code>
 	<ul>
 		<li><var>statement</var> - If <var>statement</var> evaluates to <code>True</code>, and the initial <code>If</code> and none of the previous <code>Elif</code>s were <code>True</code>, then the lines following this <code>Elif</code> will be run, until the next <code>Elif</code>, <code>Else</code>, or <code>EndIf</code>.
 	</ul>
-	<li><code>Else</code> - If the initail <code>If</code> and none of the previous <code>Elif</code>s were <code>True</code>, then the lines following will be run until an <code>EndIf</code> is met.
+	<li><code>Else</code> - If the initial <code>If</code> and none of the previous <code>Elif</code>s were <code>True</code>, then the lines following will be run until an <code>EndIf</code> is met.
 	<li><code>EndIf</code> - Signals the end of the <code>If</code> control block.
 </ul>
 <p><dfn>While-Continue-Break-EndWhile</dfn> - A while loop.
@@ -611,7 +611,7 @@ variable ^= value
 	<li><var>stop</var>: The index to stop at. If not specified but a colon <code>:</code> is supplied, indexing will continue to the end of the sequence. If not specified and no colon is supplied, only one character will be indexed.
 	<li><var>step</var>: How much to increment by when indexing. For example, a value of <code>2</code> would return every second item in the sequence. If not specified, a value of <code>1</code> will be used.
 </ul>
-<p>Negative valus for <var>start</var> and <var>stop</var> will be relative to the end of the sequence. For example, <code>-1</code> would mean the first character from the end of the sequence.
+<p>Negative values for <var>start</var> and <var>stop</var> will be relative to the end of the sequence. For example, <code>-1</code> would mean the first character from the end of the sequence.
 <p>Examples:
 <code class="box">"Hello"[0]   ;returns "H"
 "Hello"[0:]  ;returns "Hello"

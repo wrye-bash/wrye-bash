@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2014 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,116 +27,159 @@ Its use should generally be restricted to large chunks of data and/or chunks of 
 that are used by multiple objects."""
 
 # Imports ---------------------------------------------------------------------
+import collections
 import struct
-import _winreg
+from bass import winreg
 
-from bolt import GPath,Path,deprint
+from bolt import GPath, Path, deprint, BoltError
 
-# Setup -----------------------------------------------------------------------
-game = None
-gamePath = None
-fullLoadOrder = {}
+# Game detection --------------------------------------------------------------
+game = None         # the python module for the current game
+gamePath = None     # absolute bolt Path to the game directory
+foundGames = {}     # 'name':Path dict used by the Settings switch game menu
 
-def detectGames(workingDir=u''):
-    """Detect which supported games are intalled.
-       - First, read the windows registry, checking for the install keys for the
-         games.
-       - Next, check for a valid game at "workingDir"
-       - Finally, also look one directory up from the cwd."""
-    #--First: Find all supported games via the registry
+# Module Cache
+_allGames={} # 'name'->module
+_registryGames={} # 'name'->path
+
+def _supportedGames(useCache=True):
+    """Set games supported by Bash and return their paths from the registry."""
+    if useCache and _allGames: return _registryGames.copy()
+    # rebuilt cache
+    _allGames.clear()
+    _registryGames.clear()
     import pkgutil
     import game as _game
-    foundGames = {}
-    allGames = {}
     # Detect the known games
     for importer,modname,ispkg in pkgutil.iter_modules(_game.__path__):
+        if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
-        except:
-            deprint(u'Error in game support file:', modname, traceback=True)
+        except ImportError:
+            deprint(u'Error in game support module:', modname, traceback=True)
             continue
         submod = getattr(module,modname)
-        if not hasattr(submod,'name') or not hasattr(submod,'exe'): continue
-        allGames[submod.name.lower()] = submod
+        if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
+        _allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
-        for hkey in (_winreg.HKEY_CURRENT_USER, _winreg.HKEY_LOCAL_MACHINE):
+        if not winreg:
+            del module
+            continue
+        for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):
                 for (subkey,entry) in submod.regInstallKeys:
                     try:
-                        key = _winreg.OpenKey(hkey,
+                        key = winreg.OpenKey(hkey,
                             u'Software\\%s%s' % (wow6432,subkey))
-                        value = _winreg.QueryValueEx(key,entry)
+                        value = winreg.QueryValueEx(key,entry)
                     except: continue
-                    if value[1] != _winreg.REG_SZ: continue
+                    if value[1] != winreg.REG_SZ: continue
                     installPath = GPath(value[0])
                     if not installPath.exists(): continue
                     exePath = installPath.join(submod.exe)
                     if not exePath.exists(): continue
-                    foundGames[submod.name.lower()] = installPath
+                    _registryGames[submod.fsName.lower()] = installPath
         del module
-    # unload some modules
+    # unload some modules, _supportedGames is meant to run once
     del pkgutil
     del _game
     deprint(u'Detected the following supported games via Windows Registry:')
-    for foundName in foundGames:
-        deprint(u' %s:' % foundName, foundGames[foundName])
-    #--Second: Detect what game is installed on directory up from Mopy
+    for foundName in _registryGames:
+        deprint(u' %s:' % foundName, _registryGames[foundName])
+    return _registryGames.copy()
+
+def _detectGames(cli_path=u'',bashIni=None):
+    """Detect which supported games are installed.
+
+    - If Bash supports no games raise.
+    - For each game supported by Bash check for a supported game executable
+    in the following dirs, in decreasing precedence:
+       - the path provided by the -o cli argument if any
+       - the sOblivionPath Bash Ini entry if present
+       - one directory up from Mopy
+    If a game exe is found update the path to this game and return immediately.
+    Return (foundGames, name)
+      - foundGames: a dict from supported games to their paths (the path will
+      default to the windows registry path to the game, if present)
+      - name: the game found in the first installDir or None if no game was
+      found - a 'suggestion' for a game to use (if no game is specified/found
+      via -g argument).
+    """
+    #--Find all supported games and all games in the windows registry
+    foundGames_ = _supportedGames() # sets _allGames if not set
+    if not _allGames: # if allGames is empty something goes badly wrong
+        raise BoltError(_(u'No game support modules found in Mopy/bash/game.'))
+    # check in order of precedence the -o argument, the ini and our parent dir
+    installPaths = collections.OrderedDict() #key->(path, found msg, error msg)
+    #--First: path specified via the -o command line argument
+    if cli_path != u'':
+        path = GPath(cli_path)
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths['cmd'] = (path,
+            _(u'Set game mode to %(gamename)s specified via -o argument') +
+              u': ',
+            _(u'No known game in the path specified via -o argument: ' +
+              u'%(path)s'))
+    #--Second: check if sOblivionPath is specified in the ini
+    if bashIni and bashIni.has_option(u'General', u'sOblivionPath') \
+               and not bashIni.get(u'General', u'sOblivionPath') == u'.':
+        path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
+        if not path.isabs():
+            path = Path.getcwd().join(path)
+        installPaths['ini'] = (path,
+            _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
+              u'in bash.ini') + u': ',
+            _(u'No known game in the path specified in sOblivionPath ini '
+              u'setting: %(path)s'))
+    #--Third: Detect what game is installed one directory up from Mopy
     path = Path.getcwd()
     if path.cs[-4:] == u'mopy':
         path = GPath(path.s[:-5])
-    installPaths = [path]
-    #--Third: Detect what game is installed at the specified "workingDir"
-    if workingDir != u'':
-        path = GPath(workingDir)
         if not path.isabs():
             path = Path.getcwd().join(path)
-        installPaths.insert(0,path)
-    deprint(u'Detecting games via relative path and the -o argument:')
-    name = None
-    for path in installPaths:
-        _name = path.tail.cs
-        if _name in allGames:
-            # We have a config for that game
-            deprint(u' %s:' % _name, path)
-            foundGames[_name] = path
-            name = _name
-            break
-        else:
-            # Folder name wasn't found, try looking by exe name
-            for file in path.list():
-                for _name in allGames:
-                    if allGames[_name].exe == file:
-                        # Must be this game
-                        deprint(u' %s:' % _name, path)
-                        name = _name
-                        foundGames[name] = path
-                        break
-                else:
-                    continue
-                break
-            else:
-                continue
-            break
-    return foundGames,allGames,name
+        installPaths['upMopy'] = (path,
+            _(u'Set game mode to %(gamename)s found in parent directory of'
+              u' Mopy') + u': ',
+            _(u'No known game in parent directory of Mopy: %(path)s'))
+    #--Detect
+    deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
+    # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
+    for path, foundMsg, errorMsg in installPaths.itervalues():
+        for name, module in _allGames.items():
+            if path.join(module.exe).exists():
+                # Must be this game
+                deprint(foundMsg % {'gamename':name}, path)
+                foundGames_[name] = path
+                return foundGames_, name
+        # no game exe in this install path - print error message
+        deprint(errorMsg % {'path': path.s})
+    # no game found in installPaths - foundGames are the ones from the registry
+    return foundGames_, None
 
-def setGame(gameName,workingDir=u''):
-    global gamePath
-    global game
-    foundGames,allGames,name = detectGames(workingDir)
+def __setGame(foundGames_, name, msg):
+    """Set bush game globals - raise if they are already set."""
+    global gamePath, game, foundGames
+    if game is not None: raise BoltError(u'Trying to reset the game')
+    foundGames = foundGames_
+    gamePath = foundGames_[name]
+    game = _allGames[name]
+    deprint(msg % {'gamename': name}, gamePath)
+    # Unload the other modules from the cache
+    for i in _allGames.keys():
+        if i != name: del _allGames[i]
+    game.init()
+
+def setGame(gameName, workingDir=u'', bashIni=None):
+    foundGames_, name = _detectGames(workingDir, bashIni)
     gameName = gameName.lower()
     #--See if the specified game is one that was found
-    if gameName in foundGames:
+    if gameName in foundGames_:
         # The game specified was found
-        gamePath = foundGames[gameName]
-        game = allGames[gameName]
-        deprint(u'Specified game "%s" was found:' % gameName, gamePath)
-        # Unload the other modules
-        for i in allGames.keys():
-            if i != gameName:
-                del allGames[i]
-        game.init()
-        return False
+        __setGame(foundGames_, gameName,
+                 u'Specified game "%(gamename)s" was found:')
+        return None
     #--Specified game not found, or game was not specified,
     #  so use the game found via workingDir or the cwd
     else:
@@ -144,42 +187,33 @@ def setGame(gameName,workingDir=u''):
             deprint(u'No preferred game specified.')
         else:
             deprint(u'Specified game "%s" was not found.' % gameName)
-        if name in foundGames:
+        if name in foundGames_:
             # Game specified was not found, or no game was specified
-            # try the game based on Wrye Bash install location
-            gamePath = foundGames[name]
-            deprint(u' Using %s game:' % name, gamePath)
-            game = allGames[name]
-            # Unload the other modules
-            for i in allGames.keys():
-                if i != name:
-                    del allGames[i]
-            game.init()
-            return False
+            # try the game returned by detectGames()
+            __setGame(foundGames_, name, u' Using %(gamename)s game:')
+            return None
     # No match found return the list of possible games
-    # Unload all the modules
-    del allGames
-    return foundGames.keys()
+    return foundGames_.keys() # may be empty if nothing is found in registry
 
-# Balo Canonical Groups -------------------------------------------------------
-baloGroups = (
-    (u'Root',),
-    (u'Library',1),
-    (u'Cosmetic',),
-    (u'Clothing',),
-    (u'Weapon',),
-    (u'Tweak',2,-1),
-    (u'Overhaul',4,-1),
-    (u'Misc.',1),
-    (u'Magic',2),
-    (u'NPC',),
-    (u'Home',1),
-    (u'Place',1),
-    (u'Quest',3,-1),
-    (u'Last',1,-1),
+# Default Groups --------------------------------------------------------------
+defaultGroups = (
+    u'Root',
+    u'Library',
+    u'Cosmetic',
+    u'Clothing',
+    u'Weapon',
+    u'Tweak',
+    u'Overhaul',
+    u'Misc.',
+    u'Magic',
+    u'NPC',
+    u'Home',
+    u'Place',
+    u'Quest',
+    u'Last',
     )
 
-# Tes3 Group/Top Types -------------------------------------------------------------
+# Tes3 Group/Top Types --------------------------------------------------------
 groupTypes = [
     _(u'Top (Type)'),
     _(u'World Children'),
@@ -413,7 +447,7 @@ mgef_school.update(dict((_strU.unpack(x)[0],y) for x,[y,z,a] in magicEffects.ite
 mgef_name.update(dict((_strU.unpack(x)[0],z) for x,[y,z,a] in magicEffects.items()))
 mgef_basevalue.update(dict((_strU.unpack(x)[0],a) for x,[y,z,a] in magicEffects.items()))
 
-hostileEffects = set((
+hostileEffects = {
     'ABAT', #--Absorb Attribute
     'ABFA', #--Absorb Fatigue
     'ABHE', #--Absorb Health
@@ -449,14 +483,14 @@ hostileEffects = set((
     'WKNW', #--Weakness to Normal Weapons
     'WKPO', #--Weakness to Poison
     'WKSH', #--Weakness to Shock
-    ))
+    }
 hostileEffects |= set((_strU.unpack(x)[0] for x in hostileEffects))
 
 #Doesn't list mgefs that use actor values, but rather mgefs that have a generic name
 #Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue field contains 9
 #    But it is actually using an attribute rather than an actor value
 #Ex: Burden uses an actual actor value (encumbrance) but it isn't listed since its name doesn't change
-genericAVEffects = set([
+genericAVEffects = {
     'ABAT', #--Absorb Attribute (Use Attribute)
     'ABSK', #--Absorb Skill (Use Skill)
     'DGAT', #--Damage Attribute (Use Attribute)
@@ -465,7 +499,7 @@ genericAVEffects = set([
     'FOAT', #--Fortify Attribute (Use Attribute)
     'FOSK', #--Fortify Skill (Use Skill)
     'REAT', #--Restore Attribute (Use Attribute)
-    ])
+    }
 genericAVEffects |= set((_strU.unpack(x)[0] for x in genericAVEffects))
 
 actorValues = [
@@ -606,187 +640,6 @@ saveRecTypes = {
     59: _(u'Quest'),
     61: _(u'AI Package'),
     }
-
-# Alchemical Catalogs ---------------------------------------------------------
-ingred_alchem = (
-    (1,0xCED,_(u'Alchemical Ingredients I'),250),
-    (2,0xCEC,_(u'Alchemical Ingredients II'),500),
-    (3,0xCEB,_(u'Alchemical Ingredients III'),1000),
-    (4,0xCE7,_(u'Alchemical Ingredients IV'),2000),
-    )
-effect_alchem = (
-    (1,0xCEA,_(u'Alchemical Effects I'),500),
-    (2,0xCE9,_(u'Alchemical Effects II'),1000),
-    (3,0xCE8,_(u'Alchemical Effects III'),2000),
-    (4,0xCE6,_(u'Alchemical Effects IV'),4000),
-    )
-
-# Power Exhaustion ------------------------------------------------------------
-orrery = getIdFunc(u'DLCOrrery.esp')
-id_exhaustion = {
-    ob(0x014D23): 9, # AbPilgrimsGrace
-    ob(0x022A43): 7, # BSLoverKiss
-    ob(0x022A3A): 7, # BSRitualMaraGift
-    ob(0x022A63): 7, # BSSerpent
-    ob(0x022A66): 7, # BSShadowMoonshadow
-    ob(0x022A6C): 7, # BSTower
-    ob(0x0CB623): 7, # BSTowerWarden
-    ob(0x06B69D): 7, # DoomstoneAetherius
-    ob(0x06A8EE): 7, # DoomstoneApprentice
-    ob(0x06A8EF): 7, # DoomstoneAtronach
-    ob(0x06B6A3): 7, # DoomstoneDragon
-    ob(0x06B69F): 7, # DoomstoneJode
-    ob(0x06B69E): 7, # DoomstoneJone
-    ob(0x06A8F2): 7, # DoomstoneLady
-    ob(0x06A8F3): 7, # DoomstoneLord
-    ob(0x06A8F5): 7, # DoomstoneLover
-    ob(0x06A8ED): 7, # DoomstoneMage
-    ob(0x06B6A1): 7, # DoomstoneMagnus
-    ob(0x06B6B1): 7, # DoomstoneNirn
-    ob(0x06A8EC): 7, # DoomstoneRitualMarasMercy
-    ob(0x06A8EB): 7, # DoomstoneRitualMarasMilk
-    ob(0x06A8F8): 7, # DoomstoneSerpent
-    ob(0x06A8F6): 7, # DoomstoneShadow
-    ob(0x06B6A2): 7, # DoomstoneShezarr
-    ob(0x06B6A0): 7, # DoomstoneSithian
-    ob(0x06A8F1): 7, # DoomstoneSteed
-    ob(0x06A8F4): 7, # DoomstoneThief
-    ob(0x06A8F7): 7, # DoomstoneTower
-    ob(0x008E53): 7, # DoomstoneTowerArmor
-    ob(0x06A8F0): 7, # DoomstoneWarrior
-    ob(0x047AD0): 7, # PwRaceBretonShield
-    ob(0x047AD5): 7, # PwRaceDarkElfGuardian
-    ob(0x047ADE): 7, # PwRaceImperialAbsorbFatigue
-    ob(0x047ADD): 7, # PwRaceImperialCharm
-    ob(0x047ADF): 7, # PwRaceKhajiitDemoralize
-    ob(0x047AE4): 7, # PwRaceNordFrostDamage
-    ob(0x047AE3): 7, # PwRaceNordShield
-    ob(0x047AD3): 7, # PwRaceOrcBerserk
-    ob(0x047AE7): 7, # PwRaceRedguardFortify
-    ob(0x047AE9): 7, # PwRaceWoodElfCommandCreature
-    ob(0x03BEDB): 7, # VampireEmbraceofShadows
-    ob(0x03BEDC): 7, # VampireReignofTerror
-    ob(0x03BED9): 7, # VampireSeduction
-    #--Shivering Isles
-    ob(0x08F024): 7, # SE02BlessingDementia
-    ob(0x08F023): 7, # SE02BlessingMania
-    ob(0x03161E): 5, # SE07SaintSpell
-    ob(0x03161D): 5, # SE07SeducerSpell
-    ob(0x05DD22): 3, # SE14WeatherSpell
-    ob(0x081C35): 7, # SE44Frenzy
-    ob(0x018DBD): 6, # SEPwSummonDarkSeducer
-    ob(0x014B35): 6, # SEPwSummonFleshAtronach
-    ob(0x018DBC): 6, # SEPwSummonGoldenSaint
-    ob(0x050C76): 3, # SE09PwGKHead1
-    ob(0x050C77): 3, # SE09PwGKHead2
-    ob(0x050C78): 3, # SE09PwGKHeart1
-    ob(0x050C79): 3, # SE09PwGKHeart2
-    ob(0x050C7A): 3, # SE09PwGKLeftArm1
-    ob(0x050C7B): 3, # SE09PwGKLeftArm2
-    ob(0x050C7C): 3, # SE09PwGKLeftArm3
-    ob(0x050C82): 3, # SE09PwGKLegs1
-    ob(0x050C83): 3, # SE09PwGKLegs2
-    ob(0x050C7D): 3, # SE09PwGKRightArm1
-    ob(0x050C7E): 3, # SE09PwGKRightArm2
-    ob(0x050C7F): 3, # SE09PwGKRightArm3
-    ob(0x050C80): 3, # SE09PwGKTorso1
-    ob(0x050C81): 3, # SE09PwGKTorso2
-    ob(0x08E93F): 3, # SESuicidePower
-
-    #--Orrery
-    orrery(0x11DC5F): 7, # Masser's Might
-    orrery(0x11DC60): 7, # Masser's Grace
-    orrery(0x11DC62): 7, # Secunda's Will
-    orrery(0x11DC64): 7, # Secunda's Opportunity
-    orrery(0x11DC66): 7, # Masser's Alacrity
-    orrery(0x11DC68): 7, # Secunda's Magnetism
-    orrery(0x11DC6A): 7, # Secunda's Brilliance
-    orrery(0x11DC6C): 7, # Masser's Courage
-    }
-
-# Repair Factions -------------------------------------------------------------
-#--Formids for npcs which legitimately have no faction membership
-repairFactions_legitNullSpells = set((
-    #--MS47 Aleswell Invisibility
-    0x0002F85F, #Sakeepa
-    0x0002F861, #ShagolgroBumph
-    0x0002F864, #DiramSerethi
-    0x0002F865, #AdosiSerethi
-    0x0002F866, #UrnsiSerethi
-    ))
-
-repairFactions_legitNullFactions = set((
-    #0x00012106, #SEThadon (Between SE07 and SE12) Safer to leave in.
-    #0x00012107, #SESyl (Between SE07 and SE12) Safer to leave in.
-    #0x00031540, #Mirisa (Only in Cropsford, but doesn't hurt to leave her in it.)
-    ))
-
-repairFactions_legitDroppedFactions = set((
-    (0x000034CC,0x000034B9), #UlrichLeland CheydinhalGuardFaction
-    (0x000034CC,0x000034BB), #UlrichLeland CheydinhalCastleFaction
-    (0x000055C2,0x00090E31), #CheydinhalGuardCastlePostDay01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055C4,0x00090E31), #CheydinhalGuardCastlePostNight01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055C5,0x00090E31), #CheydinhalGuardCastlePostNight02 CheydinhalCorruptGuardsFactionMS10
-    (0x000055C7,0x00090E31), #CheydinhalGuardCityPatrolDay02 CheydinhalCorruptGuardsFactionMS10
-    (0x000055C8,0x00090E31), #CheydinhalGuardCityPatrolNight01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055C9,0x00090E31), #CheydinhalGuardCityPatrolNight02 CheydinhalCorruptGuardsFactionMS10
-    (0x000055CB,0x00090E31), #CheydinhalGuardCityPostDay02 CheydinhalCorruptGuardsFactionMS10
-    (0x000055CC,0x00090E31), #CheydinhalGuardCityPostNight01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055CD,0x00090E31), #CheydinhalGuardCityPostNight02 CheydinhalCorruptGuardsFactionMS10
-    (0x000055D2,0x00090E31), #CheydinhalGuardCastlePatrolDay01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055D3,0x00090E31), #CheydinhalGuardCastlePatrolNight01 CheydinhalCorruptGuardsFactionMS10
-    (0x000055D4,0x00090E31), #CheydinhalGuardCountEscort CheydinhalCorruptGuardsFactionMS10
-    (0x000055D5,0x00090E31), #CheydinhalGuardJailorDay CheydinhalCorruptGuardsFactionMS10
-    (0x000055D6,0x00090E31), #CheydinhalGuardJailorNight CheydinhalCorruptGuardsFactionMS10
-    (0x0000BD60,0x00091ADB), #Larthjar Prisoners
-    (0x00012106,0x0001557F), #SEThadon SENewSheothBliss
-    (0x00012106,0x0001AD45), #SEThadon SEManiaFaction
-    (0x00012106,0x00056036), #SEThadon SE07ManiaHouseFaction
-    (0x00012107,0x00013A69), #SESyl SENewSheothFaction
-    (0x00012107,0x00015580), #SESyl SENewSheothCrucible
-    (0x00012107,0x0001723D), #SESyl SE07ASylFaction
-    (0x00012107,0x0001AD46), #SESyl SEDementiaFaction
-    (0x00012107,0x0007E0CB), #SESyl SE07DementiaHouseFaction
-    (0x0001CF76,0x00009275), #Seridur ICFaction
-    (0x0001CF76,0x000947B9), #Seridur SeridurHouseFaction
-    (0x0001CF76,0x000980DD), #Seridur OrderoftheVirtuousBlood
-    (0x000222A8,0x00028D98), #ReynaldJemane ChorrolFaction
-    (0x00023999,0x00028D98), #Jauffre ChorrolFaction
-    (0x00023E86,0x000034B7), #GuilbertJemane NewlandsLodgeFaction
-    (0x00023E86,0x000034BA), #GuilbertJemane CheydinhalFaction
-    (0x00023F2A,0x0001EE1E), #Baurus BladesCG
-    (0x00024165,0x0002228F), #Maglir FightersGuild
-    (0x00024E0A,0x000272BE), #Jeelius MythicDawnPrisoner
-    (0x00026D9A,0x00009275), #AudensAvidius ICFaction
-    (0x00026D9A,0x0003486F), #AudensAvidius ImperialWatch
-    (0x00026D9A,0x00083595), #AudensAvidius CourierCustomers
-    (0x00026D9A,0x0018B117), #AudensAvidius ImperialLegion
-    (0x0002AB4E,0x0002AB4D), #Umbacano UmbacanoFaction
-    (0x0002AF3E,0x0002AEFA), #Srazirr ClaudeMaricThugFaction
-    (0x0002CD21,0x00022296), #Falcar MagesGuild
-    (0x0002D01E,0x00035EA9), #Jskar BrumaFaction
-    (0x0002D8C0,0x00022296), #Kalthar MagesGuild
-    (0x00032940,0x000C48A1), #MG16NecromancerMale1 MG16FortOntusMageFaction
-    (0x00032941,0x000C48A1), #MG16NecromancerFemale2 MG16FortOntusMageFaction
-    (0x00032943,0x000C48A1), #MG16NecromancerMale2 MG16FortOntusMageFaction
-    (0x00033907,0x0003B3F6), #Martin KvatchFaction
-    (0x00033B8B,0x000C48A1), #MG16NecromancerFemale3 MG16FortOntusMageFaction
-    (0x00033B8D,0x000C48A1), #MG16NecromancerMale3 MG16FortOntusMageFaction
-    (0x0003486E,0x00009275), #HieronymusLex ICFaction
-    (0x0003486E,0x0003486F), #HieronymusLex ImperialWatch
-    (0x00034E86,0x00029F82), #Cingor MythicDawn
-    (0x00034EAD,0x00022296), #Caranya MagesGuild
-    (0x0003529A,0x00024164), #MyvrynaArano ThievesGuild
-    (0x0003529A,0x0003AB39), #MyvrynaArano ICWaterfrontResident
-    (0x0003563B,0x00028E77), #Amusei SkingradFaction
-    (0x00035649,0x00028E77), #MercatorHosidus SkingradFaction
-    (0x00035649,0x0002A09C), #MercatorHosidus SkingradCastleFaction
-    (0x00035ECB,0x00035EA9), #Jearl BrumaFaction
-    (0x0003628D,0x00009274), #VelwynBenirus AnvilFaction
-    (0x0004EF69,0x00090E31), #CheydinhalGuardCityPostDay03 CheydinhalCorruptGuardsFactionMS10
-    (0x0004EFF9,0x00090E31), #CheydinhalGuardCityPostDay04 CheydinhalCorruptGuardsFactionMS10
-    (0x0004EFFA,0x00090E31), #CheydinhalGuardCityPostNight04 CheydinhalCorruptGuardsFactionMS10
-    ))
 
 # Messages Text ===============================================================
 messagesHeader = u"""<html>
@@ -977,6 +830,6 @@ messagesHeader = u"""<html>
 </head>
 <body><div id="ipbwrapper">\n"""
 
-#--Cleanup ---------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+#--Cleanup --------------------------------------------------------------------
+#------------------------------------------------------------------------------
 del _strU

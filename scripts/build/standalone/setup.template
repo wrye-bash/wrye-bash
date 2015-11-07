@@ -54,7 +54,7 @@ setup(
                 'mswsock.dll',  # Prevent x64 versions (for win32api)
                 'powrprof.dll', # Prevent x64 versions (for win32api)
                 ],
-            'includes': [%(includes)s],
+            'packages': [%(packages)s],
             'excludes': [
                 '_ssl',     # Suggested in the py2exe tutorial
                 'doctest',  # Suggested in the py2exe tutorial
