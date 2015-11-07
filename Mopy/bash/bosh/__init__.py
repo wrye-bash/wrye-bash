@@ -28,7 +28,6 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
-from functools import wraps
 import locale; locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
@@ -50,29 +49,24 @@ from types import NoneType, FloatType, IntType, LongType, BooleanType, \
 from operator import attrgetter
 import subprocess
 from subprocess import Popen, PIPE
+from functools import wraps
 
 #--Local
-import balt
-import bolt
-import bush
-import bass
-from bolt import BoltError, AbstractError, ArgumentError, StateError, \
+from .. import bass, bolt, balt, bush, loot, libbsa
+from .. import patcher # for configIsCBash()
+from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError
-from bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
+from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
-from bolt import decode, encode
+from ..bolt import decode, encode
 # cint
 from _ctypes import POINTER
 from ctypes import cast, c_ulong
-from cint import ObCollection, CBash, ObBaseRecord
-from brec import MreRecord, ModReader, ModError, ModWriter, getModIndex, \
+from ..cint import ObCollection, CBash, ObBaseRecord
+from ..brec import MreRecord, ModReader, ModError, ModWriter, getModIndex, \
     genFid, getObjectIndex, getFormIndices
-from record_groups import MobWorlds, MobDials, MobICells, \
+from ..record_groups import MobWorlds, MobDials, MobICells, \
     MobObjects, MobBase
-import loot
-import libbsa
-
-import patcher # for configIsCBash()
 
 startupinfo = bolt.startupinfo
 
@@ -9913,7 +9907,7 @@ except ImportError:
                 raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             return envDefs[key]
         def getShellPath(folderKey): # move to env.py, mkdirs
-            from bass import winreg
+            from ..bass import winreg
             if not winreg:  # unix _ HACK
                 return GPath({'Personal'     : os.path.expanduser("~"),
                               'Local AppData': os.path.expanduser(
@@ -10252,7 +10246,7 @@ def initDefaultTools():
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        from bass import winreg
+        from ..bass import winreg
         if not winreg: return
         for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):
@@ -10440,7 +10434,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
     global load_order, exe7z
-    import load_order ##: move it from here - also called from restore settings
+    from .. import load_order ##: move it from here - also called from restore settings
     load_order = load_order
     initOptions(bashIni)
     initLogFile()
