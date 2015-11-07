@@ -550,7 +550,7 @@ class Path(object):
         self._shead,self._stail = os.path.split(self._s)
         self._cext = os.path.normcase(self._ext)
         self._csroot = os.path.normcase(self._sroot)
-        self._sbody = os.path.basename(os.path.splitext(self._s)[0])
+        self._sbody = os.path.basename(self._sroot)
         self._csbody = os.path.normcase(self._sbody)
 
     def __len__(self):
