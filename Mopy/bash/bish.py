@@ -1198,7 +1198,7 @@ def createLSCR(*args):
                             continue
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.fids_eids.append((cint.FormID(masterName.tail,recordId),eid))
-            except Exception, e:
+            except Exception as e:
                 print "WARNING: An error occurred while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
 
         def loadDESCS(self,descFile):
@@ -1215,7 +1215,7 @@ def createLSCR(*args):
                         line = line.strip()
                         if len(line) > 0:
                             self.DESC.append(line)
-            except Exception, e:
+            except Exception as e:
                 print "WARNING: An error occurred while reading DESC text file '%s':\n%s\n" % (descFile.s,e)
             random.shuffle(self.DESC)
 
@@ -1244,7 +1244,7 @@ def createLSCR(*args):
                             continue
                         masterName = bosh.dirs['mods'].join(masterName)
                         self.LNAM.append(cint.FormID(masterName.tail,recordId))
-            except Exception, e:
+            except Exception as e:
                 print "WARNING: An error occurred while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
 
         def updateMasters(self):

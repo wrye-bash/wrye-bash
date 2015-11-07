@@ -3154,7 +3154,7 @@ class FileInfo(_AFileInfo):
     def getHeaderError(self):
         """Read header for file. But detects file error and returns that."""
         try: self.getHeader()
-        except FileError, error:
+        except FileError as error:
             return error.message
         else:
             return None
@@ -3534,7 +3534,7 @@ class ModInfo(FileInfo):
                     raise ModError(self.name,u'Expected %s, but got %s'
                                    % (bush.game.MreHeader.classType,recHeader.recType))
                 self.header = bush.game.MreHeader(recHeader,ins,True)
-            except struct.error, rex:
+            except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
@@ -3564,7 +3564,7 @@ class ModInfo(FileInfo):
                         buffer= insRead(0x5000000)
                         if not buffer: break
                         outWrite(buffer)
-                except struct.error, rex:
+                except struct.error as rex:
                     raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Remove original and replace with temp
         filePath.untemp()
@@ -3740,7 +3740,7 @@ class SaveInfo(FileInfo):
             #--Master Names/Order
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
-        except struct.error, rex:
+        except struct.error as rex:
             raise SaveFileError(self.name,u'Struct.error: %s' % rex)
         return self.header # to honor the method's name
 
@@ -3827,7 +3827,7 @@ class FileInfos(DataDict):
             fileInfo = self.factory(self.dir,fileName)
             fileInfo.getHeader()
             self[fileName] = fileInfo
-        except FileError, error:
+        except FileError as error:
             self.corrupted[fileName] = error.message
             self.pop(fileName, None)
             raise
@@ -4309,7 +4309,7 @@ class ModInfos(FileInfos):
                         canMerge = isCBashMergeable(fileInfo)
                     else:
                         canMerge = isPBashMergeable(fileInfo)
-                except Exception, e:
+                except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
@@ -4852,7 +4852,7 @@ class ModInfos(FileInfos):
         oldPath = self.dir.join(oldName)
         try:
             basePath.moveTo(oldPath)
-        except WindowsError, werr:
+        except WindowsError as werr:
             while werr.winerror == 32 and self._retry(basePath, oldPath):
                 try:
                     basePath.moveTo(oldPath)
@@ -4863,11 +4863,11 @@ class ModInfos(FileInfos):
                 raise
         try:
             newPath.moveTo(basePath)
-        except WindowsError, werr:
+        except WindowsError as werr:
             while werr.winerror == 32 and self._retry(newPath, basePath):
                 try:
                     newPath.moveTo(basePath)
-                except WindowsError, werr:
+                except WindowsError as werr:
                     continue
                 break
             else:
@@ -9561,7 +9561,7 @@ class ModCleaner:
                     cleaner.modInfo.makeBackup()
                     try:
                         path.untemp()
-                    except WindowsError, werr:
+                    except WindowsError as werr:
                         if werr.winerror != 32: raise
                         while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
                                                 + u'\n\n' +
@@ -9573,7 +9573,7 @@ class ModCleaner:
                                                 ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
                             try:
                                 path.untemp()
-                            except WindowsError,werr:
+                            except WindowsError as werr:
                                 continue
                             break
                         else:
@@ -9620,7 +9620,7 @@ class SaveSpells:
         loadFactory = LoadFactory(False,MreRecord.type_class['SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         try: modFile.load(True)
-        except ModError, err:
+        except ModError as err:
             deprint(_(u'skipped mod due to read error (%s)') % err)
             return
         modFile.convertToLongFids(('SPEL',))
@@ -9768,7 +9768,7 @@ def isPBashMergeable(modInfo,verbose=True):
     modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
     try:
         modFile.load(True,loadStrings=False)
-    except ModError, error:
+    except ModError as error:
         if not verbose: return False
         reasons += u'\n.    %s.' % error
     #--Skipped over types?
@@ -9992,7 +9992,7 @@ def testPermissions(path,permissions='rwcd'):
                 file.copyTo(temp)
                 file.remove()
                 temp.moveTo(file)
-    except Exception, e:
+    except Exception as e:
         if getattr(e,'errno',0) == 13: # Access denied
             return False
         elif getattr(e,'winerror',0) == 183: # Cannot create file if already exists
@@ -10474,7 +10474,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     global settings
     try:
         settings = _load()
-    except cPickle.UnpicklingError, err:
+    except cPickle.UnpicklingError as err:
         msg = _(
             u"Error reading the Bash Settings database (the error is: '%s'). "
             u"This is probably not recoverable with the current file. Do you "
@@ -10484,7 +10484,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if usebck:
             try:
                 settings = _loadBakOrEmpty()
-            except cPickle.UnpicklingError, err:
+            except cPickle.UnpicklingError as err:
                 msg = _(
                     u"Error reading the BackupBash Settings database (the "
                     u"error is: '%s'). This is probably not recoverable with "

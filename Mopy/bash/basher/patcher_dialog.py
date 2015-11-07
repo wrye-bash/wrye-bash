@@ -90,30 +90,30 @@ class PatchDialog(balt.Dialog):
         self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
         cancelButton = CancelButton(self)
-        self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist')
+        self.gPatchers = gPatchers = balt.listBox(self, choices=patcherNames,
+                                                  isSingle=True, kind='checklist')
         self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)
         self.gImportConfig = OpenButton(self,label=_(u'Import'),onClick=self.ImportConfig)
         self.gRevertConfig = RevertToSavedButton(self,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
         self.gRevertToDefault = RevertButton(self,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
-        for index,patcher in enumerate(self.patchers):
-            self.gPatchers.Check(index,patcher.isEnabled)
+        for index, patcher in enumerate(self.patchers):
+            gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize)
-        self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
-        self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
-        self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
+        gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
+        gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
+        gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
+        gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
+        gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
         self.mouseItem = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
             (hSizer(
-                (self.gPatchers,0,wx.EXPAND),
-                (self.gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
+                (gPatchers,0,wx.EXPAND),
+                (gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
                 ),1,wx.EXPAND|wx.ALL,4),
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
@@ -192,12 +192,12 @@ class PatchDialog(balt.Dialog):
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
-                except WindowsError, werr:
+                except WindowsError as werr:
                     while werr.winerror == 32 and self._retry(patchName.temp.s,
                                                               patchName.s):
                         try:
                             patchName.untemp()
-                        except WindowsError, werr:
+                        except WindowsError as werr:
                             continue
                         break
                     else:
@@ -284,12 +284,12 @@ class PatchDialog(balt.Dialog):
                                    % patchName.s)
             bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
-        except bolt.FileEditError, error:
+        except bolt.FileEditError as error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
         except CancelError:
             pass
-        except BoltError, error:
+        except BoltError as error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'Processing Error'))
         except:
@@ -404,13 +404,13 @@ class PatchDialog(balt.Dialog):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
             if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gTweakList.Check(index,item.isEnabled)
                         patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def DefaultConfig(self,event=None):
@@ -427,7 +427,7 @@ class PatchDialog(balt.Dialog):
                     try:
                         patcher.gTweakList.Check(index,item.isEnabled)
                         patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def SelectAll(self,event=None):
@@ -460,8 +460,9 @@ class PatchDialog(balt.Dialog):
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
-    def OnSize(self,event): ##: needed ? event.Skip() ??
-        balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
+    def OnSize(self,event):
+        event.Skip()
+        balt.sizes[self.__class__.__name__] = tuple(self.GetSize())
         self.Layout()
         self.currentPatcher.Layout()
 

@@ -694,7 +694,7 @@ class Path(object):
         else:
             try:
                 return os.path.getsize(self._s)
-            except WindowsError, werr:
+            except WindowsError as werr:
                     if werr.winerror != 123: raise
                     deprint(u'Unable to determine size of %s - probably a unicode error' % self._s)
                     return 0
@@ -702,7 +702,7 @@ class Path(object):
     def atime(self):
         try:
             return os.path.getatime(self._s)
-        except WindowsError, werr:
+        except WindowsError as werr:
             if werr.winerror != 123: raise
             deprint(u'Unable to determine atime of %s - probably a unicode error' % self._s)
             return 1309853942.895 #timestamp of oblivion.exe (also known as any random time may work).
@@ -730,7 +730,7 @@ class Path(object):
                 return 0
         try:
             mtime = int(os.path.getmtime(self._s))
-        except WindowsError, werr:
+        except WindowsError as werr:
                 if werr.winerror != 123: raise
                 deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
                 mtime = 1146007898.0 #0blivion.exe's time... random basically.
@@ -738,7 +738,7 @@ class Path(object):
     def setmtime(self,mtime):
         try:
             os.utime(self._s,(self.atime,int(mtime)))
-        except WindowsError, werr:
+        except WindowsError as werr:
             if werr.winerror != 123: raise
             deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
@@ -797,7 +797,7 @@ class Path(object):
                 while insTell() < size:
                     crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
                     progress(insTell())
-        except IOError, ierr:
+        except IOError as ierr:
             #if werr.winerror != 123: raise
             deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
         return crc & 0xFFFFFFFF
