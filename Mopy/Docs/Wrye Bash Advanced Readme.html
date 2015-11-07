@@ -91,6 +91,7 @@
     <li><a href="#screenshots">Screenshots Tab</a>
     <ol>
         <li><a href="#screenshots-overview">Overview</a>
+        <li><a href="#screenshots-alt-path">Change screenshots directory (Oblivion)</a>
         <li><a href="#screenshots-commands">Context Menu Commands</a>
     </ol>
     <li><a href="#launchers">Advanced Launchers</a>
@@ -420,7 +421,7 @@
         <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the the Current load order.
         <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
         <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Master Index differs from the Current load order. Masters of this plugin still exist in the Data folder but plugins are out of order compared to the order of its masters when the mod was saved.<br />
-        <br />If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the “winner”. But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
+        <br />If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the "winner". But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
         <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A Master is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
@@ -604,7 +605,13 @@
         <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
         <tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001. <b>It is advised that mod authors use this on their mods before release.</b>
         <tr><td id="modsUndeleteRefs">Undelete Refs<td><b>This is an experimental feature for advanced mod authors. If you're trying to undelete references, you should probably use TES4Edit instead.</b> Deleted references can cause crashes. This command undeletes references and disables them instead. However, the undeleted reference does not contain the missing data caused by deletion. TES4Edit can add this data back in.
-        <tr><td colspan="2">Add Master...<td>Add a master to the list of masters for the selected plugin. <b>Warning:</b> For advanced mod authors only. You should only use this if you know exactly what you're doing.
+        <tr><td colspan="2">Add Master...<td>Adds specified master to the list of masters for the selected plugin, thus ceding ownership of new content
+            of this mod to the new master. Useful for splitting mods into esm/esp pairs. <b>Warning:</b> For advanced mod authors only.
+            You should only use this if you know exactly what you're doing: adding a master through Bash does not update record FormIDs,
+            so new content added by the mod will now seem added by the mod's new master (the "cedes ownership" part above) - resulting in
+            the mod marked as mergeable - info from Arthmoor and Lojack here: http://forums.bethsoft.com/topic/1536340-wrye-bash-thread-105/page-3#entry24345148
+            see previous posts for the confusion that this might cause. As Lojack points out if you're doing that sort of low level adding of masters,
+            you should be using xEdit.
         <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
         <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
         <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file
@@ -1557,6 +1564,30 @@
 </figure>
 <h3 id="screenshots-overview">Overview</h3>
 <p>The Screenshots tab allows you to preview any screenshots taken in-game using the built-in Print Screen functionality. These screenshots are saved as bitmap files (.bmp). Selecting a screenshot from the list on the left will display it on the right. Screenshots can be converted from bitmaps into a few other formats using context menu commands.
+
+<h3 id="screenshots-alt-path">Change screenshots directory (Oblivion)</h3>
+<p>By default, Oblivion stores its screenshots in Oblivion's root folder but allows you to change the default directory via an ini setting.
+    You can change the ini setting by directly editing Oblivion.ini or by using the "Next Shot" column menu item in the Screenshots tab.
+    For instance Oblivion Reloaded uses Oblivion\Screenshots. To change the screenshots directory to Oblivion\Screenshots by editing the
+    Oblivion.ini find the following line under the <code>[Display]</code> heading:</p>
+
+    <code>SScreenShotBaseName=ScreenShot</code>
+
+<p>and add the path to the Oblivion\Screenshots folder, i.e.:</p>
+
+    <code>SScreenShotBaseName=C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot</code>
+
+<p>Alternatively hit "Next Shot" and supply the path as in:</p>
+
+    <code>C:\Bethesda Softworks\Oblivion\ScreenShots\Screenshot0</code>
+
+<p>where 0 is the (optional) Screenshot base number (it will set the <code>iScreenShotIndex</code> ini setting). A relative path will
+    also work (as in <code>Screenshots\Screenshot</code>). Bash will go ahead and edit the ini for you. You may also create an ini
+    tweak to readily switch directories.
+
+<p><b>IMPORTANT</b>: The base filename "Screenshot" (or any other base name you like) must be included in the path or Oblivion's
+    native screenshots will not work - that is pressing the Prt Scr key will do nothing.
+
 <h3 id="screenshots-commands">Context Menu Commands</h3>
 <table>
     <thead>
@@ -1564,7 +1595,7 @@
         <tr><th>Command<th>Description
     <tbody>
         <tr><td>Open<td>View the screenshot directory in Windows Explorer.
-        <tr><td>Next Shot<td>Set the name and number of the next screenshot.
+        <tr><td>Next Shot<td>Set any or all of the base name and number of the next screenshot as well as the screenshot directory
         <tr><td>JPEG Quality<td>Set the quality of JPEGs created during conversion.
 </table>
 <table>
@@ -1864,6 +1895,7 @@
 			<td><code>-d, --debug</code>
 			<td>Useful if bash is crashing on startup or if you want to
 				print a lot of information (e.g. while developing or debugging).
+		<tr>
 			<td><code>-C, --Cbash-mode</code>
 			<td>enables CBash and uses CBash to build the bashed patch.
 		<tr>
@@ -1880,7 +1912,7 @@
 			<th>All path arguments must be absolute paths and use either
 				forward slashes (/) or two backward slashes (\\). All of these can
 				also be set in the ini (where you can also use relative paths) and
-				if set in both cmd line takes pecedence.
+				if set in both cmd line takes precedence.
     <tbody>
 		<tr>
 			<td><code>-o&nbsp;OBLIVIONPATH,
@@ -1897,8 +1929,8 @@
 		<tr>
 			<th>User Directory Arguments
 			<th>These arguments allow you to specify your user directories
-				in several wasy. These are only useful if the regular procedure for
-				geting the user directory fails. And even in that case, the user is
+				in several ways. These are only useful if the regular procedure for
+				getting the user directory fails. And even in that case, the user is
 				probably better off installing win32com.
     <tbody>
 		<tr>
