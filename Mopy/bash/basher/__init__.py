@@ -3027,7 +3027,7 @@ class ScreensList(balt.UIList):
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Double click a screenshot"""
-        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
+        (hitItem, hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
         self.OpenSelected(selected=[self.GetItem(hitItem)])
 
