@@ -99,11 +99,6 @@
         <li><a href="#launchers-hide">Hiding Launchers</a>
         <li><a href="#launchers-custom">Custom Launchers</a>
     </ol>
-    <li><a href="#pm">PM Archive Tab</a>
-    <ol>
-        <li><a href="#pm-overview">Overview</a>
-        <li><a href="#pm-commands">Buttons &amp; Context Menu Commands</a>
-    </ol>
     <li><a href="#people">People Tab</a>
     <ol>
         <li><a href="#people-overview">Overview</a>
@@ -140,7 +135,7 @@
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and many area geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on how Wrye Bash functions. It assumes the reader has previously read the General Readme.
-<p>Note that the <a href="#people">People</a> and <a href="#pm">PM Archive</a> tabs are hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
+<p>Note that the <a href="#people">People</a> tab is hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
 
 <h3 id="intro-title">Title Bar Info</h3>
 <p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
@@ -176,7 +171,6 @@
     <li><a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
     <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, it is used to enable rendering of HTML via an ActiveX control.  The  following features are affected if comtypes is not installed:
         <ul>
-            <li>The PM Archives tab will be disabled.
             <li>The DocBrowser will display raw text when displaying an HTML readme.
             <li>The ModChecker report will be text instead of HTML.
             <li>The Bashed Patch build report will be displayed by opening the file in your default browser.
@@ -1639,36 +1633,6 @@
 <p><b>Note:</b> 24x24 icons taken from shortcuts do not work well, so if you are using this size, be sure to include a custom icon. Icon size displayed can be adjusted in the <q>bash.ini</q> or the <a href="#tools-settings">Settings</a> menu.
 
 
-<h2 id="pm">PM Archive Tab</h2>
-<figure>
-<img src="../bash/images/readme/pm-archive-2.png" alt="PM Archive Tab"/>
-<figcaption>Wrye Bash's PM Archive tab.</figcaption>
-</figure>
-<h3 id="pm-overview">Overview</h3>
-<p>The PM Archive tab can be used to archive, view and search Private Messages from the official Bethesda Softworks forums. Due to forum updates, messages archived since the 13th of March 2010 cannot be imported into Wrye Bash. As such, the tab is only available for legacy support of those with messages archived before then.
-<p><b>Warning:</b> This feature is both experimental and outdated. Keep a separate backup of any archives you import into Wrye Bash.
-<p>To import PM archives into Wrye Bash, follow the instructions below:
-<ol>
-    <li>Archive your PMs using the forum option, then download the HTML archive that is emailed as an attachment to you.
-    <li>Rename the archive file so that the filename begins with the date the archive was created, in the format YY.MM.DD. Eg. <code>07.11.06 archive.html</code>. It doesn't matter what the name is after the date.
-    <li>In Wrye Bash's PM Archives tab, right-click the box at the top and select <q>Import Archives...</q> then select the archive files you wish to import.
-</ol>
-<p>PMs may be searched using the bar at the bottom of the window, by entering in the search text then clicking the <q>Search</q> button or hitting return on your keyboard. Messages may be sorted by any of the columns by clicking a column header. Selecting multiple messages will display them all at once in the order they are listed.
-<h3 id="pm-commands">Buttons &amp; Context Menu Commands</h3>
-<table>
-    <thead><tr><th>Button<th>Description
-    <tbody>
-        <tr><td>Search<td>Search for the text entered into the search text box. Messages will be searched in the subject, author and text fields, and a filtered list of matching results will be displayed at the top of the window. Search may also be initiated by pressing the return keyboard key.
-        <tr><td>Clear<td>Clears the search box, removing the filter from the PM list and so displaying all archived PMs again. Search may also be cleared by emptying the search text box and pressing the return keyboard key.
-</table>
-<table>
-    <thead>
-        <tr><th colspan="2">PM List Context Menu
-        <tr><th>Command<th>Description
-    <tbody>
-        <tr><td>Delete<td>Deleted the selected message(s).
-        <tr><td>Import Archives...<td>Import one or more PM archive files.
-</table>
 
 <h2 id="people">People Tab</h2>
 <figure class="slideshow">
@@ -1736,7 +1700,6 @@
                 <li>The Mods, Installer, and Converter meta-data stored in <code>[Game] Mods</code>.
                 <li>Any user profiles you have created.
                 <li>Your application and UI settings.
-                <li>Your messages from the PM Archive tab.
                 <li>Your people from the People tab.
                 <li>Any translation files you have.
                 <li>All files in the <code>Data\Bashed Patches</code> directory.

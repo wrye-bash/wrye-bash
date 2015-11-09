@@ -30,7 +30,6 @@ import os
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard,  PeopleList,\
     BashStatusBar, BashNotebook
-from .pm_tab import InitMessageLinks
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
@@ -828,6 +827,5 @@ def InitLinks():
     InitModLinks()
     InitSaveLinks()
     InitScreenLinks()
-    InitMessageLinks()
     InitPeopleLinks()
     # InitBSALinks()

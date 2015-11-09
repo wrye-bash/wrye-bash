@@ -153,7 +153,6 @@ tabInfo = {
     'Saves': ['SavePanel', _(u"Saves"), None],
     'INI Edits': ['INIPanel', _(u"INI Edits"), None],
     'Screenshots': ['ScreensPanel', _(u"Screenshots"), None],
-    'PM Archive':['MessagePanel', _(u"PM Archive"), None],
     'People':['PeoplePanel', _(u"People"), None],
     # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
@@ -198,11 +197,8 @@ class NotebookPanel(wx.Panel):
     def ClosePanel(self):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
-        if isinstance(self, ScreensPanel): return # ScreensPanel is not
-        # backed up by a pickle file
-        if isinstance(self, MessagePanel): ##: another special case...
-            if bosh.messages: bosh.messages.save()
-            return
+        # ScreensPanel is not backed up by a pickle file
+        if isinstance(self, ScreensPanel): return
         if hasattr(self, 'listData'):
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
@@ -277,8 +273,6 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
-
-from .pm_tab import MessagePanel # MUST BE AFTER SashPanel
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
@@ -3456,7 +3450,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                                         ('Saves', True),
                                         ('INI Edits', True),
                                         ('Screenshots', True),
-                                        ('PM Archive', False),
                                         ('People', False),
                                         # ('BSAs', False),
                                        ))
@@ -3503,10 +3496,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 self.AddPage(item,title)
                 tabInfo[page][2] = item
             except Exception, e:
-                if isinstance(e, ImportError):
-                    if page == 'PM Archive':
-                        deprint(title+_(u' panel disabled due to Import Error (most likely comtypes)'),traceback=True)
-                        continue
                 if page == 'Mods':
                     deprint(_(u"Fatal error constructing '%s' panel.") % title)
                     raise

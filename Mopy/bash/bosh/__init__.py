@@ -139,7 +139,6 @@ saveInfos = None #--SaveInfos singleton
 iniInfos = None #--INIInfos singleton
 bsaInfos = None #--BSAInfos singleton
 screensData = None #--ScreensData singleton
-messages = None #--Message archive singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
 load_order = None #--can't import yet as I need bosh.dirs to be initialized

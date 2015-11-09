@@ -363,16 +363,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
-    #--Wrye Bash: Messages
-    'bash.messages.allCols': ['Subject','Author','Date'],
-    'bash.messages.cols': ['Subject','Author','Date'],
-    'bash.messages.sort': 'Date',
-    'bash.messages.colReverse': {},
-    'bash.messages.colWidths': {
-        'Subject':250,
-        'Author':100,
-        'Date':150,
-        },
     #--Wrye Bash: People
     'bash.people.allCols': ['Name','Karma','Header'],
     'bash.people.cols': ['Name','Karma','Header'],
