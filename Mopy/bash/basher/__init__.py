@@ -69,7 +69,7 @@ import wx.gizmos
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
 from ..bass import Resources
-from ..bosh import formatInteger,formatDate
+from ..bosh import formatInteger, formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError
 from ..cint import CBash
@@ -277,6 +277,8 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
+
+from .pm_tab import MessagePanel # MUST BE AFTER SashPanel
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
@@ -3288,121 +3290,6 @@ class BSAPanel(SashPanel):
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
         # bosh.bsaInfos.profiles.save()
-
-#------------------------------------------------------------------------------
-class MessageList(balt.UIList):
-    #--Class Data
-    mainMenu = Links() #--Column menu
-    itemMenu = Links() #--Single item menu
-    reNoRe = re.compile(u'^Re: *',re.U)
-    _recycle = False
-    _default_sort_col = 'Date'
-    _sort_keys = {'Date': lambda self, a: self.data[a][2],
-                  'Subject': lambda self, a: MessageList.reNoRe.sub(
-                     u'', self.data[a][0]),
-                  'Author': lambda self, a: self.data[a][1],
-                 }
-
-    def __init__(self, parent, listData, keyPrefix, panel):
-        self.gText = None
-        self.searchResults = None
-        self.persistent_columns = {'Subject'}
-        #--Parent init
-        super(MessageList, self).__init__(
-            parent, data=listData, keyPrefix=keyPrefix, panel=panel)
-
-    def GetItems(self):
-        if self.searchResults is not None: return list(self.searchResults)
-        return self.data.keys()
-
-    #--Populate Item
-    def getLabels(self, fileName):
-        labels = defaultdict(lambda: u'-')
-        subject,author,date = self.data[fileName][:3]
-        labels['Subject'] = subject
-        labels['Date'] = formatDate(date)
-        labels['Author'] = author
-        return labels
-
-    @staticmethod
-    def _gpath(item): return item
-
-    def OnItemSelected(self,event=None):
-        keys = self.GetSelected()
-        path = bosh.dirs['saveBase'].join(u'Messages.html')
-        bosh.messages.writeText(path,*keys)
-        self.gText.Navigate(path.s,0x2) #--0x2: Clear History
-
-    def _promptDelete(self, items, dialogTitle=_(u'Delete Messages'),
-                      order=False, recycle=False):
-        message = _(u'Delete these %d message(s)? This operation cannot'
-                    u' be undone.') % len(items)
-        yes = balt.askYes(self, message, title=dialogTitle)
-        return items if yes else []
-
-#------------------------------------------------------------------------------
-class MessagePanel(SashPanel):
-    """Messages tab."""
-    keyPrefix = 'bash.messages'
-
-    def __init__(self,parent):
-        """Initialize."""
-        import wx.lib.iewin
-        SashPanel.__init__(self, parent, isVertical=False)
-        gTop,gBottom = self.left,self.right
-        #--Contents
-        self.listData = bosh.messages = bosh.Messages()
-        self.uiList = MessageList(
-            gTop, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.uiList.gText = wx.lib.iewin.IEHtmlWindow(
-            gBottom, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Search ##: move to textCtrl subclass
-        gSearchBox = self.gSearchBox = TextCtrl(gBottom,style=wx.TE_PROCESS_ENTER)
-        gSearchButton = balt.Button(gBottom,_(u'Search'),onClick=self.DoSearch)
-        gClearButton = balt.Button(gBottom,_(u'Clear'),onClick=self.DoClear)
-        #--Events
-        #--Following line should use EVT_COMMAND_TEXT_ENTER, but that seems broken.
-        gSearchBox.Bind(wx.EVT_CHAR,self.OnSearchChar)
-        #--Layout
-        gTop.SetSizer(hSizer(
-            (self.uiList,1,wx.GROW)))
-        gBottom.SetSizer(vSizer(
-            (self.uiList.gText,1,wx.GROW),
-            (hSizer(
-                (gSearchBox,1,wx.GROW),
-                (gSearchButton,0,wx.LEFT,4),
-                (gClearButton,0,wx.LEFT,4),
-                ),0,wx.GROW|wx.TOP,4),
-            ))
-        wx.LayoutAlgorithm().LayoutWindow(self, gTop)
-        wx.LayoutAlgorithm().LayoutWindow(self, gBottom)
-
-    def _sbCount(self):
-        used = len(self.uiList.GetItems())
-        return _(u'PMs:') + u' %d/%d' % (used, len(self.uiList.data.keys()))
-
-    def ShowPanel(self):
-        """Panel is shown. Update self.data."""
-        if bosh.messages.refresh():
-            self.uiList.RefreshUI()
-            #self.Refresh()
-        super(MessagePanel, self).ShowPanel()
-
-    def OnSearchChar(self,event):
-        if event.GetKeyCode() in balt.wxReturn: self.DoSearch(None)
-        else: event.Skip()
-
-    def DoSearch(self,event):
-        """Handle search button."""
-        term = self.gSearchBox.GetValue()
-        self.uiList.searchResults = self.uiList.data.search(term)
-        self.uiList.RefreshUI()
-
-    def DoClear(self,event):
-        """Handle clear button."""
-        self.gSearchBox.SetValue(u'')
-        self.uiList.searchResults = None
-        self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.Tank):
