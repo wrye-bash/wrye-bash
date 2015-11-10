@@ -3029,8 +3029,7 @@ class ScreensList(balt.UIList):
         """Double click a screenshot"""
         (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        item = self.GetItem(hitItem)
-        bosh.screensData.dir.join(item).start()
+        self.OpenSelected(selected=[self.GetItem(hitItem)])
 
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""

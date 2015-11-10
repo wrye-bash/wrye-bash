@@ -52,10 +52,10 @@ class BaseBackupSettings:
         if path is None: path = bosh.settings['bash.backupPath']
         if path is None: path = bosh.dirs['modsBash']
         self.quit = quit
-        self.dir = path
+        self._dir = path
         self.archive = None
         if path.ext:
-            self.dir = path.head
+            self._dir = path.head
             self.archive = path.tail
         self.parent = parent
         self.verDat = bosh.settings['bash.version']
@@ -172,7 +172,7 @@ class BackupSettings(BaseBackupSettings):
     def Apply(self):
         if not self.PromptFile(): return
         deprint(u'')
-        deprint(_(u'BACKUP BASH SETTINGS: ') + self.dir.join(self.archive).s)
+        deprint(_(u'BACKUP BASH SETTINGS: ') + self._dir.join(self.archive).s)
         with BusyCursor():
             # copy all files to ~tmp backup dir
             for tpath,fpath in self.files.iteritems():
@@ -188,23 +188,23 @@ class BackupSettings(BaseBackupSettings):
                 cPickle.dump(self.verApp, out, -1)
             # create the backup archive in 7z format WITH solid compression
             # may raise StateError
-            command = bosh.compressCommand(self.archive, self.dir, self.tmp)
-            bolt.compress7z(command, self.dir, self.archive, self.tmp)
-            bosh.settings['bash.backupPath'] = self.dir
+            command = bosh.compressCommand(self.archive, self._dir, self.tmp)
+            bolt.compress7z(command, self._dir, self.archive, self.tmp)
+            bosh.settings['bash.backupPath'] = self._dir
         self.InfoSuccess()
 
     def PromptFile(self):
         #prompt for backup filename
         #returns False if user cancels
-        if self.archive is None or self.dir.join(self.archive).exists():
+        if self.archive is None or self._dir.join(self.archive).exists():
             dt = datetime.datetime.now()
             file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
                 bush.game.fsName, dt.strftime(u'%Y-%m-%d %H.%M.%S'),
                 self.verDat, self.verApp)
             if not self.quit:
-                path = askSave(self.parent,_(u'Backup Bash Settings'),self.dir,file,u'*.7z')
+                path = askSave(self.parent,_(u'Backup Bash Settings'),self._dir,file,u'*.7z')
                 if not path: return False
-                self.dir = path.head
+                self._dir = path.head
                 self.archive = path.tail
             elif not self.archive:
                 self.archive = file
@@ -253,7 +253,7 @@ class BackupSettings(BaseBackupSettings):
         if self.quit: return
         showInfo(self.parent,
             _(u'Your Bash settings have been backed up successfully.')+u'\n' +
-            _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n',
+            _(u'Backup Path: ')+self._dir.join(self.archive).s+u'\n',
             _(u'Backup File Created'))
 
 #------------------------------------------------------------------------------
@@ -262,8 +262,8 @@ class RestoreSettings(BaseBackupSettings):
         BaseBackupSettings.__init__(self,parent,path,quit)
         if not self.PromptFile():
             raise BackupCancelled()
-        command = bosh.extractCommand(self.dir.join(self.archive), self.tmp)
-        bolt.extract7z(command, self.dir.join(self.archive))
+        command = bosh.extractCommand(self._dir.join(self.archive), self.tmp)
+        bolt.extract7z(command, self._dir.join(self.archive))
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
             self.verApp = cPickle.load(ins)
@@ -277,7 +277,7 @@ class RestoreSettings(BaseBackupSettings):
             raise BackupCancelled()
 
         deprint(u'')
-        deprint(_(u'RESTORE BASH SETTINGS: ') + self.dir.join(self.archive).s)
+        deprint(_(u'RESTORE BASH SETTINGS: ') + self._dir.join(self.archive).s)
 
         # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
         game, dirs = bush.game.fsName, bosh.dirs
@@ -345,10 +345,10 @@ class RestoreSettings(BaseBackupSettings):
     def PromptFile(self):
         #prompt for backup filename
         #returns False if user cancels
-        if self.archive is None or not self.dir.join(self.archive).exists():
-            path = askOpen(self.parent,_(u'Restore Bash Settings'),self.dir,u'',u'*.7z')
+        if self.archive is None or not self._dir.join(self.archive).exists():
+            path = askOpen(self.parent,_(u'Restore Bash Settings'),self._dir,u'',u'*.7z')
             if not path: return False
-            self.dir = path.head
+            self._dir = path.head
             self.archive = path.tail
         self.maketmp()
         return True
@@ -392,7 +392,7 @@ class RestoreSettings(BaseBackupSettings):
         if self.quit: return
         showWarning(self.parent,
             _(u'Your Bash settings have been successfully restored.')+u'\n' +
-            _(u'Backup Path: ')+self.dir.join(self.archive).s+u'\n' +
+            _(u'Backup Path: ')+self._dir.join(self.archive).s+u'\n' +
             u'\n' +
             _(u'Before the settings can take effect, Wrye Bash must restart.')+u'\n' +
             _(u'Click OK to restart now.'),

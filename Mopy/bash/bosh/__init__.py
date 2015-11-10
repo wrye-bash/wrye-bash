@@ -7074,10 +7074,8 @@ class InstallerArchive(Installer):
                             file = u''
             text.sort()
             #--Output
-            for line in text:
-                dir = line[0]
-                isdir = line[1]
-                log(u'  ' * dir.count(os.sep) + os.path.split(dir)[1] + (
+            for node, isdir in text:
+                log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                     os.sep if isdir else u''))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
