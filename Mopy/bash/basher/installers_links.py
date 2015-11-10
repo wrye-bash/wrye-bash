@@ -85,7 +85,7 @@ class Installers_MonitorInstall(Installers_Link):
         self.iPanel.fullRefresh = False
         self.iPanel.ShowPanel(canCancel=False)
         # Backup CRC data
-        data = copy.copy(self.iPanel.data.data_sizeCrcDate)
+        data_sizeCrcDate = copy.copy(self.idata.data_sizeCrcDate)
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'),
@@ -95,14 +95,16 @@ class Installers_MonitorInstall(Installers_Link):
         self.iPanel.fullRefresh = False
         self.iPanel.ShowPanel(canCancel=False)
         # Determine changes
-        curData = self.iPanel.data.data_sizeCrcDate
-        oldFiles = set(data)
+        curData = self.idata.data_sizeCrcDate
+        oldFiles = set(data_sizeCrcDate)
         curFiles = set(curData)
         newFiles = curFiles - oldFiles
         delFiles = oldFiles - curFiles
         sameFiles = curFiles & oldFiles
-        changedFiles = set(file_ for file_ in sameFiles if data[file_][1] != curData[file_][1])
-        touchedFiles = set(file_ for file_ in sameFiles if data[file_][2] != curData[file_][2])
+        changedFiles = set(file_ for file_ in sameFiles if
+                           data_sizeCrcDate[file_][1] != curData[file_][1])
+        touchedFiles = set(file_ for file_ in sameFiles if
+                           data_sizeCrcDate[file_][2] != curData[file_][2])
         touchedFiles -= changedFiles
 
         if not newFiles and not changedFiles and not touchedFiles:
@@ -441,54 +443,54 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
 #------------------------------------------------------------------------------
-class Installers_Skip(Installers_Link, BoolLink):
+class _Installers_Skip(Installers_Link, BoolLink):
     """Toggle various skip settings and update."""
     def Execute(self,event):
-        super(Installers_Skip, self).Execute(event)
+        super(_Installers_Skip, self).Execute(event)
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
             progress.setFull(len(self.idata))
-            for index,dataItem in enumerate(self.idata.iteritems()):
-                progress(index,_(u'Refreshing Packages...')+u'\n'+dataItem[0].s)
-                dataItem[1].refreshDataSizeCrc()
+            for index, (name, installer) in enumerate(self.idata.iteritems()):
+                progress(index, _(u'Refreshing Packages...') + u'\n' + name.s)
+                installer.refreshDataSizeCrc()
         self.idata.irefresh(what='NS')
         self.window.RefreshUI()
 
-class Installers_SkipScreenshots(Installers_Skip):
+class Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
     text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
-class Installers_SkipImages(Installers_Skip):
+class Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
     text, key = _(u'Skip Images'), 'bash.installers.skipImages'
 
-class Installers_SkipDocs(Installers_Skip):
+class Installers_SkipDocs(_Installers_Skip):
     """Toggle skipDocs setting and update."""
     text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
-class Installers_SkipDistantLOD(Installers_Skip):
+class Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
     text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
 
-class Installers_SkipLandscapeLODMeshes(Installers_Skip):
+class Installers_SkipLandscapeLODMeshes(_Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
     text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
 
-class Installers_SkipLandscapeLODTextures(Installers_Skip):
+class Installers_SkipLandscapeLODTextures(_Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
     text = _(u'Skip LOD Textures')
     key = 'bash.installers.skipLandscapeLODTextures'
 
-class Installers_SkipLandscapeLODNormals(Installers_Skip):
+class Installers_SkipLandscapeLODNormals(_Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
 
-class Installers_SkipBsl(AppendableLink, Installers_Skip):
+class Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
     text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.fsName == 'Skyrim'
 
-class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
+class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
@@ -496,7 +498,7 @@ class Installers_SkipOBSEPlugins(AppendableLink, Installers_Skip):
     def _append(self, window): return bool(bush.game.se_sd)
     def _check(self): return not bosh.settings[self.key]
 
-class Installers_RenameStrings(AppendableLink, Installers_Skip):
+class Installers_RenameStrings(AppendableLink, _Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
     text = _(u'Auto-name String Translation Files')
     key = 'bash.installers.renameStrings'

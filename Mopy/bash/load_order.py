@@ -60,7 +60,7 @@ class LoadOrder(object):
         self._loadOrder = tuple(loadOrder)
         self._active = frozenset(active)
         self.__mod_loIndex = dict((a, i) for i, a in enumerate(loadOrder))
-        # would raise key error if active have no loadOrder
+        # below would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
             sorted(active, key=self.__mod_loIndex.__getitem__))
         self.__mod_actIndex = dict(
@@ -353,7 +353,4 @@ def _setPluginsTxtModTime():
 
 # helper - print a list
 def _pl(aList, legend=u''):
-    try:
-        return legend + u', '.join(x.s for x in aList)
-    except AttributeError:
-        return legend + u', '.join(map(repr, aList))
+    return legend + u', '.join(u'%s' % x for x in aList) # use Path.__unicode__

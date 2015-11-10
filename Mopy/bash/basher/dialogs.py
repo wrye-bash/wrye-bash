@@ -91,9 +91,9 @@ class ColorDialog(balt.Dialog):
     def GetChoice(self):
         return self.text_key[self.comboBox.GetValue()]
 
-    def UpdateUIColors(self):
+    @staticmethod
+    def UpdateUIColors():
         """Update the Bash Frame with the new colors"""
-        nb = Link.Frame.notebook
         with balt.BusyCursor():
             for (className,title,panel) in tabInfo.itervalues():
                 if panel is not None:
@@ -101,8 +101,8 @@ class ColorDialog(balt.Dialog):
 
     def UpdateUIButtons(self):
         # Apply All and Default All
-        for key in self.changes.keys():
-            if self.changes[key] == colors[key]:
+        for key, val in self.changes.iteritems():
+            if val == colors[key]:
                 del self.changes[key]
         anyChanged = bool(self.changes)
         allDefault = True

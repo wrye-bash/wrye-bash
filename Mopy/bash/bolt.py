@@ -527,7 +527,8 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s','_cs','_csroot','_sroot','_shead','_stail','_ext','_cext','_sbody','_csbody')
+    __slots__ = ('_s', '_cs', '_csroot', '_sroot', '_shead', '_stail', '_ext',
+                 '_cext', '_sbody', '_csbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -712,8 +713,7 @@ class Path(object):
 
     #--Mtime
     def getmtime(self,maxMTime=False):
-        """Returns mtime for path. But if mtime is outside of epoch, then resets
-        mtime to an in-epoch date and uses that."""
+        """Return mtime for path."""
         if self.isdir() and maxMTime:
             #fastest implementation I could make
             c = []
@@ -750,7 +750,8 @@ class Path(object):
 
     @property
     def version(self):
-        """File version (exe/dll) embeded in the file properties (windows only)."""
+        """File version (exe/dll) embedded in the file properties
+        (windows only)."""
         try:
             import win32api
             info = win32api.GetFileVersionInfo(self._s,u'\\')
@@ -1246,7 +1247,7 @@ class OrderedSet(list, MutableSet):
         - index(value)
         - __getitem__(index)
         - __call__ -> to enable 'enumerate'
-       If an item is dicarded, then later readded, it will be added
+       If an item is discarded, then later readded, it will be added
        to the end of the set.
     """
     def update(self, *args, **kwdargs):
@@ -1286,7 +1287,7 @@ class MemorySet(object):
     """
     def __init__(self, *args, **kwdargs):
         self.items = OrderedSet(*args, **kwdargs)
-        self.mask = [True for i in range(len(self.items))]
+        self.mask = [True] * len(self.items)
 
     def add(self,elem):
         if elem in self.items: self.mask[self.items.index(elem)] = True

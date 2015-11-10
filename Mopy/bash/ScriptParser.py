@@ -113,7 +113,7 @@ class OP:
     MEM = 7     # Membership test (a in b)
     NOT = 8     # Logical not (not, !)
     AND = 9     # Logical and (and, &)
-    OR  = 10    # Locical or (or, |)
+    OR  = 10    # Logical or (or, |)
     ASS = 11    # Assignment (=,+=,etc
 
 # Constants for operator associations
@@ -161,7 +161,7 @@ Types = {UNKNOWN:u'UNKNOWN',
 # getType ---------------------------------------
 #  determines the type of a string.  If 'parser'
 #  is passed, then it will attempt it against
-#  vairious names as well.
+#  various names as well.
 #------------------------------------------------
 def getType(item, parser=None):
     if isinstance(item, unicode):

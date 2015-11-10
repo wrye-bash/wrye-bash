@@ -325,8 +325,8 @@ class MasterList(_ModsSortMixin, balt.UIList):
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
-    _sort_keys = {'Num': None, # sort by master index, the key itself
-                  'File': lambda self, a: self.data[a].name.s.lower(),
+    _sort_keys = {'Num'          : None, # sort by master index, the key itself
+                  'File'         : lambda self, a: self.data[a].name.s.lower(),
                   'Current Order': lambda self, a: self.loadOrderNames.index(
                      self.data[a].name), #missing mods sort last alphabetically
                  }
@@ -541,7 +541,7 @@ class INIList(balt.UIList):
     mainMenu = Links()  #--Column menu
     itemMenu = Links()  #--Single item menu
     _shellUI = True
-    _sort_keys = {'File': None,
+    _sort_keys = {'File'     : None,
                   'Installer': lambda self, a: bosh.iniInfos.table.getItem(
                      a, 'installer', u''),
                  }
@@ -772,20 +772,19 @@ class ModList(_ModsSortMixin, balt.UIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
+    def _get(self, mod): return partial(self.data.table.getItem, mod)
     _sort_keys = {
-        'File': None,
-        'Author': lambda self, a: self.data[a].header.author.lower(),
-        'Rating': lambda self, a: bosh.modInfos.table.getItem(
-                     a, 'rating', u''),
-        'Group': lambda self, a: bosh.modInfos.table.getItem(a, 'group', u''),
-        'Installer': lambda self, a: bosh.modInfos.table.getItem(
-                     a, 'installer', u''),
+        'File'      : None,
+        'Author'    : lambda self, a: self.data[a].header.author.lower(),
+        'Rating'    : lambda self, a: self._get(a)('rating', u''),
+        'Group'     : lambda self, a: self._get(a)('group', u''),
+        'Installer' : lambda self, a: self._get(a)('installer', u''),
         'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
-        'Modified': lambda self, a: self.data[a].getPath().mtime,
-        'Size': lambda self, a: self.data[a].size,
-        'Status': lambda self, a: self.data[a].getStatus(),
+        'Modified'  : lambda self, a: self.data[a].getPath().mtime,
+        'Size'      : lambda self, a: self.data[a].size,
+        'Status'    : lambda self, a: self.data[a].getStatus(),
         'Mod Status': lambda self, a: self.data[a].txt_status(),
-        'CRC': lambda self, a: self.data[a].cachedCrc(),
+        'CRC'       : lambda self, a: self.data[a].cachedCrc(),
     }
     _extra_sortings = [_ModsSortMixin._sortEsmsFirst,
                       _ModsSortMixin._activeModsFirst]
@@ -1820,7 +1819,6 @@ class SaveList(balt.UIList):
             balt.copyListToClipboard(sel)
         super(SaveList, self).OnKeyUp(event)
 
-    #--Event: Left Down
     def OnLeftDown(self,event):
         (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
         msg = _(u"Clicking on a save icon will disable/enable the save "
@@ -3017,7 +3015,7 @@ class InstallersPanel(SashTankPanel):
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
-    #--Class Data
+
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _shellUI = True
@@ -3026,12 +3024,12 @@ class ScreensList(balt.UIList):
                   'Modified': lambda self, a: self.data[a][1],
                  }
 
+    #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Double click a screenshot"""
-        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
+        (hitItem, hitFlag) = self._gList.HitTest(event.GetPosition())
         if hitItem < 0: return
-        item = self.GetItem(hitItem)
-        bosh.screensData.dir.join(item).start()
+        self.OpenSelected(selected=[self.GetItem(hitItem)])
 
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""
@@ -3129,12 +3127,12 @@ class ScreensPanel(SashPanel):
 
 #------------------------------------------------------------------------------
 class BSAList(balt.UIList):
-    #--Class Data
+
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
-    _sort_keys = {'File': None,
+    _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data[a].mtime,
-                  'Size': lambda self, a: self.data[a].size,
+                  'Size'    : lambda self, a: self.data[a].size,
                  }
 
     #--Populate Item
@@ -3292,8 +3290,8 @@ class PeopleList(balt.Tank):
     icons = karmacons
     _recycle = False
     _default_sort_col = 'Name'
-    _sort_keys = {'Name': lambda self, x: x.lower(),
-                  'Karma': lambda self, x: self.data[x][1],
+    _sort_keys = {'Name'  : lambda self, x: x.lower(),
+                  'Karma' : lambda self, x: self.data[x][1],
                   'Header': lambda self, x: self.data[x][2][:50].lower(),
                  }
 
@@ -3495,7 +3493,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 item = panel(self)
                 self.AddPage(item,title)
                 tabInfo[page][2] = item
-            except Exception, e:
+            except:
                 if page == 'Mods':
                     deprint(_(u"Fatal error constructing '%s' panel.") % title)
                     raise
@@ -3509,7 +3507,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         self.currentPage = self.GetPage(self.GetSelection())
         # callback was bound before SetSelection() selection - this triggered
         # OnShowPage() - except if pageIndex was 0 (?!). Moved self.Bind() here
-        # as OnShowPage() is manually called in RefreshData
+        # as OnShowPage() is explicitly called in RefreshData
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
