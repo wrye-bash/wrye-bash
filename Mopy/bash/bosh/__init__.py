@@ -5674,14 +5674,10 @@ class Installer(object):
         return dict((x.root,x) for x in ghosts if not dataDir.join(x).root.exists())
 
     @staticmethod
-    def sortFiles(files):
+    def sortFiles(files, __split=os.path.split):
         """Utility function. Sorts files by directory, then file name."""
-        def sortKey(file):
-            dirFile = os.path.split(file)
-            if len(dirFile) == 1: dirFile.insert(0,u'')
-            return dirFile
-        sortKeys = dict((x,sortKey(x)) for x in files)
-        return sorted(files,key=lambda x: sortKeys[x])
+        sortKeys = dict((x, __split(x)) for x in files)
+        return sorted(files, key=sortKeys.__getitem__)
 
     @staticmethod
     def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
