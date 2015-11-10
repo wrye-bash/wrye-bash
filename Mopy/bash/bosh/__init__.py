@@ -5858,7 +5858,7 @@ class Installer(object):
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
         self.hasBCF = False
-        self.espmMap = {}
+        self.espmMap = collections.defaultdict(list)
         self.readMe = self.packageDoc = self.packagePic = None
         self.hasReadme = False
         self.hasBethFiles = False
@@ -6018,8 +6018,7 @@ class Installer(object):
         goodDlls, badDlls = settings['bash.installers.goodDlls'],settings['bash.installers.badDlls']
         espms = self.espms
         espmsAdd = espms.add
-        espmMap = self.espmMap = {}
-        espmMapSetdefault = espmMap.setdefault
+        espmMap = self.espmMap = collections.defaultdict(list)
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
         splitExt = os.path.splitext
@@ -6049,7 +6048,7 @@ class Installer(object):
                     # and readme's
                     skip = True
                     fileLower = file.lower()
-                    subList = espmMapSetdefault(sub,[])
+                    subList = espmMap[sub]
                     subListAppend = subList.append
                     rootLower,fileExt = splitExt(fileLower)
                     rootLower = rootLower.split(u'\\',1)
@@ -6088,7 +6087,7 @@ class Installer(object):
                     if skip:
                         continue
                 fileLower = file.lower()
-            subList = espmMapSetdefault(sub,[])
+            subList = espmMap[sub]
             subListAppend = subList.append
             rootLower,fileExt = splitExt(fileLower)
             rootLower = rootLower.split(u'\\',1)

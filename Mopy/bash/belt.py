@@ -786,12 +786,12 @@ class WryeParser(ScriptParser.Parser):
             self.choiceIdex = -1
             self.sublist = {}
             self.espmlist = {}
-            for i in installer.espmMap.keys():
-                for j in installer.espmMap[i]:
+            for k, v in installer.espmMap.iteritems():
+                for j in v:
                     if j not in self.espmlist:
                         self.espmlist[j] = False
-                if i == u'': continue
-                self.sublist[i] = False
+                if k == u'': continue
+                self.sublist[k] = False
 
         #--Constants
         self.SetConstant(u'SubPackages',u'SubPackages')
@@ -982,17 +982,15 @@ class WryeParser(ScriptParser.Parser):
     def EspmIsInPackage(self, espm, package):
         package = package.lower()
         espm = espm.lower()
-        for i in self.installer.espmMap:
-            if package == i.lower():
-                for j in self.installer.espmMap[i]:
+        for k, v in self.installer.espmMap.iteritems():
+            if package == k.lower():
+                for j in v:
                     if espm == j.lower():
                         return True
         return False
     def EspmList(self, package):
         pack = self.GetPackage(package)
-        if pack in self.installer.espmMap:
-            return self.installer.espmMap[pack]
-        return []
+        return self.installer.espmMap[pack] # returns [] if pack not in espmMap
     def PackageList(self, espm):
         ret = []
         for i in self.sublist:
