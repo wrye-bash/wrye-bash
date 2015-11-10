@@ -773,22 +773,22 @@ class Installer_Uninstall(_InstallerLink):
 class Installer_CopyConflicts(_InstallerLink):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
-    help = _(u'Copy all files that conflict with the selected package into a'
+    help = _(u'Copy all files that conflict with the selected installer into a'
              u' new project')
 
     def _enable(self): return self.isSingleInstallable()
 
     def Execute(self,event):
         """Handle selection."""
-        data = self.idata # bosh.InstallersData instance (dict bolt.Path ->
+        idata = self.idata # bosh.InstallersData instance (dict bolt.Path ->
         # InstallerArchive)
-        installers_dir = data.dir
+        installers_dir = idata.dir
         srcConflicts = set()
         packConflicts = []
         with balt.Progress(_(u"Copying Conflicts..."),
                            u'\n' + u' ' * 60) as progress:
             srcArchive = self.selected[0]
-            srcInstaller = data[srcArchive]
+            srcInstaller = idata[srcArchive]
             src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path
             mismatched = set(src_sizeCrc) # just a set of bolt.Path of the src
             # installer files
@@ -797,9 +797,9 @@ class Installer_CopyConflicts(_InstallerLink):
                 curFile = 1
                 srcOrder = srcInstaller.order
                 destDir = GPath(u"%03d - Conflicts" % srcOrder)
-                getArchiveOrder = lambda y: data[y].order
-                for package in sorted(data.data,key=getArchiveOrder):
-                    installer = data[package]
+                getArchiveOrder = lambda y: idata[y].order
+                for package in sorted(idata.data,key=getArchiveOrder):
+                    installer = idata[package]
                     curConflicts = set()
                     for z,y in installer.refreshDataSizeCrc().iteritems():
                         if z in mismatched and installer.data_sizeCrc[z] != \
@@ -853,16 +853,16 @@ class Installer_CopyConflicts(_InstallerLink):
                                     u"%03d - %s" % (order,package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
-                    if project not in data:
-                        data[project] = bosh.InstallerProject(project)
-                    iProject = data[project] #bash.bosh.InstallerProject object
+                    if project not in idata:
+                        idata[project] = bosh.InstallerProject(project)
+                    iProject = idata[project] #bash.bosh.InstallerProject object
                     pProject = installers_dir.join(project) # bolt.Path
                     # ...\Bash Installers\030 - Conflicts
                     iProject.refreshed = False
                     iProject.refreshBasic(pProject,None,True)
                     if iProject.order == -1:
-                        data.moveArchives([project],srcInstaller.order + 1)
-                    data.irefresh(what='I')
+                        idata.moveArchives([project],srcInstaller.order + 1)
+                    idata.irefresh(what='I')
                     self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

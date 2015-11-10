@@ -5822,7 +5822,7 @@ class Installer(object):
         #--Done
         return changed
 
-    #--Initialization, etc -------------------------------------------------------
+    #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
         """Inits everything to default values."""
         #--Package Only
@@ -5948,7 +5948,6 @@ class Installer(object):
             archiveRoot = GPath(self.archive).sroot
         else:
             archiveRoot = self.archive
-        reReadMe = self.reReadMe
         docExts = self.docExts
         imageExts = self.imageExts
         docDirs = self.docDirs
@@ -5998,10 +5997,8 @@ class Installer(object):
             allSubs = set(self.subNames[1:])
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         #--Init to empty
-        self.hasWizard = False
-        self.hasBCF = False
+        self.hasWizard = self.hasBCF = self.hasReadme = False
         self.readMe = self.packageDoc = self.packagePic = None
-        self.hasReadme = False
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
             object.__getattribute__(self,attr).clear()
         data_sizeCrc = {}
@@ -6024,7 +6021,7 @@ class Installer(object):
         espmMap = self.espmMap = {}
         espmMapSetdefault = espmMap.setdefault
         reModExtMatch = reModExt.match
-        reReadMeMatch = reReadMe.match
+        reReadMeMatch = Installer.reReadMe.match
         splitExt = os.path.splitext
         dest_src = {}
         #--Bad archive?
@@ -7359,26 +7356,12 @@ class InstallersData(DataDict):
         #--Archive invalidation
         if settings.get('bash.bsaRedirection'):
             oblivionIni.setBsaRedirection(True)
-        #--Refresh Data
-        changed = False
-        if not self.loaded:
-            progress(0,_(u"Loading Data..."))
-            self.dictFile.load()
-            self.converterFile.load()
-            data = self.dictFile.data
-            convertData = self.converterFile.data
-            self.bcfCRC_converter = convertData.get('bcfCRC_converter',dict())
-            self.srcCRC_converters = convertData.get('srcCRC_converters',dict())
-            self.data = data.get('installers',{})
-            self.data_sizeCrcDate = data.get('sizeCrcDate',{})
-            self.crc_installer = data.get('crc_installer',{})
-            self.updateDictFile()
-            self.loaded = True
-            changed = True
+        #--Load Installers.dat if not loaded - will set changed to True
+        changed = not self.loaded and self.__load(progress)
         #--Last marker
         if self.lastKey not in self.data:
             self.data[self.lastKey] = InstallerMarker(self.lastKey)
-        #--Refresh Other
+        #--Refresh Other - FIXME(ut): docs
         if 'D' in what:
             changed |= Installer.refreshSizeCrcDate(
                 dirs['mods'], self.data_sizeCrcDate, progress, fullRefresh)
@@ -7390,6 +7373,21 @@ class InstallersData(DataDict):
         #--Done
         if changed: self.hasChanged = True
         return changed
+
+    def __load(self, progress):
+        progress(0, _(u"Loading Data..."))
+        self.dictFile.load()
+        self.converterFile.load()
+        data = self.dictFile.data
+        convertData = self.converterFile.data
+        self.bcfCRC_converter = convertData.get('bcfCRC_converter', dict())
+        self.srcCRC_converters = convertData.get('srcCRC_converters', dict())
+        self.data = data.get('installers', {})
+        self.data_sizeCrcDate = data.get('sizeCrcDate', {})
+        self.crc_installer = data.get('crc_installer', {})
+        self.updateDictFile()
+        self.loaded = True
+        return True
 
     def updateDictFile(self): # CRUFT pickle
         """Updates self.data to use new classes."""
@@ -7460,9 +7458,8 @@ class InstallersData(DataDict):
         projects = set()
         #--Current archives
         newData = {}
-        for i in self.data.keys():
-            if isinstance(self.data[i],InstallerMarker):
-                newData[i] = self.data[i]
+        for k, v in self.items():
+            if isinstance(v, InstallerMarker): newData[k] = v
         installersJoin = dirs['installers'].join
         dataGet = self.data.get
         pendingAdd = pending.add
