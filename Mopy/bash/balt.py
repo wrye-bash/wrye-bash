@@ -2769,8 +2769,7 @@ class ListBoxes(Dialog):
         for i,group in enumerate(lists):
             title = group[0] # also serves as key in self._ids dict
             tip = group[1]
-            try: strings = [x.s for x in group[2:]]
-            except AttributeError: strings = [x for x in group[2:]]
+            strings = [u'%s' % x for x in group[2:]] # works for Path & strings
             if len(strings) == 0: continue
             subsizer = hsbSizer((self, wx.ID_ANY, title))
             if liststyle == 'check':

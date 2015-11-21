@@ -4047,7 +4047,7 @@ class BashFrame(wx.Frame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = set([x for x in bosh.modInfos.values() if round(
+        invalidVersions = set([x.name for x in bosh.modInfos.values() if round(
             x.header.version, 6) not in bush.game.esp.validHeaderVersions])
         if not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
