@@ -36,8 +36,7 @@ from .. import bosh, bolt, balt, bush
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
-from ..bolt import GPath, ArgumentError, SubProgress, BoltError
-from ..bosh import formatInteger
+from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',

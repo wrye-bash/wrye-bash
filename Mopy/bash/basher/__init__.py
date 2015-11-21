@@ -69,9 +69,8 @@ import wx.gizmos
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
 from ..bass import Resources
-from ..bosh import formatInteger, formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path, AbstractError
+    deprint, Path, AbstractError, formatInteger, formatDate
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -1307,7 +1306,7 @@ class ModDetails(_SashDetailsPanel):
         modifiedStr = self.modified.GetValue()
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = bosh.unformatDate(modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(modifiedStr, u'%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
@@ -1363,7 +1362,7 @@ class ModDetails(_SashDetailsPanel):
         if changeName and not self._askResourcesOk(modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
-            newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.modInfo.name)
@@ -1395,7 +1394,7 @@ class ModDetails(_SashDetailsPanel):
             modInfo.writeHeader()
         #--Change date?
         if changeDate or changeHedr or changeMasters:
-            newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
         #--Done

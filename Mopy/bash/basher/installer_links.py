@@ -42,8 +42,7 @@ from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, LogFile
-from ..bosh import formatInteger
+    SubProgress, LogFile, formatInteger
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_OpenSearch', 'Installer_OpenTESA', 'Installer_OpenPES',

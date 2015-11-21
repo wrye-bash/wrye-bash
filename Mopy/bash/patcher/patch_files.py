@@ -25,11 +25,11 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
-from ..bosh import ModFile, ModInfo, LoadFactory, MasterSet, formatDate, dirs
+from ..bosh import ModFile, ModInfo, LoadFactory, MasterSet, dirs
 from ..brec import MreRecord, ModError
 from ..balt import showWarning
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
-    Progress, StateError
+    Progress, StateError, formatDate
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 

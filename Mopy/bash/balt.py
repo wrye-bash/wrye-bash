@@ -2339,7 +2339,7 @@ class UIList(wx.Panel):
     @staticmethod
     def _round(siz):
         """Round non zero sizes to 1 KB."""
-        siz = u'0' if siz == 0 else bosh.formatInteger(max(siz, 1024) / 1024)
+        siz = u'0' if siz == 0 else bolt.formatInteger(max(siz, 1024) / 1024)
         return siz + u' KB'
 
 #------------------------------------------------------------------------------

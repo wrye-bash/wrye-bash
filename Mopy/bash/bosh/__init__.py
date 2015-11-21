@@ -106,26 +106,6 @@ def getPatchesList():
     """Get a basic list of potential Bash Patches."""
     return set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())
 
-def formatInteger(value):
-    """Convert integer to string formatted to locale."""
-    return decode(locale.format('%d',int(value),True),locale.getpreferredencoding())
-
-def formatDate(value):
-    """Convert time to string formatted to to locale's default date/time."""
-    return decode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
-
-def unformatDate(date, formatStr):
-    """Basically a wrapper around time.strptime. Exists to get around bug in
-    strptime for Japanese locale."""
-    try:
-        return time.strptime(date, '%c')
-    except ValueError:
-        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
-            date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
-            return time.strptime(date, '%c')
-        else:
-            raise
-
 # Singletons, Constants -------------------------------------------------------
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
