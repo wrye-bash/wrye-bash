@@ -6747,10 +6747,8 @@ class InstallerConverter(object):
             srcAdd(installerCRC)
             fileList = subGet(installerCRC,[])
             fileAppend = fileList.append
-            for fileSizeCrc in installer.fileSizeCrcs:
-                fileName = fileSizeCrc[0]
-                fileCRC = fileSizeCrc[2]
-                srcFiles[fileCRC] = (installerCRC,fileName)
+            for fileName, __size, fileCRC in installer.fileSizeCrcs:
+                srcFiles[fileCRC] = (installerCRC, fileName)
                 #--Note any subArchives
                 if GPath(fileName).cext in readExts:
                     fileAppend(fileName)
@@ -6778,9 +6776,7 @@ class InstallerConverter(object):
             srcFiles.update(archivedFiles)
             Installer.rmTempDir()
         #--Make list of destination files
-        for fileSizeCrc in destInstaller.fileSizeCrcs:
-            fileName = fileSizeCrc[0]
-            fileCRC = fileSizeCrc[2]
+        for fileName, __size, fileCRC in destInstaller.fileSizeCrcs:
             destFileAppend((fileCRC, fileName))
             #--Note files that aren't in any of the source files
             if fileCRC not in srcFiles:
@@ -7116,9 +7112,8 @@ class InstallerProject(Installer):
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
-        for file in [x.s for x in self.src_sizeCrcDate]:
-            size,crc,date = src_sizeCrcDate[GPath(file)]
-            fileSizeCrcs.append((file,size,crc))
+        for path, (size, crc, date) in src_sizeCrcDate.iteritems():
+            fileSizeCrcs.append((path.s, size, crc))
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
             cumSize += size
