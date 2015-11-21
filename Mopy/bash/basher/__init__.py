@@ -2680,7 +2680,7 @@ class InstallersPanel(SashTankPanel):
                 else:
                     refresh = bool(data.pop(path, None))
             if refresh:
-                self.data.refreshStatus()
+                self.data.refreshInstallersStatus()
                 self.RefreshUIMods()
         super(InstallersPanel, self).ShowPanel()
 

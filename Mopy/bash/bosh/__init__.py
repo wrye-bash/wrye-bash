@@ -7367,7 +7367,7 @@ class InstallersData(DataDict):
         if 'I' in what: changed |= self.refreshInstallers(progress,fullRefresh)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()
-        if 'S' in what or changed: changed |= self.refreshStatus()
+        if 'S' in what or changed: changed |= self.refreshInstallersStatus()
         if 'C' in what or changed: changed |= self.refreshConverters(progress,fullRefresh)
         #--Done
         if changed: self.hasChanged = True
@@ -7672,7 +7672,7 @@ class InstallersData(DataDict):
             abnorm_sizeCrc, self.abnorm_sizeCrc
         return abnorm_sizeCrc != oldAbnorm_sizeCrc
 
-    def refreshStatus(self):
+    def refreshInstallersStatus(self):
         """Refresh installer status."""
         changed = False
         for installer in self.itervalues():
