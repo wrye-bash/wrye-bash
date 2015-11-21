@@ -34,7 +34,7 @@ from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
 class _PFile:
-# hasty mixin to absorb setMods - also compare buildPatch and buildPatchLog
+# hasty mixin to absorb setMods - also compare __init__
     def setMods(self,loadMods=None,mergeMods=None):
         """Sets mod lists and sets."""
         if loadMods is not None: self.loadMods = loadMods
@@ -43,6 +43,83 @@ class _PFile:
         self.mergeSet = set(self.mergeMods)
         self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
         self.allSet = set(self.allMods)
+
+    def _log_header(self, log, patch_name):
+        log.setHeader(u'= ' + patch_name.s + u' ' + u'=' * 30 + u'#', True)
+        log(u"{{CONTENTS=1}}")
+        #--Load Mods and error mods
+        log.setHeader(u'= ' + _(u'Overview'), True)
+        log.setHeader(u'=== ' + _(u'Date/Time'))
+        log(u'* ' + formatDate(time.time()))
+        log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        if self.patcher_mod_skipcount:
+            log.setHeader(u'=== ' + _(u'Skipped Imports'))
+            log(_(u"The following import patchers skipped records because the "
+                  u"imported record required a missing or non-active mod to "
+                  u"work properly. If this was not intentional, rebuild the "
+                  u"patch after either deactivating the imported mods listed "
+                  u"below or activating the missing mod(s)."))
+            for patcher, mod_skipcount in \
+                    self.patcher_mod_skipcount.iteritems():
+                log(u'* ' + _(u'%s skipped %d records:') % (
+                patcher, sum(mod_skipcount.values())))
+                for mod, skipcount in mod_skipcount.iteritems():
+                    log(u'  * ' + _(
+                        u'The imported mod, %s, skipped %d records.') % (
+                        mod, skipcount))
+        if self.unFilteredMods:
+            log.setHeader(u'=== ' + _(u'Unfiltered Mods'))
+            log(_(u"The following mods were active when the patch was built. "
+                  u"For the mods to work properly, you should deactivate the "
+                  u"mods and then rebuild the patch with the mods [["
+                  u"http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering"
+                  u"|Merged]] in."))
+            for mod in self.unFilteredMods: log(u'* ' + mod.s)
+        if self.loadErrorMods:
+            log.setHeader(u'=== ' + _(u'Load Error Mods'))
+            log(_(u"The following mods had load errors and were skipped while "
+                  u"building the patch. Most likely this problem is due to a "
+                  u"badly formatted mod. For more info, see [["
+                  u"http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch"
+                  u"#Error_Messages|Bashed Patch: Error Messages]]."))
+            for (mod, e) in self.loadErrorMods: log(
+                u'* ' + mod.s + u': %s' % e)
+        if self.worldOrphanMods:
+            log.setHeader(u'=== ' + _(u'World Orphans'))
+            log(_(u"The following mods had orphaned world groups, which were "
+                  u"skipped. This is not a major problem, but you might want "
+                  u"to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html"
+                  u"#RemoveWorldOrphans|Remove World Orphans]] command to "
+                  u"repair the mods."))
+            for mod in self.worldOrphanMods: log(u'* ' + mod.s)
+        if self.compiledAllMods:
+            log.setHeader(u'=== ' + _(u'Compiled All'))
+            log(_(u"The following mods have an empty compiled version of "
+                u"genericLoreScript. This is usually a sign that the mod "
+                u"author did a __compile all__ while editing scripts. This "
+                u"may interfere with the behavior of other mods that "
+                u"intentionally modify scripts from Oblivion.esm. (E.g. Cobl "
+                u"and Unofficial Oblivion Patch.) You can use Bash's [["
+                u"http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll"
+                u"|Decompile All]] command to repair the mods."))
+            for mod in self.compiledAllMods: log(u'* ' + mod.s)
+        log.setHeader(u'=== ' + _(u'Active Mods'), True)
+        for name in self.allMods:
+            version = bosh.modInfos.getVersion(name)
+            if name in self.loadMods:
+                message = u'* %02X ' % (self.loadMods.index(name),)
+            else:
+                message = u'* ++ '
+            if version:
+                message += _(u'%s  [Version %s]') % (name.s,version)
+            else:
+                message += name.s
+            log(message)
+        #--Load Mods and error mods
+        if self.aliases:
+            log.setHeader(u'= ' + _(u'Mod Aliases'))
+            for key, value in sorted(self.aliases.iteritems()):
+                log(u'* %s >> %s' % (key.s, value.s))
 
 class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
@@ -250,53 +327,7 @@ class PatchFile(_PFile, ModFile):
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using scanLoadMods."""
         if not len(self.patchers): return
-        log.setHeader(u'= '+self.fileInfo.name.s+u' '+u'='*30+u'#',True)
-        log(u"{{CONTENTS=1}}")
-        #--Load Mods and error mods
-        log.setHeader(u'= '+_(u'Overview'),True)
-        log.setHeader(u'=== '+_(u'Date/Time'))
-        log(u'* '+formatDate(time.time()))
-        log(u'* '+_(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
-        if self.patcher_mod_skipcount:
-            log.setHeader(u'=== '+_(u'Skipped Imports'))
-            log(_(u"The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
-            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
-                log (u'* '+_(u'%s skipped %d records:') % (patcher,sum(mod_skipcount.values())))
-                for mod, skipcount in mod_skipcount.iteritems():
-                    log (u'  * '+_(u'The imported mod, %s, skipped %d records.') % (mod,skipcount))
-        if self.unFilteredMods:
-            log.setHeader(u'=== '+_(u'Unfiltered Mods'))
-            log(_(u"The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
-            for mod in self.unFilteredMods: log (u'* '+mod.s)
-        if self.loadErrorMods:
-            log.setHeader(u'=== '+_(u'Load Error Mods'))
-            log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for (mod,e) in self.loadErrorMods: log (u'* '+mod.s+u': %s'%e)
-        if self.worldOrphanMods:
-            log.setHeader(u'=== '+_(u'World Orphans'))
-            log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
-            for mod in self.worldOrphanMods: log (u'* '+mod.s)
-        if self.compiledAllMods:
-            log.setHeader(u'=== '+_(u'Compiled All'))
-            log(_(u"The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
-            for mod in self.compiledAllMods: log (u'* '+mod.s)
-        log.setHeader(u'=== '+_(u'Active Mods'),True)
-        for name in self.allMods:
-            version = bosh.modInfos.getVersion(name)
-            if name in self.loadMods:
-                message = u'* %02X ' % (self.loadMods.index(name),)
-            else:
-                message = u'* ++ '
-            if version:
-                message += _(u'%s  [Version %s]') % (name.s,version)
-            else:
-                message += name.s
-            log(message)
-        #--Load Mods and error mods
-        if self.aliases:
-            log.setHeader(u'= '+_(u'Mod Aliases'))
-            for key,value in sorted(self.aliases.iteritems()):
-                log(u'* %s >> %s' % (key.s,value.s))
+        self._log_header(log, self.fileInfo.name.s)
         #--Patchers
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
@@ -632,54 +663,7 @@ class CBash_PatchFile(_PFile, ObModFile):
     def buildPatchLog(self,patchName,log,progress):
         """Completes merge process. Use this when finished using buildPatch."""
         if not len(self.patchers): return
-        log.setHeader(u'= '+patchName.s+u' '+u'='*30+u'#',True)
-        log(u"{{CONTENTS=1}}")
-        #--Load Mods and error mods
-        log.setHeader(u'= '+_(u'Overview'),True)
-        log.setHeader(u'=== '+_(u'Date/Time'))
-        log(u'* '+formatDate(time.time()))
-        log(u'* '+_(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
-        if self.patcher_mod_skipcount:
-            log.setHeader(u'=== '+_(u'Skipped Imports'))
-            log(_(u"The following import patchers skipped records because the imported record required a missing or non-active mod to work properly. If this was not intentional, rebuild the patch after either deactivating the imported mods listed below or activating the missing mod(s)."))
-            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
-                log(u'* '+_(u'%s skipped %d records:') % (patcher,sum(mod_skipcount.values())))
-                for mod, skipcount in mod_skipcount.iteritems():
-                    log (u'  * '+_(u'The imported mod, %s, skipped %d records.') % (mod,skipcount))
-
-        if self.unFilteredMods:
-            log.setHeader(u'=== '+_(u'Unfiltered Mods'))
-            log(_(u"The following mods were active when the patch was built. For the mods to work properly, you should deactivate the mods and then rebuild the patch with the mods [[http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering|Merged]] in."))
-            for mod in self.unFilteredMods: log (u'* '+mod.s)
-        if self.loadErrorMods:
-            log.setHeader(u'=== '+_(u'Load Error Mods'))
-            log(_(u"The following mods had load errors and were skipped while building the patch. Most likely this problem is due to a badly formatted mod. For more info, see [[http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch#Error_Messages|Bashed Patch: Error Messages]]."))
-            for (mod,e) in self.loadErrorMods: log (u'* '+mod.s+u': %s' % e)
-        if self.worldOrphanMods:
-            log.setHeader(u'=== '+_(u'World Orphans'))
-            log(_(u"The following mods had orphaned world groups, which were skipped. This is not a major problem, but you might want to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#RemoveWorldOrphans|Remove World Orphans]] command to repair the mods."))
-            for mod in self.worldOrphanMods: log (u'* '+mod.s)
-        if self.compiledAllMods:
-            log.setHeader(u'=== '+_(u'Compiled All'))
-            log(_(u"The following mods have an empty compiled version of genericLoreScript. This is usually a sign that the mod author did a __compile all__ while editing scripts. This may interfere with the behavior of other mods that intentionally modify scripts from Oblivion.esm. (E.g. Cobl and Unofficial Oblivion Patch.) You can use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll|Decompile All]] command to repair the mods."))
-            for mod in self.compiledAllMods: log (u'* '+mod.s)
-        log.setHeader(u'=== '+_(u'Active Mods'),True)
-        for name in self.allMods:
-            version = bosh.modInfos.getVersion(name)
-            if name in self.loadMods:
-                message = u'* %02X ' % (self.loadMods.index(name),)
-            else:
-                message = u'* ++ '
-            if version:
-                message += _(u'%s  [Version %s]') % (name.s,version)
-            else:
-                message += name.s
-            log(message)
-        #--Load Mods and error mods
-        if self.aliases:
-            log.setHeader(u'= '+_(u'Mod Aliases'))
-            for key,value in sorted(self.aliases.iteritems()):
-                log(u'* %s >> %s' % (key.s,value.s))
+        self._log_header(log, patchName)
         #--Patchers
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
