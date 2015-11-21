@@ -136,6 +136,7 @@ def Init(path):
     LIBLO_GAME_TES5 = _uint('LIBLO_GAME_TES5')
     LIBLO_GAME_FO3 = _uint('LIBLO_GAME_FO3')
     LIBLO_GAME_FNV = _uint('LIBLO_GAME_FNV')
+    LIBLO_GAME_FO4 = _uint('LIBLO_GAME_FO4')
     games = {
         'Oblivion':LIBLO_GAME_TES4,
         LIBLO_GAME_TES4:LIBLO_GAME_TES4,
@@ -145,6 +146,8 @@ def Init(path):
         LIBLO_GAME_FO3:LIBLO_GAME_FO3,
         'FalloutNV':LIBLO_GAME_FNV,
         LIBLO_GAME_FNV:LIBLO_GAME_FNV,
+        'Fallout4':LIBLO_GAME_FO4,
+        LIBLO_GAME_FO4:LIBLO_GAME_FO4,
         }
 
     # =========================================================================
