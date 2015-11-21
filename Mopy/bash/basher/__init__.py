@@ -2295,9 +2295,11 @@ class InstallersList(balt.Tank):
                     # Omod extraction was cancelled, or user denied admin
                     # rights if needed
                     raise
-                except: deprint(
+                except:
+                    deprint(
                         _(u"Failed to extract '%s'.") % omod.stail + u'\n\n',
                         traceback=True)
+                    failed.append(omod.stail)
         except CancelError:
             skipped = set(omodnames) - set(completed)
             msg = u''
