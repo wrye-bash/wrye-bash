@@ -1193,20 +1193,8 @@ class DataDict:
     def __contains__(self,key):
         return key in self.data
     def __getitem__(self,key):
-        """Return value for key or modinfo (?) of the game master file."""
-        if self.data.has_key(key):
-            return self.data[key]
-        else:
-            if isinstance(key, Path):
-                try: # TODO(ut): why? data may not contain ModInfos necessarily
-                    import bush
-                    return self.data[Path(bush.game.masterFiles[0])]
-                except:
-                    print
-                    print "An error occurred trying to access data for mod file:", key
-                    print "This can occur when the game's main ESM file is corrupted."
-                    print
-                    raise
+        """Return value for key or raise KeyError if not present."""
+        return self.data[key]
     def __setitem__(self,key,value):
         self.data[key] = value
     def __delitem__(self,key):
