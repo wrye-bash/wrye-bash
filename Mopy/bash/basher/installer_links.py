@@ -476,14 +476,14 @@ class Installer_Rename(_InstallerLink):
         ##Only enable if all selected items are of the same type
         firstItem = self.idata[self.selected[0]]
         if isinstance(firstItem,bosh.InstallerMarker):
-            self.InstallerType = bosh.InstallerMarker
+            installer_type = bosh.InstallerMarker
         elif isinstance(firstItem,bosh.InstallerArchive):
-            self.InstallerType = bosh.InstallerArchive
+            installer_type = bosh.InstallerArchive
         elif isinstance(firstItem,bosh.InstallerProject):
-            self.InstallerType = bosh.InstallerProject
+            installer_type = bosh.InstallerProject
         else: return False
         for item in self.selected:
-            if not isinstance(self.idata[item], self.InstallerType):
+            if not isinstance(self.idata[item], installer_type):
                 return False
         return True
 

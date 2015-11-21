@@ -2129,18 +2129,17 @@ class InstallersList(balt.Tank):
         """Start renaming installers"""
         #--Only rename multiple items of the same type
         firstItem = self.data[self.GetSelected()[0]]
-        InstallerType = None
         if isinstance(firstItem,bosh.InstallerMarker):
-            InstallerType = bosh.InstallerMarker
+            installer_type = bosh.InstallerMarker
         elif isinstance(firstItem,bosh.InstallerArchive):
-            InstallerType = bosh.InstallerArchive
+            installer_type = bosh.InstallerArchive
         elif isinstance(firstItem,bosh.InstallerProject):
-            InstallerType = bosh.InstallerProject
+            installer_type = bosh.InstallerProject
         else:
             event.Veto()
             return
         for item in self.GetSelected():
-            if not isinstance(self.data[item],InstallerType):
+            if not isinstance(self.data[item], installer_type):
                 event.Veto()
                 return
             #--Also, don't allow renaming the 'Last' marker
@@ -2150,11 +2149,11 @@ class InstallersList(balt.Tank):
         editbox = self._gList.GetEditControl()
         editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if InstallerType is bosh.InstallerMarker:
+        if installer_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
             editbox.SetSelection(2,to)
         #--Archives, change the selection to not include the extension
-        elif InstallerType is bosh.InstallerArchive:
+        elif installer_type is bosh.InstallerArchive:
             to = len(GPath(event.GetLabel()).sbody)
             editbox.SetSelection(0,to)
 
@@ -2252,8 +2251,8 @@ class InstallersList(balt.Tank):
                 self.data.irefresh(what='I')
                 BashFrame.modList.RefreshUI(refreshSaves=True)
                 if BashFrame.iniList is not None:
-                    # It will be None if the INI Edits Tab was hidden at startup,
-                    # and never initialized
+                    # It will be None if the INI Edits Tab was hidden at
+                    # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
