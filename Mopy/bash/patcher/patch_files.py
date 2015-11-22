@@ -68,7 +68,7 @@ class _PFile:
         self.allSet = set(self.allMods)
 
     def _log_header(self, log, patch_name):
-        log.setHeader(u'= ' + patch_name.s + u' ' + u'=' * 30 + u'#', True)
+        log.setHeader((u'= %s' % patch_name) + u' ' + u'=' * 30 + u'#', True)
         log(u"{{CONTENTS=1}}")
         #--Load Mods and error mods
         log.setHeader(u'= ' + _(u'Overview'), True)
