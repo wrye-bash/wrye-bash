@@ -2630,64 +2630,7 @@ class InstallersPanel(SashTankPanel):
         if self.frameActivated and data.extractOmodsNeeded():
             self.refreshing = True
             try:
-                with balt.Progress(_(u'Extracting OMODs...'),u'\n'+u' '*60) as progress:
-                    dirInstallers = bosh.dirs['installers']
-                    dirInstallersJoin = dirInstallers.join
-                    omods = [dirInstallersJoin(x) for x in dirInstallers.list() if x.cext == u'.omod']
-                    progress.setFull(max(len(omods),1))
-                    for i,omod in enumerate(omods):
-                        progress(i,x.stail)
-                        outDir = dirInstallersJoin(omod.body)
-                        num = 0
-                        omodRemoves = set()
-                        omodMoves = set()
-                        while outDir.exists():
-                            outDir = dirInstallersJoin(u'%s%s' % (omod.sbody,num))
-                            num += 1
-                        try:
-                            bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
-                            omodRemoves.add(omod)
-                        except (CancelError,SkipError):
-                            omodMoves.add(omod)
-                        except Exception as e:
-                            deprint(_(u"Error extracting OMOD '%s':") % omod.stail,traceback=True)
-                            # Ensures we don't infinitely refresh if moving the omod fails
-                            data.failedOmods.add(omod.body)
-                            omodMoves.add(omod)
-                    # Delete extracted omods
-                    def _del(files): balt.shellDelete(files, parent=self)
-                    try: _del(omodRemoves)
-                    except (CancelError,SkipError):
-                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to delete OMODs that have already been extracted.')
-                                          + u'\n\n' +
-                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
-                            try:
-                                _del(set(x for x in omodRemoves if x.exists()))
-                            except (CancelError,SkipError):
-                                continue
-                            break
-                        else:
-                            # User decided not to give permission.  Add omod to 'failedOmods' so we know not to try to extract them again
-                            for omod in omodRemoves:
-                                if omod.exists():
-                                    data.failedOmods.add(omod.body)
-                    # Move bad omods
-                    try:
-                        omodMoves = list(omodMoves)
-                        omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
-                        balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
-                        balt.shellMove(omodMoves, omodDests, parent=self)
-                    except (CancelError,SkipError):
-                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
-                                          + u'\n\n' +
-                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
-                            try:
-                                omodMoves = [x for x in omodMoves]
-                                omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
-                                balt.shellMove(omodMoves, omodDests, self)
-                            except (CancelError,SkipError):
-                                continue
-                            break
+                self.__extractOmods(data)
             finally:
                 self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
@@ -2738,6 +2681,81 @@ class InstallersPanel(SashTankPanel):
                 self.data.refreshStatus()
                 self.RefreshUIMods()
         super(InstallersPanel, self).ShowPanel()
+
+    def __extractOmods(self, data):
+        with balt.Progress(_(u'Extracting OMODs...'),
+                           u'\n' + u' ' * 60) as progress:
+            dirInstallers = bosh.dirs['installers']
+            dirInstallersJoin = dirInstallers.join
+            omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
+                     x.cext == u'.omod']
+            progress.setFull(max(len(omods), 1))
+            for i, omod in enumerate(omods):
+                progress(i, x.stail)
+                outDir = dirInstallersJoin(omod.body)
+                num = 0
+                omodRemoves = set()
+                omodMoves = set()
+                while outDir.exists():
+                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
+                    num += 1
+                try:
+                    bosh.OmodFile(omod).extractToProject(
+                        outDir, SubProgress(progress, i))
+                    omodRemoves.add(omod)
+                except (CancelError, SkipError):
+                    omodMoves.add(omod)
+                except:
+                    deprint(_(u"Error extracting OMOD '%s':") % omod.stail,
+                            traceback=True)
+                    # Ensure we don't infinitely refresh if moving the omod
+                    # fails
+                    data.failedOmods.add(omod.body)
+                    omodMoves.add(omod)
+            # Cleanup
+            dialog_title = _(u'OMOD Extraction - Cleanup Error')
+            # Delete extracted omods
+            def _del(files): balt.shellDelete(files, parent=self)
+            try:
+                _del(omodRemoves)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to delete '
+                        u'OMODs that have already been extracted.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodRemoves = [x for x in omodRemoves if x.exists()]
+                        _del(omodRemoves)
+                    except (CancelError, SkipError):
+                        continue
+                    break
+                else:
+                    # User decided not to give permission.  Add omod to
+                    # 'failedOmods' so we know not to try to extract them again
+                    for omod in omodRemoves:
+                        if omod.exists():
+                            data.failedOmods.add(omod.body)
+            # Move bad omods
+            try:
+                omodMoves = list(omodMoves)
+                omodDests = [
+                    dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail) for
+                    omod in omodMoves]
+                balt.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                balt.shellMove(omodMoves, omodDests, parent=self)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to move failed '
+                        u'OMODs out of the Bash Installers directory.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodMoves = [x for x in omodMoves]
+                        omodDests = [
+                            dirInstallersJoin(u'Bash', u'Failed OMODs',
+                                              omod.body) for omod in omodMoves]
+                        balt.shellMove(omodMoves, omodDests, self)
+                    except (CancelError, SkipError):
+                        continue
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
