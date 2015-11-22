@@ -2690,12 +2690,11 @@ class InstallersPanel(SashTankPanel):
             omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
                      x.cext == u'.omod']
             progress.setFull(max(len(omods), 1))
+            omodMoves, omodRemoves = set(), set()
             for i, omod in enumerate(omods):
-                progress(i, x.stail)
+                progress(i, omod.stail)
                 outDir = dirInstallersJoin(omod.body)
                 num = 0
-                omodRemoves = set()
-                omodMoves = set()
                 while outDir.exists():
                     outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
                     num += 1
@@ -2710,7 +2709,7 @@ class InstallersPanel(SashTankPanel):
                             traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
-                    data.failedOmods.add(omod.body)
+                    data.failedOmods.add(omod.tail)
                     omodMoves.add(omod)
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
@@ -2734,26 +2733,24 @@ class InstallersPanel(SashTankPanel):
                     # 'failedOmods' so we know not to try to extract them again
                     for omod in omodRemoves:
                         if omod.exists():
-                            data.failedOmods.add(omod.body)
+                            data.failedOmods.add(omod.tail)
             # Move bad omods
+            def _move_omods(failed):
+                dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
+                         for omod in failed]
+                balt.shellMove(failed, dests, parent=self)
             try:
                 omodMoves = list(omodMoves)
-                omodDests = [
-                    dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail) for
-                    omod in omodMoves]
                 balt.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
-                balt.shellMove(omodMoves, omodDests, parent=self)
+                _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while balt.askYes(self, _(
                         u'Bash needs Administrator Privileges to move failed '
                         u'OMODs out of the Bash Installers directory.') +
                         u'\n\n' + _(u'Try again?'), dialog_title):
                     try:
-                        omodMoves = [x for x in omodMoves]
-                        omodDests = [
-                            dirInstallersJoin(u'Bash', u'Failed OMODs',
-                                              omod.body) for omod in omodMoves]
-                        balt.shellMove(omodMoves, omodDests, self)
+                        omodMoves = [x for x in omodMoves if x.exists()]
+                        _move_omods(omodMoves)
                     except (CancelError, SkipError):
                         continue
 

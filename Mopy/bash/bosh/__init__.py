@@ -7507,8 +7507,9 @@ class InstallersData(DataDict):
 
     def extractOmodsNeeded(self):
         """Returns true if .omod files are present, requiring extraction."""
-        for file in dirs['installers'].list():
-            if file.cext == u'.omod' and file not in self.failedOmods: return True
+        for path in dirs['installers'].list():
+            if path.cext == u'.omod' and path not in self.failedOmods:
+                return True
         return False
 
     def embeddedBCFsExist(self):
