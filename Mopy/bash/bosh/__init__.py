@@ -106,26 +106,6 @@ def getPatchesList():
     """Get a basic list of potential Bash Patches."""
     return set(dirs['patches'].list()) | set(dirs['defaultPatches'].list())
 
-def formatInteger(value):
-    """Convert integer to string formatted to locale."""
-    return decode(locale.format('%d',int(value),True),locale.getpreferredencoding())
-
-def formatDate(value):
-    """Convert time to string formatted to to locale's default date/time."""
-    return decode(time.strftime('%c',time.localtime(value)),locale.getpreferredencoding())
-
-def unformatDate(date, formatStr):
-    """Basically a wrapper around time.strptime. Exists to get around bug in
-    strptime for Japanese locale."""
-    try:
-        return time.strptime(date, '%c')
-    except ValueError:
-        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
-            date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
-            return time.strptime(date, '%c')
-        else:
-            raise
-
 # Singletons, Constants -------------------------------------------------------
 #--Constants
 #..Bit-and this with the fid to get the objectindex.
@@ -5923,7 +5903,7 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        if hasattr(self,'fileSizeCrcs'):
+        if hasattr(self,'fileSizeCrcs'): # CRUFT PICKLE ?
             # Older pickle files didn't store filenames in unicode,
             # convert them here.
             self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
@@ -6301,7 +6281,7 @@ class Installer(object):
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
-        #--Find correct staring point to treat as BAIN package
+        #--Find correct starting point to treat as BAIN package
         dataDirs = self.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
@@ -6396,7 +6376,7 @@ class Installer(object):
         #--Data Size Crc
         self.refreshDataSizeCrc()
 
-    def refreshStatus(self,installers):
+    def refreshStatus(self, installersData):
         """Updates missingFiles, mismatchedFiles and status.
         Status:
         20: installed (green)
@@ -6406,8 +6386,8 @@ class Installer(object):
         -20: bad type (grey)
         """
         data_sizeCrc = self.data_sizeCrc
-        data_sizeCrcDate = installers.data_sizeCrcDate
-        abnorm_sizeCrc = installers.abnorm_sizeCrc
+        data_sizeCrcDate = installersData.data_sizeCrcDate
+        abnorm_sizeCrc = installersData.abnorm_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         misEspmed = self.mismatchedEspms
@@ -6747,10 +6727,8 @@ class InstallerConverter(object):
             srcAdd(installerCRC)
             fileList = subGet(installerCRC,[])
             fileAppend = fileList.append
-            for fileSizeCrc in installer.fileSizeCrcs:
-                fileName = fileSizeCrc[0]
-                fileCRC = fileSizeCrc[2]
-                srcFiles[fileCRC] = (installerCRC,fileName)
+            for fileName, __size, fileCRC in installer.fileSizeCrcs:
+                srcFiles[fileCRC] = (installerCRC, fileName)
                 #--Note any subArchives
                 if GPath(fileName).cext in readExts:
                     fileAppend(fileName)
@@ -6778,9 +6756,7 @@ class InstallerConverter(object):
             srcFiles.update(archivedFiles)
             Installer.rmTempDir()
         #--Make list of destination files
-        for fileSizeCrc in destInstaller.fileSizeCrcs:
-            fileName = fileSizeCrc[0]
-            fileCRC = fileSizeCrc[2]
+        for fileName, __size, fileCRC in destInstaller.fileSizeCrcs:
             destFileAppend((fileCRC, fileName))
             #--Note files that aren't in any of the source files
             if fileCRC not in srcFiles:
@@ -7116,9 +7092,8 @@ class InstallerProject(Installer):
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
-        for file in [x.s for x in self.src_sizeCrcDate]:
-            size,crc,date = src_sizeCrcDate[GPath(file)]
-            fileSizeCrcs.append((file,size,crc))
+        for path, (size, crc, date) in src_sizeCrcDate.iteritems():
+            fileSizeCrcs.append((path.s, size, crc))
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
             cumSize += size
@@ -7367,7 +7342,7 @@ class InstallersData(DataDict):
         if 'I' in what: changed |= self.refreshInstallers(progress,fullRefresh)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()
-        if 'S' in what or changed: changed |= self.refreshStatus()
+        if 'S' in what or changed: changed |= self.refreshInstallersStatus()
         if 'C' in what or changed: changed |= self.refreshConverters(progress,fullRefresh)
         #--Done
         if changed: self.hasChanged = True
@@ -7451,7 +7426,7 @@ class InstallersData(DataDict):
 
     #--Refresh Functions ------------------------------------------------------
     def refreshInstallers(self,progress=None,fullRefresh=False):
-        """Refresh installer data."""
+        """Refresh installer data from the installers' directory."""
         progress = progress or bolt.Progress()
         pending = set()
         projects = set()
@@ -7483,10 +7458,8 @@ class InstallersData(DataDict):
         progressSetFull = progress.setFull
         newDataGet = newData.get
         newDataSetDefault = newData.setdefault
-        for subPending,iClass in zip(
-            (pending - projects, pending & projects),
-            (InstallerArchive, InstallerProject)
-            ):
+        for subPending, iClass in zip((pending - projects, pending & projects),
+                                      (InstallerArchive, InstallerProject)):
             if not subPending: continue
             progress(0,_(u"Scanning Packages..."))
             progressSetFull(len(subPending))
@@ -7509,8 +7482,9 @@ class InstallersData(DataDict):
 
     def extractOmodsNeeded(self):
         """Returns true if .omod files are present, requiring extraction."""
-        for file in dirs['installers'].list():
-            if file.cext == u'.omod' and file not in self.failedOmods: return True
+        for path in dirs['installers'].list():
+            if path.cext == u'.omod' and path not in self.failedOmods:
+                return True
         return False
 
     def embeddedBCFsExist(self):
@@ -7655,26 +7629,25 @@ class InstallersData(DataDict):
 
     def refreshNorm(self):
         """Refresh self.abnorm_sizeCrc."""
-        data = self.data
-        active = [x for x in data if data[x].isActive]
-        active.sort(key=lambda x: data[x].order)
+        active = [x for x in self.values() if x.isActive]
+        active.sort(key=lambda pac: pac.order)
         #--norm
         norm_sizeCrc = {}
         normUpdate = norm_sizeCrc.update
         for package in active:
-            normUpdate(data[package].data_sizeCrc)
+            normUpdate(package.data_sizeCrc)
         #--Abnorm
         abnorm_sizeCrc = {}
-        data_sizeCrcDate = self.data_sizeCrcDate
-        dataGet = data_sizeCrcDate.get
+        dataGet = self.data_sizeCrcDate.get
         for path,sizeCrc in norm_sizeCrc.iteritems():
             sizeCrcDate = dataGet(path)
             if sizeCrcDate and sizeCrc != sizeCrcDate[:2]:
                 abnorm_sizeCrc[path] = sizeCrcDate[:2]
-        (self.abnorm_sizeCrc,oldAbnorm_sizeCrc) = (abnorm_sizeCrc,self.abnorm_sizeCrc)
+        self.abnorm_sizeCrc, oldAbnorm_sizeCrc = \
+            abnorm_sizeCrc, self.abnorm_sizeCrc
         return abnorm_sizeCrc != oldAbnorm_sizeCrc
 
-    def refreshStatus(self):
+    def refreshInstallersStatus(self):
         """Refresh installer status."""
         changed = False
         for installer in self.itervalues():

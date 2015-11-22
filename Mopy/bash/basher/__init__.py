@@ -69,9 +69,8 @@ import wx.gizmos
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass
 from ..bass import Resources
-from ..bosh import formatInteger, formatDate
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path, AbstractError
+    deprint, Path, AbstractError, formatInteger, formatDate
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -524,7 +523,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
                 masterInfo.oldName] = newName
-            self.PopulateItem(itemDex) # populate, refresh etc _last_
+            self.PopulateItem(itemDex) # populate, refresh must be called last
         elif newName == u'':
             event.Veto()
         else:
@@ -1307,7 +1306,7 @@ class ModDetails(_SashDetailsPanel):
         modifiedStr = self.modified.GetValue()
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = bosh.unformatDate(modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(modifiedStr, u'%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
@@ -1363,7 +1362,7 @@ class ModDetails(_SashDetailsPanel):
         if changeName and not self._askResourcesOk(modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
-            newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.modInfo.name)
@@ -1395,7 +1394,7 @@ class ModDetails(_SashDetailsPanel):
             modInfo.writeHeader()
         #--Change date?
         if changeDate or changeHedr or changeMasters:
-            newTimeTup = bosh.unformatDate(self.modifiedStr,u'%c')
+            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
         #--Done
@@ -1755,10 +1754,10 @@ class SaveList(balt.UIList):
     _sort_keys = {'File'    : None, # just sort by name
                   'Modified': lambda self, a: self.data[a].mtime,
                   'Size'    : lambda self, a: self.data[a].size,
-                  'Status'  : lambda self, a: self.data[a].getStatus(),
-                  'Player'  : lambda self, a: self.data[a].header.pcName,
                   'PlayTime': lambda self, a: self.data[a].header.gameTicks,
+                  'Player'  : lambda self, a: self.data[a].header.pcName,
                   'Cell'    : lambda self, a: self.data[a].header.pcLocation,
+                  'Status'  : lambda self, a: self.data[a].getStatus(),
                  }
 
     def OnLabelEdited(self, event):
@@ -2129,18 +2128,17 @@ class InstallersList(balt.Tank):
         """Start renaming installers"""
         #--Only rename multiple items of the same type
         firstItem = self.data[self.GetSelected()[0]]
-        InstallerType = None
         if isinstance(firstItem,bosh.InstallerMarker):
-            InstallerType = bosh.InstallerMarker
+            installer_type = bosh.InstallerMarker
         elif isinstance(firstItem,bosh.InstallerArchive):
-            InstallerType = bosh.InstallerArchive
+            installer_type = bosh.InstallerArchive
         elif isinstance(firstItem,bosh.InstallerProject):
-            InstallerType = bosh.InstallerProject
+            installer_type = bosh.InstallerProject
         else:
             event.Veto()
             return
         for item in self.GetSelected():
-            if not isinstance(self.data[item],InstallerType):
+            if not isinstance(self.data[item], installer_type):
                 event.Veto()
                 return
             #--Also, don't allow renaming the 'Last' marker
@@ -2150,11 +2148,11 @@ class InstallersList(balt.Tank):
         editbox = self._gList.GetEditControl()
         editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if InstallerType is bosh.InstallerMarker:
+        if installer_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
             editbox.SetSelection(2,to)
         #--Archives, change the selection to not include the extension
-        elif InstallerType is bosh.InstallerArchive:
+        elif installer_type is bosh.InstallerArchive:
             to = len(GPath(event.GetLabel()).sbody)
             editbox.SetSelection(0,to)
 
@@ -2252,8 +2250,8 @@ class InstallersList(balt.Tank):
                 self.data.irefresh(what='I')
                 BashFrame.modList.RefreshUI(refreshSaves=True)
                 if BashFrame.iniList is not None:
-                    # It will be None if the INI Edits Tab was hidden at startup,
-                    # and never initialized
+                    # It will be None if the INI Edits Tab was hidden at
+                    # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
@@ -2296,26 +2294,28 @@ class InstallersList(balt.Tank):
                     # Omod extraction was cancelled, or user denied admin
                     # rights if needed
                     raise
-                except: deprint(
+                except:
+                    deprint(
                         _(u"Failed to extract '%s'.") % omod.stail + u'\n\n',
                         traceback=True)
+                    failed.append(omod.stail)
         except CancelError:
             skipped = set(omodnames) - set(completed)
             msg = u''
-            if len(completed) > 0:
+            if completed:
                 completed = [u' * ' + x.stail for x in completed]
                 msg += _(u'The following OMODs were unpacked:') + \
                        u'\n%s\n\n' % u'\n'.join(completed)
-            if len(skipped) > 0:
+            if skipped:
                 skipped = [u' * ' + x.stail for x in skipped]
                 msg += _(u'The following OMODs were skipped:') + \
                        u'\n%s\n\n' % u'\n'.join(skipped)
-            if len(failed) > 0:
+            if failed:
                 msg += _(u'The following OMODs failed to extract:') + \
                        u'\n%s' % u'\n'.join(failed)
             balt.showOk(self, msg, _(u'OMOD Extraction Canceled'))
         else:
-            if len(failed) > 0: balt.showWarning(self, _(
+            if failed: balt.showWarning(self, _(
                 u'The following OMODs failed to extract.  This could be '
                 u'a file IO error, or an unsupported OMOD format:') + u'\n\n'
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
@@ -2631,64 +2631,7 @@ class InstallersPanel(SashTankPanel):
         if self.frameActivated and data.extractOmodsNeeded():
             self.refreshing = True
             try:
-                with balt.Progress(_(u'Extracting OMODs...'),u'\n'+u' '*60) as progress:
-                    dirInstallers = bosh.dirs['installers']
-                    dirInstallersJoin = dirInstallers.join
-                    omods = [dirInstallersJoin(x) for x in dirInstallers.list() if x.cext == u'.omod']
-                    progress.setFull(max(len(omods),1))
-                    for i,omod in enumerate(omods):
-                        progress(i,x.stail)
-                        outDir = dirInstallersJoin(omod.body)
-                        num = 0
-                        omodRemoves = set()
-                        omodMoves = set()
-                        while outDir.exists():
-                            outDir = dirInstallersJoin(u'%s%s' % (omod.sbody,num))
-                            num += 1
-                        try:
-                            bosh.OmodFile(omod).extractToProject(outDir,SubProgress(progress,i))
-                            omodRemoves.add(omod)
-                        except (CancelError,SkipError):
-                            omodMoves.add(omod)
-                        except Exception as e:
-                            deprint(_(u"Error extracting OMOD '%s':") % omod.stail,traceback=True)
-                            # Ensures we don't infinitely refresh if moving the omod fails
-                            data.failedOmods.add(omod.body)
-                            omodMoves.add(omod)
-                    # Delete extracted omods
-                    def _del(files): balt.shellDelete(files, parent=self)
-                    try: _del(omodRemoves)
-                    except (CancelError,SkipError):
-                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to delete OMODs that have already been extracted.')
-                                          + u'\n\n' +
-                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
-                            try:
-                                _del(set(x for x in omodRemoves if x.exists()))
-                            except (CancelError,SkipError):
-                                continue
-                            break
-                        else:
-                            # User decided not to give permission.  Add omod to 'failedOmods' so we know not to try to extract them again
-                            for omod in omodRemoves:
-                                if omod.exists():
-                                    data.failedOmods.add(omod.body)
-                    # Move bad omods
-                    try:
-                        omodMoves = list(omodMoves)
-                        omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.tail) for omod in omodMoves]
-                        balt.shellMakeDirs(dirInstallersJoin(u'Bash',u'Failed OMODs'))
-                        balt.shellMove(omodMoves, omodDests, parent=self)
-                    except (CancelError,SkipError):
-                        while balt.askYes(self,_(u'Bash needs Administrator Privileges to move failed OMODs out of the Bash Installers directory.')
-                                          + u'\n\n' +
-                                          _(u'Try again?'),_(u'OMOD Extraction - Cleanup Error')):
-                            try:
-                                omodMoves = [x for x in omodMoves]
-                                omodDests = [dirInstallersJoin(u'Bash',u'Failed OMODs',omod.body) for omod in omodMoves]
-                                balt.shellMove(omodMoves, omodDests, self)
-                            except (CancelError,SkipError):
-                                continue
-                            break
+                self.__extractOmods(data)
             finally:
                 self.refreshing = False
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
@@ -2736,9 +2679,81 @@ class InstallersPanel(SashTankPanel):
                 else:
                     refresh = bool(data.pop(path, None))
             if refresh:
-                self.data.refreshStatus()
+                self.data.refreshInstallersStatus()
                 self.RefreshUIMods()
         super(InstallersPanel, self).ShowPanel()
+
+    def __extractOmods(self, data):
+        with balt.Progress(_(u'Extracting OMODs...'),
+                           u'\n' + u' ' * 60) as progress:
+            dirInstallers = bosh.dirs['installers']
+            dirInstallersJoin = dirInstallers.join
+            omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
+                     x.cext == u'.omod']
+            progress.setFull(max(len(omods), 1))
+            omodMoves, omodRemoves = set(), set()
+            for i, omod in enumerate(omods):
+                progress(i, omod.stail)
+                outDir = dirInstallersJoin(omod.body)
+                num = 0
+                while outDir.exists():
+                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
+                    num += 1
+                try:
+                    bosh.OmodFile(omod).extractToProject(
+                        outDir, SubProgress(progress, i))
+                    omodRemoves.add(omod)
+                except (CancelError, SkipError):
+                    omodMoves.add(omod)
+                except:
+                    deprint(_(u"Error extracting OMOD '%s':") % omod.stail,
+                            traceback=True)
+                    # Ensure we don't infinitely refresh if moving the omod
+                    # fails
+                    data.failedOmods.add(omod.tail)
+                    omodMoves.add(omod)
+            # Cleanup
+            dialog_title = _(u'OMOD Extraction - Cleanup Error')
+            # Delete extracted omods
+            def _del(files): balt.shellDelete(files, parent=self)
+            try:
+                _del(omodRemoves)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to delete '
+                        u'OMODs that have already been extracted.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodRemoves = [x for x in omodRemoves if x.exists()]
+                        _del(omodRemoves)
+                    except (CancelError, SkipError):
+                        continue
+                    break
+                else:
+                    # User decided not to give permission.  Add omod to
+                    # 'failedOmods' so we know not to try to extract them again
+                    for omod in omodRemoves:
+                        if omod.exists():
+                            data.failedOmods.add(omod.tail)
+            # Move bad omods
+            def _move_omods(failed):
+                dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
+                         for omod in failed]
+                balt.shellMove(failed, dests, parent=self)
+            try:
+                omodMoves = list(omodMoves)
+                balt.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                _move_omods(omodMoves)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to move failed '
+                        u'OMODs out of the Bash Installers directory.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodMoves = [x for x in omodMoves if x.exists()]
+                        _move_omods(omodMoves)
+                    except (CancelError, SkipError):
+                        continue
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3583,6 +3598,9 @@ class BashStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
+    @property
+    def iconsSize(self): return settings['bash.statusbar.iconSize'] + 8
+
     def _addButton(self,link):
         gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
         if gButton:
@@ -3594,8 +3612,6 @@ class BashStatusBar(wx.StatusBar):
             gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
-        self.size = settings['bash.statusbar.iconSize']
-        self.size += 8
         self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings['bash.statusbar.order']
         orderChanged = False
@@ -3629,8 +3645,8 @@ class BashStatusBar(wx.StatusBar):
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
         # Refresh
-        self.SetStatusWidths([self.size*len(self.buttons),-1,130])
-        self.SetSize((-1, self.size))
+        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
+        self.SetSize((-1, self.iconsSize))
         self.GetParent().SendSizeEvent()
         self.OnSize()
 
@@ -3644,7 +3660,8 @@ class BashStatusBar(wx.StatusBar):
                 settings['bash.statusbar.hide'].add(link.uid)
                 settings.setChanged('bash.statusbar.hide')
                 # Refresh
-                self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+                self.SetStatusWidths(
+                    [self.iconsSize * len(self.buttons), -1, 130])
                 self.GetParent().SendSizeEvent()
                 self.OnSize()
 
@@ -3672,7 +3689,7 @@ class BashStatusBar(wx.StatusBar):
                     break
             self.buttons.insert(insertBefore,button)
         # Refresh
-        self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
         self.GetParent().SendSizeEvent()
         self.OnSize()
 
@@ -3696,9 +3713,9 @@ class BashStatusBar(wx.StatusBar):
         for i,button in enumerate(self.buttons):
             if button.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x/self.size
-                if abs(x) % self.size > self.size:
-                    delta += x/abs(x)
+                delta = x / self.iconsSize
+                if abs(x) % self.iconsSize > self.iconsSize:
+                    delta += x / abs(x)
                 i += delta
                 if i < 0: i = 0
                 elif i > len(self.buttons): i = len(self.buttons)
@@ -3775,10 +3792,10 @@ class BashStatusBar(wx.StatusBar):
 
     def OnSize(self,event=None):
         rect = self.GetFieldRect(0)
-        (xPos,yPos) = (rect.x+4,rect.y+2)
+        (xPos, yPos) = (rect.x + 4, rect.y + 2)
         for button in self.buttons:
-            button.SetPosition((xPos,yPos))
-            xPos += self.size
+            button.SetPosition((xPos, yPos))
+            xPos += self.iconsSize
         if event: event.Skip()
 
 #------------------------------------------------------------------------------

@@ -62,7 +62,7 @@ class ColorDialog(balt.Dialog):
         self.defaultAll = Button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
         self.apply = ApplyButton(self, onClick=self.OnApply)
         self.applyAll = Button(self,_(u'Apply All'),onClick=self.OnApplyAll)
-        self.exportConfig = Button(self,_(u'Export...'),onClick=self.OnExport)
+        self.export_config = Button(self, _(u'Export...'), onClick=self.OnExport)
         self.importConfig = Button(self,_(u'Import...'),onClick=self.OnImport)
         self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
         #--Events
@@ -76,7 +76,7 @@ class ColorDialog(balt.Dialog):
             (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
             (hSizer(
                 (self.defaultAll,0,wx.RIGHT,5),
-                (self.applyAll,0,wx.RIGHT,5), self.exportConfig,
+                (self.applyAll,0,wx.RIGHT,5), self.export_config,
                 ),0,wx.EXPAND|wx.ALL,5),
             (hSizer(
                 (self.default,0,wx.RIGHT,5),

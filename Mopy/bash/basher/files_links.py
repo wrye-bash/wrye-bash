@@ -29,8 +29,7 @@ from .. import balt, bosh, bush, bolt
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
-from ..bolt import CancelError, SkipError, GPath
-from ..bosh import formatDate
+from ..bolt import CancelError, SkipError, GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide', 'File_Redate',
@@ -290,7 +289,7 @@ class File_Redate(AppendableLink, ItemLink):
                                    default=formatDate(int(time.time())))
         if not newTimeStr: return
         try:
-            newTimeTup = bosh.unformatDate(newTimeStr,u'%c')
+            newTimeTup = bolt.unformatDate(newTimeStr, u'%c')
             newTime = int(time.mktime(newTimeTup))
         except ValueError:
             self._showError(_(u'Unrecognized date: ') + newTimeStr)

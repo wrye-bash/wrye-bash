@@ -2339,7 +2339,7 @@ class UIList(wx.Panel):
     @staticmethod
     def _round(siz):
         """Round non zero sizes to 1 KB."""
-        siz = u'0' if siz == 0 else bosh.formatInteger(max(siz, 1024) / 1024)
+        siz = u'0' if siz == 0 else bolt.formatInteger(max(siz, 1024) / 1024)
         return siz + u' KB'
 
 #------------------------------------------------------------------------------
@@ -2712,7 +2712,7 @@ def copyListToClipboard(selected):
     if selected and not wx.TheClipboard.IsOpened():
         wx.TheClipboard.Open()
         clipData = wx.FileDataObject()
-        for mod in selected: clipData.AddFile(mod)
+        for abspath in selected: clipData.AddFile(abspath)
         wx.TheClipboard.SetData(clipData)
         wx.TheClipboard.Close()
 

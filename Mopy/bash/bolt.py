@@ -149,6 +149,28 @@ def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False)
         else: return goodEncoding[0]
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
+def formatInteger(value):
+    """Convert integer to string formatted to locale."""
+    return decode(locale.format('%d', int(value), True),
+                  locale.getpreferredencoding())
+
+def formatDate(value):
+    """Convert time to string formatted to to locale's default date/time."""
+    return decode(time.strftime('%c', time.localtime(value)),
+                  locale.getpreferredencoding())
+
+def unformatDate(date, formatStr):
+    """Basically a wrapper around time.strptime. Exists to get around bug in
+    strptime for Japanese locale."""
+    try:
+        return time.strptime(date, '%c')
+    except ValueError:
+        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
+            date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
+            return time.strptime(date, '%c')
+        else:
+            raise
+
 # Localization ----------------------------------------------------------------
 # noinspection PyDefaultArgument
 def _findAllBashModules(files=[], bashPath=None, cwd=None,
@@ -1022,7 +1044,7 @@ class Path(object):
             return cmp(self._cs, Path.getCase(other))
 
 def clearReadOnly(dirPath):
-    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
+    """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
     cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
     subprocess.call(cmd, startupinfo=startupinfo)
 
@@ -1534,9 +1556,6 @@ class Settings(DataDict):
         for key in defaults.keys():
             if key not in self.data:
                 self.data[key] = copy.deepcopy(defaults[key])
-
-    def setDefault(self,key,default):
-        """Sets a single value to a default value if it has not yet been set."""
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""
