@@ -2712,7 +2712,7 @@ def copyListToClipboard(selected):
     if selected and not wx.TheClipboard.IsOpened():
         wx.TheClipboard.Open()
         clipData = wx.FileDataObject()
-        for mod in selected: clipData.AddFile(mod)
+        for abspath in selected: clipData.AddFile(abspath)
         wx.TheClipboard.SetData(clipData)
         wx.TheClipboard.Close()
 

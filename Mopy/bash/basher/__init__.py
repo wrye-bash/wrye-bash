@@ -524,7 +524,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
                 masterInfo.oldName] = newName
-            self.PopulateItem(itemDex) # populate, refresh etc _last_
+            self.PopulateItem(itemDex) # populate, refresh must be called last
         elif newName == u'':
             event.Veto()
         else:
@@ -1755,10 +1755,10 @@ class SaveList(balt.UIList):
     _sort_keys = {'File'    : None, # just sort by name
                   'Modified': lambda self, a: self.data[a].mtime,
                   'Size'    : lambda self, a: self.data[a].size,
-                  'Status'  : lambda self, a: self.data[a].getStatus(),
-                  'Player'  : lambda self, a: self.data[a].header.pcName,
                   'PlayTime': lambda self, a: self.data[a].header.gameTicks,
+                  'Player'  : lambda self, a: self.data[a].header.pcName,
                   'Cell'    : lambda self, a: self.data[a].header.pcLocation,
+                  'Status'  : lambda self, a: self.data[a].getStatus(),
                  }
 
     def OnLabelEdited(self, event):
@@ -2302,20 +2302,20 @@ class InstallersList(balt.Tank):
         except CancelError:
             skipped = set(omodnames) - set(completed)
             msg = u''
-            if len(completed) > 0:
+            if completed:
                 completed = [u' * ' + x.stail for x in completed]
                 msg += _(u'The following OMODs were unpacked:') + \
                        u'\n%s\n\n' % u'\n'.join(completed)
-            if len(skipped) > 0:
+            if skipped:
                 skipped = [u' * ' + x.stail for x in skipped]
                 msg += _(u'The following OMODs were skipped:') + \
                        u'\n%s\n\n' % u'\n'.join(skipped)
-            if len(failed) > 0:
+            if failed:
                 msg += _(u'The following OMODs failed to extract:') + \
                        u'\n%s' % u'\n'.join(failed)
             balt.showOk(self, msg, _(u'OMOD Extraction Canceled'))
         else:
-            if len(failed) > 0: balt.showWarning(self, _(
+            if failed: balt.showWarning(self, _(
                 u'The following OMODs failed to extract.  This could be '
                 u'a file IO error, or an unsupported OMOD format:') + u'\n\n'
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
@@ -3583,6 +3583,9 @@ class BashStatusBar(wx.StatusBar):
         self.dragStart = 0
         self.moved = False
 
+    @property
+    def iconsSize(self): return settings['bash.statusbar.iconSize'] + 8
+
     def _addButton(self,link):
         gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
         if gButton:
@@ -3594,8 +3597,6 @@ class BashStatusBar(wx.StatusBar):
             gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
-        self.size = settings['bash.statusbar.iconSize']
-        self.size += 8
         self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings['bash.statusbar.order']
         orderChanged = False
@@ -3629,8 +3630,8 @@ class BashStatusBar(wx.StatusBar):
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
         # Refresh
-        self.SetStatusWidths([self.size*len(self.buttons),-1,130])
-        self.SetSize((-1, self.size))
+        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
+        self.SetSize((-1, self.iconsSize))
         self.GetParent().SendSizeEvent()
         self.OnSize()
 
@@ -3644,7 +3645,8 @@ class BashStatusBar(wx.StatusBar):
                 settings['bash.statusbar.hide'].add(link.uid)
                 settings.setChanged('bash.statusbar.hide')
                 # Refresh
-                self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+                self.SetStatusWidths(
+                    [self.iconsSize * len(self.buttons), -1, 130])
                 self.GetParent().SendSizeEvent()
                 self.OnSize()
 
@@ -3672,7 +3674,7 @@ class BashStatusBar(wx.StatusBar):
                     break
             self.buttons.insert(insertBefore,button)
         # Refresh
-        self.SetStatusWidths([self.size*len(self.buttons),-1,130])
+        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
         self.GetParent().SendSizeEvent()
         self.OnSize()
 
@@ -3696,9 +3698,9 @@ class BashStatusBar(wx.StatusBar):
         for i,button in enumerate(self.buttons):
             if button.GetId() == id_:
                 x = mouseEvent.GetPosition()[0]
-                delta = x/self.size
-                if abs(x) % self.size > self.size:
-                    delta += x/abs(x)
+                delta = x / self.iconsSize
+                if abs(x) % self.iconsSize > self.iconsSize:
+                    delta += x / abs(x)
                 i += delta
                 if i < 0: i = 0
                 elif i > len(self.buttons): i = len(self.buttons)
@@ -3775,10 +3777,10 @@ class BashStatusBar(wx.StatusBar):
 
     def OnSize(self,event=None):
         rect = self.GetFieldRect(0)
-        (xPos,yPos) = (rect.x+4,rect.y+2)
+        (xPos, yPos) = (rect.x + 4, rect.y + 2)
         for button in self.buttons:
-            button.SetPosition((xPos,yPos))
-            xPos += self.size
+            button.SetPosition((xPos, yPos))
+            xPos += self.iconsSize
         if event: event.Skip()
 
 #------------------------------------------------------------------------------

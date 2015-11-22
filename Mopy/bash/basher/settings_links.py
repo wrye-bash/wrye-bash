@@ -234,7 +234,8 @@ class Settings_IconSize(RadioLink):
         self.help = _(u"Sets the status bar icons to %(size)s pixels") % (
             {'size': unicode(size)})
 
-    def _check(self): return self.size == bosh.settings['bash.statusbar.iconSize']
+    def _check(self):
+        return self.size == bosh.settings['bash.statusbar.iconSize']
 
     def Execute(self,event):
         bosh.settings['bash.statusbar.iconSize'] = self.size

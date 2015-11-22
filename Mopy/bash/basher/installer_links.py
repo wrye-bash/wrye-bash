@@ -511,7 +511,6 @@ class Installer_HasExtraData(CheckLink, _InstallerLink):
 class Installer_OverrideSkips(CheckLink, _InstallerLink):
     """Toggle overrideSkips flag on installer."""
     text = _(u'Override Skips')
-    help = _(u"Allow installation of files in non-standard directories.")
 
     def _initData(self, window, selection):
         super(Installer_OverrideSkips, self)._initData(window, selection)
@@ -534,7 +533,7 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
         self.window.RefreshUI()
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
-    """Toggle skipRefresh flag on installer."""
+    """Toggle skipRefresh flag on project."""
     text = _(u"Don't Refresh")
     help = _(u"Don't automatically refresh project.")
 
@@ -544,7 +543,8 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
         self.idata[self.selected[0]]).skipRefresh
 
     def Execute(self,event):
-        """Handle selection."""
+        """Toggle skipRefresh project attribute and refresh the project if
+        skipRefresh is set to False."""
         installer = self.idata[self.selected[0]]
         installer.skipRefresh ^= True
         if not installer.skipRefresh:

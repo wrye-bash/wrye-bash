@@ -1022,7 +1022,7 @@ class Path(object):
             return cmp(self._cs, Path.getCase(other))
 
 def clearReadOnly(dirPath):
-    """Recursivelly (/S) clear ReadOnly flag if set - include folders (/D)."""
+    """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
     cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
     subprocess.call(cmd, startupinfo=startupinfo)
 
@@ -1534,9 +1534,6 @@ class Settings(DataDict):
         for key in defaults.keys():
             if key not in self.data:
                 self.data[key] = copy.deepcopy(defaults[key])
-
-    def setDefault(self,key,default):
-        """Sets a single value to a default value if it has not yet been set."""
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""

@@ -5923,7 +5923,7 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        if hasattr(self,'fileSizeCrcs'):
+        if hasattr(self,'fileSizeCrcs'): # CRUFT PICKLE ?
             # Older pickle files didn't store filenames in unicode,
             # convert them here.
             self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
@@ -6301,7 +6301,7 @@ class Installer(object):
         fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
-        #--Find correct staring point to treat as BAIN package
+        #--Find correct starting point to treat as BAIN package
         dataDirs = self.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
@@ -6396,7 +6396,7 @@ class Installer(object):
         #--Data Size Crc
         self.refreshDataSizeCrc()
 
-    def refreshStatus(self,installers):
+    def refreshStatus(self, installersData):
         """Updates missingFiles, mismatchedFiles and status.
         Status:
         20: installed (green)
@@ -6406,8 +6406,8 @@ class Installer(object):
         -20: bad type (grey)
         """
         data_sizeCrc = self.data_sizeCrc
-        data_sizeCrcDate = installers.data_sizeCrcDate
-        abnorm_sizeCrc = installers.abnorm_sizeCrc
+        data_sizeCrcDate = installersData.data_sizeCrcDate
+        abnorm_sizeCrc = installersData.abnorm_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         misEspmed = self.mismatchedEspms
@@ -7451,7 +7451,7 @@ class InstallersData(DataDict):
 
     #--Refresh Functions ------------------------------------------------------
     def refreshInstallers(self,progress=None,fullRefresh=False):
-        """Refresh installer data."""
+        """Refresh installer data from the installers' directory."""
         progress = progress or bolt.Progress()
         pending = set()
         projects = set()
@@ -7483,10 +7483,8 @@ class InstallersData(DataDict):
         progressSetFull = progress.setFull
         newDataGet = newData.get
         newDataSetDefault = newData.setdefault
-        for subPending,iClass in zip(
-            (pending - projects, pending & projects),
-            (InstallerArchive, InstallerProject)
-            ):
+        for subPending, iClass in zip((pending - projects, pending & projects),
+                                      (InstallerArchive, InstallerProject)):
             if not subPending: continue
             progress(0,_(u"Scanning Packages..."))
             progressSetFull(len(subPending))
@@ -7655,23 +7653,22 @@ class InstallersData(DataDict):
 
     def refreshNorm(self):
         """Refresh self.abnorm_sizeCrc."""
-        data = self.data
-        active = [x for x in data if data[x].isActive]
-        active.sort(key=lambda x: data[x].order)
+        active = [x for x in self.values() if x.isActive]
+        active.sort(key=lambda pac: pac.order)
         #--norm
         norm_sizeCrc = {}
         normUpdate = norm_sizeCrc.update
         for package in active:
-            normUpdate(data[package].data_sizeCrc)
+            normUpdate(package.data_sizeCrc)
         #--Abnorm
         abnorm_sizeCrc = {}
-        data_sizeCrcDate = self.data_sizeCrcDate
-        dataGet = data_sizeCrcDate.get
+        dataGet = self.data_sizeCrcDate.get
         for path,sizeCrc in norm_sizeCrc.iteritems():
             sizeCrcDate = dataGet(path)
             if sizeCrcDate and sizeCrc != sizeCrcDate[:2]:
                 abnorm_sizeCrc[path] = sizeCrcDate[:2]
-        (self.abnorm_sizeCrc,oldAbnorm_sizeCrc) = (abnorm_sizeCrc,self.abnorm_sizeCrc)
+        self.abnorm_sizeCrc, oldAbnorm_sizeCrc = \
+            abnorm_sizeCrc, self.abnorm_sizeCrc
         return abnorm_sizeCrc != oldAbnorm_sizeCrc
 
     def refreshStatus(self):
