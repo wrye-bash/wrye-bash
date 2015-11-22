@@ -555,7 +555,6 @@ class MelMODS(MelBase):
     def loadData(self,record,ins,type,size,readId):
         """Reads data from ins into record attribute."""
         insUnpack = ins.unpack
-        insRead32 = ins.readString32
         count, = insUnpack('I',4,readId)
         data = []
         dataAppend = data.append
@@ -2986,7 +2985,6 @@ class MreFlst(MelRecord):
             removeItems = self.items & other.deflsts
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
             self.items = (self.items | other.deflsts)
-        hasOldItems = bool(self.items)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
@@ -2997,7 +2995,7 @@ class MreFlst(MelRecord):
                 newItemsAdd(fid)
         if newItems:
             self.items |= newItems
-            self.formIDInList.sort
+            self.formIDInList.sort()
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
@@ -5231,7 +5229,7 @@ class MelItems(MelGroups):
     def __init__(self, attr='items'):
         MelGroups.__init__(self,attr,
             MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-            MelOptStruct('COED','=IIf',(FID,'owner'),(FID,'glob'), ('rank'))
+            MelOptStruct('COED','=IIf', (FID,'owner'), (FID,'glob'), 'rank')
             )
 
     def getLoaders(self, loaders):
