@@ -29,7 +29,7 @@ import struct
 import itertools
 from .constants import *
 from .default_tweaks import default_tweaks
-from .records import MreHeader
+from .records import MreHeader, MreLvli, MreLvln
 from ... import brec
 from ...brec import BaseRecordHeader, ModError
 
@@ -71,8 +71,8 @@ class cs:
     ## TODO:  When the Fallout 4 Creation Kit is actually released, double check
     ## that the filename is correct, and create an actual icon
     shortName = u'FO4CK'                 # Abbreviated name
-    longName = u'Fallout 4 Creation Kit' # Full name
-    exe = u'FO4CK.exe'                   # Executable to run
+    longName = u'Creation Kit'           # Full name
+    exe = u'CreationKit.exe'             # Executable to run
     seArgs = None                        # u'-editor'
     imageName = u'creationkit%s.png'     # Image name template for the status bar
 
@@ -154,7 +154,7 @@ class ini:
 class ess:
     # Save file capabilities
     canReadBasic = True         # All the basic stuff needed for the Saves Tab
-    canEditMasters = False      # Adjusting save file masters
+    canEditMasters = True       # Adjusting save file masters
     canEditMore = False         # No advanced editing
     ext = u'.fos'               # Save file extension
 
@@ -166,11 +166,14 @@ class ess:
             raise Exception(u'Save file is not a Fallout 4 save game.')
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
-        version,saveNumber,size = struct.unpack('2IH',ins.read(10))
+        header.version, = struct.unpack('I',ins.read(4))
+        saveNumber, = struct.unpack('I',ins.read(4))
+        size, = struct.unpack('H',ins.read(2))
         header.pcName = ins.read(size)
         header.pcLevel, = struct.unpack('I',ins.read(4))
         size, = struct.unpack('H',ins.read(2))
         header.pcLocation = ins.read(size)
+        # Begin Game Time
         size, = struct.unpack('H',ins.read(2))
         header.gameDate = ins.read(size)
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
@@ -181,8 +184,13 @@ class ess:
         header.gameDays = float(days) + float(hours)/24 + float(minutes)/(24*60)
         # Assuming still 1000 ticks per second
         header.gameTicks = (days*24*60*60 + hours*60*60 + minutes*60) * 1000
+        # End Game Time
         size, = struct.unpack('H',ins.read(2))
-        ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime
+        header.pcRace = ins.read(size) # Player Race
+        header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
+        # Read unknown 16 bytes
+        unk3 = ins.read(16)
+        #--Image Data
         ssWidth, = struct.unpack('I',ins.read(4))
         ssHeight, = struct.unpack('I',ins.read(4))
         if ins.tell() != headerSize + 16:
@@ -201,32 +209,21 @@ class ess:
         gameVersion = ins.read(size)
         #--Masters
         mastersSize, = struct.unpack('I',ins.read(4))
-        mastersStart = ins.tell()
+        header.mastersStart = ins.tell()
         del header.masters[:]
         numMasters, = struct.unpack('B',ins.read(1))
         for count in xrange(numMasters):
             size, = struct.unpack('H',ins.read(2))
             header.masters.append(ins.read(size))
-        if ins.tell() != mastersStart + mastersSize:
-            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
+        if ins.tell() != header.mastersStart + mastersSize:
+            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-header.mastersStart,mastersSize))
 
     @staticmethod
     def writeMasters(ins,out,header):
         """Rewrites masters of existing save file."""
-        def unpack(format,size): return struct.unpack(format,ins.read(size))
-        def pack(format,*args): out.write(struct.pack(format,*args))
-        #--Magic (FO4_SAVEGAME)
-        out.write(ins.read(12))
-        #--Header
-        size, = unpack('I',4)
-        pack('I',size)
-        out.write(ins.read(size-8))
-        ssWidth,ssHeight = unpack('2I',8)
-        pack('2I',ssWidth,ssHeight)
-        #--Screenshot
-        out.write(ins.read(3*ssWidth*ssHeight))
-        #--formVersion
-        out.write(ins.read(1))
+        def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
+        def pack(fmt, *args): out.write(struct.pack(fmt, *args))
+        out.write(ins.read(header.mastersStart-4))
         #--plugin info
         oldSize, = unpack('I',4)
         newSize = 1 + sum(len(x)+2 for x in header.masters)
@@ -244,7 +241,6 @@ class ess:
             out.write(master.s)
         #--Offsets
         offset = out.tell() - ins.tell()
-        ## TODO: See if this is needed for FO4
         #--File Location Table
         for i in xrange(6):
             # formIdArrayCount offset, unkownTable3Offset,
@@ -254,9 +250,9 @@ class ess:
             pack('I',oldOffset+offset)
         #--Copy the rest
         while True:
-            buffer = ins.read(0x5000000)
-            if not buffer: break
-            out.write(buffer)
+            buff = ins.read(0x5000000)
+            if not buff: break
+            out.write(buff)
         return oldMasters
 
 #--INI files that should show up in the INI Edits tab
@@ -338,10 +334,14 @@ ignoreDataFilePrefixes = set()
 ignoreDataDirs = set()
 
 #--Tags supported by this game
-allTags = sorted(set())
+allTags = sorted((
+    u'Delev', u'NoMerge', u'Relev',
+    ))
 
 #--Gui patcher classes available when building a Bashed Patch
-patchers = tuple()
+patchers = (
+    u'ListsMerger',
+    )
 
 #--CBash Gui patcher classes available when building a Bashed Patch
 CBash_patchers = tuple()
@@ -358,7 +358,7 @@ raceHairFemale = dict()
 #--Plugin format stuff
 class esp:
     #--Wrye Bash capabilities
-    canBash = False         # Can create Bashed Patches
+    canBash = True          # Can create Bashed Patches
     canCBash = False        # CBash can handle this game's records
     canEditHeader = True    # Can edit anything in the TES4 record
 
@@ -379,7 +379,9 @@ class esp:
                 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
                 'STAT', 'SCOL', 'MSTT', 'GRAS', 'TREE', 'FLOR', 'FURN',
                 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM',
-                'NOTE', 'PROJ', 'HAZD', 'BNDS', 'TERM', 'LVLI', 'WTHR',
+                'NOTE', 'PROJ', 'HAZD', 'BNDS', 'TERM', 'GRAS', 'TREE',
+                'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
+                'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'LVLI', 'WTHR',
                 'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD',
                 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'ANIO', 'WATR',
                 'EFSH', 'EXPL', 'DEBR', 'IMGS', 'IMAD', 'FLST', 'PERK',
@@ -391,7 +393,6 @@ class esp:
                 'CLFM', 'REVB', 'PKIN', 'RFGP', 'AMDL', 'LAYR', 'COBJ',
                 'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO',
                 'AORU', 'SCSN', 'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS',]
-
 
     #--Dict mapping 'ignored' top types to un-ignored top types.
     topIgTypes = dict([
@@ -461,6 +462,19 @@ class RecordHeader(BaseRecordHeader):
             return struct.pack('=4s5I',self.recType,self.size,self.flags1,
                                self.fid,self.flags2,self.extra)
 
+#------------------------------------------------------------------------------
+# These Are normally not mergable but added to brec.MreRecord.type_class
+#
+#       MreCell,
+#------------------------------------------------------------------------------
+# These have undefined FormIDs Do not merge them
+#
+#       MreNavi, MreNavm,
+#------------------------------------------------------------------------------
+# These need syntax revision but can be merged once that is corrected
+#
+#       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
+#------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = tuple()
 
@@ -479,6 +493,8 @@ def init():
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
+        MreLvli, MreLvln,
+        ####### for debug
         MreHeader,
         ))
 

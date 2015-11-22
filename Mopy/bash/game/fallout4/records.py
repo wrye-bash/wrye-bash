@@ -23,14 +23,10 @@
 # =============================================================================
 
 """This module contains the Fallout 4 record classes."""
-
+from ..skyrim.records import MelBounds, MreLeveledList
 from ...brec import MreHeaderBase, MelSet, MelStruct, MelUnicode, MelNull, \
-    MelFidList, MelBase
-
-#------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
-#------------------------------------------------------------------------------
-
+    MelFidList, MelBase, MelOptStruct, MelStructA, MelFid, MelLString, \
+    MelString, MreLeveledListBase, FID
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -61,3 +57,41 @@ class MreHeader(MreHeaderBase):
     __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreLvli(MreLeveledList):
+    classType = 'LVLI'
+    copyAttrs = ('chanceNone','glob',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLM','B','maxCount'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelOptStruct('LVLG','I',(FID,'glob')),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        MelStructA('LLKC','2I','filterKeywordChances',(FID, 'keyword'), 'chance'),
+        MelFid('LVSG', 'epicLootChance'),
+        MelLString('ONAM', 'overrideName')
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreLvln(MreLeveledList):
+    classType = 'LVLN'
+    copyAttrs = ('chanceNone','model','modt_p',)
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelStruct('LVLD','B','chanceNone'),
+        MelStruct('LVLM','B','maxCount'),
+        MelStruct('LVLF','B',(MreLeveledListBase._flags,'flags',0L)),
+        MelOptStruct('LVLG','I',(FID,'glob')),
+        MelNull('LLCT'),
+        MreLeveledList.MelLevListLvlo(),
+        MelStructA('LLKC','2I','filterKeywordChances',(FID, 'keyword'), 'chance'),
+        MelString('MODL','model'),
+        MelBase('MODT','modt_p'),
+        )
+    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
