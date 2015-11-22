@@ -34,7 +34,30 @@ from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
 class _PFile:
-# hasty mixin to absorb setMods - also compare __init__
+# TODO(ut): ugly (C/P diffs) 'patchName' class variable and bush imports
+    def __init__(self, patchers):
+        #--New attrs
+        self.patchers = patchers
+        # Aliases from one mod name to another. Used by text file patchers.
+        self.aliases = {}
+        self.mergeIds = set()
+        self.loadErrorMods = []
+        self.worldOrphanMods = []
+        self.unFilteredMods = []
+        self.compiledAllMods = []
+        self.patcher_mod_skipcount = {}
+        #--Config
+        self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
+        #--Mods
+        dex = bosh.modInfos.loIndexCached
+        loadMods = [name for name in bosh.modInfos.activeCached if
+                    dex(name) < dex(self.__class__.patchName)]
+        if not loadMods:
+            raise BoltError(u"No active mods dated before the bashed patch")
+        self.setMods(loadMods, [])
+        for patcher in self.patchers:
+            patcher.initPatchFile(self, loadMods)
+
     def setMods(self,loadMods=None,mergeMods=None):
         """Sets mod lists and sets."""
         if loadMods is not None: self.loadMods = loadMods
@@ -151,27 +174,8 @@ class PatchFile(_PFile, ModFile):
         self.tes4.author = u'BASHED PATCH'
         self.tes4.masters = [bosh.modInfos.masterName]
         self.longFids = True
-        #--New attrs
-        self.aliases = {} #--Aliases from one mod name to another. Used by text file patchers.
-        self.patchers = patchers
         self.keepIds = set()
-        self.mergeIds = set()
-        self.loadErrorMods = []
-        self.worldOrphanMods = []
-        self.unFilteredMods = []
-        self.compiledAllMods = []
-        self.patcher_mod_skipcount = {}
-        #--Config
-        self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
-        #--Mods
-        dex = bosh.modInfos.loIndexCached
-        loadMods = [name for name in bosh.modInfos.activeCached
-                    if dex(name) < dex(PatchFile.patchName)]
-        if not loadMods:
-            raise BoltError(u"No active mods dated before the bashed patch")
-        self.setMods(loadMods, [])
-        for patcher in self.patchers:
-            patcher.initPatchFile(self,loadMods)
+        _PFile.__init__(self, patchers)
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -357,34 +361,18 @@ class CBash_PatchFile(_PFile, ObModFile):
     def __init__(self, patchName, patchers):
         """Initialization."""
         self.patchName = patchName
-        #--New attrs
-        self.aliases = {} #--Aliases from one mod name to another. Used by text file patchers.
-        self.patchers = patchers
-        self.mergeIds = set()
-        self.loadErrorMods = []
-        self.worldOrphanMods = []
-        self.unFilteredMods = []
-        self.compiledAllMods = []
         self.group_patchers = {}
         self.indexMGEFs = False
         self.mgef_school = bush.mgef_school.copy()
         self.mgef_name = bush.mgef_name.copy()
         self.hostileEffects = bush.hostileEffects.copy()
         self.scanSet = set()
-        self.patcher_mod_skipcount = {}
-        #--Config
-        self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
-        self.races_vanilla = ['argonian','breton','dremora','dark elf','dark seducer', 'golden saint','high elf','imperial','khajiit','nord','orc','redguard','wood elf']
-        self.races_data = {'EYES':[],'HAIR':[]}
-        #--Mods
-        dex = bosh.modInfos.loIndexCached
-        loadMods = [name for name in bosh.modInfos.activeCached
-                    if dex(name) < dex(CBash_PatchFile.patchName)]
-        if not loadMods:
-            raise BoltError(u"No active mods dated before the bashed patch")
-        self.setMods(loadMods,[])
-        for patcher in self.patchers:
-            patcher.initPatchFile(self,loadMods)
+        self.races_vanilla = ['argonian', 'breton', 'dremora', 'dark elf',
+                              'dark seducer', 'golden saint', 'high elf',
+                              'imperial', 'khajiit', 'nord', 'orc', 'redguard',
+                              'wood elf']
+        self.races_data = {'EYES': [], 'HAIR': []}
+        _PFile.__init__(self, patchers)
 
     def initData(self,progress):
         """Gives each patcher a chance to get its source data."""
