@@ -922,9 +922,6 @@ class ModList(_ModsSortMixin, balt.UIList):
 
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
-        files = kwargs.get('files', ())
-        if files : ##: this is a hack to mask bugs - uproot !
-            kwargs['files'] = filter(lambda x: x in bosh.modInfos, files)
         super(ModList, self).RefreshUI(**kwargs)
         if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
 
