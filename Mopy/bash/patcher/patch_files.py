@@ -49,8 +49,10 @@ class _PFile:
         self.compiledAllMods = []
         self.patcher_mod_skipcount = {}
         #--Config
-        self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
-        #--Mods
+        if bush.game.fsName in (u'FalloutNV', u'Fallout3',):
+            self.bodyTags = 'HAGPBFE' #--Default bodytags
+        else:
+            self.bodyTags = 'ARGHTCCPBS' #--Default bodytags        #--Mods
         dex = bosh.modInfos.loIndexCached
         loadMods = [name for name in bosh.modInfos.activeCached if
                     dex(name) < dex(self.__class__.patchName)]
