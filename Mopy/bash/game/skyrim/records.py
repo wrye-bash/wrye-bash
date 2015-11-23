@@ -146,49 +146,12 @@ class MelBounds(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
+    """Needs custom unpacker to look at FormID type of owner.  If owner is an
+	NPC then it is followed by a FormID.  If owner is a faction then it is
+	followed by an signed integer or '=Iif' instead of '=IIf' """
     def __init__(self):
         MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'),
-                              'rank')
-
-#function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
-#var
-#  Container  : IwbContainer;
-#  LinksTo    : IwbElement;
-#  MainRecord : IwbMainRecord;
-#begin
-#  Result := 0;
-#  if aElement.ElementType = etValue then
-#    Container := aElement.Container
-#  else
-#    Container := aElement as IwbContainer;
-#
-#  LinksTo := Container.ElementByName['Owner'].LinksTo;
-#
-#
-#  if Supports(LinksTo, IwbMainRecord, MainRecord) then
-#    if MainRecord.Signature = 'NPC_' then
-#      Result := 1
-#    else if MainRecord.Signature = 'FACT' then
-#      Result := 2;
-#end;
-#Basically the Idea is this;
-#When it's an NPC_ then it's a FormID of a [GLOB]
-#When it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
-#When it's not an NPC_ or FACT then it's unknown and just a 4Byte integer
-
-#class MelCoed(MelStruct):
-# wbCOED := wbStructExSK(COED, [2], [0, 1], 'Extra Data', [
-#    {00} wbFormIDCkNoReach('Owner', [NPC_, FACT, NULL]),
-#    {04} wbUnion('Global Variable / Required Rank', wbCOEDOwnerDecider, [
-#           wbByteArray('Unknown', 4, cpIgnore),
-#           wbFormIDCk('Global Variable', [GLOB, NULL]),
-#           wbInteger('Required Rank', itS32)
-#         ]),
-#    {08} wbFloat('Item Condition')
-#  ]);
-
-# When all of Skyrim's records are entered this needs to be updated
-# To more closly resemple the wbCOEDOwnerDecider from TES5Edit
+                              'itemCondition')
 #------------------------------------------------------------------------------
 class MelColorN(MelOptStruct):
         def __init__(self):
@@ -5171,7 +5134,7 @@ class MelItems(MelGroups):
     def __init__(self, attr='items'):
         MelGroups.__init__(self,attr,
             MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-            MelOptStruct('COED','=IIf', (FID,'owner'), (FID,'glob'), 'rank')
+            MelCoed(),
             )
 
     def getLoaders(self, loaders):
