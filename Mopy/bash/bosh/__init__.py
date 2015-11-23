@@ -134,7 +134,10 @@ reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reBSAExt  = re.compile(ur'\.bsa(.ghost)?$',re.I|re.U)
-reEssExt  = re.compile(ur'\.ess$',re.I|re.U)
+# Comment 1: Could this be used in class CoSaves?
+# Comment 2: Does this need re.U?
+reEssExt  = re.compile(ur'(\.(es|fo)[rs])$',re.I|re.U)
+# Needs revision since all games have different file name formats
 reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.(es|fo)[rs])$',re.I|re.U)
 reCsvExt  = re.compile(ur'\.csv$',re.I|re.U)
 reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
@@ -1700,7 +1703,11 @@ def _delete(itemOrItems, **kwargs):
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave  = re.compile(r'\.ess(f?)$',re.I)
+	# Comment 1: Does this need re.U?
+	# Review: Old line reSave  = re.compile(r'(\.ess(f?))$',re.I)
+	#       : What is the (f?) for, essf?
+	#       : There are no save games named .essf or .esf
+    reSave  = re.compile(r'(\.(es|fo)[rs])$',re.I)
 
     @staticmethod
     def getPaths(savePath):
