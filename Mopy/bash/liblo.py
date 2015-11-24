@@ -172,7 +172,7 @@ def Init(path):
     LIBLO_WARN_INVALID_LIST = _uint('LIBLO_WARN_INVALID_LIST')
     LIBLO_ERROR_INVALID_ARGS = _uint('LIBLO_ERROR_INVALID_ARGS')
     errors = dict((name, value) for name, value in locals().iteritems() if
-                  name.startswith('LIBLO_'))
+                  name.startswith(('LIBLO_ERROR_', 'LIBLO_WARN_')))
     LIBLO_RETURN_MAX = _uint('LIBLO_RETURN_MAX')
 
     # =========================================================================

@@ -32,6 +32,8 @@ from bolt import Path
 
 LootApi = None
 version = None
+loot_needs_cleaning_yes = None
+LootDb, LootError = None, None
 
 # Version of LOOT this Python script is written for.
 PythonAPIVersion = (0,6)
@@ -59,13 +61,14 @@ def Init(path):
         #else:
             path = os.path.join(path,u'loot32.dll')
 
-    global LootApi
+    global LootApi, loot_needs_cleaning_yes, LootDb, LootError
 
     # First unload any LOOT dll previously loaded
-    del LootApi
-    LootApi = None
+    del LootApi, LootDb, LootError
+    LootApi = loot_needs_cleaning_yes = None
 
     if not os.path.exists(path):
+        LootDb, LootError = None, None
         return
 
     try:
@@ -77,7 +80,7 @@ def Init(path):
             handle = LoadLibrary(path)
         LootApi = CDLL(path,handle=handle)
     except Exception as e:
-        LootApi = None
+        LootApi = LootDb = LootError = None
         raise
 
     # Some types
@@ -95,6 +98,9 @@ def Init(path):
     c_bool_p = POINTER(c_bool)
     loot_message_p = POINTER(loot_message)
     loot_message_p_p = POINTER(loot_message_p)
+
+    # helpers
+    def _uint(const): return c_uint.in_dll(LootApi, const).value
 
     # utility unicode functions
     def _uni(x): return u'' if x is None else unicode(x,'utf8')
@@ -126,35 +132,31 @@ def Init(path):
     # =========================================================================
     # API Constants - Return codes
     # =========================================================================
-    errors = {}
-    ErrorCallbacks = {}
-    for name in ['ok',
-                 'error_liblo_error',
-                 'error_file_write_fail',
-                 'error_parse_fail',
-                 'error_condition_eval_fail',
-                 'error_regex_eval_fail',
-                 'error_no_mem',
-                 'error_invalid_args',
-                 'error_no_tag_map',
-                 'error_path_not_found',
-                 'error_no_game_detected',
-                 'error_windows_error',
-                 'error_sorting_error',
-                 ]:
-        name = 'loot_'+name
-        errors[name] = c_uint.in_dll(LootApi,name).value
-        ErrorCallbacks[errors[name]] = None
-    loot_return_max = c_uint.in_dll(LootApi,'loot_return_max').value
-    globals().update(errors)
+    loot_ok = _uint('loot_ok')
+    loot_error_liblo_error = _uint('loot_error_liblo_error')
+    loot_error_file_write_fail = _uint('loot_error_file_write_fail')
+    loot_error_parse_fail = _uint('loot_error_parse_fail')
+    loot_error_condition_eval_fail = _uint('loot_error_condition_eval_fail')
+    loot_error_regex_eval_fail = _uint('loot_error_regex_eval_fail')
+    loot_error_no_mem = _uint('loot_error_no_mem')
+    loot_error_invalid_args = _uint('loot_error_invalid_args')
+    loot_error_no_tag_map = _uint('loot_error_no_tag_map')
+    loot_error_path_not_found = _uint('loot_error_path_not_found')
+    loot_error_no_game_detected = _uint('loot_error_no_game_detected')
+    loot_error_windows_error = _uint('loot_error_windows_error')
+    loot_error_sorting_error = _uint('loot_error_sorting_error')
+
+    errors = dict((name, value) for name, value in locals().iteritems() if
+                  name.startswith('loot_error_'))
+    loot_return_max = _uint('loot_return_max')
 
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    loot_game_tes4 = c_uint.in_dll(LootApi,'loot_game_tes4').value
-    loot_game_tes5 = c_uint.in_dll(LootApi,'loot_game_tes5').value
-    loot_game_fo3 = c_uint.in_dll(LootApi,'loot_game_fo3').value
-    loot_game_fonv = c_uint.in_dll(LootApi,'loot_game_fonv').value
+    loot_game_tes4 = _uint('loot_game_tes4')
+    loot_game_tes5 = _uint('loot_game_tes5')
+    loot_game_fo3 = _uint('loot_game_fo3')
+    loot_game_fonv = _uint('loot_game_fonv')
     games = {
         'Oblivion':loot_game_tes4,
         loot_game_tes4:loot_game_tes4,
@@ -169,22 +171,22 @@ def Init(path):
     # =========================================================================
     # API Constants - Message Types
     # =========================================================================
-    loot_message_say = c_uint.in_dll(LootApi,'loot_message_say').value
-    loot_message_warn = c_uint.in_dll(LootApi,'loot_message_warn').value
-    loot_message_error = c_uint.in_dll(LootApi,'loot_message_error').value
+    loot_message_say = _uint('loot_message_say')
+    loot_message_warn = _uint('loot_message_warn')
+    loot_message_error = _uint('loot_message_error')
 
     # =========================================================================
     # API Constants - Languages
     # =========================================================================
-    loot_lang_any = c_uint.in_dll(LootApi,'loot_lang_any').value
+    loot_lang_any = _uint('loot_lang_any')
     # Other language constants are unused by Bash, so omitted here.
 
     # =========================================================================
     # API Constants - Cleanliness
     # =========================================================================
-    loot_needs_cleaning_no = c_uint.in_dll(LootApi,'loot_needs_cleaning_no').value
-    loot_needs_cleaning_yes = c_uint.in_dll(LootApi,'loot_needs_cleaning_yes').value
-    loot_needs_cleaning_unknown = c_uint.in_dll(LootApi,'loot_needs_cleaning_unknown').value
+    loot_needs_cleaning_no = _uint('loot_needs_cleaning_no')
+    loot_needs_cleaning_yes = _uint('loot_needs_cleaning_yes')
+    loot_needs_cleaning_unknown = _uint('loot_needs_cleaning_unknown')
 
     # =========================================================================
     # API Functions - Error Handling
@@ -200,19 +202,14 @@ def Init(path):
             raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % ret)
         return unicode(details.value if details.value else 'None', 'utf8')
 
-    def RegisterCallback(errorCode,callback):
-        """Used to setup callback functions for whenever specific error codes
-           are encountered"""
-        ErrorCallbacks[errorCode] = callback
-
     class LootError(Exception):
         def __init__(self,value):
             self.code = value
-            msg = 'UNKNOWN(%i)' % value
-            for code in errors:
-                if errors[code] == value:
-                    msg = code
+            for errorName, errorCode in errors.iteritems():
+                if errorCode == value:
+                    msg = errorName
                     break
+            else: msg = 'UNKNOWN(%i)' % value
             msg += ':'
             try:
                 msg += GetLastErrorDetails()
@@ -221,12 +218,10 @@ def Init(path):
             self.msg = msg
             Exception.__init__(self,msg)
 
-        def __repr__(self): return '<LootError: %s>' % self.msg
+        def __repr__(self): return '<LootError: %r>' % self.msg
         def __str__(self): return 'LootError: %s' % self.msg
 
     def LootErrorCheck(result):
-        callback = ErrorCallbacks.get(result,None)
-        if callback: callback()
         if result == loot_ok: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
@@ -393,13 +388,10 @@ def Init(path):
                code"""
             return [x for x in plugins if self.GetDirtyMessage(x)[1] == cleanCode]
 
-    # Put the locally defined functions, classes, etc into the module global namespace
-    globals().update(locals())
-
 # Initialize the LOOT API, assuming that loot32.dll and loot64.dll are in
 # the same directory. Call Init again with the path to these dll's if this
 # assumption is incorrect. LootApi will be None if this is the case.
 try:
     Init(os.getcwdu())
 except LootVersionError:
-    pass
+    LootDb, LootError = None, None
