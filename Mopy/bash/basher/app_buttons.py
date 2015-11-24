@@ -698,7 +698,7 @@ class App_GenPickle(StatusBar_Button):
                 #--Source file
         if fileName:
             sorter = lambda a: a.eid
-            loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
+            loadFactory = bosh.LoadFactory(False, bush.game.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
             modFile = bosh.ModFile(modInfo,loadFactory)
             modFile.load(True)
