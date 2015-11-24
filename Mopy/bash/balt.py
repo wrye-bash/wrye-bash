@@ -2263,7 +2263,6 @@ class UIList(wx.Panel):
             colDex += 1
         while listCtrl.GetColumnCount() > numCols:
             listCtrl.DeleteColumn(numCols)
-        self.autosizeColumns()
 
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
