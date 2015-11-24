@@ -372,6 +372,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,
+    'fo4View.iKnowWhatImDoing':False,
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,

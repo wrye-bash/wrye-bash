@@ -323,6 +323,10 @@ class Tooldir_Button(App_Button):
         App_Button.__init__(self, bass.tooldirs[toolKey], images, tip, obseTip, obseArg, workingDir, toolKey, canHide)
 
 #------------------------------------------------------------------------------
+class _Mods_Fo4ViewExpert(BoolLink):
+    """Toggle Fo4Edit expert mode (when launched via Bash)."""
+    text, key = _(u'FO4Edit Expert'), 'fo4View.iKnowWhatImDoing'
+
 class _Mods_Tes4ViewExpert(BoolLink):
     """Toggle Tes4Edit expert mode (when launched via Bash)."""
     text, key = _(u'Tes4Edit Expert'), 'tes4View.iKnowWhatImDoing'
@@ -374,6 +378,8 @@ class App_Tes4View(App_Button):
             self.mainMenu.append(_Mods_Tes5ViewExpert())
         elif bush.game.fsName == 'Oblivion' or bush.game.fsName == 'Nehrim':
             self.mainMenu.append(_Mods_Tes4ViewExpert())
+        elif bush.game.fsName == 'Fallout4':
+            self.mainMenu.append(_Mods_Fo4ViewExpert())
 
     def IsPresent(self):
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
@@ -395,6 +401,9 @@ class App_Tes4View(App_Button):
                 extraArgs.append(u'-IKnowWhatImDoing')
         if bush.game.fsName == 'Skyrim':
             if bosh.settings['tes5View.iKnowWhatImDoing']:
+                extraArgs.append(u'-IKnowWhatImDoing')
+        if bush.game.fsName == 'Fallout4':
+            if bosh.settings['fo4View.iKnowWhatImDoing']:
                 extraArgs.append(u'-IKnowWhatImDoing')
         self.extraArgs = tuple(extraArgs)
         super(App_Tes4View, self).Execute()
