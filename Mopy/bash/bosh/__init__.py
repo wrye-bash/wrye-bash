@@ -5288,10 +5288,8 @@ class ConfigHelpers:
         else:
             return self.tagCache[modName][1]
 
-    def getDirtyMessage(self,modName):
-        message,clean = lootDb.GetDirtyMessage(modName)
-        cleanIt = clean == loot.loot_needs_cleaning_yes
-        return cleanIt,message
+    @staticmethod
+    def getDirtyMessage(modName): return lootDb.GetDirtyMessage(modName)
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):

@@ -32,7 +32,6 @@ from bolt import Path
 
 LootApi = None
 version = None
-loot_needs_cleaning_yes = None
 LootDb, LootError = None, None
 
 # Version of LOOT this Python script is written for.
@@ -61,11 +60,11 @@ def Init(path):
         #else:
             path = os.path.join(path,u'loot32.dll')
 
-    global LootApi, loot_needs_cleaning_yes, LootDb, LootError
+    global LootApi, LootDb, LootError
 
     # First unload any LOOT dll previously loaded
     del LootApi, LootDb, LootError
-    LootApi = loot_needs_cleaning_yes = None
+    LootApi = None
 
     if not os.path.exists(path):
         LootDb, LootError = None, None
@@ -132,61 +131,60 @@ def Init(path):
     # =========================================================================
     # API Constants - Return codes
     # =========================================================================
-    loot_ok = _uint('loot_ok')
-    loot_error_liblo_error = _uint('loot_error_liblo_error')
-    loot_error_file_write_fail = _uint('loot_error_file_write_fail')
-    loot_error_parse_fail = _uint('loot_error_parse_fail')
-    loot_error_condition_eval_fail = _uint('loot_error_condition_eval_fail')
-    loot_error_regex_eval_fail = _uint('loot_error_regex_eval_fail')
-    loot_error_no_mem = _uint('loot_error_no_mem')
-    loot_error_invalid_args = _uint('loot_error_invalid_args')
-    loot_error_no_tag_map = _uint('loot_error_no_tag_map')
-    loot_error_path_not_found = _uint('loot_error_path_not_found')
-    loot_error_no_game_detected = _uint('loot_error_no_game_detected')
-    loot_error_windows_error = _uint('loot_error_windows_error')
-    loot_error_sorting_error = _uint('loot_error_sorting_error')
-
+    LOOT_OK = _uint('loot_ok')
+    LOOT_ERROR_LIBLO_ERROR = _uint('loot_error_liblo_error')
+    LOOT_ERROR_FILE_WRITE_FAIL = _uint('loot_error_file_write_fail')
+    LOOT_ERROR_PARSE_FAIL = _uint('loot_error_parse_fail')
+    LOOT_ERROR_CONDITION_EVAL_FAIL = _uint('loot_error_condition_eval_fail')
+    LOOT_ERROR_REGEX_EVAL_FAIL = _uint('loot_error_regex_eval_fail')
+    LOOT_ERROR_NO_MEM = _uint('loot_error_no_mem')
+    LOOT_ERROR_INVALID_ARGS = _uint('loot_error_invalid_args')
+    LOOT_ERROR_NO_TAG_MAP = _uint('loot_error_no_tag_map')
+    LOOT_ERROR_PATH_NOT_FOUND = _uint('loot_error_path_not_found')
+    LOOT_ERROR_NO_GAME_DETECTED = _uint('loot_error_no_game_detected')
+    LOOT_ERROR_WINDOWS_ERROR = _uint('loot_error_windows_error')
+    LOOT_ERROR_SORTING_ERROR = _uint('loot_error_sorting_error')
     errors = dict((name, value) for name, value in locals().iteritems() if
-                  name.startswith('loot_error_'))
-    loot_return_max = _uint('loot_return_max')
+                  name.startswith('LOOT_ERROR_'))
+    LOOT_RETURN_MAX = _uint('loot_return_max')
 
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    loot_game_tes4 = _uint('loot_game_tes4')
-    loot_game_tes5 = _uint('loot_game_tes5')
-    loot_game_fo3 = _uint('loot_game_fo3')
-    loot_game_fonv = _uint('loot_game_fonv')
+    LOOT_GAME_TES4 = _uint('loot_game_tes4')
+    LOOT_GAME_TES5 = _uint('loot_game_tes5')
+    LOOT_GAME_FO3 = _uint('loot_game_fo3')
+    LOOT_GAME_FONV = _uint('loot_game_fonv')
     games = {
-        'Oblivion':loot_game_tes4,
-        loot_game_tes4:loot_game_tes4,
-        'Skyrim':loot_game_tes5,
-        loot_game_tes5:loot_game_tes5,
-        'Fallout3':loot_game_fo3,
-        loot_game_fo3:loot_game_fo3,
-        'FalloutNV':loot_game_fonv,
-        loot_game_fonv:loot_game_fonv,
-        }
+        'Oblivion': LOOT_GAME_TES4,
+        LOOT_GAME_TES4: LOOT_GAME_TES4,
+        'Skyrim': LOOT_GAME_TES5,
+        LOOT_GAME_TES5: LOOT_GAME_TES5,
+        'Fallout3': LOOT_GAME_FO3,
+        LOOT_GAME_FO3: LOOT_GAME_FO3,
+        'FalloutNV': LOOT_GAME_FONV,
+        LOOT_GAME_FONV: LOOT_GAME_FONV,
+    }
 
     # =========================================================================
     # API Constants - Message Types
     # =========================================================================
-    loot_message_say = _uint('loot_message_say')
-    loot_message_warn = _uint('loot_message_warn')
-    loot_message_error = _uint('loot_message_error')
+    LOOT_MESSAGE_SAY = _uint('loot_message_say')
+    LOOT_MESSAGE_WARN = _uint('loot_message_warn')
+    LOOT_MESSAGE_ERROR = _uint('loot_message_error')
 
     # =========================================================================
     # API Constants - Languages
     # =========================================================================
-    loot_lang_any = _uint('loot_lang_any')
+    LOOT_LANG_ANY = _uint('loot_lang_any')
     # Other language constants are unused by Bash, so omitted here.
 
     # =========================================================================
     # API Constants - Cleanliness
     # =========================================================================
-    loot_needs_cleaning_no = _uint('loot_needs_cleaning_no')
-    loot_needs_cleaning_yes = _uint('loot_needs_cleaning_yes')
-    loot_needs_cleaning_unknown = _uint('loot_needs_cleaning_unknown')
+    LOOT_NEEDS_CLEANING_NO = _uint('loot_needs_cleaning_no')
+    LOOT_NEEDS_CLEANING_YES = _uint('loot_needs_cleaning_yes')
+    LOOT_NEEDS_CLEANING_UNKNOWN = _uint('loot_needs_cleaning_unknown')
 
     # =========================================================================
     # API Functions - Error Handling
@@ -198,7 +196,7 @@ def Init(path):
     def GetLastErrorDetails():
         details = c_char_p()
         ret = _CGetLastErrorDetails(byref(details))
-        if ret != loot_ok:
+        if ret != LOOT_OK:
             raise Exception(u'An error occurred while getting the details of a LOOT API error: %i' % ret)
         return unicode(details.value if details.value else 'None', 'utf8')
 
@@ -222,7 +220,7 @@ def Init(path):
         def __str__(self): return 'LootError: %s' % self.msg
 
     def LootErrorCheck(result):
-        if result == loot_ok: return result
+        if result == LOOT_OK: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
         raise LootError(result)
@@ -334,14 +332,14 @@ def Init(path):
         def Load(self, masterlist, userlist=None):
             # Load masterlist/userlist
             _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
-            _CEvalConditionals(self._DB, loot_lang_any)
+            _CEvalConditionals(self._DB, LOOT_LANG_ANY)
             self._GetBashTags()
 
         def PlainLoad(self, masterlist, userlist=None):
             _CLoad(self._DB, _enc(masterlist), _enc(userlist) if userlist else None)
 
         def EvalConditionals(self):
-            _CEvalConditionals(self._DB, loot_lang_any)
+            _CEvalConditionals(self._DB, LOOT_LANG_ANY)
             self._GetBashTags()
 
         def _GetBashTags(self):
@@ -371,10 +369,10 @@ def Init(path):
         def GetDirtyMessage(self,plugin):
             clean = c_uint()
             _CGetDirtyMessage(self._DB,_enc(plugin),byref(clean))
-            if clean.value == loot_needs_cleaning_yes:
-                return 'Contains dirty edits, needs cleaning.',clean.value
+            if clean.value == LOOT_NEEDS_CLEANING_YES:
+                return True, 'Contains dirty edits, needs cleaning.'
             else:
-                return '',clean.value
+                return False, ''
 
         def DumpMinimal(self,file,overwrite):
             _CDumpMinimal(self._DB,_enc(file),overwrite)
@@ -382,7 +380,7 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
-        def FilterDirty(self,plugins,cleanCode=loot_needs_cleaning_yes):
+        def FilterDirty(self,plugins,cleanCode=LOOT_NEEDS_CLEANING_YES):
             """Given a list of plugins, returns the subset of that list,
                consisting of plugins that meet the given loot_needs_cleaning_*
                code"""
