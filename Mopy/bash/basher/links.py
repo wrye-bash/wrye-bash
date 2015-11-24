@@ -366,7 +366,6 @@ def InitInstallerLinks():
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
-        openAtMenu.links.append(Installer_OpenPES())
         InstallersList.itemMenu.append(openAtMenu)
     InstallersList.itemMenu.append(Installer_Hide())
     InstallersList.itemMenu.append(Installer_Rename())
