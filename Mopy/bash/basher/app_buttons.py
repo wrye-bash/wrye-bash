@@ -152,7 +152,8 @@ class App_Button(StatusBar_Button):
             java = win.join(u'syswow64', u'javaw.exe')
         return java
 
-    def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None,uid=None,canHide=True):
+    def __init__(self, exePathArgs, images, tip, obseTip=None, obseArg=None,
+                 workingDir=None, uid=None, canHide=True):
         """Initialize
         exePathArgs (string): exePath
         exePathArgs (tuple): (exePath,*exeArgs)
@@ -686,34 +687,36 @@ class App_GenPickle(StatusBar_Button):
         except:
             fids = {}
             maxId = 0
-        maxId = max(maxId,0xf12345)
+        maxId = max(maxId, 0xf12345)
         maxOld = maxId
-        print 'maxId',hex(maxId)
-        #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
-        # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
+        print 'maxId', hex(maxId)
+        #--Eid list? - if the GMST has a 00000000 eid when looking at it in
+        # the cs with nothing but oblivion.esm loaded you need to add the
+        # gmst to this list, rebuild the pickle and overwrite the old one.
         for eid in bush.game.gmstEids:
             if eid not in fids:
                 maxId += 1
                 fids[eid] = maxId
-                print '%08X  %08X %s' % (0,maxId,eid)
-                #--Source file
+                print '%08X  %08X %s' % (0, maxId, eid)
+        #--Source file
         if fileName:
             sorter = lambda a: a.eid
             loadFactory = bosh.LoadFactory(False, bush.game.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
-            modFile = bosh.ModFile(modInfo,loadFactory)
+            modFile = bosh.ModFile(modInfo, loadFactory)
             modFile.load(True)
-            for gmst in sorted(modFile.GMST.records,key=sorter):
+            for gmst in sorted(modFile.GMST.records, key=sorter):
                 print gmst.eid, gmst.value
                 if gmst.eid not in fids:
                     maxId += 1
                     fids[gmst.eid] = maxId
-                    print '%08X  %08X %s' % (gmst.fid,maxId,gmst.eid)
+                    print '%08X  %08X %s' % (gmst.fid, maxId, gmst.eid)
         #--Changes?
         if maxId > maxOld:
-            outData = {'GMST':fids}
-            cPickle.dump(outData,GPath(bush.game.pklfile).open('w'))
-            print _(u"%d new gmst ids written to "+bush.game.pklfile) % ((maxId - maxOld),)
+            outData = {'GMST': fids}
+            cPickle.dump(outData, GPath(bush.game.pklfile).open('w'))
+            print _(u"%d new gmst ids written to " + bush.game.pklfile) % (
+                (maxId - maxOld),)
         else:
             print _(u'No changes necessary. PKL data unchanged.')
 

@@ -5205,9 +5205,7 @@ class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
     def __init__(self):
-        """Initialialize."""
         #--LOOT masterlist or if that doesn't exist use the taglist
-
         libbsa.Init(dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not libbsa.libbsa:
@@ -5222,10 +5220,11 @@ class ConfigHelpers:
 
         global lootDb
         lootDb = loot.LootDb(dirs['app'].s,bush.game.fsName)
-
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
-        self.lootMasterPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'masterlist.yaml')
-        self.lootUserPath = dirs['userApp'].join(os.pardir,u'LOOT',bush.game.fsName,u'userlist.yaml')
+        self.lootMasterPath = dirs['userApp'].join(
+            os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
+        self.lootUserPath = dirs['userApp'].join(
+            os.pardir, u'LOOT', bush.game.fsName, u'userlist.yaml')
         self.lootMasterTime = None
         self.lootUserTime = None
         self.tagList = dirs['defaultPatches'].join(u'taglist.yaml')
@@ -5310,7 +5309,9 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
-    def checkMods(self,showModList=False,showRuleSets=False,showNotes=False,showConfig=True,showSuggest=True,showCRC=False,showVersion=True,showWarn=True,scanDirty=None):
+    def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
+                  showConfig=True, showSuggest=True, showCRC=False,
+                  showVersion=True, showWarn=True, scanDirty=None):
         """Checks currently loaded mods against ruleset.
            scanDirty should be the instance of ModChecker, to scan."""
         active = set(modInfos.activeCached)

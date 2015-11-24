@@ -610,22 +610,22 @@ def _tinkerSelectGame(ret, msgtext):
         def __init__(self):
             self.canceled = False
 
-        def onClick(self):
+        def on_click(self):
             self.canceled = True
             root.destroy()
 
     quit = onQuit()
     button = Tkinter.Button(frame, text=_(u'Quit'), fg='red',
-                            command=quit.onClick, pady=15, borderwidth=5,
+                            command=quit.on_click, pady=15, borderwidth=5,
                             relief=Tkinter.GROOVE)
     button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
 
-    class onClick(object):
+    class OnClick(object):
         def __init__(self, gameName, callback):
             self.gameName = gameName
             self.callback = callback
 
-        def onClick(self):
+        def on_click(self):
             sys.argv = sys.argv + ['-g', self.gameName]
             self.callback(self.gameName)
             root.destroy()
@@ -634,7 +634,7 @@ def _tinkerSelectGame(ret, msgtext):
 
     for gameName in ret:
         text = gameName[0].upper() + gameName[1:]
-        command = onClick(gameName, retCode.set).onClick
+        command = OnClick(gameName, retCode.set).on_click
         button = Tkinter.Button(frame, text=text, command=command, pady=15,
                                 borderwidth=5, relief=Tkinter.GROOVE)
         button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)

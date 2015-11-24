@@ -356,7 +356,6 @@ def Init(path):
                 deprint(u'lo_set_load_order failed:', traceback=True)
                 raise BoltError(ex.msg), None, sys.exc_info()[2]
 
-
         # ---------------------------------------------------------------------
         # Active plugin management
         # ---------------------------------------------------------------------

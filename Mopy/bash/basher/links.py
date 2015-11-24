@@ -22,13 +22,13 @@
 #
 # =============================================================================
 
-"""Links initialization functions. Each panel's UIlIst has main and items Links
-attributes which are populated here. Therefore the order of menu items is
+"""Links initialization functions. Each panel's UIList has main and items Links
+attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 
 import os
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
-    BSAList, ScreensList, MasterList, bEnableWizard,  PeopleList,\
+    BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
