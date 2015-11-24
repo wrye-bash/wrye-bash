@@ -105,7 +105,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## bool loot_is_compatible(const unsigned int versionMajor, const unsigned int versionMinor, const unsigned int versionPatch)
+    ## bool loot_is_compatible(const unsigned int versionMajor,
+    #                          const unsigned int versionMinor,
+    #                          const unsigned int versionPatch)
     _CIsCompatibleVersion = LootApi.loot_is_compatible
     _CIsCompatibleVersion.restype = c_bool
     _CIsCompatibleVersion.argtypes = [c_uint, c_uint, c_uint]
@@ -233,7 +235,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## unsigned int loot_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
+    ## unsigned int loot_get_version(unsigned int * const versionMajor,
+    #                                unsigned int * const versionMinor,
+    #                                unsigned int * const versionPatch)
     _CGetVersionString = LootApi.loot_get_version
     _CGetVersionString.restype = LootErrorCheck
     _CGetVersionString.argtypes = [c_uint_p, c_uint_p, c_uint_p]
@@ -252,7 +256,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Lifecycle Management
     # =========================================================================
-    ## unsigned int loot_create_db (loot_db * const db, const unsigned int clientGame, const char * const gamePath)
+    ## unsigned int loot_create_db (loot_db * const db,
+    #                               const unsigned int clientGame,
+    #                               const char * const gamePath)
     _CCreateLootDb = LootApi.loot_create_db
     _CCreateLootDb.restype = LootErrorCheck
     _CCreateLootDb.argtypes = [loot_db_p, c_uint, c_char_p]
@@ -264,8 +270,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Database Loading
     # =========================================================================
-    ## unsigned int loot_load_lists (loot_db db, const char * const masterlistPath,
-    ##                                const char * const userlistPath)
+    ## unsigned int loot_load_lists (loot_db db,
+    #                                const char * const masterlistPath,
+    #                                const char * const userlistPath)
     _CLoad = LootApi.loot_load_lists
     _CLoad.restype = LootErrorCheck
     _CLoad.argtypes = [loot_db, c_char_p, c_char_p]
@@ -277,25 +284,29 @@ def Init(path):
     # =========================================================================
     # API Functions - Database Access
     # =========================================================================
-    ## unsigned int loot_get_tag_map (loot_db db, char *** const tagMap, size_t * const numTags)
+    ## unsigned int loot_get_tag_map (loot_db db, char *** const tagMap,
+    #                                 size_t * const numTags)
     _CGetBashTagMap = LootApi.loot_get_tag_map
     _CGetBashTagMap.restype = LootErrorCheck
     _CGetBashTagMap.argtypes = [loot_db, c_char_p_p_p, c_size_t_p]
-    ## unsigned int loot_get_plugin_tags (loot_db db, const char * const plugin,
-    ##                                        unsigned int ** const tags_added,
-    ##                                        size_t * const numTags_added,
-    ##                                        unsigned int ** const tags_removed,
-    ##                                        size_t * const numTags_removed,
-    ##                                        bool * const userlistModified)
+    ## unsigned int loot_get_plugin_tags (loot_db db,
+    #                                     const char * const plugin,
+    #                                     unsigned int ** const tags_added,
+    #                                     size_t * const numTags_added,
+    #                                     unsigned int ** const tags_removed,
+    #                                     size_t * const numTags_removed,
+    #                                     bool * const userlistModified)
     _CGetModBashTags = LootApi.loot_get_plugin_tags
     _CGetModBashTags.restype = LootErrorCheck
     _CGetModBashTags.argtypes = [loot_db, c_char_p, c_uint_p_p, c_size_t_p, c_uint_p_p, c_size_t_p, c_bool_p]
     ## loot_get_dirty_info (loot_db db, const char * const plugin,
-    ##                                          unsigned int * const needsCleaning)
+    #                       unsigned int * const needsCleaning)
     _CGetDirtyMessage = LootApi.loot_get_dirty_info
     _CGetDirtyMessage.restype = LootErrorCheck
     _CGetDirtyMessage.argtypes = [loot_db, c_char_p, c_uint_p]
-    ## unsigned int loot_write_minimal_list (loot_db db, const char * const outputFile, const bool overwrite)
+    ## unsigned int loot_write_minimal_list (loot_db db,
+    #                                        const char * const outputFile,
+    #                                        const bool overwrite)
     _CDumpMinimal = LootApi.loot_write_minimal_list
     _CDumpMinimal.restype = LootErrorCheck
     _CDumpMinimal.argtypes = [loot_db, c_char_p, c_bool]
@@ -321,10 +332,6 @@ def Init(path):
             if self._DB is not None:
                 _CDestroyLootDb(self._DB)
                 self._DB = None
-
-        # 'with' statement
-        def __enter__(self): return self
-        def __exit__(self,exc_type,exc_value,traceback): self.__del__()
 
         # ---------------------------------------------------------------------
         # Database Loading
@@ -380,7 +387,6 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
-
         def FilterDirty(self,plugins,cleanCode=loot_needs_cleaning_yes):
             """Given a list of plugins, returns the subset of that list,
                consisting of plugins that meet the given loot_needs_cleaning_*
@@ -390,9 +396,9 @@ def Init(path):
     # Put the locally defined functions, classes, etc into the module global namespace
     globals().update(locals())
 
-# Initialize the LOOT API, assuming that loot32.dll and loot64.dll are in the same directory
-# Call Init again with the path to these dll's if this assumption is incorrect.
-# LootApi will be None if this is the case.
+# Initialize the LOOT API, assuming that loot32.dll and loot64.dll are in
+# the same directory. Call Init again with the path to these dll's if this
+# assumption is incorrect. LootApi will be None if this is the case.
 try:
     Init(os.getcwdu())
 except LootVersionError:
