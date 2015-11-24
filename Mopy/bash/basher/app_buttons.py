@@ -39,10 +39,10 @@ __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
-class StatusBar_Hide(ItemLink):
+class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, selection):
-        super(StatusBar_Hide, self)._initData(window, selection)
+        super(_StatusBar_Hide, self)._initData(window, selection)
         tip = window.GetToolTip().GetTip()
         self.text = _(u"Hide '%s'") % tip
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
@@ -82,10 +82,11 @@ class StatusBar_Button(ItemLink):
 
     def DoPopupMenu(self,event):
         if self.canHide:
-            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],StatusBar_Hide):
+            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],
+                                                         _StatusBar_Hide):
                 if len(self.mainMenu) > 0:
                     self.mainMenu.append(SeparatorLink())
-                self.mainMenu.append(StatusBar_Hide())
+                self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
             self.mainMenu.PopupMenu(self.gButton,Link.Frame,0)
         else:

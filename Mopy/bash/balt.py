@@ -501,7 +501,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
 
-def aSizer(sizer,*elements):
+def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""
     for element in elements:
         if isinstance(element,tuple):
@@ -513,19 +513,21 @@ def aSizer(sizer,*elements):
 
 def hSizer(*elements):
     """Horizontal sizer."""
-    return aSizer(wx.BoxSizer(wx.HORIZONTAL),*elements)
+    return _aSizer(wx.BoxSizer(wx.HORIZONTAL), *elements)
 
 def vSizer(*elements):
     """Vertical sizer and elements."""
-    return aSizer(wx.BoxSizer(wx.VERTICAL),*elements)
+    return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
 
 def hsbSizer(boxArgs,*elements):
     """Horizontal static box sizer and elements."""
-    return aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs),wx.HORIZONTAL),*elements)
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.HORIZONTAL),
+                   *elements)
 
 def vsbSizer(boxArgs,*elements):
     """Vertical static box sizer and elements."""
-    return aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs),wx.VERTICAL),*elements)
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.VERTICAL),
+                   *elements)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------

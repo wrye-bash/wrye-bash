@@ -364,11 +364,11 @@ class Settings_Games(MenuLink):
         super(Settings_Games, self).__init__(_(u'Game'))
         for game in bush.foundGames:
             game = game[0].upper()+game[1:]
-            self.links.append(Settings_Game(game))
+            self.links.append(_Settings_Game(game))
 
-class Settings_Game(RadioLink):
+class _Settings_Game(RadioLink):
     def __init__(self,game):
-        super(Settings_Game, self).__init__()
+        super(_Settings_Game, self).__init__()
         self.game = self.text = game
         self.help = _("Restart Wrye Bash to manage %(game)s.") % (
             {'game': game})
