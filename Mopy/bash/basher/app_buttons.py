@@ -73,7 +73,7 @@ class StatusBar_Button(ItemLink):
         image = kwdargs.pop('image', None) or images[self.imageKey %
                         bosh.settings['bash.statusbar.iconSize']].GetBitmap()
         kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
-        kwdargs['onClick'] = lambda __event: self.Execute()
+        kwdargs['onBBClick'] = self.Execute
         if self.gButton is not None:
             self.gButton.Destroy()
         self.gButton = bitmapButton(window, image, style=style, tip=self.tip,

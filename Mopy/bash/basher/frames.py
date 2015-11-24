@@ -99,11 +99,13 @@ class DocBrowser(wx.Frame):
             #--Html Back
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
+            self.prevButton = bitmapButton(self, bitmap,
+                                           onBBClick=self.DoPrevPage)
             #--Html Forward
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
+            self.nextButton = bitmapButton(self, bitmap,
+                                           onBBClick=self.DoNextPage)
         else:
             self.htmlText = None
             self.prevButton = None
@@ -152,11 +154,11 @@ class DocBrowser(wx.Frame):
         except UnicodeDecodeError:
             return False
 
-    def DoPrevPage(self, event):
+    def DoPrevPage(self):
         """Handle "Back" button click."""
         self.htmlText.GoBack()
 
-    def DoNextPage(self, event):
+    def DoNextPage(self):
         """Handle "Next" button click."""
         self.htmlText.GoForward()
 
@@ -395,12 +397,12 @@ class ModChecker(wx.Frame):
             #--Buttons
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            gBackButton = bitmapButton(self, bitmap, onClick=lambda
-                evt: self.gTextCtrl.GoBack())
+            gBackButton = bitmapButton(self, bitmap,
+                                       onBBClick=self.gTextCtrl.GoBack)
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            gForwardButton = bitmapButton(self, bitmap, onClick=lambda
-                evt: self.gTextCtrl.GoForward())
+            gForwardButton = bitmapButton(self, bitmap,
+                                          onBBClick=self.gTextCtrl.GoForward)
         else:
             self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None

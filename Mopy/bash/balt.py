@@ -383,10 +383,11 @@ class ComboBox(wx.ComboBox):
         event.Skip()
 
 def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
-        style=wx.BU_AUTODRAW, val=defVal, name=u'button',onClick=None, onRClick=None):
+                 style=wx.BU_AUTODRAW, val=defVal, name=u'button',
+                 onBBClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
+    if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
@@ -875,9 +876,9 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
+    gBackButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoBack)
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
+    gForwardButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoForward)
     gOkButton = OkButton(window, onButClick=window.Close, default=True)
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
