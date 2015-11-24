@@ -550,9 +550,8 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         result = vistaDialog(parent,
                              title=title,
                              message=message,
-                             buttons=[(wx.ID_OK,'ok'),
-                                      (wx.ID_CANCEL,'cancel'),
-                                      ],
+                             buttons=[(wx.ID_OK, 'ok'),
+                                      (wx.ID_CANCEL, 'cancel')],
                              checkBoxTxt=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
@@ -566,20 +565,12 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
 
-def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
-    # labels are OBSOLETE, we must never mess with ids outside balt
+def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
     if canVista:
-        buttons = []
-        if wx.ID_OK in labels:
-            buttons.append((wx.ID_OK,labels[wx.ID_OK]))
-        for id in labels:
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            buttons.append((id,labels[id]))
-        buttons.append((wx.ID_CANCEL,labels.get(wx.ID_CANCEL,'cancel')))
+        buttons=[(wx.ID_OK, 'ok'), (wx.ID_CANCEL, 'cancel')]
         result = vistaDialog(parent,
                              title=title,
                              message=message,
