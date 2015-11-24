@@ -782,8 +782,8 @@ def _showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
-def showLog(parent, logText, title=u'', style=0, asDialog=True,
-            fixedFont=False, icons=None, size=True):
+def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
+            icons=None, size=True):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -2480,9 +2480,9 @@ class Link(object):
         return askSave(self.window, title, defaultDir, defaultFile, wildcard,
                        style)
 
-    def _showLog(self, logText, title=u'', style=0, asDialog=False,
-                 fixedFont=False, icons=None, size=True):
-        showLog(self.window, logText, title, style, asDialog, fixedFont, icons,
+    def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
+                 icons=None, size=True):
+        showLog(self.window, logText, title, asDialog, fixedFont, icons,
                 size)
 
     def _showInfo(self, message, title=_(u'Information'), **kwdargs):

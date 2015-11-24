@@ -27,7 +27,7 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bosh, bolt, balt, bush
-from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
+from ..balt import ItemLink, Link, Links, bitmapButton, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 
@@ -96,10 +96,10 @@ class StatusBar_Button(ItemLink):
     @property
     def obseVersion(self):
         if bosh.inisettings['SteamInstall']:
-            file = bush.game.se.steamExe
+            se_exe = bush.game.se.steamExe
         else:
-            file = bush.game.se.exe
-        version = bosh.dirs['app'].join(file).strippedVersion
+            se_exe = bush.game.se.exe
+        version = bosh.dirs['app'].join(se_exe).strippedVersion
         return u'.'.join([u'%s'%x for x in version])
 
 #------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ class App_Button(StatusBar_Button):
         exePathArgs (list):  [exePathArgs,altExePathArgs,...]
         images: [16x16,24x24,32x32] images
         """
-        StatusBar_Button.__init__(self,uid,canHide,tip)
+        super(App_Button, self).__init__(uid, canHide, tip)
         if isinstance(exePathArgs, list):
             use = exePathArgs[0]
             for item in exePathArgs:

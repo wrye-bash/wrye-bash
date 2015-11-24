@@ -515,8 +515,6 @@ def bookImport(fileName=None):
 # Misc. Utils -----------------------------------------------------------------
 @mainfunc
 def perfTest():
-    import psyco
-    psyco.full()
     init(3)
     test = 0.0
     total = 0.0
