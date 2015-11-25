@@ -2409,7 +2409,7 @@ class Link(object):
         specify text as a class attribute (or set in it _initData()).
         """
         super(Link, self).__init__()
-        self.id = wx.NewId() # register wx callbacks in AppendToMenu overrides
+        self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, selection):
@@ -2520,9 +2520,9 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        wx.EVT_MENU(Link.Frame,self.id,self.Execute)
+        wx.EVT_MENU(Link.Frame, self._id, self.Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
+        menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
@@ -2559,9 +2559,9 @@ class MenuLink(Link):
         super(MenuLink, self).AppendToMenu(menu, window, selection)
         wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        menu.AppendMenu(self.id, self.text, subMenu)
+        menu.AppendMenu(self._id, self.text, subMenu)
         if not self._enable():
-            menu.Enable(self.id, False)
+            menu.Enable(self._id, False)
         else: # do not append sub links unless submenu enabled
             for link in self.links: link.AppendToMenu(subMenu, window,
                                                       selection)
