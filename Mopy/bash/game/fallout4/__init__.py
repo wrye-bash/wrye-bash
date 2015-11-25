@@ -27,6 +27,7 @@
 
 import re
 import struct
+import itertools
 from constants import bethDataFiles, allBethFiles
 from ... import brec
 #from ...brec import *
@@ -138,17 +139,17 @@ class ini:
 #--Save Game format stuff
 class ess:
     # Save file capabilities
-    canReadBasic = False        # All the basic stuff needed for the Saves Tab
+    canReadBasic = True         # All the basic stuff needed for the Saves Tab
     canEditMasters = False      # Adjusting save file masters
     canEditMore = False         # No advanced editing
-    ext = u'.ess'               # Save file extension
+    ext = u'.fos'               # Save file extension
 
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
         #--Header
-        if ins.read(13) != 'TESV_SAVEGAME':
-            raise Exception(u'Save file is not a Skyrim save game.')
+        if ins.read(12) != 'FO4_SAVEGAME':
+            raise Exception(u'Save file is not a Fallout 4 save game.')
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
         version,saveNumber,size = struct.unpack('2IH',ins.read(10))
@@ -158,21 +159,32 @@ class ess:
         header.pcLocation = ins.read(size)
         size, = struct.unpack('H',ins.read(2))
         header.gameDate = ins.read(size)
-        hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
-        playSeconds = hours*60*60 + minutes*60 + seconds
-        header.gameDays = float(playSeconds)/(24*60*60)
-        header.gameTicks = playSeconds * 1000
+        # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
+        days,hours,minutes,_days,_hours,_minutes = header.gameDate.split('.')
+        days = int(days[:-1])
+        hours = int(hours[:-1])
+        minutes = int(minutes[:-1])
+        header.gameDays = float(days) + float(hours)/24 + float(minutes)/(24*60)
+        # Assuming still 1000 ticks per second 
+        header.gameTicks = (days*24*60*60 + hours*60*60 + minutes*60) * 1000
         size, = struct.unpack('H',ins.read(2))
         ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime
         ssWidth, = struct.unpack('I',ins.read(4))
         ssHeight, = struct.unpack('I',ins.read(4))
-        if ins.tell() != headerSize + 17:
-            raise Exception(u'Save game header size (%s) not as expected (%s).' % (ins.tell()-17,headerSize))
+        if ins.tell() != headerSize + 16:
+            raise Exception(u'Save game header size (%s) not as expected (%s).' % (ins.tell()-16,headerSize))
         #--Image Data
-        ssData = ins.read(3*ssWidth*ssHeight)
+        # Fallout 4 is in 32bit RGB, Bash is expecting 24bit RGB
+        ssData = ins.read(4*ssWidth*ssHeight)
+        # pick out only every 3 bytes, drop the 4th (alpha channel)
+        ## TODO: Setup Bash to use the alpha data
+        #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
+        ssData = ''.join(itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
         header.image = (ssWidth,ssHeight,ssData)
         #--unknown
         unk3 = ins.read(1)
+        size, = struct.unpack('H',ins.read(2))
+        gameVersion = ins.read(size)
         #--Masters
         mastersSize, = struct.unpack('I',ins.read(4))
         mastersStart = ins.tell()
@@ -189,8 +201,8 @@ class ess:
         """Rewrites masters of existing save file."""
         def unpack(format,size): return struct.unpack(format,ins.read(size))
         def pack(format,*args): out.write(struct.pack(format,*args))
-        #--Magic (TESV_SAVEGAME)
-        out.write(ins.read(13))
+        #--Magic (FO4_SAVEGAME)
+        out.write(ins.read(12))
         #--Header
         size, = unpack('I',4)
         pack('I',size)
@@ -218,6 +230,7 @@ class ess:
             out.write(master.s)
         #--Offsets
         offset = out.tell() - ins.tell()
+        ## TODO: See if this is needed for FO4
         #--File Location Table
         for i in xrange(6):
             # formIdArrayCount offset, unkownTable3Offset,
