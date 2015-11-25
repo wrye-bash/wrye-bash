@@ -30,10 +30,7 @@ Note: bashmon is based on Breeze582000's brzMonitor (which it replaces).
 """
 # Imports ----------------------------------------------------------------------
 #--Standard
-import StringIO
 import string
-import struct
-import sys
 import time
 import traceback
 

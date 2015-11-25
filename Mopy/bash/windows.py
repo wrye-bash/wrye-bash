@@ -375,11 +375,11 @@ class TaskDialog(object):
         """Close the task dialog."""
         windll.user32.SendMessageW(self.__handle, 0x0010, 0, 0)
 
-    def bind(self, event, func):
+    def bind(self, task_dialog_event, func):
         """Bind a function to one of the task dialog events."""
-        if event not in self.__events.keys():
+        if task_dialog_event not in self.__events.keys():
             raise Exception("The control does not support the event.")
-        self.__events[event].append(func)
+        self.__events[task_dialog_event].append(func)
         return self
 
     def bindHyperlink(self):

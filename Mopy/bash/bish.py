@@ -74,23 +74,23 @@ if ret != False: # False == success
             def __init__(self):
                 self.canceled = False
 
-            def onClick(self):
+            def on_click(self):
                 self.canceled = True
                 root.destroy()
         quit = onQuit()
 
-        button = Tkinter.Button(frame,text=u'Quit',fg=u'red',command=quit.onClick,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
+        button = Tkinter.Button(frame,text=u'Quit',fg=u'red',command=quit.on_click,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
         button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
-        class onClick(object):
+        class OnClick(object):
             def __init__(self,gameName):
                 self.gameName = gameName
 
-            def onClick(self):
+            def on_click(self):
                 bush.setGame(self.gameName)
                 root.destroy()
         for gameName in ret:
             text = gameName[0].upper() + gameName[1:]
-            command = onClick(gameName).onClick
+            command = OnClick(gameName).on_click
             button = Tkinter.Button(frame,text=text,command=command,pady=15,borderwidth=5,relief=Tkinter.GROOVE)
             button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
         w = Tkinter.Text(frame)
@@ -515,8 +515,6 @@ def bookImport(fileName=None):
 # Misc. Utils -----------------------------------------------------------------
 @mainfunc
 def perfTest():
-    import psyco
-    psyco.full()
     init(3)
     test = 0.0
     total = 0.0

@@ -501,7 +501,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
 # Sizers ----------------------------------------------------------------------
 spacer = ((0,0),1) #--Used to space elements apart.
 
-def aSizer(sizer,*elements):
+def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""
     for element in elements:
         if isinstance(element,tuple):
@@ -513,19 +513,21 @@ def aSizer(sizer,*elements):
 
 def hSizer(*elements):
     """Horizontal sizer."""
-    return aSizer(wx.BoxSizer(wx.HORIZONTAL),*elements)
+    return _aSizer(wx.BoxSizer(wx.HORIZONTAL), *elements)
 
 def vSizer(*elements):
     """Vertical sizer and elements."""
-    return aSizer(wx.BoxSizer(wx.VERTICAL),*elements)
+    return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
 
 def hsbSizer(boxArgs,*elements):
     """Horizontal static box sizer and elements."""
-    return aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs),wx.HORIZONTAL),*elements)
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.HORIZONTAL),
+                   *elements)
 
 def vsbSizer(boxArgs,*elements):
     """Vertical static box sizer and elements."""
-    return aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs),wx.VERTICAL),*elements)
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.VERTICAL),
+                   *elements)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -550,9 +552,8 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         result = vistaDialog(parent,
                              title=title,
                              message=message,
-                             buttons=[(wx.ID_OK,'ok'),
-                                      (wx.ID_CANCEL,'cancel'),
-                                      ],
+                             buttons=[(wx.ID_OK, 'ok'),
+                                      (wx.ID_CANCEL, 'cancel')],
                              checkBoxTxt=_(u"Don't show this in the future."),
                              icon='warning',
                              heading=u'',
@@ -566,20 +567,12 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
 
-def askContinueShortTerm(parent,message,title=_(u'Warning'),labels={}):
-    # labels are OBSOLETE, we must never mess with ids outside balt
+def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
     if canVista:
-        buttons = []
-        if wx.ID_OK in labels:
-            buttons.append((wx.ID_OK,labels[wx.ID_OK]))
-        for id in labels:
-            if id in (wx.ID_OK,wx.ID_CANCEL):
-                continue
-            buttons.append((id,labels[id]))
-        buttons.append((wx.ID_CANCEL,labels.get(wx.ID_CANCEL,'cancel')))
+        buttons=[(wx.ID_OK, 'ok'), (wx.ID_CANCEL, 'cancel')]
         result = vistaDialog(parent,
                              title=title,
                              message=message,
@@ -789,8 +782,8 @@ def _showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = window.GetSizeTuple()
     window.Destroy()
 
-def showLog(parent, logText, title=u'', style=0, asDialog=True,
-            fixedFont=False, icons=None, size=True):
+def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
+            icons=None, size=True):
     """Display text in a log window"""
     #--Sizing
     pos = _settings.get('balt.LogMessage.pos',defPos)
@@ -2270,7 +2263,6 @@ class UIList(wx.Panel):
             colDex += 1
         while listCtrl.GetColumnCount() > numCols:
             listCtrl.DeleteColumn(numCols)
-        self.autosizeColumns()
 
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
@@ -2487,9 +2479,9 @@ class Link(object):
         return askSave(self.window, title, defaultDir, defaultFile, wildcard,
                        style)
 
-    def _showLog(self, logText, title=u'', style=0, asDialog=False,
-                 fixedFont=False, icons=None, size=True):
-        showLog(self.window, logText, title, style, asDialog, fixedFont, icons,
+    def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
+                 icons=None, size=True):
+        showLog(self.window, logText, title, asDialog, fixedFont, icons,
                 size)
 
     def _showInfo(self, message, title=_(u'Information'), **kwdargs):

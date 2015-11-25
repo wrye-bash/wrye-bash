@@ -45,7 +45,7 @@ from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile, formatInteger
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
-           'Installer_OpenSearch', 'Installer_OpenTESA', 'Installer_OpenPES',
+           'Installer_OpenSearch', 'Installer_OpenTESA',
            'Installer_Hide', 'Installer_Rename', 'Installer_Refresh',
            'Installer_Move', 'Installer_HasExtraData',
            'Installer_OverrideSkips', 'Installer_SkipVoices',
@@ -707,20 +707,6 @@ class Installer_OpenTESA(_Installer_OpenAt):
         u"you'll just get a random mod page (or error notice) at TES "
         u"Alliance.")
     baseUrl =u'http://tesalliance.org/forums/index.php?app=downloads&showfile='
-
-class Installer_OpenPES(_Installer_OpenAt):
-    regexp = bosh.reTESA
-    text = _(u'Planet Elderscrolls...')
-    key = 'bash.installers.openPES.continue'
-    askTitle = _(u'Open at Planet Elderscrolls')
-    message = _(
-        u"Attempt to open this as a mod at Planet Elderscrolls? This assumes "
-        u"that the trailing digits in the package's name are actually the id "
-        u"number of the mod at Planet Elderscrolls. If this assumption is "
-        u"wrong, you'll just get a random mod page (or error notice) at "
-        u"Planet Elderscrolls.")
-    baseUrl = u'http://planetelderscrolls.gamespy.com/View.php' \
-               u'?view=OblivionMods.Detail&id='
 
 #------------------------------------------------------------------------------
 class Installer_Refresh(_InstallerLink):

@@ -34,6 +34,7 @@ from bolt import Path, GPath
 
 libbsa = None
 version = None
+BSAHandle, LibbsaError = None, None
 
 # Version of libbsa this Python script is written for.
 PythonLibbsaVersion = (2,0)
@@ -61,13 +62,14 @@ def Init(path):
         else:
             path = os.path.join(path,u'libbsa32.dll')
 
-    global libbsa
+    global libbsa, BSAHandle, LibbsaError
 
     # First unload any libbsa dll previously loaded
-    del libbsa
+    del libbsa, BSAHandle, LibbsaError
     libbsa = None
 
     if not os.path.exists(path):
+        BSAHandle, LibbsaError = None, None
         return
 
     try:
@@ -79,7 +81,7 @@ def Init(path):
             handle = LoadLibrary(path)
         libbsa = CDLL(path,handle=handle)
     except Exception as e:
-        libbsa = None
+        libbsa = BSAHandle = LibbsaError = None
         raise
 
     # Some types
@@ -97,12 +99,9 @@ def Init(path):
                     ]
     bsa_asset_p = POINTER(bsa_asset)
     bsa_asset_p_p = POINTER(bsa_asset_p)
-    def list_of_strings(strings):
-        lst = (c_char_p * len(strings))()
-        lst = cast(lst,c_char_p_p)
-        for i,string in enumerate(strings):
-            lst[i] = cast(create_string_buffer(string),c_char_p)
-        return lst
+
+    # helpers
+    def _uint(const): return c_uint.in_dll(libbsa, const).value
 
     # utility unicode functions
     def _enc(x): return (x.encode('utf8') if isinstance(x,unicode)
@@ -112,7 +111,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## bool bsa_is_compatible(const unsigned int versionMajor, const unsigned int versionMinor, const unsigned int versionPatch)
+    ## bool bsa_is_compatible(const unsigned int versionMajor,
+    #                         const unsigned int versionMinor,
+    #                         const unsigned int versionPatch)
     _Cbsa_is_compatible = libbsa.bsa_is_compatible
     _Cbsa_is_compatible.restype = c_bool
     _Cbsa_is_compatible.argtypes = [c_uint, c_uint, c_uint]
@@ -126,14 +127,16 @@ def Init(path):
         try:
             libbsa.bsa_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
-            raise LibbsaVersionError('libbsa.py is not compatible with the specified libbsa DLL (%i.%i.%i).' % verMajor % verMinor % verPatch)
+            raise LibbsaVersionError(
+                'libbsa.py is not compatible with the specified libbsa DLL ('
+                '%i.%i.%i).' % verMajor % verMinor % verPatch)
 
     # =========================================================================
     # API Constants - BSA Version Flags
     # =========================================================================
-    LIBBSA_VERSION_TES3 = c_uint.in_dll(libbsa,'LIBBSA_VERSION_TES3').value
-    LIBBSA_VERSION_TES4 = c_uint.in_dll(libbsa,'LIBBSA_VERSION_TES4').value
-    LIBBSA_VERSION_TES5 = c_uint.in_dll(libbsa,'LIBBSA_VERSION_TES5').value
+    LIBBSA_VERSION_TES3 = _uint('LIBBSA_VERSION_TES3')
+    LIBBSA_VERSION_TES4 = _uint('LIBBSA_VERSION_TES4')
+    LIBBSA_VERSION_TES5 = _uint('LIBBSA_VERSION_TES5')
     games = {
         'Morrowind':LIBBSA_VERSION_TES3,
         LIBBSA_VERSION_TES3:LIBBSA_VERSION_TES3,
@@ -149,35 +152,30 @@ def Init(path):
     # =========================================================================
     # API Constants - Compression Flags
     # =========================================================================
-    LIBBSA_COMPRESS_LEVEL_0 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_0').value
-    LIBBSA_COMPRESS_LEVEL_1 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_1').value
-    LIBBSA_COMPRESS_LEVEL_2 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_2').value
-    LIBBSA_COMPRESS_LEVEL_3 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_3').value
-    LIBBSA_COMPRESS_LEVEL_4 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_4').value
-    LIBBSA_COMPRESS_LEVEL_5 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_5').value
-    LIBBSA_COMPRESS_LEVEL_6 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_6').value
-    LIBBSA_COMPRESS_LEVEL_7 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_7').value
-    LIBBSA_COMPRESS_LEVEL_8 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_8').value
-    LIBBSA_COMPRESS_LEVEL_9 = c_uint.in_dll(libbsa,'LIBBSA_COMPRESS_LEVEL_9').value
+    LIBBSA_COMPRESS_LEVEL_0 = _uint('LIBBSA_COMPRESS_LEVEL_0')
+    LIBBSA_COMPRESS_LEVEL_1 = _uint('LIBBSA_COMPRESS_LEVEL_1')
+    LIBBSA_COMPRESS_LEVEL_2 = _uint('LIBBSA_COMPRESS_LEVEL_2')
+    LIBBSA_COMPRESS_LEVEL_3 = _uint('LIBBSA_COMPRESS_LEVEL_3')
+    LIBBSA_COMPRESS_LEVEL_4 = _uint('LIBBSA_COMPRESS_LEVEL_4')
+    LIBBSA_COMPRESS_LEVEL_5 = _uint('LIBBSA_COMPRESS_LEVEL_5')
+    LIBBSA_COMPRESS_LEVEL_6 = _uint('LIBBSA_COMPRESS_LEVEL_6')
+    LIBBSA_COMPRESS_LEVEL_7 = _uint('LIBBSA_COMPRESS_LEVEL_7')
+    LIBBSA_COMPRESS_LEVEL_8 = _uint('LIBBSA_COMPRESS_LEVEL_8')
+    LIBBSA_COMPRESS_LEVEL_9 = _uint('LIBBSA_COMPRESS_LEVEL_9')
 
     # =========================================================================
     # API Constants - Return codes
     # =========================================================================
-    errors = {}
-    ErrorCallbacks = {}
-    for name in ['OK',
-                 'ERROR_INVALID_ARGS',
-                 'ERROR_NO_MEM',
-                 'ERROR_FILESYSTEM_ERROR',
-                 'ERROR_BAD_STRING',
-                 'ERROR_ZLIB_ERROR',
-                 'ERROR_PARSE_FAIL',
-                 ]:
-        name = 'LIBBSA_'+name
-        errors[name] = c_uint.in_dll(libbsa,name).value
-        ErrorCallbacks[errors[name]] = None
-    LIBBSA_RETURN_MAX = c_uint.in_dll(libbsa,'LIBBSA_RETURN_MAX').value
-    globals().update(errors)
+    LIBBSA_OK = _uint('LIBBSA_OK')
+    LIBBSA_ERROR_INVALID_ARGS = _uint('LIBBSA_ERROR_INVALID_ARGS')
+    LIBBSA_ERROR_NO_MEM = _uint('LIBBSA_ERROR_NO_MEM')
+    LIBBSA_ERROR_FILESYSTEM_ERROR = _uint('LIBBSA_ERROR_FILESYSTEM_ERROR')
+    LIBBSA_ERROR_BAD_STRING = _uint('LIBBSA_ERROR_BAD_STRING')
+    LIBBSA_ERROR_ZLIB_ERROR = _uint('LIBBSA_ERROR_ZLIB_ERROR')
+    LIBBSA_ERROR_PARSE_FAIL = _uint('LIBBSA_ERROR_PARSE_FAIL')
+    errors = dict((name, value) for name, value in locals().iteritems() if
+                  name.startswith('LIBBSA_ERROR_'))
+    LIBBSA_RETURN_MAX = _uint('LIBBSA_RETURN_MAX')
 
     # =========================================================================
     # API Functions - Error Handling
@@ -193,19 +191,14 @@ def Init(path):
             raise Exception(u'An error occurred while getting the details of a libbsa error: %i' % ret)
         return unicode(details.value if details.value else 'None', 'utf8')
 
-    def RegisterCallback(errorCode,callback):
-        """Used to setup callback functions for whenever specific error codes
-           are encountered"""
-        ErrorCallbacks[errorCode] = callback
-
     class LibbsaError(Exception):
         def __init__(self,value):
             self.code = value
-            msg = 'UNKNOWN(%i)' % value
-            for code in errors:
-                if errors[code] == value:
-                    msg = code
+            for errorName, errorCode in errors.iteritems():
+                if errorCode == value:
+                    msg = errorName
                     break
+            else: msg = 'UNKNOWN(%i)' % value
             msg += ':'
             try:
                 msg += GetLastErrorDetails()
@@ -214,12 +207,10 @@ def Init(path):
             self.msg = msg
             Exception.__init__(self,msg)
 
-        def __repr__(self): return '<LibbsaError: %s>' % self.msg
+        def __repr__(self): return '<LibbsaError: %r>' % self.msg
         def __str__(self): return 'LibbsaError: %s' % self.msg
 
     def LibbsaErrorCheck(result):
-        callback = ErrorCallbacks.get(result,None)
-        if callback: callback()
         if result == LIBBSA_OK: return result
         elif DebugLevel > 0:
             print GetLastErrorDetails()
@@ -228,7 +219,9 @@ def Init(path):
     # =========================================================================
     # API Functions - Version
     # =========================================================================
-    ## unsigned int bsa_get_version(unsigned int * const versionMajor, unsigned int * const versionMinor, unsigned int * const versionPatch)
+    ## unsigned int bsa_get_version(unsigned int * const versionMajor,
+    #                               unsigned int * const versionMinor,
+    #                               unsigned int * const versionPatch)
     _Cbsa_get_version = libbsa.bsa_get_version
     _Cbsa_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
@@ -250,7 +243,8 @@ def Init(path):
     _Cbsa_open = libbsa.bsa_open
     _Cbsa_open.restype = LibbsaErrorCheck
     _Cbsa_open.argtypes = [bsa_handle_p, c_char_p]
-    ## unsigned int bsa_save(bsa_handle bh, const char * const path, const unsigned int flags)
+    ## unsigned int bsa_save(bsa_handle bh, const char * const path,
+    #                        const unsigned int flags)
     _Cbsa_save = libbsa.bsa_save
     _Cbsa_save.restype = LibbsaErrorCheck
     _Cbsa_save.argtypes = [bsa_handle, c_char_p, c_uint]
@@ -262,11 +256,16 @@ def Init(path):
     # =========================================================================
     # API Functions - Content Reading
     # =========================================================================
-    ## unsigned int bsa_get_assets(bsa_handle bh, const char * const contentPath, char *** const assetPaths, size_t * const numAssets)
+    ## unsigned int bsa_get_assets(bsa_handle bh,
+    #                              const char * const contentPath,
+    #                              char *** const assetPaths,
+    #                              size_t * const numAssets)
     _Cbsa_get_assets = libbsa.bsa_get_assets
     _Cbsa_get_assets.restype = LibbsaErrorCheck
     _Cbsa_get_assets.argtypes = [bsa_handle, c_char_p, c_char_p_p_p, c_size_t_p]
-    ## unsigned int bsa_contains_asset(bsa_handle bh, const char * const assetPath, bool * const result)
+    ## unsigned int bsa_contains_asset(bsa_handle bh,
+    #                                  const char * const assetPath,
+    #                                  bool * const result)
     _Cbsa_contains_asset = libbsa.bsa_contains_asset
     _Cbsa_contains_asset.restype = LibbsaErrorCheck
     _Cbsa_contains_asset.argtypes = [bsa_handle, c_char_p, c_bool_p]
@@ -274,16 +273,23 @@ def Init(path):
     # =========================================================================
     # API Functions - Content Writing
     # =========================================================================
-    ## These functions are still being written in libbsa, no point wrapping them yet.
+    ## These functions are still being written in libbsa, no point wrapping
+    # them yet.
 
     # =========================================================================
     # API Functions - Content Extraction
     # =========================================================================
-    ## unsigned int bsa_extract_assets(bsa_handle bh, const char * const contentPath, const char * const destPath, char *** const assetPaths, size_t * const numAssets)
+    ## unsigned int bsa_extract_assets(bsa_handle bh,
+    #                                  const char * const contentPath,
+    #                                  const char * const destPath,
+    #                                  char *** const assetPaths,
+    #                                  size_t * const numAssets)
     _Cbsa_extract_assets = libbsa.bsa_extract_assets
     _Cbsa_extract_assets.restype = LibbsaErrorCheck
-    _Cbsa_extract_assets.argtypes = [bsa_handle, c_char_p, c_char_p, c_char_p_p_p, c_size_t_p, c_bool]
-    ## unsigned int bsa_extract_asset(bsa_handle bh, const char * assetPath, const char * destPath)
+    _Cbsa_extract_assets.argtypes = [bsa_handle, c_char_p, c_char_p,
+                                     c_char_p_p_p, c_size_t_p, c_bool]
+    ## unsigned int bsa_extract_asset(bsa_handle bh, const char * assetPath,
+    #                                 const char * destPath)
     _Cbsa_extract_asset = libbsa.bsa_extract_asset
     _Cbsa_extract_asset.restype = LibbsaErrorCheck
     _Cbsa_extract_asset.argtypes = [bsa_handle, c_char_p, c_char_p, c_bool]
@@ -300,10 +306,6 @@ def Init(path):
             if self._handle is not None:
                 _Cbsa_close(self._handle)
                 self._handle = None
-
-        # 'with' statement
-        def __enter__(self): return self
-        def __exit__(self,exc_type,exc_value,traceback): self.__del__()
 
         # ---------------------------------------------------------------------
         # Content Reading
@@ -322,7 +324,7 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Content Writing
         # ---------------------------------------------------------------------
-        ## These functions don't have wrappers yet, so no OO interface for them.
+        ## These functions don't have wrappers yet, so no OO interface for them
 
         # ---------------------------------------------------------------------
         # Content Extraction
@@ -334,15 +336,14 @@ def Init(path):
             return map(GPath, assets[:num.value])
 
         def ExtractAsset(self, assetPath, destPath):
-            _Cbsa_extract_asset(self._handle, _enc(assetPath), _enc(destPath), True)
+            _Cbsa_extract_asset(self._handle, _enc(assetPath), _enc(destPath),
+                                True)
 
-    # Put the locally defined functions, classes, etc into the module global namespace
-    globals().update(locals())
 
-# Initialize libbsa, assuming that libbsa32.dll and libbsa64.dll are in the same directory
-# Call Init again with the path to these dll's if this assumption is incorrect.
-# libbsa will be None if this is the case.
+# Initialize libbsa, assuming that libbsa32.dll and libbsa64.dll are in the
+# same directory. Call Init again with the path to these dll's if this
+# assumption is incorrect. libbsa will be None if this is the case.
 try:
     Init(os.getcwdu())
 except LibbsaVersionError:
-    pass
+    BSAHandle, LibbsaError = None, None

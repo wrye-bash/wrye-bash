@@ -27,7 +27,7 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bosh, bolt, balt, bush
-from ..balt import ItemLink, Link, Links, bitmapButton, Image, images, \
+from ..balt import ItemLink, Link, Links, bitmapButton, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 
@@ -39,10 +39,10 @@ __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
 #------------------------------------------------------------------------------
-class StatusBar_Hide(ItemLink):
+class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, selection):
-        super(StatusBar_Hide, self)._initData(window, selection)
+        super(_StatusBar_Hide, self)._initData(window, selection)
         tip = window.GetToolTip().GetTip()
         self.text = _(u"Hide '%s'") % tip
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
@@ -82,10 +82,11 @@ class StatusBar_Button(ItemLink):
 
     def DoPopupMenu(self,event):
         if self.canHide:
-            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],StatusBar_Hide):
+            if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],
+                                                         _StatusBar_Hide):
                 if len(self.mainMenu) > 0:
                     self.mainMenu.append(SeparatorLink())
-                self.mainMenu.append(StatusBar_Hide())
+                self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
             self.mainMenu.PopupMenu(self.gButton,Link.Frame,0)
         else:
@@ -95,10 +96,10 @@ class StatusBar_Button(ItemLink):
     @property
     def obseVersion(self):
         if bosh.inisettings['SteamInstall']:
-            file = bush.game.se.steamExe
+            se_exe = bush.game.se.steamExe
         else:
-            file = bush.game.se.exe
-        version = bosh.dirs['app'].join(file).strippedVersion
+            se_exe = bush.game.se.exe
+        version = bosh.dirs['app'].join(se_exe).strippedVersion
         return u'.'.join([u'%s'%x for x in version])
 
 #------------------------------------------------------------------------------
@@ -151,14 +152,15 @@ class App_Button(StatusBar_Button):
             java = win.join(u'syswow64', u'javaw.exe')
         return java
 
-    def __init__(self,exePathArgs,images,tip,obseTip=None,obseArg=None,workingDir=None,uid=None,canHide=True):
+    def __init__(self, exePathArgs, images, tip, obseTip=None, obseArg=None,
+                 workingDir=None, uid=None, canHide=True):
         """Initialize
         exePathArgs (string): exePath
         exePathArgs (tuple): (exePath,*exeArgs)
         exePathArgs (list):  [exePathArgs,altExePathArgs,...]
         images: [16x16,24x24,32x32] images
         """
-        StatusBar_Button.__init__(self,uid,canHide,tip)
+        super(App_Button, self).__init__(uid, canHide, tip)
         if isinstance(exePathArgs, list):
             use = exePathArgs[0]
             for item in exePathArgs:
@@ -685,34 +687,36 @@ class App_GenPickle(StatusBar_Button):
         except:
             fids = {}
             maxId = 0
-        maxId = max(maxId,0xf12345)
+        maxId = max(maxId, 0xf12345)
         maxOld = maxId
-        print 'maxId',hex(maxId)
-        #--Eid list? - if the GMST has a 00000000 eid when looking at it in the cs with nothing
-        # but oblivion.esm loaded you need to add the gmst to this list, rebuild the pickle and overwrite the old one.
+        print 'maxId', hex(maxId)
+        #--Eid list? - if the GMST has a 00000000 eid when looking at it in
+        # the cs with nothing but oblivion.esm loaded you need to add the
+        # gmst to this list, rebuild the pickle and overwrite the old one.
         for eid in bush.game.gmstEids:
             if eid not in fids:
                 maxId += 1
                 fids[eid] = maxId
-                print '%08X  %08X %s' % (0,maxId,eid)
-                #--Source file
+                print '%08X  %08X %s' % (0, maxId, eid)
+        #--Source file
         if fileName:
             sorter = lambda a: a.eid
-            loadFactory = bosh.LoadFactory(False,bosh.MreGmst)
+            loadFactory = bosh.LoadFactory(False, bush.game.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
-            modFile = bosh.ModFile(modInfo,loadFactory)
+            modFile = bosh.ModFile(modInfo, loadFactory)
             modFile.load(True)
-            for gmst in sorted(modFile.GMST.records,key=sorter):
+            for gmst in sorted(modFile.GMST.records, key=sorter):
                 print gmst.eid, gmst.value
                 if gmst.eid not in fids:
                     maxId += 1
                     fids[gmst.eid] = maxId
-                    print '%08X  %08X %s' % (gmst.fid,maxId,gmst.eid)
+                    print '%08X  %08X %s' % (gmst.fid, maxId, gmst.eid)
         #--Changes?
         if maxId > maxOld:
-            outData = {'GMST':fids}
-            cPickle.dump(outData,GPath(bush.game.pklfile).open('w'))
-            print _(u"%d new gmst ids written to "+bush.game.pklfile) % ((maxId - maxOld),)
+            outData = {'GMST': fids}
+            cPickle.dump(outData, GPath(bush.game.pklfile).open('w'))
+            print _(u"%d new gmst ids written to " + bush.game.pklfile) % (
+                (maxId - maxOld),)
         else:
             print _(u'No changes necessary. PKL data unchanged.')
 
