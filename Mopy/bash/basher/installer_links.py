@@ -143,7 +143,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def _askFilename(self, message, filename):
         result = self._askText(message, title=self.dialogTitle,
                                default=filename)
-        result = (result or u'').strip()
         if not result: return
         archive = GPath(result).tail
         #--Error checking
@@ -420,7 +419,6 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
             index += 1
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)
-        result = (result or u'').strip()
         if not result: return
         #--Error checking
         newName = GPath(result).tail
@@ -612,10 +610,9 @@ class Installer_Move(_InstallerLink):
                    )
         newPos = self._askText(message, default=unicode(curPos))
         if not newPos: return
-        newPos = newPos.strip()
         try:
             newPos = int(newPos)
-        except:
+        except ValueError:
             self._showError(_(u'Position must be an integer.'))
             return
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
@@ -1021,7 +1018,6 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             project = archive.root
             result = self._askText(_(u"Unpack %s to Project:") % archive.s,
                                    default=project.s)
-            result = (result or u'').strip()
             if not result: return
             #--Error checking
             project = GPath(result).tail
@@ -1249,7 +1245,6 @@ class InstallerConverter_Create(_InstallerLink):
         #--Confirm operation
         result = self._askText(message, title=self.dialogTitle,
                                default=BCFArchive.s)
-        result = (result or u'').strip()
         if not result: return
         #--Error checking
         BCFArchive = GPath(result).tail

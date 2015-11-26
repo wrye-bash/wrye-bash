@@ -129,8 +129,7 @@ class Mods_LoadList(ChoiceLink):
             text = _(u'Save List...')
             def _enable(self): return bool(bosh.modInfos.activeCached)
             def Execute(self, event):
-                newItem = (self._askText(_(u'Save current load list as:'),
-                                         u'Wrye Bash') or u'').strip()
+                newItem = self._askText(_(u'Save current load list as:'))
                 if not newItem: return
                 if len(newItem) > 64:
                     message = _(u'Load list name must be between 1 and 64 '

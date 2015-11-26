@@ -642,11 +642,12 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
     return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_SAVE|style)
 
 #------------------------------------------------------------------------------
-def askText(parent,message,title=u'',default=u''):
+def askText(parent, message, title=u'', default=u'', strip=True):
     """Shows a text entry dialog and returns result or None if canceled."""
     with wx.TextEntryDialog(parent, message, title, default) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
-        return dialog.GetValue()
+        txt = dialog.GetValue()
+        return txt.strip() if strip else txt
 
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
@@ -1297,7 +1298,7 @@ class ListEditor(Dialog):
         itemDex = selections[0]
         curName = self.listBox.GetString(itemDex)
         #--Dialog
-        newName = askText(self,_(u'Rename to:'),_(u'Rename'),curName)
+        newName = askText(self, _(u'Rename to:'), _(u'Rename'), curName)
         if not newName or newName == curName:
             return
         elif newName in self._list_items:
@@ -2467,9 +2468,10 @@ class Link(object):
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
         return askWarning(self.window, message, title, **kwdargs)
 
-    def _askText(self, message, title=u'', default=u''):
+    def _askText(self, message, title=u'', default=u'', strip=True):
         if not title: title = self.text
-        return askText(self.window, message, title=title, default=default)
+        return askText(self.window, message, title=title, default=default,
+                       strip=strip)
 
     def _showError(self, message, title=_(u'Error'), **kwdargs):
         return showError(self.window, message, title, **kwdargs)

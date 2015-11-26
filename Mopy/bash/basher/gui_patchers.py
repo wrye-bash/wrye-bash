@@ -526,7 +526,7 @@ class TweakPatcher(Patcher):
                 new = balt.askText(
                     self.gConfigPanel, label,
                     title=tweak.label + _(u' ~ Custom Tweak Text'),
-                    default=tweak.choiceValues[index][i])
+                    default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
                 value.append(new)

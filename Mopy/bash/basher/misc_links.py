@@ -48,7 +48,7 @@ class Screens_NextScreenShot(ItemLink):
         oblivionIni = bosh.oblivionIni
         base = oblivionIni.getSetting(u'Display', u'sScreenShotBaseName',
                                       u'ScreenShot')
-        next_ = oblivionIni.getSetting(u'Display',u'iScreenShotIndex',u'0')
+        next_ = oblivionIni.getSetting(u'Display', u'iScreenShotIndex', u'0')
         pattern = self._askText(
             _(u"Screenshot base name, optionally with next screenshot number.")
             + u'\n' +

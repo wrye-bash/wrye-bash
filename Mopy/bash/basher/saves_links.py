@@ -82,9 +82,8 @@ class Saves_ProfilesData(balt.ListEditorData):
 
     def add(self):
         """Adds a new profile."""
-        newName = balt.askText(self.parent,_(u"Enter profile name:"))
-        if not newName:
-            return False
+        newName = balt.askText(self.parent, _(u"Enter profile name:"))
+        if not newName: return False
         if newName in self.getItemList():
             balt.showError(self.parent,_(u'Name must be unique.'))
             return False
@@ -271,6 +270,7 @@ class Save_RenamePlayer(EnabledLink):
 
     def Execute(self,event):
         saveInfo = bosh.saveInfos[self.selected[0]]
+        # get new player name - must not be empty
         newName = self._askText(
             _(u"Enter new player name. E.g. Conan the Bold"),
             title=_(u"Rename player"), default=saveInfo.header.pcName)
@@ -697,14 +697,13 @@ class Save_ReweighPotions(OneItemLink):
         #--Query value
         default = u'%0.2f' % (bosh.settings.get(
             'bash.reweighPotions.newWeight', 0.2),)
-        result = self._askText(_(u"Set weight of all player potions to..."),
-                               title=_(u"Reweigh Potions"), default=default)
-        if not result: return
+        newWeight = self._askText(_(u"Set weight of all player potions to..."),
+                                  title=_(u"Reweigh Potions"), default=default)
+        if not newWeight: return
         try:
-            newWeight = float(result.strip())
-            if newWeight < 0 or newWeight > 100:
-                raise Exception('')
-        except:
+            newWeight = float(newWeight)
+            if newWeight < 0 or newWeight > 100: raise ValueError
+        except ValueError:
             self._showOk(_(u'Invalid weight: %s') % newWeight)
             return
         bosh.settings['bash.reweighPotions.newWeight'] = newWeight

@@ -196,8 +196,8 @@ class _Mod_LabelsData(balt.ListEditorData):
     def add(self):
         """Adds a new group."""
         #--Name Dialog
-        newName = balt.askText(self.parent,self.addPrompt)
-        if not newName: return
+        newName = balt.askText(self.parent, self.addPrompt)
+        if newName is None: return
         if newName in self.data:
             balt.showError(self.parent,_(u'Name must be unique.'))
             return False
