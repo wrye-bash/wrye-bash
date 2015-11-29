@@ -76,17 +76,18 @@ class DocBrowser(wx.Frame):
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
-        self.setButton = Button(self,_(u'Set Doc...'),onClick=self.DoSet)
+        self.setButton = Button(self, _(u'Set Doc...'), onButClick=self.DoSet)
         #--Forget Doc
         self.forgetButton = Button(self, _(u'Forget Doc...'),
-                                   onClick=self.DoForget)
+                                   onButClick=self.DoForget)
         #--Rename Doc
         self.renameButton = Button(self, _(u'Rename Doc...'),
-                                   onClick=self.DoRename)
+                                   onButClick=self.DoRename)
         #--Edit Doc
         self.editButton = toggleButton(self, label=_(u'Edit Doc...'),
-                                       onClick=self.DoEdit)
-        self.openButton = Button(self, _(u'Open Doc...'), onClick=self.DoOpen,
+                                       onClickToggle=self.DoEdit)
+        self.openButton = Button(self, _(u'Open Doc...'),
+                                 onButClick=self.DoOpen,
                                  tip=_(u'Open doc in external editor.'))
         #--Doc Name
         self.docNameBox = RoTextCtrl(self, multiline=False)
@@ -98,17 +99,19 @@ class DocBrowser(wx.Frame):
             #--Html Back
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            self.prevButton = bitmapButton(self,bitmap,onClick=self.DoPrevPage)
+            self.prevButton = bitmapButton(self, bitmap,
+                                           onBBClick=self.DoPrevPage)
             #--Html Forward
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            self.nextButton = bitmapButton(self,bitmap,onClick=self.DoNextPage)
+            self.nextButton = bitmapButton(self, bitmap,
+                                           onBBClick=self.DoNextPage)
         else:
             self.htmlText = None
             self.prevButton = None
             self.nextButton = None
         #--Events
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         #--Layout
         self.mainSizer = vSizer(
             (hSizer( #--Buttons
@@ -151,15 +154,15 @@ class DocBrowser(wx.Frame):
         except UnicodeDecodeError:
             return False
 
-    def DoPrevPage(self, event):
+    def DoPrevPage(self):
         """Handle "Back" button click."""
         self.htmlText.GoBack()
 
-    def DoNextPage(self, event):
+    def DoNextPage(self):
         """Handle "Next" button click."""
         self.htmlText.GoForward()
 
-    def DoOpen(self,event):
+    def DoOpen(self):
         """Handle "Open Doc" button."""
         docPath = self.docs.get(self.modName)
         if not docPath:
@@ -170,7 +173,7 @@ class DocBrowser(wx.Frame):
         else:
             docPath.start()
 
-    def DoEdit(self,event):
+    def DoEdit(self):
         """Handle "Edit Doc" button click."""
         self.DoSave()
         editing = self.editButton.GetValue()
@@ -181,7 +184,7 @@ class DocBrowser(wx.Frame):
         else:
             self.plainText.SetEditable(editing)
 
-    def DoForget(self,event):
+    def DoForget(self):
         """Handle "Forget Doc" button click.
         Sets help document for current mod name to None."""
         #--Already have mod data?
@@ -198,7 +201,7 @@ class DocBrowser(wx.Frame):
         """Handle mod name combobox selection."""
         self.SetMod(event.GetString())
 
-    def DoSet(self,event):
+    def DoSet(self):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
         modName = self.modName
@@ -217,7 +220,7 @@ class DocBrowser(wx.Frame):
         self.docs[modName] = path
         self.SetMod(modName)
 
-    def DoRename(self,event):
+    def DoRename(self):
         """Handle "Rename Doc" button click."""
         modName = self.modName
         oldPath = self.docs[modName]
@@ -357,7 +360,7 @@ class DocBrowser(wx.Frame):
         self.Layout()
 
     #--Window Closing
-    def OnCloseWindow(self, event):
+    def OnCloseWindow(self):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
@@ -394,38 +397,39 @@ class ModChecker(wx.Frame):
             #--Buttons
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            gBackButton = bitmapButton(self, bitmap, onClick=lambda
-                evt: self.gTextCtrl.GoBack())
+            gBackButton = bitmapButton(self, bitmap,
+                                       onBBClick=self.gTextCtrl.GoBack)
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
                                               wx.ART_HELP_BROWSER, (16, 16))
-            gForwardButton = bitmapButton(self, bitmap, onClick=lambda
-                evt: self.gTextCtrl.GoForward())
+            gForwardButton = bitmapButton(self, bitmap,
+                                          onBBClick=self.gTextCtrl.GoForward)
         else:
             self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
-        gUpdateButton = Button(self, _(u'Update'),
-                               onClick=lambda event: self.CheckMods())
+        gUpdateButton = Button(self, _(u'Update'), onButClick=self.CheckMods)
         self.gShowModList = toggleButton(self, _(u'Mod List'),
-                                         onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
         self.gShowRuleSets = toggleButton(self, _(u'Rule Sets'),
-                                          onClick=self.CheckMods)
+                                          onClickToggle=self.CheckMods)
         self.gShowNotes = toggleButton(self, _(u'Notes'),
-                                       onClick=self.CheckMods)
+                                       onClickToggle=self.CheckMods)
         self.gShowConfig = toggleButton(self, _(u'Configuration'),
-                                        onClick=self.CheckMods)
+                                        onClickToggle=self.CheckMods)
         self.gShowSuggest = toggleButton(self, _(u'Suggestions'),
-                                         onClick=self.CheckMods)
-        self.gShowCRC = toggleButton(self, _(u'CRCs'), onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
+        self.gShowCRC = toggleButton(self, _(u'CRCs'),
+                                     onClickToggle=self.CheckMods)
         self.gShowVersion = toggleButton(self, _(u'Version Numbers'),
-                                         onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
         if bosh.settings['bash.CBashEnabled']:
             self.gScanDirty = toggleButton(self, _(u'Scan for Dirty Edits'),
-                                           onClick=self.CheckMods)
+                                           onClickToggle=self.CheckMods)
         else:
             self.gScanDirty = toggleButton(self, _(u"Scan for UDR's"),
-                                           onClick=self.CheckMods)
-        self.gCopyText = Button(self, _(u'Copy Text'), onClick=self.OnCopyText)
+                                           onClickToggle=self.CheckMods)
+        self.gCopyText = Button(self, _(u'Copy Text'),
+                                onButClick=self.OnCopyText)
         self.gShowModList.SetValue(
             bosh.settings.get('bash.modChecker.showModList', False))
         self.gShowNotes.SetValue(
@@ -439,7 +443,7 @@ class ModChecker(wx.Frame):
         self.gShowVersion.SetValue(
             bosh.settings.get('bash.modChecker.showVersion', True))
         #--Events
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         #--Layout
         self.SetSizer(
@@ -466,7 +470,7 @@ class ModChecker(wx.Frame):
             )
         self.CheckMods()
 
-    def OnCopyText(self,event=None):
+    def OnCopyText(self):
         """Copies text of report to clipboard."""
         text = u'[spoiler]\n'+self.text+u'[/spoiler]'
         text = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]',ur'\1',text,re.U)
@@ -475,7 +479,7 @@ class ModChecker(wx.Frame):
         text = re.sub(u'<[^>]+>','',text,re.U)
         balt.copyToClipboard(text)
 
-    def CheckMods(self,event=None):
+    def CheckMods(self):
         """Do mod check."""
         bosh.settings[
             'bash.modChecker.showModList'] = self.gShowModList.GetValue()
@@ -527,7 +531,7 @@ class ModChecker(wx.Frame):
             ):
             self.CheckMods()
 
-    def OnCloseWindow(self, event):
+    def OnCloseWindow(self):
         """Handle window close event.
         Remember window size, position, etc."""
         # TODO(ut): maybe set Link.Frame.modChecker = None (compare with DocBrowser)
@@ -576,8 +580,8 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
                 spacer,
-                (SaveButton(self, onClick=self.DoSave, default=True),0,),
-                (CancelButton(self, onClick=self.DoCancel), 0,
+                (SaveButton(self, onButClick=self.DoSave, default=True),0,),
+                (CancelButton(self, onButClick=self.DoCancel), 0,
                  wx.LEFT, 4),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
@@ -587,11 +591,9 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         self.SetSize((350,400))
 
     #--Save/Cancel
-    def DoCancel(self,event):
-        """Handle save button."""
-        self.Destroy()
+    def DoCancel(self): self.Destroy()
 
-    def DoSave(self,event):
+    def DoSave(self):
         """Handle save button."""
         config = self.config
         #--Text fields

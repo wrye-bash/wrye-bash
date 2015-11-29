@@ -47,7 +47,7 @@ class Files_Open(ItemLink):
         super(Files_Open, self)._initData(window, selection)
         self.help = _(u"Open '%s'") % window.data.dir.tail
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle selection."""
         dir_ = self.window.data.dir
         dir_.makedirs()
@@ -64,7 +64,7 @@ class Files_SortBy(RadioLink):
 
     def _check(self): return self.window.sort == self.sortCol
 
-    def Execute(self, event): self.window.SortItems(self.sortCol, 'INVERT')
+    def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
 
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
@@ -75,7 +75,7 @@ class Files_Unhide(ItemLink):
         self.type = type_
         self.help = _(u"Unhides hidden %ss.") % self.type
 
-    def Execute(self,event):
+    def Execute(self):
         srcDir = bosh.dirs['modsBash'].join(u'Hidden')
         window = self.window
         destDir = None
@@ -172,7 +172,7 @@ class File_Duplicate(ItemLink):
             voice=self.voice)
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         data = self.selected
         for item in data:
             fileName = GPath(item)
@@ -225,7 +225,7 @@ class File_Hide(ItemLink):
             {'filename': selection[0]})
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
@@ -264,7 +264,7 @@ class File_ListMasters(OneItemLink):
             u"Copies list of %(filename)s's masters to the clipboard.") % (
                         {'filename': selection[0]})
 
-    def Execute(self,event):
+    def Execute(self):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
@@ -280,7 +280,7 @@ class File_Redate(AppendableLink, ItemLink):
     def _append(self, window): return not bosh.modInfos.usingTxtFile()
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         #--Get current start time.
         modInfos = self.window.data
         #--Ask user for revised time.
@@ -315,7 +315,7 @@ class File_Snapshot(ItemLink):
         super(File_Snapshot, self)._initData(window, selection)
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
 
-    def Execute(self,event):
+    def Execute(self):
         data = self.selected
         for item in data:
             fileName = GPath(item)
@@ -353,7 +353,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         """Revert to Snapshot."""
         fileInfo = self.window.data[self.selected[0]]
         fileName = fileInfo.name
@@ -389,7 +389,7 @@ class File_Backup(ItemLink):
     text = _(u'Backup')
     help = _(u"Create a backup of the selected file(s).")
 
-    def Execute(self,event):
+    def Execute(self):
         for item in self.selected:
             fileInfo = self.window.data[item]
             fileInfo.makeBackup(True)
@@ -405,7 +405,7 @@ class File_Open(EnabledLink):
 
     def _enable(self): return len(self.selected) > 0
 
-    def Execute(self, event): self.window.OpenSelected(selected=self.selected)
+    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
@@ -422,12 +422,12 @@ class File_RevertToBackup(ChoiceLink):
         class _RevertBackup(EnabledLink):
             text = _(u'Revert to Backup')
             def _enable(self): return singleSelect and backup.exists()
-            def Execute(self, event): return _self.revert(backup)
+            def Execute(self): return _self.revert(backup)
         #--First Backup item
         class _RevertFirstBackup(EnabledLink):
             text = _(u'Revert to First Backup')
             def _enable(self): return singleSelect and firstBackup.exists()
-            def Execute(self, event): return _self.revert(firstBackup)
+            def Execute(self): return _self.revert(firstBackup)
         self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
 
     @balt.conversation

@@ -44,11 +44,11 @@ class Screens_NextScreenShot(ItemLink):
     help = _(u'Set screenshot base name and number')
     rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
 
-    def Execute(self,event):
+    def Execute(self):
         oblivionIni = bosh.oblivionIni
         base = oblivionIni.getSetting(u'Display', u'sScreenShotBaseName',
                                       u'ScreenShot')
-        next_ = oblivionIni.getSetting(u'Display',u'iScreenShotIndex',u'0')
+        next_ = oblivionIni.getSetting(u'Display', u'iScreenShotIndex', u'0')
         pattern = self._askText(
             _(u"Screenshot base name, optionally with next screenshot number.")
             + u'\n' +
@@ -87,7 +87,7 @@ class Screen_ConvertTo(EnabledLink):
                        GPath(name_).cext != u'.' + self.ext]
         return len(convertable) > 0
 
-    def Execute(self,event):
+    def Execute(self):
         srcDir = bosh.screensData.dir
         try:
             with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
@@ -119,7 +119,7 @@ class Screen_JpgQuality(RadioLink):
     def _check(self):
         return self.quality == bosh.settings['bash.screens.jpgQuality']
 
-    def Execute(self,event):
+    def Execute(self):
         bosh.settings['bash.screens.jpgQuality'] = self.quality
 
 #------------------------------------------------------------------------------
@@ -130,14 +130,14 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
             bosh.settings['bash.screens.jpgCustomQuality'])
         self.text = _(u'Custom [%i]') % self.quality
 
-    def Execute(self,event):
+    def Execute(self):
         quality = self._askNumber(_(u'JPEG Quality'), value=self.quality,
                                   min=0, max=100)
         if quality is None: return
         self.quality = quality
         bosh.settings['bash.screens.jpgCustomQuality'] = self.quality
         self.text = _(u'Custom [%i]') % quality
-        Screen_JpgQuality.Execute(self,event)
+        super(Screen_JpgQualityCustom, self).Execute()
 
 #------------------------------------------------------------------------------
 class Screen_Rename(EnabledLink):
@@ -147,7 +147,7 @@ class Screen_Rename(EnabledLink):
 
     def _enable(self): return len(self.selected) > 0
 
-    def Execute(self,event): self.window.Rename(selected=self.selected)
+    def Execute(self): self.window.Rename(selected=self.selected)
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ class People_AddNew(ItemLink, People_Link):
     text = _(u'Add...')
     help = _(u'Add a new record')
 
-    def Execute(self,event):
+    def Execute(self):
         name = self._askText(_(u"Add new person:"), self.dialogTitle)
         if not name: return
         if name in self.pdata: return self._showInfo(
@@ -174,7 +174,7 @@ class People_Export(ItemLink, People_Link):
     text = _(u'Export...')
     help = _(u'Export people to text archive')
 
-    def Execute(self,event):
+    def Execute(self):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
         path = self._askSave(title=_(u'Export people to text file:'),
@@ -193,7 +193,7 @@ class People_Import(ItemLink, People_Link):
     text = _(u'Import...')
     help = _(u'Import people from text archive')
 
-    def Execute(self,event):
+    def Execute(self):
         textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
         #--File dialog
         path = self._askOpen(title=_(u'Import people from text file:'),
@@ -213,7 +213,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
     class _Karma(ItemLink, People_Link):
-        def Execute(self, event):
+        def Execute(self):
             karma = int(self.text)
             for item in self.selected:
                 text = self.pdata[item][2]
@@ -221,7 +221,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
             self.window.RefreshUI()
             self.pdata.setChanged()
 
-    cls = _Karma
+    choiceLinkType = _Karma
 
     @property
     def _choices(self): return self.__class__.labels
@@ -232,13 +232,13 @@ class Master_AllowEdit(CheckLink):
     text, help = _(u'Allow edit'), _(u'Allow editing the masters list')
 
     def _check(self): return self.window.allowEdit
-    def Execute(self, event): self.window.allowEdit ^= True
+    def Execute(self): self.window.allowEdit ^= True
 
 class Master_ClearRenames(ItemLink):
     text = _(u'Clear Renames')
     help = _(u'Clear internal Bash renames dictionary')
 
-    def Execute(self, event):
+    def Execute(self):
         bosh.settings['bash.mods.renames'].clear()
         self.window.RefreshUI()
 
@@ -258,7 +258,7 @@ class Master_ChangeTo(_Master_EditList):
     help = _(u"Rename/replace master through file dialog")
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
@@ -291,7 +291,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
 
     def _append(self, window): return not window.fileInfo.isMod() #--Saves only
 
-    def Execute(self,event):
+    def Execute(self):
         itemId = self.selected[0]
         masterInfo = self.window.data[itemId]
         masterName = masterInfo.name
@@ -316,7 +316,7 @@ class _Column(CheckLink, EnabledLink):
 
     def _check(self): return self.colName in self.window.cols
 
-    def Execute(self,event):
+    def Execute(self):
         if self.colName in self.window.cols:
             self.window.cols.remove(self.colName)
         else:
@@ -335,7 +335,7 @@ class ColumnsMenu(ChoiceLink, MenuLink):
     class _AutoWidth(RadioLink):
         wxFlag = 0
         def _check(self): return self.wxFlag == self.window.autoColWidths
-        def Execute(self, event):
+        def Execute(self):
             self.window.autoColWidths = self.wxFlag
             self.window.autosizeColumns()
     class _Manual(_AutoWidth):
@@ -352,6 +352,6 @@ class ColumnsMenu(ChoiceLink, MenuLink):
                  u' Applies to all Bash lists')
     extraItems = [_Manual(), _Contents(), _Header(), balt.SeparatorLink()]
     # choices
-    cls = _Column
+    choiceLinkType = _Column
     @property
     def _choices(self): return self.window.allCols

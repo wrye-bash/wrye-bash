@@ -54,7 +54,7 @@ class Settings_BackupSettings(ItemLink):
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
         BashFrame.SaveSettings(Link.Frame)
@@ -67,11 +67,11 @@ class Settings_BackupSettings(ItemLink):
                     ),1,wx.EXPAND|wx.ALL,6),
             (hSizer(spacer,
                     Button(dialog, label=_(u'Backup All Images'),
-                    onClick=lambda e: dialog.EndModal(2)),
+                    onButClick=lambda: dialog.EndModal(2)),
                     (Button(dialog, label=_(u'Backup Changed Images'),
-                    onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
+                    onButClick=lambda: dialog.EndModal(1)), 0, wx.LEFT, 4),
                     (Button(dialog, label=_(u'None'),
-                    onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
+                    onButClick=lambda: dialog.EndModal(0)), 0, wx.LEFT, 4),
                     ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             )
         dialog.SetSizer(sizer)
@@ -95,7 +95,7 @@ class Settings_RestoreSettings(ItemLink):
              u"file.")
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         if not barb.RestoreSettings.PromptConfirm(): return
         backup = None # barb.RestoreSettings may raise....
         try:
@@ -118,7 +118,7 @@ class Settings_SaveSettings(ItemLink):
     text = _(u'Save Settings')
     help = _(u"Save all of Wrye Bash's settings/data now.")
 
-    def Execute(self,event):
+    def Execute(self):
         BashFrame.SaveSettings(Link.Frame)
 
 #------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
 
     def _append(self, window): return bush.game.se_sd
 
-    def Execute(self,event):
+    def Execute(self):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
@@ -167,7 +167,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
 
     def _append(self, window): return bush.game.se_sd
 
-    def Execute(self,event):
+    def Execute(self):
         textDir = bosh.dirs['patches']
         textDir.makedirs()
         #--File dialog
@@ -223,7 +223,7 @@ class Settings_Colors(ItemLink):
     text = _(u'Colors...')
     help = _(u"Configure the custom colors used in the UI.")
 
-    def Execute(self,event): ColorDialog.Display()
+    def Execute(self): ColorDialog.Display()
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):
@@ -237,7 +237,7 @@ class Settings_IconSize(RadioLink):
     def _check(self):
         return self.size == bosh.settings['bash.statusbar.iconSize']
 
-    def Execute(self,event):
+    def Execute(self):
         bosh.settings['bash.statusbar.iconSize'] = self.size
         Link.Frame.statusBar.UpdateIconSizes()
 
@@ -249,7 +249,7 @@ class Settings_StatusBar_ShowVersions(CheckLink):
 
     def _check(self): return bosh.settings['bash.statusbar.showversion']
 
-    def Execute(self,event):
+    def Execute(self):
         bosh.settings['bash.statusbar.showversion'] ^= True
         for button in BashStatusBar.buttons:
             if isinstance(button, App_Button):
@@ -315,7 +315,7 @@ class Settings_Language(RadioLink):
 
     def _check(self): return self.check
 
-    def Execute(self,event):
+    def Execute(self):
         if self.language == _bassLang(): return
         if balt.askYes(Link.Frame,
                 _(u'Wrye Bash needs to restart to change languages.  Do you '
@@ -353,7 +353,7 @@ class Settings_PluginEncoding(RadioLink):
     def _check(self): return self.encoding == bosh.settings[
         'bash.pluginEncoding']
 
-    def Execute(self,event):
+    def Execute(self):
         bosh.settings['bash.pluginEncoding'] = self.encoding
         bolt.pluginEncoding = self.encoding
 
@@ -375,7 +375,7 @@ class _Settings_Game(RadioLink):
 
     def _check(self): return self.game.lower() == bush.game.fsName.lower()
 
-    def Execute(self,event):
+    def Execute(self):
         if self.game.lower() == bush.game.fsName.lower(): return
         Link.Frame.Restart(('--game',self.game))
 
@@ -422,7 +422,7 @@ class Settings_UnHideButton(ItemLink):
         self.text = tip
         self.help = _(u"Unhide the '%s' status bar button.") % tip
 
-    def Execute(self,event): Link.Frame.statusBar.UnhideButton(self.link)
+    def Execute(self): Link.Frame.statusBar.UnhideButton(self.link)
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):
@@ -430,8 +430,8 @@ class Settings_UseAltName(BoolLink):
         _(u'Use an alternate display name for Wrye Bash based on the game it'
           u' is managing.')
 
-    def Execute(self,event):
-        super(Settings_UseAltName, self).Execute(event)
+    def Execute(self):
+        super(Settings_UseAltName, self).Execute()
         Link.Frame.SetTitle()
 
 #------------------------------------------------------------------------------
@@ -443,7 +443,7 @@ class Settings_UAC(AppendableLink, ItemLink):
         from . import isUAC # FIXME(ut): globals
         return isUAC
 
-    def Execute(self,event):
+    def Execute(self):
         if balt.askYes(Link.Frame,
                 _(u'Restart Wrye Bash with administrator privileges?'),
                 _(u'Administrator Mode'), ):
@@ -457,7 +457,7 @@ class Settings_Deprint(CheckLink):
 
     def _check(self): return bolt.deprintOn
 
-    def Execute(self,event):
+    def Execute(self):
         deprint(_(u'Debug Printing: Off'))
         bolt.deprintOn = not bolt.deprintOn
         deprint(_(u'Debug Printing: On'))
@@ -471,7 +471,7 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
         """Can't dump the strings if the files don't exist."""
         return not hasattr(sys,'frozen')
 
-    def Execute(self, event):
+    def Execute(self):
         message = _(u'Generate Bash program translator file?') + u'\n\n' + _(
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages.  For more info, '

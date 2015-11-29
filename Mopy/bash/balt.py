@@ -26,7 +26,7 @@
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
-import bosh
+import bosh ##: BIN ! or rather split balt making clear which submodules use it
 from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
     StateError, CancelError, SkipError
 from bass import Resources
@@ -38,6 +38,7 @@ import textwrap
 import time
 import threading
 from functools import partial, wraps
+from collections import OrderedDict
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -65,7 +66,8 @@ def fonts():
     return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
-_settings = {} #--Using applications should override this.
+__unset = bolt.Settings(dictFile=None) # type information
+_settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
@@ -381,10 +383,11 @@ class ComboBox(wx.ComboBox):
         event.Skip()
 
 def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
-        style=wx.BU_AUTODRAW, val=defVal, name=u'button',onClick=None, onRClick=None):
+                 style=wx.BU_AUTODRAW, val=defVal, name=u'button',
+                 onBBClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
-    if onClick: gButton.Bind(wx.EVT_BUTTON,onClick)
+    if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
@@ -394,13 +397,20 @@ class Button(wx.Button):
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClick=None, tip=None,
-                 default=False):
-        """Create a button and bind its click function."""
+                 val=defVal, name='button', onButClick=None,
+                 onButClickEventful=None, tip=None, default=False):
+        """Create a button and bind its click function.
+        :param onButClick: a no args function to execute on button click
+        :param onButClickEventful: a function accepting as parameter the
+        EVT_BUTTON - messing with events outside balt is discouraged
+        """
         if  not label and self.__class__.label: label = self.__class__.label
         wx.Button.__init__(self, parent, self.__class__._id,
                            label, pos, size, style, val, name)
-        if onClick: self.Bind(wx.EVT_BUTTON,onClick)
+        if onButClick and onButClickEventful:
+            raise BoltError('Both onButClick and onButClickEventful specified')
+        if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
+        if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
         if tip: self.SetToolTip(tooltip(tip))
         if default: self.SetDefault()
 
@@ -426,12 +436,13 @@ class SelectAllButton(Button): _id = wx.ID_SELECTALL
 class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClick=None, tip=None):
+                 val=defVal, name='button', onClickToggle=None, tip=None):
     """Creates a toggle button, binds toggle function, then returns bound
     button."""
     gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
                               name)
-    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON, onClick)
+    if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
+                                   lambda __event: onClickToggle())
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
@@ -439,7 +450,7 @@ def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
              name='checkBox', onCheck=None, tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
     gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
-    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX,onCheck)
+    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
     if tip: gCheckBox.SetToolTip(tooltip(tip))
     gCheckBox.SetValue(checked)
     return gCheckBox
@@ -642,11 +653,12 @@ def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
     return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_SAVE|style)
 
 #------------------------------------------------------------------------------
-def askText(parent,message,title=u'',default=u''):
+def askText(parent, message, title=u'', default=u'', strip=True):
     """Shows a text entry dialog and returns result or None if canceled."""
     with wx.TextEntryDialog(parent, message, title, default) as dialog:
         if dialog.ShowModal() != wx.ID_OK: return None
-        return dialog.GetValue()
+        txt = dialog.GetValue()
+        return txt.strip() if strip else txt
 
 #------------------------------------------------------------------------------
 def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
@@ -810,8 +822,7 @@ def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
         fixedStyle.SetFont(fixedFont)
         txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
     #--Buttons
-    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
-                         default=True)
+    gOkButton = OkButton(window, onButClick=window.Close, default=True)
     #--Layout
     window.SetSizer(
         vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
@@ -865,11 +876,10 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-    gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
+    gBackButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoBack)
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-    gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
-    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
-                         default=True)
+    gForwardButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoForward)
+    gOkButton = OkButton(window, onButClick=window.Close, default=True)
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
     #--Layout
@@ -1235,7 +1245,8 @@ class ListEditor(Dialog):
                 style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
                       wx.TE_MULTILINE | wx.SUNKEN_BORDER)
             if not self._listEditorData.infoReadOnly:
-                self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
+                self.gInfoBox.Bind(wx.EVT_TEXT,
+                                   lambda __event: self.OnInfoEdit())
         else:
             self.gInfoBox = None
         #--Buttons
@@ -1253,7 +1264,8 @@ class ListEditor(Dialog):
             for (flag,defLabel,func) in buttonSet:
                 if not flag: continue
                 label = (flag == True and defLabel) or flag
-                buttons.Add(Button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
+                buttons.Add(Button(self, label, onButClick=func),
+                            0, wx.LEFT | wx.TOP, 4)
         else:
             buttons = None
         #--Layout
@@ -1276,7 +1288,7 @@ class ListEditor(Dialog):
         return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
     #--List Commands
-    def DoAdd(self,event):
+    def DoAdd(self):
         """Adds a new item."""
         newItem = self._listEditorData.add()
         if newItem and newItem not in self._list_items:
@@ -1289,7 +1301,7 @@ class ListEditor(Dialog):
             self._list_items = self._listEditorData.getItemList()
             self.listBox.Set(self._list_items)
 
-    def DoRename(self,event):
+    def DoRename(self):
         """Renames selected item."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
@@ -1297,7 +1309,7 @@ class ListEditor(Dialog):
         itemDex = selections[0]
         curName = self.listBox.GetString(itemDex)
         #--Dialog
-        newName = askText(self,_(u'Rename to:'),_(u'Rename'),curName)
+        newName = askText(self, _(u'Rename to:'), _(u'Rename'), curName)
         if not newName or newName == curName:
             return
         elif newName in self._list_items:
@@ -1306,7 +1318,7 @@ class ListEditor(Dialog):
             self._list_items[itemDex] = newName
             self.listBox.SetString(itemDex,newName)
 
-    def DoRemove(self,event):
+    def DoRemove(self):
         """Removes selected item."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
@@ -1322,7 +1334,7 @@ class ListEditor(Dialog):
             self.gInfoBox.SetValue(u'')
 
     #--Show Info
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self):
         """Info box text has been edited."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
@@ -1331,13 +1343,13 @@ class ListEditor(Dialog):
             self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
     #--Save/Cancel
-    def DoSave(self,event):
+    def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
         sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
-    def DoCancel(self,event):
+    def DoCancel(self):
         """Handle cancel button."""
         sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)
@@ -1815,7 +1827,9 @@ class UIList(wx.Panel):
     nonReversibleCols = {'Load Order', 'Current Order'}
     _default_sort_col = 'File' # override as needed
     _sort_keys = {} # sort_keys[col] provides the sort key for this col
-    _extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    _extra_sortings = [] #extra self.methods for fancy sortings - order matters
+    # Labels, map the (permanent) order of columns to the label generating code
+    labels = OrderedDict()
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
@@ -1885,66 +1899,64 @@ class UIList(wx.Panel):
 
     # Column properties
     @property
+    def allCols(self): return self.labels.keys()
+    @property
     def colWidths(self):
-        return bosh.settings.getChanged(self.keyPrefix + '.colWidths', {})
+        return _settings.getChanged(self.keyPrefix + '.colWidths', {})
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
+        return _settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
-    def cols(self): return bosh.settings.getChanged(self.keyPrefix + '.cols')
+    def cols(self): return _settings.getChanged(self.keyPrefix + '.cols')
     @property
-    def allCols(self): return bosh.settings[self.keyPrefix + '.allCols']
-    @property
-    def autoColWidths(self): return bosh.settings.get(
-        'bash.autoSizeListColumns', 0)
+    def autoColWidths(self):
+        return _settings.get('bash.autoSizeListColumns', 0)
     @autoColWidths.setter
-    def autoColWidths(self, val):
-        bosh.settings['bash.autoSizeListColumns'] = val
+    def autoColWidths(self, val): _settings['bash.autoSizeListColumns'] = val
     # the current sort column
     @property
     def sort(self):
-        return bosh.settings.get(self.keyPrefix + '.sort',
-                                 self._default_sort_col)
+        return _settings.get(self.keyPrefix + '.sort', self._default_sort_col)
     @sort.setter
-    def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
+    def sort(self, val): _settings[self.keyPrefix + '.sort'] = val
 
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
         self._select(modName)
     def _select(self, item): self.panel.SetDetails(item)
 
-    #--ABSTRACT
-    def getLabels(self, item):
-        """Returns text labels for item to populate list control."""
-        raise AbstractError
-
     #--Items ----------------------------------------------
     @staticmethod
     def _gpath(item): return GPath(item)
 
     def PopulateItem(self, itemDex=-1, item=None):
-        """Populate ListCtrl for specified item."""
+        """Populate ListCtrl for specified item. Either item or itemDex must be
+        specified.
+        :param itemDex: the index of the item in the list - must be given if
+        item is None
+        :param item: a bolt.Path or an int (Masters) or a string (People),
+        the key in self.data
+        """
         insert = False
         if item is not None:
-            fileName = item
             try:
                 itemDex = self.GetIndex(item)
-            except KeyError:
+            except KeyError: # item is not present, so inserting
                 itemDex = self._gList.GetItemCount() # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
-            fileName = self.GetItem(itemDex)
-        fileName = self._gpath(fileName)
+            item = self.GetItem(itemDex)
+        item = self._gpath(item)
         cols = self.cols
-        labels = self.getLabels(fileName)
         for colDex in range(len(cols)):
             col = cols[colDex]
+            labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
-                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
+                self._gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self._gList.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(fileName, itemDex)
+                self._gList.SetStringItem(itemDex, colDex, labelTxt)
+        self.setUI(item, itemDex)
 
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
@@ -2236,12 +2248,12 @@ class UIList(wx.Panel):
         """Create/name columns in ListCtrl."""
         cols = self.cols # this may have been updated in ColumnsMenu.Execute()
         numCols = len(cols)
-        names = set(bosh.settings['bash.colNames'].get(key) for key in cols)
+        names = set(_settings['bash.colNames'].get(key) for key in cols)
         self._colDict.clear()
         colDex, listCtrl = 0, self._gList
         while colDex < numCols: ##: simplify!
             colKey = cols[colDex]
-            colName = bosh.settings['bash.colNames'].get(colKey, colKey)
+            colName = _settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.GetColumnCount(): # Make a new column
                 listCtrl.InsertColumn(colDex, colName)
@@ -2274,13 +2286,12 @@ class UIList(wx.Panel):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        bosh.settings[
-            self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
+        _settings[self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
         self._gList.ScrollLines(
-            bosh.settings.get(self.keyPrefix + '.scrollPos', 0))
+            _settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -2409,7 +2420,7 @@ class Link(object):
         specify text as a class attribute (or set in it _initData()).
         """
         super(Link, self).__init__()
-        self.id = wx.NewId() # register wx callbacks in AppendToMenu overrides
+        self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
         self.text = _text or self.__class__.text # menu label
 
     def _initData(self, window, selection):
@@ -2467,9 +2478,10 @@ class Link(object):
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
         return askWarning(self.window, message, title, **kwdargs)
 
-    def _askText(self, message, title=u'', default=u''):
+    def _askText(self, message, title=u'', default=u'', strip=True):
         if not title: title = self.text
-        return askText(self.window, message, title=title, default=default)
+        return askText(self.window, message, title=title, default=default,
+                       strip=strip)
 
     def _showError(self, message, title=_(u'Error'), **kwdargs):
         return showError(self.window, message, title, **kwdargs)
@@ -2520,15 +2532,20 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        wx.EVT_MENU(Link.Frame,self.id,self.Execute)
+        wx.EVT_MENU(Link.Frame, self._id, self.__Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self.id, self.text, self.help or u'',
+        menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
 
     # Callbacks ---------------------------------------------------------------
-    def Execute(self, event):
+    # noinspection PyUnusedLocal
+    def __Execute(self, __event):
+        """Eat up wx event - code outside balt should not use it."""
+        self.Execute()
+
+    def Execute(self):
         """Event: link execution."""
         raise AbstractError
 
@@ -2559,9 +2576,9 @@ class MenuLink(Link):
         super(MenuLink, self).AppendToMenu(menu, window, selection)
         wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
-        menu.AppendMenu(self.id, self.text, subMenu)
+        menu.AppendMenu(self._id, self.text, subMenu)
         if not self._enable():
-            menu.Enable(self.id, False)
+            menu.Enable(self._id, False)
         else: # do not append sub links unless submenu enabled
             for link in self.links: link.AppendToMenu(subMenu, window,
                                                       selection)
@@ -2575,13 +2592,12 @@ class MenuLink(Link):
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
     extraItems = [] # list<Link>
-    cls = ItemLink
-
-    def _range(self):
-        for choice in self._choices: yield self.__class__.cls(_text=choice)
+    choiceLinkType = ItemLink # the class type of the individual choices' links
 
     @property
-    def _choices(self): return []
+    def _choices(self):
+        """List of text labels for the individual choices links."""
+        return []
 
     def AppendToMenu(self, menu, window, selection):
         """Append Link items."""
@@ -2590,7 +2606,7 @@ class ChoiceLink(Link):
             menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, selection)
-        for link in self._range():
+        for link in (self.choiceLinkType(_text=txt) for txt in self._choices):
             link.AppendToMenu(menu, window, selection)
         # returns None
 
@@ -2679,9 +2695,9 @@ class BoolLink(CheckLink):
 
     def _check(self):
         # check if not the same as self.opposite (so usually check if True)
-        return bosh.settings[self.key] ^ self.__class__.opposite
+        return _settings[self.key] ^ self.__class__.opposite
 
-    def Execute(self,event): bosh.settings[self.key] ^= True # toggle
+    def Execute(self): _settings[self.key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):
@@ -2689,7 +2705,7 @@ class UIList_Delete(ItemLink):
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
-    def Execute(self,event):
+    def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
@@ -2734,7 +2750,7 @@ class _CheckList_SelectAll(ItemLink):
         self.select = select
         self.text = _(u'Select All') if select else _(u'Select None')
 
-    def Execute(self,event):
+    def Execute(self):
         for i in xrange(self.window.GetCount()):
             self.window.Check(i,self.select)
 

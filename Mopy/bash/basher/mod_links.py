@@ -74,7 +74,7 @@ class Mod_FullLoad(OneItemLink):
     """Tests all record definitions against a specific mod"""
     text = _(u'Test Full Record Definitions...')
 
-    def Execute(self,event):
+    def Execute(self):
         fileName = GPath(self.selected[0])
         with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
             print bosh.MreRecord.type_class
@@ -99,7 +99,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         return super(Mod_CreateDummyMasters, self)._enable() and \
                bosh.modInfos[self.selected[0]].getStatus() == 30  # Missing masters
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle execution."""
         msg = _(u"This is an advanced feature for editing 'Filter' patches in "
                 u"TES4Edit.  It will create dummy plugins for each missing "
@@ -148,7 +148,7 @@ class Mod_OrderByName(EnabledLink):
     def _enable(self): return len(self.selected) > 1
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '
             u'in the group, with consecutive files following at 1 minute '
@@ -196,8 +196,8 @@ class _Mod_LabelsData(balt.ListEditorData):
     def add(self):
         """Adds a new group."""
         #--Name Dialog
-        newName = balt.askText(self.parent,self.addPrompt)
-        if not newName: return
+        newName = balt.askText(self.parent, self.addPrompt)
+        if newName is None: return
         if newName in self.data:
             balt.showError(self.parent,_(u'Name must be unique.'))
             return False
@@ -276,7 +276,7 @@ class _Mod_Labels(ChoiceLink):
         _self = self
         class _Edit(ItemLink):
             text = help = _self.editMenuText
-            def Execute(self, event):
+            def Execute(self):
                 """Show label editing dialog."""
                 data = _Mod_LabelsData(self.window, _self)  # ListEditorData
                 with balt.ListEditor(self.window, _self.editWindowTitle, data,
@@ -288,7 +288,7 @@ class _Mod_Labels(ChoiceLink):
         class _None(ItemLink):
             text = _(u'None')
             help = _(u'Clear labels from selected mod(s)')
-            def Execute(self, event):
+            def Execute(self):
                 """Handle selection of None."""
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected:
@@ -300,11 +300,11 @@ class _Mod_Labels(ChoiceLink):
         super(_Mod_Labels, self)._initData(window, selection)
         _self = self
         class _LabelLink(ItemLink):
-            def Execute(self, event):
+            def Execute(self):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected: fileLabels[fileName] = self.text
                 _self._refresh()
-        self.__class__.cls = _LabelLink
+        self.__class__.choiceLinkType = _LabelLink
 
     @property
     def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
@@ -319,7 +319,7 @@ class _Mod_Groups_Export(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
+    def Execute(self):
         textName = u'My' + self.__class__.csvFile
         textDir = bosh.dirs['patches']
         textDir.makedirs()
@@ -343,7 +343,7 @@ class _Mod_Groups_Import(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(
             u"Import groups from a text file ? This will assign to selected "
             u"mods the group they are assigned in the text file, if any.")
@@ -388,18 +388,18 @@ class Mod_Groups(_Mod_Labels):
         selection = set(selection)
         mod_group = bosh.modInfos.table.getColumn('group').items()
         modGroup = set([x[1] for x in mod_group if x[0] in selection])
-        class _CheckGroup(CheckLink, self.__class__.cls):
+        class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
                 return self.text in modGroup
-        self.__class__.cls = _CheckGroup
+        self.__class__.choiceLinkType = _CheckGroup
 
-    def _doRefresh(self, event):
+    def _doRefresh(self):
         """Add to the list of groups groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(set(bosh.settings[
             'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
-    def _doSync(self, event):
+    def _doSync(self):
         """Set the list of groups to groups currently assigned to mods."""
         msg = _(u'This will set the list of available groups to the groups '
                 u'currently assigned to mods. Continue ?')
@@ -408,7 +408,7 @@ class Mod_Groups(_Mod_Labels):
                                 _(u'Sync Groups')): return
         self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
 
-    def _doReset(self, event):
+    def _doReset(self):
         """Set the list of groups to the default groups list.
 
         Won't clear user set groups from the modlist - most probably not
@@ -440,7 +440,7 @@ class Mod_Details(OneItemLink):
     text = _(u'Details...')
     help = _(u'Show Mod Details')
 
-    def Execute(self,event):
+    def Execute(self):
         modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
@@ -468,7 +468,7 @@ class Mod_ShowReadme(OneItemLink):
     text = _(u'Readme...')
     help = _(u'Open the readme')
 
-    def Execute(self,event):
+    def Execute(self):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
         if not Link.Frame.docBrowser:
@@ -483,7 +483,7 @@ class Mod_ListBashTags(ItemLink):
     text = _(u"List Bash Tags...")
     help = _(u'Copies list of bash tags to clipboard')
 
-    def Execute(self,event):
+    def Execute(self):
         #--Get masters list
         files = [bosh.modInfos[fileName] for fileName in self.selected]
         text = bosh.modInfos.getTagList(files)
@@ -515,7 +515,7 @@ class Mod_CreateBOSSReport(EnabledLink):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
-    def Execute(self,event):
+    def Execute(self):
         text = u''
         if len(self.selected) > 5:
             spoiler = True
@@ -564,7 +564,7 @@ class Mod_CopyModInfo(ItemLink):
     text = _(u'Copy Mod Info...')
     help = _(u'Copies the basic info about selected mod(s)')
 
-    def Execute(self,event):
+    def Execute(self):
         text = u''
         if len(self.selected) > 5:
             spoiler = True
@@ -581,11 +581,11 @@ class Mod_CopyModInfo(ItemLink):
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: text += fileName.s
             else: text = _getUrl(fileName, installer, text)
-            labels = self.window.getLabels(fileName)
+            labels = self.window.labels
             for col in self.window.cols:
                 if col == 'File': continue
-                text += u'\n%s: %s' % (
-                    col, labels[col] if labels[col] else u'-')
+                lab = labels[col](self.window, fileName)
+                text += u'\n%s: %s' % (col, lab if lab else u'-')
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
@@ -608,7 +608,7 @@ class Mod_ListDependent(OneItemLink):
         self.legend = _(u'Mods dependent on %(filename)s') % (
                         {'filename': selection[0]})
 
-    def Execute(self,event):
+    def Execute(self):
         masterName = GPath(self.selected[0])
         ##: HACK - refactor getModList
         modInfos = self.window.data
@@ -664,7 +664,7 @@ class _GhostLink(ItemLink):
                 files.append(fileName)
         return files
 
-    def Execute(self,event):
+    def Execute(self):
         changed = self._loop()
         self.window.RefreshUI(files=changed, refreshSaves=False)
 
@@ -703,7 +703,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
             return not bosh.modInfos.isActiveCached(self.path)
         return True
 
-    def Execute(self,event):
+    def Execute(self):
         files = []
         if len(self.selected) == 1:
             # toggle - ghosting only enabled if plugin is inactive
@@ -750,7 +750,7 @@ class Mod_MarkMergeable(EnabledLink):
     def _enable(self): return bool(self.selected)
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         yes,no = [],[]
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         with balt.BusyCursor():
@@ -814,7 +814,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         """Handle activation event."""
         try:
             if not self._Execute(): return # prevent settings save
@@ -997,7 +997,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
     help = _(
         u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle execution."""
         #--Patcher info
         groupOrder = dict([(group,index) for index,group in
@@ -1101,7 +1101,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         u'Exports the Bashed Patch configuration to a Wrye Bash readable file')
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         """Handle execution."""
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],
@@ -1114,7 +1114,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
 class _DirtyLink(ItemLink):
     def _ignoreDirty(self, filename): raise AbstractError
 
-    def Execute(self, event):
+    def Execute(self):
         for fileName in self.selected:
             bosh.modInfos.table.setItem(fileName, 'ignoreDirty',
                                         self._ignoreDirty(fileName))
@@ -1182,7 +1182,7 @@ class Mod_ScanDirty(ItemLink):
         self.text = _(u'Scan for Dirty Edits') if bosh.settings[
             'bash.CBashEnabled'] else _(u"Scan for UDR's")
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle execution"""
         modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
@@ -1278,7 +1278,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
         if not self._askContinue(message, 'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
@@ -1316,7 +1316,7 @@ class Mod_CleanMod(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
         if not self._askContinue(message, 'bash.cleanMod.continue',
                                  _(u'Nvidia Fog Fix')): return
@@ -1349,7 +1349,7 @@ class Mod_UndeleteRefs(EnabledLink):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
         if not self._askContinue(message, 'bash.undeleteRefs.continue',
                                  _(u'Undelete Refs')): return
@@ -1385,7 +1385,7 @@ class Mod_AddMaster(OneItemLink):
     """Adds master."""
     text = _(u'Add Master...')
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"WARNING! For advanced modders only! Adds specified "
                     u"master to list of masters, thus ceding ownership of "
                     u"new content of this mod to the new master. Useful for "
@@ -1438,7 +1438,7 @@ class Mod_CopyToEsmp(EnabledLink):
                 return False
         return True
 
-    def Execute(self,event):
+    def Execute(self):
         for item in self.selected:
             fileInfo = bosh.modInfos[item]
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
@@ -1473,7 +1473,7 @@ class Mod_DecompileAll(EnabledLink):
         return len(self.selected) != 1 or (
         not bosh.reOblivion.match(self.selected[0].s)) # disable on Oblivion.esm
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
         if not self._askContinue(message, 'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
@@ -1544,7 +1544,7 @@ class Mod_FlipSelf(EnabledLink):
         return True
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u'WARNING! For advanced modders only!')
                    + u'\n\n' +
                    _(u'This command flips an internal bit in the mod, converting an esp to an esm and vice versa.  Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod.')
@@ -1590,7 +1590,7 @@ class Mod_FlipMasters(OneItemLink):
     def _enable(self): return self.enable
 
     @balt.conversation
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
@@ -1627,7 +1627,7 @@ class Mod_SetVersion(OneItemLink):
         return (super(Mod_SetVersion, self)._enable() and
                 int(10 * self.fileInfo.header.version) != 8)
 
-    def Execute(self,event):
+    def Execute(self):
         if not self._askContinue(self.message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
         self.fileInfo.makeBackup()
@@ -1655,7 +1655,7 @@ class Mod_Fids_Replace(OneItemLink):
     @staticmethod
     def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
 
-    def Execute(self,event):
+    def Execute(self):
         if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
         fileName = GPath(self.selected[0])
@@ -1687,7 +1687,7 @@ class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
     text = _(u'Face...')
 
-    def Execute(self,event):
+    def Execute(self):
         #--Select source face file
         srcDir = bosh.saveInfos.dir
         wildcard = _(u'%s Files')%bush.game.displayName+u' (*.ess;*.esr)|*.ess;*.esr'
@@ -1719,7 +1719,7 @@ class _Mod_Export_Link(EnabledLink):
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self, event):
+    def Execute(self):
         fileName = GPath(self.selected[0])
         textName = fileName.root + self.__class__.csvFile
         textDir = bosh.dirs['patches']
@@ -1779,7 +1779,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
 
     def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
 
-    def Execute(self,event): # overrides _Mod_Export_Link
+    def Execute(self): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
@@ -1815,7 +1815,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u'This command will import NPC level info from a previously exported file.')
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
@@ -1874,7 +1874,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     def _parser(self):
         return CBash_FactionRelations() if CBash else FactionRelations()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"This command will import faction relation info from a previously exported file.")
                    + u'\n\n' +
                    _(u"See the Bash help file for more info."))
@@ -1936,7 +1936,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
     def _parser(self):
         return CBash_ActorFactions() if CBash else ActorFactions()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"This command will import faction ranks from a previously exported file.")
                    + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
@@ -1987,18 +1987,18 @@ class Mod_Scripts_Export(_Mod_Export_Link):
 
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
-    def Execute(self,event): # overrides _Mod_Export_Link
+    def Execute(self): # overrides _Mod_Export_Link
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
-        def OnOk(event):
+        def OnOk():
             dialog.EndModal(1)
             bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
             bosh.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        okButton = OkButton(dialog, onClick=OnOk)
+        okButton = OkButton(dialog, onButClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
@@ -2050,7 +2050,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
         if not self._askContinue(message, 'bash.scripts.import.continue',
                                  _(u'Import Scripts')): return
@@ -2120,7 +2120,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
         if not self._askContinue(message, 'bash.stats.import.continue',
                                  _(u'Import Stats')): return
@@ -2183,7 +2183,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
         if not self._askContinue(message, 'bash.prices.import.continue',
                                  _(u'Import prices')): return
@@ -2239,7 +2239,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     def _parser(self):
         return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
         if not self._askContinue(message, 'bash.SigilStone.import.continue',
                                  _(u'Import Sigil Stones details')): return
@@ -2315,7 +2315,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
         if not self._askContinue(message, 'bash.SpellRecords.import.continue',
                                  _(u'Import Spell details')): return
@@ -2376,7 +2376,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     def _parser(self):
         return CBash_IngredientDetails() if CBash else IngredientDetails()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
         if not self._askContinue(message, 'bash.Ingredient.import.continue',
                                  _(u'Import Ingredients details')): return
@@ -2436,7 +2436,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
         if not self._askContinue(message, 'bash.editorIds.import.continue',
                                  _(u'Import Editor Ids')): return
@@ -2511,7 +2511,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 
     def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
         if not self._askContinue(message, 'bash.fullNames.import.continue',
                                  _(u'Import Names')): return
@@ -2574,7 +2574,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
     text = _(u'Map Markers...')
     help = _(u'Import MapMarkers from text file')
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"))
         if not self._askContinue(message, 'bash.MapMarkers.import.continue',
                                  _(u'Import Map Markers')): return
@@ -2655,7 +2655,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     # CBash_CompleteItemData.writeToText is disabled, apparently has problems
         return CompleteItemData()
 
-    def Execute(self,event):
+    def Execute(self):
         message = (_(u"Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"))
         if not self._askContinue(message, 'bash.itemdata.import.continue',
                                  _(u'Import Item Data')): return
@@ -2695,7 +2695,7 @@ class Mod_MarkLevelers(EnabledLink): # CRUFT
 
     def _enable(self): return bool(self.selected)
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u'Obsolete. Mods are now automatically tagged when possible.')
         self._showInfo(message, title=_(u'Mark Levelers'))
 
@@ -2708,7 +2708,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
     text = _(u'Add Masters...')
     help = _(u'Adds specified master to list of masters')
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"WARNING!  For advanced modders only!  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master.  Useful for splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Masters')): return
@@ -2745,7 +2745,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
 
     def _append(self, window): return bosh.settings['bash.CBashEnabled']
 
-    def Execute(self,event):
+    def Execute(self):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")
         if not self._askContinue(message, 'bash.cleanMaster.continue',
                                  _(u'Clean Masters')): return

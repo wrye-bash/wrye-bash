@@ -58,13 +58,19 @@ class ColorDialog(balt.Dialog):
         help = colorInfo[choiceKey][1]
         self.textCtrl = RoTextCtrl(self, help)
         #--Buttons
-        self.default = Button(self,_(u'Default'),onClick=self.OnDefault)
-        self.defaultAll = Button(self,_(u'All Defaults'),onClick=self.OnDefaultAll)
-        self.apply = ApplyButton(self, onClick=self.OnApply)
-        self.applyAll = Button(self,_(u'Apply All'),onClick=self.OnApplyAll)
-        self.export_config = Button(self, _(u'Export...'), onClick=self.OnExport)
-        self.importConfig = Button(self,_(u'Import...'),onClick=self.OnImport)
-        self.ok = OkButton(self, onClick=self.OnApplyAll, default=True)
+        self.default = Button(self, _(u'Default'),
+                              onButClickEventful=self.OnDefault)
+        self.defaultAll = Button(self, _(u'All Defaults'),
+                                 onButClickEventful=self.OnDefaultAll)
+        self.apply = ApplyButton(self, onButClickEventful=self.OnApply)
+        self.applyAll = Button(self, _(u'Apply All'),
+                               onButClickEventful=self.OnApplyAll)
+        self.export_config = Button(self, _(u'Export...'),
+                                    onButClickEventful=self.OnExport)
+        self.importConfig = Button(self, _(u'Import...'),
+                                   onButClickEventful=self.OnImport)
+        self.ok = OkButton(self, onButClickEventful=self.OnApplyAll,
+                           default=True)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
         self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
@@ -273,8 +279,8 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText  = StaticText(self,u'')
         self.classText  = StaticText(self,u'')
         #--Other
-        importButton = Button(self, label=_(u'Import'), onClick=self.DoImport,
-                              default=True)
+        importButton = Button(self, label=_(u'Import'),
+                              onButClick=self.DoImport, default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout
         fgSizer = wx.FlexGridSizer(3,2,2,4)
@@ -326,7 +332,7 @@ class ImportFaceDialog(balt.Dialog):
                   Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
         self.picture.SetBitmap(bitmap)
 
-    def DoImport(self,event):
+    def DoImport(self):
         """Imports selected face into save file."""
         selections = self.listBox.GetSelections()
         if not selections:
@@ -362,7 +368,8 @@ class CreateNewProject(balt.Dialog):
                                  onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
-        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'), onCheck=self.OnCheckBoxChange)
+        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'),
+                                    onCheck=self.OnCheckBoxChange)
         self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
         if not bEnableWizard:
             # pywin32 not installed
@@ -371,8 +378,8 @@ class CreateNewProject(balt.Dialog):
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
         # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
         # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = OkButton(self, onClick=self.OnClose)
-        cancelButton = CancelButton(self, onClick=self.OnClose)
+        okButton = OkButton(self, onButClickEventful=self.OnClose)
+        cancelButton = CancelButton(self, onButClickEventful=self.OnCancel)
         # Panel Layout
         hsizer = wx.BoxSizer(wx.HORIZONTAL)
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
@@ -396,7 +403,7 @@ class CreateNewProject(balt.Dialog):
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
         self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
-        self.OnCheckBoxChange(self)
+        self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self,event):
         projectName = bolt.GPath(self.textName.GetValue())
@@ -409,7 +416,7 @@ class CreateNewProject(balt.Dialog):
         self.textName.Refresh()
         event.Skip()
 
-    def OnCheckBoxChange(self, event):
+    def OnCheckBoxChange(self):
         """ Change the Dialog Icon to represent what the project status will
         be when created. """
         if self.checkEsp.IsChecked():
@@ -420,12 +427,11 @@ class CreateNewProject(balt.Dialog):
         else:
             self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_grey_off.png').s,PNG))
 
-    def OnClose(self,event):
-        """ Create the New Project and add user specified extras. """
-        if event.GetId() == wx.ID_CANCEL:
-            event.Skip()
-            return
+    @staticmethod
+    def OnCancel(event): event.Skip()
 
+    def OnClose(self, event):
+        """ Create the New Project and add user specified extras. """
         projectName = bolt.GPath(self.textName.GetValue())
         projectDir = bosh.dirs['installers'].join(projectName)
 

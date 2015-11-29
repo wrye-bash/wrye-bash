@@ -239,7 +239,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.modDocs.pos': defPos,
     'bash.modDocs.dir': None,
     #--Installers
-    'bash.installers.allCols': ['Package','Order','Modified','Size','Files'],
     'bash.installers.cols': ['Package','Order','Modified','Size','Files'],
     'bash.installers.colReverse': {},
     'bash.installers.sort': 'Order',
@@ -285,7 +284,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': defPos,
     #--Wrye Bash: INI Tweaks
-    'bash.ini.allCols': ['File','Installer'],
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
     'bash.ini.colReverse': {},
@@ -298,8 +296,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.ini.choice': 0,
     'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
-    'bash.mods.allCols': ['File', 'Load Order', 'Rating', 'Group', 'Installer',
-                          'Modified', 'Size', 'Author', 'CRC', 'Mod Status'],
     'bash.mods.cols': ['File', 'Load Order', 'Installer', 'Modified', 'Size',
                        'Author', 'CRC'],
     'bash.mods.esmsFirst': 1,
@@ -324,7 +320,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.mods.export.deprefix': u'',
     'bash.mods.export.skipcomments': False,
     #--Wrye Bash: Saves
-    'bash.saves.allCols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.cols': ['File','Modified','Size','PlayTime','Player','Cell'],
     'bash.saves.sort': 'Modified',
     'bash.saves.colReverse': {
@@ -339,7 +334,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Cell':80,
         },
     #Wrye Bash: BSAs
-    'bash.BSAs.cols': ['File','Modified','Size'],
     'bash.BSAs.colReverse': {
         'Modified':1,
         },
@@ -350,7 +344,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     'bash.BSAs.sort': 'File',
     #--Wrye Bash: Screens
-    'bash.screens.allCols': ['File'],
     'bash.screens.cols': ['File'],
     'bash.screens.sort': 'File',
     'bash.screens.colReverse': {
@@ -364,7 +357,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.screens.jpgQuality': 95,
     'bash.screens.jpgCustomQuality': 75,
     #--Wrye Bash: People
-    'bash.people.allCols': ['Name','Karma','Header'],
     'bash.people.cols': ['Name','Karma','Header'],
     'bash.people.sort': 'Name',
     'bash.people.colReverse': {},

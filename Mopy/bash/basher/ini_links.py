@@ -39,8 +39,8 @@ class INI_SortValid(BoolLink):
     text, key, help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
                       _(u'Valid tweak files will be shown first.')
 
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
+    def Execute(self):
+        super(INI_SortValid, self).Execute()
         self.window.SortItems()
 
 #------------------------------------------------------------------------------
@@ -50,8 +50,8 @@ class INI_AllowNewLines(BoolLink):
     key = 'bash.ini.allowNewLines'
     help = _(u'Tweak files with new lines are considered valid..')
 
-    def Execute(self,event):
-        BoolLink.Execute(self,event)
+    def Execute(self):
+        super(INI_AllowNewLines, self).Execute()
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ class INI_ListINIs(ItemLink):
     text = _(u'List Active INIs...')
     help = _(u'Lists all fully applied tweak files.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle printing out the errors."""
         text = self.window.ListTweaks()
         balt.copyToClipboard(text)
@@ -79,7 +79,7 @@ class INI_ListErrors(EnabledLink):
                 return True
         return False
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle printing out the errors."""
         text = u''
         for i in self.selected:
@@ -104,7 +104,7 @@ class INI_FileOpenOrCopy(OneItemLink):
             self.text = _(u'Copy...')
             self.help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle selection."""
         dir = self.window.data.dir
         for file in self.selected:
@@ -159,7 +159,7 @@ class INI_Apply(EnabledLink):
                     return False # temp disabled for testing
         return True
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.iniPanel
@@ -205,7 +205,7 @@ class INI_CreateNew(OneItemLink):
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               bosh.iniInfos[self.selected[0]].status >= 0
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle creating a new INI tweak."""
         pathFrom = self.selected[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext

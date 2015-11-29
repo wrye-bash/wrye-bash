@@ -75,7 +75,7 @@ def validName(name):
         for i in name:
             if i not in name_chars: return False
         return True
-    except:
+    except (TypeError, KeyError): # TypeError means not iterable
         return False
 
 # validNumber -------------------------------------
@@ -86,7 +86,7 @@ def validNumber(string):
         float(string)
         if u'.' in string and string == u'.': return False
         return True
-    except:
+    except ValueError:
         return False
 
 # Define Some Constants ---------------------------

@@ -4103,6 +4103,11 @@ class ModInfos(FileInfos):
         return u'%02X' % (self.activeIndexCached(masterName),) \
             if self.isActiveCached(masterName) else u''
 
+    def masterWithVersion(self, masterName):
+        if masterName == u'Oblivion.esm' and self.voCurrent:
+            masterName += u' [' + self.voCurrent + u']'
+        return masterName
+
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
         # a row before saving the modified load order
@@ -5807,7 +5812,7 @@ class Installer(object):
         #--Package Only
         self.archive = u''
         self.modified = 0 #--Modified date
-        self.size = 0 #--size of archive file
+        self.size = -1 #--size of archive file
         self.crc = 0 #--crc of archive
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
         self.isSolid = False
@@ -5852,6 +5857,9 @@ class Installer(object):
         self.missingFiles = set()
         self.mismatchedFiles = set()
         self.mismatchedEspms = set()
+
+    @property
+    def files(self): return len(self.fileSizeCrcs)
 
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
@@ -6868,6 +6876,9 @@ class InstallerMarker(Installer):
     def __init__(self,archive):
         Installer.__init__(self,archive)
         self.modified = time.time()
+
+    @property
+    def files(self): return -1
 
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""

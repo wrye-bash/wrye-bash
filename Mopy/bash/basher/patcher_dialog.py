@@ -85,17 +85,24 @@ class PatchDialog(balt.Dialog):
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
-        self.gExecute = OkButton(self, label=_(u'Build Patch'),onClick=self.Execute)
+        self.gExecute = OkButton(self, label=_(u'Build Patch'),
+                                 onButClick=self.PatchExecute)
         SetUAC(self.gExecute)
-        self.gSelectAll = SelectAllButton(self,label=_(u'Select All'),onClick=self.SelectAll)
-        self.gDeselectAll = SelectAllButton(self,label=_(u'Deselect All'),onClick=self.DeselectAll)
+        self.gSelectAll = SelectAllButton(self, label=_(u'Select All'),
+                                          onButClick=self.SelectAll)
+        self.gDeselectAll = SelectAllButton(self, label=_(u'Deselect All'),
+                                            onButClick=self.DeselectAll)
         cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
                                       isSingle=True, kind='checklist')
-        self.gExportConfig = SaveAsButton(self,label=_(u'Export'),onClick=self.ExportConfig)
-        self.gImportConfig = OpenButton(self,label=_(u'Import'),onClick=self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self,label=_(u'Revert To Saved'),onClick=self.RevertConfig)
-        self.gRevertToDefault = RevertButton(self,label=_(u'Revert To Default'),onClick=self.DefaultConfig)
+        self.gExportConfig = SaveAsButton(self, label=_(u'Export'),
+                                          onButClick=self.ExportConfig)
+        self.gImportConfig = OpenButton(self, label=_(u'Import'),
+                                        onButClick=self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(
+            self, label=_(u'Revert To Saved'), onButClick=self.RevertConfig)
+        self.gRevertToDefault = RevertButton(
+            self, label=_(u'Revert To Default'), onButClick=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
@@ -163,7 +170,7 @@ class PatchDialog(balt.Dialog):
         self.currentPatcher = patcher
 
     @balt.conversation
-    def Execute(self,event=None): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
+    def PatchExecute(self): # TODO(ut): needs more work to reduce P/C differences to an absolute minimum
         """Do the patch."""
         self.EndModalOK()
         patchFile = progress = None
@@ -319,13 +326,13 @@ class PatchDialog(balt.Dialog):
         config = self.__config()
         bosh.modInfos.table.setItem(patchName, 'bash.patch.configs', config)
 
-    def ExportConfig(self,event=None):
+    def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
         exportConfig(patchName=self.patchInfo.name, config=config,
                      isCBash=self.doCBash, win=self.parent)
 
-    def ImportConfig(self,event=None):
+    def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
         patchName = self.patchInfo.name + _(u'_Configuration.dat')
         textDir = bosh.dirs['patches']
@@ -367,7 +374,7 @@ class PatchDialog(balt.Dialog):
                     except: deprint(_(u'item %s not in saved configs') % item)
         self.SetOkEnable()
 
-    def UpdateConfig(self,patchConfigs,event=None):
+    def UpdateConfig(self, patchConfigs):
         if not balt.askYes(self.parent,
             _(u"Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)")
                 % ([u'CBash',u'Python'][self.doCBash],
@@ -391,7 +398,7 @@ class PatchDialog(balt.Dialog):
                 newConfig[key] = patchConfigs[key]
         return newConfig
 
-    def RevertConfig(self,event=None):
+    def RevertConfig(self):
         """Revert configuration back to saved"""
         patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
         if configIsCBash(patchConfigs) and not self.doCBash:
@@ -413,7 +420,7 @@ class PatchDialog(balt.Dialog):
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
-    def DefaultConfig(self,event=None):
+    def DefaultConfig(self):
         """Revert configuration back to default"""
         patchConfigs = {}
         for index,patcher in enumerate(self.patchers):
@@ -430,7 +437,7 @@ class PatchDialog(balt.Dialog):
                     except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
-    def SelectAll(self,event=None):
+    def SelectAll(self):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
@@ -446,7 +453,7 @@ class PatchDialog(balt.Dialog):
                     item.isEnabled = True
             self.gExecute.Enable(True)
 
-    def DeselectAll(self,event=None):
+    def DeselectAll(self):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
