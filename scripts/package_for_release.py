@@ -44,6 +44,7 @@ import argparse
 import binascii
 import textwrap
 import traceback
+import time
 
 class NON_REPO(object):
     __slots__= []
@@ -111,12 +112,12 @@ def GetVersionInfo(version, padding=4):
         file_version = u'.'.join(c for c in v.ljust(-padding, u'0'))
     else:
         file_version = u'.'.join(c for c in v.rjust(padding, u'0'))
-
+    lprint('Using file version:', file_version)
     return file_version
 
 
 def rm(node):
-    """Removes a file or directory if it exitsts"""
+    """Removes a file or directory if it exists"""
     if os.path.isfile(node): os.remove(node)
     elif os.path.isdir(node): shutil.rmtree(node)
 
@@ -277,6 +278,7 @@ def CreateStandaloneExe(args, file_version):
 
         # Call the setup script
         os.chdir(mopy)
+        lprint(' Calling py2exe...')
         subprocess.call([setup, 'py2exe', '-q'], shell=True, stdout=pipe,
                         stderr=pipe)
         os.chdir(root)
@@ -285,11 +287,22 @@ def CreateStandaloneExe(args, file_version):
         mv(os.path.join(dist, u'Wrye Bash Launcher.exe'), exe)
 
         # Insert the icon
+        lprint(' Adding icon...')
         subprocess.call([reshacker, '-addoverwrite', exe+',', exe+',',
                          icon+',', 'ICONGROUP,', 'MAINICON,', '0'], stdout=pipe,
                         stderr=pipe)
+        # Also copy contents of ResHacker.log to the pipe file
+        if pipe is not None:
+            try:
+                with open(os.path.join(wbsa, u'Reshacker.log'), 'r') as ins:
+                    for line in ins:
+                        print(line, file=pipe)
+            except:
+                # Don't care why it failed
+                pass
 
         # Compress with UPX
+        lprint(' Compressing with UPX...')
         subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
     except:
         # On error, don't keep the built exe's
@@ -773,6 +786,14 @@ def main():
                 console instead of the build log''',
         )
     parser.add_argument(
+        '-l', '--view-logfile',
+        default=False,
+        action='store_true',
+        dest='view_log',
+        help='''If specified, and verbose mode is not enabled, opens the log
+                file for viewing after completion of the packaging script.''',
+        )
+    parser.add_argument(
         '-t', '--tutorial',
         default=False,
         action='store_true',
@@ -838,7 +859,15 @@ def main():
         # clean and create distributable directory
         if os.path.exists(dest):
             shutil.rmtree(dest)
-        os.makedirs(dest)
+        try:
+            # Sometimes in Windows, if the dist directory was open in Windows
+            # Explorer, this will cause an OSError: Accessed Denied, while
+            # Explorer is renavigating as a result of the deletion.  So just
+            # wait a second and try again.
+            os.makedirs(dest)
+        except OSError:
+            time.sleep(1)
+            os.makedirs(dest)
 
         if args.manual:
             lprint('Creating Python archive distributable...')
@@ -878,6 +907,8 @@ def main():
         if not args.verbose:
             if pipe:
                 pipe.close()
+                if args.view_log:
+                    os.startfile(logFile)
 
 
 if __name__=='__main__':
