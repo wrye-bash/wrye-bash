@@ -45,14 +45,14 @@ def _getLoadListsDict():
     loadListData = bosh.settings['bash.loadLists.data']
     loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game.bethDataFiles
         if x.endswith(u'.esm') # but avoid activating modding esms for oblivion
-    and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE) or x == u'oblivion.esm')]
+    and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE)
+         or x == u'oblivion.esm')]
     return loadListData
 
 class _Mods_LoadListData(balt.ListEditorData):
     """Data capsule for load list editing dialog."""
-    def __init__(self,parent):
-        """Initialize."""
-        self.loadListDict = _getLoadListsDict()
+    def __init__(self, parent, loadListsDict):
+        self.loadListDict = loadListsDict
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -83,23 +83,33 @@ class _Mods_LoadListData(balt.ListEditorData):
 
 class Mods_LoadList(ChoiceLink):
     """Add load list links."""
-    max_load_orders_saved = 64
-
-    def _refresh(self): self.window.RefreshUI(refreshSaves=True)
+    loadListsDict = {}
 
     def __init__(self):
         super(Mods_LoadList, self).__init__()
-        self.loadListsDict = _getLoadListsDict()
+        Mods_LoadList.loadListsDict = self.loadListsDict or _getLoadListsDict()
         #--Links
-        _self = self
         class __Activate(ItemLink):
+            """Common methods used by Links de/activating mods."""
+            def _refresh(self): self.window.RefreshUI(refreshSaves=True)
             def _selectExact(self, mods):
                 errorMessage = bosh.modInfos.selectExact(mods)
-                _self._refresh()
+                self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
-        class _All(ItemLink):
+        class _All(__Activate):
             text = _(u'All')
-            def Execute(self, event): _self.DoAll(event)
+            help = _(u'Activate all mods')
+            def Execute(self, event):
+                """Select all mods."""
+                try:
+                    bosh.modInfos.selectAll()
+                except bosh.PluginsFullError:
+                    self._showError(
+                        _(u"Mod list is full, so some mods were skipped"),
+                        _(u'Select All'))
+                except BoltError as e:
+                    self._showError(u'%s' % e, _(u'Select All'))
+                self._refresh()
         class _None(__Activate):
             text = _(u'None')
             def Execute(self, event): self._selectExact([])
@@ -107,20 +117,35 @@ class Mods_LoadList(ChoiceLink):
             text = _(u'Selected')
             help = _(u'Activate only the mods selected in the list')
             def Execute(self, event):
-                self._selectExact(_self.window.GetSelected())
+                self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
             text = _(u'Edit Lists...')
-            def Execute(self, event): _self.DoEdit(event)
+            def Execute(self, event):
+                editorData = _Mods_LoadListData(self.window,
+                                                Mods_LoadList.loadListsDict)
+                balt.ListEditor.Display(self.window, _(u'Load Lists'),
+                                        editorData)
         class _SaveLink(EnabledLink):
             text = _(u'Save List...')
             def _enable(self): return bool(bosh.modInfos.activeCached)
-            def Execute(self, event): _self.DoSave(event)
+            def Execute(self, event):
+                newItem = (self._askText(_(u'Save current load list as:'),
+                                         u'Wrye Bash') or u'').strip()
+                if not newItem: return
+                if len(newItem) > 64:
+                    message = _(u'Load list name must be between 1 and 64 '
+                                u'characters long.')
+                    return self._showError(message)
+                Mods_LoadList.loadListsDict[newItem] = list(
+                    bosh.modInfos.activeCached)
+                bosh.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]
         class _LoListLink(__Activate):
             def Execute(self, event):
                 """Select mods in list."""
-                mods = filter(lambda m: m in _self.loadListsDict[self.text],
+                listed = Mods_LoadList.loadListsDict[self.text]
+                mods = filter(lambda m: m in listed,
                               map(GPath, self.window.GetItems()))
                 self._selectExact(mods)
         self.__class__.cls = _LoListLink
@@ -128,37 +153,6 @@ class Mods_LoadList(ChoiceLink):
     @property
     def _choices(self):
         return sorted(self.loadListsDict.keys(), key=lambda a: a.lower())
-
-    def DoAll(self,event):
-        """Select all mods."""
-        try:
-            bosh.modInfos.selectAll()
-        except bosh.PluginsFullError:
-            self._showError(_(u"Mod list is full, so some mods were skipped"),
-                            _(u'Select All'))
-        except BoltError as e:
-            self._showError(u'%s' % e, _(u'Select All'))
-        self._refresh()
-
-    def DoSave(self,event):
-        #--No slots left?
-        if len(self.loadListsDict) >= (self.max_load_orders_saved + 1):
-            self._showError(_(u'All load list slots are full. Please delete an'
-                              u' existing load list before adding another.'))
-            return
-        #--Dialog
-        newItem = (self._askText(_(u'Save current load list as:'),
-                                 u'Wrye Bash') or u'').strip()
-        if not newItem: return
-        if len(newItem) > 64:
-            message = _(u'Load list name must be between 1 and 64 characters long.')
-            return self._showError(message)
-        self.loadListsDict[newItem] = list(bosh.modInfos.activeCached)
-        bosh.settings.setChanged('bash.loadLists.data')
-
-    def DoEdit(self,event):
-        editorData = _Mods_LoadListData(self.window)
-        balt.ListEditor.Display(self.window, _(u'Load Lists'), editorData)
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):
