@@ -4103,6 +4103,11 @@ class ModInfos(FileInfos):
         return u'%02X' % (self.activeIndexCached(masterName),) \
             if self.isActiveCached(masterName) else u''
 
+    def masterWithVersion(self, masterName):
+        if masterName == u'Oblivion.esm' and self.voCurrent:
+            masterName += u' [' + self.voCurrent + u']'
+        return masterName
+
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
         # a row before saving the modified load order

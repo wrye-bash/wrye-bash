@@ -581,11 +581,11 @@ class Mod_CopyModInfo(ItemLink):
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: text += fileName.s
             else: text = _getUrl(fileName, installer, text)
-            labels = self.window.getLabels(fileName)
+            labels = self.window.labels
             for col in self.window.cols:
                 if col == 'File': continue
-                text += u'\n%s: %s' % (
-                    col, labels[col] if labels[col] else u'-')
+                lab = labels[col](self.window, fileName)
+                text += u'\n%s: %s' % (col, lab if lab else u'-')
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:

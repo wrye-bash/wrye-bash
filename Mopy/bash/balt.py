@@ -38,6 +38,7 @@ import textwrap
 import time
 import threading
 from functools import partial, wraps
+from collections import OrderedDict
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -1817,7 +1818,9 @@ class UIList(wx.Panel):
     nonReversibleCols = {'Load Order', 'Current Order'}
     _default_sort_col = 'File' # override as needed
     _sort_keys = {} # sort_keys[col] provides the sort key for this col
-    _extra_sortings = [] # extra self.methods for fancy sortings - order matters
+    _extra_sortings = [] #extra self.methods for fancy sortings - order matters
+    # Labels, map the (permanent) order of columns to the label generating code
+    labels = OrderedDict()
     #--DnD
     _dndFiles = _dndList = False
     _dndColumns = ()
@@ -1896,7 +1899,7 @@ class UIList(wx.Panel):
     @property
     def cols(self): return _settings.getChanged(self.keyPrefix + '.cols')
     @property
-    def allCols(self): return _settings[self.keyPrefix + '.allCols']
+    def allCols(self): return self.labels.keys()
     @property
     def autoColWidths(self):
         return _settings.get('bash.autoSizeListColumns', 0)
@@ -1914,11 +1917,6 @@ class UIList(wx.Panel):
         self._select(modName)
     def _select(self, item): self.panel.SetDetails(item)
 
-    #--ABSTRACT
-    def getLabels(self, item):
-        """Returns text labels for item to populate list control."""
-        raise AbstractError
-
     #--Items ----------------------------------------------
     @staticmethod
     def _gpath(item): return GPath(item)
@@ -1927,24 +1925,23 @@ class UIList(wx.Panel):
         """Populate ListCtrl for specified item."""
         insert = False
         if item is not None:
-            fileName = item
             try:
                 itemDex = self.GetIndex(item)
             except KeyError:
                 itemDex = self._gList.GetItemCount() # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
-            fileName = self.GetItem(itemDex)
-        fileName = self._gpath(fileName)
+            item = self.GetItem(itemDex)
+        item = self._gpath(item)
         cols = self.cols
-        labels = self.getLabels(fileName)
         for colDex in range(len(cols)):
             col = cols[colDex]
+            labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
-                self._gList.InsertListCtrlItem(itemDex, labels[col], fileName)
+                self._gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self._gList.SetStringItem(itemDex, colDex, labels[col])
-        self.setUI(fileName, itemDex)
+                self._gList.SetStringItem(itemDex, colDex, labelTxt)
+        self.setUI(item, itemDex)
 
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""

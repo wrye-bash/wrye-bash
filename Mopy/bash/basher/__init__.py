@@ -53,7 +53,7 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 import os
 import re
 import sys
@@ -336,13 +336,19 @@ class MasterList(_ModsSortMixin, balt.UIList):
                                             | bosh.modInfos.merged)
     _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
+    #--Labels
+    labels = OrderedDict([
+        ('File',          lambda self, mi: bosh.modInfos.masterWithVersion(
+                                                self.data[mi].name.s)),
+        ('Num',           lambda self, mi: u'%02X' % mi),
+        ('Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
+            self.data[mi].name)),
+    ])
 
     @property
     def cols(self):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings.getChanged(self.__class__.keyPrefix + '.cols')
-    @property # only used in ColumnsMenu which is not available in MasterList
-    def allCols(self): return ['File', 'Num', 'Current Order']
 
     message = _(u"Edit/update the masters list? Note that the update process "
                 u"may automatically rename some files. Be sure to review the "
@@ -421,18 +427,6 @@ class MasterList(_ModsSortMixin, balt.UIList):
             return -10  # Blue
         else:
             return status  # 0, Green
-
-    def getLabels(self, mi):
-        labels, masterInfo = {}, self.data[mi]
-        masterName = masterInfo.name
-        value = masterName.s
-        if masterName == u'Oblivion.esm':
-            voCurrent = bosh.modInfos.voCurrent
-            if voCurrent: value += u' ['+voCurrent+u']'
-        labels['File'] = value
-        labels['Num'] = u'%02X' % mi
-        labels['Current Order'] = bosh.modInfos.hexIndexString(masterName)
-        return labels
 
     @staticmethod
     def _gpath(mi): return mi
@@ -548,6 +542,12 @@ class INIList(balt.UIList):
         if settings['bash.ini.sortValid']:
             items.sort(key=lambda a: self.data[a].status < 0)
     _extra_sortings = [_sortValidFirst]
+    #--Labels
+    labels = OrderedDict([
+        ('File',      lambda self, path: path.s),
+        ('Installer', lambda self, path: self.data.table.getItem(
+                                                   path, 'installer', u'')),
+    ])
 
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
@@ -590,12 +590,6 @@ class INIList(balt.UIList):
         items = super(INIList, self)._toDelete(items)
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
-
-    def getLabels(self, fileName):
-        labels, table = {}, self.data.table
-        labels['File'] = fileName.s
-        labels['Installer'] = table.getItem(fileName, 'installer', u'')
-        return labels
 
     def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
@@ -789,6 +783,22 @@ class ModList(_ModsSortMixin, balt.UIList):
                       _ModsSortMixin._activeModsFirst]
     _dndList, _dndColumns = True, ['Load Order']
     _sunkenBorder = False
+    #--Labels
+    labels = OrderedDict([
+        ('File',       lambda self, path: self.data.masterWithVersion(path.s)),
+        ('Load Order', lambda self, path: self.data.hexIndexString(path)),
+        ('Rating',     lambda self, path: self._get(path)('rating', u'')),
+        ('Group',      lambda self, path: self._get(path)('group', u'')),
+        ('Installer',  lambda self, path: self._get(path)('installer', u'')),
+        ('Modified',   lambda self, path: formatDate( # getPath is for ghosts
+                                            self.data[path].getPath().mtime)),
+        ('Size',       lambda self, path: self._round(self.data[path].size)),
+        ('Author',     lambda self, path: self.data[path].header.author if
+                                      self.data[path].header else u'-'),
+        ('CRC',        lambda self, path:
+                                        u'%08X' % self.data[path].cachedCrc()),
+        ('Mod Status', lambda self, path: self.data[path].txt_status()),
+    ])
 
     #-- Drag and Drop-----------------------------------------------------
     def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
@@ -815,24 +825,6 @@ class ModList(_ModsSortMixin, balt.UIList):
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
-    def getLabels(self, fileName):
-        labels, fileInfo = {}, self.data[fileName]
-        value = fileName.s
-        if fileName == u'Oblivion.esm' and bosh.modInfos.voCurrent:
-            value += u' ['+bosh.modInfos.voCurrent+u']'
-        labels['File'] = value
-        get = partial(bosh.modInfos.table.getItem, fileName)
-        labels['Rating'] = get('rating', u'')
-        labels['Group'] = get('group', u'')
-        labels['Installer'] = get('installer', u'')
-        labels['Modified'] = formatDate(fileInfo.getPath().mtime)
-        labels['Size'] = self._round(fileInfo.size)
-        labels['Author'] = fileInfo.header.author if fileInfo.header else u'-'
-        labels['Load Order'] = bosh.modInfos.hexIndexString(fileName)
-        labels['CRC'] = u'%08X' % fileInfo.cachedCrc()
-        labels['Mod Status'] = fileInfo.txt_status()
-        return labels
-
     def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
         listCtrl = self._gList
@@ -1756,6 +1748,26 @@ class SaveList(balt.UIList):
                   'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                   'Status'  : lambda self, a: self.data[a].getStatus(),
                  }
+    #--Labels
+    @staticmethod
+    def _headInfo(saveInfo, attr):
+        if not saveInfo.header: return u'-'
+        return getattr(saveInfo.header, attr)
+    @staticmethod
+    def _playTime(saveInfo):
+        if not saveInfo.header: return u'-'
+        playMinutes = saveInfo.header.gameTicks / 60000
+        return u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
+    labels = OrderedDict([
+        ('File',     lambda self, path: path.s),
+        ('Modified', lambda self, path: formatDate(self.data[path].mtime)),
+        ('Size',     lambda self, path: self._round(self.data[path].size)),
+        ('PlayTime', lambda self, path: self._playTime(self.data[path])),
+        ('Player',   lambda self, path: self._headInfo(self.data[path],
+                                                       'pcName')),
+        ('Cell',     lambda self, path: self._headInfo(self.data[path],
+                                                       'pcLocation')),
+    ])
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
@@ -1786,18 +1798,6 @@ class SaveList(balt.UIList):
         # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
 
     #--Populate Item
-    def getLabels(self, fileName):
-        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
-        labels['File'] = fileName.s
-        labels['Modified'] = formatDate(fileInfo.mtime)
-        labels['Size'] = self._round(fileInfo.size)
-        if not fileInfo.header: return labels
-        labels['Player'] = fileInfo.header.pcName
-        playMinutes = fileInfo.header.gameTicks / 60000
-        labels['PlayTime'] = u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
-        labels['Cell'] = fileInfo.header.pcLocation
-        return labels
-
     def setUI(self, fileName, itemDex):
         fileInfo = self.data[fileName]
         #--Image
@@ -2068,6 +2068,21 @@ class InstallersList(balt.Tank):
             items.sort(key=lambda x: not isinstance(self.data[x],
                                                     bosh.InstallerProject))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
+    #--Labels
+    def _size(self, installer):
+        if isinstance(installer, bosh.InstallerMarker): return u''
+        return self._round(installer.size)
+    @staticmethod
+    def _files(installer):
+        if isinstance(installer, bosh.InstallerMarker): return u''
+        return formatInteger(len(installer.fileSizeCrcs))
+    labels = OrderedDict([
+        ('Package',  lambda self, path: path.s),
+        ('Order',    lambda self, path: unicode(self.data[path].order)),
+        ('Modified', lambda self, path: formatDate(self.data[path].modified)),
+        ('Size',     lambda self, path: self._size(self.data[path])),
+        ('Files',    lambda self, path: self._files(self.data[path])),
+    ])
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, ['Order']
     #--GUI
@@ -2076,17 +2091,6 @@ class InstallersList(balt.Tank):
     _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
-    def getLabels(self, item):
-        labels, installer = defaultdict(lambda: u''), self.data[item]
-        marker = isinstance(installer, bosh.InstallerMarker)
-        labels['Package'] = item.s
-        labels['Order'] = unicode(installer.order)
-        labels['Modified'] = formatDate(installer.modified)
-        if marker: return labels
-        labels['Size'] = self._round(installer.size)
-        labels['Files'] = formatInteger(len(installer.fileSizeCrcs))
-        return labels
-
     def getGuiKeys(self, item):
         """Returns keys for icon and text and background colors."""
         installer = self.data[item]
@@ -3035,6 +3039,11 @@ class ScreensList(balt.UIList):
     _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data[a][1],
                  }
+    #--Labels
+    labels = OrderedDict([
+        ('File',     lambda self, path: path.s),
+        # ('Modified', lambda self, path: formatDate(self.data[path][1])), # unused
+    ])
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -3080,14 +3089,6 @@ class ScreensList(balt.UIList):
                     self.SelectItemAtIndex(index)
             event.Veto()
 
-    #--Populate Item
-    def getLabels(self, fileName):
-        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
-        labels['File'] = fileName.s
-        labels['Modified'] = formatDate(fileInfo[1]) # unused
-        return labels
-
-    #--Events ---------------------------------------------
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         code = event.GetKeyCode()
@@ -3146,14 +3147,12 @@ class BSAList(balt.UIList):
                   'Modified': lambda self, a: self.data[a].mtime,
                   'Size'    : lambda self, a: self.data[a].size,
                  }
-
-    #--Populate Item
-    def getLabels(self, fileName):
-        labels, fileInfo = defaultdict(lambda: u'-'), self.data[fileName]
-        labels['File'] = fileName.s
-        labels['Modified'] = formatDate(fileInfo.mtime)
-        labels['Size'] = self._round(fileInfo.size)
-        return labels
+    #--Labels
+    labels = OrderedDict([
+        ('File',     lambda self, path: path.s),
+        ('Modified', lambda self, path: formatDate(self.data[path].mtime)),
+        ('Size',     lambda self, path: self._round(self.data[path].size)),
+    ])
 
 #------------------------------------------------------------------------------
 class BSADetails(_EditableMixin, SashPanel):
@@ -3306,14 +3305,17 @@ class PeopleList(balt.Tank):
                   'Karma' : lambda self, x: self.data[x][1],
                   'Header': lambda self, x: self.data[x][2][:50].lower(),
                  }
-
-    def getLabels(self, item):
-        labels, itemData = {}, self.data[item]
-        labels['Name'] = item
-        karma = itemData[1]
-        labels['Karma'] = (u'-', u'+')[karma >= 0] * abs(karma)
-        labels['Header'] = itemData[2].split(u'\n', 1)[0][:75]
-        return labels
+    #--Labels
+    @staticmethod
+    def _karma(personData):
+        karma = personData[1]
+        return (u'-', u'+')[karma >= 0] * abs(karma)
+    labels = OrderedDict([
+        ('Name',   lambda self, name: name),
+        ('Karma',  lambda self, name: self._karma(self.data[name])),
+        ('Header', lambda self, name:
+                                   self.data[name][2].split(u'\n', 1)[0][:75]),
+    ])
 
     def getGuiKeys(self, item):
         """Return keys for icon and text and background colors."""
