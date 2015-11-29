@@ -286,7 +286,7 @@ def CreateStandaloneExe(args, file_version):
 
         # Insert the icon
         subprocess.call([reshacker, '-addoverwrite', exe+',', exe+',',
-                         icon+',', 'icon,', '101,', '0'], stdout=pipe,
+                         icon+',', 'ICONGROUP,', 'MAINICON,', '0'], stdout=pipe,
                         stderr=pipe)
 
         # Compress with UPX
