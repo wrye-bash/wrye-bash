@@ -146,8 +146,9 @@ class ListPatcher(Patcher):
             self.gAuto = checkBox(gConfigPanel, _(u'Automatic'),
                                   onCheck=self.OnAutomatic,
                                   checked=self.autoIsChecked)
-            self.gAdd = Button(gConfigPanel,_(u'Add'),onClick=self.OnAdd)
-            self.gRemove = Button(gConfigPanel,_(u'Remove'),onClick=self.OnRemove)
+            self.gAdd = Button(gConfigPanel, _(u'Add'), onButClick=self.OnAdd)
+            self.gRemove = Button(gConfigPanel, _(u'Remove'),
+                                  onButClick=self.OnRemove)
             self.OnAutomatic()
             gManualSizer = (vSizer(
                 (self.gAuto,0,wx.TOP,2),
@@ -155,8 +156,10 @@ class ListPatcher(Patcher):
                 (self.gRemove,0,wx.TOP,4),
                 ),0,wx.EXPAND|wx.LEFT,4)
         if self.selectCommands:
-            self.gSelectAll= Button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-            self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+            self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
+                                     onButClick=self.SelectAll)
+            self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
+                                       onButClick=self.DeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
@@ -231,7 +234,7 @@ class ListPatcher(Patcher):
         if self.autoIsChecked:
             self.SetItems(self.getAutoItems())
 
-    def OnAdd(self,event):
+    def OnAdd(self):
         """Add button clicked."""
         srcDir = bosh.modInfos.dir
         wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
@@ -246,7 +249,7 @@ class ListPatcher(Patcher):
                 self.configItems.append(name)
         self.SetItems(self.configItems)
 
-    def OnRemove(self,event):
+    def OnRemove(self):
         """Remove button clicked."""
         selections = self.gList.GetSelections()
         newItems = [item for index,item in enumerate(self.configItems) if index not in selections]
@@ -307,7 +310,7 @@ class ListPatcher(Patcher):
         #--Show/Destroy Menu
         links.PopupMenu(self.gList, Link.Frame, None)
 
-    def SelectAll(self,event=None):
+    def SelectAll(self):
         """'Select All' Button was pressed, update all configChecks states."""
         try:
             for index, item in enumerate(self.items):
@@ -317,7 +320,7 @@ class ListPatcher(Patcher):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
-    def DeselectAll(self,event=None):
+    def DeselectAll(self):
         """'Deselect All' Button was pressed, update all configChecks states."""
         try:
             self.gList.SetChecked([])
@@ -349,8 +352,10 @@ class TweakPatcher(Patcher):
         self.mouseItem = -1
         self.mouseState = None
         if self.selectCommands:
-            self.gSelectAll= Button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
-            self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+            self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
+                                     onButClick=self.TweakSelectAll)
+            self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
+                                       onButClick=self.TweakDeselectAll)
             gSelectSizer = (vSizer(
                 (self.gSelectAll,0,wx.TOP,12),
                 (self.gDeselectAll,0,wx.TOP,4),
@@ -538,7 +543,7 @@ class TweakPatcher(Patcher):
         self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
         self.TweakOnListCheck() # fired so this line is needed (?)
 
-    def TweakSelectAll(self,event=None):
+    def TweakSelectAll(self):
         """'Select All' Button was pressed, update all configChecks states."""
         try:
             for index, item in enumerate(self.tweaks):
@@ -548,8 +553,9 @@ class TweakPatcher(Patcher):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
-    def TweakDeselectAll(self,event=None):
-        """'Deselect All' Button was pressed, update all configChecks states."""
+    def TweakDeselectAll(self):
+        """'Deselect All' Button was pressed, update all configChecks
+        states."""
         try:
             self.gTweakList.SetChecked([])
             self.TweakOnListCheck()
@@ -585,14 +591,18 @@ class DoublePatcher(TweakPatcher,ListPatcher):
         self.mouseItem = -1
         self.mouseState = None
         #--Buttons
-        self.gSelectAll = Button(gConfigPanel,_(u'Select All'),onClick=self.SelectAll)
-        self.gDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.DeselectAll)
+        self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
+                                 onButClick=self.SelectAll)
+        self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
+                                   onButClick=self.DeselectAll)
         gSelectSizer = (vSizer(
             (self.gSelectAll,0,wx.TOP,12),
             (self.gDeselectAll,0,wx.TOP,4),
             ),0,wx.EXPAND|wx.LEFT,4)
-        self.gTweakSelectAll = Button(gConfigPanel,_(u'Select All'),onClick=self.TweakSelectAll)
-        self.gTweakDeselectAll = Button(gConfigPanel,_(u'Deselect All'),onClick=self.TweakDeselectAll)
+        self.gTweakSelectAll = Button(gConfigPanel, _(u'Select All'),
+                                      onButClick=self.TweakSelectAll)
+        self.gTweakDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
+                                        onButClick=self.TweakDeselectAll)
         gTweakSelectSizer = (vSizer(
             (self.gTweakSelectAll,0,wx.TOP,12),
             (self.gTweakDeselectAll,0,wx.TOP,4),

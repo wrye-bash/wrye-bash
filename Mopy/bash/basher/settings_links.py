@@ -67,11 +67,11 @@ class Settings_BackupSettings(ItemLink):
                     ),1,wx.EXPAND|wx.ALL,6),
             (hSizer(spacer,
                     Button(dialog, label=_(u'Backup All Images'),
-                    onClick=lambda e: dialog.EndModal(2)),
+                    onButClick=lambda: dialog.EndModal(2)),
                     (Button(dialog, label=_(u'Backup Changed Images'),
-                    onClick=lambda e: dialog.EndModal(1)), 0, wx.LEFT, 4),
+                    onButClick=lambda: dialog.EndModal(1)), 0, wx.LEFT, 4),
                     (Button(dialog, label=_(u'None'),
-                    onClick=lambda e: dialog.EndModal(0)), 0, wx.LEFT, 4),
+                    onButClick=lambda: dialog.EndModal(0)), 0, wx.LEFT, 4),
                     ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             )
         dialog.SetSizer(sizer)

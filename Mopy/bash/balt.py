@@ -396,13 +396,20 @@ class Button(wx.Button):
     label = u''
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClick=None, tip=None,
-                 default=False):
-        """Create a button and bind its click function."""
+                 val=defVal, name='button', onButClick=None,
+                 onButClickEventful=None, tip=None, default=False):
+        """Create a button and bind its click function.
+        :param onButClick: a no args function to execute on button click
+        :param onButClickEventful: a function accepting as parameter the
+        EVT_BUTTON - messing with events outside balt is discouraged
+        """
         if  not label and self.__class__.label: label = self.__class__.label
         wx.Button.__init__(self, parent, self.__class__._id,
                            label, pos, size, style, val, name)
-        if onClick: self.Bind(wx.EVT_BUTTON,onClick)
+        if onButClick and onButClickEventful:
+            raise BoltError('Both onButClick and onButClickEventful specified')
+        if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
+        if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
         if tip: self.SetToolTip(tooltip(tip))
         if default: self.SetDefault()
 
@@ -813,8 +820,7 @@ def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
         fixedStyle.SetFont(fixedFont)
         txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
     #--Buttons
-    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
-                         default=True)
+    gOkButton = OkButton(window, onButClick=window.Close, default=True)
     #--Layout
     window.SetSizer(
         vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
@@ -871,8 +877,7 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     gBackButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoBack())
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
     gForwardButton = bitmapButton(window,bitmap,onClick=lambda evt: textCtrl_.GoForward())
-    gOkButton = OkButton(window, onClick=lambda event: window.Close(),
-                         default=True)
+    gOkButton = OkButton(window, onButClick=window.Close, default=True)
     if not asDialog:
         window.SetBackgroundColour(gOkButton.GetBackgroundColour())
     #--Layout
@@ -1256,7 +1261,8 @@ class ListEditor(Dialog):
             for (flag,defLabel,func) in buttonSet:
                 if not flag: continue
                 label = (flag == True and defLabel) or flag
-                buttons.Add(Button(self,label,onClick=func),0,wx.LEFT|wx.TOP,4)
+                buttons.Add(Button(self, label, onButClick=func),
+                            0, wx.LEFT | wx.TOP, 4)
         else:
             buttons = None
         #--Layout
@@ -1279,7 +1285,7 @@ class ListEditor(Dialog):
         return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
 
     #--List Commands
-    def DoAdd(self,event):
+    def DoAdd(self):
         """Adds a new item."""
         newItem = self._listEditorData.add()
         if newItem and newItem not in self._list_items:
@@ -1292,7 +1298,7 @@ class ListEditor(Dialog):
             self._list_items = self._listEditorData.getItemList()
             self.listBox.Set(self._list_items)
 
-    def DoRename(self,event):
+    def DoRename(self):
         """Renames selected item."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
@@ -1309,7 +1315,7 @@ class ListEditor(Dialog):
             self._list_items[itemDex] = newName
             self.listBox.SetString(itemDex,newName)
 
-    def DoRemove(self,event):
+    def DoRemove(self):
         """Removes selected item."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
@@ -1334,13 +1340,13 @@ class ListEditor(Dialog):
             self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
 
     #--Save/Cancel
-    def DoSave(self,event):
+    def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
         sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_OK)
 
-    def DoCancel(self,event):
+    def DoCancel(self):
         """Handle cancel button."""
         sizes[self.sizesKey] = self.GetSizeTuple()
         self.EndModal(wx.ID_CANCEL)

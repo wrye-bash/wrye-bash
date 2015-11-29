@@ -1072,8 +1072,8 @@ class _EditableMixin(_DetailsMixin):
     def __init__(self, buttonsParent):
         self.edited = False
         #--Save/Cancel
-        self.save = SaveButton(buttonsParent, onClick=self.DoSave)
-        self.cancel = CancelButton(buttonsParent, onClick=self.DoCancel)
+        self.save = SaveButton(buttonsParent, onButClick=self.DoSave)
+        self.cancel = CancelButton(buttonsParent, onButClick=self.DoCancel)
         self.save.Disable()
         self.cancel.Disable()
 
@@ -1096,9 +1096,9 @@ class _EditableMixin(_DetailsMixin):
             self.save.Enable()
         self.cancel.Enable()
 
-    def DoSave(self, event): raise AbstractError
+    def DoSave(self): raise AbstractError
 
-    def DoCancel(self, event):
+    def DoCancel(self):
         self.SetFile(self.file_info.name if self.file_info else None)
 
 class _SashDetailsPanel(_EditableMixin, SashPanel):
@@ -1336,9 +1336,9 @@ class ModDetails(_SashDetailsPanel):
                 self.modifiedStr == formatDate(modInfo.mtime) and
                 self.authorStr == modInfo.header.author and
                 self.descriptionStr == modInfo.header.description):
-            self.DoCancel(None)
+            self.DoCancel()
 
-    def DoSave(self,event):
+    def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
         changeName = (self.fileStr != modInfo.name)
@@ -1472,9 +1472,11 @@ class INIPanel(SashPanel):
         SashPanel.__init__(self, parent)
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = balt.Button(right,_(u'Remove'),onClick=self.OnRemove)
+        self.button = balt.Button(right, _(u'Remove'),
+                                  onButClick=self.OnRemove)
         #--Edit button
-        self.editButton = balt.Button(right,_(u'Edit...'),onClick=self.OnEdit)
+        self.editButton = balt.Button(right, _(u'Edit...'),
+                                      onButClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
@@ -1609,7 +1611,7 @@ class INIPanel(SashPanel):
         self.tweakContents.RefreshTweakLineCtrl(selected)
         if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
 
-    def OnRemove(self,event):
+    def OnRemove(self):
         """Called when the 'Remove' button is pressed."""
         selection = self.comboBox.GetValue()
         self.choice -= 1
@@ -1619,7 +1621,7 @@ class INIPanel(SashPanel):
         self.SetBaseIni()
         self.uiList.RefreshUI()
 
-    def OnEdit(self,event):
+    def OnEdit(self):
         """Called when the 'Edit' button is pressed."""
         selection = self.comboBox.GetValue()
         self.choices[selection].start()
@@ -1979,9 +1981,9 @@ class SaveDetails(_SashDetailsPanel):
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
         if not saveInfo or self.fileStr == saveInfo.name:
-            self.DoCancel(None)
+            self.DoCancel()
 
-    def DoSave(self,event):
+    def DoSave(self):
         """Event: Clicked Save button."""
         saveInfo = self.saveInfo
         #--Change Tests
@@ -2346,9 +2348,9 @@ class InstallersList(balt.Tank):
                     (hSizer(
                         spacer,
                         balt.Button(dialog,label=_(u'Move'),
-                               onClick=lambda x: dialog.EndModal(1)),
+                                    onButClick=lambda: dialog.EndModal(1)),
                         (balt.Button(dialog,label=_(u'Copy'),
-                                onClick=lambda x: dialog.EndModal(2)),
+                                     onButClick=lambda: dialog.EndModal(2)),
                          0,wx.LEFT,4),
                         (CancelButton(dialog),0,wx.LEFT,4),
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
@@ -3244,7 +3246,7 @@ class BSADetails(_EditableMixin, SashPanel):
             self.fileStr = fileStr
             self.SetEdited()
 
-    def DoSave(self,event):
+    def DoSave(self):
         """Event: Clicked Save button."""
         BSAInfo = self.BSAInfo
         #--Change Tests
@@ -3859,8 +3861,8 @@ class BashFrame(wx.Frame):
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
 
-    def BindRefresh(self, bind=True, _event=wx.EVT_ACTIVATE):
-        self.Bind(_event, self.RefreshData) if bind else self.Unbind(_event)
+    def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
+        self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
 
     def Restart(self,args=True,uac=False):
         if not args: return

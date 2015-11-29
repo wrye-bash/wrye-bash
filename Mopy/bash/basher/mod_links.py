@@ -1991,14 +1991,14 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
-        def OnOk(event):
+        def OnOk():
             dialog.EndModal(1)
             bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
             bosh.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
             bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        okButton = OkButton(dialog, onClick=OnOk)
+        okButton = OkButton(dialog, onButClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
