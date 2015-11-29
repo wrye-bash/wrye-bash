@@ -2577,13 +2577,12 @@ class MenuLink(Link):
 class ChoiceLink(Link):
     """List of Choices with optional menu items to edit etc those choices."""
     extraItems = [] # list<Link>
-    cls = ItemLink
-
-    def _range(self):
-        for choice in self._choices: yield self.__class__.cls(_text=choice)
+    choiceLinkType = ItemLink # the class type of the individual choices' links
 
     @property
-    def _choices(self): return []
+    def _choices(self):
+        """List of text labels for the individual choices links."""
+        return []
 
     def AppendToMenu(self, menu, window, selection):
         """Append Link items."""
@@ -2592,7 +2591,7 @@ class ChoiceLink(Link):
             menu = submenu
         for link in self.extraItems:
             link.AppendToMenu(menu, window, selection)
-        for link in self._range():
+        for link in (self.choiceLinkType(_text=txt) for txt in self._choices):
             link.AppendToMenu(menu, window, selection)
         # returns None
 

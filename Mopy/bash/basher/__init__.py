@@ -1462,7 +1462,7 @@ class ModDetails(_SashDetailsPanel):
                 _refreshUI()
         # Menu
         class _TagLinks(ChoiceLink):
-            cls = _TagLink
+            choiceLinkType = _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]

@@ -304,7 +304,7 @@ class _Mod_Labels(ChoiceLink):
                 fileLabels = bosh.modInfos.table.getColumn(_self.column)
                 for fileName in self.selected: fileLabels[fileName] = self.text
                 _self._refresh()
-        self.__class__.cls = _LabelLink
+        self.__class__.choiceLinkType = _LabelLink
 
     @property
     def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
@@ -388,11 +388,11 @@ class Mod_Groups(_Mod_Labels):
         selection = set(selection)
         mod_group = bosh.modInfos.table.getColumn('group').items()
         modGroup = set([x[1] for x in mod_group if x[0] in selection])
-        class _CheckGroup(CheckLink, self.__class__.cls):
+        class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
                 return self.text in modGroup
-        self.__class__.cls = _CheckGroup
+        self.__class__.choiceLinkType = _CheckGroup
 
     def _doRefresh(self, event):
         """Add to the list of groups groups currently assigned to mods."""

@@ -173,7 +173,7 @@ class Saves_Profiles(ChoiceLink):
                 self.window.DeleteAll() # let call below repopulate
                 Link.Frame.RefreshData()
 
-    cls = _ProfileLink
+    choiceLinkType = _ProfileLink
 
     class _Default(_ProfileLink):
         text = _(u'Default')
@@ -603,7 +603,7 @@ class Save_Move(ChoiceLink):
             def _enable(self):
                 return Save_Move.local != (u'Saves\\'+ self.text +u'\\')
             def Execute(self, event): _self.MoveFiles(self.text)
-        self.__class__.cls = _SaveProfileLink
+        self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
 
     def MoveFiles(self,profile):

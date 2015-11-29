@@ -221,7 +221,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
             self.window.RefreshUI()
             self.pdata.setChanged()
 
-    cls = _Karma
+    choiceLinkType = _Karma
 
     @property
     def _choices(self): return self.__class__.labels
@@ -352,6 +352,6 @@ class ColumnsMenu(ChoiceLink, MenuLink):
                  u' Applies to all Bash lists')
     extraItems = [_Manual(), _Contents(), _Header(), balt.SeparatorLink()]
     # choices
-    cls = _Column
+    choiceLinkType = _Column
     @property
     def _choices(self): return self.window.allCols

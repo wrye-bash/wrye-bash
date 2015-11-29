@@ -147,7 +147,7 @@ class Mods_LoadList(ChoiceLink):
                 mods = filter(lambda m: m in listed,
                               map(GPath, self.window.GetItems()))
                 self._selectExact(mods)
-        self.__class__.cls = _LoListLink
+        self.__class__.choiceLinkType = _LoListLink
 
     @property
     def _choices(self):
