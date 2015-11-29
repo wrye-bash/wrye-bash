@@ -491,10 +491,10 @@ class PageFinish(PageInstaller):
         self.SetSizer(sizerMain)
         self.Layout()
 
-    def OnCheckApply(self, event):
+    def OnCheckApply(self):
         self._enableForward(self.checkApply.IsChecked())
 
-    def OnCheckInstall(self, event):
+    def OnCheckInstall(self):
         self.parent.ret.Install = self.checkInstall.IsChecked()
 
     def GetNext(self): return None
@@ -609,7 +609,7 @@ class PageVersions(PageInstaller):
         sizerMain.AddGrowableCol(0)
         self.Layout()
 
-    def OnCheck(self, event):
+    def OnCheck(self):
         self._enableForward(self.checkOk.IsChecked())
 # END PageVersions -----------------------------------------------
 

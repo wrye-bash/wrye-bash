@@ -435,12 +435,13 @@ class SelectAllButton(Button): _id = wx.ID_SELECTALL
 class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClick=None, tip=None):
+                 val=defVal, name='button', onClickToggle=None, tip=None):
     """Creates a toggle button, binds toggle function, then returns bound
     button."""
     gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
                               name)
-    if onClick: gButton.Bind(wx.EVT_TOGGLEBUTTON, onClick)
+    if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
+                                   lambda __event: onClickToggle())
     if tip: gButton.SetToolTip(tooltip(tip))
     return gButton
 
@@ -448,7 +449,7 @@ def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
              name='checkBox', onCheck=None, tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
     gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
-    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX,onCheck)
+    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
     if tip: gCheckBox.SetToolTip(tooltip(tip))
     gCheckBox.SetValue(checked)
     return gCheckBox

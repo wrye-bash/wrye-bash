@@ -226,7 +226,7 @@ class ListPatcher(Patcher):
         elif ensureEnabled:
             self._EnsurePatcherEnabled()
 
-    def OnAutomatic(self,event=None):
+    def OnAutomatic(self):
         """Automatic checkbox changed."""
         self.autoIsChecked = self.gAuto.IsChecked()
         self.gAdd.Enable(not self.autoIsChecked)

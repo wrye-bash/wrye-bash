@@ -85,7 +85,7 @@ class DocBrowser(wx.Frame):
                                    onButClick=self.DoRename)
         #--Edit Doc
         self.editButton = toggleButton(self, label=_(u'Edit Doc...'),
-                                       onClick=self.DoEdit)
+                                       onClickToggle=self.DoEdit)
         self.openButton = Button(self, _(u'Open Doc...'),
                                  onButClick=self.DoOpen,
                                  tip=_(u'Open doc in external editor.'))
@@ -171,7 +171,7 @@ class DocBrowser(wx.Frame):
         else:
             docPath.start()
 
-    def DoEdit(self,event):
+    def DoEdit(self):
         """Handle "Edit Doc" button click."""
         self.DoSave()
         editing = self.editButton.GetValue()
@@ -405,27 +405,27 @@ class ModChecker(wx.Frame):
             self.gTextCtrl = RoTextCtrl(self, special=True)
             gBackButton = None
             gForwardButton = None
-        gUpdateButton = Button(self, _(u'Update'), ##: ATTENTION!
-                               onButClickEventful=lambda event: self.CheckMods())
+        gUpdateButton = Button(self, _(u'Update'), onButClick=self.CheckMods)
         self.gShowModList = toggleButton(self, _(u'Mod List'),
-                                         onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
         self.gShowRuleSets = toggleButton(self, _(u'Rule Sets'),
-                                          onClick=self.CheckMods)
+                                          onClickToggle=self.CheckMods)
         self.gShowNotes = toggleButton(self, _(u'Notes'),
-                                       onClick=self.CheckMods)
+                                       onClickToggle=self.CheckMods)
         self.gShowConfig = toggleButton(self, _(u'Configuration'),
-                                        onClick=self.CheckMods)
+                                        onClickToggle=self.CheckMods)
         self.gShowSuggest = toggleButton(self, _(u'Suggestions'),
-                                         onClick=self.CheckMods)
-        self.gShowCRC = toggleButton(self, _(u'CRCs'), onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
+        self.gShowCRC = toggleButton(self, _(u'CRCs'),
+                                     onClickToggle=self.CheckMods)
         self.gShowVersion = toggleButton(self, _(u'Version Numbers'),
-                                         onClick=self.CheckMods)
+                                         onClickToggle=self.CheckMods)
         if bosh.settings['bash.CBashEnabled']:
             self.gScanDirty = toggleButton(self, _(u'Scan for Dirty Edits'),
-                                           onClick=self.CheckMods)
+                                           onClickToggle=self.CheckMods)
         else:
             self.gScanDirty = toggleButton(self, _(u"Scan for UDR's"),
-                                           onClick=self.CheckMods)
+                                           onClickToggle=self.CheckMods)
         self.gCopyText = Button(self, _(u'Copy Text'),
                                 onButClick=self.OnCopyText)
         self.gShowModList.SetValue(
@@ -477,7 +477,7 @@ class ModChecker(wx.Frame):
         text = re.sub(u'<[^>]+>','',text,re.U)
         balt.copyToClipboard(text)
 
-    def CheckMods(self,event=None):
+    def CheckMods(self):
         """Do mod check."""
         bosh.settings[
             'bash.modChecker.showModList'] = self.gShowModList.GetValue()

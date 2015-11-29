@@ -368,7 +368,8 @@ class CreateNewProject(balt.Dialog):
                                  onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
-        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'), onCheck=self.OnCheckBoxChange)
+        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'),
+                                    onCheck=self.OnCheckBoxChange)
         self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
         if not bEnableWizard:
             # pywin32 not installed
@@ -402,7 +403,7 @@ class CreateNewProject(balt.Dialog):
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
         self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
-        self.OnCheckBoxChange(self)
+        self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self,event):
         projectName = bolt.GPath(self.textName.GetValue())
@@ -415,7 +416,7 @@ class CreateNewProject(balt.Dialog):
         self.textName.Refresh()
         event.Skip()
 
-    def OnCheckBoxChange(self, event):
+    def OnCheckBoxChange(self):
         """ Change the Dialog Icon to represent what the project status will
         be when created. """
         if self.checkEsp.IsChecked():
