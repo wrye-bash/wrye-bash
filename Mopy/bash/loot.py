@@ -48,6 +48,11 @@ class LootVersionError(Exception):
        compatible with loot.py"""
     pass
 
+class LootGameError(Exception):
+    """Exception thrown if the LOOT API does not support
+       the specified game."""
+    pass
+
 def Init(path):
     """Called automatically by importing loot.  Can also be called manually
        by the user to reload the LOOT API, pointing to a different path to the dll.
@@ -315,7 +320,7 @@ def Init(path):
                 if game in games:
                     game = games[game]
                 else:
-                    raise Exception('Game "%s" is not recognized' % game)
+                    raise LootGameError('Game "%s" is not recognized' % game)
             self.tags = {}   # BashTag map
             self._DB = loot_db()
             # print gamePath
