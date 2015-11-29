@@ -63,7 +63,7 @@ class Installers_AddMarker(ItemLink):
     help = _(u'Adds a Marker, a special type of package useful for separating'
              u' and labelling your packages.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Add a Marker."""
         self.window.addMarker()
 
@@ -73,7 +73,7 @@ class Installers_MonitorInstall(Installers_Link):
     help = _(u'Monitors the Data folder during installation via manual install'
              u' or 3rd party tools.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle Selection."""
         msg = _(u'Wrye Bash will monitor your data folder for changes when '
                 u'installing a mod via an external application or manual '
@@ -195,7 +195,7 @@ class Installers_ListPackages(Installers_Link):
     help = _(u'Displays a list of all packages.  Also copies that list to the '
         u'clipboard.  Useful for posting your package order on forums.')
 
-    def Execute(self,event):
+    def Execute(self):
         #--Get masters list
         message = (_(u'Only show Installed Packages?')
                    + u'\n' +
@@ -214,7 +214,7 @@ class Installers_AnnealAll(Installers_Link):
     help = _(u'This will install any missing files (for active installers)'
              u' and correct all install order and reconfiguration errors.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Anneal all packages."""
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
@@ -227,7 +227,7 @@ class Installers_UninstallAllPackages(Installers_Link):
     text = _(u'Uninstall All Packages')
     help = _(u'This will uninstall all packages.')
 
-    def Execute(self,event):
+    def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_(u"Really uninstall All Packages?")): return
         try:
@@ -251,7 +251,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             u"Rescan the Data directory and all project directories.")
 
     def _append(self, window): return bosh.settings['bash.installers.enabled']
-    def Execute(self,event):
+    def Execute(self):
         """Refreshes all Installers data"""
         if self.fullRefresh and not self._askWarning(self.msg, self.text):
             return
@@ -274,7 +274,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         u'DistantLOD folder, so on completion please run TES4LodGen again.'
         ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
 
-    def Execute(self,event):
+    def Execute(self):
         if self._askYes(self.fullMessage):
             try:
                 with balt.Progress(_(u"Cleaning Data Files..."),
@@ -298,8 +298,8 @@ class Installers_AutoWizard(BoolLink):
              u" of packages after running its wizard.")
 
 class _Installers_BoolLink_Refresh(BoolLink):
-    def Execute(self,event):
-        super(_Installers_BoolLink_Refresh, self).Execute(event)
+    def Execute(self):
+        super(_Installers_BoolLink_Refresh, self).Execute()
         self.window.RefreshUI()
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
@@ -321,8 +321,8 @@ class Installers_AutoApplyEmbeddedBCFs(BoolLink):
     help = _(u'If enabled, embedded BCFs will automatically be applied to '
         u'archives.')
 
-    def Execute(self,event):
-        super(Installers_AutoApplyEmbeddedBCFs, self).Execute(event)
+    def Execute(self):
+        super(Installers_AutoApplyEmbeddedBCFs, self).Execute()
         self.window.panel.ShowPanel()
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
@@ -337,10 +337,10 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         u"refresh of BAIN data an may take quite some time.  Are you sure "
         u"you want to continue?")
 
-    def Execute(self,event):
+    def Execute(self):
         if not bosh.settings[self.key] and not self._askYes(self.message):
             return
-        super(Installers_AutoRefreshBethsoft, self).Execute(event)
+        super(Installers_AutoRefreshBethsoft, self).Execute()
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
             self.iPanel.refreshed = False
@@ -361,7 +361,7 @@ class Installers_Enabled(BoolLink):
         u"If you do, Bash will first need to initialize some data. This can "
         u"take on the order of five minutes if there are many mods installed.")
 
-    def Execute(self,event):
+    def Execute(self):
         """Enable/Disable the installers tab."""
         enabled = bosh.settings[self.key]
         if not enabled and not self._askYes(self.message,
@@ -384,9 +384,9 @@ class Installers_BsaRedirection(AppendableLink, BoolLink):
         section,key = bush.game.ini.bsaRedirection
         return bool(section) and bool(key)
 
-    def Execute(self,event):
+    def Execute(self):
         """Handle selection."""
-        super(Installers_BsaRedirection, self).Execute(event)
+        super(Installers_BsaRedirection, self).Execute()
         if bosh.settings[self.key]:
             bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
@@ -422,8 +422,8 @@ class Installers_RemoveEmptyDirs(BoolLink):
 
 # Sorting Links
 class _Installer_Sort(ItemLink):
-    def Execute(self,event):
-        super(_Installer_Sort, self).Execute(event)
+    def Execute(self):
+        super(_Installer_Sort, self).Execute()
         self.window.SortItems()
 
 class Installers_SortActive(_Installer_Sort, BoolLink):
@@ -445,8 +445,8 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 #------------------------------------------------------------------------------
 class _Installers_Skip(Installers_Link, BoolLink):
     """Toggle various skip settings and update."""
-    def Execute(self,event):
-        super(_Installers_Skip, self).Execute(event)
+    def Execute(self):
+        super(_Installers_Skip, self).Execute()
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
             progress.setFull(len(self.idata))
             for index, (name, installer) in enumerate(self.idata.iteritems()):
@@ -510,4 +510,4 @@ class Installers_CreateNewProject(ItemLink):
     text = _(u'Create New Project...')
     help = _(u'Create a new project...')
 
-    def Execute(self, event): CreateNewProject.Display()
+    def Execute(self): CreateNewProject.Display()

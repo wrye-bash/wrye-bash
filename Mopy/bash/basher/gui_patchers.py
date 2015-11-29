@@ -286,7 +286,7 @@ class ListPatcher(Patcher):
                 super(_OnItemChoice, self).__init__(_text)
                 self.index = index
             def _check(self): return self.text in choiceSet
-            def Execute(self, event_): _onItemChoice(self.index)
+            def Execute(self): _onItemChoice(self.index)
         def _onItemChoice(dex):
             """Handle choice menu selection."""
             item = self.items[itemIndex]
@@ -466,9 +466,9 @@ class TweakPatcher(Patcher):
                 super(_ValueLink, self).__init__(_text)
                 self.index = index
             def _check(self): return self.index == tweak.chosen
-            def Execute(self, event_): _self.OnTweakChoice(self.index)
+            def Execute(self): _self.OnTweakChoice(self.index)
         class _ValueLinkCustom(_ValueLink):
-            def Execute(self, event_): _self.OnTweakCustomChoice(self.index)
+            def Execute(self): _self.OnTweakCustomChoice(self.index)
         for index,label in enumerate(choiceLabels):
             if label == u'----':
                 links.append(SeparatorLink())

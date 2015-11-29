@@ -2523,7 +2523,7 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        wx.EVT_MENU(Link.Frame, self._id, self.Execute)
+        wx.EVT_MENU(Link.Frame, self._id, self.__Execute)
         wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
         menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
                                self.__class__.kind)
@@ -2531,7 +2531,12 @@ class ItemLink(Link):
         return menuItem
 
     # Callbacks ---------------------------------------------------------------
-    def Execute(self, event):
+    # noinspection PyUnusedLocal
+    def __Execute(self, __event):
+        """Eat up wx event - code outside balt should not use it."""
+        self.Execute()
+
+    def Execute(self):
         """Event: link execution."""
         raise AbstractError
 
@@ -2683,7 +2688,7 @@ class BoolLink(CheckLink):
         # check if not the same as self.opposite (so usually check if True)
         return _settings[self.key] ^ self.__class__.opposite
 
-    def Execute(self,event): _settings[self.key] ^= True # toggle
+    def Execute(self): _settings[self.key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):
@@ -2691,7 +2696,7 @@ class UIList_Delete(ItemLink):
     text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
-    def Execute(self,event):
+    def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
@@ -2736,7 +2741,7 @@ class _CheckList_SelectAll(ItemLink):
         self.select = select
         self.text = _(u'Select All') if select else _(u'Select None')
 
-    def Execute(self,event):
+    def Execute(self):
         for i in xrange(self.window.GetCount()):
             self.window.Check(i,self.select)
 

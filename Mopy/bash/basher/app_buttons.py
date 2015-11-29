@@ -48,7 +48,7 @@ class _StatusBar_Hide(ItemLink):
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip})
 
-    def Execute(self,event): Link.Frame.statusBar.HideButton(self.window)
+    def Execute(self): Link.Frame.statusBar.HideButton(self.window)
 
 class StatusBar_Button(ItemLink):
     """Launch an application."""
@@ -73,7 +73,7 @@ class StatusBar_Button(ItemLink):
         image = kwdargs.pop('image', None) or images[self.imageKey %
                         bosh.settings['bash.statusbar.iconSize']].GetBitmap()
         kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
-        kwdargs['onClick'] = kwdargs.pop('onClick', None) or self.Execute
+        kwdargs['onClick'] = lambda __event: self.Execute()
         if self.gButton is not None:
             self.gButton.Destroy()
         self.gButton = bitmapButton(window, image, style=style, tip=self.tip,
@@ -196,6 +196,9 @@ class App_Button(StatusBar_Button):
         #--**SE stuff
         self._obseTip = obseTip
         self.obseArg = obseArg
+        # used by App_Button.Execute(): be sure to set them _before_ calling it
+        self.extraArgs = ()
+        self.wait = False
 
     def IsPresent(self):
         if self.isJava:
@@ -231,7 +234,7 @@ class App_Button(StatusBar_Button):
             u'arguments failed to encode.'),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
-    def Execute(self,event,extraArgs=None,wait=False):
+    def Execute(self):
         if self.IsPresent():
             if self.isShortcut or self.isFolder:
                 webbrowser.open(self.exePath.s)
@@ -268,7 +271,7 @@ class App_Button(StatusBar_Button):
                     exePath = self.exePath
                     args = [exePath.s]
                 args.extend(self.exeArgs)
-                if extraArgs: args.extend(extraArgs)
+                if self.extraArgs: args.extend(self.extraArgs)
                 Link.Frame.SetStatusInfo(u' '.join(args[1:]))
                 cwd = bolt.Path.getcwd()
                 if self.workingDir:
@@ -277,7 +280,7 @@ class App_Button(StatusBar_Button):
                     exePath.head.setcwd()
                 try:
                     popen = subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-                    if wait:
+                    if self.wait:
                         popen.wait()
                 except UnicodeError:
                     self._showUnicodeError()
@@ -402,7 +405,7 @@ class App_Tes4View(App_Button):
             return False
         return True
 
-    def Execute(self,event):
+    def Execute(self):
         extraArgs = []
         if balt.getKeyState_Control():
             extraArgs.append(u'-FixupPGRD')
@@ -414,7 +417,8 @@ class App_Tes4View(App_Button):
         if bush.game.fsName == 'Skyrim':
             if bosh.settings['tes5View.iKnowWhatImDoing']:
                 extraArgs.append(u'-IKnowWhatImDoing')
-        App_Button.Execute(self,event,tuple(extraArgs))
+        self.extraArgs = tuple(extraArgs)
+        super(App_Tes4View, self).Execute()
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSDisableLockTimes(BoolLink):
@@ -437,10 +441,10 @@ class App_BOSS(App_Button):
         self.mainMenu.append(_Mods_BOSSLaunchGUI())
         self.mainMenu.append(_Mods_BOSSDisableLockTimes())
 
-    def Execute(self,event,extraArgs=None):
+    def Execute(self):
         if bosh.settings['BOSS.UseGUI']:
             self.exePath = self.exePath.head.join(u'BOSS GUI.exe')
-        wait = bool(bosh.settings['BOSS.ClearLockTimes'])
+        self.wait = bool(bosh.settings['BOSS.ClearLockTimes'])
         extraArgs = []
         if balt.getKeyState(82) and balt.getKeyState_Shift():
             extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
@@ -453,7 +457,8 @@ class App_BOSS(App_Button):
         if bosh.tooldirs['boss'].version >= (2,0,0,0):
             # After version 2.0, need to pass in the -g argument
             extraArgs.append(u'-g%s' % bush.game.fsName,)
-        App_Button.Execute(self,event,tuple(extraArgs), wait)
+        self.extraArgs = tuple(extraArgs)
+        super(App_BOSS, self).Execute()
         if bosh.settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
             bosh.modInfos.mtimes.clear()
@@ -485,8 +490,8 @@ class Game_Button(App_Button):
             tip += u' + ' + bush.game.laa.name
         return tip
 
-    def Execute(self,event):
-        App_Button.Execute(self,event)
+    def Execute(self):
+        super(Game_Button, self).Execute()
         if bosh.settings.get('bash.autoQuit.on',False):
             Link.Frame.Close(True)
 
@@ -558,7 +563,7 @@ class Obse_Button(_StatefulButton):
             button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
         return state
 
-    def Execute(self,event):
+    def Execute(self):
         """Invert state."""
         self.SetState(-1)
 
@@ -612,7 +617,7 @@ class AutoQuit_Button(_StatefulButton):
         self.gButton.SetBitmapLabel(image.GetBitmap())
         self.gButton.SetToolTip(tooltip(tip))
 
-    def Execute(self,event):
+    def Execute(self):
         """Invert state."""
         self.SetState(-1)
 
@@ -621,8 +626,7 @@ class App_Help(StatusBar_Button):
     """Show help browser."""
     imageKey, _tip = u'help.%s', _(u"Help File")
 
-    def Execute(self,event):
-        """Handle menu selection."""
+    def Execute(self):
         html = bosh.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
         if html.exists():
             html.start()
@@ -634,8 +638,7 @@ class App_DocBrowser(StatusBar_Button):
     """Show doc browser."""
     imageKey, _tip = u'doc.%s', _(u"Doc Browser")
 
-    def Execute(self,event):
-        """Handle menu selection."""
+    def Execute(self):
         if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bosh.settings['bash.modDocs.show'] = True
@@ -648,10 +651,10 @@ class App_Settings(StatusBar_Button):
     imageKey, _tip = 'settingsbutton.%s', _(u'Settings')
 
     def GetBitmapButton(self, window, style, **kwdargs):
-        return super(App_Settings, self).GetBitmapButton(window, style,
-                                                         onRClick=self.Execute)
+        return super(App_Settings, self).GetBitmapButton(
+            window, style, onRClick=lambda __event: self.Execute())
 
-    def Execute(self,event):
+    def Execute(self):
         BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
                                              None)
 
@@ -665,17 +668,20 @@ class App_Restart(StatusBar_Button):
         return super(App_Restart, self).GetBitmapButton(window, style,
             image=staticBitmap(window, special='undo', size=(size,size)))
 
-    def Execute(self,event): Link.Frame.Restart()
+    def Execute(self): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
 class App_GenPickle(StatusBar_Button):
     """Generate PKL File. Ported out of bish.py which wasn't working."""
     imageKey, _tip = 'pickle.%s', _(u"Generate PKL File")
 
-    def Execute(self,event,fileName=None):
-        """Updates map of GMST eids to fids in bash\db\Oblivion_ids.pkl, based either
-        on a list of new eids or the gmsts in the specified mod file. Updated pkl file
-        is dropped in Mopy directory."""
+    def Execute(self): self._update_pkl()
+
+    @staticmethod
+    def _update_pkl(fileName=None):
+        """Update map of GMST eids to fids in bash\db\Oblivion_ids.pkl,
+        based either on a list of new eids or the gmsts in the specified mod
+        file. Updated pkl file is dropped in Mopy directory."""
         #--Data base
         import cPickle
         try:
@@ -725,8 +731,7 @@ class App_ModChecker(StatusBar_Button):
     """Show mod checker."""
     imageKey, _tip = 'modchecker.%s', _(u"Mod Checker")
 
-    def Execute(self,event):
-        """Handle menu selection."""
+    def Execute(self):
         if not Link.Frame.modChecker:
             ModChecker().Show()
         #balt.ensureDisplayed(modChecker)

@@ -1417,7 +1417,7 @@ class ModDetails(_SashDetailsPanel):
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
             def _check(self): return is_auto
-            def Execute(self, event_):
+            def Execute(self):
                 """Handle selection of automatic bash tags."""
                 _setAuto(not _isAuto()) # toggle
                 if _isAuto(): mod_info.reloadBashTags()
@@ -1427,7 +1427,7 @@ class ModDetails(_SashDetailsPanel):
         class _CopyDesc(EnabledLink):
             text = _(u'Copy to Description')
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
-            def Execute(self, event_):
+            def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
                 if mod_info.setBashTagsDesc(mod_info.getBashTags()):
                     _refreshUI()
@@ -1445,7 +1445,7 @@ class ModDetails(_SashDetailsPanel):
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self.text, 'modname': mod_info.name})
             def _check(self): return self.text in mod_tags
-            def Execute(self, event_):
+            def Execute(self):
                 """Toggle bash tag from menu."""
                 if _isAuto(): _setAuto(False)
                 modTags = mod_tags ^ {self.text}
@@ -3408,7 +3408,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
     def _check(self): return bosh.settings['bash.tabs.order'][self.tabKey]
 
-    def Execute(self,event):
+    def Execute(self):
         if bosh.settings['bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
             iMods = None
