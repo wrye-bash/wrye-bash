@@ -169,6 +169,16 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
         return super(_SingleInstallable, self)._enable() and bool(
             self.filterInstallables())
 
+class _RefreshingLink(_SingleInstallable):
+    _refreshType = 'N' ##: so what's this about exactly ?
+
+    def Execute(self,event):
+        installer = self.idata[self.selected[0]]
+        installer.refreshDataSizeCrc()
+        if not 'S' in self._refreshType: installer.refreshStatus(self.idata)
+        self.idata.irefresh(what=self._refreshType)
+        self.window.RefreshUI()
+
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
@@ -483,7 +493,7 @@ class Installer_Rename(_InstallerLink):
 
     def Execute(self,event): self.window.Rename(selected=self.selected)
 
-class Installer_HasExtraData(CheckLink, _SingleInstallable):
+class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
@@ -491,16 +501,12 @@ class Installer_HasExtraData(CheckLink, _SingleInstallable):
     def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).hasExtraData
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.hasExtraData ^= True
-        installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.idata)
-        self.idata.irefresh(what='N')
-        self.window.RefreshUI()
+    def Execute(self, event):
+        """Toggle hasExtraData installer attribute"""
+        self.idata[self.selected[0]].hasExtraData ^= True
+        super(Installer_HasExtraData, self).Execute(event)
 
-class Installer_OverrideSkips(CheckLink, _SingleInstallable):
+class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     """Toggle overrideSkips flag on installer."""
     text = _(u'Override Skips')
 
@@ -513,14 +519,9 @@ class Installer_OverrideSkips(CheckLink, _SingleInstallable):
     def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).overrideSkips
 
-    def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.overrideSkips ^= True
-        installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.idata)
-        self.idata.irefresh(what='N')
-        self.window.RefreshUI()
+    def Execute(self, event):
+        self.idata[self.selected[0]].overrideSkips ^= True
+        super(Installer_OverrideSkips, self).Execute(event)
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
     """Toggle skipRefresh flag on project."""
@@ -538,14 +539,11 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
         installer = self.idata[self.selected[0]]
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
-            # Check to see if we need to refresh this Project
-            file = bosh.dirs['installers'].join(installer.archive)
-            if (installer.size,installer.modified) != (file.size,file.getmtime(True)):
-                installer.refreshDataSizeCrc()
-                installer.refreshBasic(file)
-                installer.refreshStatus(self.idata)
-                self.idata.irefresh(what='N')
-                self.window.RefreshUI()
+            installer.refreshBasic(
+                bosh.dirs['installers'].join(installer.archive))
+            installer.refreshStatus(self.idata)
+            self.idata.irefresh(what='N')
+            self.window.RefreshUI()
 
 class Installer_Install(_InstallerLink):
     """Install selected packages."""
@@ -711,20 +709,23 @@ class Installer_Refresh(_InstallerLink):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
         self.window.rescanInstallers(toRefresh, abort=True)
 
-class Installer_SkipVoices(CheckLink, _SingleInstallable):
+class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
     text = _(u'Skip Voices')
+    _refreshType = 'NS' ##: Why NS and not N like the rest ?
+
+    def _initData(self, window, selection):
+        super(Installer_SkipVoices, self)._initData(window, selection)
+        self.help = _(
+            u"Override global voices skip setting for %(installername)s.") % (
+                    {'installername': self.selected[0]})
 
     def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).skipVoices
 
     def Execute(self,event):
-        """Handle selection."""
-        installer = self.idata[self.selected[0]]
-        installer.skipVoices ^= True
-        installer.refreshDataSizeCrc()
-        self.idata.irefresh(what='NS')
-        self.window.RefreshUI()
+        self.idata[self.selected[0]].skipVoices ^= True
+        super(Installer_SkipVoices, self).Execute(event)
 
 class Installer_Uninstall(_InstallerLink):
     """Uninstall selected Installers."""
