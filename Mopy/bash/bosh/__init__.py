@@ -5224,7 +5224,11 @@ class ConfigHelpers:
         deprint(u'Using LOOT API version:', loot.version)
 
         global lootDb
-        lootDb = loot.LootDb(dirs['app'].s,bush.game.fsName)
+        try:
+            lootDb = loot.LootDb(dirs['app'].s, bush.game.fsName)
+        except loot.LootGameError:
+            deprint(u'The LOOT API does not support the current game.')
+            lootDb = None
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = dirs['userApp'].join(
             os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
@@ -5242,6 +5246,7 @@ class ConfigHelpers:
         self.refreshBashTags()
 
     def refreshBashTags(self):
+        if lootDb is None: return
         """Reloads tag info if file dates have changed."""
         path, userpath = self.lootMasterPath, self.lootUserPath
         #--Masterlist is present, use it
@@ -5277,24 +5282,30 @@ class ConfigHelpers:
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
-        if modName not in self.tagCache:
-            tags = lootDb.GetModBashTags(modName)
-            self.tagCache[modName] = tags
-            return tags[0]
-        else:
-            return self.tagCache[modName][0]
+        return self._getTagCache(modName)[0]
 
     def getBashRemoveTags(self,modName):
         """Retrieves bash tags for given file."""
+        return self._getTagCache(modName)[1]
+
+    def _getTagCache(self,modName):
+        """Gets Bash tag info from the cache, or
+           the LOOT API if it is not in cache."""
         if modName not in self.tagCache:
-            tags = lootDb.GetModBashTags(modName)
+            if lootDb is None:
+                tags = (set(), set(), set())
+            else:
+                tags = lootDb.GetModBashTags(modName)
             self.tagCache[modName] = tags
-            return tags[1]
+            return tags
         else:
-            return self.tagCache[modName][1]
+            return self.tagCache[modName]
 
     @staticmethod
-    def getDirtyMessage(modName): return lootDb.GetDirtyMessage(modName)
+    def getDirtyMessage(modName):
+        if lootDb is None:
+            return False, u''
+        return lootDb.GetDirtyMessage(modName)
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):
