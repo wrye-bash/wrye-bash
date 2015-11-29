@@ -45,6 +45,14 @@ import binascii
 import textwrap
 import traceback
 
+class NON_REPO(object):
+    __slots__= []
+    
+    # 'Enum' for options for non-repo files
+    MOVE = 'MOVE'
+    COPY = 'COPY'
+    NONE = 'NONE'
+
 # environment detection
 try:
     #--Needed for the Installer version to find NSIS
@@ -117,6 +125,20 @@ def mv(node, dst):
     """Moves a file or directory if it exists"""
     if os.path.exists(node):
         shutil.move(node, dst)
+
+
+def cpy(src, dst):
+    """Moves a file to a destination, creating the target
+       directory as needed."""
+    if os.path.isdir(src):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+    else:
+        # file
+        dstdir = os.path.dirname(dst)
+        if not os.path.exists(dstdir):
+            os.makedirs(dstdir)
+        shutil.copy2(src, dst)
 
 
 def lprint(*args, **kwdargs):
@@ -319,13 +341,12 @@ def PackStandaloneVersion(args, all_files):
     rm(listFile)
 
 
-def RelocateNonRepoFiles(all_files):
+def RelocateNonRepoFiles(non_repo):
     """Moves any non-repository files/directories to scripts/temp"""
     tmpDir = os.path.join(u'scripts', u'temp')
     rm(tmpDir)
     os.makedirs(tmpDir)
 
-    non_repo = GetNonRepoFiles(all_files)
     if non_repo:
         lprint(" Relocating non-repository files:")
     for path in non_repo:
@@ -341,21 +362,32 @@ def RelocateNonRepoFiles(all_files):
             shutil.move(src, dst)
 
 
-def WarnNonRepoFiles(all_files):
+def WarnNonRepoFiles(args, all_files):
     """Prints a warning if non-repository files are detected."""
     non_repo = GetNonRepoFiles(all_files)
     if non_repo:
         lprint(" WARNING: Non-repository files are present in your source "
-               "directory, and you have chosen to not relocate them.  "
-               "These files will be included in the installer!")
-        for file in non_repo:
-            lprint(" ", file)
+               "directory.")
+        if args.non_repo == NON_REPO.MOVE:
+            lprint("          You have chosen to move the non-repository "
+                   "files out of the source directry temporarily.")
+        elif args.non_repo == NON_REPO.COPY:
+            lprint("          You have chosen to make a temporary clean copy "
+                   " of the repository to build with.")
+        else:
+            lprint("          You have chosen to not relocate them.  "
+                   "These files will be included in the installer!")
+            for file in non_repo:
+                lprint(" ", file)
+    return non_repo
 
 
 def RestoreNonRepoFiles():
     """Returns non-repository files scripts/temp to their proper locations"""
-    failed = []
     tmpDir = os.path.join(u'scripts', u'temp')
+    if not os.path.exists(tmpDir):
+        return
+    failed = []
     if os.listdir(tmpDir):
         lprint(" Restoring non-repository files")
     for top, dirs, files in os.walk(tmpDir):
@@ -385,6 +417,36 @@ def RestoreNonRepoFiles():
             pass
 
 
+def MakeTempRepoCopy(all_files):
+    """Create a temporary copy of the necessary repository files to
+       have a clean repository for building."""
+    temp_root = os.path.join(scripts, u'build_temp')
+    temp_scripts = os.path.join(temp_root, u'scripts')
+    temp_nsis = os.path.join(temp_scripts, u'build', u'installer')
+    nsis = os.path.join(scripts, u'build', u'installer')
+    lprint(" Copying repository files to temporary location...")
+    # Clean the destination
+    if os.path.exists(temp_root):
+        shutil.rmtree(temp_root)
+    os.makedirs(temp_root)
+    # Copy the NSIS scripts to the correct location
+    shutil.copytree(nsis, temp_nsis)
+    # Copy the repository files + WBSA files
+    wbsa_files = [u'Mopy\\Wrye Bash.exe', u'Mopy\\w9xPopen.exe']
+    for fname in all_files + wbsa_files:
+        dst = os.path.join(temp_root, fname)
+        src = os.path.join(root, fname)
+        cpy(src, dst)
+    return temp_root
+
+
+def RemoveTempRepoCopy():
+    """Deletes the temporary repository copy if present."""
+    temp_root = os.path.join(scripts, u'build_temp')
+    if os.path.exists(temp_root):
+        shutil.rmtree(temp_root)
+
+
 def BuildInstallerVersion(args, all_files, file_version):
     """Compiles the NSIS script, creating the installer version"""
     nsis = args.nsis
@@ -393,7 +455,8 @@ def BuildInstallerVersion(args, all_files, file_version):
                "creation.")
         return
 
-    script = os.path.join(scripts, u'build', u'installer', u'main.nsi')
+    rel_script = os.path.join(u'build', u'installer', u'main.nsi')
+    script = os.path.join(scripts, rel_script)
     if not os.path.exists(script):
         lprint(" Could not find nsis script '%s', aborting installer "
                "creation." % script)
@@ -417,10 +480,13 @@ def BuildInstallerVersion(args, all_files, file_version):
             return
 
         try:
-            if not args.no_reloc:
-                RelocateNonRepoFiles(all_files)
-            else:
-                WarnNonRepoFiles(all_files)
+            non_repo = WarnNonRepoFiles(args, all_files)
+            if non_repo:
+                if args.non_repo == NON_REPO.MOVE:
+                    RelocateNonRepoFiles(non_repo)
+                elif args.non_repo == NON_REPO.COPY:
+                    temp_root = MakeTempRepoCopy(all_files)
+                    script = os.path.join(temp_root, u'scripts', rel_script)
 
             # Build the installer
             lprint(" Calling makensis.exe...")
@@ -433,8 +499,10 @@ def BuildInstallerVersion(args, all_files, file_version):
                 lprint(' makensis exited with error code %s.  Check the output'
                        ' log for errors in the NSIS script.' % ret)
         finally:
-            if not args.no_reloc:
+            if args.non_repo == NON_REPO.MOVE:
                 RestoreNonRepoFiles()
+            elif args.non_repo == NON_REPO.COPY:
+                RemoveTempRepoCopy()
     except KeyboardInterrupt:
         raise
     except Exception as e:
@@ -688,13 +756,20 @@ def main():
                 script cannot locate git automatically.''',
         )
     parser.add_argument(
-        '--no-reloc',
-        default=False,
-        dest='no_reloc',
-        action='store_true',
-        help='''If specified, the packaging script will NOT attempt to move
-                non-repository files out of the source directory prior to
-                creating the installer.  Moved files are moved back after.''',
+        '--non-repo',
+        default=NON_REPO.MOVE,
+        action='store',
+        choices=[NON_REPO.MOVE, NON_REPO.COPY, NON_REPO.NONE],
+        help='''If non-repository files are detected during packaging, the
+                packaging script will deal with them in the following way:
+                {MOVE} - move the non-repository files out of the source
+                directory, then restore them after (recommeneded).  {COPY} -
+                make a copy of the repository files into a temporary
+                directory, then build from there (slower).  {NONE} - do
+                nothing, causing those files to be included in the installer
+                (HIGHLY DISCOURAGED).'''.format(COPY=NON_REPO.COPY,
+                                                MOVE=NON_REPO.MOVE,
+                                                NONE=NON_REPO.NONE),
         )
     parser.add_argument(
         '-v', '--verbose',
