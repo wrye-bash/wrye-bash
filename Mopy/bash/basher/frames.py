@@ -109,7 +109,7 @@ class DocBrowser(wx.Frame):
             self.prevButton = None
             self.nextButton = None
         #--Events
-        wx.EVT_CLOSE(self, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         #--Layout
         self.mainSizer = vSizer(
             (hSizer( #--Buttons
@@ -358,7 +358,7 @@ class DocBrowser(wx.Frame):
         self.Layout()
 
     #--Window Closing
-    def OnCloseWindow(self, event):
+    def OnCloseWindow(self):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
@@ -441,7 +441,7 @@ class ModChecker(wx.Frame):
         self.gShowVersion.SetValue(
             bosh.settings.get('bash.modChecker.showVersion', True))
         #--Events
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         #--Layout
         self.SetSizer(
@@ -529,7 +529,7 @@ class ModChecker(wx.Frame):
             ):
             self.CheckMods()
 
-    def OnCloseWindow(self, event):
+    def OnCloseWindow(self):
         """Handle window close event.
         Remember window size, position, etc."""
         # TODO(ut): maybe set Link.Frame.modChecker = None (compare with DocBrowser)

@@ -3829,7 +3829,7 @@ class BashFrame(wx.Frame):
         #--Notebook panel
         self.notebook = notebook = BashNotebook(self)
         #--Events
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
@@ -4108,7 +4108,7 @@ class BashFrame(wx.Frame):
         u'%s\\Data\\Docs directories.') % (bush.game.fsName, bush.game.fsName)
         balt.showWarning(self, msg, _(u'Incomplete Installation'))
 
-    def OnCloseWindow(self, event):
+    def OnCloseWindow(self):
         """Handle Close event. Save application data."""
         try:
             self.BindRefresh(bind=False)

@@ -1244,7 +1244,8 @@ class ListEditor(Dialog):
                 style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
                       wx.TE_MULTILINE | wx.SUNKEN_BORDER)
             if not self._listEditorData.infoReadOnly:
-                self.gInfoBox.Bind(wx.EVT_TEXT,self.OnInfoEdit)
+                self.gInfoBox.Bind(wx.EVT_TEXT,
+                                   lambda __event: self.OnInfoEdit())
         else:
             self.gInfoBox = None
         #--Buttons
@@ -1332,7 +1333,7 @@ class ListEditor(Dialog):
             self.gInfoBox.SetValue(u'')
 
     #--Show Info
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self):
         """Info box text has been edited."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
