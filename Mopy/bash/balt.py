@@ -26,7 +26,7 @@
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
-import bosh
+import bosh ##: BIN ! or rather split balt making clear which submodules use it
 from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
     StateError, CancelError, SkipError
 from bass import Resources
@@ -65,7 +65,8 @@ def fonts():
     return font_default, font_bold, font_italic
 
 # Settings --------------------------------------------------------------------
-_settings = {} #--Using applications should override this.
+__unset = bolt.Settings(dictFile=None) # type information
+_settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
@@ -1887,28 +1888,26 @@ class UIList(wx.Panel):
     # Column properties
     @property
     def colWidths(self):
-        return bosh.settings.getChanged(self.keyPrefix + '.colWidths', {})
+        return _settings.getChanged(self.keyPrefix + '.colWidths', {})
     @property
     def colReverse(self): # not sure why it gets it changed but no harm either
         """Dictionary column->isReversed."""
-        return bosh.settings.getChanged(self.keyPrefix + '.colReverse', {})
+        return _settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
-    def cols(self): return bosh.settings.getChanged(self.keyPrefix + '.cols')
+    def cols(self): return _settings.getChanged(self.keyPrefix + '.cols')
     @property
-    def allCols(self): return bosh.settings[self.keyPrefix + '.allCols']
+    def allCols(self): return _settings[self.keyPrefix + '.allCols']
     @property
-    def autoColWidths(self): return bosh.settings.get(
-        'bash.autoSizeListColumns', 0)
+    def autoColWidths(self):
+        return _settings.get('bash.autoSizeListColumns', 0)
     @autoColWidths.setter
-    def autoColWidths(self, val):
-        bosh.settings['bash.autoSizeListColumns'] = val
+    def autoColWidths(self, val): _settings['bash.autoSizeListColumns'] = val
     # the current sort column
     @property
     def sort(self):
-        return bosh.settings.get(self.keyPrefix + '.sort',
-                                 self._default_sort_col)
+        return _settings.get(self.keyPrefix + '.sort', self._default_sort_col)
     @sort.setter
-    def sort(self, val): bosh.settings[self.keyPrefix + '.sort'] = val
+    def sort(self, val): _settings[self.keyPrefix + '.sort'] = val
 
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
@@ -2237,12 +2236,12 @@ class UIList(wx.Panel):
         """Create/name columns in ListCtrl."""
         cols = self.cols # this may have been updated in ColumnsMenu.Execute()
         numCols = len(cols)
-        names = set(bosh.settings['bash.colNames'].get(key) for key in cols)
+        names = set(_settings['bash.colNames'].get(key) for key in cols)
         self._colDict.clear()
         colDex, listCtrl = 0, self._gList
         while colDex < numCols: ##: simplify!
             colKey = cols[colDex]
-            colName = bosh.settings['bash.colNames'].get(colKey, colKey)
+            colName = _settings['bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.GetColumnCount(): # Make a new column
                 listCtrl.InsertColumn(colDex, colName)
@@ -2275,13 +2274,12 @@ class UIList(wx.Panel):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        bosh.settings[
-            self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
+        _settings[self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
         self._gList.ScrollLines(
-            bosh.settings.get(self.keyPrefix + '.scrollPos', 0))
+            _settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
@@ -2680,9 +2678,9 @@ class BoolLink(CheckLink):
 
     def _check(self):
         # check if not the same as self.opposite (so usually check if True)
-        return bosh.settings[self.key] ^ self.__class__.opposite
+        return _settings[self.key] ^ self.__class__.opposite
 
-    def Execute(self,event): bosh.settings[self.key] ^= True # toggle
+    def Execute(self,event): _settings[self.key] ^= True # toggle
 
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):
