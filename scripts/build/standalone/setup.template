@@ -33,7 +33,7 @@ class Target:
     def __init__(self, script):
         self.name = 'Wrye Bash'
         self.description = 'Wrye Bash'
-        self.version = '%(version)s'
+        self.version = '%(file_version)s'
         self.author = 'Wrye Bash development team'
         self.url = 'http://tesnexus.com/downloads/file.php?id=22368'
         self.download_url = self.url

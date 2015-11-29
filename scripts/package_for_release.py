@@ -104,14 +104,37 @@ def GetVersionInfo(version, padding=4):
        For example, a
        version of 291 would with default padding would return:
        ('291','0.2.9.1')"""
-    file_version = (u'0.' * abs(padding))[:-1]
-
-    v = version
-    v = v.replace(u'.', u'')
-    if padding < 0:
-        file_version = u'.'.join(c for c in v.ljust(-padding, u'0'))
-    else:
-        file_version = u'.'.join(c for c in v.rjust(padding, u'0'))
+    v = version.split(u'.')
+    # If version is too short, pad it with 0's
+    abspad = abs(padding)
+    delta = abspad - len(v)
+    if delta > 0:
+        pad = ['0'] * delta
+        if padding > 0:
+            v.extend(pad)
+        else:
+            v = pad + v
+    # If version is too long, warn and truncate
+    if delta < 0:
+        lprint('WARNING: The version specified ({version}) has too many'
+               ' version pieces.  The extra pieces will be truncated.'
+               ''.format(version=version))
+        v = v[:abspad]
+    # Verify version pieces are actually integers, as non-integer values will
+    # cause much of the 'Details' section of the built exe to be non-existant
+    newv = []
+    error = False
+    for x in v:
+        try:
+            int(x)
+            newv.append(x)
+        except ValueError:
+            error = True
+            newv.append(u'0')
+    if error:
+        lprint('WARNING: The version specified ({version}) does not convert '
+               'to integer values.'.format(version=version))
+    file_version = u'.'.join(newv)
     lprint('Using file version:', file_version)
     return file_version
 
