@@ -19,7 +19,7 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" "Mopy\*.*"
         ${If} ${DoAII} == true
             ; Some games don't use ArchiveInvalidationInvalidated
             SetOutPath "${GameDir}\Data"
@@ -40,10 +40,6 @@
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
             File "Mopy\Wrye Bash.exe"
-            ${IfNot} ${AtLeastWinXP}
-                # Running earlier than WinXP, need w9xpopen
-                File "Mopy\w9xpopen.exe"
-            ${EndIf}
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
@@ -561,6 +557,8 @@
         Delete "${Path}\Mopy\Bash Patches\Skyrim\taglist.txt"
         ${If} ${AtLeastWinXP}
             # Running XP or later, w9xpopen is only for 95/98/ME
+            # Bash no longer ships with w9xpopen, but it may be left
+            # over from a previous install
             Delete "${Path}\Mopy\w9xpopen.exe"
         ${EndIf}
     !macroend

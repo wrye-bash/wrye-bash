@@ -203,7 +203,6 @@ def BuildManualVersion(args, all_files):
 def CleanupStandaloneFiles():
     """Removes standalone exe files that are not needed after packaging"""
     rm(os.path.join(mopy, u'Wrye Bash.exe'))
-    rm(os.path.join(mopy, u'w9xpopen.exe'))
 
 
 def CreateStandaloneExe(args, file_version):
@@ -226,7 +225,6 @@ def CreateStandaloneExe(args, file_version):
     manifest = os.path.join(wbsa, u'manifest.template')
     script = os.path.join(wbsa, u'setup.template')
     exe = os.path.join(mopy, u'Wrye Bash.exe')
-    w9xexe = os.path.join(mopy, u'w9xpopen.exe')
     setup = os.path.join(mopy, u'setup.py')
     #--For l10n
     msgfmt = os.path.join(sys.prefix, u'Tools', u'i18n', u'msgfmt.py')
@@ -285,7 +283,6 @@ def CreateStandaloneExe(args, file_version):
 
         # Copy the exe's to the Mopy folder
         mv(os.path.join(dist, u'Wrye Bash Launcher.exe'), exe)
-        mv(os.path.join(dist, u'w9xpopen.exe'), w9xexe)
 
         # Insert the icon
         subprocess.call([reshacker, '-addoverwrite', exe+',', exe+',',
@@ -294,11 +291,9 @@ def CreateStandaloneExe(args, file_version):
 
         # Compress with UPX
         subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
-        subprocess.call([upx, '-9', w9xexe], stdout=pipe, stderr=pipe)
     except:
         # On error, don't keep the built exe's
         rm(exe)
-        rm(w9xexe)
         raise
     finally:
         # Clean up left over files
@@ -331,8 +326,7 @@ def PackStandaloneVersion(args, all_files):
                                                        u'.pyw',
                                                        u'.bat')
                      ]
-        all_files.extend([u'Mopy\\Wrye Bash.exe',
-                          u'Mopy\\w9xPopen.exe'])
+        all_files.append(u'Mopy\\Wrye Bash.exe')
         for file in all_files:
             out.write(file)
             out.write('\n')
@@ -432,7 +426,7 @@ def MakeTempRepoCopy(all_files):
     # Copy the NSIS scripts to the correct location
     shutil.copytree(nsis, temp_nsis)
     # Copy the repository files + WBSA files
-    wbsa_files = [u'Mopy\\Wrye Bash.exe', u'Mopy\\w9xPopen.exe']
+    wbsa_files = [u'Mopy\\Wrye Bash.exe']
     for fname in all_files + wbsa_files:
         dst = os.path.join(temp_root, fname)
         src = os.path.join(root, fname)
@@ -659,10 +653,9 @@ def GetNonRepoFiles(repo_files):
     # We can ignore .pyc and .pyo files, since the NSIS scripts skip those
     all_files = (x for x in all_files
                  if os.path.splitext(x)[1] not in (u'.pyc', u'.pyo'))
-    # We can also ignore w9xpopen and Wrye Bash.exe, for the same reason
+    # We can also ignore Wrye Bash.exe, for the same reason
     all_files = [x for x in all_files
-                 if os.path.basename(x) not in (u'w9xpopen.exe',
-                                                u'wrye bash.exe')]
+                 if os.path.basename(x) != u'wrye bash.exe']
     all_dirs = [os.path.normcase(os.path.normpath(x)) for x in all_dirs]
     # Pick out every file that doesn't belong
     non_repo.extend((x for x in all_files if x not in repo_files))
