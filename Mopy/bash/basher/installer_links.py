@@ -69,17 +69,6 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def isSingleInstallable(self):
-        if len(self.selected) == 1:
-            installer = self.idata[self.selected[0]]
-            if not isinstance(installer,
-                              (bosh.InstallerProject, bosh.InstallerArchive)):
-                return False
-            elif installer.type not in (1,2):
-                return False
-            return True
-        return False
-
     def filterInstallables(self):
         return self.idata.filterInstallables(self.selected)
 
@@ -174,8 +163,14 @@ class _InstallerLink(Installers_Link, EnabledLink):
                     archive.s, title=self.dialogTitle, default=False): return
         return archive
 
+class _SingleInstallable(OneItemLink, _InstallerLink):
+
+    def _enable(self):
+        return super(_SingleInstallable, self)._enable() and bool(
+            self.filterInstallables())
+
 #------------------------------------------------------------------------------
-class Installer_EditWizard(_InstallerLink):
+class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
     help = _(u"Edit the wizard.txt associated with this project.")
 
@@ -185,7 +180,7 @@ class Installer_EditWizard(_InstallerLink):
             u'Edit Wizard...')
 
     def _enable(self):
-        return self.isSingleInstallable() and bool(
+        return super(Installer_EditWizard, self)._enable() and bool(
             self.idata[self.selected[0]].hasWizard)
 
     def Execute(self, event):
@@ -488,14 +483,12 @@ class Installer_Rename(_InstallerLink):
 
     def Execute(self,event): self.window.Rename(selected=self.selected)
 
-class Installer_HasExtraData(CheckLink, _InstallerLink):
+class Installer_HasExtraData(CheckLink, _SingleInstallable):
     """Toggle hasExtraData flag on installer."""
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
 
-    def _enable(self): return self.isSingleInstallable()
-
-    def _check(self): return self.isSingleInstallable() and (
+    def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).hasExtraData
 
     def Execute(self,event):
@@ -507,7 +500,7 @@ class Installer_HasExtraData(CheckLink, _InstallerLink):
         self.idata.irefresh(what='N')
         self.window.RefreshUI()
 
-class Installer_OverrideSkips(CheckLink, _InstallerLink):
+class Installer_OverrideSkips(CheckLink, _SingleInstallable):
     """Toggle overrideSkips flag on installer."""
     text = _(u'Override Skips')
 
@@ -517,9 +510,7 @@ class Installer_OverrideSkips(CheckLink, _InstallerLink):
             u"Override global file type skipping for %(installername)s.") % (
                     {'installername': self.selected[0]})
 
-    def _enable(self): return self.isSingleInstallable()
-
-    def _check(self): return self.isSingleInstallable() and (
+    def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).overrideSkips
 
     def Execute(self,event):
@@ -714,20 +705,17 @@ class Installer_Refresh(_InstallerLink):
     text = _(u'Refresh')
     help = _(u'Rescan selected Installer(s)')
 
-    def _enable(self):
-        return not len(self.selected) == 1 or self.isSingleInstallable()
+    def _enable(self): return bool(self.filterInstallables())
 
     def Execute(self,event):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
         self.window.rescanInstallers(toRefresh, abort=True)
 
-class Installer_SkipVoices(CheckLink, _InstallerLink):
+class Installer_SkipVoices(CheckLink, _SingleInstallable):
     """Toggle skipVoices flag on installer."""
     text = _(u'Skip Voices')
 
-    def _enable(self): return self.isSingleInstallable()
-
-    def _check(self): return self.isSingleInstallable() and (
+    def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).skipVoices
 
     def Execute(self,event):
@@ -755,13 +743,11 @@ class Installer_Uninstall(_InstallerLink):
         finally:
             self.iPanel.RefreshUIMods(_refreshData=True)
 
-class Installer_CopyConflicts(_InstallerLink):
+class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
     help = _(u'Copy all files that conflict with the selected installer into a'
              u' new project')
-
-    def _enable(self): return self.isSingleInstallable()
 
     def Execute(self,event):
         """Handle selection."""
