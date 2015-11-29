@@ -1890,6 +1890,8 @@ class UIList(wx.Panel):
 
     # Column properties
     @property
+    def allCols(self): return self.labels.keys()
+    @property
     def colWidths(self):
         return _settings.getChanged(self.keyPrefix + '.colWidths', {})
     @property
@@ -1898,8 +1900,6 @@ class UIList(wx.Panel):
         return _settings.getChanged(self.keyPrefix + '.colReverse', {})
     @property
     def cols(self): return _settings.getChanged(self.keyPrefix + '.cols')
-    @property
-    def allCols(self): return self.labels.keys()
     @property
     def autoColWidths(self):
         return _settings.get('bash.autoSizeListColumns', 0)
@@ -1922,12 +1922,18 @@ class UIList(wx.Panel):
     def _gpath(item): return GPath(item)
 
     def PopulateItem(self, itemDex=-1, item=None):
-        """Populate ListCtrl for specified item."""
+        """Populate ListCtrl for specified item. Either item or itemDex must be
+        specified.
+        :param itemDex: the index of the item in the list - must be given if
+        item is None
+        :param item: a bolt.Path or an int (Masters) or a string (People),
+        the key in self.data
+        """
         insert = False
         if item is not None:
             try:
                 itemDex = self.GetIndex(item)
-            except KeyError:
+            except KeyError: # item is not present, so inserting
                 itemDex = self._gList.GetItemCount() # insert at the end
                 insert = True
         else: # no way we're inserting with a None item

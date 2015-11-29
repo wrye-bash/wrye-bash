@@ -773,7 +773,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         'Group'     : lambda self, a: self._get(a)('group', u''),
         'Installer' : lambda self, a: self._get(a)('installer', u''),
         'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
-        'Modified'  : lambda self, a: self.data[a].getPath().mtime,
+        'Modified'  : lambda self, a: self.data[a].mtime,
         'Size'      : lambda self, a: self.data[a].size,
         'Status'    : lambda self, a: self.data[a].getStatus(),
         'Mod Status': lambda self, a: self.data[a].txt_status(),
@@ -790,8 +790,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         ('Rating',     lambda self, path: self._get(path)('rating', u'')),
         ('Group',      lambda self, path: self._get(path)('group', u'')),
         ('Installer',  lambda self, path: self._get(path)('installer', u'')),
-        ('Modified',   lambda self, path: formatDate( # getPath is for ghosts
-                                            self.data[path].getPath().mtime)),
+        ('Modified',   lambda self, path: formatDate(self.data[path].mtime)),
         ('Size',       lambda self, path: self._round(self.data[path].size)),
         ('Author',     lambda self, path: self.data[path].header.author if
                                       self.data[path].header else u'-'),
@@ -1748,7 +1747,7 @@ class SaveList(balt.UIList):
                   'Cell'    : lambda self, a: self.data[a].header.pcLocation,
                   'Status'  : lambda self, a: self.data[a].getStatus(),
                  }
-    #--Labels
+    #--Labels, why checking for header here - is this called on corrupt saves ?
     @staticmethod
     def _headInfo(saveInfo, attr):
         if not saveInfo.header: return u'-'
@@ -2049,12 +2048,10 @@ class InstallersList(balt.Tank):
     _default_sort_col = 'Package'
     _sort_keys = {
         'Package' : None,
-        'Files'   : lambda self, x: len(self.data[x].fileSizeCrcs)
-                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
         'Order'   : lambda self, x: self.data[x].order,
-        'Size'    : lambda self, x: self.data[x].size
-                 if not isinstance(self.data[x], bosh.InstallerMarker) else -1,
         'Modified': lambda self, x: self.data[x].modified,
+        'Size'    : lambda self, x: self.data[x].size,
+        'Files'   : lambda self, x: self.data[x].files,
     }
     #--Special sorters
     def _sortStructure(self, items):
