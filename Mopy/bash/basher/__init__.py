@@ -2186,70 +2186,27 @@ class InstallersList(balt.Tank):
     def OnLabelEdited(self, event):
         """Renamed some installers"""
         if event.IsEditCancelled(): return
-
         newName = event.GetLabel()
-
         selected = self.GetSelected()
-        if isinstance(self.data[selected[0]], bosh.InstallerArchive):
-            InstallerType = bosh.InstallerArchive
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(7z|rar|zip|001))+)$',re.I|re.U)
-        elif isinstance(self.data[selected[0]], bosh.InstallerMarker):
-            InstallerType = bosh.InstallerMarker
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)$',re.I|re.U)
-        elif isinstance(self.data[selected[0]], bosh.InstallerProject):
-            InstallerType = bosh.InstallerProject
-            rePattern = re.compile(ur'^([^\\/]+?)(\d*)$',re.I|re.U)
-        maPattern = rePattern.match(newName)
+        maPattern = self.data[selected[0]].match_valid_name(newName)
         if not maPattern:
-            balt.showError(self,_(u'Bad extension or file root: ')+newName)
+            balt.showError(self, _(u'Bad extension or file root: ') + newName)
             event.Veto()
             return
-        root,numStr = maPattern.groups()[:2]
-        if InstallerType is bosh.InstallerMarker:
-            root = root.strip(u'=')
         #--Rename each installer, keeping the old extension (for archives)
-        numLen = len(numStr)
-        num = int(numStr or 0)
-        installersDir = bosh.dirs['installers']
         with balt.BusyCursor():
-            refreshNeeded = False
-            for archive in selected:
-                installer = self.data[archive]
-                if InstallerType is bosh.InstallerProject:
-                    newName = GPath(root+numStr)
-                else:
-                    newName = GPath(root+numStr+archive.ext)
-                if InstallerType is bosh.InstallerMarker:
-                    newName = GPath(u'==' + newName.s + u'==')
-                if newName != archive:
-                    oldPath = installersDir.join(archive)
-                    newPath = installersDir.join(newName)
-                    if not newPath.exists():
-                        if InstallerType is not bosh.InstallerMarker:
-                            oldPath.moveTo(newPath)
-                        self.data.pop(installer)
-                        installer.archive = newName.s
-                        #--Add the new archive to Bash
-                        self.data[newName] = installer
-                        #--Update the iniInfos & modInfos for 'installer'
-                        if InstallerType is not bosh.InstallerMarker:
-                            mfiles = (x for x in bosh.modInfos.table.getColumn('installer') if bosh.modInfos.table[x]['installer'] == oldPath.stail)
-                            ifiles = (x for x in bosh.iniInfos.table.getColumn('installer') if bosh.iniInfos.table[x]['installer'] == oldPath.stail)
-                            for i in mfiles:
-                                bosh.modInfos.table[i]['installer'] = newPath.stail
-                            for i in ifiles:
-                                bosh.iniInfos.table[i]['installer'] = newPath.stail
-                    if InstallerType is bosh.InstallerMarker:
-                        del self.data[archive]
-                    refreshNeeded = True
-                num += 1
-                numStr = unicode(num)
-                numStr = u'0'*(numLen-len(numStr))+numStr
+            refreshes, ex = [(False, False, False)], None
+            try:
+                self.data.batchRename(selected, maPattern, refreshes)
+            except (OSError, IOError) as ex:
+                pass
+            finally:
+                refreshNeeded, modsRefresh, iniRefresh = [
+                    any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
-            if refreshNeeded:
-                self.data.irefresh(what='I')
-                BashFrame.modList.RefreshUI(refreshSaves=True)
-                if BashFrame.iniList is not None:
+            if refreshNeeded or ex: # refresh the UI in case of an exception
+                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False)
+                if iniRefresh and BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at
                     # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
@@ -3056,7 +3013,9 @@ class ScreensList(balt.UIList):
         if event.IsEditCancelled(): return
         newName = event.GetLabel()
         selected = self.GetSelected()
-        rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I|re.U)
+        rePattern = re.compile(
+            ur'^([^/\\:*?"<>|]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',
+            re.I | re.U)
         maPattern = rePattern.match(newName)
         if not maPattern:
             balt.showError(self,_(u'Bad extension or file root: ')+newName)
@@ -3064,28 +3023,33 @@ class ScreensList(balt.UIList):
             return
         root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
-        numLen = len(numStr)
-        num = int(numStr or 0)
+        num = int(numStr or  0)
+        digits = len(str(num + len(selected)))
+        if numStr: numStr.zfill(digits)
         screensDir = bosh.screensData.dir
         with balt.BusyCursor():
             newselected = []
-            for file in selected:
-                newName = GPath(root+numStr+file.ext)
-                newselected.append(newName)
+            for screen in selected:
+                newName = GPath(root + numStr + screen.ext)
                 newPath = screensDir.join(newName)
-                oldPath = screensDir.join(file)
+                oldPath = screensDir.join(screen)
                 if not newPath.exists():
-                    oldPath.moveTo(newPath)
+                    try:
+                        oldPath.moveTo(newPath)
+                        newselected.append(newName)
+                    except (OSError, IOError):
+                        deprint('Renaming %s to %s failed'
+                                % (oldPath, newPath), traceback=True)
+                        ##: WindowsError:[Error 32]The process cannot access...
+                        if newPath.exists() and oldPath.exists():
+                            newPath.remove()
+                        break
                 num += 1
-                numStr = unicode(num)
-                numStr = u'0'*(numLen-len(numStr))+numStr
+                numStr = unicode(num).zfill(digits)
             bosh.screensData.refresh()
             self.RefreshUI()
             #--Reselected the renamed items
-            for file in newselected:
-                index = self._gList.FindItem(0,file.s)
-                if index != -1:
-                    self.SelectItemAtIndex(index)
+            for screen in newselected: self.SelectItem(screen)
             event.Veto()
 
     def OnKeyUp(self,event):

@@ -5629,6 +5629,7 @@ class Installer(object):
         ur'\.(txt|rtf|htm|html|doc|odt)$', re.I | re.U)
     reList = re.compile(
         u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+    reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
@@ -6444,6 +6445,43 @@ class Installer(object):
         (self.underrides,oldUnderrides) = (underrides,self.underrides)
         return self.status != oldStatus or self.underrides != oldUnderrides
 
+    #--Utility methods --------------------------------------------------------
+    def match_valid_name(self, newName):
+        return self.reValidNamePattern.match(newName)
+
+    @staticmethod
+    def _rename(archive, data, newName):
+        """Rename package or project."""
+        installer = data[archive]
+        if newName != archive:
+            newPath = dirs['installers'].join(newName)
+            if not newPath.exists():
+                oldPath = dirs['installers'].join(archive)
+                try:
+                    oldPath.moveTo(newPath)
+                except (OSError, IOError):
+                    deprint('Renaming %s to %s failed' % (oldPath, newPath),
+                            traceback=True)
+                    ##: WindowsError: [Error 32] The process cannot access...
+                    if newPath.exists() and oldPath.exists():
+                        newPath.remove()
+                    raise
+                installer.archive = newName.s
+                #--Add the new archive to Bash and remove old one
+                data[newName] = installer
+                del data[archive]
+                #--Update the iniInfos & modInfos for 'installer'
+                mfiles = [x for x in modInfos.table.getColumn('installer') if
+                          modInfos.table[x]['installer'] == oldPath.stail]
+                ifiles = [x for x in iniInfos.table.getColumn('installer') if
+                          iniInfos.table[x]['installer'] == oldPath.stail]
+                for i in mfiles:
+                    modInfos.table[i]['installer'] = newPath.stail
+                for i in ifiles:
+                    iniInfos.table[i]['installer'] = newPath.stail
+                return True, bool(mfiles), bool(ifiles)
+        return False, False, False
+
     #--ABSTRACT ---------------------------------------------------------------
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
@@ -6455,6 +6493,13 @@ class Installer(object):
 
     def listSource(self,archive):
         """Lists the folder structure of the installer."""
+        raise AbstractError
+
+    def renameInstaller(self, archive, root, numStr, data):
+        """Rename installer and return a three tuple specifying if a refresh in
+        mods and ini lists is needed.
+        :rtype: tuple
+        """
         raise AbstractError
 
 #------------------------------------------------------------------------------
@@ -6899,6 +6944,17 @@ class InstallerMarker(Installer):
         """Install specified files to Oblivion\Data directory."""
         pass
 
+    def renameInstaller(self, archive, root, numStr, data):
+        installer = data[archive]
+        newName = GPath(
+            u'==' + root.strip(u'=') + numStr + archive.ext + u'==')
+        if newName == archive:
+            return False
+        #--Add the marker to Bash and remove old one
+        data[newName] = installer
+        del data[archive]
+        return True, False, False
+
 #------------------------------------------------------------------------------
 class InstallerArchiveError(bolt.BoltError): pass
 
@@ -6906,6 +6962,8 @@ class InstallerArchiveError(bolt.BoltError): pass
 class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
+    reValidNamePattern = re.compile(
+        ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
 
     #--File Operations --------------------------------------------------------
     def refreshSource(self,archive,progress=None,fullRefresh=False):
@@ -7087,6 +7145,10 @@ class InstallerArchive(Installer):
                     os.sep if isdir else u''))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
+
+    def renameInstaller(self, archive, root, numStr, data):
+        newName = GPath(root + numStr + archive.ext)
+        return self._rename(archive, data, newName)
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -7303,6 +7365,10 @@ class InstallerProject(Installer):
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
+    def renameInstaller(self, archive, root, numStr, data):
+        newName = GPath(root + numStr)
+        return self._rename(archive, data, newName)
+
 #------------------------------------------------------------------------------
 class InstallersData(DataDict):
     """Installers tank data. This is the data source for the InstallersList."""
@@ -7405,6 +7471,17 @@ class InstallersData(DataDict):
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
             self.converterFile.save()
             self.hasChanged = False
+
+    def batchRename(self, selected, maPattern, refreshNeeded):
+        root, numStr = maPattern.groups()[:2]
+        num = int(numStr or  0)
+        digits = len(str(num + len(selected)))
+        if numStr: numStr.zfill(digits)
+        for archive in selected:
+            refreshNeeded.append(
+                self[archive].renameInstaller(archive, root, numStr, self))
+            num += 1
+            numStr = unicode(num).zfill(digits)
 
     #--Dict Functions -----------------------------------------------------------
     def delete(self, items, **kwargs):
