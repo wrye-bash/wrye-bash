@@ -5629,7 +5629,7 @@ class Installer(object):
         ur'\.(txt|rtf|htm|html|doc|odt)$', re.I | re.U)
     reList = re.compile(
         u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
-    reValidNamePattern = re.compile(ur'^([^\\/]+?)(\d*)$', re.I | re.U)
+    reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
@@ -6963,7 +6963,7 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     reValidNamePattern = re.compile(
-        ur'^([^\\/]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
+        ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
 
     #--File Operations --------------------------------------------------------
     def refreshSource(self,archive,progress=None,fullRefresh=False):

@@ -3013,7 +3013,9 @@ class ScreensList(balt.UIList):
         if event.IsEditCancelled(): return
         newName = event.GetLabel()
         selected = self.GetSelected()
-        rePattern = re.compile(ur'^([^\\/]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',re.I|re.U)
+        rePattern = re.compile(
+            ur'^([^/\\:*?"<>|]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',
+            re.I | re.U)
         maPattern = rePattern.match(newName)
         if not maPattern:
             balt.showError(self,_(u'Bad extension or file root: ')+newName)
