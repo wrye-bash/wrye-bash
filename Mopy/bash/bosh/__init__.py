@@ -7463,14 +7463,14 @@ class InstallersData(DataDict):
     def batchRename(self, selected, maPattern):
         refreshNeeded = False
         root, numStr = maPattern.groups()[:2]
-        numLen = len(numStr)
-        num = int(numStr or 0)
+        num = int(numStr or  0)
+        digits = len(str(num + len(selected)))
+        if numStr: numStr.zfill(digits)
         for archive in selected:
             refreshNeeded |= self[archive].renameInstaller(archive, root,
                                                            numStr, self)
             num += 1
-            numStr = unicode(num)
-            numStr = u'0' * (numLen - len(numStr)) + numStr
+            numStr = unicode(num).zfill(digits)
         return refreshNeeded
 
     #--Dict Functions -----------------------------------------------------------

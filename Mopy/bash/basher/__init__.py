@@ -3015,8 +3015,9 @@ class ScreensList(balt.UIList):
             return
         root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
-        numLen = len(numStr)
-        num = int(numStr or 0)
+        num = int(numStr or  0)
+        digits = len(str(num + len(selected)))
+        if numStr: numStr.zfill(digits)
         screensDir = bosh.screensData.dir
         with balt.BusyCursor():
             newselected = []
@@ -3028,8 +3029,7 @@ class ScreensList(balt.UIList):
                 if not newPath.exists():
                     oldPath.moveTo(newPath)
                 num += 1
-                numStr = unicode(num)
-                numStr = u'0'*(numLen-len(numStr))+numStr
+                numStr = unicode(num).zfill(digits)
             bosh.screensData.refresh()
             self.RefreshUI()
             #--Reselected the renamed items
