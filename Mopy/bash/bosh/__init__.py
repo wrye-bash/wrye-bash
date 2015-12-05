@@ -6463,16 +6463,16 @@ class Installer(object):
                 data[newName] = installer
                 del data[archive]
                 #--Update the iniInfos & modInfos for 'installer'
-                mfiles = (x for x in modInfos.table.getColumn('installer') if
-                          modInfos.table[x]['installer'] == oldPath.stail)
-                ifiles = (x for x in iniInfos.table.getColumn('installer') if
-                          iniInfos.table[x]['installer'] == oldPath.stail)
+                mfiles = [x for x in modInfos.table.getColumn('installer') if
+                          modInfos.table[x]['installer'] == oldPath.stail]
+                ifiles = [x for x in iniInfos.table.getColumn('installer') if
+                          iniInfos.table[x]['installer'] == oldPath.stail]
                 for i in mfiles:
                     modInfos.table[i]['installer'] = newPath.stail
                 for i in ifiles:
                     iniInfos.table[i]['installer'] = newPath.stail
-                return True
-        return False
+                return True, bool(mfiles), bool(ifiles)
+        return False, False, False
 
     #--ABSTRACT ---------------------------------------------------------------
     def refreshSource(self,archive,progress=None,fullRefresh=False):
@@ -6488,6 +6488,10 @@ class Installer(object):
         raise AbstractError
 
     def renameInstaller(self, archive, root, numStr, data):
+        """Rename installer and return a three tuple specifying if a refresh in
+        mods and ini lists is needed.
+        :rtype: tuple
+        """
         raise AbstractError
 
 #------------------------------------------------------------------------------
@@ -6941,7 +6945,7 @@ class InstallerMarker(Installer):
         #--Add the marker to Bash and remove old one
         data[newName] = installer
         del data[archive]
-        return True
+        return True, False, False
 
 #------------------------------------------------------------------------------
 class InstallerArchiveError(bolt.BoltError): pass
@@ -7461,17 +7465,17 @@ class InstallersData(DataDict):
             self.hasChanged = False
 
     def batchRename(self, selected, maPattern):
-        refreshNeeded = False
         root, numStr = maPattern.groups()[:2]
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
+        refreshNeeded = [(False, False, False)]
         for archive in selected:
-            refreshNeeded |= self[archive].renameInstaller(archive, root,
-                                                           numStr, self)
+            refreshNeeded.append(
+                self[archive].renameInstaller(archive, root, numStr, self))
             num += 1
             numStr = unicode(num).zfill(digits)
-        return refreshNeeded
+        return tuple(any(grouped) for grouped in zip(*refreshNeeded))
 
     #--Dict Functions -----------------------------------------------------------
     def delete(self, items, **kwargs):

@@ -2195,12 +2195,13 @@ class InstallersList(balt.Tank):
             return
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
-            refreshNeeded = self.data.batchRename(selected, maPattern)
+            refreshNeeded, modsRefresh, iniRefresh = self.data.batchRename(
+                selected, maPattern)
             #--Refresh UI
             if refreshNeeded:
-                self.data.irefresh(what='I')
-                BashFrame.modList.RefreshUI(refreshSaves=True)
-                if BashFrame.iniList is not None:
+                # self.data.irefresh(what='I')
+                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False)
+                if iniRefresh and BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at
                     # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
