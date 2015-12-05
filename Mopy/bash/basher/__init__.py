@@ -3038,6 +3038,9 @@ class ScreensList(balt.UIList):
                     except (OSError, IOError):
                         deprint('Renaming %s to %s failed'
                                 % (oldPath, newPath), traceback=True)
+                        ##: WindowsError:[Error 32]The process cannot access...
+                        if newPath.exists() and oldPath.exists():
+                            newPath.remove()
                         break
                 num += 1
                 numStr = unicode(num).zfill(digits)
