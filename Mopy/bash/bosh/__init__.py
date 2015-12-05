@@ -6457,7 +6457,12 @@ class Installer(object):
             newPath = dirs['installers'].join(newName)
             if not newPath.exists():
                 oldPath = dirs['installers'].join(archive)
-                oldPath.moveTo(newPath)
+                try:
+                    oldPath.moveTo(newPath)
+                except (OSError, IOError):
+                    deprint('Renaming %s to %s failed' % (oldPath, newPath),
+                            traceback=True)
+                    raise
                 installer.archive = newName.s
                 #--Add the new archive to Bash and remove old one
                 data[newName] = installer
@@ -7464,18 +7469,16 @@ class InstallersData(DataDict):
             self.converterFile.save()
             self.hasChanged = False
 
-    def batchRename(self, selected, maPattern):
+    def batchRename(self, selected, maPattern, refreshNeeded):
         root, numStr = maPattern.groups()[:2]
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        refreshNeeded = [(False, False, False)]
         for archive in selected:
             refreshNeeded.append(
                 self[archive].renameInstaller(archive, root, numStr, self))
             num += 1
             numStr = unicode(num).zfill(digits)
-        return tuple(any(grouped) for grouped in zip(*refreshNeeded))
 
     #--Dict Functions -----------------------------------------------------------
     def delete(self, items, **kwargs):

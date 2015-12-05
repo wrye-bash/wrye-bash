@@ -2195,11 +2195,16 @@ class InstallersList(balt.Tank):
             return
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
-            refreshNeeded, modsRefresh, iniRefresh = self.data.batchRename(
-                selected, maPattern)
+            refreshes, ex = [(False, False, False)], None
+            try:
+                self.data.batchRename(selected, maPattern, refreshes)
+            except (OSError, IOError) as ex:
+                pass
+            finally:
+                refreshNeeded, modsRefresh, iniRefresh = [
+                    any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
-            if refreshNeeded:
-                # self.data.irefresh(what='I')
+            if refreshNeeded or ex: # refresh the UI in case of an exception
                 if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False)
                 if iniRefresh and BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at
@@ -3022,22 +3027,24 @@ class ScreensList(balt.UIList):
         screensDir = bosh.screensData.dir
         with balt.BusyCursor():
             newselected = []
-            for file in selected:
-                newName = GPath(root+numStr+file.ext)
-                newselected.append(newName)
+            for screen in selected:
+                newName = GPath(root + numStr + screen.ext)
                 newPath = screensDir.join(newName)
-                oldPath = screensDir.join(file)
+                oldPath = screensDir.join(screen)
                 if not newPath.exists():
-                    oldPath.moveTo(newPath)
+                    try:
+                        oldPath.moveTo(newPath)
+                        newselected.append(newName)
+                    except (OSError, IOError):
+                        deprint('Renaming %s to %s failed'
+                                % (oldPath, newPath), traceback=True)
+                        break
                 num += 1
                 numStr = unicode(num).zfill(digits)
             bosh.screensData.refresh()
             self.RefreshUI()
             #--Reselected the renamed items
-            for file in newselected:
-                index = self._gList.FindItem(0,file.s)
-                if index != -1:
-                    self.SelectItemAtIndex(index)
+            for screen in newselected: self.SelectItem(screen)
             event.Veto()
 
     def OnKeyUp(self,event):

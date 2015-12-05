@@ -2129,7 +2129,8 @@ class UIList(wx.Panel):
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
         if deselectOthers: self.ClearSelected()
-        else: self.SelectItemAtIndex(dex, select=False)
+        else: #we must deselect the item and then reselect for callbacks to run
+            self.SelectItemAtIndex(dex, select=False)
         self.SelectItemAtIndex(dex)
 
     def ClearSelected(self):
