@@ -5872,11 +5872,10 @@ class Installer(object):
             self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
         self.refreshDataSizeCrc()
 
-    def __copy__(self,iClass=None):
-        """Create a copy of self -- works for subclasses too (assuming subclasses
-        don't add new data members). iClass argument is to support Installers.updateDictFile"""
-        iClass = iClass if iClass else self.__class__
-        clone = iClass(GPath(self.archive))
+    def __copy__(self):
+        """Create a copy of self -- works for subclasses too (assuming
+        subclasses don't add new data members)."""
+        clone = self.__class__(GPath(self.archive))
         copier = copy.copy
         getter = object.__getattribute__
         setter = object.__setattr__
@@ -7390,19 +7389,8 @@ class InstallersData(DataDict):
         self.data = data.get('installers', {})
         self.data_sizeCrcDate = data.get('sizeCrcDate', {})
         self.crc_installer = data.get('crc_installer', {})
-        self.updateDictFile()
         self.loaded = True
         return True
-
-    def updateDictFile(self): # CRUFT pickle
-        """Updates self.data to use new classes."""
-        if self.dictFile.vdata.get('version',0): return
-        #--Update to version 1
-        for name in self.data.keys():
-            installer = self.data[name]
-            if isinstance(installer,Installer):
-                self.data[name] = installer.__copy__(InstallerArchive)
-        self.dictFile.vdata['version'] = 1
 
     def save(self):
         """Saves to pickle file."""
@@ -7410,6 +7398,7 @@ class InstallersData(DataDict):
             self.dictFile.data['installers'] = self.data
             self.dictFile.data['sizeCrcDate'] = self.data_sizeCrcDate
             self.dictFile.data['crc_installer'] = self.crc_installer
+            self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converterFile.data['bcfCRC_converter'] = self.bcfCRC_converter
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
