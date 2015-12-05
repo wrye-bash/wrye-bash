@@ -5866,10 +5866,6 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        if hasattr(self,'fileSizeCrcs'): # CRUFT PICKLE ?
-            # Older pickle files didn't store filenames in unicode,
-            # convert them here.
-            self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
         self.refreshDataSizeCrc()
 
     def __copy__(self):
