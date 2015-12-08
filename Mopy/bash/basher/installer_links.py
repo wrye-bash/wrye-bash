@@ -567,7 +567,7 @@ class Installer_Install(_InstallerLink):
                     pass
                 except StateError as e:
                     self._showError(u'%s'%e)
-                else:
+                else: # no error occured
                     if tweaks:
                         msg = _(u'The following INI Tweaks were created, '
                                 u'because the existing INI was different than '

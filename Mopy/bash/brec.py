@@ -36,7 +36,7 @@ import bolt
 from bolt import decode, encode, sio, GPath
 from bass import null1
 
-# Util Functions ---------------------------------------------------------------
+# Util Functions --------------------------------------------------------------
 #--Type coercion
 def _coerce(value, newtype, base=None, AllowNone=False):
     try:
@@ -99,13 +99,13 @@ def getFormIndices(fid):
     """Returns tuple of modIndex and ObjectIndex of fid."""
     return int(fid >> 24),int(fid & 0x00FFFFFFL)
 
-# Mod I/O Errors ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod I/O Errors --------------------------------------------------------------
+#------------------------------------------------------------------------------
 class ModError(bolt.FileError):
     """Mod Error: File is corrupted."""
     pass
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class ModReadError(ModError):
     """TES4 Error: Attempt to read outside of buffer."""
     def __init__(self,inName,recType,tryPos,maxPos):
@@ -120,7 +120,7 @@ class ModReadError(ModError):
                        % (recType,tryPos,maxPos))
         ModError.__init__(self,inName.s,message)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class ModSizeError(ModError):
     """TES4 Error: Record/subrecord has wrong size."""
     def __init__(self,inName,recType,readSize,maxSize,exactSize=True):
@@ -134,15 +134,15 @@ class ModSizeError(ModError):
             messageForm = u'%s: Expected size <= %d, but got: %d '
         ModError.__init__(self,inName.s,messageForm % (recType,readSize,maxSize))
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class ModUnknownSubrecord(ModError):
     """TES4 Error: Unknown subrecord."""
     def __init__(self,inName,subType,recType):
         ModError.__init__(self,inName,u'Extraneous subrecord (%s) in %s record.'
                           % (subType,recType))
 
-# Mod I/O ----------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod I/O ---------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class BaseRecordHeader(object):
     """Virtual base class that all game types must implement.
     The minimal implementations must have the following attributes:
@@ -331,7 +331,7 @@ class ModReader:
         else:
             return None
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class ModWriter:
     """Wrapper around a TES4 output stream.  Adds utility functions."""
     def __init__(self,out):
@@ -404,12 +404,12 @@ class ModWriter:
         else:
             self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod Record Elements ---------------------------------------------------------
+#------------------------------------------------------------------------------
 # Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelObject(object):
     """An empty class used by group and structure elements for data storage."""
     def __eq__(self,other):
@@ -1114,7 +1114,7 @@ class MelTuple(MelBase):
         #print self.subType,self.format,self.attr,record.__getattribute__(self.attr)
         out.packSub(self.subType,self.format,*record.__getattribute__(self.attr))
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #-- Common/Special Elements
 class MelFull0(MelString):
     """Represents the main full. Use this only when there are additional FULLs
@@ -1146,7 +1146,7 @@ class MelModel(MelGroup):
         for element in self.elements[:2]: element.debug(on)
         return self
 
-#-----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):
     """Represents an optional structure, where if values are null, is skipped."""
 
@@ -1162,7 +1162,7 @@ class MelOptStruct(MelStruct):
                 MelStruct.dumpData(self,record,out)
                 break
 
-#-----------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelOptStructA(MelStructA):
     """Represents an optional array of repeating structured elements,
     where if the values are null, is skipped."""
@@ -1179,8 +1179,8 @@ class MelOptStructA(MelStructA):
                 MelStruct.dumpData(self,record,out)
                 break
 
-# Mod Element Sets -------------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod Element Sets ------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MelSet:
     """Set of mod record elments."""
 
@@ -1302,8 +1302,8 @@ class MelSet:
         buff.close()
         return ret
 
-# Mod Records ------------------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod Records -----------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreSubrecord:
     """Generic Subrecord."""
     def __init__(self,type,size,ins=None):
@@ -1616,10 +1616,10 @@ class MelRecord(MreRecord):
         """Updates set of master names according to masters actually used."""
         self.__class__.melSet.updateMasters(self,masters)
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #-- Common Records
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     #--Masters array element
@@ -1647,7 +1647,7 @@ class MreHeaderBase(MelRecord):
 
     __slots__ = MelRecord.__slots__
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreGlob(MelRecord):
     """Global record.  Rather stupidly all values, despite their designation
        (short,long,float), are stored as floats -- which means that very large
@@ -1660,7 +1660,7 @@ class MreGlob(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreGmstBase(MelRecord):
     """Game Setting record.  Base class, each game should derive from this class
        and set class member 'Master' to the file name of the game's main master
@@ -1708,7 +1708,7 @@ class MreGmstBase(MelRecord):
                 raise
         return GPath(cls.Master+u'.esm'),cls.Ids[self.eid]
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):
     """Base type for leveled item/creature/npc/spells.
        it requires the base class to use the following:

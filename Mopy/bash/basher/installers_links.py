@@ -244,7 +244,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
     def __init__(self, fullRefresh=False):
         super(Installers_Refresh, self).__init__()
         self.fullRefresh = fullRefresh
-        self.text = (_(u'Refresh Data'),_(u'Full Refresh'))[self.fullRefresh]
+        self.text = _(u'Full Refresh') if fullRefresh else _(u'Refresh Data')
         self.help = _(
             u"Perform a full refresh of all data files, recalculating all "
             u"CRCs.  This can take 5-15 minutes.") if self.fullRefresh else _(
@@ -275,14 +275,13 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
 
     def Execute(self):
-        if self._askYes(self.fullMessage):
-            try:
-                with balt.Progress(_(u"Cleaning Data Files..."),
-                                   u'\n' + u' ' * 65) as progress:
-                    self.idata.clean(progress=progress)
-            finally:
-                self.idata.irefresh(what='NS')
-                self.iPanel.RefreshUIMods(_refreshData=True)
+        if not self._askYes(self.fullMessage): return
+        try:
+            with balt.Progress(_(u"Cleaning Data Files..."),u'\n' + u' ' * 65):
+                self.idata.clean_data_dir()
+        finally:
+            self.idata.irefresh(what='NS')
+            self.iPanel.RefreshUIMods(_refreshData=True)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

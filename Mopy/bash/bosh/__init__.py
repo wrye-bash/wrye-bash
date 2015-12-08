@@ -4274,15 +4274,14 @@ class ModInfos(FileInfos):
         self.mergeable.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms
-        for name in self.data:
-            modInfo = self[name]
-            size,canMerge = name_mergeInfo.get(name,(None,None))
+        for mpath, modInfo in self.iteritems():
+            size, canMerge = name_mergeInfo.get(mpath, (None, None))
             if size == modInfo.size:
-                if canMerge: self.mergeable.add(name)
-            elif reEsmExt.search(name.s):
-                name_mergeInfo[name] = (modInfo.size,False)
+                if canMerge: self.mergeable.add(mpath)
+            elif reEsmExt.search(mpath.s):
+                name_mergeInfo[mpath] = (modInfo.size, False)
             else:
-                newMods.append(name)
+                newMods.append(mpath)
         return newMods
 
     def rescanMergeable(self,names,progress,doCBash=None):
@@ -7497,18 +7496,17 @@ class InstallersData(DataDict):
             else: toDeleteAppend(dirJoin(item))
         #--Delete
         try:
-            for m in markers: del self.data[m]
+            for m in markers: del self[m]
             _delete(toDelete, **kwargs)
         finally:
             refresh = bool(markers)
             for item in toDelete:
                 if not item.exists():
-                    del self.data[item.tail]
+                    del self[item.tail]
                     refresh = True
             if refresh: self.delete_Refresh(toDelete) # will "set changed" too
 
-    def delete_Refresh(self, deleted): self.irefresh(what='ION') # unused as
-    # Installers follow the _shellUI path and refresh in InstallersData.delete
+    def delete_Refresh(self, deleted): self.irefresh(what='ION')
 
     def copy(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -7578,9 +7576,9 @@ class InstallersData(DataDict):
             changed |= self.applyEmbeddedBCFs(progress=progress)
         return changed
 
-    def extractOmodsNeeded(self):
+    def extractOmodsNeeded(self, installers_paths=()):
         """Returns true if .omod files are present, requiring extraction."""
-        for path in dirs['installers'].list():
+        for path in installers_paths:
             if path.cext == u'.omod' and path not in self.failedOmods:
                 return True
         return False
@@ -7641,14 +7639,14 @@ class InstallersData(DataDict):
         self.irefresh(what='I')
         return True
 
-    def refreshInstallersNeeded(self):
+    def refreshInstallersNeeded(self, installers_paths=()):
         """Returns true if refreshInstallers is necessary. (Point is to skip use
         of progress dialog when possible."""
         installers = set([])
         installersJoin = dirs['installers'].join
         dataGet = self.data.get
         installersAdd = installers.add
-        for item in dirs['installers'].list():
+        for item in installers_paths:
             apath = installersJoin(item)
             if item.s.lower().startswith((u'bash',u'--')): continue
             if settings['bash.installers.autoRefreshProjects']:
@@ -8089,7 +8087,6 @@ class InstallersData(DataDict):
         """Uninstall selected archives."""
         if unArchives == 'ALL': unArchives = self.data
         unArchives = set(unArchives)
-        data = self.data
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -8102,7 +8099,7 @@ class InstallersData(DataDict):
         restores = {}
         #--March through archives in reverse order...
         getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
                                          reverse=True):
             #--Uninstall archive?
             if archive in unArchives:
@@ -8120,7 +8117,7 @@ class InstallersData(DataDict):
             self._removeFiles(removes, progress)
             #--De-activate
             for archive in unArchives:
-                data[archive].isActive = False
+                self[archive].isActive = False
             #--Restore files
             if settings['bash.installers.autoAnneal']:
                 self._restoreFiles(restores, progress)
@@ -8148,12 +8145,11 @@ class InstallersData(DataDict):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        data = self.data
-        anPackages = set(anPackages or data)
+        anPackages = set(anPackages or self.keys())
         #--Get remove/refresh files from anPackages
         removes = set()
         for package in anPackages:
-            installer = data[package]
+            installer = self[package]
             removes |= installer.underrides
             if installer.isActive:
                 removes |= installer.missingFiles
@@ -8162,7 +8158,7 @@ class InstallersData(DataDict):
         #--March through packages in reverse order...
         restores = {}
         getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(data.iteritems(), key=getArchiveOrder,
+        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
                                          reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
@@ -8176,7 +8172,7 @@ class InstallersData(DataDict):
         finally:
             self.irefresh(what='NS')
 
-    def clean(self, progress):  ##: add error handling/refresh remove ghosts
+    def clean_data_dir(self):  ##: add error handling/refresh remove ghosts
         data = self.data
         getArchiveOrder = lambda x: data[x].order
         installed = []
@@ -8352,8 +8348,13 @@ class InstallersData(DataDict):
             return bolt.winNewLines(log.out.getvalue())
 
     def filterInstallables(self, installerKeys):
+        """Return a sublist of installerKeys that can be installed -
+        installerKeys must be in data or a KeyError is raised.
+        :param installerKeys: an iterable of bolt.Path
+        :return: a list of installable packages/projects bolt.Path
+        """
         def installable(x): # type: 0: unset/invalid; 1: simple; 2: complex
-            return x in self and self[x].type in (1, 2) and isinstance(self[x],
+            return self[x].type in (1, 2) and isinstance(self[x],
                 (InstallerArchive, InstallerProject))
         return filter(installable, installerKeys)
 

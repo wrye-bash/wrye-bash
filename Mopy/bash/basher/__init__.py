@@ -2153,8 +2153,7 @@ class InstallersList(balt.Tank):
             editbox.SetSelection(2,to)
         #--Archives, change the selection to not include the extension
         elif installer_type is bosh.InstallerArchive:
-            to = len(GPath(event.GetLabel()).sbody)
-            editbox.SetSelection(0,to)
+            super(InstallersList, self).OnBeginEditLabel(event)
 
     def OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
@@ -2386,8 +2385,7 @@ class InstallersList(balt.Tank):
         if isinstance(self.data[item],bosh.InstallerMarker):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
-            sorted_ = self._SortItems(col='Order', reverse=False,
-                                     sortSpecial=False, items=self.data.keys())
+            sorted_ = self._SortItems(col='Order', sortSpecial=False)
             item = self.data[item]
             for nextItem in sorted_[item.order+1:]:
                 installer = self.data[nextItem]
@@ -2585,13 +2583,15 @@ class InstallersPanel(SashTankPanel):
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
-        if self.frameActivated and data.extractOmodsNeeded():
+        installers_paths = bosh.dirs[
+            'installers'].list() if self.frameActivated else ()
+        if self.frameActivated and data.extractOmodsNeeded(installers_paths):
             self.refreshing = True
             try:
                 self.__extractOmods(data)
             finally:
                 self.refreshing = False
-        if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded()):
+        if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
             self.refreshing = True
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
@@ -2621,20 +2621,20 @@ class InstallersPanel(SashTankPanel):
         changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
-            data = self.data.data_sizeCrcDate
+            data_sizeCrcDate = self.data.data_sizeCrcDate
             refresh = False
-            for file in changed:
+            for apath in changed:
                 # the Game/Data dir - will give correct relative path for both
                 # Ini tweaks and mods - those are keyed in data by rel path...
-                if file.cs.startswith(bosh.dirs['mods'].cs):
-                    path = file.relpath(bosh.dirs['mods'])
+                if apath.cs.startswith(bosh.dirs['mods'].cs):
+                    path = apath.relpath(bosh.dirs['mods'])
                 else:
-                    path = file
-                if file.exists():
-                    data[path] = (file.size,file.crc,file.mtime)
+                    path = apath
+                if apath.exists():
+                    data_sizeCrcDate[path] = (apath.size,apath.crc,apath.mtime)
                     refresh = True
                 else:
-                    refresh = bool(data.pop(path, None))
+                    refresh = bool(data_sizeCrcDate.pop(path, None))
             if refresh:
                 self.data.refreshInstallersStatus()
                 self.RefreshUIMods()
@@ -3906,8 +3906,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refreshBashTags()
         #--Check plugins.txt and mods directory...
-        modInfosChanged = not self.booting and bosh.modInfos.refresh()
-        if modInfosChanged:
+        if not self.booting and bosh.modInfos.refresh():
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:

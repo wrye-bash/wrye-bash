@@ -498,7 +498,7 @@ def GPathPurge():
     for key in _gpaths.keys():
         # Using .keys() allows use to modify the dictionary while iterating
         if sys.getrefcount(_gpaths[key]) == 2:
-            # 1 for the reference in the _gpath dictionary,
+            # 1 for the reference in the _gpaths dictionary,
             # 1 for the temp reference passed to sys.getrefcount
             # meanin the object is not reference anywhere else
             del _gpaths[key]
