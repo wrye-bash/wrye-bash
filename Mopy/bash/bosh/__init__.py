@@ -3743,13 +3743,9 @@ class FileInfos(DataDict):
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
+        # the type of the table keys is always bolt.Path
         self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
                                            self.bashDir.join(u'Table.pkl')))
-        #--Update table keys... # CRUFT (178)
-        tableData = self.table.data
-        for key in self.table.data.keys():
-            if not isinstance(key,bolt.Path):
-                del tableData[key]
 
     def __init__(self, dir_, factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
