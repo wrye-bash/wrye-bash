@@ -330,7 +330,8 @@ class PatchDialog(balt.Dialog):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
         exportConfig(patchName=self.patchInfo.name, config=config,
-                     isCBash=self.doCBash, win=self.parent)
+                     isCBash=self.doCBash, win=self.parent,
+                     outDir=bosh.dirs['patches'])
 
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
@@ -340,7 +341,7 @@ class PatchDialog(balt.Dialog):
         #--File dialog
         textPath = balt.askOpen(self.parent,_(u'Import Bashed Patch configuration from:'),textDir,patchName, u'*.dat',mustExist=True)
         if not textPath: return
-        table = bolt.Table(bosh.PickleDict(textPath))
+        table = bolt.Table(bolt.PickleDict(textPath))
         #try the current Bashed Patch mode.
         patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
         if not patchConfigs: #try the old format:

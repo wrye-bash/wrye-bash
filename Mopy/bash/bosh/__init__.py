@@ -126,47 +126,6 @@ def listArchiveContents(fileName):
     ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
     return ins
 
-# Util Classes ----------------------------------------------------------------
-class PickleDict(bolt.PickleDict):
-    """Dictionary saved in a pickle file."""
-    def __init__(self,path,readOnly=False):
-        bolt.PickleDict.__init__(self,path,readOnly)
-
-    def exists(self):
-        """See if pickle file exists."""
-        return bolt.PickleDict.exists(self)
-
-    def load(self):
-        """Loads vdata and data from file or backup file.
-
-        If file does not exist, or is corrupt, then reads from backup file. If
-        backup file also does not exist or is corrupt, then no data is read. If
-        no data is read, then self.data is cleared.
-
-        If file exists and has a vdata header, then that will be recorded in
-        self.vdata. Otherwise, self.vdata will be empty.
-
-        Returns:
-          0: No data read (files don't exist and/or are corrupt)
-          1: Data read from file
-          2: Data read from backup file
-        """
-        result = bolt.PickleDict.load(self)
-        #--Update paths
-        # def textDump(path):
-        #     deprint(u'Text dump:',path)
-        #     with path.open('w',encoding='utf-8-sig') as out:
-        #         for key,value in self.data.iteritems():
-        #             out.write(u'= %s:\n  %s\n' % (key,value))
-        #textDump(self.path+'.old.txt')
-        #textDump(self.path+'.new.txt')
-        #--Done
-        return result
-
-    def save(self):
-        """Save to pickle file."""
-        return bolt.PickleDict.save(self)
-
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
@@ -3732,7 +3691,8 @@ class FileInfos(DataDict):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
         # the type of the table keys is always bolt.Path
-        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat')))
+        self.table = bolt.Table(
+            bolt.PickleDict(self.bashDir.join(u'Table.dat')))
 
     def __init__(self, dir_, factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
@@ -4845,7 +4805,7 @@ class SaveInfos(FileInfos):
         self._setLocalSaveFromIni()
         FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
         # Save Profiles database
-        self.profiles = bolt.Table(PickleDict(
+        self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
 
     def getBashDir(self):
@@ -5428,7 +5388,7 @@ class PickleTankData:
     """Mix in class for tank datas built on PickleDicts."""
     def __init__(self,path):
         """Initialize. Definite data from pickledict."""
-        self.dictFile = PickleDict(path)
+        self.dictFile = bolt.PickleDict(path)
         self.data = self.dictFile.data
         self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
@@ -7304,11 +7264,11 @@ class InstallersData(DataDict):
         self.dir = dirs['installers']
         self.bashDir = dirs['bainData']
         #--Persistent data
-        self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
+        self.dictFile = bolt.PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
         self.crc_installer = {}
-        self.converterFile = PickleDict(self.bashDir.join(u'Converters.dat'))
+        self.converterFile = bolt.PickleDict(self.bashDir.join(u'Converters.dat'))
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
@@ -10231,7 +10191,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            PickleDict(dirs['saveBase'].join(dat_file), readOnly))
+            bolt.PickleDict(dirs['saveBase'].join(dat_file), readOnly))
 
     _dat = dirs['saveBase'].join(_dat)
     _bak = dirs['saveBase'].join(_bak)
