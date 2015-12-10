@@ -44,8 +44,6 @@ import re
 import string
 import struct
 import sys
-from types import NoneType, FloatType, IntType, LongType, BooleanType, \
-    StringType, UnicodeType, ListType, DictType, TupleType
 from operator import attrgetter
 import subprocess
 from subprocess import Popen, PIPE
@@ -130,7 +128,7 @@ def listArchiveContents(fileName):
 
 # Util Classes ----------------------------------------------------------------
 class PickleDict(bolt.PickleDict):
-    """Dictionary saved in a pickle file. Supports older bash pickle file formats."""
+    """Dictionary saved in a pickle file."""
     def __init__(self,path,oldPath=None,readOnly=False):
         bolt.PickleDict.__init__(self,path,readOnly)
         self.oldPath = oldPath or GPath(u'')
@@ -169,59 +167,9 @@ class PickleDict(bolt.PickleDict):
         #         for key,value in self.data.iteritems():
         #             out.write(u'= %s:\n  %s\n' % (key,value))
         #textDump(self.path+'.old.txt')
-        if not self.vdata.get('boltPaths',False):
-            self.updatePaths()
-            self.vdata['boltPaths'] = True
         #textDump(self.path+'.new.txt')
         #--Done
         return result
-
-    def updatePaths(self): # CRUFT ?
-        """Updates paths from bosh.Path to bolt.Path."""
-        import wx
-        basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
-                      StringType, UnicodeType}
-        SetType = type(set())
-        done = {}
-        changed = set()
-        def update(x):
-            xid = id(x)
-            xtype = type(x)
-            if xid in done:
-                return done[xid]
-            elif xtype in basicTypes:
-                return x
-            elif xtype == ListType:
-                xnew = [update(value) for value in x]
-                x[:] = xnew
-                xnew = x
-            elif xtype == SetType:
-                xnew = set(update(value) for value in x)
-                xnew.discard(None) #--In case it got added in else clause.
-                x.clear()
-                x.update(xnew)
-                xnew = x
-            elif xtype == DictType:
-                xnew = dict((update(key),update(value)) for key,value in x.iteritems())
-                xnew.pop(None,None) #--In case it got added in else clause.
-                x.clear()
-                x.update(xnew)
-                xnew = x
-            elif xtype == TupleType:
-                xnew = tuple(update(value) for value in x)
-            elif isinstance(x,wx.Point): #--Replace old wx.Points w nice python tuples.
-                xnew = x.Get()
-            elif isinstance(x,Path):
-             # TODO(ut) since I imported Path from bolt (was from cint) I get
-             # unresolved attribute for Path._path (in x._path below) - should
-             # be older Path class - CRUFT pickled ?
-                changed.add(x._path)
-                xnew = GPath(x._path)
-            else:
-                #raise StateError('Unknown type: %s %s' % (xtype,x))
-                xnew = None #--Hopefully this will work for few old incompatibilities.
-            return done.setdefault(xid,xnew)
-        update(self.data)
 
     def save(self):
         """Save to pickle file."""
@@ -3789,6 +3737,7 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
+
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()

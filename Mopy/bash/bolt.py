@@ -1511,10 +1511,11 @@ class PickleDict:
         """Save to pickle file.
 
         Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order.
+        dictionaries, in this order. Current version string is VDATA2.
         """
         if self.readOnly: return False
         #--Pickle it
+        self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
                 cPickle.dump(data,out,-1)
