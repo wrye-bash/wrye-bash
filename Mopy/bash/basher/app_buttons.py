@@ -736,24 +736,3 @@ class App_ModChecker(StatusBar_Button):
             ModChecker().Show()
         #balt.ensureDisplayed(modChecker)
         Link.Frame.modChecker.Raise()
-
-#------------------------------------------------------------------------------
-class App_Tes4Gecko(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
-
-#------------------------------------------------------------------------------
-class App_Tes5Gecko(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
-
-#------------------------------------------------------------------------------
-class App_OblivionBookCreator(App_Button): # CRUFT
-    """Left in for unpickling compatibility reasons."""
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__class__ = App_Button
