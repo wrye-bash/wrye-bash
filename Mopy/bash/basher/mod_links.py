@@ -1107,7 +1107,8 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         config = bosh.modInfos.table.getItem(self.selected[0],
                                              'bash.patch.configs', {})
         exportConfig(patchName=self.selected[0].s, config=config,
-                     isCBash=configIsCBash(config), win=self.window)
+                     isCBash=configIsCBash(config), win=self.window,
+                     outDir=bosh.dirs['patches'])
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2687,17 +2688,6 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
                            + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
             self._showLog(buff.getvalue())
             buff.close()
-
-#------------------------------------------------------------------------------
-class Mod_MarkLevelers(EnabledLink): # CRUFT
-    """Marks (tags) selected mods as Delevs and/or Relevs according to Leveled Lists.csv."""
-    text = _(u'Mark Levelers...')
-
-    def _enable(self): return bool(self.selected)
-
-    def Execute(self):
-        message = _(u'Obsolete. Mods are now automatically tagged when possible.')
-        self._showInfo(message, title=_(u'Mark Levelers'))
 
 #------------------------------------------------------------------------------
 from ..bolt import deprint

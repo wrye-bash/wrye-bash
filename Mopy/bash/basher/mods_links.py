@@ -317,14 +317,3 @@ class Mods_LockTimes(CheckLink):
     def _check(self): return bosh.modInfos.lockLO
 
     def Execute(self): bosh.modInfos.lockLOSet(not bosh.modInfos.lockLO)
-
-# CRUFT -----------------------------------------------------------------------
-class Mods_ReplacersData: # CRUFT
-    """Empty version of a now removed class. Here for compatibility with
-    older settings files."""
-    pass
-
-class Mod_MergedLists_Data: # CRUFT
-    """Empty version of a now removed class. Here for compatibility with
-    older settings files."""
-    pass

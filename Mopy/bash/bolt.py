@@ -171,6 +171,8 @@ def unformatDate(date, formatStr):
         else:
             raise
 
+def timestamp(): return unicode(int(time.time())) # hasty
+
 # Localization ----------------------------------------------------------------
 # noinspection PyDefaultArgument
 def _findAllBashModules(files=[], bashPath=None, cwd=None,
@@ -1452,6 +1454,13 @@ class PickleDict:
     def exists(self):
         return self.path.exists() or self.backup.exists()
 
+    class Mold(Exception):
+        def __init__(self, moldedFile):
+            msg = (u'Your settings in %s come from an ancient Bash version. '
+                   u'Please load them in 306 so they are converted '
+                   u'to the newer format' % moldedFile)
+            super(PickleDict.Mold, self).__init__(msg)
+
     def load(self):
         """Loads vdata and data from file or backup file.
 
@@ -1476,31 +1485,16 @@ class PickleDict:
                         try:
                             firstPickle = cPickle.load(ins)
                         except ValueError:
-                            os.remove(path)
+                            cor = path.join(u'.', timestamp(), u'.corrupted')
+                            deprint(u'unable to load %s (moved to %s)' % (
+                                path, cor), traceback=True)
+                            path.moveTo(cor)
                             continue # file corrupt - try next file
                         if firstPickle == 'VDATA2':
                             self.vdata.update(cPickle.load(ins))
                             self.data.update(cPickle.load(ins))
-                        elif firstPickle == 'VDATA':
-                            # translate data types to new hierarchy
-                            class _Translator:
-                                def __init__(self, fileToWrap):
-                                    self._file = fileToWrap
-                                def read(self, numBytes):
-                                    return self._translate(self._file.read(numBytes))
-                                def readline(self):
-                                    return self._translate(self._file.readline())
-                                def _translate(self, s):
-                                    return re.sub(u'^(bolt|bosh)$', r'bash.\1', s,flags=re.U)
-                            translator = _Translator(ins)
-                            try:
-                                self.vdata.update(cPickle.load(translator))
-                                self.data.update(cPickle.load(translator))
-                            except:
-                                deprint(u'unable to unpickle data', traceback=True)
-                                raise
-                        else: # no version string or vdata
-                            self.data.update(firstPickle)
+                        else:
+                            raise PickleDict.Mold(path)
                     return 1 + (path == self.backup)
                 except (EOFError, ValueError):
                     pass
@@ -1511,10 +1505,11 @@ class PickleDict:
         """Save to pickle file.
 
         Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order.
+        dictionaries, in this order. Current version string is VDATA2.
         """
         if self.readOnly: return False
         #--Pickle it
+        self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
         with self.path.temp.open('wb') as out:
             for data in ('VDATA2',self.vdata,self.data):
                 cPickle.dump(data,out,-1)

@@ -44,8 +44,6 @@ import re
 import string
 import struct
 import sys
-from types import NoneType, FloatType, IntType, LongType, BooleanType, \
-    StringType, UnicodeType, ListType, DictType, TupleType
 from operator import attrgetter
 import subprocess
 from subprocess import Popen, PIPE
@@ -127,109 +125,6 @@ def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
     ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
     return ins
-
-# Util Classes ----------------------------------------------------------------
-class PickleDict(bolt.PickleDict):
-    """Dictionary saved in a pickle file. Supports older bash pickle file formats."""
-    def __init__(self,path,oldPath=None,readOnly=False):
-        bolt.PickleDict.__init__(self,path,readOnly)
-        self.oldPath = oldPath or GPath(u'')
-
-    def exists(self):
-        """See if pickle file exists."""
-        return bolt.PickleDict.exists(self) or self.oldPath.exists()
-
-    def load(self):
-        """Loads vdata and data from file or backup file.
-
-        If file does not exist, or is corrupt, then reads from backup file. If
-        backup file also does not exist or is corrupt, then no data is read. If
-        no data is read, then self.data is cleared.
-
-        If file exists and has a vdata header, then that will be recorded in
-        self.vdata. Otherwise, self.vdata will be empty.
-
-        Returns:
-          0: No data read (files don't exist and/or are corrupt)
-          1: Data read from file
-          2: Data read from backup file
-        """
-        result = bolt.PickleDict.load(self)
-        if not result and self.oldPath.exists():
-            try:
-                with self.oldPath.open('r') as ins:
-                    self.data.update(cPickle.load(ins))
-                result = 1
-            except EOFError:
-                pass
-        #--Update paths
-        # def textDump(path):
-        #     deprint(u'Text dump:',path)
-        #     with path.open('w',encoding='utf-8-sig') as out:
-        #         for key,value in self.data.iteritems():
-        #             out.write(u'= %s:\n  %s\n' % (key,value))
-        #textDump(self.path+'.old.txt')
-        if not self.vdata.get('boltPaths',False):
-            self.updatePaths()
-            self.vdata['boltPaths'] = True
-        #textDump(self.path+'.new.txt')
-        #--Done
-        return result
-
-    def updatePaths(self): # CRUFT ?
-        """Updates paths from bosh.Path to bolt.Path."""
-        import wx
-        basicTypes = {NoneType, FloatType, IntType, LongType, BooleanType,
-                      StringType, UnicodeType}
-        SetType = type(set())
-        done = {}
-        changed = set()
-        def update(x):
-            xid = id(x)
-            xtype = type(x)
-            if xid in done:
-                return done[xid]
-            elif xtype in basicTypes:
-                return x
-            elif xtype == ListType:
-                xnew = [update(value) for value in x]
-                x[:] = xnew
-                xnew = x
-            elif xtype == SetType:
-                xnew = set(update(value) for value in x)
-                xnew.discard(None) #--In case it got added in else clause.
-                x.clear()
-                x.update(xnew)
-                xnew = x
-            elif xtype == DictType:
-                xnew = dict((update(key),update(value)) for key,value in x.iteritems())
-                xnew.pop(None,None) #--In case it got added in else clause.
-                x.clear()
-                x.update(xnew)
-                xnew = x
-            elif xtype == TupleType:
-                xnew = tuple(update(value) for value in x)
-            elif isinstance(x,wx.Point): #--Replace old wx.Points w nice python tuples.
-                xnew = x.Get()
-            elif isinstance(x,Path):
-             # TODO(ut) since I imported Path from bolt (was from cint) I get
-             # unresolved attribute for Path._path (in x._path below) - should
-             # be older Path class - CRUFT pickled ?
-                changed.add(x._path)
-                xnew = GPath(x._path)
-            else:
-                #raise StateError('Unknown type: %s %s' % (xtype,x))
-                xnew = None #--Hopefully this will work for few old incompatibilities.
-            return done.setdefault(xid,xnew)
-        update(self.data)
-
-    def save(self):
-        """Save to pickle file."""
-        saved = bolt.PickleDict.save(self)
-        if saved:
-            self.oldPath.remove()
-            self.oldPath.backup.remove()
-        return saved
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -3789,18 +3684,15 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
+
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
         self.bashDir = self.getBashDir() # should be a property
-        self.table = bolt.Table(PickleDict(self.bashDir.join(u'Table.dat'),
-                                           self.bashDir.join(u'Table.pkl')))
-        #--Update table keys... # CRUFT (178)
-        tableData = self.table.data
-        for key in self.table.data.keys():
-            if not isinstance(key,bolt.Path):
-                del tableData[key]
+        # the type of the table keys is always bolt.Path
+        self.table = bolt.Table(
+            bolt.PickleDict(self.bashDir.join(u'Table.dat')))
 
     def __init__(self, dir_, factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
@@ -4913,9 +4805,8 @@ class SaveInfos(FileInfos):
         self._setLocalSaveFromIni()
         FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
         # Save Profiles database
-        self.profiles = bolt.Table(PickleDict(
-            dirs['saveBase'].join(u'BashProfiles.dat'),
-            dirs['userApp'].join(u'Profiles.pkl')))
+        self.profiles = bolt.Table(bolt.PickleDict(
+            dirs['saveBase'].join(u'BashProfiles.dat')))
 
     def getBashDir(self):
         """Return the Bash save settings directory, creating it if it does
@@ -5497,7 +5388,7 @@ class PickleTankData:
     """Mix in class for tank datas built on PickleDicts."""
     def __init__(self,path):
         """Initialize. Definite data from pickledict."""
-        self.dictFile = PickleDict(path)
+        self.dictFile = bolt.PickleDict(path)
         self.data = self.dictFile.data
         self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
@@ -5921,17 +5812,12 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        if hasattr(self,'fileSizeCrcs'): # CRUFT PICKLE ?
-            # Older pickle files didn't store filenames in unicode,
-            # convert them here.
-            self.fileSizeCrcs = [(decode(full),size,crc) for (full,size,crc) in self.fileSizeCrcs]
         self.refreshDataSizeCrc()
 
-    def __copy__(self,iClass=None):
-        """Create a copy of self -- works for subclasses too (assuming subclasses
-        don't add new data members). iClass argument is to support Installers.updateDictFile"""
-        iClass = iClass if iClass else self.__class__
-        clone = iClass(GPath(self.archive))
+    def __copy__(self):
+        """Create a copy of self -- works for subclasses too (assuming
+        subclasses don't add new data members)."""
+        clone = self.__class__(GPath(self.archive))
         copier = copy.copy
         getter = object.__getattribute__
         setter = object.__setattr__
@@ -7378,11 +7264,11 @@ class InstallersData(DataDict):
         self.dir = dirs['installers']
         self.bashDir = dirs['bainData']
         #--Persistent data
-        self.dictFile = PickleDict(self.bashDir.join(u'Installers.dat'))
+        self.dictFile = bolt.PickleDict(self.bashDir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
         self.crc_installer = {}
-        self.converterFile = PickleDict(self.bashDir.join(u'Converters.dat'))
+        self.converterFile = bolt.PickleDict(self.bashDir.join(u'Converters.dat'))
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
@@ -7445,19 +7331,8 @@ class InstallersData(DataDict):
         self.data = data.get('installers', {})
         self.data_sizeCrcDate = data.get('sizeCrcDate', {})
         self.crc_installer = data.get('crc_installer', {})
-        self.updateDictFile()
         self.loaded = True
         return True
-
-    def updateDictFile(self): # CRUFT pickle
-        """Updates self.data to use new classes."""
-        if self.dictFile.vdata.get('version',0): return
-        #--Update to version 1
-        for name in self.data.keys():
-            installer = self.data[name]
-            if isinstance(installer,Installer):
-                self.data[name] = installer.__copy__(InstallerArchive)
-        self.dictFile.vdata['version'] = 1
 
     def save(self):
         """Saves to pickle file."""
@@ -7465,6 +7340,7 @@ class InstallersData(DataDict):
             self.dictFile.data['installers'] = self.data
             self.dictFile.data['sizeCrcDate'] = self.data_sizeCrcDate
             self.dictFile.data['crc_installer'] = self.crc_installer
+            self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converterFile.data['bcfCRC_converter'] = self.bcfCRC_converter
             self.converterFile.data['srcCRC_converters'] = self.srcCRC_converters
@@ -10311,13 +10187,11 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
-    ##(178): drop .pkl support
 
-    def _load(dat_file=_dat, oldPath=u'bash config.pkl'):
+    def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
-            PickleDict(dirs['saveBase'].join(dat_file),
-                       dirs['userApp'].join(oldPath), readOnly))
+            bolt.PickleDict(dirs['saveBase'].join(dat_file), readOnly))
 
     _dat = dirs['saveBase'].join(_dat)
     _bak = dirs['saveBase'].join(_bak)
