@@ -143,18 +143,6 @@ reQuoted  = re.compile(ur'^"(.*)"$',re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 
-# Util Functions --------------------------------------------------------------
-def PrintFormID(fid):
-    # PBash short Fid
-    if isinstance(fid,(long,int)):
-        print '%08X' % fid
-    # PBash long FId
-    elif isinstance(fid, tuple):
-        print '(%s, %06X)' % (fid[0],fid[1])
-    # CBash / other(error)
-    else:
-        print repr(fid)
-
 # Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MasterMapError(BoltError):
