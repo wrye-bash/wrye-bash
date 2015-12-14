@@ -632,9 +632,9 @@ class INIList(balt.UIList):
     def OnLeftDown(self,event):
         """Handle click on icon events"""
         event.Skip()
-        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
-        if hitItem < 0 or hitFlag != wx.LIST_HITTEST_ONITEMICON: return
-        tweak = bosh.iniInfos[self.GetItem(hitItem)]
+        hitItem = self._getItemClicked(event, on_icon=True)
+        if not hitItem: return
+        tweak = bosh.iniInfos[hitItem]
         if tweak.status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.panel
@@ -647,7 +647,7 @@ class INIList(balt.UIList):
             if not balt.askContinue(self, message, 'bash.iniTweaks.continue',
                                     _(u"INI Tweaks")): return
         #--No point applying a tweak that's already applied
-        file_ = tweak.dir.join(self.GetItem(hitItem))
+        file_ = tweak.dir.join(hitItem)
         self.data.ini.applyTweakFile(file_)
         self.RefreshUIValid()
         iniPanel.iniContents.RefreshIniContents()
@@ -919,9 +919,9 @@ class ModList(_ModsSortMixin, balt.UIList):
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Handle doubleclicking a mod in the Mods List."""
-        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
-        if hitItem < 0: return
-        fileInfo = self.data[self.GetItem(hitItem)]
+        hitItem = self._getItemClicked(event)
+        if not hitItem: return
+        fileInfo = self.data[hitItem]
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
             DocBrowser().Show()
@@ -976,17 +976,15 @@ class ModList(_ModsSortMixin, balt.UIList):
 
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
-        listCtrl = self._gList
-        (hitItem,hitFlag) = listCtrl.HitTest((event.GetX(),event.GetY()))
-        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            listCtrl.SetDnD(False)
-            modName = self.GetItem(hitItem)
+        modName = self._getItemClicked(event, on_icon=True)
+        if modName:
+            self._gList.SetDnD(False)
             self._checkUncheckMod(modName)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
             self.SelectItem(modName, deselectOthers=True)
         else:
-            listCtrl.SetDnD(True)
+            self._gList.SetDnD(True)
             #--Pass Event onward to OnSelectItem
             event.Skip()
 
@@ -1817,20 +1815,19 @@ class SaveList(balt.UIList):
         super(SaveList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):
-        (hitItem,hitFlag) = self._gList.HitTest((event.GetX(),event.GetY()))
+        #--Pass Event onward
+        event.Skip()
+        hitItem = self._getItemClicked(event, on_icon=True)
+        if not hitItem: return
         msg = _(u"Clicking on a save icon will disable/enable the save "
                 u"by changing its extension to %(ess)s (enabled) or .esr "
                 u"(disabled). Autosaves and quicksaves will be left alone."
                  % {'ess': bush.game.ess.ext})
-        if hitFlag == wx.LIST_HITTEST_ONITEMICON:
-            if not balt.askContinue(self, msg,
-                                    'bash.saves.askDisable.continue'): return
-            fileName = GPath(self.GetItem(hitItem))
-            newEnabled = not self.data.isEnabled(fileName)
-            newName = self.data.enable(fileName,newEnabled)
-            if newName != fileName: self.RefreshUI() ##: files=[fileName]
-        #--Pass Event onward
-        event.Skip()
+        if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
+            return
+        newEnabled = not self.data.isEnabled(hitItem)
+        newName = self.data.enable(hitItem, newEnabled)
+        if newName != hitItem: self.RefreshUI() ##: files=[fileName]
 
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
@@ -2379,9 +2376,9 @@ class InstallersList(balt.Tank):
 
     def OnDClick(self,event):
         """Double click, open the installer."""
-        (hitItem,hitFlag) = self._gList.HitTest(event.GetPosition())
-        if hitItem < 0: return
-        item = self.GetItem(hitItem)
+        event.Skip()
+        item = self._getItemClicked(event)
+        if not item: return
         if isinstance(self.data[item],bosh.InstallerMarker):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
@@ -2391,11 +2388,9 @@ class InstallersList(balt.Tank):
                 installer = self.data[nextItem]
                 if isinstance(installer,bosh.InstallerMarker):
                     break
-                itemDex = self.GetIndex(nextItem)
-                self.SelectItemAtIndex(itemDex)
+                self.SelectItem(nextItem)
         else:
             self.OpenSelected(selected=[item])
-        event.Skip()
 
     def Rename(self, selected=None):
         selected = self.GetSelected()
@@ -3004,9 +2999,9 @@ class ScreensList(balt.UIList):
     #--Events ---------------------------------------------
     def OnDClick(self,event):
         """Double click a screenshot"""
-        (hitItem, hitFlag) = self._gList.HitTest(event.GetPosition())
-        if hitItem < 0: return
-        self.OpenSelected(selected=[self.GetItem(hitItem)])
+        hitItem = self._getItemClicked(event)
+        if not hitItem: return
+        self.OpenSelected(selected=[hitItem])
 
     def OnLabelEdited(self, event):
         """Renamed a screenshot"""

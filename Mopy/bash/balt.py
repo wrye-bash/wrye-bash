@@ -2107,6 +2107,12 @@ class UIList(wx.Panel):
         (self._gList.GetEditControl()).SetSelection(0, to)
     def OnLabelEdited(self,event): event.Skip()
 
+    def _getItemClicked(self, event, on_icon=False):
+        (hitItem, hitFlag) = self._gList.HitTest(event.GetPosition())
+        if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
+            return None
+        return self.GetItem(hitItem)
+
     #-- Item selection --------------------------------------------------------
     def GetItems(self): return self.data.keys()
 
