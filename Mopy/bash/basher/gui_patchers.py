@@ -103,7 +103,7 @@ class _AliasesPatcher(Patcher):
         self.gAliases.SetValue(u'\n'.join([
             u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())]))
 
-    def OnEditAliases(self,event):
+    def OnEditAliases(self):
         text = self.gAliases.GetValue()
         self.aliases.clear()
         for line in text.split(u'\n'):

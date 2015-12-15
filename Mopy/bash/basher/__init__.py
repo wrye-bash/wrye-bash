@@ -1210,7 +1210,8 @@ class ModDetails(_SashDetailsPanel):
         tagPanel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
-        self.gTags.Bind(wx.EVT_CONTEXT_MENU,self.ShowBashTagsMenu)
+        self.gTags.Bind(wx.EVT_CONTEXT_MENU,
+                        lambda __event: self.ShowBashTagsMenu())
 
     def _resetDetails(self):
         self.modInfo = None
@@ -1262,7 +1263,7 @@ class ModDetails(_SashDetailsPanel):
         self._OnTextEdit(event, self.descriptionStr.replace(
             '\r\n', '\n').replace('\r', '\n'), self.description)
 
-    def OnEditFile(self,event):
+    def OnEditFile(self):
         if not self.modInfo: return
         #--Changed?
         fileStr = self.file.GetValue()
@@ -1280,14 +1281,14 @@ class ModDetails(_SashDetailsPanel):
             self.fileStr = fileStr
             self.SetEdited()
 
-    def OnEditAuthor(self,event):
+    def OnEditAuthor(self):
         if not self.modInfo: return
         authorStr = self.author.GetValue()
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()
 
-    def OnEditModified(self,event):
+    def OnEditModified(self):
         if not self.modInfo: return
         modifiedStr = self.modified.GetValue()
         if modifiedStr == self.modifiedStr: return
@@ -1304,7 +1305,7 @@ class ModDetails(_SashDetailsPanel):
         self.modified.SetValue(modifiedStr) #--Normalize format
         self.SetEdited()
 
-    def OnEditDescription(self,event):
+    def OnEditDescription(self):
         if not self.modInfo: return
         if self.description.GetValue() != self.descriptionStr.replace('\r\n',
                 '\n').replace('\r', '\n'):
@@ -1394,7 +1395,7 @@ class ModDetails(_SashDetailsPanel):
         BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
 
     #--Bash Tags
-    def ShowBashTagsMenu(self, event):
+    def ShowBashTagsMenu(self):
         """Show bash tags menu."""
         if not self.modInfo: return
         #--Links closure
@@ -1956,7 +1957,7 @@ class SaveDetails(_SashDetailsPanel):
             self.SetEdited()
         event.Skip()
 
-    def OnEditFile(self,event):
+    def OnEditFile(self):
         """Event: Finished editing file name."""
         if not self.saveInfo: return
         #--Changed?
@@ -3186,7 +3187,7 @@ class BSADetails(_EditableMixin, SashPanel):
             self.SetEdited()
         event.Skip()
 
-    def OnEditFile(self,event):
+    def OnEditFile(self):
         """Event: Finished editing file name."""
         if not self.BSAInfo: return
         #--Changed?
@@ -3316,7 +3317,7 @@ class PeoplePanel(SashTankPanel):
         if self.uiList.data.refresh(): self.uiList.RefreshUI()
         super(PeoplePanel, self).ShowPanel()
 
-    def OnSpin(self,event):
+    def OnSpin(self):
         """Karma spin."""
         if not self.detailsItem: return
         karma = int(self.gKarma.GetValue())

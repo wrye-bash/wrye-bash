@@ -329,7 +329,8 @@ class TextCtrl(wx.TextCtrl):
             self.Bind(wx.EVT_TEXT, self.OnTextChange)
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
         # event handlers must call event.Skip()
-        if onKillFocus: self.Bind(wx.EVT_KILL_FOCUS, onKillFocus)
+        if onKillFocus:
+            self.Bind(wx.EVT_KILL_FOCUS, lambda __event: onKillFocus())
         if onText: self.Bind(wx.EVT_TEXT, onText)
 
     def UpdateToolTip(self, text):
@@ -478,7 +479,7 @@ def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
     """Spin control with event and tip setting."""
     gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
                             initial, name)
-    if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL,onSpin)
+    if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
     if tip: gSpinCtrl.SetToolTip(tooltip(tip))
     return gSpinCtrl
 
