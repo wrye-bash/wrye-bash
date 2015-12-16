@@ -1102,7 +1102,7 @@ class WryeParser(ScriptParser.Parser):
         return ret[0]
     def fnCompareSEVersion(self, seWant):
         if bush.game.se.shortName != u'':
-            if bosh.inisettings['SteamInstall']:
+            if bass.inisettings['SteamInstall']:
                 se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
             else:
                 se = bush.game.se.exe
@@ -1597,7 +1597,7 @@ class WryeParser(ScriptParser.Parser):
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.se.shortName != u'':
-            if bosh.inisettings['SteamInstall']:
+            if bass.inisettings['SteamInstall']:
                 seName = bush.game.se.steamExe
             else:
                 seName = bush.game.se.exe

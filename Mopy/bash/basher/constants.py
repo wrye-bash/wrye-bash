@@ -491,11 +491,11 @@ toolbar_buttons = (
 try: # FIXME: due to constants being imported in showErrorInGui
     app_buttons = (
         ((bosh.tooldirs['OblivionBookCreatorPath'],
-          bosh.inisettings['OblivionBookCreatorJavaArg']),
+          bass.inisettings['OblivionBookCreatorJavaArg']),
          imageList(u'tools/oblivionbookcreator%s.png'),
          _(u"Launch Oblivion Book Creator"), {'uid': u'OblivionBookCreator'}),
         ((bosh.tooldirs['Tes4GeckoPath'],
-          bosh.inisettings['Tes4GeckoJavaArg']),
+          bass.inisettings['Tes4GeckoJavaArg']),
          imageList(u'tools/tes4gecko%s.png'),
          _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
         ((bosh.tooldirs['Tes5GeckoPath']), imageList(u'tools/tesvgecko%s.png'),

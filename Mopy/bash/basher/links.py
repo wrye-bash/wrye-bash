@@ -124,7 +124,7 @@ def InitStatusBar():
             imageList(u'boss%s.png'),
             _(u"Launch BOSS"),
             uid=u'BOSS'))
-    if bosh.inisettings['ShowModelingToolLaunchers']:
+    if bass.inisettings['ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
@@ -134,16 +134,16 @@ def InitStatusBar():
                 imageList(u'tools/softimagemodtool%s.png'),
                 _(u"Launch Softimage Mod Tool"),
                 uid=u'SoftimageModTool'))
-    if bosh.inisettings['ShowModelingToolLaunchers'] \
-            or bosh.inisettings['ShowTextureToolLaunchers']:
+    if bass.inisettings['ShowModelingToolLaunchers'] \
+            or bass.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             Tooldir_Button('NifskopePath', imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
-    if bosh.inisettings['ShowTextureToolLaunchers']:
+    if bass.inisettings['ShowTextureToolLaunchers']:
         from .constants import texture_tool_buttons
         for tt in texture_tool_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*tt))
-    if bosh.inisettings['ShowAudioToolLaunchers']:
+    if bass.inisettings['ShowAudioToolLaunchers']:
         from .constants import audio_tools
         for at in audio_tools:
             BashStatusBar.buttons.append(Tooldir_Button(*at))
@@ -166,7 +166,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
-    if bosh.inisettings['ShowDevTools']:
+    if bass.inisettings['ShowDevTools']:
         BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
         BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
@@ -402,7 +402,7 @@ def InitModLinks():
         ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
     #--ModList: Item Links
-    if bosh.inisettings['ShowDevTools']:
+    if bass.inisettings['ShowDevTools']:
         ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
         fileMenu = MenuLink(_(u"File"))

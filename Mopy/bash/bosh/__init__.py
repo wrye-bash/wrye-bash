@@ -50,7 +50,7 @@ from functools import wraps
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
-from ..bass import dirs
+from ..bass import dirs, inisettings
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -61,12 +61,12 @@ from ..bolt import decode, encode
 from ..cint import ObCollection, CBash, ObBaseRecord
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
+from ..parsers import LoadFactory, ModFile
 
 startupinfo = bolt.startupinfo
 
 #--Settings
 tooldirs = {}
-inisettings = {}
 defaultExt = u'.7z'
 writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
 readExts = {u'.rar', u'.7z.001', u'.001'}
@@ -1489,7 +1489,7 @@ class BsaFile:
             (u'Oblivion - Meshes.bsa',1138575220),
             (u'Oblivion - Misc.bsa',1139433736),
             (u'Oblivion - Sounds.bsa',1138660560),
-            (inisettings['OblivionTexturesBSAName'].stail,1138162634),
+            (inisettings['OblivionTexturesBSAName'].stail, 1138162634),
             (u'Oblivion - Voices1.bsa',1138162934),
             (u'Oblivion - Voices2.bsa',1138166742),
             )
@@ -7785,7 +7785,6 @@ class ModCleaner:
                     path.temp.remove()
 
 #------------------------------------------------------------------------------
-from ..parsers import LoadFactory, ModFile
 class SaveSpells:
     """Player spells of a savegame."""
 
@@ -8433,7 +8432,7 @@ def initDefaultSettings():
         inisettings['SteamInstall'] = True
     else:
         inisettings['SteamInstall'] = False
-    inisettings['ScriptFileExt']=u'.txt'
+    inisettings['ScriptFileExt'] = u'.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
     inisettings['ResetBSATimestamps'] = True
@@ -8461,7 +8460,7 @@ def initOptions(bashIni):
 
     defaultOptions = {}
     type_key = {str:u's',unicode:u's',list:u's',int:u'i',bool:u'b',bolt.Path:u's'}
-    allOptions = [tooldirs,inisettings]
+    allOptions = [tooldirs, inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
         for defaultKey,defaultValue in settingsDict.iteritems():

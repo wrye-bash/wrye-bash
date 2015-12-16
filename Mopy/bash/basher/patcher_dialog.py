@@ -273,12 +273,12 @@ class PatchDialog(balt.Dialog):
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             bosh.modInfos.table.setItem(patchName,'doc',readme)
-            balt.playSound(self.parent,bosh.inisettings['SoundSuccess'].s)
+            balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patchName.s
             if bosh.modInfos.isActiveCached(patchName) or (
-                        bosh.inisettings['PromptActivateBashedPatch'] and
+                        bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
                     changedFiles = bosh.modInfos.select(patchName, doSave=True)
@@ -292,15 +292,15 @@ class PatchDialog(balt.Dialog):
             bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except bolt.FileEditError as error:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
         except CancelError:
             pass
         except BoltError as error:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'Processing Error'))
         except:
-            balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
+            balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             raise
         finally:
             if self.doCBash:

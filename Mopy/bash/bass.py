@@ -57,3 +57,5 @@ class Resources: # this belongs to basher but leads to cyclic imports, so...
 
 # Bash's directories - values are absolute Paths - populated in initDirs()
 dirs = {}
+# settings read from the Mopy/bash.ini file in initDefaultSettings()
+inisettings = {}

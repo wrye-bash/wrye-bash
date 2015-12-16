@@ -24,7 +24,7 @@
 
 import string
 import wx
-from .. import bosh, bush, balt
+from .. import bass, bosh, bush, balt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, \
     SeparatorLink, CheckLink, Link
 from ..bolt import GPath
@@ -182,7 +182,7 @@ class _ListPatcherPanel(_PatcherPanel):
         """Set item to specified set of items."""
         items = self.items = self.sortConfig(items)
         forceItemCheck = self.forceItemCheck
-        defaultItemCheck = self.__class__.canAutoItemCheck and bosh.inisettings['AutoItemCheck']
+        defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings['AutoItemCheck']
         self.gList.Clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False

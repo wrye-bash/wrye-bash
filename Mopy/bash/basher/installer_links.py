@@ -111,7 +111,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if archive.cext in bosh.noSolidExts:
             isSolid = False
         else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+            if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
                                        % archive.s, default=False)
                 if isSolid:
@@ -452,7 +452,7 @@ class Installer_Hide(_InstallerLink):
 
     def Execute(self):
         """Handle selection."""
-        if not bosh.inisettings['SkipHideConfirmation']:
+        if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
         destDir = bass.dirs['modsBash'].join(u'Hidden')

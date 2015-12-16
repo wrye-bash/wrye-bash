@@ -3819,7 +3819,7 @@ class BashFrame(wx.Frame):
 
     @balt.conversation
     def warnTooManyModsBsas(self):
-        if not bosh.inisettings['WarnTooManyFiles']: return
+        if not bass.inisettings['WarnTooManyFiles']: return
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not \
                 settings['bash.mods.autoGhost']:
@@ -3922,7 +3922,7 @@ class BashFrame(wx.Frame):
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
             if bosh.modInfos.mtimesReset[0] == 'PLUGINS':
-                if not bosh.inisettings['SkipResetTimeNotifications']:
+                if not bass.inisettings['SkipResetTimeNotifications']:
                     balt.showWarning(self,_(u"An invalid plugin load order has been corrected."))
             else:
                 if bosh.modInfos.mtimesReset[0] == 'FAILED':
@@ -3930,7 +3930,7 @@ class BashFrame(wx.Frame):
                                             + bush.game.fsName+u'\\Data.\n' +
                                             _(u"Specifically had permission denied to change the time on:")
                                             + u'\n' + bosh.modInfos.mtimesReset[1].s)
-                if not bosh.inisettings['SkipResetTimeNotifications']:
+                if not bass.inisettings['SkipResetTimeNotifications']:
                     message = [u'',_(u'Modified dates have been reset for some mod files')]
                     message.extend(sorted(bosh.modInfos.mtimesReset))
                     ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
@@ -4183,7 +4183,7 @@ class BashApp(wx.App):
         progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
              style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
         # Is splash enabled in ini ?
-        if bosh.inisettings['EnableSplashScreen']:
+        if bass.inisettings['EnableSplashScreen']:
             if bass.dirs['images'].join(u'wryesplash.png').exists():
                 try:
                         splashScreen = WryeBashSplashScreen()
@@ -4241,7 +4241,7 @@ class BashApp(wx.App):
         # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check
         if bush.game.esp.canBash:
-            if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:
+            if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
                 PatchFile.generateNextBashedPatch()
 

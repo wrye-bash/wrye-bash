@@ -95,7 +95,7 @@ class StatusBar_Button(ItemLink):
     # Helper function to get OBSE version
     @property
     def obseVersion(self):
-        if bosh.inisettings['SteamInstall']:
+        if bass.inisettings['SteamInstall']:
             se_exe = bush.game.se.steamExe
         else:
             se_exe = bush.game.se.exe
@@ -260,7 +260,7 @@ class App_Button(StatusBar_Button):
                     exePath = exeLaa
                     args = [exePath.s]
                 elif self.obseArg is not None and bosh.settings.get('bash.obse.on',False) and exeObse.exists():
-                    if bosh.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
+                    if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
                         exePath = self.exePath
                     else:
                         exePath = exeObse

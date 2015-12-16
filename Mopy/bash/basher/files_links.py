@@ -222,7 +222,7 @@ class File_Hide(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        if not bosh.inisettings['SkipHideConfirmation']:
+        if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
         #--Do it

@@ -387,7 +387,8 @@ class Installers_BsaRedirection(AppendableLink, BoolLink):
         """Handle selection."""
         super(Installers_BsaRedirection, self).Execute()
         if bosh.settings[self.key]:
-            bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
+            bsaPath = bosh.modInfos.dir.join(
+                    bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
