@@ -42,9 +42,7 @@ defaultIniFile = u'Oblivion_default.ini'
 exe = u'Oblivion.exe'
 
 #--Registry keys to read to find the install location
-regInstallKeys = [
-    (u'Bethesda Softworks\\Oblivion',u'Installed Path'),
-    ]
+regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
 
 #--patch information
 patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'

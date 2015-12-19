@@ -34,23 +34,23 @@ except ImportError: # we're on linux
     winreg = None
 
 def get_game_path(submod):
+    """Check registry supplied game paths for the game.exe."""
     if not winreg: return None
+    subkey, entry = submod.regInstallKeys
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
-            for (subkey, entry) in submod.regInstallKeys:
-                # (subkey, entry) = submod.regInstallKeys # currently for unneeded
-                try:
-                    key = winreg.OpenKey(hkey,
-                                         u'Software\\%s%s' % (wow6432, subkey))
-                    value = winreg.QueryValueEx(key, entry)
-                except OSError:
-                    continue
-                if value[1] != winreg.REG_SZ: continue
-                installPath = GPath(value[0])
-                if not installPath.exists(): continue
-                exePath = installPath.join(submod.exe)
-                if not exePath.exists(): continue
-                return installPath
+            try:
+                key = winreg.OpenKey(hkey,
+                                     u'Software\\%s%s' % (wow6432, subkey))
+                value = winreg.QueryValueEx(key, entry)
+            except OSError:
+                continue
+            if value[1] != winreg.REG_SZ: continue
+            installPath = GPath(value[0])
+            if not installPath.exists(): continue
+            exePath = installPath.join(submod.exe)
+            if not exePath.exists(): continue
+            return installPath
     return None
 
 try: #  Import win32com, in case it's necessary

@@ -42,9 +42,7 @@ defaultIniFile = u'Skyrim_default.ini'
 exe = u'TESV.exe'
 
 #--Registry keys to read to find the install location
-regInstallKeys = [
-    (u'Bethesda Softworks\\Skyrim',u'Installed Path'),
-    ]
+regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
 
 #--patch information
 patchURL = u'' # Update via steam
