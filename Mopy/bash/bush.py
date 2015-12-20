@@ -174,7 +174,8 @@ def __setGame(foundGames_, name, msg):
 def setGame(gameName, workingDir=u'', bashIni=None):
     foundGames_, name = _detectGames(workingDir, bashIni)
     gameName = gameName.lower()
-    #--See if the specified game is one that was found
+    #--See if the game specified (either passed in initially or passed in
+    # because it was the single available game) is one that was found
     if gameName in foundGames_:
         # The game specified was found
         __setGame(foundGames_, gameName,

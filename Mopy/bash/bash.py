@@ -308,7 +308,10 @@ def main():
     bashIni = bass.GetBashIni()
     ret = bush.setGame(opts.gameName, opts.oblivionPath, bashIni)
     if ret is not None: # None == success
-        if len(ret) != 1:
+        if len(ret) == 1:
+            if opts.debug: print u'Single game found:', ret[0]
+            retCode = ret[0]
+        else:
             if len(ret) == 0:
                 msgtext = _(
                     u"Wrye Bash could not find a game to manage. Please use "
@@ -331,11 +334,9 @@ def main():
                 retCode = _tinkerSelectGame(ret, msgtext)
             if retCode is None:
                 return
-            # Add the game to the command line, so we use it if we restart
-            sys.argv = sys.argv + ['-g', retCode]
-            bush.setGame(retCode, opts.oblivionPath, bashIni)
-        else:
-            bush.setGame(ret[0], opts.oblivionPath, bashIni)
+        # Add the game to the command line, so we use it if we restart
+        sys.argv = sys.argv + ['-g', retCode]
+        bush.setGame(retCode, opts.oblivionPath, bashIni)
 
     # from now on bush.game is set
 
