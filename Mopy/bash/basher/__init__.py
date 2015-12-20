@@ -105,26 +105,25 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
 
 appRestart = False # restart Bash if true
 uacRestart = False # restart Bash with Admin Rights if true
-isUAC = False      # True if the game is under UAC protection
 
 # Settings --------------------------------------------------------------------
 settings = None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-def SetUAC(item):
+def SetUAC(item): # item must define a GetHandle() method
     """Helper function for creating menu items or buttons that need UAC
        Note: for this to work correctly, it needs to be run BEFORE
        appending a menu item to a menu (and so, needs to be enabled/
-       diasbled prior to that as well."""
-    if isUAC:
-        if isinstance(item,wx.MenuItem):
+       disabled prior to that as well."""
+    if env.isUAC:
+        if isinstance(item, wx.MenuItem):
             pass
             #if item.IsEnabled():
             #    bitmap = images['uac.small'].GetBitmap()
             #    item.SetBitmaps(bitmap,bitmap)
         else:
-            balt.setUAC(item,isUAC)
+            env.setUAC(item.GetHandle(), True)
 
 ##: DEPRECATED: Tank link mixins to access the Tank data. They should be
 # replaced by self.window.method but I keep them till encapsulation reduces

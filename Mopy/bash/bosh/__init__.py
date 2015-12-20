@@ -9714,21 +9714,6 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
     else:
         return oldPath, oldSrc
 
-def testUAC(gameDataPath):
-    print 'testing UAC' # TODO(ut): bypass in Linux !
-    tmpDir = bolt.Path.tempDir()
-    tempFile = tmpDir.join(u'_tempfile.tmp')
-    dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open('wb'): pass # create the file
-    try: # to move it into the Game/Data/ directory
-        env.shellMove(tempFile, dest, askOverwrite=True, silent=True)
-    except env.AccessDeniedError:
-        return True
-    finally:
-        tmpDir.rmtree(safety=tmpDir.stail)
-        env.shellDeletePass(dest)
-    return False
-
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories

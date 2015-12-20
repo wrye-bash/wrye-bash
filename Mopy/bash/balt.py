@@ -678,9 +678,6 @@ except ImportError: # bare linux (in wine it's imported but malfunctions)
     _win = None
     canVista = False
 
-def setUAC(button_, uac=True):
-    if _win: _win.setUAC(button_.GetHandle(), uac)
-
 def vistaDialog(parent, message, title, buttons=[], checkBoxTxt=None,
                 icon=None, commandLinks=True, footer=u'', expander=[],
                 heading=u''):

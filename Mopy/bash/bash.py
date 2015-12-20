@@ -40,6 +40,7 @@ opts,extra = barg.parse()
 bass.language = opts.language
 import bolt
 from bolt import GPath
+import env
 basher = balt = barb =  None
 
 #------------------------------------------------------------------------------
@@ -360,7 +361,7 @@ def main():
         # Force Python mode if CBash can't work with this game
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
-        isUAC = bosh.testUAC(bush.gamePath.join(u'Data'))
+        env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath,
                       opts.oblivionPath, bashIni)
 
@@ -410,8 +411,7 @@ def main():
     quit_ = cmdRestore() or quit_
     if quit_: return
 
-    basher.isUAC = isUAC
-    if isUAC:
+    if env.isUAC:
         uacRestart = False
         if not opts.noUac and not opts.uac:
             # Show a prompt asking if we should restart in Admin Mode

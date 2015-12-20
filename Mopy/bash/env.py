@@ -509,3 +509,25 @@ def shellMakeDirs(dirs, parent=None):
     finally:
         for tmpDir in tempDirs:
             tmpDir.rmtree(safety=tmpDir.stail)
+
+isUAC = False      # True if the game is under UAC protection
+
+def setUAC(handle, uac=True):
+    """Calls the Windows API to set a button as UAC"""
+    if win32gui:
+        win32gui.SendMessage(handle, 0x0000160C, None, uac)
+
+def testUAC(gameDataPath):
+    print 'testing UAC' # TODO(ut): bypass in Linux !
+    tmpDir = Path.tempDir()
+    tempFile = tmpDir.join(u'_tempfile.tmp')
+    dest = gameDataPath.join(u'_tempfile.tmp')
+    with tempFile.open('wb'): pass # create the file
+    try: # to move it into the Game/Data/ directory
+        shellMove(tempFile, dest, askOverwrite=True, silent=True)
+    except AccessDeniedError:
+        return True
+    finally:
+        tmpDir.rmtree(safety=tmpDir.stail)
+        shellDeletePass(dest)
+    return False
