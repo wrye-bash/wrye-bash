@@ -25,16 +25,14 @@
 """Links initialization functions. Each panel's UIList has main and items Links
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
-
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink, win32gui
-from ..env import get_default_app_icon
-from ..bolt import deprint, GPath
+from ..balt import Image, MenuLink, SeparatorLink
+from ..env import init_app_links
 # modules below define the __all__ directive
 from .app_buttons import *
 from .mods_links import *
@@ -48,29 +46,6 @@ from .ini_links import *
 from .mod_links import *
 
 #------------------------------------------------------------------------------
-def _initAppLinks(appDir):
-    #-- Other tools
-    links = {}
-    try:
-        import win32com.client
-        sh = win32com.client.Dispatch('WScript.Shell')
-        shCreateShortCut = sh.CreateShortCut
-        appDirJoin = appDir.join
-        for file_ in appDir.list():
-            file_ = appDirJoin(file_)
-            if file_.isfile() and file_.cext == u'.lnk':
-                fileS = file_.s
-                shortcut = shCreateShortCut(fileS)
-                description = shortcut.Description
-                if not description:
-                    description = u' '.join((_(u'Launch'), file_.sbody))
-                links[fileS] = (shortcut.TargetPath, shortcut.WorkingDirectory,
-                                shortcut.Arguments, shortcut.IconLocation,
-                                description)
-        return links
-    except:
-        deprint(_(u"Error initializing links:"),traceback=True)
-
 def InitStatusBar():
     """Initialize status bar links."""
     dirImages = bosh.dirs['images']
@@ -177,47 +152,12 @@ def InitStatusBar():
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bosh.dirs['mopy'].join(u'Apps')
-    appLinks = _initAppLinks(dirApps)
     badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
-    for link in appLinks:
-        (target,workingdir,args,icon,description) = appLinks[link]
-        path = dirApps.join(link)
-        if target.lower().find(ur'installer\{') != -1:
-            target = path
-        else:
-            target = GPath(target)
-        if target.exists():
-            icon,idex = icon.split(u',')
-            if icon == u'' and win32gui is not None:
-                if target.cext == u'.exe':
-                    # Use the icon embedded in the exe
-                    try:
-                        win32gui.ExtractIcon(0, target.s, 0)
-                        icon = target
-                    except:
-                        icon = u'' # Icon will be set to a red x further down.
-                else:
-                    icon, idex = get_default_app_icon(idex, target)
-            icon = GPath(icon)
-            # First try a custom icon
-            fileName = u'%s%%i.png' % path.sbody
-            customIcons = [dirApps.join(fileName % x) for x in (16,24,32)]
-            if customIcons[0].exists():
-                icon = customIcons
-            # Next try the shortcut specified icon
-            else:
-                if icon.exists():
-                    fileName = u';'.join((icon.s,idex))
-                    icon = [Image(fileName,ICO,x) for x in (16,24,32)]
-            # Last, use the 'x' icon
-                else:
-                    icon = badIcons
+    def iconList(fileName):
+        return [Image(fileName, ICO, x) for x in (16, 24, 32)]
+    for path, icon, description in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
-                App_Button(
-                    (path,()),
-                    icon, description,
-                    canHide=False
-                    ))
+                App_Button((path, ()), icon, description, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(
         App_Button((bosh.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',

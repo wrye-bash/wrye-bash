@@ -33,6 +33,10 @@ try:
     import _winreg as winreg
 except ImportError: # we're on linux
     winreg = None
+try:
+    import win32gui
+except ImportError: # linux
+    win32gui = None
 
 def get_game_path(submod):
     """Check registry supplied game paths for the game.exe."""
@@ -94,6 +98,11 @@ except ImportError:
         path = reEnv.sub(subEnv, path)
         return path
 
+try:
+    import win32com.client as win32client
+except ImportError:
+    win32client =None
+
 def get_personal_path():
     if shell and shellcon:
         path = _getShellPath(shellcon.CSIDL_PERSONAL)
@@ -151,6 +160,68 @@ def get_default_app_icon(idex, target):
         deprint(_(u'Error finding icon for %s:') % target.s, traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
+
+def _initAppLinks(appDir):
+    #--Other tools
+    if win32client is None: return {}
+    links = {}
+    try:
+        sh = win32client.Dispatch('WScript.Shell')
+        shCreateShortCut = sh.CreateShortCut
+        appDirJoin = appDir.join
+        for file_ in appDir.list():
+            file_ = appDirJoin(file_)
+            if file_.isfile() and file_.cext == u'.lnk':
+                fileS = file_.s
+                shortcut = shCreateShortCut(fileS)
+                description = shortcut.Description
+                if not description:
+                    description = u' '.join((_(u'Launch'), file_.sbody))
+                links[fileS] = (shortcut.TargetPath, shortcut.WorkingDirectory,
+                                shortcut.Arguments, shortcut.IconLocation,
+                                description)
+    except:
+        deprint(_(u"Error initializing links:"), traceback=True)
+    return links
+
+def init_app_links(dirApps, badIcons, iconList):
+    appLinks = _initAppLinks(dirApps)
+    init_params = []
+    for link in appLinks:
+        (target, workingdir, args, icon, description) = appLinks[link]
+        path = dirApps.join(link)
+        if target.lower().find(ur'installer\{') != -1:
+            target = path
+        else:
+            target = GPath(target)
+        if target.exists():
+            icon, idex = icon.split(u',')
+            if icon == u'' and win32gui is not None:
+                if target.cext == u'.exe':
+                    # Use the icon embedded in the exe
+                    try:
+                        win32gui.ExtractIcon(0, target.s, 0)
+                        icon = target
+                    except:
+                        icon = u'' # Icon will be set to a red x further down.
+                else:
+                    icon, idex = get_default_app_icon(idex, target)
+            icon = GPath(icon)
+            # First try a custom icon
+            fileName = u'%s%%i.png' % path.sbody
+            customIcons = [dirApps.join(fileName % x) for x in (16, 24, 32)]
+            if customIcons[0].exists():
+                icon = customIcons
+            # Next try the shortcut specified icon
+            else:
+                if icon.exists():
+                    fileName = u';'.join((icon.s, idex))
+                    icon = iconList(fileName)
+                    # Last, use the 'x' icon
+                else:
+                    icon = badIcons
+            init_params.append((path, icon, description))
+    return init_params
 
 def test_permissions(path, permissions='rwcd'):
     """Test file permissions for a path:

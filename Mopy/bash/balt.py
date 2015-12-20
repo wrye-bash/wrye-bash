@@ -672,11 +672,10 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
 # Message Dialogs -------------------------------------------------------------
 try:
     import windows as _win # only import here !
-    from windows import win32gui
     canVista = _win.TASK_DIALOG_AVAILABLE
 except ImportError: # bare linux (in wine it's imported but malfunctions)
     deprint('Importing windows.py failed', traceback=True)
-    _win = win32gui = None
+    _win = None
     canVista = False
 
 def setUAC(button_, uac=True):
