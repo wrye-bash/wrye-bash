@@ -161,35 +161,35 @@ def get_default_app_icon(idex, target):
         icon = u'not\\a\\path'
     return icon, idex
 
-def _initAppLinks(appDir):
-    #--Other tools
+def _get_app_links(apps_dir):
+    """Scan Mopy/Apps folder for shortcuts (.lnk files). Windows only !
+
+    :param apps_dir: the absolute Path to Mopy/Apps folder
+    :return: a dictionary of shortcut properties tuples keyed by the
+    absolute Path of the Apps/.lnk shortcut
+    """
     if win32client is None: return {}
     links = {}
     try:
         sh = win32client.Dispatch('WScript.Shell')
-        shCreateShortCut = sh.CreateShortCut
-        appDirJoin = appDir.join
-        for file_ in appDir.list():
-            file_ = appDirJoin(file_)
-            if file_.isfile() and file_.cext == u'.lnk':
-                fileS = file_.s
-                shortcut = shCreateShortCut(fileS)
+        for lnk in apps_dir.list():
+            lnk = apps_dir.join(lnk)
+            if lnk.isfile() and lnk.cext == u'.lnk':
+                shortcut = sh.CreateShortCut(lnk.s)
                 description = shortcut.Description
                 if not description:
-                    description = u' '.join((_(u'Launch'), file_.sbody))
-                links[fileS] = (shortcut.TargetPath, shortcut.WorkingDirectory,
-                                shortcut.Arguments, shortcut.IconLocation,
-                                description)
+                    description = u' '.join((_(u'Launch'), lnk.sbody))
+                links[lnk] = (shortcut.TargetPath, shortcut.WorkingDirectory,
+                              shortcut.Arguments, shortcut.IconLocation,
+                              description)
     except:
         deprint(_(u"Error initializing links:"), traceback=True)
     return links
 
-def init_app_links(dirApps, badIcons, iconList):
-    appLinks = _initAppLinks(dirApps)
+def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
-    for link in appLinks:
-        (target, workingdir, args, icon, description) = appLinks[link]
-        path = dirApps.join(link)
+    for path, (target, workingdir, args, icon, description) in _get_app_links(
+            apps_dir).iteritems():
         if target.lower().find(ur'installer\{') != -1:
             target = path
         else:
@@ -209,7 +209,7 @@ def init_app_links(dirApps, badIcons, iconList):
             icon = GPath(icon)
             # First try a custom icon
             fileName = u'%s%%i.png' % path.sbody
-            customIcons = [dirApps.join(fileName % x) for x in (16, 24, 32)]
+            customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
             if customIcons[0].exists():
                 icon = customIcons
             # Next try the shortcut specified icon
