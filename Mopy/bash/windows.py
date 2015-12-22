@@ -40,12 +40,13 @@ except ValueError:
     except (ValueError, subprocess.CalledProcessError, OSError):
         deprint('calling getconf failed - error:', traceback=True)
         MAX_PATH = 4096
+##: keep this below so it raises on linux - for now (win32gui is unused here)
 try:
     import win32gui
 except ImportError: # linux
     win32gui = None
     raise
-from bass import winreg
+from env import winreg
 
 BUTTONID_OFFSET                 = 1000
 
@@ -278,11 +279,6 @@ except AttributeError:
 
     def GetStockIconLocation(id_,flags=0):
         return u'',0
-
-#--Set a Button as a UAC button
-def setUAC(handle,uac=True):
-    """Calls the Windows API to set a button as UAC"""
-    if win32gui: win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 #--Start a webpage with an anchor ---------------------------------------------
 # Need to do this specially, because doing it via os.startfile, ShellExecute,

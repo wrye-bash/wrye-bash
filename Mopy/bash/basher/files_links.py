@@ -25,7 +25,7 @@
 from operator import attrgetter
 import re
 import time
-from .. import balt, bosh, bush, bolt
+from .. import balt, bosh, bush, bolt, env
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
@@ -134,7 +134,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         try:
-            balt.shellMove(srcFiles, destFiles, parent=window)
+            env.shellMove(srcFiles, destFiles, parent=window)
             for dest in coSavesMoves:
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):

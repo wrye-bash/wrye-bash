@@ -28,7 +28,7 @@ import wx
 from ..balt import ItemLink, vSizer, hSizer, spacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     StaticText, tooltip, Link, staticBitmap
-from .. import barb, bosh, bush, balt, bass, bolt
+from .. import barb, bosh, bush, balt, bass, bolt, env
 from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
 from .dialogs import ColorDialog
@@ -439,9 +439,7 @@ class Settings_UAC(AppendableLink, ItemLink):
     text = _(u'Administrator Mode')
     help = _(u'Restart Wrye Bash with administrator privileges.')
 
-    def _append(self, window):
-        from . import isUAC # FIXME(ut): globals
-        return isUAC
+    def _append(self, window): return env.isUAC
 
     def Execute(self):
         if balt.askYes(Link.Frame,

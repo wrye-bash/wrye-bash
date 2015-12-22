@@ -29,8 +29,7 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
-from bass import winreg
-
+from env import get_game_path
 from bolt import GPath, Path, deprint, BoltError
 
 # Game detection --------------------------------------------------------------
@@ -63,23 +62,8 @@ def _supportedGames(useCache=True):
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
         _allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
-        if not winreg:
-            del module
-            continue
-        for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
-            for wow6432 in (u'',u'Wow6432Node\\'):
-                for (subkey,entry) in submod.regInstallKeys:
-                    try:
-                        key = winreg.OpenKey(hkey,
-                            u'Software\\%s%s' % (wow6432,subkey))
-                        value = winreg.QueryValueEx(key,entry)
-                    except: continue
-                    if value[1] != winreg.REG_SZ: continue
-                    installPath = GPath(value[0])
-                    if not installPath.exists(): continue
-                    exePath = installPath.join(submod.exe)
-                    if not exePath.exists(): continue
-                    _registryGames[submod.fsName.lower()] = installPath
+        game_path = get_game_path(submod)
+        if game_path: _registryGames[submod.fsName.lower()] = game_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
@@ -441,8 +425,8 @@ magicEffects = {
 
 _strU = struct.Struct('I')
 
-mgef_school = dict((x,y) for x,[y,z,a] in magicEffects.items())
-mgef_name = dict((x,z) for x,[y,z,a] in magicEffects.items())
+mgef_school = dict((x, y) for x, [y, z, _num] in magicEffects.items())
+mgef_name = dict((x, z) for x, [y, z, __num] in magicEffects.items())
 mgef_basevalue = dict((x,a) for x,[y,z,a] in magicEffects.items())
 mgef_school.update(dict((_strU.unpack(x)[0],y) for x,[y,z,a] in magicEffects.items()))
 mgef_name.update(dict((_strU.unpack(x)[0],z) for x,[y,z,a] in magicEffects.items()))
@@ -618,7 +602,7 @@ acbs = {
     u'Luck': 32,
     }
 
-#Save File Info --------------------------------------------------------------
+# Save File Info --------------------------------------------------------------
 saveRecTypes = {
     6 : _(u'Faction'),
     19: _(u'Apparatus'),

@@ -30,7 +30,6 @@ import struct
 import itertools
 from constants import bethDataFiles, allBethFiles
 from ... import brec
-#from ...brec import *
 
 #--Name of the game to use in UI.
 displayName = u'Fallout 4'
@@ -45,9 +44,7 @@ defaultIniFile = u'Fallout4_default.ini'
 exe = u'Fallout4.exe'
 
 #--Registry keys to read to find the install location
-regInstallKeys = [
-    (u'Bethesda Softworks\\Fallout4',u'Installed Path'),
-    ]
+regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
 
 #--patch information
 patchURL = u'' # Update via steam
@@ -165,7 +162,7 @@ class ess:
         hours = int(hours[:-1])
         minutes = int(minutes[:-1])
         header.gameDays = float(days) + float(hours)/24 + float(minutes)/(24*60)
-        # Assuming still 1000 ticks per second 
+        # Assuming still 1000 ticks per second
         header.gameTicks = (days*24*60*60 + hours*60*60 + minutes*60) * 1000
         size, = struct.unpack('H',ins.read(2))
         ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime

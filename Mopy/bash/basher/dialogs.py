@@ -27,7 +27,7 @@ from types import IntType, LongType
 import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
-from .. import balt, bosh, bolt, bush
+from .. import balt, bosh, bolt, bush, env
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
@@ -468,7 +468,7 @@ class CreateNewProject(balt.Dialog):
 
         # Move into the target location
         try:
-            balt.shellMove(tempProject, projectDir, parent=self)
+            env.shellMove(tempProject, projectDir, parent=self)
         except:
             pass
         finally:

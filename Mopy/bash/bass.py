@@ -54,9 +54,3 @@ class Resources: # this belongs to basher but leads to cyclic imports, so...
     bashBlue = None
     bashDocBrowser = None
     bashMonkey = None
-
-# move with its uses to a cross platform 'env.py' module - maybe add bashIni
-try:
-    import _winreg as winreg
-except ImportError:
-    winreg = None

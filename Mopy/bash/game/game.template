@@ -51,9 +51,8 @@ exe = u''
 ##  HKLM\Software\Wow6432Node
 ##  HKCU\Software
 ##  HKCU\Software\Wow6432Node
-## Example: (u'Bethesda Softworks\\Oblivion',u'Installed Path')
-regInstallKeys = [
-    ]
+## Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
+regInstallKeys = ()
 
 #--Patch information
 ## URL to download patches for the main game.

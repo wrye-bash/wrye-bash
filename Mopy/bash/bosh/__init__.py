@@ -50,7 +50,7 @@ from subprocess import Popen, PIPE
 from functools import wraps
 
 #--Local
-from .. import bass, bolt, balt, bush, loot, libbsa
+from .. import bass, bolt, balt, bush, loot, libbsa, env
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError
@@ -396,7 +396,7 @@ class ModFile:
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        balt.shellMove(filePath.temp, filePath, parent=None)
+        env.shellMove(filePath.temp, filePath, parent=None)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -1708,7 +1708,7 @@ class SaveFile:
 def _delete(itemOrItems, **kwargs):
     confirm = kwargs.pop('confirm', False)
     recycle = kwargs.pop('recycle', True)
-    balt.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
+    env.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
@@ -2551,8 +2551,8 @@ class OblivionIni(IniFile):
             source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                balt.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
-            except (balt.AccessDeniedError,bolt.CancelError,bolt.SkipError):
+                env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
+            except (env.AccessDeniedError, bolt.CancelError, bolt.SkipError):
                 return
         sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
@@ -2707,11 +2707,11 @@ class OmodFile:
                 progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
             # Move files to final directory
-            balt.shellMove(stageDir, outDir.head, parent=None,
-                           askOverwrite=True, allowUndo=True, autoRename=True)
+            env.shellMove(stageDir, outDir.head, parent=None,
+                          askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
-            balt.shellDeletePass(outDir, parent=progress.getParent())
+            env.shellDeletePass(outDir, parent=progress.getParent())
             raise
         finally:
             # Clean up temp directories
@@ -3785,7 +3785,7 @@ class FileInfos(DataDict):
             if fileInfo.isGhost: newPath += u'.ghost'
         except AttributeError: pass # not a mod info
         oldPath = fileInfo.getPath()
-        balt.shellMove(oldPath, newPath, parent=None)
+        env.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -6964,7 +6964,7 @@ class InstallerArchive(Installer):
                 # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir, destDir, progress.getParent())
+                env.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean up staging dir
             self.rmTempDir()
@@ -7106,7 +7106,7 @@ class InstallerProject(Installer):
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir, destDir, progress.getParent())
+                env.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean out staging dir
             self.rmTempDir()
@@ -7924,7 +7924,7 @@ class InstallersData(DataDict):
         try: #--Do the deletion
             if nonPlugins:
                 parent = progress.getParent() if progress else None
-                balt.shellDelete(nonPlugins, parent=parent)
+                env.shellDelete(nonPlugins, parent=parent)
             #--Delete mods and remove them from load order
             if removedPlugins:
                 modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
@@ -9633,109 +9633,7 @@ def isCBashMergeable(modInfo,verbose=True):
         return False
 
 # Initialization --------------------------------------------------------------
-
-#  Import win32com, in case it's necessary
-try:
-        from win32com.shell import shell, shellcon
-        def getShellPath(shellKey):
-            path = shell.SHGetFolderPath (0, shellKey, None, 0)
-            return GPath(path)
-except ImportError:
-        shell = shellcon = None
-        reEnv = re.compile(u'%(\w+)%',re.U)
-        envDefs = os.environ
-        def subEnv(match):
-            key = match.group(1).upper()
-            if not envDefs.get(key):
-                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
-            return envDefs[key]
-        def getShellPath(folderKey): # move to env.py, mkdirs
-            from ..bass import winreg
-            if not winreg:  # unix _ HACK
-                return GPath({'Personal'     : os.path.expanduser("~"),
-                              'Local AppData': os.path.expanduser(
-                                  "~") + u'/.local/share'}[folderKey])
-            regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                u'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders')
-            try:
-                path = winreg.QueryValueEx(regKey,folderKey)[0]
-            except WindowsError:
-                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
-            regKey.Close()
-            path = reEnv.sub(subEnv,path)
-            return GPath(path)
-
-def testPermissions(path,permissions='rwcd'):
-    """Test file permissions for a path:
-        r = read permission
-        w = write permission
-        c = file creation permission
-        d = file deletion permission"""
-    return True # Temporarily disabled, for testing purposes
-    path = GPath(path)
-    permissions = permissions.lower()
-    def getTemp(path):  # Get a temp file name
-        if path.isdir():
-            temp = path.join(u'temp.tmp')
-        else:
-            temp = path.temp
-        while temp.exists():
-            temp = temp.temp
-        return temp
-    def getSmallest(path):  # Get the smallest file in the directory,
-        if path.isfile(): return path
-        smallsize = -1
-        ret = None
-        for file in path.list():
-            file = path.join(file)
-            if not file.isfile(): continue
-            size = file.size
-            if size < smallsize and smallsize >= 0:
-                smallsize = size
-                ret = file
-        return ret
-    #--Test read permissions
-    try:
-        if 'r' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with path.open('rb') as file:
-                    pass
-        #--Test write permissions
-        if 'w' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with file.open('ab') as file:
-                    pass
-        #--Test file creation permission (only for directories)
-        if 'c' in permissions:
-            if path.isdir() or not path.exists():
-                if not path.exists():
-                    path.makedirs()
-                    removeAtEnd = True
-                else:
-                    removeAtEnd = False
-                temp = getTemp(path)
-                with temp.open('wb') as file:
-                    pass
-                temp.remove()
-                if removeAtEnd:
-                    path.removedirs()
-        #--Test file deletion permission
-        if 'd' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                temp = getTemp(file)
-                file.copyTo(temp)
-                file.remove()
-                temp.moveTo(file)
-    except Exception, e:
-        if getattr(e,'errno',0) == 13: # Access denied
-            return False
-        elif getattr(e,'winerror',0) == 183: # Cannot create file if already exists
-            return False
-        else: raise
-    return True
+from ..env import get_personal_path, get_local_app_data_path
 
 def getPersonalPath(bashIni, path):
     #--Determine User folders from Personal and Local Application Data directories
@@ -9746,12 +9644,8 @@ def getPersonalPath(bashIni, path):
     elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
         path = GPath(bashIni.get('General', 'sPersonalPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
-    elif shell and shellcon:
-        path = getShellPath(shellcon.CSIDL_PERSONAL)
-        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
-        path = getShellPath('Personal')
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
+        path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -9770,12 +9664,8 @@ def getLocalAppDataPath(bashIni, path):
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
-    elif shell and shellcon:
-        path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
-        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
-        path = getShellPath('Local AppData')
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
+        path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -9824,21 +9714,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
     else:
         return oldPath, oldSrc
 
-def testUAC(gameDataPath):
-    print 'testing UAC' # TODO(ut): bypass in Linux !
-    tmpDir = bolt.Path.tempDir()
-    tempFile = tmpDir.join(u'_tempfile.tmp')
-    dest = gameDataPath.join(u'_tempfile.tmp')
-    with tempFile.open('wb'): pass # create the file
-    try: # to move it into the Game/Data/ directory
-        balt.shellMove(tempFile, dest, askOverwrite=True, silent=True)
-    except balt.AccessDeniedError:
-        return True
-    finally:
-        tmpDir.rmtree(safety=tmpDir.stail)
-        balt.shellDeletePass(dest)
-    return False
-
+from ..env import test_permissions # CURRENTLY DOES NOTHING !
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
@@ -9905,11 +9781,11 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Test correct permissions for the directories
     badPermissions = []
     for dir in dirs:
-        if not testPermissions(dirs[dir]):
+        if not test_permissions(dirs[dir]):
             badPermissions.append(dirs[dir])
-    if not testPermissions(oblivionMods):
+    if not test_permissions(oblivionMods):
         badPermissions.append(oblivionMods)
-    if len(badPermissions) > 0:
+    if badPermissions:
         # Do not have all the required permissions for all directories
         # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
         # bad, just disable BAIN.  If only the saves path is bad, just disable
@@ -9920,23 +9796,23 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
+    keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
+            'bainData', 'bsaCache')
     try:
-        keys = ('modsBash', 'installers', 'converters', 'dupeBCFs',
-                'corruptBCFs', 'bainData', 'bsaCache')
-        balt.shellMakeDirs([dirs[key] for key in keys])
-    except BoltError as e:
-        # BoltError is thrown by shellMakeDirs if any of the directories
-        # cannot be created due to residing on a non-existing drive.
-        # Find which keys are causing the errors
+        env.shellMakeDirs([dirs[key] for key in keys])
+    except env.NonExistentDriveError as e:
+        # NonExistentDriveError is thrown by shellMakeDirs if any of the
+        # directories cannot be created due to residing on a non-existing
+        # drive. Find which keys are causing the errors
         badKeys = set()     # List of dirs[key] items that are invalid
         # First, determine which dirs[key] items are causing it
         for key in keys:
-            if dirs[key] in e.message:
+            if dirs[key] in e.failed_paths:
                 badKeys.add(key)
         # Now, work back from those to determine which setting created those
-        msg = (_(u'Error creating required Wrye Bash directories.') + u'  ' +
-               _(u'Please check the settings for the following paths in your bash.ini, the drive does not exist')
-               + u':\n\n')
+        msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
+                u'Please check the settings for the following paths in your '
+                u'bash.ini, the drive does not exist') + u':\n\n'
         relativePathError = []
         if 'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
@@ -9962,13 +9838,11 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
                 else:
                     relativePathError.append(dirs['bainData'])
         if relativePathError:
-            msg += (u'\n' +
-                    _(u'A path error was the result of relative paths.')
-                    + u'  ' +
-                    _(u'The following paths are causing the errors, however usually a relative path should be fine.')
-                    + u'  ' +
-                    _(u'Check your setup to see if you are using symbolic links or NTFS Junctions')
-                    + u':\n\n')
+            msg += u'\n' + _(u'A path error was the result of relative paths.')
+            msg += u'  ' + _(u'The following paths are causing the errors, '
+                   u'however usually a relative path should be fine.')
+            msg += u'  ' + _(u'Check your setup to see if you are using '
+                   u'symbolic links or NTFS Junctions') + u':\n\n'
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 
@@ -9989,7 +9863,7 @@ def initDefaultTools():
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        from ..bass import winreg
+        from ..env import winreg
         if not winreg: return
         for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):

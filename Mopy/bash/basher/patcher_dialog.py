@@ -30,7 +30,7 @@ import time
 import wx
 from datetime import timedelta
 from . import SetUAC, BashFrame
-from .. import bosh, bolt, balt
+from .. import bosh, bolt, balt, env
 from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
@@ -263,12 +263,12 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    balt.shellMove(tempReadmeDir, bosh.dirs['mods'],
-                                   parent=self)
+                    env.shellMove(tempReadmeDir, bosh.dirs['mods'],
+                                  parent=self)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
-                    balt.shellMove([tempReadme, tempReadme.root + u'.html'],
-                                   bosh.dirs['saveBase'], parent=self)
+                    env.shellMove([tempReadme, tempReadme.root + u'.html'],
+                                  bosh.dirs['saveBase'], parent=self)
                     readme = bosh.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)

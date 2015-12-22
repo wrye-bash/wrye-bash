@@ -16,6 +16,9 @@ __pycache__/
 # the user ini
 Mopy/bash.ini
 
+# the shortcuts in the Mopy/App folder
+Mopy/Apps/*.lnk
+
 # Windows etc
 desktop.ini
 .dropbox

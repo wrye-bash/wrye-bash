@@ -67,7 +67,7 @@ import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, bass
+from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate
@@ -105,26 +105,25 @@ if sys.prefix not in set(os.environ['PATH'].split(';')):
 
 appRestart = False # restart Bash if true
 uacRestart = False # restart Bash with Admin Rights if true
-isUAC = False      # True if the game is under UAC protection
 
 # Settings --------------------------------------------------------------------
 settings = None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-def SetUAC(item):
+def SetUAC(item): # item must define a GetHandle() method
     """Helper function for creating menu items or buttons that need UAC
        Note: for this to work correctly, it needs to be run BEFORE
        appending a menu item to a menu (and so, needs to be enabled/
-       diasbled prior to that as well."""
-    if isUAC:
-        if isinstance(item,wx.MenuItem):
+       disabled prior to that as well."""
+    if env.isUAC:
+        if isinstance(item, wx.MenuItem):
             pass
             #if item.IsEnabled():
             #    bitmap = images['uac.small'].GetBitmap()
             #    item.SetBitmaps(bitmap,bitmap)
         else:
-            balt.setUAC(item,isUAC)
+            env.setUAC(item.GetHandle(), True)
 
 ##: DEPRECATED: Tank link mixins to access the Tank data. They should be
 # replaced by self.window.method but I keep them till encapsulation reduces
@@ -2237,8 +2236,8 @@ class InstallersList(balt.Tank):
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self,
-                                         recycle=True)  # recycle
+                        env.shellDelete(outDir, parent=self,
+                                        recycle=True)  # recycle
                     else: continue
                 try:
                     bosh.OmodFile(omod).extractToProject(
@@ -2339,10 +2338,10 @@ class InstallersList(balt.Tank):
             try:
                 if action == 'MOVE':
                     #--Move the dropped files
-                    balt.shellMove(filenames, filesTo, parent=self)
+                    env.shellMove(filenames, filesTo, parent=self)
                 else:
                     #--Copy the dropped files
-                    balt.shellCopy(filenames, filesTo, parent=self)
+                    env.shellCopy(filenames, filesTo, parent=self)
             except (CancelError,SkipError):
                 pass
         self.panel.frameActivated = True
@@ -2668,7 +2667,7 @@ class InstallersPanel(SashTankPanel):
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
             # Delete extracted omods
-            def _del(files): balt.shellDelete(files, parent=self)
+            def _del(files): env.shellDelete(files, parent=self)
             try:
                 _del(omodRemoves)
             except (CancelError, SkipError):
@@ -2692,10 +2691,10 @@ class InstallersPanel(SashTankPanel):
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
                          for omod in failed]
-                balt.shellMove(failed, dests, parent=self)
+                env.shellMove(failed, dests, parent=self)
             try:
                 omodMoves = list(omodMoves)
-                balt.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while balt.askYes(self, _(
