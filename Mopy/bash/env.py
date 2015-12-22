@@ -310,11 +310,6 @@ class AccessDeniedError(FileOperationError):
         self.errno = 5
         Exception.__init__(self, u'FileOperationError: Access Denied')
 
-class CallNotImplementedError(FileOperationError):
-    def __init__(self):
-        self.errno = 120
-        Exception.__init__(self, u'FileOperationError: Call Not Implemented')
-
 class _DirectoryFileCollisionError(FileOperationError):
     def __init__(self, source, dest):
         self.errno = -1
@@ -327,9 +322,10 @@ class NonExistentDriveError(FileOperationError):
         self.failed_paths = failed_paths
         Exception.__init__(self,u'FileOperationError: non existent drive')
 
-# https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
-FileOperationErrorMap = {5: AccessDeniedError,
-                         120: CallNotImplementedError,
+# NB: AccessDeniedError is not 5 but 120 as seen in:
+# https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+FileOperationErrorMap = {120: AccessDeniedError,
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383%28v=vs.85%29.aspx
                          1223: CancelError,}
 
 def __copyOrMove(operation, source, target, renameOnCollision, parent):
@@ -531,7 +527,7 @@ def testUAC(gameDataPath):
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
         shellMove(tempFile, dest, askOverwrite=True, silent=True)
-    except (AccessDeniedError, CallNotImplementedError): # believe it or not I get the latter !
+    except AccessDeniedError:
         return True
     finally:
         tmpDir.rmtree(safety=tmpDir.stail)
