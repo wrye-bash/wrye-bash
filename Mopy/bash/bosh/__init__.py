@@ -9729,7 +9729,7 @@ def testUAC(gameDataPath):
         balt.shellDeletePass(dest)
     return False
 
-from ..env import testPermissions # CURRENTLY DOES NOTHING !
+from ..env import test_permissions # CURRENTLY DOES NOTHING !
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
@@ -9796,11 +9796,11 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Test correct permissions for the directories
     badPermissions = []
     for dir in dirs:
-        if not testPermissions(dirs[dir]):
+        if not test_permissions(dirs[dir]):
             badPermissions.append(dirs[dir])
-    if not testPermissions(oblivionMods):
+    if not test_permissions(oblivionMods):
         badPermissions.append(oblivionMods)
-    if len(badPermissions) > 0:
+    if badPermissions:
         # Do not have all the required permissions for all directories
         # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
         # bad, just disable BAIN.  If only the saves path is bad, just disable
@@ -9811,9 +9811,9 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
         raise PermissionError(msg)
 
     # create bash user folders, keep these in order
+    keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
+            'bainData', 'bsaCache')
     try:
-        keys = ('modsBash', 'installers', 'converters', 'dupeBCFs',
-                'corruptBCFs', 'bainData', 'bsaCache')
         balt.shellMakeDirs([dirs[key] for key in keys])
     except BoltError as e:
         # BoltError is thrown by shellMakeDirs if any of the directories
@@ -9825,9 +9825,9 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             if dirs[key] in e.message:
                 badKeys.add(key)
         # Now, work back from those to determine which setting created those
-        msg = (_(u'Error creating required Wrye Bash directories.') + u'  ' +
-               _(u'Please check the settings for the following paths in your bash.ini, the drive does not exist')
-               + u':\n\n')
+        msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
+                u'Please check the settings for the following paths in your '
+                u'bash.ini, the drive does not exist') + u':\n\n'
         relativePathError = []
         if 'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
@@ -9853,13 +9853,11 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
                 else:
                     relativePathError.append(dirs['bainData'])
         if relativePathError:
-            msg += (u'\n' +
-                    _(u'A path error was the result of relative paths.')
-                    + u'  ' +
-                    _(u'The following paths are causing the errors, however usually a relative path should be fine.')
-                    + u'  ' +
-                    _(u'Check your setup to see if you are using symbolic links or NTFS Junctions')
-                    + u':\n\n')
+            msg += u'\n' + _(u'A path error was the result of relative paths.')
+            msg += u'  ' + _(u'The following paths are causing the errors, '
+                   u'however usually a relative path should be fine.')
+            msg += u'  ' + _(u'Check your setup to see if you are using '
+                   u'symbolic links or NTFS Junctions') + u':\n\n'
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 

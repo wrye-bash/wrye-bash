@@ -425,8 +425,8 @@ magicEffects = {
 
 _strU = struct.Struct('I')
 
-mgef_school = dict((x,y) for x,[y,z,a] in magicEffects.items())
-mgef_name = dict((x,z) for x,[y,z,a] in magicEffects.items())
+mgef_school = dict((x, y) for x, [y, z, _num] in magicEffects.items())
+mgef_name = dict((x, z) for x, [y, z, __num] in magicEffects.items())
 mgef_basevalue = dict((x,a) for x,[y,z,a] in magicEffects.items())
 mgef_school.update(dict((_strU.unpack(x)[0],y) for x,[y,z,a] in magicEffects.items()))
 mgef_name.update(dict((_strU.unpack(x)[0],z) for x,[y,z,a] in magicEffects.items()))
@@ -602,7 +602,7 @@ acbs = {
     u'Luck': 32,
     }
 
-#Save File Info --------------------------------------------------------------
+# Save File Info --------------------------------------------------------------
 saveRecTypes = {
     6 : _(u'Faction'),
     19: _(u'Apparatus'),

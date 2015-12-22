@@ -146,7 +146,7 @@ def get_default_app_icon(idex, target):
         icon = u'not\\a\\path'
     return icon, idex
 
-def testPermissions(path, permissions='rwcd'):
+def test_permissions(path, permissions='rwcd'):
     """Test file permissions for a path:
         r = read permission
         w = write permission
@@ -155,61 +155,63 @@ def testPermissions(path, permissions='rwcd'):
     return True # Temporarily disabled, for testing purposes
     path = GPath(path)
     permissions = permissions.lower()
-    def getTemp(path):  # Get a temp file name
-        if path.isdir():
-            temp = path.join(u'temp.tmp')
+    def getTemp(path_):  # Get a temp file name
+        if path_.isdir():
+            tmp = path_.join(u'temp.temp')
         else:
-            temp = path.temp
-        while temp.exists():
-            temp = temp.temp
-        return temp
-    def getSmallest(path):  # Get the smallest file in the directory,
+            tmp = path_.temp
+        while tmp.exists():
+            tmp = tmp.temp
+        return tmp
+    def getSmallest():  # Get the smallest file in the directory
         if path.isfile(): return path
         smallsize = -1
         ret = None
-        for file in path.list():
-            file = path.join(file)
-            if not file.isfile(): continue
-            size = file.size
-            if size < smallsize and smallsize >= 0:
+        for node in path.list():
+            node = path.join(node)
+            if not node.isfile(): continue
+            size = node.size
+            if smallsize == -1 or size < smallsize:
                 smallsize = size
-                ret = file
+                ret = node
         return ret
     #--Test read permissions
     try:
-        if 'r' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with path.open('rb') as file:
+        smallestFile = None
+        path_exists = path.exists()
+        if 'r' in permissions and path_exists:
+            smallestFile = getSmallest()
+            if smallestFile:
+                with smallestFile.open('rb'):
                     pass
         #--Test write permissions
-        if 'w' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with file.open('ab') as file:
+        if 'w' in permissions and path_exists:
+            smallestFile = smallestFile or getSmallest()
+            if smallestFile:
+                with smallestFile.open('ab'):
                     pass
         #--Test file creation permission (only for directories)
         if 'c' in permissions:
-            if path.isdir() or not path.exists():
-                if not path.exists():
+            if path.isdir() or not path_exists:
+                if not path_exists:
                     path.makedirs()
                     removeAtEnd = True
                 else:
                     removeAtEnd = False
                 temp = getTemp(path)
-                with temp.open('wb') as file:
+                with temp.open('wb'):
                     pass
                 temp.remove()
                 if removeAtEnd:
                     path.removedirs()
         #--Test file deletion permission
-        if 'd' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                temp = getTemp(file)
-                file.copyTo(temp)
-                file.remove()
-                temp.moveTo(file)
+        if 'd' in permissions and path_exists:
+            smallestFile = smallestFile or getSmallest()
+            if smallestFile:
+                temp = getTemp(smallestFile)
+                smallestFile.copyTo(temp)
+                smallestFile.remove()
+                temp.moveTo(smallestFile)
     except Exception, e:
         if getattr(e, 'errno', 0) == 13:
             return False # Access denied
