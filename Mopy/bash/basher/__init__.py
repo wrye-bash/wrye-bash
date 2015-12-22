@@ -3953,7 +3953,7 @@ class BashFrame(wx.Frame):
         #--Merge info # FIXME(ut) should be in ModInfos.refresh !
         oldMergeable = set(bosh.modInfos.mergeable)
         scanList = bosh.modInfos.refreshMergeable()
-        difMergeable = oldMergeable ^ bosh.modInfos.mergeable
+        difMergeable = (oldMergeable ^ bosh.modInfos.mergeable) & set(bosh.modInfos.keys())
         if scanList:
             with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
                 progress.setFull(len(scanList))
