@@ -26,7 +26,6 @@
 attributes which are populated here. Therefore the layout of the menus is
 also defined in these functions."""
 
-import os
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
@@ -34,7 +33,7 @@ from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink, win32gui
-from ..env import winreg # yak
+from ..env import get_default_app_icon
 from ..bolt import deprint, GPath
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -179,7 +178,6 @@ def InitStatusBar():
     #--Custom Apps
     dirApps = bosh.dirs['mopy'].join(u'Apps')
     appLinks = _initAppLinks(dirApps)
-    folderIcon = None
     badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
     for link in appLinks:
         (target,workingdir,args,icon,description) = appLinks[link]
@@ -199,45 +197,7 @@ def InitStatusBar():
                     except:
                         icon = u'' # Icon will be set to a red x further down.
                 else:
-                    # Use the default icon for that file type
-                    try:
-                        if target.isdir():
-                            if folderIcon is None:
-                                # Special handling of the Folder icon
-                                folderkey = winreg.OpenKey(
-                                    winreg.HKEY_CLASSES_ROOT,
-                                    u'Folder')
-                                iconkey = winreg.OpenKey(
-                                    folderkey,
-                                    u'DefaultIcon')
-                                filedata = winreg.EnumValue(
-                                    iconkey,0)
-                                filedata = filedata[1]
-                                folderIcon = filedata
-                            else:
-                                filedata = folderIcon
-                        else:
-                            icon_path = winreg.QueryValue(
-                                winreg.HKEY_CLASSES_ROOT,
-                                target.cext)
-                            pathKey = winreg.OpenKey(
-                                winreg.HKEY_CLASSES_ROOT,
-                                u'%s\\DefaultIcon' % icon_path)
-                            filedata = winreg.EnumValue(pathKey, 0)[1]
-                            winreg.CloseKey(pathKey)
-                        icon,idex = filedata.split(u',')
-                        icon = os.path.expandvars(icon)
-                        if not os.path.isabs(icon):
-                            # Get the correct path to the dll
-                            for dir_ in os.environ['PATH'].split(u';'):
-                                test = GPath(dir_).join(icon)
-                                if test.exists():
-                                    icon = test
-                                    break
-                    except:
-                        deprint(_(u'Error finding icon for %s:') % target.s,
-                                traceback=True)
-                        icon = u'not\\a\\path'
+                    icon, idex = get_default_app_icon(idex, target)
             icon = GPath(icon)
             # First try a custom icon
             fileName = u'%s%%i.png' % path.sbody

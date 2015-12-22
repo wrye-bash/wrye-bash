@@ -29,8 +29,7 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
-from env import winreg
-
+from env import get_game_path
 from bolt import GPath, Path, deprint, BoltError
 
 # Game detection --------------------------------------------------------------
@@ -63,7 +62,8 @@ def _supportedGames(useCache=True):
         if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
         _allGames[submod.fsName.lower()] = submod
         #--Get this game's install path
-        _get_game_path(submod)
+        game_path = get_game_path(submod)
+        if game_path: _registryGames[submod.fsName.lower()] = game_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
@@ -72,33 +72,6 @@ def _supportedGames(useCache=True):
     for foundName in _registryGames:
         deprint(u' %s:' % foundName, _registryGames[foundName])
     return _registryGames.copy()
-
-d= {winreg.HKEY_CURRENT_USER: 'winreg.HKEY_CURRENT_USER', winreg.HKEY_LOCAL_MACHINE:'winreg.HKEY_LOCAL_MACHINE'}
-def _get_game_path(submod): # maybe move to env.py
-    if not winreg: return
-    for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
-        for wow6432 in (u'', u'Wow6432Node\\'):
-            for (subkey, entry) in submod.regInstallKeys:
-                # (subkey, entry) = submod.regInstallKeys # currently for unneeded
-                try:
-                    key = winreg.OpenKey(hkey,
-                                         u'Software\\%s%s' % (wow6432, subkey))
-                    value = winreg.QueryValueEx(key, entry)
-                except: # WindowsError, OSError ? http://stackoverflow.com/questions/5227107/python-code-to-read-registry
-                    print d[hkey], u'Software\\%s%s' % (wow6432, subkey), entry
-                    # import traceback
-                    # traceback.print_exc()
-                    continue
-                print 'Found:', d[hkey], u'Software\\%s%s' % (wow6432, subkey), entry, value
-                if value[1] != winreg.REG_SZ: continue
-                installPath = GPath(value[0])
-                if not installPath.exists(): continue
-                exePath = installPath.join(submod.exe)
-                if not exePath.exists(): continue
-                _registryGames[submod.fsName.lower()] = installPath
-                return
-            else:
-                continue
 
 def _detectGames(cli_path=u'',bashIni=None):
     """Detect which supported games are installed.

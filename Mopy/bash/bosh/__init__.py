@@ -9633,109 +9633,7 @@ def isCBashMergeable(modInfo,verbose=True):
         return False
 
 # Initialization --------------------------------------------------------------
-
-#  Import win32com, in case it's necessary
-try:
-        from win32com.shell import shell, shellcon
-        def getShellPath(shellKey):
-            path = shell.SHGetFolderPath (0, shellKey, None, 0)
-            return GPath(path)
-except ImportError:
-        shell = shellcon = None
-        reEnv = re.compile(u'%(\w+)%',re.U)
-        envDefs = os.environ
-        def subEnv(match):
-            key = match.group(1).upper()
-            if not envDefs.get(key):
-                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
-            return envDefs[key]
-        def getShellPath(folderKey): # move to env.py, mkdirs
-            from ..env import winreg
-            if not winreg:  # unix _ HACK
-                return GPath({'Personal'     : os.path.expanduser("~"),
-                              'Local AppData': os.path.expanduser(
-                                  "~") + u'/.local/share'}[folderKey])
-            regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                u'Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders')
-            try:
-                path = winreg.QueryValueEx(regKey,folderKey)[0]
-            except WindowsError:
-                raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
-            regKey.Close()
-            path = reEnv.sub(subEnv,path)
-            return GPath(path)
-
-def testPermissions(path,permissions='rwcd'):
-    """Test file permissions for a path:
-        r = read permission
-        w = write permission
-        c = file creation permission
-        d = file deletion permission"""
-    return True # Temporarily disabled, for testing purposes
-    path = GPath(path)
-    permissions = permissions.lower()
-    def getTemp(path):  # Get a temp file name
-        if path.isdir():
-            temp = path.join(u'temp.tmp')
-        else:
-            temp = path.temp
-        while temp.exists():
-            temp = temp.temp
-        return temp
-    def getSmallest(path):  # Get the smallest file in the directory,
-        if path.isfile(): return path
-        smallsize = -1
-        ret = None
-        for file in path.list():
-            file = path.join(file)
-            if not file.isfile(): continue
-            size = file.size
-            if size < smallsize and smallsize >= 0:
-                smallsize = size
-                ret = file
-        return ret
-    #--Test read permissions
-    try:
-        if 'r' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with path.open('rb') as file:
-                    pass
-        #--Test write permissions
-        if 'w' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                with file.open('ab') as file:
-                    pass
-        #--Test file creation permission (only for directories)
-        if 'c' in permissions:
-            if path.isdir() or not path.exists():
-                if not path.exists():
-                    path.makedirs()
-                    removeAtEnd = True
-                else:
-                    removeAtEnd = False
-                temp = getTemp(path)
-                with temp.open('wb') as file:
-                    pass
-                temp.remove()
-                if removeAtEnd:
-                    path.removedirs()
-        #--Test file deletion permission
-        if 'd' in permissions and path.exists():
-            file = getSmallest(path)
-            if file:
-                temp = getTemp(file)
-                file.copyTo(temp)
-                file.remove()
-                temp.moveTo(file)
-    except Exception, e:
-        if getattr(e,'errno',0) == 13: # Access denied
-            return False
-        elif getattr(e,'winerror',0) == 183: # Cannot create file if already exists
-            return False
-        else: raise
-    return True
+from ..env import get_personal_path, get_local_app_data_path
 
 def getPersonalPath(bashIni, path):
     #--Determine User folders from Personal and Local Application Data directories
@@ -9746,12 +9644,8 @@ def getPersonalPath(bashIni, path):
     elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
         path = GPath(bashIni.get('General', 'sPersonalPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
-    elif shell and shellcon:
-        path = getShellPath(shellcon.CSIDL_PERSONAL)
-        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
-        path = getShellPath('Personal')
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
+        path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -9770,12 +9664,8 @@ def getLocalAppDataPath(bashIni, path):
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
         path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
-    elif shell and shellcon:
-        path = getShellPath(shellcon.CSIDL_LOCAL_APPDATA)
-        sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
-        path = getShellPath('Local AppData')
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key,envDefs[key]) for key in sorted(envDefs))
+        path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
     if not path.isabs():
         path = dirs['app'].join(path)
@@ -9839,6 +9729,7 @@ def testUAC(gameDataPath):
         balt.shellDeletePass(dest)
     return False
 
+from ..env import testPermissions # CURRENTLY DOES NOTHING !
 def initDirs(bashIni, personal, localAppData, oblivionPath):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
