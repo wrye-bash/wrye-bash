@@ -45,7 +45,7 @@ try:
 except ImportError: # linux
     win32gui = None
     raise
-from bass import winreg
+from env import winreg
 
 BUTTONID_OFFSET                 = 1000
 

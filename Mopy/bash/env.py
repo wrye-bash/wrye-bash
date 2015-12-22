@@ -22,35 +22,10 @@
 #
 # =============================================================================
 
-"""This module just stores some data that all modules have to be able to access
-without worrying about circular imports. Currently used to expose layout
-and environment issues - do not modify or imitate (ut)."""
-import os as _os
-import ConfigParser as _cp
+"""WIP module to encapsulate environment access - currently OS dependent stuff.
+"""
 
-language = None
-AppVersion = u"307"
-bashIni = None
-
-#--Null strings (for default empty byte arrays)
-null1 = '\x00'
-null2 = null1*2
-null3 = null1*3
-null4 = null1*4
-
-def GetBashIni(iniPath=None, reload_=False): ##: needs work
-    iniPath = iniPath or u'bash.ini'
-    global bashIni
-    if reload_ or bashIni is None:
-        if _os.path.exists(iniPath):
-            bashIni = _cp.ConfigParser()
-            bashIni.read(iniPath)
-    return bashIni
-
-class Resources: # this belongs to basher but leads to cyclic imports, so...
-    fonts = None
-    #--Icon Bundles
-    bashRed = None
-    bashBlue = None
-    bashDocBrowser = None
-    bashMonkey = None
+try:
+    import _winreg as winreg
+except ImportError: # we're on linux
+    winreg = None

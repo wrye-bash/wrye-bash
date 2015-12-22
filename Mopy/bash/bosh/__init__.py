@@ -9650,7 +9650,7 @@ except ImportError:
                 raise BoltError(u"Can't find user directories in windows registry.\n>> See \"If Bash Won't Start\" in bash docs for help.")
             return envDefs[key]
         def getShellPath(folderKey): # move to env.py, mkdirs
-            from ..bass import winreg
+            from ..env import winreg
             if not winreg:  # unix _ HACK
                 return GPath({'Personal'     : os.path.expanduser("~"),
                               'Local AppData': os.path.expanduser(
@@ -9989,7 +9989,7 @@ def initDefaultTools():
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        from ..bass import winreg
+        from ..env import winreg
         if not winreg: return
         for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
             for wow6432 in (u'',u'Wow6432Node\\'):

@@ -34,7 +34,7 @@ from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import balt, bosh, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink, win32gui
-from ..bass import winreg # yak
+from ..env import winreg # yak
 from ..bolt import deprint, GPath
 # modules below define the __all__ directive
 from .app_buttons import *
