@@ -321,6 +321,12 @@ class _DirectoryFileCollisionError(FileOperationError):
         Exception.__init__(self,
             u'FileOperationError: collision: moving %s to %s' %(source, dest))
 
+class NonExistentDriveError(FileOperationError):
+    def __init__(self, failed_paths):
+        self.errno = -1
+        self.failed_paths = failed_paths
+        Exception.__init__(self,u'FileOperationError: non existent drive')
+
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
 FileOperationErrorMap = {5: AccessDeniedError,
                          120: CallNotImplementedError,
@@ -475,7 +481,7 @@ def shellMakeDirs(dirs, parent=None):
         return not path.s.startswith(u"\\") and not path.drive().exists()
     errorPaths = [d for d in dirs if _filterUnixPaths(d)]
     if errorPaths:
-        raise BoltError(errorPaths)
+        raise NonExistentDriveError(errorPaths)
     #--Checks complete, start working
     tempDirs, fromDirs, toDirs = [], [], []
     try:
@@ -525,7 +531,7 @@ def testUAC(gameDataPath):
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
         shellMove(tempFile, dest, askOverwrite=True, silent=True)
-    except AccessDeniedError:
+    except (AccessDeniedError, CallNotImplementedError): # believe it or not I get the latter !
         return True
     finally:
         tmpDir.rmtree(safety=tmpDir.stail)

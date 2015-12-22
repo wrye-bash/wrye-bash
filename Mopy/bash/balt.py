@@ -2660,3 +2660,32 @@ class ListBoxes(Dialog):
             for i, mod in enumerate(items):
                 if checkList.IsChecked(i) ^ (not checked): select.append(mod)
         return select
+
+# Some UAC stuff --------------------------------------------------------------
+def ask_uac_restart(message, title, mopy):
+    if not canVista:
+        return askYes(None, message + u'\n\n' + _(
+                u'Start Wrye Bash with Administrator Privileges?'), title)
+    admin = _(u'Run with Administrator Privileges')
+    readme = _readme_url(mopy)
+    readme += '#trouble-permissions'
+    return vistaDialog(None, message=message,
+        buttons=[(True, u'+' + admin), (False, _(u'Run normally')), ],
+        title=title, expander=[_(u'How to avoid this message in the future'),
+            _(u'Less information'),
+            _(u'Use one of the following command line switches:') +
+            u'\n\n' + _(u'--no-uac: always run normally') +
+            u'\n' + _(u'--uac: always run with Admin Privileges') +
+            u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
+                u'for more information.') % {'readmePath': readme}])
+
+def _readme_url(mopy):
+    readme = mopy.join(u'Docs', u'Wrye Bash General Readme.html')
+    if readme.exists():
+        readme = u'file:///' + readme.s.replace(u'\\', u'/').replace(u' ',
+                                                                     u'%20')
+    else:
+        # Fallback to Git repository
+        readme = u"http://wrye-bash.github.io/docs/Wrye%20Bash" \
+                 u"%20General%20Readme.html"
+    return readme

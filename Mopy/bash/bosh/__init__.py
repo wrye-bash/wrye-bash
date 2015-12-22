@@ -9800,14 +9800,14 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             'bainData', 'bsaCache')
     try:
         env.shellMakeDirs([dirs[key] for key in keys])
-    except BoltError as e:
-        # BoltError is thrown by shellMakeDirs if any of the directories
-        # cannot be created due to residing on a non-existing drive.
-        # Find which keys are causing the errors
+    except env.NonExistentDriveError as e:
+        # NonExistentDriveError is thrown by shellMakeDirs if any of the
+        # directories cannot be created due to residing on a non-existing
+        # drive. Find which keys are causing the errors
         badKeys = set()     # List of dirs[key] items that are invalid
         # First, determine which dirs[key] items are causing it
         for key in keys:
-            if dirs[key] in e.message:
+            if dirs[key] in e.failed_paths:
                 badKeys.add(key)
         # Now, work back from those to determine which setting created those
         msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
