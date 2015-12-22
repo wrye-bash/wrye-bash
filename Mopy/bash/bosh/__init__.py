@@ -50,7 +50,7 @@ from subprocess import Popen, PIPE
 from functools import wraps
 
 #--Local
-from .. import bass, bolt, balt, bush, loot, libbsa
+from .. import bass, bolt, balt, bush, loot, libbsa, env
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError
@@ -396,7 +396,7 @@ class ModFile:
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        balt.shellMove(filePath.temp, filePath, parent=None)
+        env.shellMove(filePath.temp, filePath, parent=None)
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -1708,7 +1708,7 @@ class SaveFile:
 def _delete(itemOrItems, **kwargs):
     confirm = kwargs.pop('confirm', False)
     recycle = kwargs.pop('recycle', True)
-    balt.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
+    env.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
@@ -2551,8 +2551,8 @@ class OblivionIni(IniFile):
             source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
-                balt.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
-            except (balt.AccessDeniedError,bolt.CancelError,bolt.SkipError):
+                env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
+            except (env.AccessDeniedError, bolt.CancelError, bolt.SkipError):
                 return
         sArchives = self.getSetting(section,key,u'')
         #--Strip existint redirectors out
@@ -2707,11 +2707,11 @@ class OmodFile:
                 progress(1,self.path.stail+u'\n'+_(u'Extracted'))
 
             # Move files to final directory
-            balt.shellMove(stageDir, outDir.head, parent=None,
-                           askOverwrite=True, allowUndo=True, autoRename=True)
+            env.shellMove(stageDir, outDir.head, parent=None,
+                          askOverwrite=True, allowUndo=True, autoRename=True)
         except Exception as e:
             # Error occurred, see if final output dir needs deleting
-            balt.shellDeletePass(outDir, parent=progress.getParent())
+            env.shellDeletePass(outDir, parent=progress.getParent())
             raise
         finally:
             # Clean up temp directories
@@ -3785,7 +3785,7 @@ class FileInfos(DataDict):
             if fileInfo.isGhost: newPath += u'.ghost'
         except AttributeError: pass # not a mod info
         oldPath = fileInfo.getPath()
-        balt.shellMove(oldPath, newPath, parent=None)
+        env.shellMove(oldPath, newPath, parent=None)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -6964,7 +6964,7 @@ class InstallerArchive(Installer):
                 # install a mod for Oblivion.
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir, destDir, progress.getParent())
+                env.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean up staging dir
             self.rmTempDir()
@@ -7106,7 +7106,7 @@ class InstallerProject(Installer):
             if count:
                 destDir = dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
-                balt.shellMove(stageDataDir, destDir, progress.getParent())
+                env.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean out staging dir
             self.rmTempDir()
@@ -7924,7 +7924,7 @@ class InstallersData(DataDict):
         try: #--Do the deletion
             if nonPlugins:
                 parent = progress.getParent() if progress else None
-                balt.shellDelete(nonPlugins, parent=parent)
+                env.shellDelete(nonPlugins, parent=parent)
             #--Delete mods and remove them from load order
             if removedPlugins:
                 modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
@@ -9721,12 +9721,12 @@ def testUAC(gameDataPath):
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
-        balt.shellMove(tempFile, dest, askOverwrite=True, silent=True)
-    except balt.AccessDeniedError:
+        env.shellMove(tempFile, dest, askOverwrite=True, silent=True)
+    except env.AccessDeniedError:
         return True
     finally:
         tmpDir.rmtree(safety=tmpDir.stail)
-        balt.shellDeletePass(dest)
+        env.shellDeletePass(dest)
     return False
 
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
@@ -9814,7 +9814,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
             'bainData', 'bsaCache')
     try:
-        balt.shellMakeDirs([dirs[key] for key in keys])
+        env.shellMakeDirs([dirs[key] for key in keys])
     except BoltError as e:
         # BoltError is thrown by shellMakeDirs if any of the directories
         # cannot be created due to residing on a non-existing drive.

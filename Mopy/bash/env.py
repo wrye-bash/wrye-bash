@@ -24,9 +24,10 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
-from bolt import GPath, BoltError, deprint # bin this ideally
-import re as _re
 import os as _os
+import re as _re
+import shutil as _shutil
+from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path
 
 try:
     import _winreg as winreg
@@ -53,14 +54,19 @@ def get_game_path(submod):
             return installPath
     return None
 
-try: #  Import win32com, in case it's necessary
+try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
+    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
 
     def _getShellPath(shellKey):
         path = shell.SHGetFolderPath(0, shellKey, None, 0)
         return path
 except ImportError:
     shell = shellcon = None
+    FO_MOVE = 1
+    FO_COPY = 2
+    FO_DELETE = 3
+    FO_RENAME = 4
     reEnv = _re.compile(u'%(\w+)%', _re.U)
     envDefs = _os.environ
 
@@ -220,3 +226,215 @@ def test_permissions(path, permissions='rwcd'):
         else:
             raise
     return True
+
+# Shell (OS) File Operations --------------------------------------------------
+#------------------------------------------------------------------------------
+class FileOperationError(Exception):
+    def __init__(self, errorCode):
+        self.errno = errorCode
+        Exception.__init__(self, u'FileOperationError: %i' % errorCode)
+
+class AccessDeniedError(FileOperationError):
+    def __init__(self):
+        self.errno = 5
+        Exception.__init__(self, u'FileOperationError: Access Denied')
+
+class CallNotImplementedError(FileOperationError):
+    def __init__(self):
+        self.errno = 120
+        Exception.__init__(self, u'FileOperationError: Call Not Implemented')
+
+class _DirectoryFileCollisionError(FileOperationError):
+    def __init__(self, source, dest):
+        self.errno = -1
+        Exception.__init__(self,
+            u'FileOperationError: collision: moving %s to %s' %(source, dest))
+
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382%28v=vs.85%29.aspx
+FileOperationErrorMap = {5: AccessDeniedError,
+                         120: CallNotImplementedError,
+                         1223: CancelError,}
+
+def __copyOrMove(operation, source, target, renameOnCollision, parent):
+    """WIP shutil move and copy adapted from #96"""
+    # renameOnCollision - if True auto-rename on moving collision, else ask
+    # TODO(241): renameOnCollision NOT IMPLEMENTED
+    doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
+    for fileFrom, fileTo in zip(source, target):
+        if fileFrom.isdir():
+            if fileTo.exists():
+                if not fileTo.isdir():
+                    raise _DirectoryFileCollisionError(fileFrom, fileTo)
+                # dir exists at target, copy contents individually/recursively
+                for content in _os.listdir(fileFrom):
+                    _fileOperation(operation, fileFrom.join(content),
+                                   fileTo.join(content), renameOnCollision,
+                                   parent)
+            else:  # dir doesn't exist at the target, copy it
+                doIt(fileFrom.s, fileTo.s)
+        # copy the file, overwrite as needed
+        elif fileFrom.isfile():  # or os.path.islink(file):
+            # move may not work if the target exists, copy instead...
+            _shutil.copy2(fileFrom.s, fileTo.s) # ...and overwrite as needed
+            if operation == FO_MOVE: fileFrom.remove() # then remove original
+    return {} ##: the renames map ?
+
+def _fileOperation(operation, source, target=None, allowUndo=True,
+                   confirm=True, renameOnCollision=False, silent=False,
+                   parent=None):
+    """Docs WIP
+    :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
+    :param source: a Path, basestring or an iterable of those (yak,
+    only accept iterables)
+    :param target: as above, if iterable must have the same length as source
+    :param allowUndo: FOF_ALLOWUNDO: "Preserve undo information, if possible"
+    :param confirm: the opposite of FOF_NOCONFIRMATION ("Respond with Yes to
+    All for any dialog box that is displayed")
+    :param renameOnCollision: FOF_RENAMEONCOLLISION
+    :param silent: FOF_SILENT ("Do not display a progress dialog box")
+    :param parent: HWND to the dialog's parent window
+    .. seealso:
+        `SHFileOperation <http://msdn.microsoft.com/en-us/library/windows
+        /desktop/bb762164(v=vs.85).aspx>`
+    """
+    if not source:
+        return {}
+    abspath = _os.path.abspath
+    # source may be anything - see SHFILEOPSTRUCT - accepts list or item
+    if isinstance(source, (Path, basestring)):
+        source = [GPath(abspath(GPath(source).s))]
+    else:
+        source = [GPath(abspath(GPath(x).s)) for x in source]
+    # target may be anything ...
+    target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
+    if isinstance(target, (Path, basestring)):
+        target = [GPath(abspath(GPath(target).s))]
+    else:
+        target = [GPath(abspath(GPath(x).s)) for x in target]
+    if shell is not None:
+        # flags
+        flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flags |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
+        if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flags |= shellcon.FOF_SILENT
+        # null terminated strings
+        source = u'\x00'.join(x.s for x in source)
+        target = u'\x00'.join(x.s for x in target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # See SHFILEOPSTRUCT for deciphering return values
+        # result: a windows error code (or 0 for success)
+        # aborted: True if any operations aborted, False otherwise
+        # mapping: maps the old and new names of the renamed files
+        result, aborted, mapping = shell.SHFileOperation(
+                (parent, operation, source, target, flags, None, None))
+        if result == 0:
+            if aborted: raise SkipError()
+            return dict(mapping)
+        elif result == 2 and operation == FO_DELETE:
+            # Delete failed because file didnt exist
+            return dict(mapping)
+        else:
+            raise FileOperationErrorMap.get(result, FileOperationError(result))
+    else: # Use custom dialogs and such
+        import balt # TODO(ut): local import, env should be above balt...
+        if operation == FO_DELETE:
+            # allowUndo - no effect, can't use recycle bin this way
+            # confirm - ask if confirm is True
+            # renameOnCollision - no effect, deleting files
+            # silent - no real effect (we don't show visuals deleting this way)
+            if confirm:
+                message = _(u'Are you sure you want to permanently delete '
+                            u'these %(count)d items?') % {'count':len(source)}
+                message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
+                if not balt.askYes(parent,message,_(u'Delete Multiple Items')):
+                    return {}
+            # Do deletion
+            for toDelete in source:
+                if not toDelete.exists(): continue
+                if toDelete.isdir():
+                    toDelete.rmtree(toDelete.stail)
+                else:
+                    toDelete.remove()
+            return {}
+        # allowUndo - no effect, we're not going to manually track file moves
+        # confirm - no real effect when moving
+        # silent - no real effect, since we're not showing visuals
+        return __copyOrMove(operation, source, target, renameOnCollision,
+                            parent)
+
+def shellDelete(files, parent=None, confirm=False, recycle=False):
+    try:
+        return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,
+                              confirm=confirm, renameOnCollision=True,
+                              silent=False, parent=parent)
+    except CancelError:
+        if confirm:
+            return None
+        raise
+
+def shellDeletePass(folder, parent=None):
+    """Delete tmp dirs/files - ignore errors (but log them)."""
+    if folder.exists():
+        try: shellDelete(folder, parent=parent, confirm=False, recycle=False)
+        except: deprint(u"Error deleting %s:" % folder, traceback=True)
+
+def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False, silent=False):
+    return _fileOperation(FO_MOVE, filesFrom, filesTo, parent=parent,
+                          confirm=askOverwrite, allowUndo=allowUndo,
+                          renameOnCollision=autoRename, silent=silent)
+
+def shellCopy(filesFrom, filesTo, parent=None, askOverwrite=False,
+              allowUndo=False, autoRename=False):
+    return _fileOperation(FO_COPY, filesFrom, filesTo, allowUndo=allowUndo,
+                          confirm=askOverwrite, renameOnCollision=autoRename,
+                          silent=False, parent=parent)
+
+def shellMakeDirs(dirs, parent=None):
+    if not dirs: return
+    dirs = [dirs] if not isinstance(dirs, (list, tuple, set)) else dirs
+    #--Skip dirs that already exist
+    dirs = [x for x in dirs if not x.exists()]
+    #--Check for dirs that are impossible to create (the drive they are
+    #  supposed to be on doesn't exist
+    def _filterUnixPaths(path):
+        return not path.s.startswith(u"\\") and not path.drive().exists()
+    errorPaths = [d for d in dirs if _filterUnixPaths(d)]
+    if errorPaths:
+        raise BoltError(errorPaths)
+    #--Checks complete, start working
+    tempDirs, fromDirs, toDirs = [], [], []
+    try:
+        for folder in dirs:
+            # Attempt creating the directory via normal methods, only fall back
+            # to shellMove if UAC or something else stopped it
+            try:
+                folder.makedirs()
+            except:
+                # Failed, try the UAC workaround
+                tmpDir = Path.tempDir()
+                tempDirs.append(tmpDir)
+                toMake = []
+                toMakeAppend = toMake.append
+                while not folder.exists() and folder != folder.head:
+                    # Need to test against dir == dir.head to prevent
+                    # infinite recursion if the final bit doesn't exist
+                    toMakeAppend(folder.tail)
+                    folder = folder.head
+                if not toMake:
+                    continue
+                toMake.reverse()
+                base = tmpDir.join(toMake[0])
+                toDir = folder.join(toMake[0])
+                tmpDir.join(*toMake).makedirs()
+                fromDirs.append(base)
+                toDirs.append(toDir)
+        if fromDirs:
+            # fromDirs will only get filled if folder.makedirs() failed
+            shellMove(fromDirs, toDirs, parent=parent)
+    finally:
+        for tmpDir in tempDirs:
+            tmpDir.rmtree(safety=tmpDir.stail)

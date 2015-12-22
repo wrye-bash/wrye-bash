@@ -67,7 +67,7 @@ import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, bass
+from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate
@@ -2237,8 +2237,8 @@ class InstallersList(balt.Tank):
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
                         u"with '%s'?") % (omod.sbody, omod.stail)):
-                        balt.shellDelete(outDir, parent=self,
-                                         recycle=True)  # recycle
+                        env.shellDelete(outDir, parent=self,
+                                        recycle=True)  # recycle
                     else: continue
                 try:
                     bosh.OmodFile(omod).extractToProject(
@@ -2339,10 +2339,10 @@ class InstallersList(balt.Tank):
             try:
                 if action == 'MOVE':
                     #--Move the dropped files
-                    balt.shellMove(filenames, filesTo, parent=self)
+                    env.shellMove(filenames, filesTo, parent=self)
                 else:
                     #--Copy the dropped files
-                    balt.shellCopy(filenames, filesTo, parent=self)
+                    env.shellCopy(filenames, filesTo, parent=self)
             except (CancelError,SkipError):
                 pass
         self.panel.frameActivated = True
@@ -2668,7 +2668,7 @@ class InstallersPanel(SashTankPanel):
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
             # Delete extracted omods
-            def _del(files): balt.shellDelete(files, parent=self)
+            def _del(files): env.shellDelete(files, parent=self)
             try:
                 _del(omodRemoves)
             except (CancelError, SkipError):
@@ -2692,10 +2692,10 @@ class InstallersPanel(SashTankPanel):
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
                          for omod in failed]
-                balt.shellMove(failed, dests, parent=self)
+                env.shellMove(failed, dests, parent=self)
             try:
                 omodMoves = list(omodMoves)
-                balt.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while balt.askYes(self, _(
