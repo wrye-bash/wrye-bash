@@ -38,7 +38,6 @@ import time
 import cPickle
 import collections
 import copy
-import datetime
 import os
 import re
 import string
@@ -7289,7 +7288,8 @@ class InstallersData(DataDict):
         keepFiles.update((GPath(f) for f in bush.game.ignoreDataFiles))
         data_sizeCrcDate = self.data_sizeCrcDate
         removes = set(data_sizeCrcDate) - keepFiles
-        destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %(datetime.datetime.now().strftime(u'%d-%m-%Y %H%M.%S')))
+        destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %
+            bolt.timestamp())
         emptyDirs = set()
         skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
@@ -8805,14 +8805,11 @@ def initOptions(bashIni):
     tooldirs['Tes4TransPath'] = tooldirs['Tes4EditPath'].head.join(u'TES4Trans.exe')
 
 def initLogFile():
-    if inisettings['KeepLog'] == 0:
-        if inisettings['LogFile'].exists():
-            os.remove(inisettings['LogFile'].s)
-    else:
-        with inisettings['LogFile'].open('a', encoding='utf-8-sig') as log:
-            log.write(_(u'%s Wrye Bash ini file read, Keep Log level: %d, '
-                u'initialized.') % (
-            datetime.datetime.now(), inisettings['KeepLog']) + u'\r\n')
+    if inisettings['KeepLog'] == 0: return
+    with inisettings['LogFile'].open('a', encoding='utf-8-sig') as log:
+        log.write(_(u'%s Wrye Bash ini file read, Keep Log level: %d, '
+                    u'initialized.') % (
+                  bolt.timestamp(), inisettings['KeepLog']) + u'\r\n')
 
 def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini

@@ -24,7 +24,6 @@
 
 """Rollback library."""
 
-import datetime
 import cPickle
 import bash
 import bass
@@ -194,21 +193,19 @@ class BackupSettings(BaseBackupSettings):
         self.InfoSuccess()
 
     def PromptFile(self):
-        #prompt for backup filename
-        #returns False if user cancels
+        """Prompt for backup filename - return False if user cancels."""
         if self.archive is None or self._dir.join(self.archive).exists():
-            dt = datetime.datetime.now()
-            file = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-                bush.game.fsName, dt.strftime(u'%Y-%m-%d %H.%M.%S'),
-                self.verDat, self.verApp)
+            filename = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
+                bush.game.fsName, bolt.timestamp(), self.verDat, self.verApp)
             if not self.quit:
-                path = askSave(self.parent,_(u'Backup Bash Settings'),self._dir,file,u'*.7z')
+                path = askSave(self.parent, title=_(u'Backup Bash Settings'),
+                               defaultDir=self._dir, defaultFile=filename,
+                               wildcard=u'*.7z')
                 if not path: return False
                 self._dir = path.head
                 self.archive = path.tail
             elif not self.archive:
-                self.archive = file
-        #end if
+                self.archive = filename
         self.maketmp()
         return True
 

@@ -42,6 +42,7 @@ import traceback
 import csv
 import tempfile
 import pkgutil
+import datetime
 close_fds = True
 import types
 from binascii import crc32
@@ -171,7 +172,7 @@ def unformatDate(date, formatStr):
         else:
             raise
 
-def timestamp(): return unicode(int(time.time())) # hasty
+def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 def round_size(siz):
     """Round non zero sizes to 1 KB."""
@@ -1480,17 +1481,22 @@ class PickleDict:
         """
         self.vdata.clear()
         self.data.clear()
+        cor = cor_name =  None
         for path in (self.path,self.backup):
+            if cor is not None:
+                cor.moveTo(cor_name)
+                cor = None
             if path.exists():
                 try:
                     with path.open('rb') as ins:
                         try:
                             firstPickle = cPickle.load(ins)
                         except ValueError:
-                            cor = path.join(u'.', timestamp(), u'.corrupted')
-                            deprint(u'unable to load %s (moved to %s)' % (
-                                path, cor), traceback=True)
-                            path.moveTo(cor)
+                            cor = path
+                            cor_name = GPath(path.s + u' (%s)' % timestamp() +
+                                    u'.corrupted')
+                            deprint(u'Unable to load %s (moved to "%s")' % (
+                                path, cor_name.tail), traceback=True)
                             continue # file corrupt - try next file
                         if firstPickle == 'VDATA2':
                             self.vdata.update(cPickle.load(ins))
