@@ -120,7 +120,10 @@ def __fixLoadOrder(lord, _selected=None):
     # game's master might be out of place (if using timestamps for load
     # ordering or a manually edited loadorder.txt) so move it up
     masterName = bosh.modInfos.masterName
-    masterDex = lord.index(masterName)
+    try:
+        masterDex = lord.index(masterName)
+    except ValueError:
+        raise bolt.BoltError(u'%s is missing or corrupted' % masterName)
     if masterDex > 0:
         bolt.deprint(u'%s in %d position' % (masterName, masterDex))
         lord.remove(masterName)
