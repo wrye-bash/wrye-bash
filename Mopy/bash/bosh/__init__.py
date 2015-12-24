@@ -7394,7 +7394,6 @@ class InstallersData(DataDict):
             self.data[destName] = installer = copy.copy(self.data[item])
             installer.isActive = False
             self.moveArchives([destName],self.data[item].order+1)
-            self.refreshOrder()
 
     #--Refresh Functions ------------------------------------------------------
     def refreshInstallers(self,progress=None,fullRefresh=False):
@@ -7573,30 +7572,25 @@ class InstallersData(DataDict):
 
     def refreshOrder(self):
         """Refresh installer status."""
-        changed = False
-        data = self.data
         inOrder, pending = [], []
-        orderedAppend = inOrder.append
-        pendingAppend = pending.append
-        for archive,installer in self.iteritems():
+        # not specifying the key below results in double time
+        for archive, installer in sorted(self.iteritems(), key=lambda x: x[0]):
             if installer.order >= 0:
-                orderedAppend(archive)
+                inOrder.append((archive, installer))
             else:
-                pendingAppend(archive)
-        pending.sort()
-        inOrder.sort()
-        inOrder.sort(key=lambda x: data[x].order)
-        if self.lastKey in inOrder:
-            index = inOrder.index(self.lastKey)
-            inOrder[index:index] = pending
+                pending.append((archive, installer))
+        inOrder.sort(key=lambda x: x[1].order)
+        for dex, (key, value) in enumerate(inOrder):
+            if self.lastKey == key:
+                inOrder[dex:dex] = pending
+                break
         else:
             inOrder += pending
-        order = 0
-        for archive in inOrder:
-            if data[archive].order != order:
-                data[archive].order = order
+        changed = False
+        for order, (archive, installer) in enumerate(inOrder):
+            if installer.order != order:
+                installer.order = order
                 changed = True
-            order += 1
         return changed
 
     def refreshNorm(self):
