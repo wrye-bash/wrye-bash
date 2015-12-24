@@ -2371,7 +2371,7 @@ class InstallersList(balt.UIList):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.irefresh(what='IN')
+            self.data.irefresh(what='N')
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self.EnsureVisibleIndex(visibleIndex)

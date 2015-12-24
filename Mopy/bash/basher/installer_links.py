@@ -99,6 +99,20 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+    def _get_refreshed(self, installer, src_installer, is_project=True,
+                       progress=None, do_refresh=True):
+        new = installer not in self.idata
+        clazz = bosh.InstallerProject if is_project else bosh.InstallerArchive
+        if new:
+            self.idata[installer] = clazz(installer)
+            self.idata.moveArchives([installer], src_installer.order + 1)
+        installer_info = self.idata[installer]
+        if is_project: # no need to call irefresh(what='I')
+            installer_path = self.idata.dir.join(installer) # bolt.Path
+            installer_info.refreshBasic(installer_path, progress=progress)
+        if do_refresh:
+            self.idata.irefresh(what='NS')
+        return installer_info
 
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
@@ -127,15 +141,11 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
+            iArchive = self._get_refreshed(archive, installer,
+                                           is_project=False, do_refresh=False)
             iArchive.blockSize = blockSize
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
-            self.idata.irefresh(what='I', pending=[archive]) # fullrefresh is unneeded
+            self.idata.irefresh(what='I', pending=[archive])
         self.window.RefreshUI()
 
     def _askFilename(self, message, filename):
@@ -836,15 +846,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                                     u"%03d - %s" % (order,package.s))))
                             curFile += len(curConflicts)
                     project = destDir.root
-                    if project not in idata:
-                        idata[project] = bosh.InstallerProject(project)
-                    iProject = idata[project] #bash.bosh.InstallerProject object
-                    pProject = installers_dir.join(project) # bolt.Path
-                    # ...\Bash Installers\030 - Conflicts
-                    iProject.refreshBasic(pProject, progress=None)
-                    if iProject.order == -1:
-                        idata.moveArchives([project],srcInstaller.order + 1)
-                    idata.irefresh(what='NS')
+                    self._get_refreshed(project, srcInstaller)
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1047,18 +1049,9 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         _(u"%s already exists. Overwrite it?") % project.s,
                         default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                self._create_project(installer, progress, project)
+                self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
-
-    def _create_project(self, installer, progress, project):
-        if project not in self.idata:
-            self.idata[project] = bosh.InstallerProject(project)
-        iProject = self.idata[project]
-        pProject = bass.dirs['installers'].join(project)
-        iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
-        if iProject.order == -1:
-            self.idata.moveArchives([project], installer.order + 1)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
