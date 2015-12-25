@@ -272,6 +272,10 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel()
 
+    def SelectUIListItem(self, item, deselectOthers=False):
+        self.uiList.SelectItem(item, deselectOthers=deselectOthers)
+        self.uiList.EnsureVisibleItem(item, focus=True)
+
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
 
@@ -975,14 +979,17 @@ class ModList(_ModsSortMixin, balt.UIList):
 
     def OnLeftDown(self,event):
         """Left Down: Check/uncheck mods."""
-        modName = self._getItemClicked(event, on_icon=True)
-        if modName:
+        mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
+        if mod_clicked_on_icon:
             self._gList.SetDnD(False)
-            self._checkUncheckMod(modName)
+            self._checkUncheckMod(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
-            self.SelectItem(modName, deselectOthers=True)
+            self.SelectItem(mod_clicked_on_icon, deselectOthers=True)
         else:
+            mod_clicked = self._getItemClicked(event)
+            if event.CmdDown() and mod_clicked:
+                if self.jump_to_mods_installer(mod_clicked): return
             self._gList.SetDnD(True)
             #--Pass Event onward to OnSelectItem
             event.Skip()
@@ -1038,6 +1045,15 @@ class ModList(_ModsSortMixin, balt.UIList):
         #--Refresh
         bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
+
+    def jump_to_mods_installer(self, modName):
+        if not balt.Link.Frame.iPanel or not bosh.settings[
+            'bash.installers.enabled']: return False
+        installer = self.data.table.getColumn('installer')[modName]
+        if installer is None:
+            return False
+        balt.Link.Frame.notebook.SelectPage('Installers', installer)
+        return True
 
 #------------------------------------------------------------------------------
 class _DetailsMixin(object):
@@ -2367,7 +2383,7 @@ class InstallersList(balt.Tank):
             self.data.irefresh(what='IN')
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
-            self._gList.EnsureVisible(visibleIndex)
+            self.EnsureVisibleIndex(visibleIndex)
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
             balt.clipboardDropFiles(10, self.OnDropFiles)
@@ -3436,7 +3452,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             # needed if user updates to 306+ that drops 'bash.tabs', the latter
             # is unchanged from default and the new version also removes a panel
                                     if x in enabled])
-        # append any new tabs - apends last
+        # append any new tabs - appends last
         newTabs = set(tabInfo) - set(newOrder)
         for n in newTabs: newOrder[n] = BashNotebook._tabs_enabled_ordered[n]
         # delete any removed tabs
@@ -3493,6 +3509,14 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             canDisable = bool(key != 'Mods')
             menu.append(_Tab_Link(key, canDisable))
         return menu
+
+    def SelectPage(self, page_title, item):
+        for ind, title in enumerate(settings['bash.tabs.order']):
+            if title == page_title: break
+        else: raise BoltError('Invalid page: %s' % page_title)
+        self.SetSelection(ind)
+        tabInfo[page_title][2].SelectUIListItem(GPath(item),
+                                                deselectOthers=True)
 
     def DoTabMenu(self,event):
         pos = event.GetPosition()

@@ -65,7 +65,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_CleanMod',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
-           'Mod_SetVersion', 'Mod_ListDependent']
+           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_JumpToInstaller']
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -637,6 +637,28 @@ class Mod_ListDependent(OneItemLink):
         balt.copyToClipboard(text)
         self._showLog(text, title=self.legend, fixedFont=False,
                       icons=Resources.bashBlue)
+
+class Mod_JumpToInstaller(AppendableLink, OneItemLink):
+    """Go to the installers tab and highlight the mods installer"""
+    text = _(u"Jump to installer")
+
+    def _initData(self, window, selection):
+        super(Mod_JumpToInstaller, self)._initData(window, selection)
+        self.help = _(u"Jump to the installer of %(filename)s") % (
+                        {'filename': selection[0]}) + u'. '
+        self.help += _(u'You can Control click on the mod to the same effect')
+        self._installer = bosh.modInfos.table.getColumn('installer')[
+            selection[0]]
+
+    def _append(self, window): return balt.Link.Frame.iPanel and bosh.settings[
+        'bash.installers.enabled']
+
+    def _enable(self):
+        return super(Mod_JumpToInstaller,
+                     self)._enable() and self._installer is not None
+
+    def Execute(self): self.window.jump_to_mods_installer(self.selected[0])
+
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------

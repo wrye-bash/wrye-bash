@@ -440,6 +440,7 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_CreateBOSSReport())
     ModList.itemMenu.append(Mod_CopyModInfo())
     ModList.itemMenu.append(Mod_ListDependent())
+    ModList.itemMenu.append(Mod_JumpToInstaller())
     #--------------------------------------------
     ModList.itemMenu.append(SeparatorLink())
     ModList.itemMenu.append(Mod_AllowGhosting())

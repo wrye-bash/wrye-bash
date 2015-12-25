@@ -1926,8 +1926,12 @@ class UIList(wx.Panel):
 
     def DeleteAll(self): self._gList.DeleteAll()
 
-    def EnsureVisible(self, name):
-        self._gList.EnsureVisible(self.GetIndex(name))
+    def EnsureVisibleItem(self, name, focus=False):
+        self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
+
+    def EnsureVisibleIndex(self, dex, focus=False):
+        self._gList.Focus(dex) if focus else self._gList.EnsureVisible(dex)
+        self._gList.SetFocus()
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
