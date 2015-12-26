@@ -647,8 +647,8 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         self.help = _(u"Jump to the installer of %(filename)s") % (
                         {'filename': selection[0]}) + u'. '
         self.help += _(u'You can Control click on the mod to the same effect')
-        self._installer = bosh.modInfos.table.getColumn('installer')[
-            selection[0]]
+        self._installer = bosh.modInfos.table.getColumn('installer').get(
+                selection[0])
 
     def _append(self, window): return balt.Link.Frame.iPanel and bosh.settings[
         'bash.installers.enabled']
@@ -658,7 +658,6 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
                      self)._enable() and self._installer is not None
 
     def Execute(self): self.window.jump_to_mods_installer(self.selected[0])
-
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
