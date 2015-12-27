@@ -646,7 +646,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         super(Mod_JumpToInstaller, self)._initData(window, selection)
         self.help = _(u"Jump to the installer of %(filename)s") % (
                         {'filename': selection[0]}) + u'. '
-        self.help += _(u'You can Control click on the mod to the same effect')
+        self.help += _(u'You can Alt click on the mod to the same effect')
         self._installer = bosh.modInfos.table.getColumn('installer').get(
                 selection[0])
 

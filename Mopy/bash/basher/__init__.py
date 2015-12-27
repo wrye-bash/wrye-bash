@@ -988,7 +988,7 @@ class ModList(_ModsSortMixin, balt.UIList):
             self.SelectItem(mod_clicked_on_icon, deselectOthers=True)
         else:
             mod_clicked = self._getItemClicked(event)
-            if event.CmdDown() and mod_clicked:
+            if event.AltDown() and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
             self._gList.SetDnD(True)
             #--Pass Event onward to OnSelectItem
