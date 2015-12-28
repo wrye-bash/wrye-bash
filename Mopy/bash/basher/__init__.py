@@ -2573,11 +2573,9 @@ class InstallersPanel(SashTankPanel):
         """Update any controls using custom colors."""
         self.uiList.RefreshUI()
 
-    def ShowPanel(self, canCancel=True):
-        """Panel is shown. Update self.data."""
-        # TODO(ut): refactor, self.refreshing set to True once, extract methods
+    @balt.conversation
+    def _first_run_set_enabled(self):
         if settings.get('bash.installers.isFirstRun',True):
-            Link.Frame.BindRefresh(bind=False)
             settings['bash.installers.isFirstRun'] = False
             message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
                 u'If you do, Bash will first need to initialize some data. '
@@ -2587,7 +2585,11 @@ class InstallersPanel(SashTankPanel):
                 u"the column header menu and selecting 'Enabled'.")
             settings['bash.installers.enabled'] = balt.askYes(self, message,
                                                               _(u'Installers'))
-            Link.Frame.BindRefresh(bind=True)
+
+    def ShowPanel(self, canCancel=True):
+        """Panel is shown. Update self.data."""
+        # TODO(ut): refactor, self.refreshing set to True once, extract methods
+        self._first_run_set_enabled()
         if not settings['bash.installers.enabled']: return
         if self.refreshing: return
         data = self.uiList.data
@@ -2611,10 +2613,9 @@ class InstallersPanel(SashTankPanel):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
-                    self.refreshing = False
-                    self.refreshed = True
                 except CancelError:
-                    # User canceled the refresh
+                    pass # User canceled the refresh
+                finally:
                     self.refreshing = False
                     self.refreshed = True
         elif self.frameActivated and data.refreshConvertersNeeded():
@@ -2625,9 +2626,9 @@ class InstallersPanel(SashTankPanel):
                         self.uiList.RefreshUI()
                     self.fullRefresh = False
                     self.frameActivated = False
-                    self.refreshing = False
                 except CancelError:
-                    # User canceled the refresh
+                    pass # User canceled the refresh
+                finally:
                     self.refreshing = False
         changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
@@ -2645,7 +2646,7 @@ class InstallersPanel(SashTankPanel):
                     data_sizeCrcDate[path] = (apath.size,apath.crc,apath.mtime)
                     refresh = True
                 else:
-                    refresh = bool(data_sizeCrcDate.pop(path, None))
+                    refresh |= bool(data_sizeCrcDate.pop(path, None))
             if refresh:
                 self.data.refreshInstallersStatus()
                 self.RefreshUIMods()

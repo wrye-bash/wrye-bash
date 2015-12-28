@@ -3849,7 +3849,7 @@ class FileInfos(DataDict):
         :param deleted: make sure those are deleted before calling this method
         """
         for d in map(self.dir.join, deleted): # we need absolute paths
-            InstallersData.track(d, factory=self.factory)
+            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def delete_Refresh(self, deleted): self.refresh()
 
@@ -3905,11 +3905,6 @@ class INIInfos(FileInfos):
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
         return dir_
-
-    def delete_Refresh(self, deleted):
-        FileInfos.delete_Refresh(self, deleted)
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
-        self._updateBain(deleted)
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
@@ -5893,7 +5888,7 @@ class Installer(object):
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        if InstallersData.miscTrackedFiles:
+        if InstallersData.miscTrackedFiles is not None:
             dirsModsJoin = dirs['mods'].join
             _trackedInfosTrack = InstallersData.miscTrackedFiles.track
             trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
@@ -7278,10 +7273,6 @@ class InstallersData(DataDict):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
-
-    @staticmethod
-    def track(absPath, factory):
-        InstallersData.miscTrackedFiles.track(absPath, factory)
 
     def addMarker(self,name):
         path = GPath(name)

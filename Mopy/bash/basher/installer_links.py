@@ -555,6 +555,7 @@ class Installer_Install(_InstallerLink):
 
     def _enable(self): return len(self.filterInstallables())
 
+    @balt.conversation
     def Execute(self):
         """Handle selection."""
         try:
@@ -567,7 +568,7 @@ class Installer_Install(_InstallerLink):
                     pass
                 except StateError as e:
                     self._showError(u'%s'%e)
-                else: # no error occured
+                else: # no error occurred
                     if tweaks:
                         msg = _(u'The following INI Tweaks were created, '
                                 u'because the existing INI was different than '
