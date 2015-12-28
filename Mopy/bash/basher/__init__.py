@@ -1049,7 +1049,7 @@ class ModList(_ModsSortMixin, balt.UIList):
     def jump_to_mods_installer(self, modName):
         if not balt.Link.Frame.iPanel or not bosh.settings[
             'bash.installers.enabled']: return False
-        installer = self.data.table.getColumn('installer')[modName]
+        installer = self.data.table.getColumn('installer').get(modName)
         if installer is None:
             return False
         balt.Link.Frame.notebook.SelectPage('Installers', installer)
