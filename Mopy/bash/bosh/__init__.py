@@ -3863,22 +3863,22 @@ class FileInfos(DataDict):
         if doRefresh: self.refresh()
 
     #--Copy
-    def copy(self,fileName,destDir,destName=None,mtime=False):
-        """Copies member file to destDir. Will overwrite!"""
+    def copy_info(self, fileName, destDir, destName=None, set_mtime=None):
+        """Copies member file to destDir. Will overwrite!
+        :param set_mtime: if None self[fileName].mtime is copied to destination
+        """
         destDir.makedirs()
         if not destName: destName = fileName
-        srcPath = self.data[fileName].getPath()
+        srcPath = self[fileName].getPath()
         if destDir == self.dir and destName in self.data:
             destPath = self.data[destName].getPath()
         else:
             destPath = destDir.join(destName)
-        srcPath.copyTo(destPath)
-        if mtime:
-            if mtime == True:
-                mtime = srcPath.mtime
-            elif mtime == '+1':
-                mtime = srcPath.mtime + 1
-            destPath.mtime = mtime
+        srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
+        if set_mtime is not None:
+            if set_mtime == '+1':
+                set_mtime = srcPath.mtime + 1
+            destPath.mtime = set_mtime
         self.refresh()
 
     #--Move Exists
@@ -4595,18 +4595,18 @@ class ModInfos(FileInfos):
             mtime = self[modName].mtime
             return len(self.mtime_selected[mtime]) > 1
 
-    def getFreeTime(self, startTime, defaultTime='+1', reverse=False):
+    def getFreeTime(self, startTime, defaultTime='+1'):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
         if load_order.usingTxtFile():
             # Doesn't matter - LO isn't determined by mtime
             return time.time()
         else:
             haskey = self.mtime_mods.has_key
-            step = -1 if reverse else 1
-            endTime = startTime + step * 1000 #1000 is an arbitrary limit
-            for testTime in xrange(startTime, endTime, step):
-                if not haskey(testTime):
-                    return testTime
+            endTime = startTime + 1000 # 1000 (seconds) is an arbitrary limit
+            while startTime < endTime:
+                if not haskey(startTime):
+                    return startTime
+                startTime += 1 # step by one second intervals
             return defaultTime
 
     __max_time = -1
@@ -4831,9 +4831,9 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy(self,fileName,destDir,destName=None,mtime=False):
+    def copy_info(self, fileName, destDir, destName=None, set_mtime=None):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy(self,fileName,destDir,destName,mtime)
+        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
     def move(self,fileName,destDir,doRefresh=True):

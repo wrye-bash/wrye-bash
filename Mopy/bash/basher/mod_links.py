@@ -1461,23 +1461,24 @@ class Mod_CopyToEsmp(EnabledLink):
         return True
 
     def Execute(self):
-        for item in self.selected:
-            fileInfo = bosh.modInfos[item]
+        modInfos = bosh.modInfos
+        for curName, fileInfo in ((x, modInfos[x]) for x in self.selected):
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
-            modsDir = fileInfo.dir
-            curName = fileInfo.name
-            newName = curName.root+u'.'+newType
+            newName = curName.root + u'.' + newType # calls GPath internally
             #--Replace existing file?
-            if modsDir.join(newName).exists():
-                if not self._askYes(_(u'Replace existing %s?') % (newName.s,)):
+            timeSource = None
+            if newName in modInfos:
+                existing = modInfos[newName]
+                if not self._askYes(_( # getPath() as existing may be ghosted
+                        u'Replace existing %s?') % existing.getPath()):
                     continue
-                bosh.modInfos[newName].makeBackup()
+                existing.makeBackup()
+                timeSource = newName
             #--New Time
-            modInfos = bosh.modInfos
-            timeSource = (curName,newName)[newName in modInfos]
-            newTime = modInfos[timeSource].mtime
+            newTime = modInfos[timeSource].mtime if timeSource else \
+                bosh.modInfos.getFreeTime(fileInfo.mtime)
             #--Copy, set type, update mtime.
-            modInfos.copy(curName,modsDir,newName,newTime)
+            modInfos.copy_info(curName, fileInfo.dir, newName, newTime)
             modInfos.table.copyRow(curName,newName)
             newInfo = modInfos[newName]
             newInfo.setType(newType)

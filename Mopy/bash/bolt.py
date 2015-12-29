@@ -952,6 +952,7 @@ class Path(object):
         else:
             os.startfile(self._s)
     def copyTo(self,destName):
+        """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
         if self.isdir():
             shutil.copytree(self._s,destName._s)

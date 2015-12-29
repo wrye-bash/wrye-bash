@@ -145,7 +145,7 @@ class Files_Unhide(ItemLink):
 # File Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class File_Duplicate(ItemLink):
-    """Create a duplicate of the file."""
+    """Create a duplicate of the file - mod, save or bsa."""
 
     def _initData(self, window, selection):
         super(File_Duplicate, self)._initData(window, selection)
@@ -208,7 +208,7 @@ class File_Duplicate(ItemLink):
                 newTime = bosh.modInfos.getFreeTime(fileInfo.getPath().mtime)
             else:
                 newTime = '+1'
-            fileInfos.copy(fileName,destDir,destName,mtime=newTime)
+            fileInfos.copy_info(fileName, destDir, destName, set_mtime=newTime)
             if destDir == fileInfo.dir:
                 fileInfos.table.copyRow(fileName,destName)
                 if fileInfos.table.getItem(fileName,'mtime'):
@@ -345,7 +345,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self.window.data.copy(fileName,destDir,destName)
+            self.window.data.copy_info(fileName, destDir, destName)
 
 class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     """Revert to Snapshot."""
