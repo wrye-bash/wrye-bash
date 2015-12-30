@@ -732,6 +732,7 @@ class Installer_Uninstall(_InstallerLink):
 
     def _enable(self): return len(self.filterInstallables())
 
+    @balt.conversation
     def Execute(self):
         """Uninstall selected Installers."""
         try:

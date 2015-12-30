@@ -251,6 +251,8 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             u"Rescan the Data directory and all project directories.")
 
     def _append(self, window): return bosh.settings['bash.installers.enabled']
+
+    @balt.conversation
     def Execute(self):
         """Refreshes all Installers data"""
         if self.fullRefresh and not self._askWarning(self.msg, self.text):

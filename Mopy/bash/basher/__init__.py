@@ -2588,48 +2588,45 @@ class InstallersPanel(SashTankPanel):
 
     def ShowPanel(self, canCancel=True):
         """Panel is shown. Update self.data."""
-        # TODO(ut): refactor, self.refreshing set to True once, extract methods
         self._first_run_set_enabled()
-        if not settings['bash.installers.enabled']: return
-        if self.refreshing: return
-        data = self.uiList.data
+        if not settings['bash.installers.enabled'] or self.refreshing: return
+        refresh_ui = [False]
+        try:
+            self.refreshing = True
+            self._refresh_installers(refresh_ui, canCancel)
+            if refresh_ui[0]: self.uiList.RefreshUI()
+            super(InstallersPanel, self).ShowPanel()
+        finally:
+            self.refreshing = False
+
+    def _refresh_installers(self, _refresh_ui, canCancel):
+        data = self.data
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
         installers_paths = bosh.dirs[
             'installers'].list() if self.frameActivated else ()
         if self.frameActivated and data.extractOmodsNeeded(installers_paths):
-            self.refreshing = True
-            try:
-                self.__extractOmods(data)
-            finally:
-                self.refreshing = False
+            self.__extractOmods(data)
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
-            self.refreshing = True
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = ('DISC','IC')[self.refreshed]
-                    if data.irefresh(progress,what,self.fullRefresh):
-                        self.uiList.RefreshUI()
+                    _refresh_ui[0] |= data.irefresh(progress,what,self.fullRefresh)
                     self.fullRefresh = False
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
                 finally:
-                    self.refreshing = False
                     self.refreshed = True
         elif self.frameActivated and data.refreshConvertersNeeded():
-            self.refreshing = True
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
-                    if data.irefresh(progress,'C',self.fullRefresh):
-                        self.uiList.RefreshUI()
+                    _refresh_ui[0] |= data.irefresh(progress,'C',self.fullRefresh)
                     self.fullRefresh = False
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-                finally:
-                    self.refreshing = False
         changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
@@ -2648,9 +2645,7 @@ class InstallersPanel(SashTankPanel):
                 else:
                     refresh |= bool(data_sizeCrcDate.pop(path, None))
             if refresh:
-                self.data.refreshInstallersStatus()
-                self.RefreshUIMods()
-        super(InstallersPanel, self).ShowPanel()
+                _refresh_ui[0] |= self.data.refreshInstallersStatus()
 
     def __extractOmods(self, data):
         with balt.Progress(_(u'Extracting OMODs...'),
@@ -4230,7 +4225,9 @@ class BashApp(wx.App):
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
         self.SetTopWindow(frame)
         frame.Show()
-        frame.Maximize(settings['bash.frameMax'])
+        @balt.conversation
+        def maximize(): frame.Maximize(settings['bash.frameMax'])
+        maximize()
         balt.ensureDisplayed(frame)
         frame.warnTooManyModsBsas()
         return frame
