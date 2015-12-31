@@ -5026,16 +5026,16 @@ class Installer(object):
             progress(index)
             rsDir = asDir[relPos:]
             inModsRoot = rootIsMods and not rsDir
-            rpDirJoin = GPath(rsDir).join
             for sFile in sFiles:
                 sFileLower = sFile.lower()
                 ext = sFileLower[sFileLower.rfind(u'.'):]
-                rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
                     if sFileLower in bethFiles:
                         continue
+                    rpFile = GPath(os.path.join(rsDir, sFile))
                     rpFile = ghostGet(rpFile,rpFile)
+                else: rpFile = GPath(os.path.join(rsDir, sFile))
                 isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
