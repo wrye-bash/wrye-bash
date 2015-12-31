@@ -5250,12 +5250,9 @@ class Installer(object):
 
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
-    _silentSkips = [
-        lambda f: f.startswith(
-            (u'--', u'omod conversion data', u'fomod', u'wizard images')),
-        lambda f: f.endswith(
-            (u'thumbs.db',u'desktop.ini',u'config')),
-    ]
+    _silentSkipsStart = (
+        u'--', u'omod conversion data', u'fomod', u'wizard images')
+    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'config')
 
     _globalSkips = []
     @staticmethod
@@ -5475,12 +5472,9 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full[rootIdex:]
             fileLower = file.lower()
-            for lam in Installer._silentSkips:
-                if lam(fileLower):
-                    _out = True
-                    break
-            else: _out = False
-            if _out: continue
+            if fileLower.startswith(
+                    Installer._silentSkipsStart) or fileLower.endswith(
+                    Installer._silentSkipsEnd): continue
             sub = u''
             if type_ == 2: #--Complex archive
                 sub = file.split(u'\\',1)
@@ -5548,8 +5542,9 @@ class Installer(object):
                 if lam(fileLower, fileExt):
                     _out = True
                     break
+            else: _out = False
             if _out: continue
-            for lam in complex_skips:
+            for lam in complex_skips: # process attributes
                 if lam(fileLower, full, fileExt):
                     _out = True
                     break
