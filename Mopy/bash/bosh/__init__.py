@@ -5304,15 +5304,15 @@ class Installer(object):
             'bash.installers.skipDocs']
         reReadMeMatch = Installer.reReadMe.match
         docExts = Installer.docExts
+        sep = os.path.pathsep
         def _processDocs(fileLower, full, fileExt):
             if not (fileExt in docExts): return False
             if reReadMeMatch(fileLower): self.hasReadme = full
-            filePath = fileLower.split('\\')
-            end = fileLower.split('\\')[-1]
-            del filePath[-1]
-            filePath = '\\'.join(filePath)
-            return skipDocs and not (end in bush.game.dontSkip) and not (
-                fileExt in bush.game.dontSkipDirs.get(filePath, []))
+            # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
+            rsplit = fileLower.rsplit(sep, 1)
+            parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
+            return skipDocs and not (fname in bush.game.dontSkip) and not (
+                fileExt in bush.game.dontSkipDirs.get(parentDir, []))
         def _processBCF(fileLower, full, fileExt):
             if fileExt in defaultExt and ( # DOCS !
                     fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
