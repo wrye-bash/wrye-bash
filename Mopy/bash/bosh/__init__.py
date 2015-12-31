@@ -5262,13 +5262,8 @@ class Installer(object):
     def initGlobalSkips():
         """Update _globalSkips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
-        and on flipping skip settings - and nowhere else hopefully.
-        WIP ! I use eval to keep performance in par with previous
-        implementation - do _not_ imitate. Ideally it will be refactored out,
-        once refreshDataSizeCrc is understood."""
+        and on flipping skip settings - and nowhere else hopefully."""
         _globalSkips = []
-        fLower, fExt  = 'fileLower', 'fileExt'
-        def _compile(s): return compile(s, '<string>', 'eval')
         # skips files starting with...
         start = []
         if settings['bash.installers.skipDistantLOD']:
@@ -5281,21 +5276,18 @@ class Installer(object):
         skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
-        head = fLower + ".startswith(u'textures\\landscapelod\\generated')"
         if skipAllTextures:
             start.append(u'textures\\landscapelod\\generated')
-        elif skipLODTextures: _globalSkips += [
-            _compile(head + " and not " + fLower + ".endswith(u'_fn.dds')")]
-        elif skipLODNormals: _globalSkips += [
-            _compile(head + " and " + fLower + ".endswith(u'_fn.dds')")]
-        if start: _globalSkips += [
-            _compile(fLower + ".startswith(" + str(tuple(start)) + ")")]
+        elif skipLODTextures: _globalSkips += [lambda f,e:  f.startswith(
+            u'textures\\landscapelod\\generated') and not f.endswith(u'_fn.dds')]
+        elif skipLODNormals: _globalSkips += [lambda f,e:  f.startswith(
+            u'textures\\landscapelod\\generated') and f.endswith(u'_fn.dds')]
+        if start: _globalSkips += [lambda f,e:  f.startswith((tuple(start)))]
         # Skipped extensions
         skipExts =  {'.bsl'} if settings['bash.installers.skipTESVBsl'] else set()
         if settings['bash.installers.skipImages']:
             skipExts |= Installer.imageExts
-        if skipExts: _globalSkips += [
-            _compile(fExt + " in {" + ', '.join(map(repr, skipExts)) + '}')]
+        if skipExts: _globalSkips += [lambda f,e:  e in skipExts]
         Installer._globalSkips = _globalSkips
 
     def _initComplexSkips(self):
@@ -5553,7 +5545,7 @@ class Installer(object):
             fileStartsWith = fileLower.startswith
             #--Skips
             for lam in _skips:
-                if eval(lam):
+                if lam(fileLower, fileExt):
                     _out = True
                     break
             if _out: continue
