@@ -3863,12 +3863,14 @@ class FileInfos(DataDict):
         if doRefresh: self.refresh()
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=None, set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
+                  doRefresh=True):
         """Copies member file to destDir. Will overwrite!
         :param set_mtime: if None self[fileName].mtime is copied to destination
         """
         destDir.makedirs()
         if not destName: destName = fileName
+        destName = GPath(destName)
         srcPath = self[fileName].getPath()
         if destDir == self.dir and destName in self.data:
             destPath = self.data[destName].getPath()
@@ -3879,7 +3881,10 @@ class FileInfos(DataDict):
             if set_mtime == '+1':
                 set_mtime = srcPath.mtime + 1
             destPath.mtime = set_mtime
-        self.refresh()
+        if doRefresh: self.refresh() ##: maybe avoid it (add copied info manually)
+        if destDir == self.dir:
+            self.table.copyRow(fileName, destName)
+        return set_mtime
 
     #--Move Exists
     @staticmethod
@@ -4663,10 +4668,19 @@ class ModInfos(FileInfos):
         if not deleted: return
         for name in deleted:
             self.pop(name, None)
-            if self.mtimes.has_key(name): del self.mtimes[name]
         self.plugins.removeMods(deleted, savePlugins=True)
         self.refreshInfoLists()
         self._updateBain(deleted)
+
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
+                  doRefresh=True):
+        """Copies modfile and updates mtime table column - not sure why."""
+        set_mtime = FileInfos.copy_info(self, fileName, destDir, destName,
+                                        set_mtime, doRefresh=doRefresh)
+        if destDir == self.dir:
+            if set_mtime is None:
+                raise BoltError("Always specify mtime when copying to Data/")
+            self.mtimes[GPath(destName)] = set_mtime
 
     def move(self,fileName,destDir,doRefresh=True):
         """Moves member file to destDir."""
@@ -4831,9 +4845,11 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy_info(self, fileName, destDir, destName=None, set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
+                  doRefresh=True):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
+        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime,
+                            doRefresh=doRefresh)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
     def move(self,fileName,destDir,doRefresh=True):

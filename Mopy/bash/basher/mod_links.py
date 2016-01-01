@@ -109,7 +109,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             title=_(u'Create Files')): return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
         modInfo = bosh.modInfos[self.selected[0]]
-        lastTime = modInfo.mtime - 1
+        lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
         if doCBash:
             newFiles = []
         refresh = []
@@ -119,8 +119,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(modInfo.dir,master)
-            newTime = lastTime
-            newInfo.mtime = bosh.modInfos.getFreeTime(newTime,newTime)
+            newInfo.mtime = bosh.modInfos.getFreeTime(lastTime, lastTime)
             refresh.append(master)
             if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
@@ -1477,12 +1476,11 @@ class Mod_CopyToEsmp(EnabledLink):
             #--New Time
             newTime = modInfos[timeSource].mtime if timeSource else \
                 bosh.modInfos.getFreeTime(fileInfo.mtime)
-            #--Copy, set type, update mtime.
-            modInfos.copy_info(curName, fileInfo.dir, newName, newTime)
-            modInfos.table.copyRow(curName,newName)
+            #--Copy, set type, update mtime - will use ghosted path if needed
+            modInfos.copy_info(curName, fileInfo.dir, newName,
+                               set_mtime=newTime)
             newInfo = modInfos[newName]
             newInfo.setType(newType)
-            newInfo.setmtime(newTime)
         #--Repopulate
         self.window.RefreshUI(refreshSaves=True) # True ?
 

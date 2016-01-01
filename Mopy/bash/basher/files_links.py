@@ -207,12 +207,8 @@ class File_Duplicate(ItemLink):
             if fileInfo.isMod():
                 newTime = bosh.modInfos.getFreeTime(fileInfo.getPath().mtime)
             else:
-                newTime = '+1'
+                newTime = None # for bsas and saves leave mtime alone
             fileInfos.copy_info(fileName, destDir, destName, set_mtime=newTime)
-            if destDir == fileInfo.dir:
-                fileInfos.table.copyRow(fileName,destName)
-                if fileInfos.table.getItem(fileName,'mtime'):
-                    fileInfos.table.setItem(destName,'mtime',newTime)
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
 
 class File_Hide(ItemLink):

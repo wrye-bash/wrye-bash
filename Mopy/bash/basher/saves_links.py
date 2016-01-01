@@ -629,19 +629,21 @@ class Save_Move(ChoiceLink):
                 if not result: continue
                 elif result == 2: ask = False #so don't warn for rest of operation
             if self.copyMode:
-                bosh.saveInfos.copy_info(fileName, destDir)
+                bosh.saveInfos.copy_info(fileName, destDir, doRefresh=False)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable[fileName]
             else:
-                bosh.saveInfos.move(fileName,destDir,False)
+                bosh.saveInfos.move(fileName, destDir, doRefresh=False)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
             count += 1
         destTable.save()
-        Link.Frame.RefreshData() ##: BIN!
         if self.copyMode:
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
+        elif count: # files moved to other profile, refresh
+            bosh.saveInfos.refresh()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class Save_RepairAbomb(OneItemLink):
