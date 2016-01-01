@@ -2399,12 +2399,15 @@ class InstallersList(balt.Tank):
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
             sorted_ = self._SortItems(col='Order', sortSpecial=False)
-            item = self.data[item]
-            for nextItem in sorted_[item.order+1:]:
+            new = []
+            for nextItem in sorted_[self.data[item].order + 1:]:
                 installer = self.data[nextItem]
                 if isinstance(installer,bosh.InstallerMarker):
                     break
-                self.SelectItem(nextItem)
+                new.append(nextItem)
+            if new:
+                self.SelectItemsNoCallback(new)
+                self.SelectItem((new[-1])) # show details for the last one
         else:
             self.OpenSelected(selected=[item])
 

@@ -1778,7 +1778,7 @@ class UIList(wx.Panel):
             self.SortItems()
             self.autosizeColumns()
         # Details HACK: if it was a single item then refresh details for it:
-        if len(files) == 1: self.panel.SetDetails(files[0])
+        if len(files) == 1: self.SelectItem(files[0])
         else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
 
@@ -1912,6 +1912,13 @@ class UIList(wx.Panel):
         else: #we must deselect the item and then reselect for callbacks to run
             self.SelectItemAtIndex(dex, select=False)
         self.SelectItemAtIndex(dex)
+
+    def SelectItemsNoCallback(self, items, deselectOthers=False):
+        try:
+            self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+            for item in items: self.SelectItem(item, deselectOthers)
+        finally:
+            self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
     def ClearSelected(self):
         """Unselect all items."""

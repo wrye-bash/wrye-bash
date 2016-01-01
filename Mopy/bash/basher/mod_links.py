@@ -1460,7 +1460,7 @@ class Mod_CopyToEsmp(EnabledLink):
         return True
 
     def Execute(self):
-        modInfos = bosh.modInfos
+        modInfos, added = bosh.modInfos, []
         for curName, fileInfo in ((x, modInfos[x]) for x in self.selected):
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
@@ -1481,8 +1481,10 @@ class Mod_CopyToEsmp(EnabledLink):
                                set_mtime=newTime)
             newInfo = modInfos[newName]
             newInfo.setType(newType)
+            added.append(newName)
         #--Repopulate
         self.window.RefreshUI(refreshSaves=True) # True ?
+        self.window.SelectItemsNoCallback(added)
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
