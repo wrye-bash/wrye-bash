@@ -3744,11 +3744,15 @@ class FileInfos(DataDict):
                 fileInfo = self.factory(self.dir,name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
-            oldInfo = self.data.get(name)
+            oldInfo = self.data.get(name) # None if name was in corrupted
             isAdded = name not in oldNames
-            isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
+            dont_recheck = isUpdated = False
+            if oldInfo is not None:
+                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
+            elif not isAdded: # known corrupted - recheck
+                dont_recheck = isUpdated = not fileInfo.getHeaderError()
             if isAdded or isUpdated:
-                errorMessage = fileInfo.getHeaderError()
+                errorMessage = not dont_recheck and fileInfo.getHeaderError()
                 if errorMessage:
                     self.corrupted[name] = errorMessage
                     data.pop(name,None)
