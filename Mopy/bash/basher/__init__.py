@@ -4290,6 +4290,7 @@ def InitSettings(): # this must run first !
     settings = bosh.settings
     settings.loadDefaults(settingDefaults)
     bosh.Installer.init_global_skips() # must be after loadDefaults - grr #178
+    bosh.Installer.init_attributes_process()
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')

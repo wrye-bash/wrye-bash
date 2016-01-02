@@ -5274,6 +5274,9 @@ class Installer(object):
             Installer._badDlls = collections.defaultdict(list)
             Installer._badDlls.update(settings['bash.installers.badDlls'])
         return Installer._badDlls
+    # while checking for skips process some installer attributes
+    _attributes_process = {}
+    _extensions_to_process = set()
 
     @staticmethod
     def init_global_skips():
@@ -5311,34 +5314,37 @@ class Installer(object):
             Installer._global_skip_extensions |= Installer.imageExts
         Installer._init_executables_skips()
 
-    def _initComplexSkips(self):
-        """Return a list of functions which decide if the file is to be skipped
-        while at the same time update self attributes."""
-        skipDocs = not self.overrideSkips and settings[
-            'bash.installers.skipDocs']
+    @staticmethod
+    def init_attributes_process():
+        """Populate _attributes_process with functions which decide if the
+        file is to be skipped while at the same time update self hasReadme,
+        hasWizard, hasBCF attributes."""
         reReadMeMatch = Installer.reReadMe.match
-        docExts = Installer.docExts
         sep = os.path.pathsep
-        def _processDocs(fileLower, full, fileExt):
-            if not (fileExt in docExts): return False
+        def _process_docs(self, fileLower, full, fileExt):
             if reReadMeMatch(fileLower): self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
             rsplit = fileLower.rsplit(sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
-            return skipDocs and not (fname in bush.game.dontSkip) and not (
+            return not self.overrideSkips and settings[
+                'bash.installers.skipDocs'] and not (
+                fname in bush.game.dontSkip) and not (
                 fileExt in bush.game.dontSkipDirs.get(parentDir, []))
-        def _processBCF(fileLower, full, fileExt):
-            if fileExt in defaultExt and ( # DOCS !
-                    fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+        for ext in Installer.docExts:
+            Installer._attributes_process[ext] = _process_docs
+        def _process_BCF(self, fileLower, full, fileExt):
+            if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: # DOCS !
                 self.hasBCF = full
                 return True
             return False
-        def _processWizard(fileLower, full, fileExt):
-            if fileLower == u'wizard.txt':
+        Installer._attributes_process[defaultExt] = _process_BCF # .7z
+        def _process_txt(self, fileLower, full, fileExt):
+            if fileLower == u'wizard.txt': # first check if it's the wizard.txt
                 self.hasWizard = full
                 return True
-            return False
-        return [_processDocs, _processBCF, _processWizard]
+            return _process_docs(self, fileLower, full, fileExt)
+        Installer._attributes_process[u'.txt'] = _process_txt
+        Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
         start = [u'sound\\voice'] if self.skipVoices else []
@@ -5451,7 +5457,6 @@ class Installer(object):
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
-        complex_skips = self._initComplexSkips()
         if self.overrideSkips:
             skipEspmVoices = None
             renameStrings = False
@@ -5554,11 +5559,10 @@ class Installer(object):
                     break
             else: _out = False
             if _out: continue
-            for lam in complex_skips: # process attributes
-                if lam(fileLower, full, fileExt):
-                    _out = True
-                    break
-            if _out: continue
+            if fileExt in Installer._extensions_to_process: # process attributes
+                if Installer._attributes_process[fileExt](self, fileLower,
+                                                          full, fileExt):
+                    continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
