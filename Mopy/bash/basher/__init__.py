@@ -3960,12 +3960,12 @@ class BashFrame(wx.Frame):
             BashFrame.saveListRefresh()
         if popInis and self.iniList:
             BashFrame.iniList.RefreshUI()
-        #--Current notebook panel
+        #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
         self._loadOrderWarnings()
-        self._corruptedWarns()
+        self.warn_corrupted()
         self._corruptedGameIni()
         self._obmmWarn()
         self._missingDocsDir()
@@ -4009,18 +4009,19 @@ class BashFrame(wx.Frame):
            warn(_(u'Files have been removed from load list:'), msg)
            bosh.modInfos.selectedExtra = set()
 
-    def _corruptedWarns(self):
+    def warn_corrupted(self, warn_mods=True, warn_saves=True,
+                       warn_strings=True): # WIP maybe move to ShowPanel()
         #--Any new corrupted files?
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
-        if not corruptMods <= self.knownCorrupted:
+        if warn_mods and not corruptMods <= self.knownCorrupted:
             m = [_(u'Corrupted Mods'),
                  _(u'The following mod files have corrupted headers: ')]
             m.extend(sorted(corruptMods))
             message.append(m)
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted.keys())
-        if not corruptSaves <= self.knownCorrupted:
+        if warn_saves and not corruptSaves <= self.knownCorrupted:
             m = [_(u'Corrupted Saves'),
                  _(u'The following save files have corrupted headers: ')]
             m.extend(sorted(corruptSaves))
@@ -4028,14 +4029,14 @@ class BashFrame(wx.Frame):
             self.knownCorrupted |= corruptSaves
         invalidVersions = set([x.name for x in bosh.modInfos.values() if round(
             x.header.version, 6) not in bush.game.esp.validHeaderVersions])
-        if not invalidVersions <= self.knownInvalidVerions:
+        if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
                  _(u'The following mods have unrecognized TES4 header '
                    u'versions: ')]
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
-        if bosh.modInfos.new_missing_strings:
+        if warn_strings and bosh.modInfos.new_missing_strings:
             m = [_(u'Missing String Localization files:'),
                  _(u'This will cause CTDs if activated.')]
             m.extend(sorted(bosh.modInfos.missing_strings))

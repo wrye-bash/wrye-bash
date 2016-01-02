@@ -73,6 +73,7 @@ class Installers_MonitorInstall(Installers_Link):
     help = _(u'Monitors the Data folder during installation via manual install'
              u' or 3rd party tools.')
 
+    @balt.conversation
     def Execute(self):
         """Handle Selection."""
         msg = _(u'Wrye Bash will monitor your data folder for changes when '
@@ -195,15 +196,13 @@ class Installers_ListPackages(Installers_Link):
     help = _(u'Displays a list of all packages.  Also copies that list to the '
         u'clipboard.  Useful for posting your package order on forums.')
 
+    @balt.conversation
     def Execute(self):
         #--Get masters list
-        message = (_(u'Only show Installed Packages?')
-                   + u'\n' +
-                   _(u'(Else shows all packages)')
-                   )
-        if self._askYes(message,_(u'Only Show Installed?')):
-            text = self.idata.getPackageList(False)
-        else: text = self.idata.getPackageList()
+        message = _(u'Only show Installed Packages?') + u'\n' + _(
+            u'(Else shows all packages)')
+        installed_only = self._askYes(message, _(u'Only Show Installed?'))
+        text = self.idata.getPackageList(showInactive=not installed_only)
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False,
                       icons=Resources.bashBlue)
@@ -214,6 +213,7 @@ class Installers_AnnealAll(Installers_Link):
     help = _(u'This will install any missing files (for active installers)'
              u' and correct all install order and reconfiguration errors.')
 
+    @balt.conversation
     def Execute(self):
         """Anneal all packages."""
         try:
@@ -227,6 +227,7 @@ class Installers_UninstallAllPackages(Installers_Link):
     text = _(u'Uninstall All Packages')
     help = _(u'This will uninstall all packages.')
 
+    @balt.conversation
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_(u"Really uninstall All Packages?")): return
@@ -276,6 +277,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         u'DistantLOD folder, so on completion please run TES4LodGen again.'
         ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
 
+    @balt.conversation
     def Execute(self):
         if not self._askYes(self.fullMessage): return
         try:
@@ -338,7 +340,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         u"refresh of BAIN data an may take quite some time.  Are you sure "
         u"you want to continue?")
 
-    def Execute(self):
+    @balt.conversation
+    def Execute(self): ##: needs optimizing - ShowPanel + rescanInstallers...
         if not bosh.settings[self.key] and not self._askYes(self.message):
             return
         super(Installers_AutoRefreshBethsoft, self).Execute()
@@ -362,6 +365,7 @@ class Installers_Enabled(BoolLink):
         u"If you do, Bash will first need to initialize some data. This can "
         u"take on the order of five minutes if there are many mods installed.")
 
+    @balt.conversation
     def Execute(self):
         """Enable/Disable the installers tab."""
         enabled = bosh.settings[self.key]
@@ -371,7 +375,6 @@ class Installers_Enabled(BoolLink):
         if enabled:
             self.window.panel.refreshed = False
             self.window.panel.ShowPanel()
-            self.window.RefreshUI()
         else:
             self.window.DeleteAll() ##: crude
             self.window.panel.ClearDetails()
@@ -446,6 +449,8 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 #------------------------------------------------------------------------------
 class _Installers_Skip(Installers_Link, BoolLink):
     """Toggle various skip settings and update."""
+
+    @balt.conversation
     def Execute(self):
         super(_Installers_Skip, self).Execute()
         with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
@@ -495,7 +500,6 @@ class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
-
     def _append(self, window): return bool(bush.game.se_sd)
     def _check(self): return not bosh.settings[self.key]
 
@@ -503,7 +507,6 @@ class Installers_RenameStrings(AppendableLink, _Installers_Skip):
     """Toggle auto-renaming of .STRINGS files"""
     text = _(u'Auto-name String Translation Files')
     key = 'bash.installers.renameStrings'
-
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
 
 class Installers_CreateNewProject(ItemLink):

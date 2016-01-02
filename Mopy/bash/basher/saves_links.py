@@ -171,7 +171,10 @@ class Saves_Profiles(ChoiceLink):
                 Link.Frame.SetTitle()
                 self.window.panel.ClearDetails()
                 self.window.DeleteAll() # let call below repopulate
-                Link.Frame.RefreshData()
+                bosh.saveInfos.refresh()
+                self.window.RefreshUI()
+                self.window.panel.ShowPanel()
+                Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
 
     choiceLinkType = _ProfileLink
 
