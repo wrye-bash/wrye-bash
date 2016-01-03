@@ -222,13 +222,14 @@ class Mods_CreateBlank(ItemLink):
         fileInfos = self.window.data
         count = 0
         newName = GPath(u'New Mod.esp')
-        while newName in fileInfos:
+        while newName in fileInfos: ##: 259 refactor renames
             count += 1
             newName = GPath(u'New Mod %d.esp' % count)
         newInfo = fileInfos.factory(fileInfos.dir,newName)
         windowSelected = self.window.GetSelected()
-        mods = windowSelected if windowSelected else fileInfos.data
-        newTime = max(fileInfos[x].mtime for x in mods)
+        mods = [fileInfos[x] for x in
+                windowSelected] if windowSelected else fileInfos.values()
+        newTime = max(x.mtime for x in mods)
         newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
         newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
         newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]

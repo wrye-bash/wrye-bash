@@ -636,7 +636,7 @@ class Save_Move(ChoiceLink):
                 if fileName in savesTable:
                     destTable[fileName] = savesTable[fileName]
             else:
-                bosh.saveInfos.move(fileName, destDir, doRefresh=False)
+                bosh.saveInfos.move_info(fileName, destDir, doRefresh=False)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
             count += 1

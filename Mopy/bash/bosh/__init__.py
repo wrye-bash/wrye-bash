@@ -1740,7 +1740,7 @@ class CoSaves:
                             (p + u'f' for p in backpaths))
         _delete(paths + tuple(backpaths), **kwargs)
 
-    def recopy(self,savePath,saveName,pathFunc):
+    def _recopy(self, savePath, saveName, pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
         if saveName: savePath = savePath.join(saveName)
         newPaths = CoSaves.getPaths(savePath)
@@ -1750,11 +1750,11 @@ class CoSaves:
 
     def copy(self,savePath,saveName=None):
         """Copies cofiles."""
-        self.recopy(savePath,saveName,bolt.Path.copyTo)
+        self._recopy(savePath, saveName, bolt.Path.copyTo)
 
     def move(self,savePath,saveName=None):
         """Renames cofiles."""
-        self.recopy(savePath,saveName,bolt.Path.moveTo)
+        self._recopy(savePath, saveName, bolt.Path.moveTo)
 
     def getTags(self):
         """Returns tags expressing whether cosaves exist and are correct."""
@@ -2990,6 +2990,7 @@ class _AFileInfo:
         path = self.getPath()
         path.mtime = mtime
         self.mtime = path.mtime
+        return mtime
 
 class FileInfo(_AFileInfo):
     """Abstract TES4/TES4GAME File."""
@@ -3164,14 +3165,14 @@ class ModInfo(FileInfo):
         """Returns modInfos or saveInfos depending on fileInfo type."""
         return modInfos
 
-    def setType(self,type):
+    def setType(self, esm_or_esp):
         """Sets the file's internal type."""
-        if type not in (u'esm',u'esp'):
+        if esm_or_esp not in (u'esm', u'esp'):
             raise ArgumentError
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
             flags1 = MreRecord._flags1(struct.unpack('I',modFile.read(4))[0])
-            flags1.esm = (type == u'esm')
+            flags1.esm = (esm_or_esp == u'esm')
             modFile.seek(8)
             modFile.write(struct.pack('=I',int(flags1)))
         self.header.flags1 = flags1
@@ -3297,8 +3298,7 @@ class ModInfo(FileInfo):
 
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = int(mtime or self.mtime)
-        FileInfo.setmtime(self,mtime)
+        mtime = FileInfo.setmtime(self,mtime)
         modInfos.mtimes[self.name] = mtime
         # Prevent re-calculating the File CRC
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
@@ -3668,7 +3668,7 @@ class TrackedFileInfos(DataDict):
         for name in data.keys():
             fileInfo = self.factory(self.dir, name)
             filePath = fileInfo.getPath()
-            if not filePath.exists(): # untrack
+            if not filePath.exists(): # untrack - runs on first run !!
                 self.data.pop(name, None)
                 changed.add(name)
             elif not fileInfo.sameAs(data[name]):
@@ -3848,17 +3848,10 @@ class FileInfos(DataDict):
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
 
-    def _updateBain(self, deleted):
-        """Track deleted inis and mods so BAIN can update its UI.
-        :param deleted: make sure those are deleted before calling this method
-        """
-        for d in map(self.dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
-
     def delete_Refresh(self, deleted): self.refresh()
 
     #--Move
-    def move(self,fileName,destDir,doRefresh=True):
+    def move_info(self, fileName, destDir, doRefresh=True):
         """Moves member file to destDir. Will overwrite!"""
         destDir.makedirs()
         srcPath = self[fileName].getPath()
@@ -4619,7 +4612,7 @@ class ModInfos(FileInfos):
             return defaultTime
 
     __max_time = -1
-    def timestamp(self):
+    def mod_timestamp(self):
         """Hack to install mods last in load order (done by liblo when txt
         method used, when mod times method is used make sure we get the latest
         mod time). The mod times stuff must be moved to load_order.py."""
@@ -4628,8 +4621,8 @@ class ModInfos(FileInfos):
             maxi = [maxi + 60]
             def timestamps(p):
                 if reModExt.search(p.s):
-                    self.__max_time = p.mtime = maxi[-1]
-                    maxi[-1] += 60 # space at one minute intervals
+                    self.__max_time = p.mtime = maxi[0]
+                    maxi[0] += 60 # space at one minute intervals
         else:
             # noinspection PyUnusedLocal
             def timestamps(p): pass
@@ -4674,7 +4667,9 @@ class ModInfos(FileInfos):
             self.pop(name, None)
         self.plugins.removeMods(deleted, savePlugins=True)
         self.refreshInfoLists()
-        self._updateBain(deleted)
+        # temporarily track deleted mods so BAIN can update its UI
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
                   doRefresh=True):
@@ -4686,10 +4681,10 @@ class ModInfos(FileInfos):
                 raise BoltError("Always specify mtime when copying to Data/")
             self.mtimes[GPath(destName)] = set_mtime
 
-    def move(self,fileName,destDir,doRefresh=True):
+    def move_info(self, fileName, destDir, doRefresh=True):
         """Moves member file to destDir."""
         self.unselect(fileName, doSave=True)
-        FileInfos.move(self,fileName,destDir,doRefresh)
+        FileInfos.move_info(self, fileName, destDir, doRefresh)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -4856,9 +4851,9 @@ class SaveInfos(FileInfos):
                             doRefresh=doRefresh)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
-    def move(self,fileName,destDir,doRefresh=True):
+    def move_info(self, fileName, destDir, doRefresh=True):
         """Moves member file to destDir. Will overwrite!"""
-        FileInfos.move(self,fileName,destDir,doRefresh)
+        FileInfos.move_info(self, fileName, destDir, doRefresh)
         CoSaves(self.dir,fileName).move(destDir,fileName)
 
     #--Local Saves ------------------------------------------------------------
@@ -6955,7 +6950,7 @@ class InstallerArchive(Installer):
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.timestamp()
+        timestamps = modInfos.mod_timestamp()
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
@@ -7105,7 +7100,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.timestamp()
+        timestamps = modInfos.mod_timestamp()
         count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
@@ -7272,8 +7267,10 @@ class InstallerProject(Installer):
 #------------------------------------------------------------------------------
 class InstallersData(DataDict):
     """Installers tank data. This is the data source for the InstallersList."""
-    miscTrackedFiles = TrackedFileInfos() # hack to track changes in installed
-    # inis etc _in the Data/ dir_. Keys are absolute paths to those files
+    # hack to track changes in installed mod inis etc _in the Data/ dir_ and
+    # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
+    # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
+    miscTrackedFiles = TrackedFileInfos()
 
     def __init__(self):
         self.dir = dirs['installers']
