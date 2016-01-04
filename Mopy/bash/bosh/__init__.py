@@ -4179,6 +4179,7 @@ class ModInfos(FileInfos):
             doCBash = bool(CBash)
         elif doCBash and not bool(CBash):
             doCBash = False
+        is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
         for i,fileName in enumerate(names):
@@ -4189,16 +4190,11 @@ class ModInfos(FileInfos):
                 canMerge = False
             else:
                 try:
-                    if doCBash:
-                        canMerge = isCBashMergeable(fileInfo)
-                    else:
-                        canMerge = isPBashMergeable(fileInfo)
+                    canMerge = is_mergeable(fileInfo)
                 except Exception, e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
-
-
                 #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
                 if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
                     canMerge = False
@@ -5146,8 +5142,8 @@ class ConfigHelpers:
         self.refreshBashTags()
 
     def refreshBashTags(self):
-        if lootDb is None: return
         """Reloads tag info if file dates have changed."""
+        if lootDb is None: return
         path, userpath = self.lootMasterPath, self.lootUserPath
         #--Masterlist is present, use it
         if path.exists():
@@ -5166,7 +5162,7 @@ class ConfigHelpers:
                 except loot.LootError:
                     deprint(u'An error occurred while using the LOOT API:',
                             traceback=True)
-        #--No masterlist or an error occured while reading it, use the taglist
+        #--No masterlist or an error occurred while reading it, use the taglist
         if not self.tagList.exists():
             raise bolt.BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
                 u'\\taglist.yaml could not be found.  Please ensure Wrye '
@@ -5771,7 +5767,7 @@ class Installer(object):
         self.mismatchedEspms = set()
 
     @property
-    def files(self): return len(self.fileSizeCrcs)
+    def num_of_files(self): return len(self.fileSizeCrcs)
 
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
@@ -6829,7 +6825,7 @@ class InstallerMarker(Installer):
         self.modified = time.time()
 
     @property
-    def files(self): return -1
+    def num_of_files(self): return -1
 
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
@@ -8051,11 +8047,10 @@ class InstallersData(DataDict):
             self.irefresh(what='NS')
 
     def clean_data_dir(self):  ##: add error handling/refresh remove ghosts
-        data = self.data
-        getArchiveOrder = lambda x: data[x].order
+        getArchiveOrder = lambda x: x.order
         installed = []
-        for package in sorted(data,key=getArchiveOrder,reverse=True):
-            installer = data[package]
+        for installer in sorted(self.values(), key=getArchiveOrder,
+                                reverse=True):
             if installer.isActive:
                 installed += installer.data_sizeCrc
         keepFiles = set(installed)
@@ -8069,14 +8064,10 @@ class InstallersData(DataDict):
         skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
+        skipPrefixes = tuple(skipPrefixes)
         for file in removes:
             # don't remove files in Wrye Bash-related directories
-            skip = False
-            for skipPrefix in skipPrefixes:
-                if file.cs.startswith(skipPrefix):
-                    skip = True
-                    break
-            if skip: continue
+            if file.cs.startswith(skipPrefixes): continue
             path = dirs['mods'].join(file)
             try:
                 if path.exists():

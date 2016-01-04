@@ -89,8 +89,7 @@ class Installers_MonitorInstall(Installers_Link):
         data_sizeCrcDate = copy.copy(self.idata.data_sizeCrcDate)
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
-                       u'complete, press Ok.'),
-                     _(u'External Installation'))
+                       u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
         self.iPanel.refreshed = False
         self.iPanel.fullRefresh = False
@@ -150,21 +149,17 @@ class Installers_MonitorInstall(Installers_Link):
                      _(u'These files were deleted.  BAIN does not have the capability to remove files when installing.'),
                      ]
             group.extend(delFiles)
-        dialog = ListBoxes(self.window,_(u'External Installation'),
-                           _(u'The following changes were detected in the Data directory'),
-                           checklists, bOk=_(u'Create Project'))
-        if not dialog.askOkModal():
-            dialog.Destroy()
-            return
-        include = set()
-        for (lst, key) in [(newFiles, newFilesKey),
-                           (changedFiles, changedFilesKey),
-                           (touchedFiles, touchedFilesKey), ]:
-            include |= set(dialog.getChecked(key, lst))
-        dialog.Destroy()
+        with ListBoxes(self.window, _(u'External Installation'),
+            _(u'The following changes were detected in the Data directory'),
+            checklists, bOk=_(u'Create Project')) as dialog:
+            if not dialog.askOkModal(): return
+            include = set()
+            for (lst, key) in [(newFiles, newFilesKey),
+                               (changedFiles, changedFilesKey),
+                               (touchedFiles, touchedFilesKey), ]:
+                include |= set(dialog.getChecked(key, lst))
+            if not include: return
         # Create Project
-        if not include:
-            return
         projectName = self._askText(_(u'Project Name'),
                                     _(u'External Installation'))
         if not projectName:
@@ -242,13 +237,13 @@ class Installers_Refresh(AppendableLink, Installers_Link):
     msg = _(u"Refresh ALL data from scratch? This may take five to ten minutes"
             u" (or more) depending on the number of mods you have installed.")
 
-    def __init__(self, fullRefresh=False):
+    def __init__(self, full_refresh=False):
         super(Installers_Refresh, self).__init__()
-        self.fullRefresh = fullRefresh
-        self.text = _(u'Full Refresh') if fullRefresh else _(u'Refresh Data')
+        self.full_refresh = full_refresh
+        self.text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
         self.help = _(
             u"Perform a full refresh of all data files, recalculating all "
-            u"CRCs.  This can take 5-15 minutes.") if self.fullRefresh else _(
+            u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
             u"Rescan the Data directory and all project directories.")
 
     def _append(self, window): return bosh.settings['bash.installers.enabled']
@@ -256,10 +251,10 @@ class Installers_Refresh(AppendableLink, Installers_Link):
     @balt.conversation
     def Execute(self):
         """Refreshes all Installers data"""
-        if self.fullRefresh and not self._askWarning(self.msg, self.text):
+        if self.full_refresh and not self._askWarning(self.msg, self.text):
             return
         self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = self.fullRefresh
+        self.iPanel.fullRefresh = self.full_refresh
         self.iPanel.ShowPanel()
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):

@@ -2066,7 +2066,7 @@ class InstallersList(balt.Tank):
         'Order'   : lambda self, x: self.data[x].order,
         'Modified': lambda self, x: self.data[x].modified,
         'Size'    : lambda self, x: self.data[x].size,
-        'Files'   : lambda self, x: self.data[x].files,
+        'Files'   : lambda self, x: self.data[x].num_of_files,
     }
     #--Special sorters
     def _sortStructure(self, items):
@@ -2087,7 +2087,7 @@ class InstallersList(balt.Tank):
     @staticmethod
     def _files(installer):
         if isinstance(installer, bosh.InstallerMarker): return u''
-        return formatInteger(len(installer.fileSizeCrcs))
+        return formatInteger(installer.num_of_files)
     labels = OrderedDict([
         ('Package',  lambda self, path: path.s),
         ('Order',    lambda self, path: unicode(self.data[path].order)),

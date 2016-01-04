@@ -475,7 +475,6 @@ class CreateNewProject(balt.Dialog):
             tmpDir.rmtree(tmpDir.s)
 
         # Move successful
-        self.fullRefresh = False
         BashFrame.iPanel.refreshed = False
-        BashFrame.iPanel.fullRefresh = self.fullRefresh
+        BashFrame.iPanel.fullRefresh = False
         BashFrame.iPanel.ShowPanel()

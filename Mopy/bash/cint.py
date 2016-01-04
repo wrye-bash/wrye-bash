@@ -137,15 +137,17 @@ class CBashError(Exception):
         return repr(self.value)
 
 def ZeroIsErrorCheck(result, function, cArguments, *args):
-    if result == 0: raise CBashError("Function returned an error code.")
+    if result == 0: raise CBashError("Function returned error code 0.")
     return result
 
 def NegativeIsErrorCheck(result, function, cArguments, *args):
-    if result < 0: raise CBashError("Function returned an error code.")
+    if result < 0:
+        raise CBashError("Function returned error code %i." % result)
     return result
 
 def PositiveIsErrorCheck(result, function, cArguments, *args):
-    if result > 0: raise CBashError("Function returned an error code.")
+    if result > 0:
+        raise CBashError("Function returned error code %i" % result)
     return result
 
 CBash = None

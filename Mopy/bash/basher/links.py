@@ -214,8 +214,8 @@ def InitInstallerLinks():
     #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Files_Open())
-    InstallersList.mainMenu.append(Installers_Refresh(fullRefresh=False))
-    InstallersList.mainMenu.append(Installers_Refresh(fullRefresh=True))
+    InstallersList.mainMenu.append(Installers_Refresh(full_refresh=False))
+    InstallersList.mainMenu.append(Installers_Refresh(full_refresh=True))
     InstallersList.mainMenu.append(Installers_AddMarker())
     InstallersList.mainMenu.append(Installers_CreateNewProject())
     InstallersList.mainMenu.append(Installers_MonitorInstall())
