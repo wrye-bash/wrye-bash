@@ -71,6 +71,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate
+from ..bosh import omods
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -2256,7 +2257,7 @@ class InstallersList(balt.Tank):
                                         recycle=True)  # recycle
                     else: continue
                 try:
-                    bosh.OmodFile(omod).extractToProject(
+                    bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     completed.append(omod)
                 except (CancelError, SkipError):
@@ -2667,7 +2668,7 @@ class InstallersPanel(SashTankPanel):
                     outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
                     num += 1
                 try:
-                    bosh.OmodFile(omod).extractToProject(
+                    bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     omodRemoves.add(omod)
                 except (CancelError, SkipError):
