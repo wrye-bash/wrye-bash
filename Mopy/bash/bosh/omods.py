@@ -268,3 +268,52 @@ class OmodFile:
                 crcs.append(file.readInt32())
                 sizes.append(file.readInt64())
         return fileNames,crcs,sizes
+
+class OmodConfig:
+    """Tiny little omod config class."""
+    def __init__(self,name):
+        self.name = name.s
+        self.vMajor = 0
+        self.vMinor = 1
+        self.vBuild = 0
+        self.author = u''
+        self.email = u''
+        self.website = u''
+        self.abstract = u''
+
+    @staticmethod
+    def getOmodConfig(name):
+        """Get obmm config file for project."""
+        config = OmodConfig(name)
+        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
+        if configPath.exists():
+            with bolt.StructFile(configPath.s,'rb') as ins:
+                ins.read(1) #--Skip first four bytes
+                # OBMM can support UTF-8, so try that first, then fail back to
+                config.name = decode(ins.readNetString(),encoding='utf-8')
+                config.vMajor, = ins.unpack('i',4)
+                config.vMinor, = ins.unpack('i',4)
+                for attr in ('author','email','website','abstract'):
+                    setattr(config,attr,decode(ins.readNetString(),encoding='utf-8'))
+                ins.read(8) #--Skip date-time
+                ins.read(1) #--Skip zip-compression
+                #config['vBuild'], = ins.unpack('I',4)
+        return config
+
+    @staticmethod
+    def writeOmodConfig(name, config):
+        """Write obmm config file for project."""
+        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath.head.makedirs()
+        with bolt.StructFile(configPath.temp.s,'wb') as out:
+            out.pack('B',4)
+            out.writeNetString(config.name.encode('utf8'))
+            out.pack('i',config.vMajor)
+            out.pack('i',config.vMinor)
+            for attr in ('author','email','website','abstract'):
+                # OBMM reads it fine if in UTF-8, so we'll do that.
+                out.writeNetString(getattr(config,attr).encode('utf-8'))
+            out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
+            out.pack('b',0) #--zip compression (will be ignored)
+            out.write('\xFF\xFF\xFF\xFF')
+        configPath.untemp()
