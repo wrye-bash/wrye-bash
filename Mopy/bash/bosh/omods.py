@@ -28,6 +28,15 @@ from . import exe7z, dirs
 from .. import env, bolt
 from ..bolt import decode, encode, Path, startupinfo
 
+failedOmods = set()
+
+def extractOmodsNeeded(installers_paths=()):
+    """Return true if .omod files are present, requiring extraction."""
+    for path in installers_paths:
+        if path.cext == u'.omod' and path not in failedOmods:
+            return True
+    return False
+
 class OmodFile:
     """Class for extracting data from OMODs."""
     def __init__(self, path):

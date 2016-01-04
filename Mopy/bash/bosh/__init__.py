@@ -6989,7 +6989,6 @@ class InstallersData(DataDict):
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile
-        self.failedOmods = set()
         self.abnorm_sizeCrc = {} #--Normative sizeCrc, according to order of active packages
         self.bcfPath_sizeCrcDate = {}
         self.hasChanged = False
@@ -7163,13 +7162,6 @@ class InstallersData(DataDict):
         if settings['bash.installers.autoApplyEmbeddedBCFs']:
             changed |= self.applyEmbeddedBCFs(progress=progress)
         return changed
-
-    def extractOmodsNeeded(self, installers_paths=()):
-        """Returns true if .omod files are present, requiring extraction."""
-        for path in installers_paths:
-            if path.cext == u'.omod' and path not in self.failedOmods:
-                return True
-        return False
 
     def embeddedBCFsExist(self):
         """Return true if any InstallerArchive's have an embedded BCF file in them"""

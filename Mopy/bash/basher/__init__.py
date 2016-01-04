@@ -2610,8 +2610,8 @@ class InstallersPanel(SashTankPanel):
             self.refreshed = False
         installers_paths = bosh.dirs[
             'installers'].list() if self.frameActivated else ()
-        if self.frameActivated and data.extractOmodsNeeded(installers_paths):
-            self.__extractOmods(data)
+        if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
+            self.__extractOmods()
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
@@ -2651,7 +2651,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 _refresh_ui[0] |= self.data.refreshInstallersStatus()
 
-    def __extractOmods(self, data):
+    def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallers = bosh.dirs['installers']
@@ -2678,7 +2678,7 @@ class InstallersPanel(SashTankPanel):
                             traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
-                    data.failedOmods.add(omod.tail)
+                    bosh.omods.failedOmods.add(omod.tail)
                     omodMoves.add(omod)
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
@@ -2702,7 +2702,7 @@ class InstallersPanel(SashTankPanel):
                     # 'failedOmods' so we know not to try to extract them again
                     for omod in omodRemoves:
                         if omod.exists():
-                            data.failedOmods.add(omod.tail)
+                            bosh.omods.failedOmods.add(omod.tail)
             # Move bad omods
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
