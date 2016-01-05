@@ -1274,7 +1274,8 @@ class InstallerConverter_Create(_InstallerLink):
         log = None
         try:
             #--Create the converter
-            converter = bosh.InstallerConverter(self.selected, self.idata, destArchive, BCFArchive, blockSize, progress)
+            converter = bosh.converters.InstallerConverter(self.selected,
+                    self.idata, destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
             self.idata.converters_data.addConverter(converter)
             #--Refresh UI
