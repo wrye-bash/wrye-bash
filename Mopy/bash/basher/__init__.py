@@ -71,6 +71,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate
+from ..bosh import omods
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -2256,7 +2257,7 @@ class InstallersList(balt.Tank):
                                         recycle=True)  # recycle
                     else: continue
                 try:
-                    bosh.OmodFile(omod).extractToProject(
+                    bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     completed.append(omod)
                 except (CancelError, SkipError):
@@ -2337,7 +2338,8 @@ class InstallersList(balt.Tank):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if
                      not x.isdir() and x.cext == u'.omod']
-        converters = [x for x in filenames if self.data.validConverterName(x)]
+        converters = [x for x in filenames if
+                      bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
                      or x.cext in bosh.readExts and x not in converters]
         if len(omodnames) > 0: self._extractOmods(omodnames)
@@ -2609,8 +2611,8 @@ class InstallersPanel(SashTankPanel):
             self.refreshed = False
         installers_paths = bosh.dirs[
             'installers'].list() if self.frameActivated else ()
-        if self.frameActivated and data.extractOmodsNeeded(installers_paths):
-            self.__extractOmods(data)
+        if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
+            self.__extractOmods()
         if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
@@ -2650,7 +2652,7 @@ class InstallersPanel(SashTankPanel):
             if refresh:
                 _refresh_ui[0] |= self.data.refreshInstallersStatus()
 
-    def __extractOmods(self, data):
+    def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallers = bosh.dirs['installers']
@@ -2667,7 +2669,7 @@ class InstallersPanel(SashTankPanel):
                     outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
                     num += 1
                 try:
-                    bosh.OmodFile(omod).extractToProject(
+                    bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     omodRemoves.add(omod)
                 except (CancelError, SkipError):
@@ -2677,7 +2679,7 @@ class InstallersPanel(SashTankPanel):
                             traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
-                    data.failedOmods.add(omod.tail)
+                    bosh.omods.failedOmods.add(omod.tail)
                     omodMoves.add(omod)
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
@@ -2701,7 +2703,7 @@ class InstallersPanel(SashTankPanel):
                     # 'failedOmods' so we know not to try to extract them again
                     for omod in omodRemoves:
                         if omod.exists():
-                            data.failedOmods.add(omod.tail)
+                            bosh.omods.failedOmods.add(omod.tail)
             # Move bad omods
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)

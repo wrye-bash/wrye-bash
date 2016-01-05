@@ -32,6 +32,7 @@ from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
+from ..bosh import omods
 
 # If comtypes is not installed, the IE ActiveX control cannot be imported
 try:
@@ -547,7 +548,7 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         #--Data
         self.data = data
         self.project = project
-        self.config = config = data[project].getOmodConfig(project)
+        self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
         wx.Frame.__init__(self, parent, title=_(u'Omod Config: ') + project.s,
                           style=(wx.RESIZE_BORDER | wx.CAPTION |
@@ -610,5 +611,5 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done
-        self.data[self.project].writeOmodConfig(self.project,self.config)
+        omods.OmodConfig.writeOmodConfig(self.project, self.config)
         self.Destroy()

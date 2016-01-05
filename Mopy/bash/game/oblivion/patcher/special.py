@@ -25,8 +25,7 @@
 import os
 import re
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
-from ....bosh import PrintFormID, getPatchesList, getPatchesPath, LoadFactory, \
-    ModFile
+from ....bosh import getPatchesList, getPatchesPath, LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4
 # from  bush import  genericAVEffects
@@ -39,6 +38,18 @@ from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
 __all__ = ['AlchemicalCatalogs', 'CBash_AlchemicalCatalogs', 'CoblExhaustion',
            'MFactMarker', 'CBash_MFactMarker', 'CBash_CoblExhaustion',
            'SEWorldEnforcer', 'CBash_SEWorldEnforcer']
+
+# Util Functions --------------------------------------------------------------
+def _PrintFormID(fid):
+    # PBash short Fid
+    if isinstance(fid,(long,int)):
+        print '%08X' % fid
+    # PBash long FId
+    elif isinstance(fid, tuple):
+        print '(%s, %06X)' % (fid[0],fid[1])
+    # CBash / other(error)
+    else:
+        print repr(fid)
 
 class _AAlchemicalCatalogs(SpecialPatcher):
     """Updates COBL alchemical catalogs."""
@@ -218,14 +229,14 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
             # sanity checks
             if book:
                 if book.recType != 'BOOK':
-                    print PrintFormID(fid)
+                    print _PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     raise StateError(u"Cobl Catalogs: Unable to lookup book"
                                      u" record in Cobl Main.esm!")
                 book = book.CopyAsOverride(self.patchFile)
                 if not book:
-                    print PrintFormID(fid)
+                    print _PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     book = coblMod.LookupRecord(
@@ -747,7 +758,7 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
 
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
-            print PrintFormID(self.mFactLong)
+            print _PrintFormID(self.mFactLong)
             print patchFile.Current.Debug_DumpModFiles()
             print record
             raise StateError(u"Cobl Morph Factions: Unable to lookup morphable"

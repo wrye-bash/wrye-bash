@@ -37,6 +37,7 @@ from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
 from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger
+from ..bosh import faces
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -245,7 +246,7 @@ class Save_ImportFace(OneItemLink):
             saveFile = bosh.SaveFile(srcInfo)
             saveFile.load(progress)
             progress.Destroy()
-            srcFaces = bosh.PCFaces.save_getFaces(saveFile)
+            srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
             #--Dialog
             ImportFaceDialog.Display(self.window,srcName.s,fileInfo,srcFaces)
 
@@ -254,7 +255,7 @@ class Save_ImportFace(OneItemLink):
         #--Get faces
         srcDir,srcName = GPath(srcPath).headTail
         srcInfo = bosh.ModInfo(srcDir,srcName)
-        srcFaces = bosh.PCFaces.mod_getFaces(srcInfo)
+        srcFaces = bosh.faces.PCFaces.mod_getFaces(srcInfo)
         #--No faces to import?
         if not srcFaces:
             self._showOk(_(u'No player (PC) faces found in %s.') % srcName.s,
@@ -689,7 +690,7 @@ class Save_RepairHair(OneItemLink):
         #--File Info
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        if bosh.PCFaces.save_repairHair(fileInfo):
+        if bosh.faces.PCFaces.save_repairHair(fileInfo):
             self._showOk(_(u'Hair repaired.'))
         else:
             self._showOk(_(u'No repair necessary.'), fileName.s)

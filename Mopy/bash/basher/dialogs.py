@@ -32,6 +32,7 @@ from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton, ApplyButton
+from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -266,7 +267,7 @@ class ImportFaceDialog(balt.Dialog):
                                     onSelect=self.EvtListBox)
         self.listBox.SetSizeHints(175,150)
         #--Name,Race,Gender Checkboxes
-        flags = bosh.PCFaces.flags(bosh.settings.get('bash.faceImport.flags', 0x4))
+        flags = bosh.faces.PCFaces.flags(bosh.settings.get('bash.faceImport.flags', 0x4))
         self.nameCheck = checkBox(self, _(u'Name'), checked=flags.name)
         self.raceCheck = checkBox(self, _(u'Race'), checked=flags.race)
         self.genderCheck = checkBox(self, _(u'Gender'), checked=flags.gender)
@@ -341,7 +342,7 @@ class ImportFaceDialog(balt.Dialog):
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
-        flags = bosh.PCFaces.flags()
+        flags = bosh.faces.PCFaces.flags()
         flags.hair = flags.eye = True
         flags.name = self.nameCheck.GetValue()
         flags.race = self.raceCheck.GetValue()
@@ -350,7 +351,7 @@ class ImportFaceDialog(balt.Dialog):
         flags.iclass = self.classCheck.GetValue()
         #deprint(flags.getTrueAttrs())
         bosh.settings['bash.faceImport.flags'] = int(flags)
-        bosh.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
         balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
         self.EndModalOK()
 

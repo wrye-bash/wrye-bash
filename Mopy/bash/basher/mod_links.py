@@ -36,6 +36,7 @@ from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
     OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError
+from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
@@ -1721,11 +1722,11 @@ class Mod_Face_Import(OneItemLink):
         #--Get face
         srcDir,srcName = srcPath.headTail
         srcInfo = bosh.SaveInfo(srcDir,srcName)
-        srcFace = bosh.PCFaces.save_getPlayerFace(srcInfo)
+        srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data[fileName]
-        npc = bosh.PCFaces.mod_addFace(fileInfo,srcFace)
+        npc = bosh.faces.PCFaces.mod_addFace(fileInfo,srcFace)
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():

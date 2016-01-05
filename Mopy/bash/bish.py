@@ -53,6 +53,7 @@ import sys
 import types
 from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
+import bosh.faces
 from record_groups import MobCell, MobWorld
 from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, \
     MreWeap, MreSkil, MreInfo, MreDial, MreRegn
@@ -257,12 +258,12 @@ def convertFace(fileName,eid,fromEid,toEid):
     init(3)
     #--Race faces
     raceInfo = bosh.modInfos[GPath('Oblivion.esm')]
-    raceFaces = bosh.PCFaces.mod_getRaceFaces(raceInfo)
-    fromRace = raceFaces.get(fromEid, bosh.PCFaces.PCFace())
-    toRace   = raceFaces.get(toEid,   bosh.PCFaces.PCFace())
+    raceFaces = bosh.faces.PCFaces.mod_getRaceFaces(raceInfo)
+    fromRace = raceFaces.get(fromEid, bosh.faces.PCFaces.PCFace())
+    toRace   = raceFaces.get(toEid,   bosh.faces.PCFaces.PCFace())
     #--Mod Face
     modInfo = bosh.modInfos[GPath(fileName)]
-    face = bosh.PCFaces.mod_getFaces(modInfo)[eid]
+    face = bosh.faces.PCFaces.mod_getFaces(modInfo)[eid]
     face.convertRace(fromRace,toRace)
     #--Save back over original face
     loadFactory = bosh.LoadFactory(True,MreNpc)

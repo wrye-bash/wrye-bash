@@ -38,7 +38,7 @@ import traceback
 import bush
 import bosh
 import bolt
-from bosh import PCFaces
+from bosh.faces import PCFaces
 from bolt import GPath, intArg
 
 #--Debugging/Info
