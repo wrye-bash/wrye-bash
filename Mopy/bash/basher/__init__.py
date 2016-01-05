@@ -2338,7 +2338,8 @@ class InstallersList(balt.Tank):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if
                      not x.isdir() and x.cext == u'.omod']
-        converters = [x for x in filenames if self.data.validConverterName(x)]
+        converters = [x for x in filenames if
+                      bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
                      or x.cext in bosh.readExts and x not in converters]
         if len(omodnames) > 0: self._extractOmods(omodnames)

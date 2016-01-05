@@ -1264,7 +1264,7 @@ class InstallerConverter_Create(_InstallerLink):
                                 title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
-            self.idata.removeConverter(BCFArchive)
+            self.idata.converters_data.removeConverter(BCFArchive)
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:
@@ -1276,7 +1276,7 @@ class InstallerConverter_Create(_InstallerLink):
             #--Create the converter
             converter = bosh.InstallerConverter(self.selected, self.idata, destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
-            self.idata.addConverter(converter)
+            self.idata.converters_data.addConverter(converter)
             #--Refresh UI
             self.idata.irefresh(what='C')
             #--Generate log
@@ -1328,10 +1328,10 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        instData = self.window.data # InstallersData singleton
-        selectedCRCs = set(instData[archive].crc for archive in selected)
-        crcInstallers = set(instData.crc_installer)
-        srcCRCs = set(instData.srcCRC_converters)
+        idata = self.window.data # InstallersData singleton
+        selectedCRCs = set(idata[archive].crc for archive in selected)
+        crcInstallers = set(idata.crc_installer)
+        srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
@@ -1340,13 +1340,13 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             #--and all of its required archives are available (but not necessarily selected)
             linkSet = set( #--List comprehension is faster than unrolling the for loops, but readability suffers
                 [converter for installerCRC in selectedCRCs for converter in
-                 instData.srcCRC_converters[installerCRC] if
+                 idata.converters_data.srcCRC_converters[installerCRC] if
                  selectedCRCs <= converter.srcCRCs <= crcInstallers])
 ##            for installerCRC in selectedCRCs:
 ##                for converter in window.data.srcCRC_converters[installerCRC]:
 ##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
         #--If the archive is a single archive with an embedded BCF, add that
-        if len(selected) == 1 and instData[selected[0]].hasBCF:
+        if len(selected) == 1 and idata[selected[0]].hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
