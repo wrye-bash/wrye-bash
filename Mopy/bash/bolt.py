@@ -403,12 +403,9 @@ class FileError(BoltError):
         self.inName = inName
 
     def __str__(self):
-        if self.inName:
-            if isinstance(self.inName, basestring):
-                return self.inName+u': '+self.message
-            return self.inName.s+u': '+self.message
-        else:
-            return u'Unknown File: '+self.message
+        if self.inName: # Path or basestring
+            return (u'%s: ' % self.inName) + self.message
+        return u'Unknown File: ' + self.message
 
 #------------------------------------------------------------------------------
 class FileEditError(BoltError):

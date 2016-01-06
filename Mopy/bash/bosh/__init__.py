@@ -1010,7 +1010,6 @@ class SaveFile:
         path = self.fileInfo.getPath()
         with bolt.StructFile(path.s,'rb') as ins:
             #--Progress
-            fileName = self.fileInfo.name
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
             #--Header
@@ -1097,7 +1096,6 @@ class SaveFile:
             def pack(format,*data):
                 out.write(struct.pack(format,*data))
             #--Progress
-            fileName = self.fileInfo.name
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
             #--Header
@@ -1235,7 +1233,8 @@ class SaveFile:
         """Returns fid corresponding to iref."""
         if not iref: return default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(u'IRef from Mars.')
+        if iref >= len(self.fids): raise ModError(self.fileInfo.name,
+                                                  u'IRef from Mars.')
         return self.fids[iref]
 
     def getIref(self,fid):

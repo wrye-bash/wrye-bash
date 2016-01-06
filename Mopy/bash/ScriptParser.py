@@ -193,8 +193,8 @@ def getType(item, parser=None):
 #  control statement
 #--------------------------------------------------
 class FlowControl:
-    def __init__(self, type, active, keywords=[], **attribs):
-        self.type = type
+    def __init__(self, statement_type, active, keywords=[], **attribs):
+        self.type = statement_type
         self.active = active
         self.keywords = keywords
         for i in attribs:
@@ -438,34 +438,35 @@ class Parser(object):
             error(_(u'IndexError'))
 
     def SetOperator(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME,OPERATOR,UNKNOWN]:
+            error(ERR_CANNOT_SET % (u'operator', name, Types[type_]))
         self.operators[name] = Parser.Operator(*args, **kwdargs)
         for i in name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME,KEYWORD]:
+            error(ERR_CANNOT_SET % (u'keyword', name, Types[type_]))
         self.keywords[name] = Parser.Keyword(*args, **kwdargs)
     def SetFunction(self, name, *args, **kwdargs):
-        type = getType(name, self)
-        if type not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME,FUNCTION]:
+            error(ERR_CANNOT_SET % (u'function', name, Types[type_]))
         self.functions[name] = Parser.Function(*args, **kwdargs)
     def SetConstant(self, name, value):
-        type = getType(name, self)
-        if type not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME,CONSTANT]:
+            error(ERR_CANNOT_SET % (u'constant', name, Types[type_]))
         self.constants[name] = value
     def SetVariable(self, name, value):
-        type = getType(name, self)
-        if type not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', name, Types[type]))
+        type_ = getType(name, self)
+        if type_ not in [NAME, VARIABLE]:
+            error(ERR_CANNOT_SET % (u'variable', name, Types[type_]))
 
     # Flow control stack
-    def PushFlow(self, type, active, keywords, **attribs): self.Flow.append(FlowControl(type,active,keywords,**attribs))
+    def PushFlow(self, stmnt_type, active, keywords, **attribs):
+        self.Flow.append(FlowControl(stmnt_type, active, keywords, **attribs))
     def PopFlow(self): return self.Flow.pop()
     def PopFrontFlow(self): return self.Flow.pop(0)
     def PeekFlow(self,index=-1): return self.Flow[index]
@@ -724,15 +725,15 @@ class Parser(object):
             self.word = c
             self.wordStart = self.cCol
 
-    def _emit(self, word=None, type=None):
+    def _emit(self, word=None, type_=None):
         word = word or self.word
         if word is None: return
         if self.wordStart is None: self.wordStart = self.cCol - 1
-        type = type or getType(word, self)
+        type_ = type_ or getType(word, self)
 
-        # Try to figure out if it's mutliple operators bunched together
+        # Try to figure out if it's multiple operators bunched together
         rightWord = None
-        if type == UNKNOWN:
+        if type_ == UNKNOWN:
             for idex in range(len(word),0,-1):
                 newType = getType(word[0:idex], self)
                 if newType != UNKNOWN:
@@ -746,15 +747,15 @@ class Parser(object):
             if len(self.tokens) > 0:
                 left = self.tokens[-1].type
                 if left in [CLOSE_PARENS,CLOSE_BRACKET]:
-                    if type in [OPEN_PARENS,DECIMAL,INTEGER,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                    if type_ in [OPEN_PARENS, DECIMAL, INTEGER, FUNCTION, VARIABLE, CONSTANT, NAME]:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
                 elif left in [DECIMAL,INTEGER]:
-                    if type in [OPEN_PARENS,FUNCTION,VARIABLE,CONSTANT,NAME]:
+                    if type_ in [OPEN_PARENS, FUNCTION, VARIABLE, CONSTANT, NAME]:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
                 elif left in [VARIABLE, CONSTANT, NAME]:
-                    if type == OPEN_PARENS:
+                    if type_ == OPEN_PARENS:
                         self.tokens.append(Parser.Token(self.doImplicit,OPERATOR,self,self.cLine))
-        self.tokens.append(Parser.Token(word,type,self,self.cLine,(self.wordStart,self.cCol)))
+        self.tokens.append(Parser.Token(word, type_, self, self.cLine, (self.wordStart, self.cCol)))
         self.word = None
         self.wordStart = None
 
@@ -789,7 +790,7 @@ class Parser(object):
         if c == u'\\': return self._stateSQuoteEscape
         if c == u"'":
             if not self.word: self.word = u''
-            self._emit(type=STRING)
+            self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
             error(_(u'Unterminated single quote.'))
@@ -804,7 +805,7 @@ class Parser(object):
         if c == u'\\': return self._stateDQuoteEscape
         if c == u'"':
             if not self.word: self.word = u""
-            self._emit(type=STRING)
+            self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
             error(_(u"Unterminated double quote."))

@@ -46,12 +46,12 @@ class BackupCancelled(BoltError):
 class BaseBackupSettings:
     verApp = bass.AppVersion
 
-    def __init__(self, parent=None, path=None, quit=False):
+    def __init__(self, parent=None, path=None, do_quit=False):
         if path is not None and path.ext == u'' and not path.exists():
             path = None
         if path is None: path = bosh.settings['bash.backupPath']
         if path is None: path = bosh.dirs['modsBash']
-        self.quit = quit
+        self.quit = do_quit
         self._dir = path
         self.archive = None
         if path.ext:
@@ -96,8 +96,8 @@ class BaseBackupSettings:
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
 
-    def __init__(self, parent=None, path=None, quit=False, backup_images=None):
-        BaseBackupSettings.__init__(self,parent,path,quit)
+    def __init__(self, parent=None, path=None, do_quit=False, backup_images=None):
+        BaseBackupSettings.__init__(self, parent, path, do_quit)
         game, dirs = bush.game.fsName, bosh.dirs
         for path, name, tmpdir in (
               (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
@@ -258,8 +258,8 @@ class BackupSettings(BaseBackupSettings):
 
 #------------------------------------------------------------------------------
 class RestoreSettings(BaseBackupSettings):
-    def __init__(self, parent=None, path=None, quit=False, restore_images=None):
-        BaseBackupSettings.__init__(self,parent,path,quit)
+    def __init__(self, parent=None, path=None, do_quit=False, restore_images=None):
+        BaseBackupSettings.__init__(self, parent, path, do_quit)
         if not self.PromptFile():
             raise BackupCancelled()
         command = bosh.extractCommand(self._dir.join(self.archive), self.tmp)

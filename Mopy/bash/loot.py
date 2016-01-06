@@ -379,8 +379,8 @@ def Init(path):
             else:
                 return False, ''
 
-        def DumpMinimal(self,file,overwrite):
-            _CDumpMinimal(self._DB,_enc(file),overwrite)
+        def DumpMinimal(self, file_, overwrite):
+            _CDumpMinimal(self._DB, _enc(file_), overwrite)
 
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)

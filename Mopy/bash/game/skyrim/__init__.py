@@ -193,8 +193,8 @@ class ess:
     @staticmethod
     def writeMasters(ins,out,header):
         """Rewrites masters of existing save file."""
-        def unpack(format,size): return struct.unpack(format,ins.read(size))
-        def pack(format,*args): out.write(struct.pack(format,*args))
+        def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
+        def pack(fmt, *args): out.write(struct.pack(fmt, *args))
         #--Magic (TESV_SAVEGAME)
         out.write(ins.read(13))
         #--Header
@@ -233,9 +233,9 @@ class ess:
             pack('I',oldOffset+offset)
         #--Copy the rest
         while True:
-            buffer = ins.read(0x5000000)
-            if not buffer: break
-            out.write(buffer)
+            buff = ins.read(0x5000000)
+            if not buff: break
+            out.write(buff)
         return oldMasters
 
 #--INI files that should show up in the INI Edits tab
