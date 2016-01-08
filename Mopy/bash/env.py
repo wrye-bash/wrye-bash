@@ -335,14 +335,14 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
     for fileFrom, fileTo in zip(source, target):
         if fileFrom.isdir():
-            if fileTo.exists():
-                if not fileTo.isdir():
-                    raise _DirectoryFileCollisionError(fileFrom, fileTo)
+            dest_dir = fileTo.join(fileFrom.tail)
+            if dest_dir.exists():
+                if not dest_dir.isdir():
+                    raise _DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
-                for content in _os.listdir(fileFrom):
-                    _fileOperation(operation, fileFrom.join(content),
-                                   fileTo.join(content), renameOnCollision,
-                                   parent)
+                for content in _os.listdir(fileFrom.s):
+                    __copyOrMove(operation, [fileFrom.join(content)],
+                                 [dest_dir], renameOnCollision, parent)
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed
