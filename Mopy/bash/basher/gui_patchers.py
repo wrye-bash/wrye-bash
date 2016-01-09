@@ -29,7 +29,7 @@ from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, 
     SeparatorLink, CheckLink, Link
 from ..bolt import GPath
 
-class Patcher:
+class _PatcherPanel(object):
     """Basic patcher panel with no options."""
     def SetCallbackFns(self,checkPatcherFn,boldPatcherFn):
         self._checkPatcherFn = checkPatcherFn
@@ -70,7 +70,7 @@ class Patcher:
             self.gConfigPanel.Layout()
 
 #------------------------------------------------------------------------------
-class _AliasesPatcher(Patcher):
+class _AliasesPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
@@ -113,7 +113,7 @@ class _AliasesPatcher(Patcher):
         self.SetAliasText()
 
 #------------------------------------------------------------------------------
-class ListPatcher(Patcher):
+class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
     listLabel = _(u'Source Mods/Files')
 
@@ -330,7 +330,7 @@ class ListPatcher(Patcher):
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
 #------------------------------------------------------------------------------
-class TweakPatcher(Patcher):
+class _TweakPatcherPanel(_PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
     listLabel = _(u"Tweaks")
 
@@ -564,7 +564,7 @@ class TweakPatcher(Patcher):
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
 #------------------------------------------------------------------------------
-class DoublePatcher(TweakPatcher,ListPatcher):
+class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Patcher panel with option to select source elements."""
     listLabel = _(u'Source Mods/Files')
 
@@ -628,10 +628,8 @@ class DoublePatcher(TweakPatcher,ListPatcher):
 
 #------------------------------------------------------------------------------
 # GUI Patcher classes - mixins of patchers and the GUI patchers defined above -
+# Do _not_ rename the gui patcher classes or you will break existing BP configs
 #------------------------------------------------------------------------------
-##: consider dynamically create those (game independent ?) UI patchers based on
-# dictionaries in bash.patcher.__init__.py (see the game specific creation
-# below)
 from ..patcher.patchers import base
 from ..patcher.patchers import importers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
@@ -640,103 +638,120 @@ from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
 from ..patcher.patchers import special
 
 # Patchers 10 -----------------------------------------------------------------
-class AliasesPatcher(_AliasesPatcher, base.AliasesPatcher): pass
-class CBash_AliasesPatcher(_AliasesPatcher, base.CBash_AliasesPatcher): pass
+class AliasesPatcher(_AliasesPatcherPanel, base.AliasesPatcher): pass
+class CBash_AliasesPatcher(_AliasesPatcherPanel,
+                           base.CBash_AliasesPatcher): pass
 
-class PatchMerger(base.PatchMerger,ListPatcher):
+class PatchMerger(base.PatchMerger, _ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')
-class CBash_PatchMerger(base.CBash_PatchMerger,ListPatcher):
+class CBash_PatchMerger(base.CBash_PatchMerger, _ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')
+
 # Patchers 20 -----------------------------------------------------------------
-class GraphicsPatcher(importers.GraphicsPatcher,ListPatcher): pass
-class CBash_GraphicsPatcher(importers.CBash_GraphicsPatcher,ListPatcher): pass
+class GraphicsPatcher(importers.GraphicsPatcher, _ListPatcherPanel): pass
+class CBash_GraphicsPatcher(importers.CBash_GraphicsPatcher,
+                            _ListPatcherPanel): pass
 
-class KFFZPatcher(importers.KFFZPatcher,ListPatcher): pass
-class CBash_KFFZPatcher(importers.CBash_KFFZPatcher,ListPatcher): pass
+class KFFZPatcher(importers.KFFZPatcher, _ListPatcherPanel): pass
+class CBash_KFFZPatcher(importers.CBash_KFFZPatcher, _ListPatcherPanel): pass
 
-class NPCAIPackagePatcher(importers.NPCAIPackagePatcher,ListPatcher): pass
+class NPCAIPackagePatcher(importers.NPCAIPackagePatcher,
+                          _ListPatcherPanel): pass
 class CBash_NPCAIPackagePatcher(importers.CBash_NPCAIPackagePatcher,
-                                ListPatcher): pass
+                                _ListPatcherPanel): pass
 
-class ActorImporter(importers.ActorImporter,ListPatcher): pass
-class CBash_ActorImporter(importers.CBash_ActorImporter,ListPatcher): pass
+class ActorImporter(importers.ActorImporter, _ListPatcherPanel): pass
+class CBash_ActorImporter(importers.CBash_ActorImporter,
+                          _ListPatcherPanel): pass
 
-class DeathItemPatcher(importers.DeathItemPatcher,ListPatcher): pass
-class CBash_DeathItemPatcher(importers.CBash_DeathItemPatcher,ListPatcher): pass
+class DeathItemPatcher(importers.DeathItemPatcher, _ListPatcherPanel): pass
+class CBash_DeathItemPatcher(importers.CBash_DeathItemPatcher,
+                             _ListPatcherPanel): pass
 
-class CellImporter(importers.CellImporter,ListPatcher): pass
-class CBash_CellImporter(importers.CBash_CellImporter,ListPatcher): pass
+class CellImporter(importers.CellImporter, _ListPatcherPanel): pass
+class CBash_CellImporter(importers.CBash_CellImporter, _ListPatcherPanel): pass
 
-class ImportFactions(importers.ImportFactions,ListPatcher): pass
-class CBash_ImportFactions(importers.CBash_ImportFactions,ListPatcher): pass
+class ImportFactions(importers.ImportFactions, _ListPatcherPanel): pass
+class CBash_ImportFactions(importers.CBash_ImportFactions,
+                           _ListPatcherPanel): pass
 
-class ImportRelations(importers.ImportRelations,ListPatcher): pass
-class CBash_ImportRelations(importers.CBash_ImportRelations,ListPatcher): pass
+class ImportRelations(importers.ImportRelations, _ListPatcherPanel): pass
+class CBash_ImportRelations(importers.CBash_ImportRelations,
+                            _ListPatcherPanel): pass
 
-class ImportInventory(importers.ImportInventory,ListPatcher): pass
-class CBash_ImportInventory(importers.CBash_ImportInventory,ListPatcher): pass
+class ImportInventory(importers.ImportInventory, _ListPatcherPanel): pass
+class CBash_ImportInventory(importers.CBash_ImportInventory,
+                            _ListPatcherPanel): pass
 
-class ImportActorsSpells(importers.ImportActorsSpells,ListPatcher): pass
+class ImportActorsSpells(importers.ImportActorsSpells, _ListPatcherPanel): pass
 class CBash_ImportActorsSpells(importers.CBash_ImportActorsSpells,
-                               ListPatcher): pass
+                               _ListPatcherPanel): pass
 
-class NamesPatcher(importers.NamesPatcher,ListPatcher): pass
-class CBash_NamesPatcher(importers.CBash_NamesPatcher,ListPatcher): pass
+class NamesPatcher(importers.NamesPatcher, _ListPatcherPanel): pass
+class CBash_NamesPatcher(importers.CBash_NamesPatcher, _ListPatcherPanel): pass
 
-class NpcFacePatcher(importers.NpcFacePatcher,ListPatcher): pass
-class CBash_NpcFacePatcher(importers.CBash_NpcFacePatcher,ListPatcher): pass
+class NpcFacePatcher(importers.NpcFacePatcher, _ListPatcherPanel): pass
+class CBash_NpcFacePatcher(importers.CBash_NpcFacePatcher,
+                           _ListPatcherPanel): pass
 
-class RoadImporter(importers.RoadImporter,ListPatcher): pass
-class CBash_RoadImporter(importers.CBash_RoadImporter,ListPatcher): pass
+class RoadImporter(importers.RoadImporter, _ListPatcherPanel): pass
+class CBash_RoadImporter(importers.CBash_RoadImporter, _ListPatcherPanel): pass
 
-class SoundPatcher(importers.SoundPatcher,ListPatcher): pass
-class CBash_SoundPatcher(importers.CBash_SoundPatcher,ListPatcher): pass
+class SoundPatcher(importers.SoundPatcher, _ListPatcherPanel): pass
+class CBash_SoundPatcher(importers.CBash_SoundPatcher, _ListPatcherPanel): pass
 
-class StatsPatcher(importers.StatsPatcher,ListPatcher): pass
-class CBash_StatsPatcher(importers.CBash_StatsPatcher,ListPatcher): pass
+class StatsPatcher(importers.StatsPatcher, _ListPatcherPanel): pass
+class CBash_StatsPatcher(importers.CBash_StatsPatcher, _ListPatcherPanel): pass
 
-class ImportScripts(importers.ImportScripts,ListPatcher):pass
-class CBash_ImportScripts(importers.CBash_ImportScripts,ListPatcher):pass
+class ImportScripts(importers.ImportScripts, _ListPatcherPanel): pass
+class CBash_ImportScripts(importers.CBash_ImportScripts,
+                          _ListPatcherPanel): pass
 
-class SpellsPatcher(importers.SpellsPatcher,ListPatcher):pass
-class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,ListPatcher):pass
+class SpellsPatcher(importers.SpellsPatcher, _ListPatcherPanel): pass
+class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
+                          _ListPatcherPanel): pass
 
 # Patchers 30 -----------------------------------------------------------------
-class AssortedTweaker(multitweak_assorted.AssortedTweaker,TweakPatcher): pass
+class AssortedTweaker(multitweak_assorted.AssortedTweaker,
+                      _TweakPatcherPanel): pass
 class CBash_AssortedTweaker(multitweak_assorted.CBash_AssortedTweaker,
-                            TweakPatcher): pass
+                            _TweakPatcherPanel): pass
 
-class ClothesTweaker(multitweak_clothes.ClothesTweaker,TweakPatcher): pass
+class ClothesTweaker(multitweak_clothes.ClothesTweaker,
+                     _TweakPatcherPanel): pass
 class CBash_ClothesTweaker(multitweak_clothes.CBash_ClothesTweaker,
-                           TweakPatcher): pass
+                           _TweakPatcherPanel): pass
 
-class GmstTweaker(multitweak_settings.GmstTweaker,TweakPatcher): pass
+class GmstTweaker(multitweak_settings.GmstTweaker, _TweakPatcherPanel): pass
 class CBash_GmstTweaker(multitweak_settings.CBash_GmstTweaker,
-                        TweakPatcher): pass
+                        _TweakPatcherPanel): pass
 
-class NamesTweaker(multitweak_names.NamesTweaker,TweakPatcher): pass
+class NamesTweaker(multitweak_names.NamesTweaker, _TweakPatcherPanel): pass
 class CBash_NamesTweaker(multitweak_names.CBash_NamesTweaker,
-                         TweakPatcher): pass
+                         _TweakPatcherPanel): pass
 
-class TweakActors(multitweak_actors.TweakActors,TweakPatcher): pass
-class CBash_TweakActors(multitweak_actors.CBash_TweakActors,TweakPatcher): pass
+class TweakActors(multitweak_actors.TweakActors, _TweakPatcherPanel): pass
+class CBash_TweakActors(multitweak_actors.CBash_TweakActors,
+                        _TweakPatcherPanel): pass
 
 # Patchers 40 -----------------------------------------------------------------
-class UpdateReferences(base.UpdateReferences,ListPatcher): pass
-class CBash_UpdateReferences(base.CBash_UpdateReferences,ListPatcher): pass
+class UpdateReferences(base.UpdateReferences, _ListPatcherPanel): pass
+class CBash_UpdateReferences(base.CBash_UpdateReferences,
+                             _ListPatcherPanel): pass
 
-class RacePatcher(races_multitweaks.RacePatcher,DoublePatcher):
+class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel):
     listLabel = _(u'Race Mods')
-class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,DoublePatcher):
+class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
+                        _DoublePatcherPanel):
     listLabel = _(u'Race Mods')
 
-class ListsMerger(special.ListsMerger,ListPatcher):
+class ListsMerger(special.ListsMerger, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
-class CBash_ListsMerger(special.CBash_ListsMerger,ListPatcher):
+class CBash_ListsMerger(special.CBash_ListsMerger, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
 
-class ContentsChecker(special.ContentsChecker,Patcher): pass
-class CBash_ContentsChecker(special.CBash_ContentsChecker,Patcher): pass
+class ContentsChecker(special.ContentsChecker, _PatcherPanel): pass
+class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass
 
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
@@ -748,11 +763,11 @@ from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
                        package=bush.game.__name__)
 for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, Patcher), {})
+    globals()[name] = type(name, (typeInfo.clazz, _PatcherPanel), {})
     if typeInfo.twinPatcher:
         otherPatcherDict[name] = typeInfo.twinPatcher
 for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, ListPatcher), {})
+    globals()[name] = type(name, (typeInfo.clazz, _ListPatcherPanel), {})
     if typeInfo.twinPatcher:
         otherPatcherDict[name] = typeInfo.twinPatcher
 
