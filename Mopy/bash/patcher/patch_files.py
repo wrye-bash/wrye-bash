@@ -25,7 +25,8 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
-from ..bosh import ModFile, ModInfo, LoadFactory, MasterSet, dirs
+from ..bosh import ModInfo, MasterSet, dirs
+from ..parsers import LoadFactory, ModFile
 from ..brec import MreRecord, ModError
 from ..balt import showWarning
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \

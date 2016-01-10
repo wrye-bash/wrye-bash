@@ -54,6 +54,7 @@ import types
 from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
 import bosh.faces
+import parsers
 from record_groups import MobCell, MobWorld
 from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, \
     MreWeap, MreSkil, MreInfo, MreDial, MreRegn
@@ -266,8 +267,8 @@ def convertFace(fileName,eid,fromEid,toEid):
     face = bosh.faces.PCFaces.mod_getFaces(modInfo)[eid]
     face.convertRace(fromRace,toRace)
     #--Save back over original face
-    loadFactory = bosh.LoadFactory(True,MreNpc)
-    modFile = bosh.ModFile(modInfo,loadFactory)
+    loadFactory = parsers.LoadFactory(True, MreNpc)
+    modFile = parsers.ModFile(modInfo, loadFactory)
     modFile.load(True)
     npc = modFile.NPC_.getRecordByEid(eid)
     bolt.copyattrs(face,npc,('fggs_p','fgga_p','fgts_p'))
@@ -281,12 +282,12 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     init(3)
     if dstMod.lower() == 'oblivion.esm':
         raise bolt.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
-    srcFactory = bosh.LoadFactory(False,MreRace)
-    dstFactory = bosh.LoadFactory(True,MreRace)
+    srcFactory = parsers.LoadFactory(False, MreRace)
+    dstFactory = parsers.LoadFactory(True, MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
     dstInfo = bosh.modInfos[GPath(dstMod)]
-    srcFile = bosh.ModFile(srcInfo,srcFactory)
-    dstFile = bosh.ModFile(dstInfo,dstFactory)
+    srcFile = parsers.ModFile(srcInfo, srcFactory)
+    dstFile = parsers.ModFile(dstInfo, dstFactory)
     srcFile.load(True)
     dstFile.load(True)
     #--Get source and dest race records
@@ -336,9 +337,9 @@ def diffScripts(oldFile,newFile):
     init(3)
     oldScripts, newScripts = {},{}
     for scripts,fileName in ((oldScripts,oldFile),(newScripts,newFile)):
-        loadFactory = bosh.LoadFactory(False,MreScpt)
+        loadFactory = parsers.LoadFactory(False, MreScpt)
         modInfo = bosh.modInfos[GPath(fileName)]
-        modFile = bosh.ModFile(modInfo,loadFactory)
+        modFile = parsers.ModFile(modInfo, loadFactory)
         modFile.load(True)
         scripts.update(dict((record.eid, record.scriptText) for record in modFile.SCPT.records))
     oldDump,newDump = ((GPath(fileName)+'.mws').open('w') for fileName in (oldFile,newFile))
@@ -360,9 +361,9 @@ def diffScripts2(oldFile,newFile):
     init(3)
     oldScripts, newScripts = {},{}
     for scripts,fileName in ((oldScripts,oldFile),(newScripts,newFile)):
-        loadFactory = bosh.LoadFactory(False,MreScpt)
+        loadFactory = parsers.LoadFactory(False, MreScpt)
         modInfo = bosh.modInfos[GPath(fileName)]
-        modFile = bosh.ModFile(modInfo,loadFactory)
+        modFile = parsers.ModFile(modInfo, loadFactory)
         modFile.load(True)
         scripts.update(dict((record.eid, record.scriptText) for record in modFile.SCPT.records))
     modDump = (GPath(oldFile)+' to '+GPath(newFile)+' - Modified Scripts'+'.txt').open('w')
@@ -381,9 +382,9 @@ def diffScripts2(oldFile,newFile):
 def scriptVars(fileName=None,printAll=None):
     """Print variables for scripts for specified mod file."""
     init(3)
-    loadFactory = bosh.LoadFactory(False,MreScpt)
+    loadFactory = parsers.LoadFactory(False, MreScpt)
     modInfo = bosh.modInfos[GPath(fileName)]
-    modFile = bosh.ModFile(modInfo,loadFactory)
+    modFile = parsers.ModFile(modInfo, loadFactory)
     modFile.load(True)
     for record in sorted(modFile.SCPT.records,key=lambda a: a.eid):
         indices = [var.index for var in record.vars]
@@ -402,8 +403,8 @@ def bookExport(fileName=None):
     #--Data from mod
     doImport = True
     modInfo = bosh.modInfos[fileName]
-    loadFactory= bosh.LoadFactory(doImport,MreBook)
-    modFile = bosh.ModFile(modInfo,loadFactory)
+    loadFactory= parsers.LoadFactory(doImport, MreBook)
+    modFile = parsers.ModFile(modInfo, loadFactory)
     modFile.load(True)
     data = {}
     texts = {}
@@ -501,8 +502,8 @@ def bookImport(fileName=None):
     ins.close()
     #--Export to book
     modInfo = bosh.modInfos[fileName]
-    loadFactory= bosh.LoadFactory(True,MreBook)
-    modFile = bosh.ModFile(modInfo,loadFactory)
+    loadFactory= parsers.LoadFactory(True, MreBook)
+    modFile = parsers.ModFile(modInfo, loadFactory)
     modFile.load(True)
     for book in modFile.BOOK.records:
         if book.eid in data:
@@ -776,9 +777,9 @@ def gmstIds(fileName=None):
     if fileName:
         init(3)
         sorter = lambda a: a.eid
-        loadFactory = bosh.LoadFactory(False,MreGmst)
+        loadFactory = parsers.LoadFactory(False, MreGmst)
         modInfo = bosh.modInfos[GPath(fileName)]
-        modFile = bosh.ModFile(modInfo,loadFactory)
+        modFile = parsers.ModFile(modInfo, loadFactory)
         modFile.load(True)
         for gmst in sorted(modFile.GMST.records,key=sorter):
             print gmst.eid, gmst.value
@@ -846,10 +847,10 @@ def modCheck(fileName=None):
     """Reports on various problems with mods."""
     reBadVarName = re.compile('^[_0-9]')
     init(3)
-    loadFactory = bosh.LoadFactory(False,MreWeap)
+    loadFactory = parsers.LoadFactory(False, MreWeap)
     for modInfo in bosh.modInfos.values():
         print '\n',modInfo.name
-        modFile = bosh.ModFile(modInfo,loadFactory)
+        modFile = parsers.ModFile(modInfo, loadFactory)
         modFile.load(True)
         #--Bows with reach == 0 error? (Causes CTD if NPC tries to equip.)
         for record in modFile.WEAP.records:
@@ -921,16 +922,16 @@ def uncontinue():
 def parseTest(srcName=None,dstName='Wrye Test.esp'):
     init(3)
     testClasses = (MreSkil,)
-    loadFactory = bosh.LoadFactory(False,*testClasses)
+    loadFactory = parsers.LoadFactory(False, *testClasses)
     #--Src file
     srcInfo = bosh.modInfos[GPath(srcName)]
-    srcFile = bosh.ModFile(srcInfo,loadFactory)
+    srcFile = parsers.ModFile(srcInfo, loadFactory)
     srcFile.load(True)
     #return
     #--Dst file
-    loadFactory = bosh.LoadFactory(True,*testClasses)
+    loadFactory = parsers.LoadFactory(True, *testClasses)
     dstInfo = bosh.modInfos[GPath(dstName)]
-    dstFile = bosh.ModFile(dstInfo,loadFactory)
+    dstFile = parsers.ModFile(dstInfo, loadFactory)
     dstFile.convertToLongFids()
     srcFile.convertToLongFids()
     #--Save to test file
@@ -950,16 +951,16 @@ def parseTest(srcName=None,dstName='Wrye Test.esp'):
 def parseDials(srcName=None,dstName='Wrye Test.esp'):
     init(3)
     testClasses = (MreDial,MreInfo)
-    loadFactory = bosh.LoadFactory(False,*testClasses)
+    loadFactory = parsers.LoadFactory(False, *testClasses)
     #--Src file
     srcInfo = bosh.modInfos[GPath(srcName)]
-    srcFile = bosh.ModFile(srcInfo,loadFactory)
+    srcFile = parsers.ModFile(srcInfo, loadFactory)
     srcFile.load(True)
     #return
     #--Dst file
-    loadFactory = bosh.LoadFactory(True,*testClasses)
+    loadFactory = parsers.LoadFactory(True, *testClasses)
     dstInfo = bosh.modInfos[GPath(dstName)]
-    dstFile = bosh.ModFile(dstInfo,loadFactory)
+    dstFile = parsers.ModFile(dstInfo, loadFactory)
     dstFile.convertToLongFids()
     srcFile.convertToLongFids()
     #--Save to test file
@@ -990,9 +991,9 @@ def parseRecords(fileName='Oblivion.esm'):
 ##    testClasses = bosh.MreRecord.type_class.values() + ['LAND','PGRD']
     testClasses = [MreRegn,]
 ##    testClasses = [bosh.MreRefr,bosh.MreCell,bosh.MreWrld]
-    loadFactory = bosh.LoadFactory(False,*testClasses)
+    loadFactory = parsers.LoadFactory(False, *testClasses)
     modInfo = bosh.modInfos[GPath(fileName)]
-    modFile = bosh.ModFile(modInfo,loadFactory)
+    modFile = parsers.ModFile(modInfo, loadFactory)
     modFile.load(True)
     class disablePrint:
         def write(self,text):
@@ -1405,11 +1406,11 @@ def createLSCR(*args):
 def balancer(fileName=None):
     """Generates part of the balancing scripts for Cobl Races Balanced."""
     init(3)
-    loadFactory = bosh.LoadFactory(False,MreRace)
+    loadFactory = parsers.LoadFactory(False, MreRace)
     modInfo = bosh.modInfos[GPath('Cobl Races.esp')]
     balInfo = bosh.modInfos[GPath('Cobl Races - Balanced.esp')]
-    modFile = bosh.ModFile(modInfo,loadFactory)
-    balFile = bosh.ModFile(balInfo,loadFactory)
+    modFile = parsers.ModFile(modInfo, loadFactory)
+    balFile = parsers.ModFile(balInfo, loadFactory)
     modFile.load(True)
     balFile.load(True)
     skillNames = bush.actorValues[12:33]

@@ -26,7 +26,7 @@ import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
-from .. import bosh, bolt, balt, bush
+from .. import bosh, bolt, balt, bush, parsers
 from ..balt import ItemLink, Link, Links, bitmapButton, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
@@ -707,9 +707,9 @@ class App_GenPickle(StatusBar_Button):
         #--Source file
         if fileName:
             sorter = lambda a: a.eid
-            loadFactory = bosh.LoadFactory(False, bush.game.records.MreGmst)
+            loadFactory = parsers.LoadFactory(False, bush.game.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
-            modFile = bosh.ModFile(modInfo, loadFactory)
+            modFile = parsers.ModFile(modInfo, loadFactory)
             modFile.load(True)
             for gmst in sorted(modFile.GMST.records, key=sorter):
                 print gmst.eid, gmst.value

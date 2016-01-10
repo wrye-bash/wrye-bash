@@ -32,7 +32,7 @@ import struct
 from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
-from .. import bosh, bolt, balt, bush
+from .. import bosh, bolt, balt, bush, parsers
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
@@ -843,14 +843,15 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'])
+            loadFactory = parsers.LoadFactory(
+                    False, bosh.MreRecord.type_class['NPC_'])
             ordered = list(bosh.modInfos.activeCached)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
                 subProgress(index,_(u'Scanning ') + modName.s)
                 modInfo = bosh.modInfos[modName]
-                modFile = bosh.ModFile(modInfo,loadFactory)
+                modFile = parsers.ModFile(modInfo, loadFactory)
                 try:
                     modFile.load(True)
                 except bosh.ModError as x:

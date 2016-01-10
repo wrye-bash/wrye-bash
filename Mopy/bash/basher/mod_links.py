@@ -29,7 +29,7 @@ import StringIO
 import collections
 import copy
 import os
-from .. import bosh, bolt, balt, bush
+from .. import bosh, bolt, balt, bush, parsers
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
@@ -81,8 +81,8 @@ class Mod_FullLoad(OneItemLink):
             print bosh.MreRecord.type_class
             readClasses = bosh.MreRecord.type_class
             print readClasses.values()
-            loadFactory = bosh.LoadFactory(False, *readClasses.values())
-            modFile = bosh.ModFile(bosh.modInfos[fileName],loadFactory)
+            loadFactory = parsers.LoadFactory(False, *readClasses.values())
+            modFile = parsers.ModFile(bosh.modInfos[fileName], loadFactory)
             try:
                 modFile.load(True,progress)
             except:
@@ -127,7 +127,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
             else:
-                newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+                newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
                 newFile.tes4.author = u'BASHED DUMMY'
                 newFile.safeSave()
         if doCBash:
@@ -1313,8 +1313,10 @@ class Mod_RemoveWorldOrphans(EnabledLink):
             fileInfo = bosh.modInfos[fileName]
             #--Export
             with balt.Progress(_(u"Remove World Orphans")) as progress:
-                loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
-                modFile = bosh.ModFile(fileInfo,loadFactory)
+                loadFactory = parsers.LoadFactory(True,
+                        bosh.MreRecord.type_class['CELL'],
+                        bosh.MreRecord.type_class['WRLD'])
+                modFile = parsers.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' ' + fileName.s + u'.')
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
@@ -1508,16 +1510,16 @@ class Mod_DecompileAll(EnabledLink):
                                   _(u'Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
-            loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['SCPT'])
-            modFile = bosh.ModFile(fileInfo,loadFactory)
+            loadFactory = parsers.LoadFactory(True, bosh.MreRecord.type_class['SCPT'])
+            modFile = parsers.ModFile(fileInfo, loadFactory)
             modFile.load(True)
             badGenericLore = False
             removed = []
             id_text = {}
             if modFile.SCPT.getNumRecords(False):
-                loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['SCPT'])
+                loadFactory = parsers.LoadFactory(False, bosh.MreRecord.type_class['SCPT'])
                 for master in modFile.tes4.masters:
-                    masterFile = bosh.ModFile(bosh.modInfos[master],loadFactory)
+                    masterFile = parsers.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
                     mapper = masterFile.getLongMapper()
                     for record in masterFile.SCPT.getActiveRecords():

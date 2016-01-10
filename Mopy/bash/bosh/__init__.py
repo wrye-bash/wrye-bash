@@ -28,7 +28,8 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
-import locale; locale.setlocale(locale.LC_ALL,u'')
+import locale
+locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
 import time
@@ -56,13 +57,9 @@ from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
 # cint
-from _ctypes import POINTER
-from ctypes import cast, c_ulong
 from ..cint import ObCollection, CBash, ObBaseRecord
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
-from ..record_groups import MobWorlds, MobDials, MobICells, \
-    MobObjects, MobBase
 
 startupinfo = bolt.startupinfo
 
@@ -192,319 +189,6 @@ class MasterSet(set):
         return modInfos.getOrdered(self)
 
 #------------------------------------------------------------------------------
-class LoadFactory:
-    """Factory for mod representation objects."""
-    def __init__(self,keepAll,*recClasses):
-        self.keepAll = keepAll
-        self.recTypes = set()
-        self.topTypes = set()
-        self.type_class = {}
-        self.cellType_class = {}
-        addClass = self.addClass
-        for recClass in recClasses:
-            addClass(recClass)
-
-    def addClass(self,recClass):
-        """Adds specified class."""
-        cellTypes = ('WRLD','ROAD','CELL','REFR','ACHR','ACRE','PGRD','LAND')
-        if isinstance(recClass,basestring):
-            recType = recClass
-            recClass = MreRecord
-        else:
-            recType = recClass.classType
-        #--Don't replace complex class with default (MreRecord) class
-        if recType in self.type_class and recClass == MreRecord:
-            return
-        self.recTypes.add(recType)
-        self.type_class[recType] = recClass
-        #--Top type
-        if recType in cellTypes:
-            topAdd = self.topTypes.add
-            topAdd('CELL')
-            topAdd('WRLD')
-            if self.keepAll:
-                setterDefault = self.type_class.setdefault
-                for type in cellTypes:
-                    setterDefault(type,MreRecord)
-        elif recType == 'INFO':
-            self.topTypes.add('DIAL')
-        else:
-            self.topTypes.add(recType)
-
-    def getRecClass(self,type):
-        """Returns class for record type or None."""
-        default = (self.keepAll and MreRecord) or None
-        return self.type_class.get(type,default)
-
-    def getCellTypeClass(self):
-        """Returns type_class dictionary for cell objects."""
-        if not self.cellType_class:
-            types = ('REFR','ACHR','ACRE','PGRD','LAND','CELL','ROAD')
-            getterRecClass = self.getRecClass
-            self.cellType_class.update((x,getterRecClass(x)) for x in types)
-        return self.cellType_class
-
-    def getUnpackCellBlocks(self,topType):
-        """Returns whether cell blocks should be unpacked or not. Only relevant
-        if CELL and WRLD top types are expanded."""
-        return (
-            self.keepAll or
-            (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
-            (topType == 'WRLD' and 'LAND' in self.recTypes))
-
-    def getTopClass(self,type):
-        """Returns top block class for top block type, or None."""
-        if type in self.topTypes:
-            if   type == 'DIAL': return MobDials
-            elif type == 'CELL': return MobICells
-            elif type == 'WRLD': return MobWorlds
-            else: return MobObjects
-        elif self.keepAll:
-            return MobBase
-        else:
-            return None
-
-#------------------------------------------------------------------------------
-class ModFile:
-    """TES4 file representation."""
-    def __init__(self, fileInfo,loadFactory=None):
-        self.fileInfo = fileInfo
-        self.loadFactory = loadFactory or LoadFactory(True)
-        #--Variables to load
-        self.tes4 = bush.game.MreHeader(ModReader.recHeader())
-        self.tes4.setChanged()
-        self.strings = bolt.StringTable()
-        self.tops = {} #--Top groups.
-        self.topsSkipped = set() #--Types skipped
-        self.longFids = False
-        #--Cached data
-        self.mgef_school = None
-        self.mgef_name = None
-        self.hostileEffects = None
-
-    def __getattr__(self,topType):
-        """Returns top block of specified topType, creating it, if necessary."""
-        if topType in self.tops:
-            return self.tops[topType]
-        elif topType in bush.game.esp.topTypes:
-            topClass = self.loadFactory.getTopClass(topType)
-            self.tops[topType] = topClass(ModReader.recHeader('GRUP',0,topType,0,0),self.loadFactory)
-            self.tops[topType].setChanged()
-            return self.tops[topType]
-        elif topType == '__repr__':
-            raise AttributeError
-        else:
-            raise ArgumentError(u'Invalid top group type: '+topType)
-
-    def load(self,unpack=False,progress=None,loadStrings=True):
-        """Load file."""
-        progress = progress or bolt.Progress()
-        progress.setFull(1.0)
-        #--Header
-        with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
-            header = ins.unpackRecHeader()
-            self.tes4 = bush.game.MreHeader(header,ins,True)
-            #--Strings
-            self.strings.clear()
-            if unpack and self.tes4.flags1[7] and loadStrings:
-                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
-                stringsPaths = self.fileInfo.getStringsPaths(lang)
-                stringsProgress.setFull(max(len(stringsPaths),1))
-                for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
-                    stringsProgress(i)
-                ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.1,1.0)
-            else:
-                ins.setStringTable(None)
-                subProgress = progress
-            #--Raw data read
-            subProgress.setFull(ins.size)
-            insAtEnd = ins.atEnd
-            insRecHeader = ins.unpackRecHeader
-            selfGetTopClass = self.loadFactory.getTopClass
-            selfTopsSkipAdd = self.topsSkipped.add
-            insSeek = ins.seek
-            insTell = ins.tell
-            selfLoadFactory = self.loadFactory
-            selfTops = self.tops
-            while not insAtEnd():
-                #--Get record info and handle it
-                header = insRecHeader()
-                type = header.recType
-                if type != 'GRUP' or header.groupType != 0:
-                    raise ModError(self.fileInfo.name,u'Improperly grouped file.')
-                label,size = header.label,header.size
-                topClass = selfGetTopClass(label)
-                try:
-                    if topClass:
-                        selfTops[label] = topClass(header,selfLoadFactory)
-                        selfTops[label].load(ins,unpack and (topClass != MobBase))
-                    else:
-                        selfTopsSkipAdd(label)
-                        insSeek(size-header.__class__.size,1,type + '.' + label)
-                except:
-                    print u'Error in',self.fileInfo.name.s
-                    deprint(u' ',traceback=True)
-                    break
-                subProgress(insTell())
-        #--Done Reading
-
-    def load_unpack(self):
-        """Unpacks blocks."""
-        factoryTops = self.loadFactory.topTypes
-        selfTops = self.tops
-        for type in bush.game.esp.topTypes:
-            if type in selfTops and type in factoryTops:
-                selfTops[type].load(None,True)
-
-    def load_UI(self):
-        """Convenience function. Loads, then unpacks, then indexes."""
-        self.load()
-        self.load_unpack()
-        #self.load_index()
-
-    def askSave(self,hasChanged=True):
-        """CLI command. If hasSaved, will ask if user wants to save the file,
-        and then save if the answer is yes. If hasSaved == False, then does nothing."""
-        if not hasChanged: return
-        fileName = self.fileInfo.name
-        if re.match(ur'\s*[yY]',raw_input(u'\nSave changes to '+fileName.s+u' [y\n]?: '),flags=re.U):
-            self.safeSave()
-            print fileName.s,u'saved.'
-        else:
-            print fileName.s,u'not saved.'
-
-    def safeSave(self):
-        """Save data to file safely.  Works under UAC."""
-        self.fileInfo.tempBackup()
-        filePath = self.fileInfo.getPath()
-        self.save(filePath.temp)
-        filePath.temp.mtime = self.fileInfo.mtime
-        env.shellMove(filePath.temp, filePath, parent=None)
-        self.fileInfo.extras.clear()
-
-    def save(self,outPath=None):
-        """Save data to file.
-        outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
-        outPath = outPath or self.fileInfo.getPath()
-        with ModWriter(outPath.open('wb')) as out:
-            #--Mod Record
-            self.tes4.setChanged()
-            self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
-            self.tes4.getSize()
-            self.tes4.dump(out)
-            #--Blocks
-            selfTops = self.tops
-            for type in bush.game.esp.topTypes:
-                if type in selfTops:
-                    selfTops[type].dump(out)
-
-    def getLongMapper(self):
-        """Returns a mapping function to map short fids to long fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        maxMaster = len(masters)-1
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid,tuple): return fid
-            mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
-            return masters[min(mod,maxMaster)],object
-        return mapper
-
-    def getShortMapper(self):
-        """Returns a mapping function to map long fids to short fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        indices = dict([(name,index) for index,name in enumerate(masters)])
-        gLong = self.getLongMapper()
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, (long, int)):
-                fid = gLong(fid)
-            modName,object = fid
-            mod = indices[modName]
-            return (long(mod) << 24 ) | long(object)
-        return mapper
-
-    def convertToLongFids(self,types=None):
-        """Convert fids to long format (modname,objectindex)."""
-        mapper = self.getLongMapper()
-        if types is None: types = self.tops.keys()
-        selfTops = self.tops
-        for type in types:
-            if type in selfTops:
-                selfTops[type].convertFids(mapper,True)
-        #--Done
-        self.longFids = True
-
-    def convertToShortFids(self):
-        """Convert fids to short (numeric) format."""
-        mapper = self.getShortMapper()
-        selfTops = self.tops
-        for type in selfTops:
-            selfTops[type].convertFids(mapper,False)
-        #--Done
-        self.longFids = False
-
-    def getMastersUsed(self):
-        """Updates set of master names according to masters actually used."""
-        if not self.longFids: raise StateError(u"ModFile fids not in long form.")
-        for fname in bush.game.masterFiles:
-            if dirs['mods'].join(fname).exists():
-                masters = MasterSet([GPath(fname)])
-                break
-        for block in self.tops.values():
-            block.updateMasters(masters)
-        return masters.getOrdered()
-
-    def getMgefSchool(self,refresh=False):
-        """Return a dictionary mapping magic effect code to magic effect school.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_school and not refresh:
-            return self.mgef_school
-        mgef_school = self.mgef_school = bush.mgef_school.copy()
-        if 'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
-        return mgef_school
-
-    def getMgefHostiles(self,refresh=False):
-        """Return a set of hostile magic effect codes.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.hostileEffects and not refresh:
-            return self.hostileEffects
-        hostileEffects = self.hostileEffects = bush.hostileEffects.copy()
-        if 'MGEF' in self.tops:
-            hostile = set()
-            nonhostile = set()
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    if record.flags.hostile:
-                        hostile.add(record.eid)
-                        hostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-                    else:
-                        nonhostile.add(record.eid)
-                        nonhostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-            hostileEffects = (hostileEffects - nonhostile) | hostile
-        return hostileEffects
-
-    def getMgefName(self,refresh=False):
-        """Return a dictionary mapping magic effect code to magic effect name.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_name and not refresh:
-            return self.mgef_name
-        mgef_name = self.mgef_name = bush.mgef_name.copy()
-        if 'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_name[record.eid] = record.full
-        return mgef_name
-
 # Save I/O --------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class SaveFileError(FileError):
@@ -8149,6 +7833,7 @@ class ModCleaner:
                     path.temp.remove()
 
 #------------------------------------------------------------------------------
+from ..parsers import LoadFactory, ModFile
 class SaveSpells:
     """Player spells of a savegame."""
 
@@ -8183,8 +7868,8 @@ class SaveSpells:
             self.allSpells.update(modInfo.extras['bash.spellList'])
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False,MreRecord.type_class['SPEL'])
-        modFile = ModFile(modInfo,loadFactory)
+        loadFactory = LoadFactory(False, MreRecord.type_class['SPEL'])
+        modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:
             deprint(_(u'skipped mod due to read error (%s)') % err)
@@ -8331,7 +8016,7 @@ def isPBashMergeable(modInfo,verbose=True):
         reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
     #--Load test
     mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
-    modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
+    modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
     try:
         modFile.load(True,loadStrings=False)
     except ModError as error:
