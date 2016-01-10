@@ -8798,9 +8798,9 @@ def initLogFile():
             os.remove(inisettings['LogFile'].s)
     else:
         with inisettings['LogFile'].open('a', encoding='utf-8-sig') as log:
-            log.write(
-                _(u'%s Wrye Bash ini file read, Keep Log level: %d, initialized.') % (datetime.datetime.now(),inisettings['KeepLog'])
-                + u'\r\n')
+            log.write(_(u'%s Wrye Bash ini file read, Keep Log level: %d, '
+                u'initialized.') % (
+            datetime.datetime.now(), inisettings['KeepLog']) + u'\r\n')
 
 def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
@@ -8810,7 +8810,10 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     from .. import load_order ##: move it from here - also called from restore settings
     load_order = load_order
     initOptions(bashIni)
-    initLogFile()
+    try:
+        initLogFile()
+    except IOError:
+        deprint('Error creating log file', traceback=True)
     Installer.initData()
     exe7z = dirs['compiled'].join(exe7z).s
 
