@@ -305,7 +305,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     #--Get mapper
     srcMasters = srcFile.tes4.masters[:] + [GPath(srcMod)]
     dstMasters = dstFile.tes4.masters[:] + [GPath(dstMod)]
-    mapper = bosh.MasterMap(srcMasters,dstMasters)
+    mapper = parsers.MasterMap(srcMasters, dstMasters)
     #print mapper.map
     #--XFer eyes, hair
     dstRace.defaultHairColor = srcRace.defaultHairColor

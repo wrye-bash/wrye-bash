@@ -859,7 +859,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                     continue
                 if 'NPC_' not in modFile.tops: continue
                 #--Loop over mod NPCs
-                mapToOrdered = bosh.MasterMap(modFile.tes4.masters+[modName], ordered)
+                mapToOrdered = parsers.MasterMap(modFile.tes4.masters + [modName], ordered)
                 for npc in modFile.NPC_.getActiveRecords():
                     fid = mapToOrdered(npc.fid,None)
                     if not fid: continue
@@ -873,7 +873,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 saveFile = bosh.SaveFile(saveInfo)
                 saveFile.load()
                 records = saveFile.records
-                mapToOrdered = bosh.MasterMap(saveFile.masters, ordered)
+                mapToOrdered = parsers.MasterMap(saveFile.masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
                 for recNum in xrange(len(records)):

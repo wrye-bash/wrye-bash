@@ -38,8 +38,8 @@ import bosh # for modInfos
 import env
 from balt import Progress
 from bolt import GPath, decode, deprint, CsvReader, csvFormat, ArgumentError, \
-    SubProgress, StateError
-from bosh import dirs, inisettings, MasterSet
+    SubProgress, StateError, BoltError
+from bosh import dirs, inisettings
 from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModError, \
     ModWriter
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \
@@ -3793,7 +3793,54 @@ class CBash_CellBlockInfo:
                 block, subblock = celldata[eid]
                 out.write(rowFormat % (eid, block, subblock))
 
-# Moved here from bosh, used also in patchers ---------------------------------
+#------------------------------------------------------------------------------
+# Mod Blocks, File ------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MasterMapError(BoltError):
+    """Attempt to map a fid when mapping does not exist."""
+    def __init__(self,modIndex):
+        BoltError.__init__(self,u'No valid mapping for mod index 0x%02X' % modIndex)
+
+class MasterMap:
+    """Serves as a map between two sets of masters."""
+    def __init__(self,inMasters,outMasters):
+        """Initiation."""
+        map = {}
+        outMastersIndex = outMasters.index
+        for index,master in enumerate(inMasters):
+            if master in outMasters:
+                map[index] = outMastersIndex(master)
+            else:
+                map[index] = -1
+        self.map = map
+
+    def __call__(self,fid,default=-1):
+        """Maps a fid from first set of masters to second. If no mapping
+        is possible, then either returns default (if defined) or raises MasterMapError."""
+        if not fid: return fid
+        inIndex = int(fid >> 24)
+        outIndex = self.map.get(inIndex,-2)
+        if outIndex >= 0:
+            return (long(outIndex) << 24 ) | (fid & 0xFFFFFFL)
+        elif default != -1:
+            return default
+        else:
+            raise MasterMapError(inIndex)
+
+class MasterSet(set):
+    """Set of master names."""
+
+    def add(self,element):
+        """Add an element it's not empty. Special handling for tuple."""
+        if isinstance(element,tuple):
+            set.add(self,element[0])
+        elif element:
+            set.add(self,element)
+
+    def getOrdered(self):
+        """Returns masters in proper load order."""
+        return bosh.modInfos.getOrdered(self)
+
 class LoadFactory:
     """Factory for mod representation objects."""
     def __init__(self,keepAll,*recClasses):

@@ -139,55 +139,6 @@ reQuoted  = re.compile(ur'^"(.*)"$',re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 
-# Mod Blocks, File ------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MasterMapError(BoltError):
-    """Attempt to map a fid when mapping does not exist."""
-    def __init__(self,modIndex):
-        BoltError.__init__(self,u'No valid mapping for mod index 0x%02X' % modIndex)
-
-#------------------------------------------------------------------------------
-class MasterMap:
-    """Serves as a map between two sets of masters."""
-    def __init__(self,inMasters,outMasters):
-        """Initiation."""
-        map = {}
-        outMastersIndex = outMasters.index
-        for index,master in enumerate(inMasters):
-            if master in outMasters:
-                map[index] = outMastersIndex(master)
-            else:
-                map[index] = -1
-        self.map = map
-
-    def __call__(self,fid,default=-1):
-        """Maps a fid from first set of masters to second. If no mapping
-        is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not fid: return fid
-        inIndex = int(fid >> 24)
-        outIndex = self.map.get(inIndex,-2)
-        if outIndex >= 0:
-            return (long(outIndex) << 24 ) | (fid & 0xFFFFFFL)
-        elif default != -1:
-            return default
-        else:
-            raise MasterMapError(inIndex)
-
-#------------------------------------------------------------------------------
-class MasterSet(set):
-    """Set of master names."""
-
-    def add(self,element):
-        """Add an element it's not empty. Special handling for tuple."""
-        if isinstance(element,tuple):
-            set.add(self,element[0])
-        elif element:
-            set.add(self,element)
-
-    def getOrdered(self):
-        """Returns masters in proper load order."""
-        return modInfos.getOrdered(self)
-
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
 #------------------------------------------------------------------------------
