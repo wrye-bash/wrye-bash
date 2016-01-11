@@ -52,7 +52,7 @@ from functools import wraps
 from .. import bass, bolt, balt, bush, loot, libbsa, env
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    PermissionError, FileError
+    PermissionError, FileError, formatInteger, round_size
 from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
@@ -5513,6 +5513,13 @@ class Installer(object):
     @property
     def num_of_files(self): return len(self.fileSizeCrcs)
 
+    @staticmethod
+    def number_string(number, marker_string=u''):
+        return formatInteger(number)
+
+    def size_string(self, marker_string=u''):
+        return round_size(self.size)
+
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
         del self.remaps[oldName]
@@ -6226,6 +6233,11 @@ class InstallerMarker(Installer):
 
     @property
     def num_of_files(self): return -1
+
+    @staticmethod
+    def number_string(number, marker_string=u''): return marker_string
+
+    def size_string(self, marker_string=u''): return marker_string
 
     def refreshSource(self,archive,progress=None,fullRefresh=False):
         """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""

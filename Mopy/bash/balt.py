@@ -2130,13 +2130,6 @@ class UIList(wx.Panel):
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
 
-    #--Helpers ----------------------------------------------------------------
-    @staticmethod
-    def _round(siz):
-        """Round non zero sizes to 1 KB."""
-        siz = u'0' if siz == 0 else bolt.formatInteger(max(siz, 1024) / 1024)
-        return siz + u' KB'
-
 #------------------------------------------------------------------------------
 class Tank(UIList):
     """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with

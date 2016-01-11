@@ -42,7 +42,7 @@ from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, LogFile, formatInteger
+    SubProgress, LogFile, formatInteger, round_size
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_OpenSearch', 'Installer_OpenTESA',
@@ -1285,7 +1285,7 @@ class InstallerConverter_Create(_InstallerLink):
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(u'. '+_(u'Name')+u': '+BCFArchive.s)
-            log(u'. '+_(u'Size')+u': %s KB'% formatInteger(max(converter.fullPath.size,1024)/1024 if converter.fullPath.size else 0))
+            log(u'. '+_(u'Size')+u': %s'% round_size(converter.fullPath.size))
             log(u'. '+_(u'Remapped')+u': %s'%formatInteger(len(converter.convertedFiles))+(_(u'file'),_(u'files'))[len(converter.convertedFiles) > 1])
             log.setHeader(u'. '+_(u'Requires')+u': %s'%formatInteger(len(converter.srcCRCs))+(_(u'file'),_(u'files'))[len(converter.srcCRCs) > 1])
             log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in converter.srcCRCs if x in self.idata.crc_installer)))

@@ -173,6 +173,10 @@ def unformatDate(date, formatStr):
 
 def timestamp(): return unicode(int(time.time())) # hasty
 
+def round_size(siz):
+    """Round non zero sizes to 1 KB."""
+    return formatInteger(0 if siz == 0 else max(siz, 1024) / 1024) + u' KB'
+
 # Localization ----------------------------------------------------------------
 # noinspection PyDefaultArgument
 def _findAllBashModules(files=[], bashPath=None, cwd=None,

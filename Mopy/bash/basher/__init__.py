@@ -70,7 +70,7 @@ import wx.gizmos
 from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path, AbstractError, formatInteger, formatDate
+    deprint, Path, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
@@ -795,7 +795,7 @@ class ModList(_ModsSortMixin, balt.UIList):
         ('Group',      lambda self, path: self._get(path)('group', u'')),
         ('Installer',  lambda self, path: self._get(path)('installer', u'')),
         ('Modified',   lambda self, path: formatDate(self.data[path].mtime)),
-        ('Size',       lambda self, path: self._round(self.data[path].size)),
+        ('Size',       lambda self, path: round_size(self.data[path].size)),
         ('Author',     lambda self, path: self.data[path].header.author if
                                       self.data[path].header else u'-'),
         ('CRC',        lambda self, path:
@@ -1777,7 +1777,7 @@ class SaveList(balt.UIList):
     labels = OrderedDict([
         ('File',     lambda self, path: path.s),
         ('Modified', lambda self, path: formatDate(self.data[path].mtime)),
-        ('Size',     lambda self, path: self._round(self.data[path].size)),
+        ('Size',     lambda self, path: round_size(self.data[path].size)),
         ('PlayTime', lambda self, path: self._playTime(self.data[path])),
         ('Player',   lambda self, path: self._headInfo(self.data[path],
                                                        'pcName')),
@@ -2082,19 +2082,13 @@ class InstallersList(balt.Tank):
                                                     bosh.InstallerProject))
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
-    def _size(self, installer):
-        if isinstance(installer, bosh.InstallerMarker): return u''
-        return self._round(installer.size)
-    @staticmethod
-    def _files(installer):
-        if isinstance(installer, bosh.InstallerMarker): return u''
-        return formatInteger(installer.num_of_files)
     labels = OrderedDict([
         ('Package',  lambda self, path: path.s),
         ('Order',    lambda self, path: unicode(self.data[path].order)),
         ('Modified', lambda self, path: formatDate(self.data[path].modified)),
-        ('Size',     lambda self, path: self._size(self.data[path])),
-        ('Files',    lambda self, path: self._files(self.data[path])),
+        ('Size',     lambda self, path: self.data[path].size_string()),
+        ('Files',    lambda self, path: self.data[path].number_string(
+            self.data[path].num_of_files)),
     ])
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, ['Order']
@@ -2876,7 +2870,7 @@ class InstallersPanel(SashTankPanel):
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
             if isinstance(installer,bosh.InstallerProject):
-                info += _(u'Size:')+u' %s KB\n' % formatInteger(max(installer.size,1024)/1024 if installer.size else 0)
+                info += _(u'Size:') + u' %s\n' % round_size(installer.size)
             elif isinstance(installer,bosh.InstallerMarker):
                 info += _(u'Size:')+u' N/A\n'
             elif isinstance(installer,bosh.InstallerArchive):
@@ -2889,24 +2883,25 @@ class InstallersPanel(SashTankPanel):
                         sSolid = _(u'Solid, Block Size: 7z Default')
                 else:
                     sSolid = _(u'Non-solid')
-                info += _(u'Size: %s KB (%s)') % (formatInteger(max(installer.size,1024)/1024 if installer.size else 0),sSolid) + u'\n'
+                info += _(u'Size: %s (%s)') % (
+                    round_size(installer.size), sSolid) + u'\n'
             else:
                 info += _(u'Size: Unrecognized')+u'\n'
             info += (_(u'Modified:')+u' %s\n' % formatDate(installer.modified),
                      _(u'Modified:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
                      _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'Files:')+u' %s\n' % formatInteger(len(installer.fileSizeCrcs)),
-                     _(u'Files:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'Configured:')+u' %s (%s KB)\n' % (
-                formatInteger(nConfigured), formatInteger(max(installer.unSize,1024)/1024 if installer.unSize else 0)),
+            info += (_(u'Files:') + u' %s\n' % installer.number_string(
+                installer.num_of_files, marker_string=u'N/A'))
+            info += (_(u'Configured:')+u' %s (%s)\n' % (
+                formatInteger(nConfigured), round_size(installer.unSize)),
                      _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'  Matched:')+u' %s\n' % formatInteger(nConfigured-nMissing-nMismatched),
-                     _(u'  Matched:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'  Missing:')+u' %s\n' % formatInteger(nMissing),
-                     _(u'  Missing:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'  Conflicts:')+u' %s\n' % formatInteger(nMismatched),
-                     _(u'  Conflicts:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
+                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
+            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
+                nMissing, marker_string=u'N/A'))
+            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
+                nMismatched, marker_string=u'N/A'))
             info += '\n'
             #--Infoboxes
             gPage.SetValue(info+dumpFiles(installer,installer.data_sizeCrc,sNone,
@@ -3126,7 +3121,7 @@ class BSAList(balt.UIList):
     labels = OrderedDict([
         ('File',     lambda self, path: path.s),
         ('Modified', lambda self, path: formatDate(self.data[path].mtime)),
-        ('Size',     lambda self, path: self._round(self.data[path].size)),
+        ('Size',     lambda self, path: round_size(self.data[path].size)),
     ])
 
 #------------------------------------------------------------------------------
