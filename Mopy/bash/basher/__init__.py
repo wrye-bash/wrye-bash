@@ -2481,7 +2481,6 @@ class InstallersPanel(SashTankPanel):
         self.refreshed = False
         self.refreshing = False
         self.frameActivated = False
-        self.fullRefresh = False
         #--Contents
         self.detailsPanel = self # YAK
         self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
@@ -2585,20 +2584,20 @@ class InstallersPanel(SashTankPanel):
             settings['bash.installers.enabled'] = balt.askYes(self, message,
                                                               _(u'Installers'))
 
-    def ShowPanel(self, canCancel=True):
+    def ShowPanel(self, canCancel=True, fullRefresh=False):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled()
         if not settings['bash.installers.enabled'] or self.refreshing: return
         refresh_ui = [False]
         try:
             self.refreshing = True
-            self._refresh_installers(refresh_ui, canCancel)
+            self._refresh_installers(refresh_ui, canCancel, fullRefresh)
             if refresh_ui[0]: self.uiList.RefreshUI()
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
 
-    def _refresh_installers(self, _refresh_ui, canCancel):
+    def _refresh_installers(self, refreshui, canCancel, fullRefresh):
         data = self.data
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
@@ -2611,8 +2610,7 @@ class InstallersPanel(SashTankPanel):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = ('DISC','IC')[self.refreshed]
-                    _refresh_ui[0] |= data.irefresh(progress,what,self.fullRefresh)
-                    self.fullRefresh = False
+                    refreshui[0] |= data.irefresh(progress, what, fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -2621,8 +2619,7 @@ class InstallersPanel(SashTankPanel):
         elif self.frameActivated and data.refreshConvertersNeeded():
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
-                    _refresh_ui[0] |= data.irefresh(progress,'C',self.fullRefresh)
-                    self.fullRefresh = False
+                    refreshui[0] |= data.irefresh(progress, 'C', fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -2644,7 +2641,7 @@ class InstallersPanel(SashTankPanel):
                 else:
                     refresh |= bool(data_sizeCrcDate.pop(path, None))
             if refresh:
-                _refresh_ui[0] |= self.data.refreshInstallersStatus()
+                refreshui[0] |= self.data.refreshInstallersStatus()
 
     def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),

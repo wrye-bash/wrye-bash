@@ -477,5 +477,4 @@ class CreateNewProject(balt.Dialog):
 
         # Move successful
         BashFrame.iPanel.refreshed = False
-        BashFrame.iPanel.fullRefresh = False
         BashFrame.iPanel.ShowPanel()

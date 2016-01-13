@@ -83,7 +83,6 @@ class Installers_MonitorInstall(Installers_Link):
         if not self._askOk(msg, _(u'External Installation')): return
         # Refresh Data
         self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = False
         self.iPanel.ShowPanel(canCancel=False)
         # Backup CRC data
         data_sizeCrcDate = copy.copy(self.idata.data_sizeCrcDate)
@@ -92,7 +91,6 @@ class Installers_MonitorInstall(Installers_Link):
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
         self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = False
         self.iPanel.ShowPanel(canCancel=False)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -254,8 +252,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         if self.full_refresh and not self._askWarning(self.msg, self.text):
             return
         self.iPanel.refreshed = False
-        self.iPanel.fullRefresh = self.full_refresh
-        self.iPanel.ShowPanel()
+        self.iPanel.ShowPanel(fullRefresh=self.full_refresh)
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
@@ -343,7 +340,6 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
             self.iPanel.refreshed = False
-            self.iPanel.fullRefresh = False
             self.iPanel.ShowPanel()
         # Refresh Installers
         toRefresh = set()
