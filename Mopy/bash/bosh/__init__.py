@@ -5361,40 +5361,13 @@ class Installer(object):
         normGet = norm_ghost.get
         pendingAdd = pending.add
         apRootJoin = apRoot.join
-        obse = bush.game.se.shortName.lower()
-        sd = bush.game.sd.installDir.lower()
-        setSkipLod = settings['bash.installers.skipDistantLOD']
-        setSkipScreen = settings['bash.installers.skipScreenshots']
-        setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
-        setSkipSD = bush.game.sd.shortName and setSkipOBSE
-        setSkipDocs = settings['bash.installers.skipDocs']
-        setSkipImages = settings['bash.installers.skipImages']
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
-        dataDirsMinus = Installer.dataDirsMinus
-        if inisettings['KeepLog'] > 1:
-            try: log = inisettings['LogFile'].open('a',encoding='utf-8-sig')
-            except: log = None
-        else: log = None
         for asDir,sDirs,sFiles in os.walk(asRoot):
             progress(0.05,transProgress % (rootName,asDir[relPos:]))
             if rootIsMods and asDir == asRoot:
-                newSDirs = (x for x in sDirs if x.lower() not in dataDirsMinus)
-                if setSkipLod:
-                    newSDirs = (x for x in newSDirs if x.lower() != u'distandlod')
-                if setSkipScreen:
-                    newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
-                if setSkipOBSE:
-                    newSDirs = (x for x in newSDirs if x.lower() != obse)
-                if setSkipSD:
-                    newSDirs = (x for x in newSDirs if x.lower() != sd)
-                if setSkipDocs and setSkipImages:
-                    newSDirs = (x for x in newSDirs if x.lower() != u'docs')
-                newSDirs = [x for x in newSDirs if x.lower() not in bush.game.SkipBAINRefresh]
-                sDirs[:] = [x for x in newSDirs]
-                if log: log.write(u'(in refreshSizeCRCDate after accounting for skipping) sDirs = %s\n'%(sDirs[:]))
+                Installer._skips_in_data_dir(sDirs)
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
-        if log: log.close()
         progress(0,_(u"%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
@@ -5456,6 +5429,38 @@ class Installer(object):
         old_sizeCrcDate.update(new_sizeCrcDate)
         #--Done
         return changed
+
+    @staticmethod
+    def _skips_in_data_dir(sDirs):
+        """Skip some top level directories based on global settings - EVEN
+        on a fullRefresh."""
+        if inisettings['KeepLog'] > 1:
+            try: log = inisettings['LogFile'].open('a', encoding='utf-8-sig')
+            except: log = None
+        else: log = None
+        setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
+        setSkipDocs = settings['bash.installers.skipDocs']
+        setSkipImages = settings['bash.installers.skipImages']
+        newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
+        if settings['bash.installers.skipDistantLOD']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'distandlod')
+        if settings['bash.installers.skipScreenshots']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
+        if setSkipOBSE:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != bush.game.se.shortName.lower())
+        if bush.game.sd.shortName and setSkipOBSE:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != bush.game.sd.installDir.lower())
+        if setSkipDocs and setSkipImages:
+            newSDirs = (x for x in newSDirs if x.lower() != u'docs')
+        newSDirs = (x for x in newSDirs if
+                    x.lower() not in bush.game.SkipBAINRefresh)
+        sDirs[:] = [x for x in newSDirs]
+        if log:
+            log.write(u'(in refreshSizeCRCDate after accounting for skipping) '
+                      u'sDirs = %s\r\n' % (sDirs[:]))
+            log.close()
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
