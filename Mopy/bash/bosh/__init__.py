@@ -5335,7 +5335,7 @@ class Installer(object):
 
     @staticmethod
     def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
-                           fullRefresh=False):
+                           recalculate_all_crcs=False):
         """Update old_sizeCrcDate for apRoot directory. Used by:
         - InstallerProject._refreshSource(): populates the project's
         src_sizeCrcDate cache with _all_ files present in the project dir.
@@ -5406,7 +5406,7 @@ class Installer(object):
                 try: dir.removedirs()
                 except OSError: pass
         #--Force update?
-        if fullRefresh: pending |= set(new_sizeCrcDate)
+        if recalculate_all_crcs: pending |= set(new_sizeCrcDate)
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
         apRootJoin = apRoot.join
@@ -5940,9 +5940,9 @@ class Installer(object):
         #--Done (return dest_src for install operation)
         return dest_src
 
-    def refreshBasic(self,archive,progress=None,fullRefresh=False):
+    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
         """Extract file/size/crc info from archive."""
-        self._refreshSource(archive, progress, fullRefresh)
+        self._refreshSource(archive, progress, recalculate_project_crc)
         #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(u'\\',1)
@@ -6134,13 +6134,14 @@ class Installer(object):
         return False, False, False
 
     #--ABSTRACT ---------------------------------------------------------------
-    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+    def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, and modified from source
         archive/directory. fileSizeCrcs is a list of tuples, one for _each_
         file in the archive or project directory. _refreshSource is called
         in refreshBasic only - so may be skipped if this is a project and
         skipRefresh is on. In projects the src_sizeCrcDate cache is used to
         avoid recalculating crc's.
+        :param recalculate_project_crc: only used in InstallerProject override
         """
         raise AbstractError
 
@@ -6254,7 +6255,7 @@ class InstallerMarker(Installer):
 
     def size_string(self, marker_string=u''): return marker_string
 
-    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+    def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
@@ -6284,7 +6285,7 @@ class InstallerArchive(Installer):
         ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
 
     #--File Operations --------------------------------------------------------
-    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+    def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
         self.modified = archive.mtime
@@ -6483,12 +6484,12 @@ class InstallerProject(Installer):
         for empty in empties: empty.removedirs()
         projectDir.makedirs() #--In case it just got wiped out.
 
-    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+    def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set refreshed to True."""
         apRoot = dirs['installers'].join(archive)
         Installer.refreshSizeCrcDate(apRoot, self.src_sizeCrcDate, progress,
-                                     fullRefresh)
+                                     recalculate_project_crc)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
@@ -6826,7 +6827,10 @@ class InstallersData(DataDict):
                     installer = newDataSetDefault(package,iClass(package))
                 if installer.skipRefresh and isinstance(installer, InstallerProject) and not fullRefresh: continue
                 apath = installersJoin(package)
-                try: installer.refreshBasic(apath,SubProgress(progress,index,index+1))
+                try:
+                    installer.refreshBasic(apath,
+                            SubProgress(progress, index, index + 1),
+                            recalculate_project_crc=False)
                 except InstallerArchiveError:
                     installer.type = -1
         self.data = newData
@@ -6883,7 +6887,7 @@ class InstallersData(DataDict):
             #--Refresh UI
             pArchive = dirs['installers'].join(destArchive)
             iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
+            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             # If applying the BCF created a new archive with an embedded BCF,
             # ignore the embedded BCF for now, so we don't end up in an
             # infinite loop

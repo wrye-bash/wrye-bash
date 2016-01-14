@@ -132,8 +132,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             pArchive = bosh.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
             iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99),
-                                  True)
+            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
                 self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
@@ -538,7 +537,8 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
             installer.refreshBasic(
-                bosh.dirs['installers'].join(installer.archive))
+                bosh.dirs['installers'].join(installer.archive), progress=None,
+                recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
             self.idata.irefresh(what='N')
             self.window.RefreshUI()
@@ -830,7 +830,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                     pProject = installers_dir.join(project) # bolt.Path
                     # ...\Bash Installers\030 - Conflicts
                     iProject.refreshed = False
-                    iProject.refreshBasic(pProject,None,True)
+                    iProject.refreshBasic(pProject, progress=None)
                     if iProject.order == -1:
                         idata.moveArchives([project],srcInstaller.order + 1)
                     idata.irefresh(what='I')
@@ -1042,7 +1042,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 iProject = self.idata[project]
                 pProject = bosh.dirs['installers'].join(project)
                 iProject.refreshed = False
-                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99))
                 if iProject.order == -1:
                     self.idata.moveArchives([project],installer.order+1)
                 self.idata.irefresh(what='NS')
@@ -1062,7 +1062,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     iProject = self.idata[project]
                     pProject = bosh.dirs['installers'].join(project)
                     iProject.refreshed = False
-                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99),True)
+                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99))
                     if iProject.order == -1:
                         self.idata.moveArchives([project],installer.order+1)
                 self.idata.irefresh(what='NS')
@@ -1111,7 +1111,7 @@ class InstallerProject_Sync(_InstallerLink):
             installer.syncToData(project,missing|mismatched)
             pProject = bosh.dirs['installers'].join(project)
             installer.refreshed = False
-            installer.refreshBasic(pProject,SubProgress(progress,0.1,0.99),True)
+            installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
 
@@ -1189,7 +1189,7 @@ class InstallerConverter_Apply(_InstallerLink):
             #--Refresh UI
             pArchive = bosh.dirs['installers'].join(destArchive)
             iArchive.refreshed = False
-            iArchive.refreshBasic(pArchive,SubProgress(progress,0.99,1.0),True)
+            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             if iArchive.order == -1:
                 lastInstaller = self.idata[self.selected[-1]]
                 self.idata.moveArchives([destArchive],lastInstaller.order+1)

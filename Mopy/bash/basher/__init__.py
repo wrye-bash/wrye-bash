@@ -2453,7 +2453,7 @@ class InstallersList(balt.Tank):
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bosh.dirs['installers'].join(name)
                     installer.refreshBasic(apath, SubProgress(progress, index,
-                                                              index + 1), True)
+                                                              index + 1))
                     self.data.hasChanged = True  # is it really needed ?
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
