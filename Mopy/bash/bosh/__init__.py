@@ -5336,31 +5336,24 @@ class Installer(object):
     @staticmethod
     def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
                            fullRefresh=False):
-        """Update old_sizeCrcDate for root directory.
-        This is used both by InstallerProject's and by InstallersData."""
+        """Update old_sizeCrcDate for apRoot directory. Used by:
+        - InstallerProject._refreshSource(): populates the project's
+        src_sizeCrcDate cache with _all_ files present in the project dir.
+        src_sizeCrcDate is then used to populate fileSizeCrcs, used to populate
+        data_sizeCrc in refreshDataSizeCrc.
+        - InstallersData.irefresh(): it populates its data_sizeCrcDate but
+        taking into account ghosts and (somewhat buggily) global skips.
+        """
         rootIsMods = (apRoot == dirs['mods']) #--Filtered scanning for mods directory.
-        norm_ghost = (rootIsMods and Installer.getGhosted()) or {}
-        ghost_norm = dict((y,x) for x,y in norm_ghost.iteritems())
+        #--Scan for changed files
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
-        new_sizeCrcDate = {}
-        bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
-        skipExts = Installer.skipExts
-        asRoot = apRoot.s
-        relPos = len(asRoot)+1
-        pending = set()
-        #--Scan for changed files
         progress(0,rootName+u': '+_(u'Pre-Scanning...'))
         progress.setFull(1)
-        dirDirsFiles = []
-        emptyDirs = set()
-        dirDirsFilesAppend = dirDirsFiles.append
-        emptyDirsAdd = emptyDirs.add
-        oldGet = old_sizeCrcDate.get
-        ghostGet = ghost_norm.get
-        normGet = norm_ghost.get
-        pendingAdd = pending.add
-        apRootJoin = apRoot.join
+        dirDirsFiles, emptyDirs = [], set()
+        dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
+        asRoot = apRoot.s
+        relPos = len(asRoot)+1
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
         for asDir,sDirs,sFiles in os.walk(asRoot):
             progress(0.05,transProgress % (rootName,asDir[relPos:]))
@@ -5370,6 +5363,17 @@ class Installer(object):
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_(u"%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
+        pending = set()
+        pendingAdd = pending.add
+        new_sizeCrcDate = {}
+        oldGet = old_sizeCrcDate.get
+        # below only for dirs['mods'] (aka the Data/ dir)
+        norm_ghost = (rootIsMods and Installer.getGhosted()) or {}
+        ghost_norm = dict((y,x) for x,y in norm_ghost.iteritems())
+        bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+        skipExts = Installer.skipExts
+        ghostGet = ghost_norm.get
+        normGet = norm_ghost.get
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
             progress(index)
             rsDir = asDir[relPos:]
@@ -5405,6 +5409,7 @@ class Installer(object):
         if fullRefresh: pending |= set(new_sizeCrcDate)
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
+        apRootJoin = apRoot.join
         if pending:
             totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
             done = 0
@@ -5937,7 +5942,7 @@ class Installer(object):
 
     def refreshBasic(self,archive,progress=None,fullRefresh=False):
         """Extract file/size/crc info from archive."""
-        self.refreshSource(archive,progress,fullRefresh)
+        self._refreshSource(archive, progress, fullRefresh)
         #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(u'\\',1)
@@ -6129,8 +6134,14 @@ class Installer(object):
         return False, False, False
 
     #--ABSTRACT ---------------------------------------------------------------
-    def refreshSource(self,archive,progress=None,fullRefresh=False):
-        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
+    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+        """Refresh fileSizeCrcs, size, and modified from source
+        archive/directory. fileSizeCrcs is a list of tuples, one for _each_
+        file in the archive or project directory. _refreshSource is called
+        in refreshBasic only - so may be skipped if this is a project and
+        skipRefresh is on. In projects the src_sizeCrcDate cache is used to
+        avoid recalculating crc's.
+        """
         raise AbstractError
 
     def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
@@ -6243,8 +6254,8 @@ class InstallerMarker(Installer):
 
     def size_string(self, marker_string=u''): return marker_string
 
-    def refreshSource(self,archive,progress=None,fullRefresh=False):
-        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
+    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+        """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
     def install(self,name,destFiles,data_sizeCrcDate,progress=None):
@@ -6273,8 +6284,8 @@ class InstallerArchive(Installer):
         ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
 
     #--File Operations --------------------------------------------------------
-    def refreshSource(self,archive,progress=None,fullRefresh=False):
-        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
+    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+        """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
         self.modified = archive.mtime
         self.size = archive.size
@@ -6472,17 +6483,17 @@ class InstallerProject(Installer):
         for empty in empties: empty.removedirs()
         projectDir.makedirs() #--In case it just got wiped out.
 
-    def refreshSource(self,archive,progress=None,fullRefresh=False):
-        """Refreshes fileSizeCrcs, size, date and modified from source archive/directory."""
-        fileSizeCrcs = self.fileSizeCrcs = []
-        src_sizeCrcDate = self.src_sizeCrcDate
+    def _refreshSource(self, archive, progress=None, fullRefresh=False):
+        """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
+        project directory, set refreshed to True."""
         apRoot = dirs['installers'].join(archive)
-        Installer.refreshSizeCrcDate(apRoot, src_sizeCrcDate, progress,
+        Installer.refreshSizeCrcDate(apRoot, self.src_sizeCrcDate, progress,
                                      fullRefresh)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
-        for path, (size, crc, date) in src_sizeCrcDate.iteritems():
+        fileSizeCrcs = self.fileSizeCrcs = []
+        for path, (size, crc, date) in self.src_sizeCrcDate.iteritems():
             fileSizeCrcs.append((path.s, size, crc))
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
