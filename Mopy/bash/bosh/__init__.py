@@ -5280,8 +5280,10 @@ class Installer(object):
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Needs to be called after bush.game has been set
+    dataDirs = dataDirsPlus = ()
     @staticmethod
-    def initData():
+    def init_bain_dirs():
+        """Initialize BAIN data directories on a per game basis."""
         Installer.dataDirs = bush.game.dataDirs
         Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
 
@@ -5469,22 +5471,23 @@ class Installer(object):
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
-        """Inits everything to default values."""
-        #--Package Only
+        """Initialize everything to default values."""
         self.archive = u''
+        #--Persistent: set by _refreshSource called by refreshBasic
         self.modified = 0 #--Modified date
         self.size = -1 #--size of archive file
         self.crc = 0 #--crc of archive
+        self.isSolid = False #--package only - solid 7z archive
+        self.blockSize = None #--package only - set here and there
+        self.fileSizeCrcs = [] #--list of tuples for _all_ files in installer
+        #--For InstallerProject's, cache if refresh projects is skipped
+        self.src_sizeCrcDate = {}
+        #--Set by refreshBasic
+        self.fileRootIdex = 0
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
-        self.isSolid = False
-        self.blockSize = None
-        self.fileSizeCrcs = []
         self.subNames = []
-        self.src_sizeCrcDate = {} #--For InstallerProject's
-        #--Dirty Update
-        self.dirty_sizeCrc = {}
-        #--Mixed
         self.subActives = []
+        self.readMe = None # set by refreshDataSizeCrc (unused for now)
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
@@ -5496,15 +5499,14 @@ class Installer(object):
         self.isActive = False
         self.espmNots = set() #--Lowercase esp/m file names that user has decided not to install.
         self.remaps = {}
-        self.fileRootIdex = 0
-        #--Volatiles (unpickled values)
+        #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.refreshed = False
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
         self.hasBCF = False
         self.espmMap = collections.defaultdict(list)
-        self.readMe = self.packageDoc = self.packagePic = None
+        self.packageDoc = self.packagePic = None
         self.hasReadme = False
         self.hasBethFiles = False
         self.data_sizeCrc = {}
@@ -5512,6 +5514,7 @@ class Installer(object):
         self.skipDirFiles = set()
         self.espms = set()
         self.unSize = 0
+        self.dirty_sizeCrc = {}
         #--Volatile: set by refreshStatus
         self.status = 0
         self.underrides = set()
@@ -8843,7 +8846,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
         initLogFile()
     except IOError:
         deprint('Error creating log file', traceback=True)
-    Installer.initData()
+    Installer.init_bain_dirs()
     exe7z = dirs['compiled'].join(exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
