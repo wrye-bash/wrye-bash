@@ -32,8 +32,8 @@ from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
     ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelUnicode, MelModel, MelFidList, MelStructA, \
-    MreRecord, MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
+    MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
+    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
     MelCountedFids, MelSortedFidList, MelStrings
 from ...bass import null1, null2, null3, null4
 from ... import bush
