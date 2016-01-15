@@ -5943,23 +5943,21 @@ class Installer(object):
         #--Done (return dest_src for install operation)
         return dest_src
 
-    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
-        """Extract file/size/crc info from archive."""
-        self._refreshSource(archive, progress, recalculate_project_crc)
+    @staticmethod
+    def _find_root_index(fileSizeCrcs):
         #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(u'\\',1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
-        fileSizeCrcs = self.fileSizeCrcs
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
         fileSizeCrcs.sort(key=lambda x: sortKeys[x])
         #--Find correct starting point to treat as BAIN package
-        dataDirs = self.dataDirsPlus
+        dataDirs = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
-            if file.startswith(u'--'): continue
+            if file.startswith(u'--'): continue ##: also ignore other silent skips !!
             fileLower = file.lower()
             frags = fileLower.split(u'\\')
             if len(frags) == 1:
@@ -5969,8 +5967,7 @@ class Installer(object):
             else:
                 dirName = frags[0]
                 if dirName not in layout and layout:
-                    # A second directory in the archive root, start
-                    # in the root
+                    # A second directory in the archive root, start in the root
                     rootIdex = 0
                     break
                 root = layoutSetdefault(dirName,{'dirs':{},'files':False})
@@ -6007,17 +6004,21 @@ class Installer(object):
                             # Multiple folders, stop here even if it's no good
                             break
                     rootIdex = len(rootStr)
-        self.fileRootIdex = rootIdex
-        # fileRootIdex now points to the start in the file strings
-        # to ignore
-        reDataFile = self.reDataFile
+        return rootIdex
+
+    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
+        """Extract file/size/crc and BAIN structure info from installer."""
+        self._refreshSource(archive, progress, recalculate_project_crc)
+        self.fileRootIdex = rootIdex = self._find_root_index(self.fileSizeCrcs)
+        # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
         type_ = 0
         subNameSet = set()
         subNameSetAdd = subNameSet.add
         subNameSetAdd(u'')
-        reDataFileSearch = reDataFile.search
-        for file,size,crc in fileSizeCrcs:
+        reDataFileSearch = self.reDataFile.search
+        dataDirs = self.dataDirsPlus
+        for file, size, crc in self.fileSizeCrcs:
             file = file[rootIdex:]
             if type_ != 1:
                 frags = file.split(u'\\')
@@ -6276,6 +6277,9 @@ class InstallerMarker(Installer):
         data[newName] = installer
         del data[archive]
         return True, False, False
+
+    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
+        pass
 
 #------------------------------------------------------------------------------
 class InstallerArchiveError(bolt.BoltError): pass
