@@ -5253,9 +5253,9 @@ class Installer(object):
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
     volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
-        'missingFiles', 'mismatchedFiles', 'refreshed', 'mismatchedEspms',
-        'unSize', 'espms', 'underrides', 'hasWizard', 'espmMap', 'hasReadme',
-        'hasBCF', 'hasBethFiles')
+        'missingFiles', 'mismatchedFiles', 'project_refreshed',
+        'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
+        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles')
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
@@ -5501,7 +5501,7 @@ class Installer(object):
         self.remaps = {}
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
-        self.refreshed = False
+        self.project_refreshed = False
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
         self.hasBCF = False
@@ -6489,7 +6489,7 @@ class InstallerProject(Installer):
 
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
-        project directory, set refreshed to True."""
+        project directory, set project_refreshed to True."""
         apRoot = dirs['installers'].join(archive)
         Installer.refreshSizeCrcDate(apRoot, self.src_sizeCrcDate, progress,
                                      recalculate_project_crc)
@@ -6505,7 +6505,7 @@ class InstallerProject(Installer):
         self.size = cumSize
         self.modified = apRoot.getmtime(True)
         self.crc = cumCRC & 0xFFFFFFFFL
-        self.refreshed = True
+        self.project_refreshed = True
 
     def install(self,name,destFiles,data_sizeCrcDate,progress=None):
         """Install specified files to Oblivion\Data directory."""
@@ -6806,7 +6806,7 @@ class InstallersData(DataDict):
                 installer = dataGet(archive)
                 if not installer:
                     pendingAdd(archive)
-                elif (isdir and not installer.refreshed) or (
+                elif (isdir and not installer.project_refreshed) or (
                     (installer.size,installer.modified) != (apath.size,apath.mtime)):
                     newData[archive] = installer
                     pendingAdd(archive)
@@ -6889,7 +6889,7 @@ class InstallersData(DataDict):
             converter.applySettings(iArchive)
             #--Refresh UI
             pArchive = dirs['installers'].join(destArchive)
-            iArchive.refreshed = False
+            iArchive.project_refreshed = False
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             # If applying the BCF created a new archive with an embedded BCF,
             # ignore the embedded BCF for now, so we don't end up in an

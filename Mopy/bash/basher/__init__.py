@@ -2443,6 +2443,7 @@ class InstallersList(balt.Tank):
             self._gList.EditLabel(index)
 
     def rescanInstallers(self, toRefresh, abort):
+        """Refresh installers, ignoring skip refresh flag."""
         if not toRefresh: return
         try:
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,

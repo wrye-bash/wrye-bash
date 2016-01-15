@@ -131,7 +131,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
             iArchive = self.idata[archive]
             pArchive = bosh.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
-            iArchive.refreshed = False
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
                 self.idata.moveArchives([archive], installer.order + 1)
@@ -699,7 +698,8 @@ class Installer_OpenTESA(_Installer_OpenAt):
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     text = _(u'Refresh')
-    help = _(u'Rescan selected Installer(s)')
+    help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+        u'Ignores skip refresh flag on projects')
 
     def _enable(self): return bool(self.filterInstallables())
 
@@ -829,7 +829,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                     iProject = idata[project] #bash.bosh.InstallerProject object
                     pProject = installers_dir.join(project) # bolt.Path
                     # ...\Bash Installers\030 - Conflicts
-                    iProject.refreshed = False
+                    iProject.project_refreshed = False
                     iProject.refreshBasic(pProject, progress=None)
                     if iProject.order == -1:
                         idata.moveArchives([project],srcInstaller.order + 1)
@@ -1014,59 +1014,41 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         return self.isSelectedArchives()
 
     def Execute(self):
-        if self.isSingleArchive():
-            archive = self.selected[0]
-            installer = self.idata[archive]
-            project = archive.root
-            result = self._askText(_(u"Unpack %s to Project:") % archive.s,
-                                   default=project.s)
-            if not result: return
-            #--Error checking
-            project = GPath(result).tail
-            if not project.s or project.cext in bosh.readExts:
-                self._showWarning(_(u"%s is not a valid project name.") % result)
-                return
-            if self.idata.dir.join(project).isfile():
-                self._showWarning(_(u"%s is a file.") % project.s)
-                return
-            if project in self.idata:
-                if not self._askYes(
-                            _(u"%s already exists. Overwrite it?") % project.s,
-                            default=False): return
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            if self.isSingleArchive():
+            for archive in self.selected:
+                installer = self.idata[archive]
+                project = archive.root
+                if self.isSingleArchive():
+                    result = self._askText(_(u"Unpack %s to Project:") % archive.s,
+                                           default=project.s)
+                    if not result: return
+                    #--Error checking
+                    project = GPath(result).tail
+                    if not project.s or project.cext in bosh.readExts:
+                        self._showWarning(_(u"%s is not a valid project name.") % result)
+                        return
+                    if self.idata.dir.join(project).isfile():
+                        self._showWarning(_(u"%s is a file.") % project.s)
+                        return
+                if project in self.idata:
+                    if not self._askYes(
+                        _(u"%s already exists. Overwrite it?") % project.s,
+                        default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                if project not in self.idata:
-                    self.idata[project] = bosh.InstallerProject(project)
-                iProject = self.idata[project]
-                pProject = bosh.dirs['installers'].join(project)
-                iProject.refreshed = False
-                iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99))
-                if iProject.order == -1:
-                    self.idata.moveArchives([project],installer.order+1)
-                self.idata.irefresh(what='NS')
-                self.window.RefreshUI()
-                #pProject.start()
-            else:
-                for archive in self.selected:
-                    project = archive.root
-                    installer = self.idata[archive]
-                    if project in self.idata:
-                        if not self._askYes(
-                            _(u"%s already exists. Overwrite it?") % project.s,
-                            default=False): continue
-                    installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                    if project not in self.idata:
-                        self.idata[project] = bosh.InstallerProject(project)
-                    iProject = self.idata[project]
-                    pProject = bosh.dirs['installers'].join(project)
-                    iProject.refreshed = False
-                    iProject.refreshBasic(pProject,SubProgress(progress,0.8,0.99))
-                    if iProject.order == -1:
-                        self.idata.moveArchives([project],installer.order+1)
-                self.idata.irefresh(what='NS')
-                self.window.RefreshUI()
+                self._create_project(installer, progress, project)
+            self.idata.irefresh(what='NS')
+            self.window.RefreshUI()
+
+    def _create_project(self, installer, progress, project):
+        if project not in self.idata:
+            self.idata[project] = bosh.InstallerProject(project)
+        iProject = self.idata[project]
+        pProject = bosh.dirs['installers'].join(project)
+        iProject.project_refreshed = False
+        iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
+        if iProject.order == -1:
+            self.idata.moveArchives([project], installer.order + 1)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
@@ -1110,7 +1092,7 @@ class InstallerProject_Sync(_InstallerLink):
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
             pProject = bosh.dirs['installers'].join(project)
-            installer.refreshed = False
+            installer.project_refreshed = False
             installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
@@ -1188,7 +1170,7 @@ class InstallerConverter_Apply(_InstallerLink):
             self.converter.applySettings(iArchive)
             #--Refresh UI
             pArchive = bosh.dirs['installers'].join(destArchive)
-            iArchive.refreshed = False
+            iArchive.project_refreshed = False
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             if iArchive.order == -1:
                 lastInstaller = self.idata[self.selected[-1]]
