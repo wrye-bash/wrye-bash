@@ -36,7 +36,7 @@ import StringIO
 
 import bass
 import barg
-opts,extra = barg.parse()
+opts = barg.parse()
 bass.language = opts.language
 import bolt
 from bolt import GPath
@@ -274,9 +274,6 @@ def dump_environment():
 # Main ------------------------------------------------------------------------
 def main():
     bolt.deprintOn = opts.debug
-    if len(extra) > 0:
-        return
-
     # useful for understanding context of bug reports
     if opts.debug or hasattr(sys,'frozen'):
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
