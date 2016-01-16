@@ -134,7 +134,10 @@ reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reBSAExt  = re.compile(ur'\.bsa(.ghost)?$',re.I|re.U)
-reEssExt  = re.compile(ur'\.ess$',re.I|re.U)
+# Comment 1: Could this be used in class CoSaves?
+# Comment 2: Does this need re.U?
+reEssExt  = re.compile(ur'(\.(es|fo)[rs])$',re.I|re.U)
+# Needs revision since all games have different file name formats
 reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.(es|fo)[rs])$',re.I|re.U)
 reCsvExt  = re.compile(ur'\.csv$',re.I|re.U)
 reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
@@ -468,7 +471,10 @@ class ModFile:
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
+                    if bush.game.fsName == u'Oblivion':
+                        mgef_school[record.eid] = record.school
+                    else:
+                        mgef_school[record.eid] = record.magicSkill
         return mgef_school
 
     def getMgefHostiles(self,refresh=False):
@@ -1697,7 +1703,11 @@ def _delete(itemOrItems, **kwargs):
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave  = re.compile(r'\.ess(f?)$',re.I)
+	# Comment 1: Does this need re.U?
+	# Review: Old line reSave  = re.compile(r'(\.ess(f?))$',re.I)
+	#       : What is the (f?) for, essf?
+	#       : There are no save games named .essf or .esf
+    reSave  = re.compile(r'(\.(es|fo)[rs])$',re.I)
 
     @staticmethod
     def getPaths(savePath):
@@ -2532,6 +2542,7 @@ class OblivionIni(IniFile):
             aiBsa.mtime = aiBsaMTime
         if doRedirect == self.getBsaRedirection():
             return
+        # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
             source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
@@ -2977,6 +2988,10 @@ class ModInfo(FileInfo):
         """Returns True if plugin has an associated BSA."""
         return self.getBsaPath().exists()
 
+    def getIniPath(self):
+        """Returns path to plugin's INI, if it were to exists."""
+        return self.getPath().root.root+u'.ini'
+
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to those, otherwise
            extract needed files from BSA if needed."""
@@ -3002,12 +3017,21 @@ class ModInfo(FileInfo):
         #--If there were some missing Loose Files
         if extract:
             bsaPaths = [self.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                extraBsa.reverse()
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            if bush.game.fsName == u'Skyrim':
+                iniPaths = [ModInfo(self.dir,name).getIniPath() for name in modInfos.activeCached]
+                iniFiles = [IniFile(iniPath) for iniPath in iniPaths if iniPath.exists()]
+                iniFiles.reverse()
+                iniFiles.append(oblivionIni)
+            else:
+                iniFiles = [oblivionIni]
+            for iniFile in iniFiles:
+                for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                    extraBsa = iniFile.getSetting(u'Archive',key,u'').split(u',')
+                    extraBsa = [x.strip() for x in extraBsa]
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    extraBsa.reverse()
+                    bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists() and x.isfile()]
             bsaFiles = {}
             targetJoin = dirs['bsaCache'].join
             for file in extract:
@@ -4276,11 +4300,21 @@ class ModInfos(FileInfos):
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
             bsaPaths = [modInfo.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            if bush.game.fsName == u'Skyrim':
+                iniPaths = [ModInfo(self.dir,name).getIniPath() for name in modInfos.activeCached]
+                iniFiles = [IniFile(iniPath) for iniPath in iniPaths if iniPath.exists()]
+                # iniFiles.reverse()
+                iniFiles.append(oblivionIni)
+            else:
+                iniFiles = [oblivionIni]
+            for iniFile in iniFiles:
+                for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
+                    extraBsa = iniFile.getSetting(u'Archive',key,u'').split(u',')
+                    extraBsa = [x.strip() for x in extraBsa]
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    # extraBsa.reverse()
+                    bsaPaths.extend(extraBsa)
+            bsaPaths = [x for x in bsaPaths if x.exists() and x.isfile()]
             bsaFiles = {}
             for stringsFile in bush.game.esp.stringsFiles:
                 dir,join,format = stringsFile

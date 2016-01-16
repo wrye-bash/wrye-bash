@@ -25,9 +25,8 @@
 """This module contains the oblivion record classes. Ripped from oblivion.py"""
 import re
 import struct
-from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict
-from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
+from ...brec import MelRecord, ModError, MelStructs, \
     ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0, \
@@ -35,62 +34,6 @@ from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
 from ...bass import null1, null2, null3, null4
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from constants import allConditions, fid1Conditions, fid2Conditions
-
-#--Mod I/O
-class RecordHeader(BaseRecordHeader):
-    size = 20
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg2
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
-        #--Bad?
-        if type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(type))
-        #--Record
-        if type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: # groupType == 0 (Top Group)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        return RecordHeader(type,size,uint0,uint1,uint2)
-
-    def pack(self):
-        """Returns the record header packed into a string for writing to
-        file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label, str):
-                return struct.pack('=4sI4sII', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-            elif isinstance(self.label, tuple):
-                return struct.pack('=4sIhhII', self.recType, self.size,
-                                   self.label[0], self.label[1],
-                                   self.groupType, self.stamp)
-            else:
-                return struct.pack('=4s4I', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-        else:
-            return struct.pack('=4s4I', self.recType, self.size, self.flags1,
-                               self.fid, self.flags2)
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -2326,4 +2269,3 @@ class MreWthr(MelRecord):
         MelStructs('SNAM','2I','sounds',(FID,'sound'),'type'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-

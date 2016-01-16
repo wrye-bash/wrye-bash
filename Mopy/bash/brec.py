@@ -26,7 +26,6 @@
 import zlib
 import StringIO
 import os
-import re # flagged as unused but game detection fails if deleted
 import struct
 import copy
 import cPickle
@@ -205,7 +204,7 @@ class ModReader:
     def setStringTable(self,table={}):
         if table is None:
             self.hasStrings = False
-            self.table = {}
+            self.strings = {}
         else:
             self.hasStrings = True
             self.strings = table
@@ -1234,7 +1233,7 @@ class MelSet:
         if _debug: print u'\n>>>> %08X' % record.fid
         insAtEnd = ins.atEnd
         insSubHeader = ins.unpackSubHeader
-##        fullLoad = self.full0.loadData
+        # fullLoad = self.full0.loadData
         while not insAtEnd(endPos,recType):
             (Type,size) = insSubHeader(recType)
             if _debug: print type,size
@@ -1349,23 +1348,103 @@ class MreSubrecord:
 
 #------------------------------------------------------------------------------
 class MreRecord(object):
-    """Generic Record."""
+    """Generic Record. flags1 are game specific see comments."""
     subtype_attr = {'EDID':'eid','FULL':'full','MODL':'model'}
     _flags1 = bolt.Flags(0L,bolt.Flags.getNames(
-        ( 0,'esm'),
-        ( 5,'deleted'),
-        ( 6,'borderRegion'),
-        ( 7,'turnFireOff'),
-        ( 7,'hasStrings'),
-        ( 9,'castsShadows'),
-        (10,'questItem'),
-        (10,'persistent'),
-        (11,'initiallyDisabled'),
-        (12,'ignored'),
-        (15,'visibleWhenDistant'),
-        (17,'dangerous'),
-        (18,'compressed'),
-        (19,'cantWait'),
+        # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
+        ( 0,'esm'), # {0x00000001}
+        # {Sky}, {FNV} 0x00000004 ARMO: Not playable
+        ( 2,'isNotPlayable'), # {0x00000004}
+        # {FNV} 0x00000010 ????: Form initialized (Runtime only)
+        ( 4,'formInitialized'), # {0x00000010}
+        ( 5,'deleted'), # {0x00000020}
+        # {Sky}, {FNV} 0x00000040 ACTI: Has Tree LOD
+        # {Sky}, {FNV} 0x00000040 REGN: Border Region
+        # {Sky}, {FNV} 0x00000040 STAT: Has Tree LOD
+        # {Sky}, {FNV} 0x00000040 REFR: Hidden From Local Map
+        # {TES4} 0x00000040 ????:  Actor Value
+        # Constant HiddenFromLocalMap BorderRegion HasTreeLOD ActorValue
+        ( 6,'borderRegion'), # {0x00000040}
+        # {Sky} 0x00000080 TES4: Localized
+        # {Sky}, {FNV} 0x00000080 PHZD: Turn Off Fire
+        # {Sky} 0x00000080 SHOU: Treat Spells as Powers
+        # {Sky}, {FNV} 0x00000080 STAT: Add-on LOD Object
+        # {TES4} 0x00000080 ????:  Actor Value
+        # Localized IsPerch AddOnLODObject TurnOffFire TreatSpellsAsPowers  ActorValue
+        ( 7,'turnFireOff'), # {0x00000080}
+        ( 7,'hasStrings'), # {0x00000080}
+        # {Sky}, {FNV} 0x00000100 ACTI: Must Update Anims
+        # {Sky}, {FNV} 0x00000100 REFR: Inaccessible
+        # {Sky}, {FNV} 0x00000100 REFR for LIGH: Doesn't light water
+        # MustUpdateAnims Inaccessible DoesntLightWater
+        ( 8,'inaccessible'), # {0x00000100}
+        # {Sky}, {FNV} 0x00000200 ACTI: Local Map - Turns Flag Off, therefore it is Hidden
+        # {Sky}, {FNV} 0x00000200 REFR: MotionBlurCastsShadows
+        # HiddenFromLocalMap StartsDead MotionBlur CastsShadows
+        ( 9,'castsShadows'), # {0x00000200}
+        # {Sky}, {FNV} 0x00000400 LSCR: Displays in Main Menu
+        # PersistentReference QuestItem DisplaysInMainMenu
+        (10,'questItem'), # {0x00000400}
+        (10,'persistent'), # {0x00000400}
+        (11,'initiallyDisabled'), # {0x00000800}
+        (12,'ignored'), # {0x00001000}
+        # {FNV} 0x00002000 ????: No Voice Filter
+        (13,'noVoiceFilter'), # {0x00002000}
+        # {FNV} 0x00004000 STAT: Cannot Save (Runtime only) Ignore VC info
+        (14,'cannotSave'), # {0x00004000}
+        # {Sky}, {FNV} 0x00008000 STAT: Has Distant LOD
+        (15,'visibleWhenDistant'), # {0x00008000}
+        # {Sky}, {FNV} 0x00010000 ACTI: Random Animation Start
+        # {Sky}, {FNV} 0x00010000 REFR light: Never fades
+        # {FNV} 0x00010000 REFR High Priority LOD
+        # RandomAnimationStart NeverFades HighPriorityLOD
+        (16,'randomAnimationStart'), # {0x00010000}
+        # {Sky}, {FNV} 0x00020000 ACTI: Dangerous
+        # {Sky}, {FNV} 0x00020000 REFR light: Doesn't light landscape
+        # {Sky} 0x00020000 SLGM: Can hold NPC's soul
+        # {Sky}, {FNV} 0x00020000 STAT: Use High-Detail LOD Texture
+        # {FNV} 0x00020000 STAT: Radio Station (Talking Activator)
+        # {FNV} 0x00020000 STAT: Off limits (Interior cell)
+        # Dangerous OffLimits DoesntLightLandscape HighDetailLOD CanHoldNPC RadioStation
+        (17,'dangerous'), # {0x00020000}
+        (18,'compressed'), # {0x00040000}
+        # {Sky}, {FNV} 0x00080000 STAT: Has Currents
+        # {FNV} 0x00080000 STAT: Platform Specific Texture
+        # {FNV} 0x00080000 STAT: Dead
+        # CantWait HasCurrents PlatformSpecificTexture Dead
+        (19,'cantWait'), # {0x00080000}
+        # {Sky}, {FNV} 0x00100000 ACTI: Ignore Object Interaction
+        (20,'ignoreObjectInteraction'), # {0x00100000}
+        # {???} 0x00200000 ????: Used in Memory Changed Form
+        # {Sky}, {FNV} 0x00800000 ACTI: Is Marker
+        (23,'isMarker'), # {0x00800000}
+        # {FNV} 0x01000000 ????: Destructible (Runtime only)
+        (24,'destructible'), # {0x01000000} {FNV}
+        # {Sky}, {FNV} 0x02000000 ACTI: Obstacle
+        # {Sky}, {FNV} 0x02000000 REFR: No AI Acquire
+        (25,'obstacle'), # {0x02000000}
+        # {Sky}, {FNV} 0x04000000 ACTI: Filter
+        (26,'navMeshFilter'), # {0x04000000}
+        # {Sky}, {FNV} 0x08000000 ACTI: Bounding Box
+        # NavMesh BoundingBox
+        (27,'boundingBox'), # {0x08000000}
+        # {Sky}, {FNV} 0x10000000 STAT: Show in World Map
+        # {FNV} 0x10000000 STAT: Reflected by Auto Water
+        # {FNV} 0x10000000 STAT: Non-Pipboy
+        # MustExitToTalk ShowInWorldMap NonPipboy',
+        (28,'nonPipboy'), # {0x10000000}
+        # {Sky}, {FNV} 0x20000000 ACTI: Child Can Use
+        # {Sky}, {FNV} 0x20000000 REFR: Don't Havok Settle
+        # {FNV} 0x20000000 REFR: Refracted by Auto Water
+        # ChildCanUse DontHavokSettle RefractedbyAutoWater
+        (29,'refractedbyAutoWater'), # {0x20000000}
+        # {Sky}, {FNV} 0x40000000 ACTI: GROUND
+        # {Sky}, {FNV} 0x40000000 REFR: NoRespawn
+        # NavMeshGround NoRespawn
+        (30,'noRespawn'), # {0x40000000}
+        # {Sky}, {FNV} 0x80000000 REFR: MultiBound
+        # MultiBound
+        (31,'multiBound'), # {0x80000000}
         ))
     __slots__ = ['header','recType','fid','flags1','size','flags2','changed','subrecords','data','inName','longFids',]
     #--Set at end of class data definitions.
@@ -1455,6 +1534,8 @@ class MreRecord(object):
                 self.data = ins.read(self.size,type)
             if not self.__class__ == MreRecord:
                 with self.getReader() as reader:
+                    # Check This
+                    if ins.hasStrings: reader.setStringTable(ins.strings)
                     self.loadData(reader,reader.size)
         #--Discard raw data?
         if unpack == 2:
