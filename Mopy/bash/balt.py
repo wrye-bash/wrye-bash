@@ -787,8 +787,8 @@ def _showLogClose(evt=None):
     """Handle log message closing."""
     window = evt.GetEventObject()
     if not window.IsIconized() and not window.IsMaximized():
-        _settings['balt.LogMessage.pos'] = window.GetPositionTuple()
-        _settings['balt.LogMessage.size'] = window.GetSizeTuple()
+        _settings['balt.LogMessage.pos'] = tuple(window.GetPosition())
+        _settings['balt.LogMessage.size'] = tuple(window.GetSize())
     window.Destroy()
 
 def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
@@ -895,8 +895,8 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
     if asDialog:
         window.ShowModal()
         if window:
-            _settings['balt.WryeLog.pos'] = window.GetPositionTuple()
-            _settings['balt.WryeLog.size'] = window.GetSizeTuple()
+            _settings['balt.WryeLog.pos'] = tuple(window.GetPosition())
+            _settings['balt.WryeLog.size'] = tuple(window.GetSize())
             window.Destroy()
     else:
         window.Show()
@@ -969,12 +969,12 @@ class Dialog(wx.Dialog):
         if caption: style |= wx.CAPTION
         super(Dialog, self).__init__(parent, wx.ID_ANY, self.title, size=size,
                                      pos=pos, style=style, *args, **kwargs)
-        wx.EVT_CLOSE(self, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
 
     def OnCloseWindow(self, event):
         """Handle window close event.
         Remember window size, position, etc."""
-        if self.resizable: sizes[self.sizesKey] = self.GetSizeTuple()
+        if self.resizable: sizes[self.sizesKey] = tuple(self.GetSize())
         event.Skip()
 
     @classmethod
@@ -1120,12 +1120,12 @@ class ListEditor(Dialog):
     def DoSave(self):
         """Handle save button."""
         self._listEditorData.save()
-        sizes[self.sizesKey] = self.GetSizeTuple()
+        sizes[self.sizesKey] = tuple(self.GetSize())
         self.EndModal(wx.ID_OK)
 
     def DoCancel(self):
         """Handle cancel button."""
-        sizes[self.sizesKey] = self.GetSizeTuple()
+        sizes[self.sizesKey] = tuple(self.GetSize())
         self.EndModal(wx.ID_CANCEL)
 
 #------------------------------------------------------------------------------
@@ -1802,7 +1802,7 @@ class UIList(wx.Panel):
     #-- Callbacks -------------------------------------------------------------
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
-        size = self.GetClientSizeTuple()
+        size = tuple(self.GetClientSize())
         self._gList.SetSize(size)
 
     def OnMouse(self,event):
@@ -2317,8 +2317,8 @@ class ItemLink(Link):
         """Append self as menu item and set callbacks to be executed when
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
-        wx.EVT_MENU(Link.Frame, self._id, self.__Execute)
-        wx.EVT_MENU_HIGHLIGHT_ALL(Link.Frame,ItemLink.ShowHelp)
+        Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
+        Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
@@ -2359,7 +2359,7 @@ class MenuLink(Link):
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
         super(MenuLink, self).AppendToMenu(menu, window, selection)
-        wx.EVT_MENU_OPEN(Link.Frame,MenuLink.OnMenuOpen)
+        Link.Frame.Bind(wx.EVT_MENU_OPEN, MenuLink.OnMenuOpen)
         subMenu = wx.Menu()
         menu.AppendMenu(self._id, self.text, subMenu)
         if not self._enable():
@@ -2588,7 +2588,7 @@ class ListBoxes(Dialog):
                                                wx.TR_FULL_ROW_HIGHLIGHT |
                                                wx.TR_HIDE_ROOT)
                 root = checksCtrl.AddRoot(title)
-                wx.EVT_MOTION(checksCtrl, self.OnMotion)
+                checksCtrl.Bind(wx.EVT_MOTION, self.OnMotion)
                 for item, subitems in group[2].iteritems():
                     child = checksCtrl.AppendItem(root,item.s)
                     for subitem in subitems:

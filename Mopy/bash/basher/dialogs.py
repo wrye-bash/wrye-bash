@@ -188,7 +188,7 @@ class ColorDialog(balt.Dialog):
                     else:
                         color = colors[key]
                     file.write(key+u': '+color+u'\n')
-        except Exception,e:
+        except Exception as e:
             balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
 
     def OnImport(self,event):
@@ -228,7 +228,7 @@ class ColorDialog(balt.Dialog):
                     # Save it
                     if color == colors[key]: continue
                     self.changes[key] = color
-        except Exception, e:
+        except Exception as e:
             balt.showError(Link.Frame, _(
                 u'An error occurred reading from ') + inPath.stail +
                            u':\n\n%s' % e)

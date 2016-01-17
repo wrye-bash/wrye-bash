@@ -199,12 +199,12 @@ class PatchDialog(balt.Dialog):
                 patchTime = fullName.mtime
                 try:
                     patchName.untemp()
-                except WindowsError, werr:
+                except WindowsError as werr:
                     while werr.winerror == 32 and self._retry(patchName.temp.s,
                                                               patchName.s):
                         try:
                             patchName.untemp()
-                        except WindowsError, werr:
+                        except WindowsError as werr:
                             continue
                         break
                     else:
@@ -291,12 +291,12 @@ class PatchDialog(balt.Dialog):
                                    % patchName.s)
             bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
-        except bolt.FileEditError, error:
+        except bolt.FileEditError as error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
         except CancelError:
             pass
-        except BoltError, error:
+        except BoltError as error:
             balt.playSound(self.parent,bosh.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'Processing Error'))
         except:
@@ -410,13 +410,13 @@ class PatchDialog(balt.Dialog):
                 if patcher.getName() == 'Leveled Lists': continue #not handled yet!
                 for index, item in enumerate(patcher.items):
                     try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
             if hasattr(patcher, 'gTweakList'):
                 for index, item in enumerate(patcher.tweaks):
                     try:
                         patcher.gTweakList.Check(index,item.isEnabled)
                         patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def DefaultConfig(self):
@@ -433,7 +433,7 @@ class PatchDialog(balt.Dialog):
                     try:
                         patcher.gTweakList.Check(index,item.isEnabled)
                         patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception, err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
+                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
         self.SetOkEnable()
 
     def SelectAll(self):
@@ -467,7 +467,7 @@ class PatchDialog(balt.Dialog):
 
     #--GUI --------------------------------
     def OnSize(self,event): ##: needed ? event.Skip() ??
-        balt.sizes[self.__class__.__name__] = self.GetSizeTuple()
+        balt.sizes[self.__class__.__name__] = tuple(self.GetSize())
         self.Layout()
         self.currentPatcher.Layout()
 

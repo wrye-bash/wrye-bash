@@ -2037,7 +2037,7 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                         override.maleIconPath, override.femaleIconPath = icons
                 else:
                     override.iconPath = icons
-            except ValueError, error:
+            except ValueError as error:
                 print override._Type
                 print icons
                 print error

@@ -73,7 +73,6 @@ class DocBrowser(wx.Frame):
         self.modNameList = balt.listBox(self, choices=sorted(
             x.s for x in self.docs.keys()), isSort=True)
         self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
-        #wx.EVT_COMBOBOX(self.modNameBox,ID_SELECT,self.DoSelectMod)
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
@@ -367,8 +366,8 @@ class DocBrowser(wx.Frame):
         self.DoSave()
         bosh.settings['bash.modDocs.show'] = False
         if not self.IsIconized() and not self.IsMaximized():
-            bosh.settings['bash.modDocs.pos'] = self.GetPositionTuple()
-            bosh.settings['bash.modDocs.size'] = self.GetSizeTuple()
+            bosh.settings['bash.modDocs.pos'] = tuple(self.GetPosition())
+            bosh.settings['bash.modDocs.size'] = tuple(self.GetSize())
         Link.Frame.docBrowser = None
         self.Destroy()
 
@@ -537,8 +536,8 @@ class ModChecker(wx.Frame):
         Remember window size, position, etc."""
         # TODO(ut): maybe set Link.Frame.modChecker = None (compare with DocBrowser)
         if not self.IsIconized() and not self.IsMaximized():
-            bosh.settings['bash.modChecker.pos'] = self.GetPositionTuple()
-            bosh.settings['bash.modChecker.size'] = self.GetSizeTuple()
+            bosh.settings['bash.modChecker.pos'] = tuple(self.GetPosition())
+            bosh.settings['bash.modChecker.size'] = tuple(self.GetSize())
         self.Destroy()
 
 #------------------------------------------------------------------------------

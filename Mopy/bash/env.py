@@ -289,7 +289,7 @@ def test_permissions(path, permissions='rwcd'):
                 smallestFile.copyTo(temp)
                 smallestFile.remove()
                 temp.moveTo(smallestFile)
-    except Exception, e:
+    except Exception as e:
         if getattr(e, 'errno', 0) == 13:
             return False # Access denied
         elif getattr(e, 'winerror', 0) == 183:

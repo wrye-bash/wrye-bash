@@ -3567,7 +3567,7 @@ class BashStatusBar(wx.StatusBar):
         self.SetFieldsCount(3)
         self.UpdateIconSizes()
         #--Bind events
-        wx.EVT_SIZE(self,self.OnSize)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
         #--Setup Drag-n-Drop reordering
         self.dragging = wx.NOT_FOUND
         self.dragStart = 0
@@ -4104,8 +4104,8 @@ class BashFrame(wx.Frame):
         self.CleanSettings()
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
         if not (self.IsIconized() or self.IsMaximized()):
-            settings['bash.framePos'] = self.GetPositionTuple()
-            settings['bash.frameSize'] = self.GetSizeTuple()
+            settings['bash.framePos'] = tuple(self.GetPosition())
+            settings['bash.frameSize'] = tuple(self.GetSize())
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         for index in range(self.notebook.GetPageCount()):
