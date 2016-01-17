@@ -4490,7 +4490,7 @@ class ModInfos(FileInfos):
             while werr.winerror == 32 and self._retry(basePath, oldPath):
                 try:
                     basePath.moveTo(oldPath)
-                except WindowsError, werr:
+                except WindowsError as werr:
                     continue
                 break
             else:

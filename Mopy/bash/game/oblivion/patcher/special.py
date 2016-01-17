@@ -210,7 +210,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         #--Setup
         try:
             coblMod = patchFile.Current.LookupModFile(u'Cobl Main.esm')
-        except KeyError, error:
+        except KeyError as error:
             print u"CBash_AlchemicalCatalogs:finishPatch"
             print error[0]
             return
