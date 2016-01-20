@@ -5026,10 +5026,7 @@ class Installer(object):
             progress(index)
             rsDir = asDir[relPos:]
             inModsRoot = rootIsMods and not rsDir
-            apDir = GPath(asDir)
-            rpDir = GPath(rsDir)
-            rpDirJoin = rpDir.join
-            apDirJoin = apDir.join
+            rpDirJoin = GPath(rsDir).join
             for sFile in sFiles:
                 sFileLower = sFile.lower()
                 ext = sFileLower[sFileLower.rfind(u'.'):]
@@ -5040,9 +5037,10 @@ class Installer(object):
                         continue
                     rpFile = ghostGet(rpFile,rpFile)
                 isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
-                apFile = apDirJoin(sFile)
-                size = apFile.size
-                date = apFile.mtime
+                asFile = os.path.join(asDir, sFile)
+                # below calls may now raise even if "werr.winerror = 123"
+                size = os.path.getsize(asFile)
+                date = int(os.path.getmtime(asFile))
                 oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
                 if not isEspm and size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize,oCrc,oDate)
@@ -5070,8 +5068,8 @@ class Installer(object):
             progress.setFull(max(pending_size + len(pending), 1))
             for rpFile, (size, _crc, date) in iter(sorted(pending.items())):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
+                apFile = apRootJoin(normGet(rpFile,rpFile))
                 try:
-                    apFile = apRootJoin(normGet(rpFile,rpFile))
                     crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
                     done += size
                 except WindowsError:
