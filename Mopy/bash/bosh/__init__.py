@@ -3590,6 +3590,7 @@ class FileInfos(DataDict):
             #--Refresh
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
+            return tableUpdate.values()
 
     def delete_Refresh(self, deleted): self.refresh()
 
@@ -3800,6 +3801,14 @@ class ModInfos(FileInfos):
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
         self.setOblivionVersions()
+        oldMergeable = set(self.mergeable)
+        scanList = self.refreshMergeable()
+        difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
+        if scanList:
+            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
+                progress.setFull(len(scanList))
+                self.rescanMergeable(scanList,progress)
+        hasChanged += bool(scanList or difMergeable)
         return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
@@ -4396,7 +4405,10 @@ class ModInfos(FileInfos):
             if f.s in bush.game.masterFiles: raise bolt.BoltError(
                 u"Cannot delete the game's master file(s).")
         self.unselect(fileName, doSave=False)
-        FileInfos.delete(self, fileName, **kwargs)
+        deleted = FileInfos.delete(self, fileName, **kwargs)
+        # temporarily track deleted mods so BAIN can update its UI
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def delete_Refresh(self, deleted):
         # adapted from refresh() (avoid refreshing from the data directory)
@@ -4406,9 +4418,6 @@ class ModInfos(FileInfos):
             self.pop(name, None)
         self.plugins.removeMods(deleted, savePlugins=True)
         self.refreshInfoLists()
-        # temporarily track deleted mods so BAIN can update its UI
-        for d in map(self.dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
                   doRefresh=True):
@@ -4670,6 +4679,12 @@ class BSAInfos(FileInfos):
 
     def resetBSAMTimes(self):
         for bsa in self.values(): bsa.resetMTime()
+
+    @staticmethod
+    def check_bsa_timestamps():
+        if bush.game.fsName != 'Skyrim' and inisettings['ResetBSATimestamps']:
+            if bsaInfos.refresh():
+                bsaInfos.resetBSAMTimes()
 
 # Mod Config Help -------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -7129,8 +7144,8 @@ class InstallersData(DataDict):
             self._editTweaks(tweaksCreated)
         return tweaksCreated
 
-    def bain_install(self, archives, refresh_ui=(False, False), progress=None,
-                     last=False, override=True):
+    def bain_install(self, archives, refresh_ui, progress=None, last=False,
+                     override=True):
         try: return self._install(archives, refresh_ui, progress, last,
                                   override)
         finally: self.irefresh(what='NS')
@@ -7192,7 +7207,7 @@ class InstallersData(DataDict):
             #--Delete mods and remove them from load order
             if removedPlugins:
                 refresh_ui[0] = True
-                modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
+                modInfos.delete(removedPlugins, doRefresh=False, recycle=False)
         except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()

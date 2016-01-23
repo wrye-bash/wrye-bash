@@ -301,7 +301,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 with balt.Progress(title, u'\n'+u' '*60) as progress:
                     doIt(self.selected, ui_refresh, progress)
             finally:
-                self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
+                self.iPanel.RefreshUIMods(*ui_refresh)
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
@@ -390,7 +390,7 @@ class Installer_Anneal(_InstallerLink):
         except (CancelError,SkipError):
             pass
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
@@ -566,6 +566,7 @@ class Installer_Install(_InstallerLink):
                 try:
                     tweaks = self.idata.bain_install(self.filterInstallables(),
                         ui_refresh, progress, last, override)
+                    ui_refresh[1] |= bool(tweaks)
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
@@ -578,7 +579,7 @@ class Installer_Install(_InstallerLink):
                                 [u' * %s\n' % x.stail for (x, y) in tweaks])
                         self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
@@ -746,7 +747,7 @@ class Installer_Uninstall(_InstallerLink):
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:
-            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
