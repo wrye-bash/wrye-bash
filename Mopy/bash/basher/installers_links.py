@@ -274,12 +274,12 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     @balt.conversation
     def Execute(self):
         if not self._askYes(self.fullMessage): return
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Cleaning Data Files..."),u'\n' + u' ' * 65):
-                self.idata.clean_data_dir()
+                self.idata.clean_data_dir(ui_refresh)
         finally:
-            self.idata.irefresh(what='NS')
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 #------------------------------------------------------------------------------
 # Installers BoolLinks --------------------------------------------------------

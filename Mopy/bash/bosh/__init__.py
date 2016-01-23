@@ -7310,7 +7310,7 @@ class InstallersData(DataDict):
         finally:
             self.irefresh(what='NS')
 
-    def clean_data_dir(self):  ##: add error handling/refresh remove ghosts
+    def clean_data_dir(self, refresh_ui):
         getArchiveOrder = lambda x: x.order
         installed = []
         for installer in sorted(self.values(), key=getArchiveOrder,
@@ -7321,15 +7321,24 @@ class InstallersData(DataDict):
         keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.game.ignoreDataFiles))
-        data_sizeCrcDate = self.data_sizeCrcDate
-        removes = set(data_sizeCrcDate) - keepFiles
+        removes = set(self.data_sizeCrcDate) - keepFiles
         destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %
             bolt.timestamp())
-        emptyDirs = set()
         skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         skipPrefixes = tuple(skipPrefixes)
+        try:
+            self._clean_data_dir(self.data_sizeCrcDate, destDir, removes,
+                                 skipPrefixes, refresh_ui)
+        finally:
+            self.irefresh(what='NS')
+
+    @staticmethod
+    def _clean_data_dir(data_sizeCrcDate, destDir, removes, skipPrefixes,
+                        refresh_ui): # we do _not_ remove Ini Tweaks/*
+        emptyDirs = set()
+        def isMod(p): return reModExt.search(p.s) is not None
         for file in removes:
             # don't remove files in Wrye Bash-related directories
             if file.cs.startswith(skipPrefixes): continue
@@ -7337,17 +7346,19 @@ class InstallersData(DataDict):
             try:
                 if path.exists():
                     path.moveTo(destDir.join(file))
-                else:
-                    ghost = GPath(path.s+u'.ghost')
-                    if ghost.exists():
-                        ghost.moveTo(destDir.join(file))
+                    if not refresh_ui[0]: refresh_ui[0] = isMod(path)
+                else: # Try if it's a ghost - belongs to modInfos...
+                    path = GPath(path.s + u'.ghost')
+                    if path.exists():
+                        path.moveTo(destDir.join(file))
+                        refresh_ui[0] = True
+                    else: continue # don't pop if file was not removed
+                data_sizeCrcDate.pop(file,None)
+                emptyDirs.add(path.head)
             except:
-                # It's not imperative that files get moved, so if errors happen, just ignore them.
-                # Would could put a deprint in here so that when debug mode is enabled we at least
-                # see that some files failed for some reason.
-                pass
-            data_sizeCrcDate.pop(file,None)
-            emptyDirs.add(path.head)
+                # It's not imperative that files get moved, so ignore errors
+                deprint(u'Clean Data: moving %s to % s failed' % (
+                            path, destDir), traceback=True)
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()
