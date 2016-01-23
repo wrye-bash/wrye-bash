@@ -7007,14 +7007,18 @@ class InstallersData(DataDict):
     def updateTable(destFiles, value):
         """Set the 'installer' column in mod and ini tables for the
         destFiles."""
+        mods_changed, inis_changed = False, False
         for i in destFiles:
             if value and reModExt.match(i.cext): # if value == u'' we come from delete !
+                mods_changed = True
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
+                inis_changed = True
                 if value:
                     iniInfos.table.setItem(i.tail, 'installer', value)
                 else: # installer is the only column used in iniInfos table
                     iniInfos.table.delRow(i.tail)
+        return mods_changed, inis_changed
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
@@ -7084,7 +7088,8 @@ class InstallersData(DataDict):
                 ini.writelines(lines)
         tweaksCreated -= removed
 
-    def _install(self,archives,progress=None,last=False,override=True):
+    def _install(self, archives, refresh_ui, progress=None, last=False,
+                 override=True):
         """Install selected archives.
         what:
             'MISSING': only missing files.
@@ -7114,15 +7119,20 @@ class InstallersData(DataDict):
                 self._createTweaks(destFiles, installer, tweaksCreated)
                 installer.install(archive, destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
-                InstallersData.updateTable(destFiles, archive.s)
+                mods_changed, inis_changed = InstallersData.updateTable(
+                    destFiles, archive.s)
+                refresh_ui[0] |= mods_changed
+                refresh_ui[1] |= inis_changed
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
         return tweaksCreated
 
-    def install(self,archives,progress=None,last=False,override=True):
-        try: return self._install(archives, progress, last, override)
+    def bain_install(self, archives, refresh_ui=(False, False), progress=None,
+                     last=False, override=True):
+        try: return self._install(archives, refresh_ui, progress, last,
+                                  override)
         finally: self.irefresh(what='NS')
 
     #--Uninstall, Anneal, Clean
@@ -7151,7 +7161,7 @@ class InstallersData(DataDict):
             emptyDirs -= exclude
         return removedFiles
 
-    def _removeFiles(self, removes, progress=None):
+    def _removeFiles(self, removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
         modsDirJoin = dirs['mods'].join
@@ -7181,23 +7191,18 @@ class InstallersData(DataDict):
                 env.shellDelete(nonPlugins, parent=parent)
             #--Delete mods and remove them from load order
             if removedPlugins:
+                refresh_ui[0] = True
                 modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
-                ##: HACK - because I short circuit ModInfos.refresh() via
-                # delete_Refresh(), modList.RefreshUI won't be called leaving
-                # stale entries in modList._gList._item_itemIdd - note that
-                # deleting via the UIList calls modList.RefreshUI() which
-                # cleans _gList internal dictionaries
-                balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
-                # This is _less_ hacky than _not_ calling modInfos.delete().
-                # Real solution: refresh should keep track of deleted, added,
-                # modified - (ut)
         except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
             raise
         finally:
             if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
-            InstallersData.updateTable(removes, u'')
+            mods_changed, inis_changed = InstallersData.updateTable(removes,
+                                                                    u'')
+            refresh_ui[0] |= mods_changed
+            refresh_ui[1] |= inis_changed
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
             for relPath in removes:
@@ -7213,7 +7218,7 @@ class InstallersData(DataDict):
             removes.discard(file)
         return files
 
-    def uninstall(self,unArchives,progress=None):
+    def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
         if unArchives == 'ALL': unArchives = self.data
         unArchives = set(unArchives)
@@ -7244,17 +7249,17 @@ class InstallersData(DataDict):
                 masked |= self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, progress)
+            self._removeFiles(removes, refresh_ui, progress)
             #--De-activate
             for archive in unArchives:
                 self[archive].isActive = False
             #--Restore files
             if settings['bash.installers.autoAnneal']:
-                self._restoreFiles(restores, progress)
+                self._restoreFiles(restores, progress, refresh_ui)
         finally:
             self.irefresh(what='NS')
 
-    def _restoreFiles(self, restores, progress):
+    def _restoreFiles(self, restores, progress, refresh_ui):
         getArchiveOrder = lambda x: self[x].order
         restoreArchives = sorted(set(restores.itervalues()),
                                  key=getArchiveOrder, reverse=True)
@@ -7267,9 +7272,12 @@ class InstallersData(DataDict):
                 if destFiles:
                     installer.install(archive, destFiles, self.data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
-                    InstallersData.updateTable(destFiles, archive.s)
+                    mods_changed, inis_changed = InstallersData.updateTable(
+                         destFiles, archive.s)
+                    refresh_ui[0] |= mods_changed
+                    refresh_ui[1] |= inis_changed
 
-    def anneal(self,anPackages=None,progress=None):
+    def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
@@ -7296,9 +7304,9 @@ class InstallersData(DataDict):
                 self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, progress)
+            self._removeFiles(removes, refresh_ui, progress)
             #--Restore files
-            self._restoreFiles(restores, progress)
+            self._restoreFiles(restores, progress, refresh_ui)
         finally:
             self.irefresh(what='NS')
 

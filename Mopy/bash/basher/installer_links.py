@@ -293,14 +293,15 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #Install if necessary
         if ret.Install:
             if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
-                title, doIt = _(u'Annealing...'), self.idata.anneal
+                title, doIt = _(u'Annealing...'), self.idata.bain_anneal
             else: #Install, if it's not installed
-                title, doIt = _(u'Installing...'), self.idata.install
+                title, doIt = _(u'Installing...'), self.idata.bain_install
+            ui_refresh = [False, False]
             try:
                 with balt.Progress(title, u'\n'+u' '*60) as progress:
-                    doIt(self.selected, progress)
+                    doIt(self.selected, ui_refresh, progress)
             finally:
-                self.iPanel.RefreshUIMods(_refreshData=True)
+                self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
@@ -381,14 +382,15 @@ class Installer_Anneal(_InstallerLink):
     def _enable(self): return bool(self.filterInstallables())
 
     def Execute(self):
-        """Handle selection."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.idata.anneal(self.filterInstallables(),progress)
+                self.idata.bain_anneal(self.filterInstallables(), ui_refresh,
+                                       progress)
         except (CancelError,SkipError):
             pass
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
@@ -556,13 +558,14 @@ class Installer_Install(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        """Handle selection."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
                 try:
-                    tweaks = self.idata.install(self.filterInstallables(),progress,last,override)
+                    tweaks = self.idata.bain_install(self.filterInstallables(),
+                        ui_refresh, progress, last, override)
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
@@ -575,7 +578,7 @@ class Installer_Install(_InstallerLink):
                                 [u' * %s\n' % x.stail for (x, y) in tweaks])
                         self._showInfo(msg, title=_(u'INI Tweaks'))
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
@@ -735,13 +738,15 @@ class Installer_Uninstall(_InstallerLink):
     @balt.conversation
     def Execute(self):
         """Uninstall selected Installers."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.idata.uninstall(self.filterInstallables(),progress)
+                self.idata.bain_uninstall(self.filterInstallables(),
+                                          ui_refresh, progress)
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""

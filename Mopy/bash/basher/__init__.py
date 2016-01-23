@@ -2747,14 +2747,15 @@ class InstallersPanel(SashTankPanel):
         installer.comments = self.gComments.GetValue()
         self.data.setChanged()
 
-    def RefreshUIMods(self, _refreshData=False):
+    def RefreshUIMods(self, mods_changed=False, inis_changed=False,
+                      _refreshData=False): # TODO(ut): drop _refreshData
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
-        if bosh.modInfos.refresh():
+        if bosh.modInfos.refresh() or mods_changed: # TODO(ut): invert or
             del bosh.modInfos.mtimesReset[:]
             BashFrame.modList.RefreshUI(refreshSaves=True)
         if BashFrame.iniList is not None:
-            if bosh.iniInfos.refresh():
+            if bosh.iniInfos.refresh() or inis_changed: ##: invert or
                 BashFrame.iniList.panel.RefreshPanel('ALL')
             else:
                 BashFrame.iniList.panel.RefreshPanel('TARGETS')
@@ -3781,7 +3782,7 @@ class BashFrame(wx.Frame):
     modChecker = None
     # UILists - use sparingly for inter Panel communication
     # modList is always set but for example iniList may be None (tab not
-    # enabled). There is a single use of modList in bosh that needs revisiting
+    # enabled).
     saveList = None
     iniList = None
     modList = None

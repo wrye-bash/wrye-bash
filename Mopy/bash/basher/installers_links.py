@@ -177,7 +177,7 @@ class Installers_MonitorInstall(Installers_Link):
         self.iPanel.ShowPanel()
         # Update the status of the installer (as installer last)
         path = path.relpath(bosh.dirs['installers'])
-        self.idata.install([path],None,True,False)
+        self.idata.bain_install([path], last=True, override=False)
         # Refresh UI
         self.iPanel.RefreshUIMods()
         # Select new installer
@@ -209,11 +209,12 @@ class Installers_AnnealAll(Installers_Link):
     @balt.conversation
     def Execute(self):
         """Anneal all packages."""
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.idata.anneal(progress=progress)
+                self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
@@ -224,11 +225,12 @@ class Installers_UninstallAllPackages(Installers_Link):
     def Execute(self):
         """Uninstall all packages."""
         if not self._askYes(_(u"Really uninstall All Packages?")): return
+        ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.idata.uninstall(unArchives='ALL',progress=progress)
+                self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
         finally:
-            self.iPanel.RefreshUIMods(_refreshData=True)
+            self.iPanel.RefreshUIMods(*ui_refresh, _refreshData=True)
 
 class Installers_Refresh(AppendableLink, Installers_Link):
     """Refreshes all Installers data."""
