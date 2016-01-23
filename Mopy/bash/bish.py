@@ -895,7 +895,7 @@ def renameArchives(root=r'C:\Program Files\Bethesda Softworks\Oblivion\Downloads
     reTesSourceNV = re.compile(r'^\d{4}-(.+)-TESSource.(zip|rar|7z|ace|exe)$',re.I)
     reTesSource3 = re.compile(r'^(.+)-\d+-TESSource.(zip|rar|7z|ace|exe|esp)$',re.I)
     reBracketNum = re.compile(r'\[1\]')
-    for (dirPath,dirNames,fileNames) in os.walk(root):
+    for (dirPath,dirNames,fileNames) in bolt.walkdir(root):
         dirPath = GPath(dirPath)
         for name in fileNames:
             path = dirPath.join(name)

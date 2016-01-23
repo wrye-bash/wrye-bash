@@ -252,6 +252,7 @@ def dump_environment(_wx, bolt):
         print u"wxPython not found"
     # Standalone: stdout will actually be pointing to stderr, which has no
     # 'encoding' attribute
+    if bolt.scandir is not None: print 'Using scandir' , bolt.scandir.__version__
     print u"input encoding: %s; output encoding: %s; locale: %s" % (
         sys.stdin.encoding,getattr(sys.stdout,'encoding',None),
         locale.getdefaultlocale())

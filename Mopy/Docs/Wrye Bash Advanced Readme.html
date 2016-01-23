@@ -184,10 +184,10 @@
 
 <h3 id="install-components">Python Components</h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.
-<p style="font-style:italic;font-weight:bold;font-size:1em;color:red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
+<p style="font-style: italic; font-weight: bold; font-size: 1em; color: red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.
 <ul>
-    <li><a href="https://www.python.org/ftp/python/2.7.12/python-2.7.12.msi">Python 2.7.12</a>.  Versions prior to 2.7.12 may work with Wrye Bash, but have not been tested.  Updating is recommended for bug and security fixes.
-    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a>  (do <b>not</b> get a newer version)
+    <li><a href="https://www.python.org/ftp/python/2.7.12/python-2.7.12.msi">Python 2.7.12</a>:  Versions prior to 2.7.12 may work with Wrye Bash, but have not been tested.  Updating is recommended for bug and security fixes.
+    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a>: (do <b>not</b> get a newer version)
     <li><a href="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20220/pywin32-220.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
     <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, it is used to enable rendering of HTML via an ActiveX control.  The  following features are affected if comtypes is not installed:
         <ul>
@@ -195,6 +195,28 @@
             <li>The ModChecker report will be text instead of HTML.
             <li>The Bashed Patch build report will be displayed by opening the file in your default browser.
         </ul>
+    <li><a href="https://pypi.python.org/pypi/scandir">scandir</a>: Optional but highly recommended module (in the standard library since
+    python 3.5).Scandir speeds up disk I/O operations (namely os. walk) by 5-50x on the Windows operating system family. There are several
+    ways to install Scandir, in levels of increasing complexity
+  <ul>
+    <li>The first is to download the Scandir wheel file (.whl)&nbsp; and install it using the Pip command line tool.</li>
+    <ul>
+      <li>Browse to the <a href="https://pypi.python.org/pypi/scandir" target="_blank">official Python Scandir page</a> and download <a href="https://pypi.python.org/packages/ad/ba/72797d0d2cd7b9d2a2ca06bce94f59b8864dc737548c8169bbdf90be22ff/scandir-1.6-cp27-cp27m-win32.whl#md5=369517d3cd6d189afaefe7149adecc92" target="_blank">scandir-1.6-cp27-cp27m-win32.whl</a> or newer. Remember the path to the download location on your hard disk.&nbsp; For this example we will use "C:\Downloads\".
+      <li>Open a Windows command or Powershell prompt and issue the <code>command python.exe -m pip install C:\Downloads\scandir-1.6-cp27-cp27m-win32.whl</code>
+      <li>Follow the instructions on screen if any appear.
+    </ul>
+    <li>The second method is to install Scandir via the Python pip package manager.
+    </li>
+    <ul>
+      <li>Open a Windows command prompt or Powershell prompt.
+      <li>Issue the command <code>python.exe -m pip install --upgrade scandir</code>
+      <ul>
+        <li>You may be asked to install the 'Microsoft Visual C++ Compiler for Python 2.7'. In this event, download and install the compiler from the <a href="https://www.microsoft.com/en-us/download/details.aspx?id=44266" target="_blank">official Microsoft download page</a>.
+        <li>You may also be asked to install Python "setuptools". To install setuptools, issue the command (from within the same command prompt is fine) <code>python.exe -m pip install --upgrade setuptools</code>
+        <li>Once these two tools are installed the installation should proceed as expected.
+      </ul>
+    </ul>
+  </ul>
 </ul>
 
 <h3 id="install-loot-api">LOOT API</h3>

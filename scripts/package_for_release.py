@@ -56,6 +56,13 @@ class NON_REPO(object):
     COPY = 'COPY'
     NONE = 'NONE'
 
+try:
+    import scandir
+    _walkdir = scandir.walk
+except ImportError:
+    _walkdir = os.walk
+    scandir = None
+
 # environment detection
 try:
     #--Needed for the Installer version to find NSIS
@@ -425,7 +432,7 @@ def RestoreNonRepoFiles():
     failed = []
     if os.listdir(tmpDir):
         lprint(" Restoring non-repository files")
-    for top, dirs, files in os.walk(tmpDir):
+    for top, dirs, files in _walkdir(tmpDir):
         for dir_ in dirs:
             src = os.path.join(top, dir_)
             dst = os.path.join(mopy, src[13:])
@@ -695,7 +702,7 @@ def GetNonRepoFiles(repo_files):
     # Get a list of every directory and file actually present
     mopy_files = []
     mopy_dirs = []
-    for root, dirs, files in os.walk(u'Mopy'):
+    for root, dirs, files in _walkdir(u'Mopy'):
         mopy_files.extend((os.path.join(root, x) for x in files))
         mopy_dirs.extend((os.path.join(root, x) for x in dirs))
     mopy_files = (os.path.normpath(x) for x in mopy_files)
