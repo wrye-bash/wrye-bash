@@ -342,7 +342,7 @@ class Tooldir_Button(App_Button):
     """Just an App_Button that's path is in bosh.tooldirs
        Use this to automatically set the uid for the App_Button."""
     def __init__(self,toolKey,images,tip,obseTip=None,obseArg=None,workingDir=None,canHide=True):
-        App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
+        App_Button.__init__(self, bass.tooldirs[toolKey], images, tip, obseTip, obseArg, workingDir, toolKey, canHide)
 
 #------------------------------------------------------------------------------
 class _Mods_Tes4ViewExpert(BoolLink):
@@ -399,7 +399,7 @@ class App_Tes4View(App_Button):
 
     def IsPresent(self):
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
-            testPath = bosh.tooldirs['Tes4ViewPath']
+            testPath = bass.tooldirs['Tes4ViewPath']
             if testPath not in bosh.undefinedPaths and testPath.exists():
                 self.exePath = testPath
                 return True
@@ -455,7 +455,7 @@ class App_BOSS(App_Button):
             extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
         if balt.getKeyState(67): #c - print crc calculations in BOSS log.
             extraArgs.append(u'-c',)
-        if bosh.tooldirs['boss'].version >= (2,0,0,0):
+        if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             extraArgs.append(u'-g%s' % bush.game.fsName,)
         self.extraArgs = tuple(extraArgs)

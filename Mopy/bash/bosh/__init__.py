@@ -50,7 +50,7 @@ from functools import wraps
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
-from ..bass import dirs, inisettings
+from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -66,7 +66,6 @@ from ..parsers import LoadFactory, ModFile
 startupinfo = bolt.startupinfo
 
 #--Settings
-tooldirs = {}
 defaultExt = u'.7z'
 writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
 readExts = {u'.rar', u'.7z.001', u'.001'}

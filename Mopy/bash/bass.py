@@ -55,7 +55,10 @@ class Resources: # this belongs to basher but leads to cyclic imports, so...
     bashDocBrowser = None
     bashMonkey = None
 
+#--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
 dirs = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
+# dirs where various apps may be located - populated in initDefaultTools()
+tooldirs = {}

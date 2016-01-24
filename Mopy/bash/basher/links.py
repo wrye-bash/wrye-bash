@@ -29,7 +29,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
-from .. import bass, balt, bosh, bush
+from .. import bass, balt, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink
 from ..env import init_app_links
@@ -85,55 +85,49 @@ def InitStatusBar():
         BashStatusBar.buttons.append(App_Button(*ab[:-1], **ab[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
-            (bosh.tooldirs['Tes4ViewPath'],u'-TES4'), #no cmd argument to force view mode
+            (bass.tooldirs['Tes4ViewPath'], u'-TES4'), #no cmd argument to force view mode
             imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
     BashStatusBar.buttons.append( #Tes4Edit
-        App_Tes4View(
-            (bosh.tooldirs['Tes4EditPath'],u'-TES4 -edit'),
-            imageList(u'tools/tes4edit%s.png'),
-            _(u"Launch TES4Edit"),
-            uid=u'TES4Edit'))
+        App_Tes4View((bass.tooldirs['Tes4EditPath'], u'-TES4 -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch TES4Edit"),
+                     uid=u'TES4Edit'))
     BashStatusBar.buttons.append( #Tes5Edit
-        App_Tes4View(
-            (bosh.tooldirs['Tes5EditPath'],u'-TES5 -edit'),
-            imageList(u'tools/tes4edit%s.png'),
-            _(u"Launch TES5Edit"),
-            uid=u'TES5Edit'))
+        App_Tes4View((bass.tooldirs['Tes5EditPath'], u'-TES5 -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch TES5Edit"),
+                     uid=u'TES5Edit'))
     BashStatusBar.buttons.append( #TesVGecko
-        App_Button( (bosh.tooldirs['Tes5GeckoPath']),
-            imageList(u'tools/tesvgecko%s.png'),
-            _(u"Launch TesVGecko"),
-            uid=u'TesVGecko'))
+        App_Button((bass.tooldirs['Tes5GeckoPath']),
+                   imageList(u'tools/tesvgecko%s.png'),
+                   _(u"Launch TesVGecko"),
+                   uid=u'TesVGecko'))
     BashStatusBar.buttons.append( #Tes4Trans
-        App_Tes4View(
-            (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
-            imageList(u'tools/tes4trans%s.png'),
-            _(u"Launch TES4Trans"),
-            uid=u'TES4Trans'))
+        App_Tes4View((bass.tooldirs['Tes4TransPath'], u'-TES4 -translate'),
+                     imageList(u'tools/tes4trans%s.png'),
+                     _(u"Launch TES4Trans"),
+                     uid=u'TES4Trans'))
     BashStatusBar.buttons.append( #Tes4LODGen
-        App_Tes4View(
-            (bosh.tooldirs['Tes4LodGenPath'],u'-TES4 -lodgen'),
-            imageList(u'tools/tes4lodgen%s.png'),
-            _(u"Launch Tes4LODGen"),
-            uid=u'TES4LODGen'))
+        App_Tes4View((bass.tooldirs['Tes4LodGenPath'], u'-TES4 -lodgen'),
+                    imageList(u'tools/tes4lodgen%s.png'),
+                    _(u"Launch Tes4LODGen"),
+                    uid=u'TES4LODGen'))
     BashStatusBar.buttons.append( #BOSS
-        App_BOSS(
-            (bosh.tooldirs['boss']),
-            imageList(u'boss%s.png'),
-            _(u"Launch BOSS"),
-            uid=u'BOSS'))
+        App_BOSS((bass.tooldirs['boss']),
+                imageList(u'boss%s.png'),
+                _(u"Launch BOSS"),
+                uid=u'BOSS'))
     if bass.inisettings['ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
         BashStatusBar.buttons.append( #Softimage Mod Tool
-            App_Button(
-                (bosh.tooldirs['SoftimageModTool'],u'-mod'),
-                imageList(u'tools/softimagemodtool%s.png'),
-                _(u"Launch Softimage Mod Tool"),
-                uid=u'SoftimageModTool'))
+            App_Button((bass.tooldirs['SoftimageModTool'], u'-mod'),
+                       imageList(u'tools/softimagemodtool%s.png'),
+                       _(u"Launch Softimage Mod Tool"),
+                       uid=u'SoftimageModTool'))
     if bass.inisettings['ShowModelingToolLaunchers'] \
             or bass.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
