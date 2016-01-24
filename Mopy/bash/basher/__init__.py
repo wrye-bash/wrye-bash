@@ -2747,23 +2747,21 @@ class InstallersPanel(SashTankPanel):
         installer.comments = self.gComments.GetValue()
         self.data.setChanged()
 
-    def RefreshUIMods(self, _refreshData=False):
+    def RefreshUIMods(self, mods_changed, inis_changed):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
-        if bosh.modInfos.refresh():
-            del bosh.modInfos.mtimesReset[:]
+        if mods_changed:
+            if bosh.modInfos.refresh():
+                del bosh.modInfos.mtimesReset[:] ##: not sure why this here
             BashFrame.modList.RefreshUI(refreshSaves=True)
+            Link.Frame.warn_corrupted(warn_saves=False)
         if BashFrame.iniList is not None:
-            if bosh.iniInfos.refresh():
-                BashFrame.iniList.panel.RefreshPanel('ALL')
-            else:
-                BashFrame.iniList.panel.RefreshPanel('TARGETS')
-        if not _refreshData: return
-        try: # HACK: using .booting hack to short circuit double refreshes
-            balt.Link.Frame.booting = True
-            balt.Link.Frame.RefreshData()
-        finally:
-            balt.Link.Frame.booting = False
+            if inis_changed: ##: why this if below ??
+                if bosh.iniInfos.refresh():
+                    BashFrame.iniList.panel.RefreshPanel('ALL')
+                else:
+                    BashFrame.iniList.panel.RefreshPanel('TARGETS')
+        bosh.BSAInfos.check_bsa_timestamps()
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
@@ -3781,7 +3779,7 @@ class BashFrame(wx.Frame):
     modChecker = None
     # UILists - use sparingly for inter Panel communication
     # modList is always set but for example iniList may be None (tab not
-    # enabled). There is a single use of modList in bosh that needs revisiting
+    # enabled).
     saveList = None
     iniList = None
     modList = None
@@ -3947,10 +3945,7 @@ class BashFrame(wx.Frame):
         if not self.booting and bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
-        if bush.game.fsName != 'Skyrim':
-            if bosh.inisettings['ResetBSATimestamps']:
-                if bosh.bsaInfos.refresh():
-                    bosh.bsaInfos.resetBSAMTimes()
+        bosh.BSAInfos.check_bsa_timestamps()
         #--Repopulate
         if popMods:
             BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
@@ -3967,17 +3962,6 @@ class BashFrame(wx.Frame):
         self._corruptedGameIni()
         self._obmmWarn()
         self._missingDocsDir()
-        #--Merge info # FIXME(ut) should be in ModInfos.refresh !
-        oldMergeable = set(bosh.modInfos.mergeable)
-        scanList = bosh.modInfos.refreshMergeable()
-        difMergeable = (oldMergeable ^ bosh.modInfos.mergeable) & set(bosh.modInfos.keys())
-        if scanList:
-            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
-                progress.setFull(len(scanList))
-                bosh.modInfos.rescanMergeable(scanList,progress)
-        if scanList or difMergeable:
-            BashFrame.modList.RefreshUI(files=scanList + list(difMergeable),
-                                        refreshSaves=False) # was True
         #--Done (end recursion blocker)
         self.inRefreshData = False
 

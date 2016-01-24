@@ -3590,6 +3590,7 @@ class FileInfos(DataDict):
             #--Refresh
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
+            return tableUpdate.values()
 
     def delete_Refresh(self, deleted): self.refresh()
 
@@ -3800,6 +3801,14 @@ class ModInfos(FileInfos):
         hasNewBad = self.refreshBadNames()
         hasMissingStrings = self.refreshMissingStrings()
         self.setOblivionVersions()
+        oldMergeable = set(self.mergeable)
+        scanList = self.refreshMergeable()
+        difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
+        if scanList:
+            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
+                progress.setFull(len(scanList))
+                self.rescanMergeable(scanList,progress)
+        hasChanged += bool(scanList or difMergeable)
         return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
 
     def refreshBadNames(self):
@@ -4396,7 +4405,10 @@ class ModInfos(FileInfos):
             if f.s in bush.game.masterFiles: raise bolt.BoltError(
                 u"Cannot delete the game's master file(s).")
         self.unselect(fileName, doSave=False)
-        FileInfos.delete(self, fileName, **kwargs)
+        deleted = FileInfos.delete(self, fileName, **kwargs)
+        # temporarily track deleted mods so BAIN can update its UI
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def delete_Refresh(self, deleted):
         # adapted from refresh() (avoid refreshing from the data directory)
@@ -4406,9 +4418,6 @@ class ModInfos(FileInfos):
             self.pop(name, None)
         self.plugins.removeMods(deleted, savePlugins=True)
         self.refreshInfoLists()
-        # temporarily track deleted mods so BAIN can update its UI
-        for d in map(self.dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
 
     def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
                   doRefresh=True):
@@ -4670,6 +4679,12 @@ class BSAInfos(FileInfos):
 
     def resetBSAMTimes(self):
         for bsa in self.values(): bsa.resetMTime()
+
+    @staticmethod
+    def check_bsa_timestamps():
+        if bush.game.fsName != 'Skyrim' and inisettings['ResetBSATimestamps']:
+            if bsaInfos.refresh():
+                bsaInfos.resetBSAMTimes()
 
 # Mod Config Help -------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -7007,14 +7022,18 @@ class InstallersData(DataDict):
     def updateTable(destFiles, value):
         """Set the 'installer' column in mod and ini tables for the
         destFiles."""
+        mods_changed, inis_changed = False, False
         for i in destFiles:
             if value and reModExt.match(i.cext): # if value == u'' we come from delete !
+                mods_changed = True
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
+                inis_changed = True
                 if value:
                     iniInfos.table.setItem(i.tail, 'installer', value)
                 else: # installer is the only column used in iniInfos table
                     iniInfos.table.delRow(i.tail)
+        return mods_changed, inis_changed
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
@@ -7084,7 +7103,8 @@ class InstallersData(DataDict):
                 ini.writelines(lines)
         tweaksCreated -= removed
 
-    def _install(self,archives,progress=None,last=False,override=True):
+    def _install(self, archives, refresh_ui, progress=None, last=False,
+                 override=True):
         """Install selected archives.
         what:
             'MISSING': only missing files.
@@ -7114,15 +7134,20 @@ class InstallersData(DataDict):
                 self._createTweaks(destFiles, installer, tweaksCreated)
                 installer.install(archive, destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
-                InstallersData.updateTable(destFiles, archive.s)
+                mods_changed, inis_changed = InstallersData.updateTable(
+                    destFiles, archive.s)
+                refresh_ui[0] |= mods_changed
+                refresh_ui[1] |= inis_changed
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
         return tweaksCreated
 
-    def install(self,archives,progress=None,last=False,override=True):
-        try: return self._install(archives, progress, last, override)
+    def bain_install(self, archives, refresh_ui, progress=None, last=False,
+                     override=True):
+        try: return self._install(archives, refresh_ui, progress, last,
+                                  override)
         finally: self.irefresh(what='NS')
 
     #--Uninstall, Anneal, Clean
@@ -7151,7 +7176,7 @@ class InstallersData(DataDict):
             emptyDirs -= exclude
         return removedFiles
 
-    def _removeFiles(self, removes, progress=None):
+    def _removeFiles(self, removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'uninstall' and 'anneal'."""
         modsDirJoin = dirs['mods'].join
@@ -7181,23 +7206,18 @@ class InstallersData(DataDict):
                 env.shellDelete(nonPlugins, parent=parent)
             #--Delete mods and remove them from load order
             if removedPlugins:
-                modInfos.delete(removedPlugins, doRefresh=True, recycle=False)
-                ##: HACK - because I short circuit ModInfos.refresh() via
-                # delete_Refresh(), modList.RefreshUI won't be called leaving
-                # stale entries in modList._gList._item_itemIdd - note that
-                # deleting via the UIList calls modList.RefreshUI() which
-                # cleans _gList internal dictionaries
-                balt.Link.Frame.modList.RefreshUI(refreshSaves=True)
-                # This is _less_ hacky than _not_ calling modInfos.delete().
-                # Real solution: refresh should keep track of deleted, added,
-                # modified - (ut)
+                refresh_ui[0] = True
+                modInfos.delete(removedPlugins, doRefresh=False, recycle=False)
         except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
             raise
         finally:
             if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
-            InstallersData.updateTable(removes, u'')
+            mods_changed, inis_changed = InstallersData.updateTable(removes,
+                                                                    u'')
+            refresh_ui[0] |= mods_changed
+            refresh_ui[1] |= inis_changed
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
             for relPath in removes:
@@ -7213,7 +7233,7 @@ class InstallersData(DataDict):
             removes.discard(file)
         return files
 
-    def uninstall(self,unArchives,progress=None):
+    def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
         if unArchives == 'ALL': unArchives = self.data
         unArchives = set(unArchives)
@@ -7244,17 +7264,17 @@ class InstallersData(DataDict):
                 masked |= self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, progress)
+            self._removeFiles(removes, refresh_ui, progress)
             #--De-activate
             for archive in unArchives:
                 self[archive].isActive = False
             #--Restore files
             if settings['bash.installers.autoAnneal']:
-                self._restoreFiles(restores, progress)
+                self._restoreFiles(restores, progress, refresh_ui)
         finally:
             self.irefresh(what='NS')
 
-    def _restoreFiles(self, restores, progress):
+    def _restoreFiles(self, restores, progress, refresh_ui):
         getArchiveOrder = lambda x: self[x].order
         restoreArchives = sorted(set(restores.itervalues()),
                                  key=getArchiveOrder, reverse=True)
@@ -7267,9 +7287,12 @@ class InstallersData(DataDict):
                 if destFiles:
                     installer.install(archive, destFiles, self.data_sizeCrcDate,
                         SubProgress(progress,index,index+1))
-                    InstallersData.updateTable(destFiles, archive.s)
+                    mods_changed, inis_changed = InstallersData.updateTable(
+                         destFiles, archive.s)
+                    refresh_ui[0] |= mods_changed
+                    refresh_ui[1] |= inis_changed
 
-    def anneal(self,anPackages=None,progress=None):
+    def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
         Anneal will:
         * Correct underrides in anPackages.
@@ -7296,13 +7319,13 @@ class InstallersData(DataDict):
                 self.__filter(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, progress)
+            self._removeFiles(removes, refresh_ui, progress)
             #--Restore files
-            self._restoreFiles(restores, progress)
+            self._restoreFiles(restores, progress, refresh_ui)
         finally:
             self.irefresh(what='NS')
 
-    def clean_data_dir(self):  ##: add error handling/refresh remove ghosts
+    def clean_data_dir(self, refresh_ui):
         getArchiveOrder = lambda x: x.order
         installed = []
         for installer in sorted(self.values(), key=getArchiveOrder,
@@ -7313,15 +7336,24 @@ class InstallersData(DataDict):
         keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.game.ignoreDataFiles))
-        data_sizeCrcDate = self.data_sizeCrcDate
-        removes = set(data_sizeCrcDate) - keepFiles
+        removes = set(self.data_sizeCrcDate) - keepFiles
         destDir = dirs['bainData'].join(u'Data Folder Contents (%s)' %
             bolt.timestamp())
-        emptyDirs = set()
         skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         skipPrefixes = tuple(skipPrefixes)
+        try:
+            self._clean_data_dir(self.data_sizeCrcDate, destDir, removes,
+                                 skipPrefixes, refresh_ui)
+        finally:
+            self.irefresh(what='NS')
+
+    @staticmethod
+    def _clean_data_dir(data_sizeCrcDate, destDir, removes, skipPrefixes,
+                        refresh_ui): # we do _not_ remove Ini Tweaks/*
+        emptyDirs = set()
+        def isMod(p): return reModExt.search(p.s) is not None
         for file in removes:
             # don't remove files in Wrye Bash-related directories
             if file.cs.startswith(skipPrefixes): continue
@@ -7329,17 +7361,19 @@ class InstallersData(DataDict):
             try:
                 if path.exists():
                     path.moveTo(destDir.join(file))
-                else:
-                    ghost = GPath(path.s+u'.ghost')
-                    if ghost.exists():
-                        ghost.moveTo(destDir.join(file))
+                    if not refresh_ui[0]: refresh_ui[0] = isMod(path)
+                else: # Try if it's a ghost - belongs to modInfos...
+                    path = GPath(path.s + u'.ghost')
+                    if path.exists():
+                        path.moveTo(destDir.join(file))
+                        refresh_ui[0] = True
+                    else: continue # don't pop if file was not removed
+                data_sizeCrcDate.pop(file,None)
+                emptyDirs.add(path.head)
             except:
-                # It's not imperative that files get moved, so if errors happen, just ignore them.
-                # Would could put a deprint in here so that when debug mode is enabled we at least
-                # see that some files failed for some reason.
-                pass
-            data_sizeCrcDate.pop(file,None)
-            emptyDirs.add(path.head)
+                # It's not imperative that files get moved, so ignore errors
+                deprint(u'Clean Data: moving %s to % s failed' % (
+                            path, destDir), traceback=True)
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()
