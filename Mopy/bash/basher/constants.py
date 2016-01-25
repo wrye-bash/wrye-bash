@@ -23,8 +23,7 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
-
-from .. import bush, bosh
+from .. import bass, bush, bosh
 from ..balt import Image, ImageList, defPos
 from ..bolt import GPath
 
@@ -383,7 +382,7 @@ ICO = Image.typesDict['ico']
 BMP = Image.typesDict['bmp']
 TIF = Image.typesDict['tif']
 
-imDirJn = bosh.dirs['images'].join
+imDirJn = bass.dirs['images'].join
 def _png(name): return Image(GPath(imDirJn(name)), PNG)
 
 #--Image lists

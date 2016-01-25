@@ -53,6 +53,8 @@ import sys
 import types
 from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
+
+import bass
 import bosh.faces
 import parsers
 from record_groups import MobCell, MobWorld
@@ -542,7 +544,7 @@ def perfTest():
 def makeOOO_NoGuildOwnership():
     bosh.initBosh()
     import cint
-    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+    with cint.ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
         modFile = Current.addMod("Oscuro's_Oblivion_Overhaul.esp")
         destFile = Current.addMod("OOO-No_Guild_Ownership.esp", CreateIfNotExist=True)
         Current.load()
@@ -1042,7 +1044,7 @@ def dumpLSCR(fileName=u'Oblivion.esm'):
     fileName = GPath(fileName)
     #--Load up in CBash
     import cint
-    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+    with cint.ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
         modFile = Current.addMod(fileName.stail)
         Current.load()
         #--Dump the info
@@ -1196,7 +1198,7 @@ def createLSCR(*args):
                                 continue
                         except:
                             continue
-                        masterName = bosh.dirs['mods'].join(masterName)
+                        masterName = bass.dirs['mods'].join(masterName)
                         self.fids_eids.append((cint.FormID(masterName.tail,recordId),eid))
             except Exception as e:
                 print "WARNING: An error occurred while reading FormID text file '%s':\n%s\n" % (fidFile.s,e)
@@ -1242,7 +1244,7 @@ def createLSCR(*args):
                                 continue
                         except:
                             continue
-                        masterName = bosh.dirs['mods'].join(masterName)
+                        masterName = bass.dirs['mods'].join(masterName)
                         self.LNAM.append(cint.FormID(masterName.tail,recordId))
             except Exception as e:
                 print "WARNING: An error occurred while reading LNAM text file '%s':\n%s\n" % (lnamFile.s,e)
@@ -1251,20 +1253,20 @@ def createLSCR(*args):
             self.masters = set()
             self.missingMasters = set()
             for fid,eid in self.fids_eids:
-                master = bosh.dirs['mods'].join(fid[0])
+                master = bass.dirs['mods'].join(fid[0])
                 if master.exists():
                     self.masters.add(fid[0])
                 else:
                     self.missingMasters.add(fid[0])
             for lnam in self.LNAM:
-                master = bosh.dirs['mods'].join(lnam[0])
+                master = bass.dirs['mods'].join(lnam[0])
                 if master.exists():
                     self.masters.add(fid[0])
                 else:
                     self.missingMasters.add(fid[0])
 
     bosh.initBosh()
-    modName = bosh.dirs['mods'].join(opts.modName)
+    modName = bass.dirs['mods'].join(opts.modName)
     #--Parse data
     data = LSCRData(opts.ddsPath,opts.formidPath,opts.descPath,opts.lnamPath,opts.reuse,opts.clearLNAM)
     if not data.DESC and not data.DDS and not data.fids_eids:
@@ -1294,7 +1296,7 @@ def createLSCR(*args):
     for master in data.missingMasters:
         print "WARNING: Expected master file '%s' is not present.  Applicable data from those records cannot be verified and/or copied." % (master.stail)
     #--Now do the mod creation
-    with cint.ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+    with cint.ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
         for master in data.masters:
             Current.addMod(master.stail)
         modFile = Current.addMod(modName.stail,CreateNew=True)

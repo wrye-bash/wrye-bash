@@ -30,7 +30,7 @@ import time
 import wx
 from datetime import timedelta
 from . import SetUAC, BashFrame
-from .. import bosh, bolt, balt, env
+from .. import bass, bosh, bolt, balt, env
 from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
@@ -263,13 +263,13 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(tempReadme,None,docsDir)
                 #--Try moving temp log/readme to Docs dir
                 try:
-                    env.shellMove(tempReadmeDir, bosh.dirs['mods'],
+                    env.shellMove(tempReadmeDir, bass.dirs['mods'],
                                   parent=self)
                 except (CancelError,SkipError):
                     # User didn't allow UAC, move to My Games directory instead
                     env.shellMove([tempReadme, tempReadme.root + u'.html'],
-                                  bosh.dirs['saveBase'], parent=self)
-                    readme = bosh.dirs['saveBase'].join(readme.tail)
+                                  bass.dirs['saveBase'], parent=self)
+                    readme = bass.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             bosh.modInfos.table.setItem(patchName,'doc',readme)
@@ -331,12 +331,12 @@ class PatchDialog(balt.Dialog):
         config = self.__config()
         exportConfig(patchName=self.patchInfo.name, config=config,
                      isCBash=self.doCBash, win=self.parent,
-                     outDir=bosh.dirs['patches'])
+                     outDir=bass.dirs['patches'])
 
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
         patchName = self.patchInfo.name + _(u'_Configuration.dat')
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         textPath = balt.askOpen(self.parent,_(u'Import Bashed Patch configuration from:'),textDir,patchName, u'*.dat',mustExist=True)

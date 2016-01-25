@@ -35,6 +35,7 @@ import time
 import traceback
 
 #--Local
+import bass
 import bush
 import bosh
 import bolt
@@ -64,7 +65,7 @@ class Data:
         ini = bosh.oblivionIni
         if not self.savesDir or ini.mtime != ini.path.mtime:
             ini.mtime = ini.path.mtime
-            savesDir = bosh.dirs['saveBase'].join(ini.getSetting(u'General',u'SLocalSavePath',u'Saves\\'))
+            savesDir = bass.dirs['saveBase'].join(ini.getSetting(u'General', u'SLocalSavePath', u'Saves\\'))
             if savesDir != self.savesDir:
                 print u'\n'+_(u'Monitoring:'),savesDir.stail
                 self.setSavesDir(savesDir)
@@ -84,7 +85,7 @@ class Data:
         self.brz_shapeIsMale = signalDir.join(u'.shapeIsMale')
         self.removeRequest   = True
         #--Pluggy text
-        signalDir = bosh.dirs['saveBase'].join(u'Pluggy',u'User Files',u'BashMon')
+        signalDir = bass.dirs['saveBase'].join(u'Pluggy', u'User Files', u'BashMon')
         self.plt_ping        = signalDir.join(u'ping.txt')
         self.plt_pong        = signalDir.join(u'pong.txt')
         self.plt_request     = signalDir.join(u'request.txt')

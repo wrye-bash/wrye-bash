@@ -25,7 +25,7 @@
 from operator import attrgetter
 import re
 import time
-from .. import balt, bosh, bush, bolt, env
+from .. import bass, balt, bosh, bush, bolt, env
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
@@ -76,7 +76,7 @@ class Files_Unhide(ItemLink):
         self.help = _(u"Unhides hidden %ss.") % self.type
 
     def Execute(self):
-        srcDir = bosh.dirs['modsBash'].join(u'Hidden')
+        srcDir = bass.dirs['modsBash'].join(u'Hidden')
         window = self.window
         destDir = None
         if self.type == 'mod':
@@ -88,7 +88,7 @@ class Files_Unhide(ItemLink):
             destDir = window.data.dir
         elif self.type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
-            destDir = bosh.dirs['installers']
+            destDir = bass.dirs['installers']
             srcPaths = self._askOpenMulti(
                 title=_(u'Unhide files:'), defaultDir=srcDir,
                 defaultFile=u'.Folder Selection.', wildcard=wildcard)

@@ -29,7 +29,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
-from .. import balt, bosh, bush
+from .. import bass, balt, bosh, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink
 from ..env import init_app_links
@@ -48,7 +48,7 @@ from .mod_links import *
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
-    dirImages = bosh.dirs['images']
+    dirImages = bass.dirs['images']
     def imageList(template):
         return [Image(dirImages.join(template % i)) for i in (16,24,32)]
     #--Bash Status/LinkBar
@@ -59,7 +59,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Game_Button(
-            exePathArgs=bosh.dirs['app'].join(bush.game.exe),
+            exePathArgs=bass.dirs['app'].join(bush.game.exe),
             images=imageList(u'%s%%s.png' % bush.game.fsName.lower()),
             tip=u' '.join((_(u"Launch"),bush.game.displayName)),
             obseTip=u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s')),
@@ -67,18 +67,17 @@ def InitStatusBar():
             uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bosh.dirs['app'].join(bush.game.cs.exe),
+            bass.dirs['app'].join(bush.game.cs.exe),
             imageList(bush.game.cs.imageName),
             u' '.join((_(u"Launch"),bush.game.cs.shortName)),
             u' '.join((_(u"Launch"),bush.game.cs.shortName,u'%(version)s')),
             bush.game.cs.seArgs,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
-        App_Button(
-            bosh.dirs['app'].join(u'OblivionModManager.exe'),
-            imageList(u'obmm%s.png'),
-            _(u"Launch OBMM"),
-            uid=u'OBMM'))
+        App_Button(bass.dirs['app'].join(u'OblivionModManager.exe'),
+                   imageList(u'obmm%s.png'),
+                   _(u"Launch OBMM"),
+                   uid=u'OBMM'))
     from .constants import toolbar_buttons, app_buttons
     for tb in toolbar_buttons:
         BashStatusBar.buttons.append(Tooldir_Button(*tb))
@@ -151,8 +150,8 @@ def InitStatusBar():
     from .constants import misc_tools
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
-    dirApps = bosh.dirs['mopy'].join(u'Apps')
-    badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
+    dirApps = bass.dirs['mopy'].join(u'Apps')
+    badIcons = [Image(bass.dirs['images'].join(u'x.png'))] * 3
     def iconList(fileName):
         return [Image(fileName, ICO, x) for x in (16, 24, 32)]
     for path, icon, description in init_app_links(dirApps, badIcons, iconList):
@@ -160,7 +159,7 @@ def InitStatusBar():
                 App_Button((path, ()), icon, description, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(
-        App_Button((bosh.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
+        App_Button((bass.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
                     u'--bashmon'), imageList(u'bashmon%s.png'),
                    _(u"Launch BashMon"), uid=u'Bashmon'))
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))

@@ -50,6 +50,7 @@ from functools import wraps
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
+from ..bass import dirs
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -64,7 +65,6 @@ from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
 startupinfo = bolt.startupinfo
 
 #--Settings
-dirs = {} #--app, user, mods, saves, userApp
 tooldirs = {}
 inisettings = {}
 defaultExt = u'.7z'
@@ -114,7 +114,7 @@ bsaInfos = None #--BSAInfos singleton
 screensData = None #--ScreensData singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
-load_order = None #--can't import yet as I need bosh.dirs to be initialized
+load_order = None #--can't import yet as I need bass.dirs to be initialized
 
 def listArchiveContents(fileName):
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
@@ -2119,13 +2119,13 @@ class OblivionIni(IniFile):
     def __init__(self,name):
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
-            IniFile.__init__(self,dirs['app'].join(name),u'General')
+            IniFile.__init__(self, dirs['app'].join(name), u'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
+        IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
 
     def ensureExists(self):
         """Ensures that Oblivion.ini file exists. Copies from default
@@ -2168,7 +2168,7 @@ class OblivionIni(IniFile):
         if doRedirect == self.getBsaRedirection():
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
@@ -3271,7 +3271,7 @@ class FileInfos(DataDict):
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
-        FileInfos.__init__(self, dirs['tweaks'],INIInfo, dirs['defaultTweaks'])
+        FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
     def rightFileType(self,fileName):
@@ -3294,7 +3294,7 @@ class ModInfos(FileInfos):
     # Load Order stuff is almost all handled in the Plugins class again
     #--------------------------------------------------------------------------
     def __init__(self):
-        FileInfos.__init__(self,dirs['mods'],ModInfo)
+        FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--MTime resetting
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
@@ -4194,7 +4194,7 @@ class SaveInfos(FileInfos):
         self.iniMTime = 0
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
-        FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
+        FileInfos.__init__(self, dirs['saveBase'].join(self.localSave), SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
@@ -6519,7 +6519,7 @@ class InstallersData(DataDict):
             Installer.rmTempDir()
             installer.unpackToTemp(name,[installer.hasBCF],progress)
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
-            bcfFile = dirs['converters'].join(u'temp-'+srcBcfFile.stail)
+            bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             Installer.rmTempDir()
             #--Create the converter, apply it
@@ -7059,7 +7059,8 @@ class InstallersData(DataDict):
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
+                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
+                    dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
@@ -8194,13 +8195,13 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['app'] = bush.gamePath
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
+    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
-    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.fsName)
+    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks', bush.game.fsName)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join(u'My Games',bush.game.fsName)
+    dirs['saveBase'] = personal.join(u'My Games', bush.game.fsName)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
@@ -8216,7 +8217,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             # Set the save game folder to the Oblivion directory
             dirs['saveBase'] = dirs['app']
             # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath',u'Data\\'))
+            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath', u'Data\\'))
             # these are relative to the mods path so they must be updated too
             dirs['patches'] = dirs['mods'].join(u'Bash Patches')
             dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
@@ -8229,11 +8230,12 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)
     dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
-        dirs['modsBash'], dirs['app'].join(u'Data',u'Bash'),
+        dirs['modsBash'], dirs['app'].join(u'Data', u'Bash'),
         modsBashSrc, u'Relative Path')
 
     dirs['installers'] = oblivionMods.join(u'Bash Installers')
-    dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join(u'Installers'))
+    dirs['installers'] = getLegacyPath(dirs['installers'],
+                                       dirs['app'].join(u'Installers'))
 
     dirs['bainData'], bainDataSrc = getBainDataPath(bashIni)
 
@@ -8323,7 +8325,7 @@ def initDefaultTools():
 
     # BOSS can be in any number of places.
     # Detect locally installed (into game folder) BOSS
-    if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
+    if dirs['app'].join(u'BOSS', u'BOSS.exe').exists():
         tooldirs['boss'] = dirs['app'].join(u'BOSS').join(u'BOSS.exe')
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
@@ -8346,7 +8348,7 @@ def initDefaultTools():
                 continue
             break
 
-    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools',u'TES4Files.exe')
+    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
@@ -8373,8 +8375,8 @@ def initDefaultTools():
     tooldirs['Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
     tooldirs['Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
     tooldirs['BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
-    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools',u'Interactive Map of Cyrodiil and Shivering Isles 3.52',u'Mapa v 3.52.exe')
-    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools',u'Oblivion Mod List Generator',u'Oblivion Mod List Generator.exe')
+    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools', u'Interactive Map of Cyrodiil and Shivering Isles 3.52', u'Mapa v 3.52.exe')
+    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools', u'Oblivion Mod List Generator', u'Oblivion Mod List Generator.exe')
     tooldirs['OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
     tooldirs['ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
     tooldirs['ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
@@ -8406,7 +8408,7 @@ def initDefaultTools():
     tooldirs['EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
     tooldirs['Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
     tooldirs['Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
-    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools',u'Tabula',u'Tabula.exe')
+    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools', u'Tabula', u'Tabula.exe')
     tooldirs['MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
     tooldirs['Pixia'] = pathlist(u'Pixia',u'pixia.exe')
     tooldirs['DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')

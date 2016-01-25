@@ -24,8 +24,8 @@
 import re
 import subprocess
 from subprocess import PIPE
-from . import exe7z, dirs
-from .. import env, bolt
+from . import exe7z
+from .. import env, bolt, bass
 from ..bolt import decode, encode, Path, startupinfo
 
 failedOmods = set()
@@ -252,7 +252,7 @@ class OmodFile:
 
         # Now decompress
         progress(0.3)
-        cmd = [dirs['compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
+        cmd = [bass.dirs['compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
         subprocess.call(cmd,startupinfo=startupinfo)
         progress(0.8)
 
@@ -294,7 +294,7 @@ class OmodConfig:
     def getOmodConfig(name):
         """Get obmm config file for project."""
         config = OmodConfig(name)
-        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
             with bolt.StructFile(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
@@ -312,7 +312,7 @@ class OmodConfig:
     @staticmethod
     def writeOmodConfig(name, config):
         """Write obmm config file for project."""
-        configPath = dirs['installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
         with bolt.StructFile(configPath.temp.s,'wb') as out:
             out.pack('B',4)

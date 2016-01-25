@@ -27,7 +27,7 @@ from types import IntType, LongType
 import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
-from .. import balt, bosh, bolt, bush, env
+from .. import bass, balt, bosh, bolt, bush, env
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
@@ -175,7 +175,7 @@ class ColorDialog(balt.Dialog):
 
     def OnExport(self,event):
         event.Skip()
-        outDir = bosh.dirs['patches']
+        outDir = bass.dirs['patches']
         outDir.makedirs()
         #--File dialog
         outPath = balt.askSave(self,_(u'Export color configuration to:'), outDir, _(u'Colors.txt'), u'*.txt')
@@ -193,7 +193,7 @@ class ColorDialog(balt.Dialog):
 
     def OnImport(self,event):
         event.Skip()
-        inDir = bosh.dirs['patches']
+        inDir = bass.dirs['patches']
         inDir.makedirs()
         #--File dialog
         inPath = balt.askOpen(self,_(u'Import color configuration from:'), inDir, _(u'Colors.txt'), u'*.txt', mustExist=True)
@@ -327,7 +327,7 @@ class ImportFaceDialog(balt.Dialog):
         self.raceText.SetLabel(face.getRaceName())
         self.genderText.SetLabel(face.getGenderName())
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
-        itemImagePath = bosh.dirs['mods'].join(u'Docs',u'Images','%s.jpg' % item)
+        itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         bitmap = (itemImagePath.exists() and
                   Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
@@ -362,7 +362,7 @@ class CreateNewProject(balt.Dialog):
         super(CreateNewProject, self).__init__(parent, resize=False)
         #--Build a list of existing directories
         #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = [x for x in bosh.dirs['installers'].list() if bosh.dirs['installers'].join(x).isdir()]
+        self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
 
         #--Attributes
         self.textName = TextCtrl(self, _(u'New Project Name-#####'),
@@ -403,7 +403,8 @@ class CreateNewProject(balt.Dialog):
         # Event Handlers
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
-        self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
+        self.SetIcon(wx.Icon(
+            bass.dirs['images'].join(u'diamond_white_off.png').s, PNG))
         self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self,event):
@@ -422,11 +423,14 @@ class CreateNewProject(balt.Dialog):
         be when created. """
         if self.checkEsp.IsChecked():
             if self.checkWizard.IsChecked():
-                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off_wiz.png').s,PNG))
+                self.SetIcon(wx.Icon(
+                    bass.dirs['images'].join(u'diamond_white_off_wiz.png').s, PNG))
             else:
-                self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_white_off.png').s,PNG))
+                self.SetIcon(wx.Icon(
+                    bass.dirs['images'].join(u'diamond_white_off.png').s, PNG))
         else:
-            self.SetIcon(wx.Icon(bosh.dirs['images'].join(u'diamond_grey_off.png').s,PNG))
+            self.SetIcon(wx.Icon(
+                bass.dirs['images'].join(u'diamond_grey_off.png').s, PNG))
 
     @staticmethod
     def OnCancel(event): event.Skip()
@@ -434,7 +438,7 @@ class CreateNewProject(balt.Dialog):
     def OnClose(self, event):
         """ Create the New Project and add user specified extras. """
         projectName = bolt.GPath(self.textName.GetValue())
-        projectDir = bosh.dirs['installers'].join(projectName)
+        projectDir = bass.dirs['installers'].join(projectName)
 
         if projectDir.exists():
             balt.showError(self, _(
@@ -447,7 +451,7 @@ class CreateNewProject(balt.Dialog):
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        extrasDir = bosh.dirs['templates'].join(bush.game.fsName)
+        extrasDir = bass.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
             # Copy blank esp into project
             fileName = u'Blank, %s.esp' % bush.game.fsName

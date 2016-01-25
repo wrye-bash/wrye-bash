@@ -37,7 +37,7 @@ import re
 import webbrowser
 from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
-from .. import bosh, bush, balt
+from .. import bass, bosh, bush, balt
 from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
@@ -129,7 +129,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 self.idata[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
+            pArchive = bass.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
@@ -306,7 +306,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
                     out.write(line+u'\n')
@@ -332,7 +332,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                              _(u'INI Tweaks')): continue
                 if BashFrame.iniList is not None:
                     BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        bosh.dirs['mods'].join(iniFile))
+                        bass.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
@@ -455,7 +455,7 @@ class Installer_Hide(_InstallerLink):
         if not bosh.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
-        destDir = bosh.dirs['modsBash'].join(u'Hidden')
+        destDir = bass.dirs['modsBash'].join(u'Hidden')
         for curName in self.selected:
             newName = destDir.join(curName)
             if newName.exists():
@@ -464,7 +464,7 @@ class Installer_Hide(_InstallerLink):
                 if not self._askYes(message, _(u'Hide Files')): return
             #Move
             with balt.BusyCursor():
-                file = bosh.dirs['installers'].join(curName)
+                file = bass.dirs['installers'].join(curName)
                 file.moveTo(newName)
         self.idata.irefresh(what='ION')
         self.window.RefreshUI()
@@ -538,7 +538,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
             installer.refreshBasic(
-                bosh.dirs['installers'].join(installer.archive), progress=None,
+                bass.dirs['installers'].join(installer.archive), progress=None,
                 recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
             self.idata.irefresh(what='N')
@@ -1050,7 +1050,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         if project not in self.idata:
             self.idata[project] = bosh.InstallerProject(project)
         iProject = self.idata[project]
-        pProject = bosh.dirs['installers'].join(project)
+        pProject = bass.dirs['installers'].join(project)
         iProject.project_refreshed = False
         iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
         if iProject.order == -1:
@@ -1097,7 +1097,7 @@ class InstallerProject_Sync(_InstallerLink):
         with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
-            pProject = bosh.dirs['installers'].join(project)
+            pProject = bass.dirs['installers'].join(project)
             installer.project_refreshed = False
             installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
@@ -1117,7 +1117,7 @@ class InstallerProject_Pack(_InstallerLink):
         #--Generate default filename from the project name and the default extension
         project = self.selected[0]
         installer = self.idata[project]
-        archive = bosh.GPath(project.s + bosh.defaultExt)
+        archive = GPath(project.s + bosh.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
             message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
@@ -1175,7 +1175,7 @@ class InstallerConverter_Apply(_InstallerLink):
             iArchive = self.idata[destArchive]
             self.converter.applySettings(iArchive)
             #--Refresh UI
-            pArchive = bosh.dirs['installers'].join(destArchive)
+            pArchive = bass.dirs['installers'].join(destArchive)
             iArchive.project_refreshed = False
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             if iArchive.order == -1:
@@ -1246,7 +1246,7 @@ class InstallerConverter_Create(_InstallerLink):
         if BCFArchive.cext != bosh.defaultExt:
             self._showWarning(_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
-        if bosh.dirs['converters'].join(BCFArchive).exists():
+        if bass.dirs['converters'].join(BCFArchive).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive.s,
                                 title=self.dialogTitle, default=False): return

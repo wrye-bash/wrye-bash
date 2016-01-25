@@ -132,7 +132,7 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
     def _append(self, window): return bush.game.se_sd
 
     def Execute(self):
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         title = _(u'Export list of allowed/disallowed %s plugin dlls to:') % \
@@ -168,7 +168,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
     def _append(self, window): return bush.game.se_sd
 
     def Execute(self):
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         defFile = bush.game.se.shortName + u' ' + _(
@@ -264,7 +264,7 @@ class Settings_Languages(TransLink):
     """Menu for available Languages."""
     def _decide(self, window, selection):
         languages = []
-        for file in bosh.dirs['l10n'].list():
+        for file in bass.dirs['l10n'].list():
             if file.cext == u'.txt' and file.csbody[-3:] != u'new':
                 languages.append(file.body)
         if languages:
@@ -476,7 +476,7 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
             u'see Internationalization section of Bash readme.')
         if not self._askContinue(message, 'bash.dumpTranslator.continue',
                                 _(u'Dump Translator')): return
-        outPath = bosh.dirs['l10n']
+        outPath = bass.dirs['l10n']
         with balt.BusyCursor():
             outFile = bolt.dumpTranslator(outPath.s, _bassLang())
         self._showOk(_(

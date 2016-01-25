@@ -25,7 +25,7 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-from .. import bosh, balt, bush, env
+from .. import bass, bosh, balt, bush, env
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 
@@ -96,7 +96,7 @@ class INI_FileOpenOrCopy(OneItemLink):
         if not len(selection) == 1:
             self.text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
-        elif bosh.dirs['tweaks'].join(selection[0]).isfile():
+        elif bass.dirs['tweaks'].join(selection[0]).isfile():
             self.text = _(u'Open...')
             self.help = _(u"Open '%s' with the system's default program.") % selection[0]
         else:
@@ -107,12 +107,12 @@ class INI_FileOpenOrCopy(OneItemLink):
         """Handle selection."""
         dir = self.window.data.dir
         for file in self.selected:
-            if bosh.dirs['tweaks'].join(file).isfile():
+            if bass.dirs['tweaks'].join(file).isfile():
                 dir.join(file).start()
             else:
                 srcFile = bosh.iniInfos[file].dir.join(file)
-                destFile = bosh.dirs['tweaks'].join(file)
-                env.shellMakeDirs(bosh.dirs['tweaks'], self.window)
+                destFile = bass.dirs['tweaks'].join(file)
+                env.shellMakeDirs(bass.dirs['tweaks'], self.window)
                 env.shellCopy(srcFile, destFile, parent=self.window)
                 bosh.iniInfos.refresh()
                 self.window.RefreshUI()
@@ -175,10 +175,12 @@ class INI_Apply(EnabledLink):
             #--No point applying a tweak that's already applied
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
-            if bosh.dirs['tweaks'].join(item).isfile():
-                self.window.data.ini.applyTweakFile(bosh.dirs['tweaks'].join(item))
+            if bass.dirs['tweaks'].join(item).isfile():
+                self.window.data.ini.applyTweakFile(
+                    bass.dirs['tweaks'].join(item))
             else:
-                self.window.data.ini.applyTweakFile(bosh.dirs['defaultTweaks'].join(item))
+                self.window.data.ini.applyTweakFile(
+                    bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
             self.window.RefreshUIValid()
@@ -209,7 +211,7 @@ class INI_CreateNew(OneItemLink):
         pathFrom = self.selected[0]
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
         path = self._askSave(title=_(u'Copy Tweak with current settings...'),
-                             defaultDir=bosh.dirs['tweaks'],
+                             defaultDir=bass.dirs['tweaks'],
                              defaultFile=fileName,
                              wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return

@@ -42,6 +42,7 @@ patching that (see __fix methods).
 Double underscores and dirty comments are no accident - ALPHA
 """
 import time
+import bass
 import bolt
 import bush
 import liblo as _liblo
@@ -317,23 +318,23 @@ def swap(oldPath, newPath):
         _loadorder_txt_path.mtime = time.time()#update mtime to trigger refresh
 
 #----------------------------------------------------------------------REFACTOR
-_liblo_handle, _liblo_error = _liblo.Init(bosh.dirs['compiled'].s)
+_liblo_handle, _liblo_error = _liblo.Init(bass.dirs['compiled'].s)
 # That didn't work - Wrye Bash isn't installed correctly
 if not _liblo.liblo:
     raise bolt.BoltError(u'The libloadorder API could not be loaded.')
 bolt.deprint(u'Using libloadorder API version:', _liblo.version)
 
-_liblo_handle = _liblo_handle(bosh.dirs['app'].s, bush.game.fsName,
-                              bosh.dirs['userApp'].s)
-if bush.game.fsName == u'Oblivion' and bosh.dirs['mods'].join(
+_liblo_handle = _liblo_handle(bass.dirs['app'].s, bush.game.fsName,
+                              bass.dirs['userApp'].s)
+if bush.game.fsName == u'Oblivion' and bass.dirs['mods'].join(
         u'Nehrim.esm').isfile():
     _liblo_handle.SetGameMaster(u'Nehrim.esm')
 
-if bosh.dirs['saveBase'] == bosh.dirs['app']:
+if bass.dirs['saveBase'] == bass.dirs['app']:
 #--If using the game directory as rather than the appdata dir.
-    _dir = bosh.dirs['app']
+    _dir = bass.dirs['app']
 else:
-    _dir = bosh.dirs['userApp']
+    _dir = bass.dirs['userApp']
 _plugins_txt_path = _dir.join(u'plugins.txt')
 _loadorder_txt_path = _dir.join(u'loadorder.txt')
 mtimePlugins = 0

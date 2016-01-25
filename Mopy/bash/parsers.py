@@ -39,7 +39,8 @@ import env
 from balt import Progress
 from bolt import GPath, decode, deprint, CsvReader, csvFormat, ArgumentError, \
     SubProgress, StateError, BoltError
-from bosh import dirs, inisettings
+from bosh import inisettings
+from bass import dirs
 from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModError, \
     ModWriter
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \

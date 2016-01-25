@@ -32,6 +32,7 @@ import copy
 import cPickle
 from operator import attrgetter
 
+import bass
 import bolt
 from bolt import decode, encode, sio, GPath
 from bass import null1
@@ -1699,7 +1700,8 @@ class MreGmstBase(MelRecord):
             fname = cls.Master + u'_ids.pkl'
             try:
                 import bosh # Late import to avoid circular imports
-                cls.Ids = cPickle.load(bosh.dirs['db'].join(fname).open())[cls.classType]
+                cls.Ids = cPickle.load(
+                    bass.dirs['db'].join(fname).open())[cls.classType]
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True

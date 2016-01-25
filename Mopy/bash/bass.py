@@ -54,3 +54,6 @@ class Resources: # this belongs to basher but leads to cyclic imports, so...
     bashBlue = None
     bashDocBrowser = None
     bashMonkey = None
+
+# Bash's directories - values are absolute Paths - populated in initDirs()
+dirs = {}

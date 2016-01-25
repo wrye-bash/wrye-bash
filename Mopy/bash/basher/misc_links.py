@@ -26,7 +26,7 @@ import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image
-from .. import balt, bosh, bush
+from .. import bass, balt, bosh, bush
 from .import People_Link
 from ..bolt import GPath, LString
 
@@ -64,7 +64,7 @@ class Screens_NextScreenShot(ItemLink):
             }}
         screensDir = GPath(newBase).head
         if screensDir:
-            if not screensDir.isabs(): screensDir = bosh.dirs['app'].join(
+            if not screensDir.isabs(): screensDir = bass.dirs['app'].join(
                 screensDir)
             screensDir.makedirs()
         oblivionIni.saveSettings(settings)
@@ -175,7 +175,7 @@ class People_Export(ItemLink, People_Link):
     help = _(u'Export people to text archive')
 
     def Execute(self):
-        textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
+        textDir = bosh.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
         path = self._askSave(title=_(u'Export people to text file:'),
                              defaultDir=textDir, defaultFile=u'People.txt',
@@ -194,7 +194,7 @@ class People_Import(ItemLink, People_Link):
     help = _(u'Import people from text archive')
 
     def Execute(self):
-        textDir = bosh.settings.get('bash.workDir',bosh.dirs['app'])
+        textDir = bosh.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
         path = self._askOpen(title=_(u'Import people from text file:'),
                              defaultDir=textDir, wildcard=u'*.txt',
