@@ -34,8 +34,10 @@ from this module outside of the patcher package."""
 import copy
 import re
 from ..bolt import AbstractError, GPath, Path
-from ..bosh import reModExt, reCsvExt
+from ..bosh import reModExt
 from .. import bosh # for modInfos
+
+reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
