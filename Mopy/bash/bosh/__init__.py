@@ -45,7 +45,6 @@ import string
 import struct
 import sys
 from operator import attrgetter
-from subprocess import Popen, PIPE
 from functools import wraps
 
 #--Local
@@ -57,20 +56,14 @@ from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
 from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
+from ..bolt import defaultExt, compressionSettings, countFilesInArchive, readExts
 # cint
 from ..cint import ObCollection, CBash, ObBaseRecord
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
 from ..parsers import LoadFactory, ModFile
 
-startupinfo = bolt.startupinfo
-
 #--Settings
-defaultExt = u'.7z'
-writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
-readExts = {u'.rar', u'.7z.001', u'.001'}
-readExts.update(set(writeExts))
-noSolidExts = {u'.zip'}
 settings = None
 
 allTags = bush.game.allTags
@@ -5801,83 +5794,6 @@ class Installer(object):
         :rtype: tuple
         """
         raise AbstractError
-
-#------------------------------------------------------------------------------
-#  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
-reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
-def compressionSettings(archive, blockSize, isSolid):
-    archiveType = writeExts.get(archive.cext)
-    if not archiveType:
-        #--Always fall back to using the defaultExt
-        archive = GPath(archive.sbody + defaultExt).tail
-        archiveType = writeExts.get(archive.cext)
-    if archive.cext in noSolidExts: # zip
-        solid = u''
-    else:
-        if isSolid:
-            if blockSize:
-                solid = u'-ms=on -ms=%dm' % blockSize
-            else:
-                solid = u'-ms=on'
-        else:
-            solid = u'-ms=off'
-    userArgs = inisettings['7zExtraCompressionArguments']
-    if userArgs:
-        if reSolid.search(userArgs):
-            if not solid: # zip, will blow if ms=XXX is passed in
-                old = userArgs
-                userArgs = reSolid.sub(u'', userArgs).strip()
-                if old != userArgs: deprint(
-                    archive.s + u': 7zExtraCompressionArguments ini option '
-                                u'"' + old + u'" -> "' + userArgs + u'"')
-            solid = userArgs
-        else:
-            solid += userArgs
-    return archive, archiveType, solid
-
-def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
-                    archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [bolt.exe7z, u'a', destDir.join(destArchive).temp.s,
-            u'-t%s' % archiveType] + solid.split() + [
-            u'-y', u'-r', # quiet, recursive
-            u'-o"%s"' % destDir.s,
-            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
-            u"%s\\*" % srcFolder.s]
-
-def extractCommand(archivePath, outDirPath):
-    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
-        bolt.exe7z, archivePath.s, outDirPath.s)
-    return command
-
-regErrMatch = re.compile(u'Error:', re.U).match
-
-def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
-    """Count all regular files in srcArch (or only the subset in
-    listFilePath)."""
-    # http://stackoverflow.com/q/31124670/281545
-    command = [bolt.exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
-    if listFilePath: command += [u'@%s' % listFilePath.s]
-    if recurse: command += [u'-r']
-    proc = Popen(command, stdout=PIPE, stdin=PIPE if listFilePath else None,
-                 startupinfo=startupinfo, bufsize=1)
-    errorLine = line = u''
-    with proc.stdout as out:
-        for line in iter(out.readline, b''): # consider io.TextIOWrapper
-            line = unicode(line, 'utf8')
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
-    returncode = proc.wait()
-    msg = u'%s: Listing failed\n' % srcArch.s
-    if returncode or errorLine:
-        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
-    elif not line: # should not happen
-        msg += u'Empty output'
-    else: msg = u''
-    if msg: raise StateError(msg) # consider using CalledProcessError
-    # number of files is reported in the last line - example:
-    #                                3534900       325332  75 files, 29 folders
-    return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):

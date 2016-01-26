@@ -2335,7 +2335,7 @@ class InstallersList(balt.Tank):
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
-                     or x.cext in bosh.readExts and x not in converters]
+                     or x.cext in bolt.readExts and x not in converters]
         if len(omodnames) > 0: self._extractOmods(omodnames)
         if not filenames and not converters:
             return

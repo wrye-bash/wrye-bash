@@ -26,8 +26,9 @@
 import cPickle
 import re
 import sys
-from . import defaultExt, Installer, extractCommand, readExts, \
-    compressionSettings, compressCommand, InstallerArchive
+from . import Installer, InstallerArchive
+from ..bolt import defaultExt, extractCommand, readExts, compressionSettings, \
+    compressCommand
 from .. import bolt
 from ..bolt import DataDict, PickleDict, GPath, Path, StateError, sio, \
     SubProgress, ArgumentError
