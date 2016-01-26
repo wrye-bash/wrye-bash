@@ -84,9 +84,6 @@ reOblivion = re.compile(
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
-#--Unicode
-exe7z = u'7z.exe' # this should be moved to bolt (or bass ?) but still set here
-
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
     if dirs['patches'].join(fileName).isfile():
@@ -114,11 +111,6 @@ screensData = None #--ScreensData singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
 load_order = None #--can't import yet as I need bass.dirs to be initialized
-
-def listArchiveContents(fileName):
-    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
-    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-    return ins
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -5845,7 +5837,7 @@ def compressionSettings(archive, blockSize, isSolid):
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+    return [bolt.exe7z, u'a', destDir.join(destArchive).temp.s,
             u'-t%s' % archiveType] + solid.split() + [
             u'-y', u'-r', # quiet, recursive
             u'-o"%s"' % destDir.s,
@@ -5854,7 +5846,7 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
 
 def extractCommand(archivePath, outDirPath):
     command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
-        exe7z, archivePath.s, outDirPath.s)
+        bolt.exe7z, archivePath.s, outDirPath.s)
     return command
 
 regErrMatch = re.compile(u'Error:', re.U).match
@@ -5863,7 +5855,7 @@ def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
     """Count all regular files in srcArch (or only the subset in
     listFilePath)."""
     # http://stackoverflow.com/q/31124670/281545
-    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
+    command = [bolt.exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
     if listFilePath: command += [u'@%s' % listFilePath.s]
     if recurse: command += [u'-r']
     proc = Popen(command, stdout=PIPE, stdin=PIPE if listFilePath else None,
@@ -5949,7 +5941,7 @@ class InstallerArchive(Installer):
         file = size = crc = isdir = 0
         self.isSolid = False
         with archive.unicodeSafe() as tempArch:
-            ins = listArchiveContents(tempArch.s)
+            ins = bolt.listArchiveContents(tempArch.s)
             try:
                 cumCRC = 0
                 for line in ins.splitlines(True):
@@ -5995,7 +5987,7 @@ class InstallerArchive(Installer):
             args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
                 arch.s, self.getTempDir().s, self.tempList.s)
             if recurse: args += u' -r'
-            command = u'"%s" x %s' % (exe7z, args)
+            command = u'"%s" x %s' % (bolt.exe7z, args)
             try:
                 bolt.extract7z(command, archive, progress)
             finally:
@@ -6096,7 +6088,7 @@ class InstallerArchive(Installer):
             file = u''
             apath = dirs['installers'].join(archive)
             with apath.unicodeSafe() as tempArch:
-                ins = listArchiveContents(tempArch.s)
+                ins = bolt.listArchiveContents(tempArch.s)
                 #--Parse
                 text = []
                 for line in ins.splitlines(True):
@@ -6246,7 +6238,8 @@ class InstallerProject(Installer):
                     out.write(u'*desktop.ini\n')
                     out.write(u'--*\\')
             #--Compress
-            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
+                bolt.exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
             try:
                 bolt.compress7z(command, outDir, outFile.tail, projectDir,
                                 progress)
@@ -8509,7 +8502,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order, exe7z
+    global load_order
     from .. import load_order ##: move it from here - also called from restore settings
     load_order = load_order
     initOptions(bashIni)
@@ -8518,7 +8511,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     except IOError:
         deprint('Error creating log file', traceback=True)
     Installer.init_bain_dirs()
-    exe7z = dirs['compiled'].join(exe7z).s
+    bolt.exe7z = dirs['compiled'].join(bolt.exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

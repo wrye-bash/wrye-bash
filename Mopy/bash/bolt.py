@@ -1949,6 +1949,7 @@ def winNewLines(inString):
     return reUnixNewLine.sub(u'\r\n',inString)
 
 # Archives --------------------------------------------------------------------
+exe7z = u'7z.exe'
 regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
 regErrMatch = re.compile(
@@ -2021,6 +2022,13 @@ def wrapPopenOut(command, wrapper, errorMsg):
     returncode = proc.returncode
     if returncode:
         raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
+
+def listArchiveContents(fileName):
+    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
+    ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                startupinfo=startupinfo).communicate()
+    return ins
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------

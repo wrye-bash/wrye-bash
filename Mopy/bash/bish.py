@@ -1507,7 +1507,7 @@ class Archive:
         reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = isDir = 0
 
-        cmd = '"%s" l "%s"' % (bosh.exe7z, self.path.s)
+        cmd = '"%s" l "%s"' % (bolt.exe7z, self.path.s)
         cmd = cmd.encode('mbcs')
         proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
         out = proc.stdout
@@ -1535,7 +1535,8 @@ class Archive:
 
     def extract(self):
         """Extracts specified files from archive."""
-        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (bosh.exe7z,self.path.s)
+        command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (
+            bolt.exe7z, self.path.s)
         command = command.encode('mbcs')
         out = Popen(command, stdout=PIPE, stdin=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')
