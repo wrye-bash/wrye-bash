@@ -37,7 +37,7 @@ import re
 import webbrowser
 from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
-from .. import bosh, bush, balt
+from .. import bass, bolt, bosh, bush, balt
 from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
 from ..belt import InstallerWizard, generateTweakLines
@@ -108,10 +108,10 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def _pack(self, archive, installer, project, release=False):
         #--Archive configuration options
         blockSize = None
-        if archive.cext in bosh.noSolidExts:
+        if archive.cext in bolt.noSolidExts:
             isSolid = False
         else:
-            if not u'-ms=' in bosh.inisettings['7zExtraCompressionArguments']:
+            if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
                                        % archive.s, default=False)
                 if isSolid:
@@ -129,7 +129,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 self.idata[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.idata[archive]
-            pArchive = bosh.dirs['installers'].join(archive)
+            pArchive = bass.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
@@ -150,11 +150,11 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if self.idata.dir.join(archive).isdir():
             self._showWarning(_(u'%s is a directory.') % archive.s)
             return
-        if archive.cext not in bosh.writeExts:
+        if archive.cext not in bolt.writeExts:
             self._showWarning(
                 _(u'The %s extension is unsupported. Using %s instead.') % (
-                archive.cext, bosh.defaultExt))
-            archive = GPath(archive.sroot + bosh.defaultExt).tail
+                    archive.cext, bolt.defaultExt))
+            archive = GPath(archive.sroot + bolt.defaultExt).tail
         if archive in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?') %
                     archive.s, title=self.dialogTitle, default=False): return
@@ -306,7 +306,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         for iniFile in ret.IniEdits:
-            outFile = bosh.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
                     out.write(line+u'\n')
@@ -332,7 +332,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                              _(u'INI Tweaks')): continue
                 if BashFrame.iniList is not None:
                     BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        bosh.dirs['mods'].join(iniFile))
+                        bass.dirs['mods'].join(iniFile))
                 if bosh.iniInfos[outFile.tail] == 20: continue
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
@@ -452,10 +452,10 @@ class Installer_Hide(_InstallerLink):
 
     def Execute(self):
         """Handle selection."""
-        if not bosh.inisettings['SkipHideConfirmation']:
+        if not bass.inisettings['SkipHideConfirmation']:
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
-        destDir = bosh.dirs['modsBash'].join(u'Hidden')
+        destDir = bass.dirs['modsBash'].join(u'Hidden')
         for curName in self.selected:
             newName = destDir.join(curName)
             if newName.exists():
@@ -464,7 +464,7 @@ class Installer_Hide(_InstallerLink):
                 if not self._askYes(message, _(u'Hide Files')): return
             #Move
             with balt.BusyCursor():
-                file = bosh.dirs['installers'].join(curName)
+                file = bass.dirs['installers'].join(curName)
                 file.moveTo(newName)
         self.idata.irefresh(what='ION')
         self.window.RefreshUI()
@@ -538,7 +538,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
             installer.refreshBasic(
-                bosh.dirs['installers'].join(installer.archive), progress=None,
+                bass.dirs['installers'].join(installer.archive), progress=None,
                 recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
             self.idata.irefresh(what='N')
@@ -1031,7 +1031,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if not result: return
                     #--Error checking
                     project = GPath(result).tail
-                    if not project.s or project.cext in bosh.readExts:
+                    if not project.s or project.cext in bolt.readExts:
                         self._showWarning(_(u"%s is not a valid project name.") % result)
                         return
                     if self.idata.dir.join(project).isfile():
@@ -1050,7 +1050,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         if project not in self.idata:
             self.idata[project] = bosh.InstallerProject(project)
         iProject = self.idata[project]
-        pProject = bosh.dirs['installers'].join(project)
+        pProject = bass.dirs['installers'].join(project)
         iProject.project_refreshed = False
         iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
         if iProject.order == -1:
@@ -1097,7 +1097,7 @@ class InstallerProject_Sync(_InstallerLink):
         with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
-            pProject = bosh.dirs['installers'].join(project)
+            pProject = bass.dirs['installers'].join(project)
             installer.project_refreshed = False
             installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
@@ -1117,7 +1117,7 @@ class InstallerProject_Pack(_InstallerLink):
         #--Generate default filename from the project name and the default extension
         project = self.selected[0]
         installer = self.idata[project]
-        archive = bosh.GPath(project.s + bosh.defaultExt)
+        archive = GPath(project.s + bolt.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
             message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
@@ -1147,7 +1147,7 @@ class InstallerConverter_Apply(_InstallerLink):
     @balt.conversation
     def Execute(self):
         #--Generate default filename from BCF filename
-        defaultFilename = self.converter.fullPath.sbody[:-4] + bosh.defaultExt
+        defaultFilename = self.converter.fullPath.sbody[:-4] + bolt.defaultExt
         #--List source archives
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
             u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in
@@ -1175,7 +1175,7 @@ class InstallerConverter_Apply(_InstallerLink):
             iArchive = self.idata[destArchive]
             self.converter.applySettings(iArchive)
             #--Refresh UI
-            pArchive = bosh.dirs['installers'].join(destArchive)
+            pArchive = bass.dirs['installers'].join(destArchive)
             iArchive.project_refreshed = False
             iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
             if iArchive.order == -1:
@@ -1212,7 +1212,7 @@ class InstallerConverter_Create(_InstallerLink):
 
     def Execute(self):
         #--Generate allowable targets
-        readTypes = u'*%s' % u';*'.join(bosh.readExts)
+        readTypes = u'*%s' % u';*'.join(bolt.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
                                     defaultDir=self.idata.dir,
@@ -1220,14 +1220,14 @@ class InstallerConverter_Create(_InstallerLink):
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
-        if not destArchive.s or destArchive.cext not in bosh.readExts:
+        if not destArchive.s or destArchive.cext not in bolt.readExts:
             self._showWarning(_(u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive not in self.idata:
             self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive.s)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
-            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bosh.defaultExt).tail
+            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bolt.defaultExt).tail
         #--List source archives and target archive
         message = _(u'Convert:')
         message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.idata[x].crc,x.s) for x in self.selected))
@@ -1243,10 +1243,11 @@ class InstallerConverter_Create(_InstallerLink):
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
-        if BCFArchive.cext != bosh.defaultExt:
-            self._showWarning(_(u"BCF's only support %s. The %s extension will be discarded.") % (bosh.defaultExt, BCFArchive.cext))
-            BCFArchive = GPath(BCFArchive.sbody + bosh.defaultExt).tail
-        if bosh.dirs['converters'].join(BCFArchive).exists():
+        if BCFArchive.cext != bolt.defaultExt:
+            self._showWarning(_(u"BCF's only support %s. The %s extension will"
+                      u" be discarded.") % (bolt.defaultExt, BCFArchive.cext))
+            BCFArchive = GPath(BCFArchive.sbody + bolt.defaultExt).tail
+        if bass.dirs['converters'].join(BCFArchive).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive.s,
                                 title=self.dialogTitle, default=False): return

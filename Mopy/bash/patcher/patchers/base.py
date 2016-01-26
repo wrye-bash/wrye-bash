@@ -26,7 +26,7 @@
 import struct
 from operator import itemgetter
 # Internal
-from ... import bosh # for bosh.modInfos, dirs
+from ... import bosh, bass # for bosh.modInfos, bass.dirs
 from ...bosh import getPatchesList, reModExt, getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
@@ -39,7 +39,7 @@ from ..patch_files import PatchFile, CBash_PatchFile
 class ListPatcher(AListPatcher,Patcher):
 
     def _patchesList(self):
-        return bosh.dirs['patches'].list()
+        return bass.dirs['patches'].list()
 
     def _patchFile(self):
         return PatchFile

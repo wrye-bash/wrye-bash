@@ -26,7 +26,7 @@ import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
-from .. import bosh, bolt, balt, bush
+from .. import bass, bosh, bolt, balt, bush, parsers
 from ..balt import ItemLink, Link, Links, bitmapButton, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
@@ -95,11 +95,11 @@ class StatusBar_Button(ItemLink):
     # Helper function to get OBSE version
     @property
     def obseVersion(self):
-        if bosh.inisettings['SteamInstall']:
+        if bass.inisettings['SteamInstall']:
             se_exe = bush.game.se.steamExe
         else:
             se_exe = bush.game.se.exe
-        version = bosh.dirs['app'].join(se_exe).strippedVersion
+        version = bass.dirs['app'].join(se_exe).strippedVersion
         return u'.'.join([u'%s'%x for x in version])
 
 #------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ class App_Button(StatusBar_Button):
               image=self.images[idex].GetBitmap())
         if self.obseTip is not None:
             App_Button.obseButtons.append(self)
-            exeObse = bosh.dirs['app'].join(bush.game.se.exe)
+            exeObse = bass.dirs['app'].join(bush.game.se.exe)
             if bosh.settings.get('bash.obse.on',False) and exeObse.exists():
                 self.gButton.SetToolTip(tooltip(self.obseTip))
         return self.gButton
@@ -253,14 +253,14 @@ class App_Button(StatusBar_Button):
                 finally:
                     cwd.setcwd()
             elif self.isExe:
-                exeObse = bosh.dirs['app'].join(bush.game.se.exe)
-                exeLaa = bosh.dirs['app'].join(bush.game.laa.exe)
+                exeObse = bass.dirs['app'].join(bush.game.se.exe)
+                exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
                 if exeLaa.exists() and bosh.settings.get('bash.laa.on',True) and self.exePath.tail == bush.game.exe:
                     # Should use the LAA Launcher
                     exePath = exeLaa
                     args = [exePath.s]
                 elif self.obseArg is not None and bosh.settings.get('bash.obse.on',False) and exeObse.exists():
-                    if bosh.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
+                    if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
                         exePath = self.exePath
                     else:
                         exePath = exeObse
@@ -289,7 +289,8 @@ class App_Button(StatusBar_Button):
                         self.ShowError(werr)
                     try:
                         import win32api
-                        win32api.ShellExecute(0,'runas',exePath.s,u'%s'%self.exeArgs,bosh.dirs['app'].s,1)
+                        win32api.ShellExecute(0,'runas', exePath.s,u'%s' % self.exeArgs,
+                                              bass.dirs['app'].s, 1)
                     except:
                         self.ShowError(werr)
                 except Exception as error:
@@ -341,7 +342,7 @@ class Tooldir_Button(App_Button):
     """Just an App_Button that's path is in bosh.tooldirs
        Use this to automatically set the uid for the App_Button."""
     def __init__(self,toolKey,images,tip,obseTip=None,obseArg=None,workingDir=None,canHide=True):
-        App_Button.__init__(self,bosh.tooldirs[toolKey],images,tip,obseTip,obseArg,workingDir,toolKey,canHide)
+        App_Button.__init__(self, bass.tooldirs[toolKey], images, tip, obseTip, obseArg, workingDir, toolKey, canHide)
 
 #------------------------------------------------------------------------------
 class _Mods_Tes4ViewExpert(BoolLink):
@@ -398,7 +399,7 @@ class App_Tes4View(App_Button):
 
     def IsPresent(self):
         if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
-            testPath = bosh.tooldirs['Tes4ViewPath']
+            testPath = bass.tooldirs['Tes4ViewPath']
             if testPath not in bosh.undefinedPaths and testPath.exists():
                 self.exePath = testPath
                 return True
@@ -454,7 +455,7 @@ class App_BOSS(App_Button):
             extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
         if balt.getKeyState(67): #c - print crc calculations in BOSS log.
             extraArgs.append(u'-c',)
-        if bosh.tooldirs['boss'].version >= (2,0,0,0):
+        if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             extraArgs.append(u'-g%s' % bush.game.fsName,)
         self.extraArgs = tuple(extraArgs)
@@ -475,7 +476,7 @@ class Game_Button(App_Button):
     @property
     def tip(self):
         tip = self._tip + u' ' + self.version if self.version else self._tip
-        if bosh.dirs['app'].join(bush.game.laa.exe).exists() and bosh.settings.get('bash.laa.on',True):
+        if bass.dirs['app'].join(bush.game.laa.exe).exists() and bosh.settings.get('bash.laa.on', True):
             tip += u' + ' + bush.game.laa.name
         return tip
 
@@ -486,7 +487,7 @@ class Game_Button(App_Button):
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + LAA
-        if bosh.dirs['app'].join(bush.game.laa.exe).exists() and bosh.settings.get('bash.laa.on',True):
+        if bass.dirs['app'].join(bush.game.laa.exe).exists() and bosh.settings.get('bash.laa.on', True):
             tip += u' + ' + bush.game.laa.name
         return tip
 
@@ -506,7 +507,7 @@ class TESCS_Button(App_Button):
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
-        path = bosh.dirs['mods'].join(u'obse',u'plugins',u'Construction Set Extender.dll')
+        path = bass.dirs['mods'].join(u'obse', u'plugins', u'Construction Set Extender.dll')
         if path.exists():
             version = path.strippedVersion
             if version != (0,):
@@ -532,7 +533,7 @@ class Obse_Button(_StatefulButton):
     """Obse on/off state button."""
     imageKey = u'checkbox.green.off.%s'
     @property
-    def _present(self): return bosh.dirs['app'].join(bush.game.se.exe).exists()
+    def _present(self): return bass.dirs['app'].join(bush.game.se.exe).exists()
 
     def SetState(self,state=None):
         """Sets state related info. If newState != none, sets to new state first.
@@ -572,7 +573,7 @@ class LAA_Button(_StatefulButton):
     imageKey = u'checkbox.blue.off.%s'
     @property
     def _present(self):
-        return bosh.dirs['app'].join(bush.game.laa.exe).exists()
+        return bass.dirs['app'].join(bush.game.laa.exe).exists()
 
     def SetState(self,state=None):
         """Sets state related info.  If newState != none, sets to new state first.
@@ -627,7 +628,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u"Help File")
 
     def Execute(self):
-        html = bosh.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
+        html = bass.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
         if html.exists():
             html.start()
         else:
@@ -707,9 +708,9 @@ class App_GenPickle(StatusBar_Button):
         #--Source file
         if fileName:
             sorter = lambda a: a.eid
-            loadFactory = bosh.LoadFactory(False, bush.game.records.MreGmst)
+            loadFactory = parsers.LoadFactory(False, bush.game.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
-            modFile = bosh.ModFile(modInfo, loadFactory)
+            modFile = parsers.ModFile(modInfo, loadFactory)
             modFile.load(True)
             for gmst in sorted(modFile.GMST.records, key=sorter):
                 print gmst.eid, gmst.value

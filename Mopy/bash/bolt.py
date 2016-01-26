@@ -1949,6 +1949,13 @@ def winNewLines(inString):
     return reUnixNewLine.sub(u'\r\n',inString)
 
 # Archives --------------------------------------------------------------------
+exe7z = u'7z.exe'
+defaultExt = u'.7z'
+writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
+readExts = {u'.rar', u'.7z.001', u'.001'}
+readExts.update(set(writeExts))
+noSolidExts = {u'.zip'}
+reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
 regErrMatch = re.compile(
@@ -2021,6 +2028,87 @@ def wrapPopenOut(command, wrapper, errorMsg):
     returncode = proc.returncode
     if returncode:
         raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
+
+def listArchiveContents(fileName):
+    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
+    ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                startupinfo=startupinfo).communicate()
+    return ins
+
+#  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
+def compressionSettings(archive, blockSize, isSolid):
+    archiveType = writeExts.get(archive.cext)
+    if not archiveType:
+        #--Always fall back to using the defaultExt
+        archive = GPath(archive.sbody + defaultExt).tail
+        archiveType = writeExts.get(archive.cext)
+    if archive.cext in noSolidExts: # zip
+        solid = u''
+    else:
+        if isSolid:
+            if blockSize:
+                solid = u'-ms=on -ms=%dm' % blockSize
+            else:
+                solid = u'-ms=on'
+        else:
+            solid = u'-ms=off'
+    userArgs = bass.inisettings['7zExtraCompressionArguments']
+    if userArgs:
+        if reSolid.search(userArgs):
+            if not solid: # zip, will blow if ms=XXX is passed in
+                old = userArgs
+                userArgs = reSolid.sub(u'', userArgs).strip()
+                if old != userArgs: deprint(
+                    archive.s + u': 7zExtraCompressionArguments ini option '
+                                u'"' + old + u'" -> "' + userArgs + u'"')
+            solid = userArgs
+        else:
+            solid += userArgs
+    return archive, archiveType, solid
+
+def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
+                    archiveType=u'7z'): # WIP - note solid on by default (7z)
+    return [exe7z, u'a', destDir.join(destArchive).temp.s,
+            u'-t%s' % archiveType] + solid.split() + [
+            u'-y', u'-r', # quiet, recursive
+            u'-o"%s"' % destDir.s,
+            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
+            u"%s\\*" % srcFolder.s]
+
+def extractCommand(archivePath, outDirPath):
+    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
+        exe7z, archivePath.s, outDirPath.s)
+    return command
+
+def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
+    """Count all regular files in srcArch (or only the subset in
+    listFilePath)."""
+    # http://stackoverflow.com/q/31124670/281545
+    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
+    if listFilePath: command += [u'@%s' % listFilePath.s]
+    if recurse: command += [u'-r']
+    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                            stdin=subprocess.PIPE if listFilePath else None,
+                            startupinfo=startupinfo, bufsize=1)
+    errorLine = line = u''
+    with proc.stdout as out:
+        for line in iter(out.readline, b''): # consider io.TextIOWrapper
+            line = unicode(line, 'utf8')
+            if regErrMatch(line):
+                errorLine = line + u''.join(out)
+                break
+    returncode = proc.wait()
+    msg = u'%s: Listing failed\n' % srcArch.s
+    if returncode or errorLine:
+        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
+    elif not line: # should not happen
+        msg += u'Empty output'
+    else: msg = u''
+    if msg: raise StateError(msg) # consider using CalledProcessError
+    # number of files is reported in the last line - example:
+    #                                3534900       325332  75 files, 29 folders
+    return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------

@@ -28,7 +28,8 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
-import locale; locale.setlocale(locale.LC_ALL,u'')
+import locale
+locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
 import time
@@ -44,37 +45,25 @@ import string
 import struct
 import sys
 from operator import attrgetter
-from subprocess import Popen, PIPE
 from functools import wraps
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
+from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
 from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
+from ..bolt import defaultExt, compressionSettings, countFilesInArchive, readExts
 # cint
-from _ctypes import POINTER
-from ctypes import cast, c_ulong
 from ..cint import ObCollection, CBash, ObBaseRecord
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
-from ..record_groups import MobWorlds, MobDials, MobICells, \
-    MobObjects, MobBase
-
-startupinfo = bolt.startupinfo
+from ..parsers import LoadFactory, ModFile
 
 #--Settings
-dirs = {} #--app, user, mods, saves, userApp
-tooldirs = {}
-inisettings = {}
-defaultExt = u'.7z'
-writeExts = dict({u'.7z':u'7z',u'.zip':u'zip'})
-readExts = {u'.rar', u'.7z.001', u'.001'}
-readExts.update(set(writeExts))
-noSolidExts = {u'.zip'}
 settings = None
 
 allTags = bush.game.allTags
@@ -87,9 +76,6 @@ reOblivion = re.compile(
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
-
-#--Unicode
-exe7z = u'7z.exe' # this should be moved to bolt (or bass ?) but still set here
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
@@ -117,12 +103,7 @@ bsaInfos = None #--BSAInfos singleton
 screensData = None #--ScreensData singleton
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 lootDb = None #--LootDb singleton
-load_order = None #--can't import yet as I need bosh.dirs to be initialized
-
-def listArchiveContents(fileName):
-    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
-    ins, err = Popen(command, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).communicate()
-    return ins
+load_order = None #--can't import yet as I need bass.dirs to be initialized
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -134,377 +115,12 @@ reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reBSAExt  = re.compile(ur'\.bsa(.ghost)?$',re.I|re.U)
-reEssExt  = re.compile(ur'\.ess$',re.I|re.U)
 reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.(es|fo)[rs])$',re.I|re.U)
-reCsvExt  = re.compile(ur'\.csv$',re.I|re.U)
 reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
-reQuoted  = re.compile(ur'^"(.*)"$',re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 
-# Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MasterMapError(BoltError):
-    """Attempt to map a fid when mapping does not exist."""
-    def __init__(self,modIndex):
-        BoltError.__init__(self,u'No valid mapping for mod index 0x%02X' % modIndex)
-
-#------------------------------------------------------------------------------
-class MasterMap:
-    """Serves as a map between two sets of masters."""
-    def __init__(self,inMasters,outMasters):
-        """Initiation."""
-        map = {}
-        outMastersIndex = outMasters.index
-        for index,master in enumerate(inMasters):
-            if master in outMasters:
-                map[index] = outMastersIndex(master)
-            else:
-                map[index] = -1
-        self.map = map
-
-    def __call__(self,fid,default=-1):
-        """Maps a fid from first set of masters to second. If no mapping
-        is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not fid: return fid
-        inIndex = int(fid >> 24)
-        outIndex = self.map.get(inIndex,-2)
-        if outIndex >= 0:
-            return (long(outIndex) << 24 ) | (fid & 0xFFFFFFL)
-        elif default != -1:
-            return default
-        else:
-            raise MasterMapError(inIndex)
-
-#------------------------------------------------------------------------------
-class MasterSet(set):
-    """Set of master names."""
-
-    def add(self,element):
-        """Add an element it's not empty. Special handling for tuple."""
-        if isinstance(element,tuple):
-            set.add(self,element[0])
-        elif element:
-            set.add(self,element)
-
-    def getOrdered(self):
-        """Returns masters in proper load order."""
-        return modInfos.getOrdered(self)
-
-#------------------------------------------------------------------------------
-class LoadFactory:
-    """Factory for mod representation objects."""
-    def __init__(self,keepAll,*recClasses):
-        self.keepAll = keepAll
-        self.recTypes = set()
-        self.topTypes = set()
-        self.type_class = {}
-        self.cellType_class = {}
-        addClass = self.addClass
-        for recClass in recClasses:
-            addClass(recClass)
-
-    def addClass(self,recClass):
-        """Adds specified class."""
-        cellTypes = ('WRLD','ROAD','CELL','REFR','ACHR','ACRE','PGRD','LAND')
-        if isinstance(recClass,basestring):
-            recType = recClass
-            recClass = MreRecord
-        else:
-            recType = recClass.classType
-        #--Don't replace complex class with default (MreRecord) class
-        if recType in self.type_class and recClass == MreRecord:
-            return
-        self.recTypes.add(recType)
-        self.type_class[recType] = recClass
-        #--Top type
-        if recType in cellTypes:
-            topAdd = self.topTypes.add
-            topAdd('CELL')
-            topAdd('WRLD')
-            if self.keepAll:
-                setterDefault = self.type_class.setdefault
-                for type in cellTypes:
-                    setterDefault(type,MreRecord)
-        elif recType == 'INFO':
-            self.topTypes.add('DIAL')
-        else:
-            self.topTypes.add(recType)
-
-    def getRecClass(self,type):
-        """Returns class for record type or None."""
-        default = (self.keepAll and MreRecord) or None
-        return self.type_class.get(type,default)
-
-    def getCellTypeClass(self):
-        """Returns type_class dictionary for cell objects."""
-        if not self.cellType_class:
-            types = ('REFR','ACHR','ACRE','PGRD','LAND','CELL','ROAD')
-            getterRecClass = self.getRecClass
-            self.cellType_class.update((x,getterRecClass(x)) for x in types)
-        return self.cellType_class
-
-    def getUnpackCellBlocks(self,topType):
-        """Returns whether cell blocks should be unpacked or not. Only relevant
-        if CELL and WRLD top types are expanded."""
-        return (
-            self.keepAll or
-            (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
-            (topType == 'WRLD' and 'LAND' in self.recTypes))
-
-    def getTopClass(self,type):
-        """Returns top block class for top block type, or None."""
-        if type in self.topTypes:
-            if   type == 'DIAL': return MobDials
-            elif type == 'CELL': return MobICells
-            elif type == 'WRLD': return MobWorlds
-            else: return MobObjects
-        elif self.keepAll:
-            return MobBase
-        else:
-            return None
-
-#------------------------------------------------------------------------------
-class ModFile:
-    """TES4 file representation."""
-    def __init__(self, fileInfo,loadFactory=None):
-        self.fileInfo = fileInfo
-        self.loadFactory = loadFactory or LoadFactory(True)
-        #--Variables to load
-        self.tes4 = bush.game.MreHeader(ModReader.recHeader())
-        self.tes4.setChanged()
-        self.strings = bolt.StringTable()
-        self.tops = {} #--Top groups.
-        self.topsSkipped = set() #--Types skipped
-        self.longFids = False
-        #--Cached data
-        self.mgef_school = None
-        self.mgef_name = None
-        self.hostileEffects = None
-
-    def __getattr__(self,topType):
-        """Returns top block of specified topType, creating it, if necessary."""
-        if topType in self.tops:
-            return self.tops[topType]
-        elif topType in bush.game.esp.topTypes:
-            topClass = self.loadFactory.getTopClass(topType)
-            self.tops[topType] = topClass(ModReader.recHeader('GRUP',0,topType,0,0),self.loadFactory)
-            self.tops[topType].setChanged()
-            return self.tops[topType]
-        elif topType == '__repr__':
-            raise AttributeError
-        else:
-            raise ArgumentError(u'Invalid top group type: '+topType)
-
-    def load(self,unpack=False,progress=None,loadStrings=True):
-        """Load file."""
-        progress = progress or bolt.Progress()
-        progress.setFull(1.0)
-        #--Header
-        with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
-            header = ins.unpackRecHeader()
-            self.tes4 = bush.game.MreHeader(header,ins,True)
-            #--Strings
-            self.strings.clear()
-            if unpack and self.tes4.flags1[7] and loadStrings:
-                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
-                stringsPaths = self.fileInfo.getStringsPaths(lang)
-                stringsProgress.setFull(max(len(stringsPaths),1))
-                for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
-                    stringsProgress(i)
-                ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.1,1.0)
-            else:
-                ins.setStringTable(None)
-                subProgress = progress
-            #--Raw data read
-            subProgress.setFull(ins.size)
-            insAtEnd = ins.atEnd
-            insRecHeader = ins.unpackRecHeader
-            selfGetTopClass = self.loadFactory.getTopClass
-            selfTopsSkipAdd = self.topsSkipped.add
-            insSeek = ins.seek
-            insTell = ins.tell
-            selfLoadFactory = self.loadFactory
-            selfTops = self.tops
-            while not insAtEnd():
-                #--Get record info and handle it
-                header = insRecHeader()
-                type = header.recType
-                if type != 'GRUP' or header.groupType != 0:
-                    raise ModError(self.fileInfo.name,u'Improperly grouped file.')
-                label,size = header.label,header.size
-                topClass = selfGetTopClass(label)
-                try:
-                    if topClass:
-                        selfTops[label] = topClass(header,selfLoadFactory)
-                        selfTops[label].load(ins,unpack and (topClass != MobBase))
-                    else:
-                        selfTopsSkipAdd(label)
-                        insSeek(size-header.__class__.size,1,type + '.' + label)
-                except:
-                    print u'Error in',self.fileInfo.name.s
-                    deprint(u' ',traceback=True)
-                    break
-                subProgress(insTell())
-        #--Done Reading
-
-    def load_unpack(self):
-        """Unpacks blocks."""
-        factoryTops = self.loadFactory.topTypes
-        selfTops = self.tops
-        for type in bush.game.esp.topTypes:
-            if type in selfTops and type in factoryTops:
-                selfTops[type].load(None,True)
-
-    def load_UI(self):
-        """Convenience function. Loads, then unpacks, then indexes."""
-        self.load()
-        self.load_unpack()
-        #self.load_index()
-
-    def askSave(self,hasChanged=True):
-        """CLI command. If hasSaved, will ask if user wants to save the file,
-        and then save if the answer is yes. If hasSaved == False, then does nothing."""
-        if not hasChanged: return
-        fileName = self.fileInfo.name
-        if re.match(ur'\s*[yY]',raw_input(u'\nSave changes to '+fileName.s+u' [y\n]?: '),flags=re.U):
-            self.safeSave()
-            print fileName.s,u'saved.'
-        else:
-            print fileName.s,u'not saved.'
-
-    def safeSave(self):
-        """Save data to file safely.  Works under UAC."""
-        self.fileInfo.tempBackup()
-        filePath = self.fileInfo.getPath()
-        self.save(filePath.temp)
-        filePath.temp.mtime = self.fileInfo.mtime
-        env.shellMove(filePath.temp, filePath, parent=None)
-        self.fileInfo.extras.clear()
-
-    def save(self,outPath=None):
-        """Save data to file.
-        outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
-        outPath = outPath or self.fileInfo.getPath()
-        with ModWriter(outPath.open('wb')) as out:
-            #--Mod Record
-            self.tes4.setChanged()
-            self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
-            self.tes4.getSize()
-            self.tes4.dump(out)
-            #--Blocks
-            selfTops = self.tops
-            for type in bush.game.esp.topTypes:
-                if type in selfTops:
-                    selfTops[type].dump(out)
-
-    def getLongMapper(self):
-        """Returns a mapping function to map short fids to long fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        maxMaster = len(masters)-1
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid,tuple): return fid
-            mod,object = int(fid >> 24),int(fid & 0xFFFFFFL)
-            return masters[min(mod,maxMaster)],object
-        return mapper
-
-    def getShortMapper(self):
-        """Returns a mapping function to map long fids to short fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        indices = dict([(name,index) for index,name in enumerate(masters)])
-        gLong = self.getLongMapper()
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, (long, int)):
-                fid = gLong(fid)
-            modName,object = fid
-            mod = indices[modName]
-            return (long(mod) << 24 ) | long(object)
-        return mapper
-
-    def convertToLongFids(self,types=None):
-        """Convert fids to long format (modname,objectindex)."""
-        mapper = self.getLongMapper()
-        if types is None: types = self.tops.keys()
-        selfTops = self.tops
-        for type in types:
-            if type in selfTops:
-                selfTops[type].convertFids(mapper,True)
-        #--Done
-        self.longFids = True
-
-    def convertToShortFids(self):
-        """Convert fids to short (numeric) format."""
-        mapper = self.getShortMapper()
-        selfTops = self.tops
-        for type in selfTops:
-            selfTops[type].convertFids(mapper,False)
-        #--Done
-        self.longFids = False
-
-    def getMastersUsed(self):
-        """Updates set of master names according to masters actually used."""
-        if not self.longFids: raise StateError(u"ModFile fids not in long form.")
-        for fname in bush.game.masterFiles:
-            if dirs['mods'].join(fname).exists():
-                masters = MasterSet([GPath(fname)])
-                break
-        for block in self.tops.values():
-            block.updateMasters(masters)
-        return masters.getOrdered()
-
-    def getMgefSchool(self,refresh=False):
-        """Return a dictionary mapping magic effect code to magic effect school.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_school and not refresh:
-            return self.mgef_school
-        mgef_school = self.mgef_school = bush.mgef_school.copy()
-        if 'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
-        return mgef_school
-
-    def getMgefHostiles(self,refresh=False):
-        """Return a set of hostile magic effect codes.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.hostileEffects and not refresh:
-            return self.hostileEffects
-        hostileEffects = self.hostileEffects = bush.hostileEffects.copy()
-        if 'MGEF' in self.tops:
-            hostile = set()
-            nonhostile = set()
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    if record.flags.hostile:
-                        hostile.add(record.eid)
-                        hostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-                    else:
-                        nonhostile.add(record.eid)
-                        nonhostile.add(cast(record.eid, POINTER(c_ulong)).contents.value)
-            hostileEffects = (hostileEffects - nonhostile) | hostile
-        return hostileEffects
-
-    def getMgefName(self,refresh=False):
-        """Return a dictionary mapping magic effect code to magic effect name.
-        This is intended for use with the patch file when it records for all magic effects.
-        If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_name and not refresh:
-            return self.mgef_name
-        mgef_name = self.mgef_name = bush.mgef_name.copy()
-        if 'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
-                if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_name[record.eid] = record.full
-        return mgef_name
-
 # Save I/O --------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class SaveFileError(FileError):
@@ -1854,7 +1470,7 @@ class BsaFile:
             (u'Oblivion - Meshes.bsa',1138575220),
             (u'Oblivion - Misc.bsa',1139433736),
             (u'Oblivion - Sounds.bsa',1138660560),
-            (inisettings['OblivionTexturesBSAName'].stail,1138162634),
+            (inisettings['OblivionTexturesBSAName'].stail, 1138162634),
             (u'Oblivion - Voices1.bsa',1138162934),
             (u'Oblivion - Voices2.bsa',1138166742),
             )
@@ -2484,13 +2100,13 @@ class OblivionIni(IniFile):
     def __init__(self,name):
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
-            IniFile.__init__(self,dirs['app'].join(name),u'General')
+            IniFile.__init__(self, dirs['app'].join(name), u'General')
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self,dirs['saveBase'].join(name),u'General')
+        IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
 
     def ensureExists(self):
         """Ensures that Oblivion.ini file exists. Copies from default
@@ -2533,7 +2149,7 @@ class OblivionIni(IniFile):
         if doRedirect == self.getBsaRedirection():
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs['templates'].join(bush.game.fsName,u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs['templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
@@ -3636,7 +3252,7 @@ class FileInfos(DataDict):
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
     def __init__(self):
-        FileInfos.__init__(self, dirs['tweaks'],INIInfo, dirs['defaultTweaks'])
+        FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
     def rightFileType(self,fileName):
@@ -3659,7 +3275,7 @@ class ModInfos(FileInfos):
     # Load Order stuff is almost all handled in the Plugins class again
     #--------------------------------------------------------------------------
     def __init__(self):
-        FileInfos.__init__(self,dirs['mods'],ModInfo)
+        FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--MTime resetting
         self.mtimes = self.table.getColumn('mtime')
         self.mtimesReset = [] #--Files whose mtimes have been reset.
@@ -4559,7 +4175,7 @@ class SaveInfos(FileInfos):
         self.iniMTime = 0
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
-        FileInfos.__init__(self,dirs['saveBase'].join(self.localSave),SaveInfo)
+        FileInfos.__init__(self, dirs['saveBase'].join(self.localSave), SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
@@ -6180,83 +5796,6 @@ class Installer(object):
         raise AbstractError
 
 #------------------------------------------------------------------------------
-#  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
-reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
-def compressionSettings(archive, blockSize, isSolid):
-    archiveType = writeExts.get(archive.cext)
-    if not archiveType:
-        #--Always fall back to using the defaultExt
-        archive = GPath(archive.sbody + defaultExt).tail
-        archiveType = writeExts.get(archive.cext)
-    if archive.cext in noSolidExts: # zip
-        solid = u''
-    else:
-        if isSolid:
-            if blockSize:
-                solid = u'-ms=on -ms=%dm' % blockSize
-            else:
-                solid = u'-ms=on'
-        else:
-            solid = u'-ms=off'
-    userArgs = inisettings['7zExtraCompressionArguments']
-    if userArgs:
-        if reSolid.search(userArgs):
-            if not solid: # zip, will blow if ms=XXX is passed in
-                old = userArgs
-                userArgs = reSolid.sub(u'', userArgs).strip()
-                if old != userArgs: deprint(
-                    archive.s + u': 7zExtraCompressionArguments ini option '
-                                u'"' + old + u'" -> "' + userArgs + u'"')
-            solid = userArgs
-        else:
-            solid += userArgs
-    return archive, archiveType, solid
-
-def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
-                    archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [exe7z, u'a', destDir.join(destArchive).temp.s,
-            u'-t%s' % archiveType] + solid.split() + [
-            u'-y', u'-r', # quiet, recursive
-            u'-o"%s"' % destDir.s,
-            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
-            u"%s\\*" % srcFolder.s]
-
-def extractCommand(archivePath, outDirPath):
-    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
-        exe7z, archivePath.s, outDirPath.s)
-    return command
-
-regErrMatch = re.compile(u'Error:', re.U).match
-
-def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
-    """Count all regular files in srcArch (or only the subset in
-    listFilePath)."""
-    # http://stackoverflow.com/q/31124670/281545
-    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
-    if listFilePath: command += [u'@%s' % listFilePath.s]
-    if recurse: command += [u'-r']
-    proc = Popen(command, stdout=PIPE, stdin=PIPE if listFilePath else None,
-                 startupinfo=startupinfo, bufsize=1)
-    errorLine = line = u''
-    with proc.stdout as out:
-        for line in iter(out.readline, b''): # consider io.TextIOWrapper
-            line = unicode(line, 'utf8')
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
-    returncode = proc.wait()
-    msg = u'%s: Listing failed\n' % srcArch.s
-    if returncode or errorLine:
-        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
-    elif not line: # should not happen
-        msg += u'Empty output'
-    else: msg = u''
-    if msg: raise StateError(msg) # consider using CalledProcessError
-    # number of files is reported in the last line - example:
-    #                                3534900       325332  75 files, 29 folders
-    return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
-
-#------------------------------------------------------------------------------
 class InstallerMarker(Installer):
     """Represents a marker installer entry.
     Currently only used for the '==Last==' marker"""
@@ -6318,7 +5857,7 @@ class InstallerArchive(Installer):
         file = size = crc = isdir = 0
         self.isSolid = False
         with archive.unicodeSafe() as tempArch:
-            ins = listArchiveContents(tempArch.s)
+            ins = bolt.listArchiveContents(tempArch.s)
             try:
                 cumCRC = 0
                 for line in ins.splitlines(True):
@@ -6364,7 +5903,7 @@ class InstallerArchive(Installer):
             args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
                 arch.s, self.getTempDir().s, self.tempList.s)
             if recurse: args += u' -r'
-            command = u'"%s" x %s' % (exe7z, args)
+            command = u'"%s" x %s' % (bolt.exe7z, args)
             try:
                 bolt.extract7z(command, archive, progress)
             finally:
@@ -6465,7 +6004,7 @@ class InstallerArchive(Installer):
             file = u''
             apath = dirs['installers'].join(archive)
             with apath.unicodeSafe() as tempArch:
-                ins = listArchiveContents(tempArch.s)
+                ins = bolt.listArchiveContents(tempArch.s)
                 #--Parse
                 text = []
                 for line in ins.splitlines(True):
@@ -6615,7 +6154,8 @@ class InstallerProject(Installer):
                     out.write(u'*desktop.ini\n')
                     out.write(u'--*\\')
             #--Compress
-            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
+                bolt.exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
             try:
                 bolt.compress7z(command, outDir, outFile.tail, projectDir,
                                 progress)
@@ -6884,7 +6424,7 @@ class InstallersData(DataDict):
             Installer.rmTempDir()
             installer.unpackToTemp(name,[installer.hasBCF],progress)
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
-            bcfFile = dirs['converters'].join(u'temp-'+srcBcfFile.stail)
+            bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             Installer.rmTempDir()
             #--Create the converter, apply it
@@ -7424,7 +6964,8 @@ class InstallersData(DataDict):
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
+                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
+                    dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
@@ -8183,8 +7724,8 @@ class SaveSpells:
             self.allSpells.update(modInfo.extras['bash.spellList'])
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False,MreRecord.type_class['SPEL'])
-        modFile = ModFile(modInfo,loadFactory)
+        loadFactory = LoadFactory(False, MreRecord.type_class['SPEL'])
+        modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:
             deprint(_(u'skipped mod due to read error (%s)') % err)
@@ -8331,7 +7872,7 @@ def isPBashMergeable(modInfo,verbose=True):
         reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
     #--Load test
     mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
-    modFile = ModFile(modInfo,LoadFactory(False,*mergeTypes))
+    modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
     try:
         modFile.load(True,loadStrings=False)
     except ModError as error:
@@ -8558,13 +8099,13 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     dirs['app'] = bush.gamePath
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',bush.game.fsName)
+    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
-    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks',bush.game.fsName)
+    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks', bush.game.fsName)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
-    dirs['saveBase'] = personal.join(u'My Games',bush.game.fsName)
+    dirs['saveBase'] = personal.join(u'My Games', bush.game.fsName)
 
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni,localAppData)
@@ -8580,7 +8121,7 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
             # Set the save game folder to the Oblivion directory
             dirs['saveBase'] = dirs['app']
             # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath',u'Data\\'))
+            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath', u'Data\\'))
             # these are relative to the mods path so they must be updated too
             dirs['patches'] = dirs['mods'].join(u'Bash Patches')
             dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
@@ -8593,11 +8134,12 @@ def initDirs(bashIni, personal, localAppData, oblivionPath):
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)
     dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
-        dirs['modsBash'], dirs['app'].join(u'Data',u'Bash'),
+        dirs['modsBash'], dirs['app'].join(u'Data', u'Bash'),
         modsBashSrc, u'Relative Path')
 
     dirs['installers'] = oblivionMods.join(u'Bash Installers')
-    dirs['installers'] = getLegacyPath(dirs['installers'],dirs['app'].join(u'Installers'))
+    dirs['installers'] = getLegacyPath(dirs['installers'],
+                                       dirs['app'].join(u'Installers'))
 
     dirs['bainData'], bainDataSrc = getBainDataPath(bashIni)
 
@@ -8687,7 +8229,7 @@ def initDefaultTools():
 
     # BOSS can be in any number of places.
     # Detect locally installed (into game folder) BOSS
-    if dirs['app'].join(u'BOSS',u'BOSS.exe').exists():
+    if dirs['app'].join(u'BOSS', u'BOSS.exe').exists():
         tooldirs['boss'] = dirs['app'].join(u'BOSS').join(u'BOSS.exe')
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
@@ -8710,7 +8252,7 @@ def initDefaultTools():
                 continue
             break
 
-    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools',u'TES4Files.exe')
+    tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
@@ -8737,8 +8279,8 @@ def initDefaultTools():
     tooldirs['Milkshape3D'] = pathlist(u'MilkShape 3D 1.8.4',u'ms3d.exe')
     tooldirs['Wings3D'] = pathlist(u'wings3d_1.2',u'Wings3D.exe')
     tooldirs['BSACMD'] = pathlist(u'BSACommander',u'bsacmd.exe')
-    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools',u'Interactive Map of Cyrodiil and Shivering Isles 3.52',u'Mapa v 3.52.exe')
-    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools',u'Oblivion Mod List Generator',u'Oblivion Mod List Generator.exe')
+    tooldirs['MAP'] = dirs['app'].join(u'Modding Tools', u'Interactive Map of Cyrodiil and Shivering Isles 3.52', u'Mapa v 3.52.exe')
+    tooldirs['OBMLG'] = dirs['app'].join(u'Modding Tools', u'Oblivion Mod List Generator', u'Oblivion Mod List Generator.exe')
     tooldirs['OBFEL'] = pathlist(u'Oblivion Face Exchange Lite',u'OblivionFaceExchangeLite.exe')
     tooldirs['ArtOfIllusion'] = pathlist(u'ArtOfIllusion',u'Art of Illusion.exe')
     tooldirs['ABCAmberAudioConverter'] = pathlist(u'ABC Amber Audio Converter',u'abcaudio.exe')
@@ -8770,7 +8312,7 @@ def initDefaultTools():
     tooldirs['EggTranslator'] = pathlist(u'Egg Translator',u'EggTranslator.exe')
     tooldirs['Sculptris'] = pathlist(u'sculptris',u'Sculptris.exe')
     tooldirs['Mudbox'] = pathlist(u'Autodesk',u'Mudbox2011',u'mudbox.exe')
-    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools',u'Tabula',u'Tabula.exe')
+    tooldirs['Tabula'] = dirs['app'].join(u'Modding Tools', u'Tabula', u'Tabula.exe')
     tooldirs['MyPaint'] = pathlist(u'MyPaint',u'mypaint.exe')
     tooldirs['Pixia'] = pathlist(u'Pixia',u'pixia.exe')
     tooldirs['DeepPaint'] = pathlist(u'Right Hemisphere',u'Deep Paint',u'DeepPaint.exe')
@@ -8795,7 +8337,7 @@ def initDefaultSettings():
         inisettings['SteamInstall'] = True
     else:
         inisettings['SteamInstall'] = False
-    inisettings['ScriptFileExt']=u'.txt'
+    inisettings['ScriptFileExt'] = u'.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')
     inisettings['ResetBSATimestamps'] = True
@@ -8823,7 +8365,7 @@ def initOptions(bashIni):
 
     defaultOptions = {}
     type_key = {str:u's',unicode:u's',list:u's',int:u'i',bool:u'b',bolt.Path:u's'}
-    allOptions = [tooldirs,inisettings]
+    allOptions = [tooldirs, inisettings]
     unknownSettings = {}
     for settingsDict in allOptions:
         for defaultKey,defaultValue in settingsDict.iteritems():
@@ -8876,7 +8418,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order, exe7z
+    global load_order
     from .. import load_order ##: move it from here - also called from restore settings
     load_order = load_order
     initOptions(bashIni)
@@ -8885,7 +8427,7 @@ def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
     except IOError:
         deprint('Error creating log file', traceback=True)
     Installer.init_bain_dirs()
-    exe7z = dirs['compiled'].join(exe7z).s
+    bolt.exe7z = dirs['compiled'].join(bolt.exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

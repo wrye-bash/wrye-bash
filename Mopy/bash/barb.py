@@ -49,7 +49,7 @@ class BaseBackupSettings:
         if path is not None and path.ext == u'' and not path.exists():
             path = None
         if path is None: path = bosh.settings['bash.backupPath']
-        if path is None: path = bosh.dirs['modsBash']
+        if path is None: path = bass.dirs['modsBash']
         self.quit = do_quit
         self._dir = path
         self.archive = None
@@ -97,7 +97,7 @@ class BackupSettings(BaseBackupSettings):
 
     def __init__(self, parent=None, path=None, do_quit=False, backup_images=None):
         BaseBackupSettings.__init__(self, parent, path, do_quit)
-        game, dirs = bush.game.fsName, bosh.dirs
+        game, dirs = bush.game.fsName, bass.dirs
         for path, name, tmpdir in (
               (dirs['mopy'],                      u'bash.ini',             game+u'\\Mopy'),
               (dirs['mods'].join(u'Bash'),        u'Table',                game+u'\\Data\\Bash'),
@@ -187,7 +187,7 @@ class BackupSettings(BaseBackupSettings):
                 cPickle.dump(self.verApp, out, -1)
             # create the backup archive in 7z format WITH solid compression
             # may raise StateError
-            command = bosh.compressCommand(self.archive, self._dir, self.tmp)
+            command = bolt.compressCommand(self.archive, self._dir, self.tmp)
             bolt.compress7z(command, self._dir, self.archive, self.tmp)
             bosh.settings['bash.backupPath'] = self._dir
         self.InfoSuccess()
@@ -259,7 +259,7 @@ class RestoreSettings(BaseBackupSettings):
         BaseBackupSettings.__init__(self, parent, path, do_quit)
         if not self.PromptFile():
             raise BackupCancelled()
-        command = bosh.extractCommand(self._dir.join(self.archive), self.tmp)
+        command = bolt.extractCommand(self._dir.join(self.archive), self.tmp)
         bolt.extract7z(command, self._dir.join(self.archive))
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
@@ -276,8 +276,8 @@ class RestoreSettings(BaseBackupSettings):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._dir.join(self.archive).s)
 
-        # reinitialize bosh.dirs using the backup copy of bash.ini if it exists
-        game, dirs = bush.game.fsName, bosh.dirs
+        # reinitialize bass.dirs using the backup copy of bash.ini if it exists
+        game, dirs = bush.game.fsName, bass.dirs
         tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
         opts, args = bash.opts, bash.extra
 

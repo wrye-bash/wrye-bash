@@ -420,7 +420,7 @@ def main():
                           'gameName': bush.game.displayName}
             uacRestart = balt.ask_uac_restart(message,
                                               title=_(u'UAC Protection'),
-                                              mopy=bosh.dirs['mopy'])
+                                              mopy=bass.dirs['mopy'])
         elif opts.uac:
             uacRestart = True
         if uacRestart:

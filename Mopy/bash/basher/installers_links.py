@@ -28,7 +28,7 @@ points to the InstallersList singleton."""
 import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
-from .. import bosh, balt, bush
+from .. import bass, bosh, balt, bush
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes
 from ..bass import Resources
 
@@ -161,7 +161,7 @@ class Installers_MonitorInstall(Installers_Link):
                                     _(u'External Installation'))
         if not projectName:
             return
-        path = bosh.dirs['installers'].join(projectName).root
+        path = bass.dirs['installers'].join(projectName).root
         if path.exists():
             num = 2
             tmpPath = path + u' (%i)' % num
@@ -175,7 +175,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh Installers - so we can manipulate the InstallerProject item
         self.iPanel.ShowPanel()
         # Update the status of the installer (as installer last)
-        path = path.relpath(bosh.dirs['installers'])
+        path = path.relpath(bass.dirs['installers'])
         ui_refresh = [False, False]
         try:
             self.idata.bain_install([path], ui_refresh, last=True,
@@ -387,7 +387,8 @@ class Installers_BsaRedirection(AppendableLink, BoolLink):
         """Handle selection."""
         super(Installers_BsaRedirection, self).Execute()
         if bosh.settings[self.key]:
-            bsaPath = bosh.modInfos.dir.join(bosh.inisettings['OblivionTexturesBSAName'])
+            bsaPath = bosh.modInfos.dir.join(
+                    bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()

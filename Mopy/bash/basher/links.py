@@ -29,7 +29,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
-from .. import balt, bosh, bush
+from .. import bass, balt, bush
 from ..cint import CBash
 from ..balt import Image, MenuLink, SeparatorLink
 from ..env import init_app_links
@@ -48,9 +48,23 @@ from .mod_links import *
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
-    dirImages = bosh.dirs['images']
+    dirImages = bass.dirs['images']
     def imageList(template):
         return [Image(dirImages.join(template % i)) for i in (16,24,32)]
+    def _init_tool_buttons(): # tooldirs must have been initialized
+        return (((bass.tooldirs['OblivionBookCreatorPath'],
+                  bass.inisettings['OblivionBookCreatorJavaArg']),
+                 imageList(u'tools/oblivionbookcreator%s.png'),
+                 _(u"Launch Oblivion Book Creator"),
+                 {'uid': u'OblivionBookCreator'}),
+                ((bass.tooldirs['Tes4GeckoPath'],
+                  bass.inisettings['Tes4GeckoJavaArg']),
+                 imageList(u'tools/tes4gecko%s.png'),
+                 _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
+                ((bass.tooldirs['Tes5GeckoPath']),
+                imageList(u'tools/tesvgecko%s.png'),
+                _(u"Launch TesVGecko"), {'uid': u'TesVGecko'}),
+        )
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
     BashStatusBar.buttons.append(obseButton)
@@ -59,7 +73,7 @@ def InitStatusBar():
     BashStatusBar.buttons.append(AutoQuit_Button(uid=u'AutoQuit'))
     BashStatusBar.buttons.append( # Game
         Game_Button(
-            exePathArgs=bosh.dirs['app'].join(bush.game.exe),
+            exePathArgs=bass.dirs['app'].join(bush.game.exe),
             images=imageList(u'%s%%s.png' % bush.game.fsName.lower()),
             tip=u' '.join((_(u"Launch"),bush.game.displayName)),
             obseTip=u' '.join((_(u"Launch"),bush.game.displayName,u'%(version)s')),
@@ -67,92 +81,85 @@ def InitStatusBar():
             uid=u'Oblivion'))
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
-            bosh.dirs['app'].join(bush.game.cs.exe),
+            bass.dirs['app'].join(bush.game.cs.exe),
             imageList(bush.game.cs.imageName),
             u' '.join((_(u"Launch"),bush.game.cs.shortName)),
             u' '.join((_(u"Launch"),bush.game.cs.shortName,u'%(version)s')),
             bush.game.cs.seArgs,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
-        App_Button(
-            bosh.dirs['app'].join(u'OblivionModManager.exe'),
-            imageList(u'obmm%s.png'),
-            _(u"Launch OBMM"),
-            uid=u'OBMM'))
-    from .constants import toolbar_buttons, app_buttons
+        App_Button(bass.dirs['app'].join(u'OblivionModManager.exe'),
+                   imageList(u'obmm%s.png'),
+                   _(u"Launch OBMM"),
+                   uid=u'OBMM'))
+    from .constants import toolbar_buttons
     for tb in toolbar_buttons:
         BashStatusBar.buttons.append(Tooldir_Button(*tb))
-    for ab in app_buttons:
-        BashStatusBar.buttons.append(App_Button(*ab[:-1], **ab[-1]))
+    for tb2 in _init_tool_buttons():
+        BashStatusBar.buttons.append(App_Button(*tb2[:-1], **tb2[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
-            (bosh.tooldirs['Tes4ViewPath'],u'-TES4'), #no cmd argument to force view mode
+            (bass.tooldirs['Tes4ViewPath'], u'-TES4'), #no cmd argument to force view mode
             imageList(u'tools/tes4view%s.png'),
             _(u"Launch TES4View"),
             uid=u'TES4View'))
     BashStatusBar.buttons.append( #Tes4Edit
-        App_Tes4View(
-            (bosh.tooldirs['Tes4EditPath'],u'-TES4 -edit'),
-            imageList(u'tools/tes4edit%s.png'),
-            _(u"Launch TES4Edit"),
-            uid=u'TES4Edit'))
+        App_Tes4View((bass.tooldirs['Tes4EditPath'], u'-TES4 -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch TES4Edit"),
+                     uid=u'TES4Edit'))
     BashStatusBar.buttons.append( #Tes5Edit
-        App_Tes4View(
-            (bosh.tooldirs['Tes5EditPath'],u'-TES5 -edit'),
-            imageList(u'tools/tes4edit%s.png'),
-            _(u"Launch TES5Edit"),
-            uid=u'TES5Edit'))
+        App_Tes4View((bass.tooldirs['Tes5EditPath'], u'-TES5 -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch TES5Edit"),
+                     uid=u'TES5Edit'))
     BashStatusBar.buttons.append( #TesVGecko
-        App_Button( (bosh.tooldirs['Tes5GeckoPath']),
-            imageList(u'tools/tesvgecko%s.png'),
-            _(u"Launch TesVGecko"),
-            uid=u'TesVGecko'))
+        App_Button((bass.tooldirs['Tes5GeckoPath']),
+                   imageList(u'tools/tesvgecko%s.png'),
+                   _(u"Launch TesVGecko"),
+                   uid=u'TesVGecko'))
     BashStatusBar.buttons.append( #Tes4Trans
-        App_Tes4View(
-            (bosh.tooldirs['Tes4TransPath'],u'-TES4 -translate'),
-            imageList(u'tools/tes4trans%s.png'),
-            _(u"Launch TES4Trans"),
-            uid=u'TES4Trans'))
+        App_Tes4View((bass.tooldirs['Tes4TransPath'], u'-TES4 -translate'),
+                     imageList(u'tools/tes4trans%s.png'),
+                     _(u"Launch TES4Trans"),
+                     uid=u'TES4Trans'))
     BashStatusBar.buttons.append( #Tes4LODGen
-        App_Tes4View(
-            (bosh.tooldirs['Tes4LodGenPath'],u'-TES4 -lodgen'),
-            imageList(u'tools/tes4lodgen%s.png'),
-            _(u"Launch Tes4LODGen"),
-            uid=u'TES4LODGen'))
+        App_Tes4View((bass.tooldirs['Tes4LodGenPath'], u'-TES4 -lodgen'),
+                    imageList(u'tools/tes4lodgen%s.png'),
+                    _(u"Launch Tes4LODGen"),
+                    uid=u'TES4LODGen'))
     BashStatusBar.buttons.append( #BOSS
-        App_BOSS(
-            (bosh.tooldirs['boss']),
-            imageList(u'boss%s.png'),
-            _(u"Launch BOSS"),
-            uid=u'BOSS'))
-    if bosh.inisettings['ShowModelingToolLaunchers']:
+        App_BOSS((bass.tooldirs['boss']),
+                imageList(u'boss%s.png'),
+                _(u"Launch BOSS"),
+                uid=u'BOSS'))
+    if bass.inisettings['ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*mb))
         BashStatusBar.buttons.append( #Softimage Mod Tool
-            App_Button(
-                (bosh.tooldirs['SoftimageModTool'],u'-mod'),
-                imageList(u'tools/softimagemodtool%s.png'),
-                _(u"Launch Softimage Mod Tool"),
-                uid=u'SoftimageModTool'))
-    if bosh.inisettings['ShowModelingToolLaunchers'] \
-            or bosh.inisettings['ShowTextureToolLaunchers']:
+            App_Button((bass.tooldirs['SoftimageModTool'], u'-mod'),
+                       imageList(u'tools/softimagemodtool%s.png'),
+                       _(u"Launch Softimage Mod Tool"),
+                       uid=u'SoftimageModTool'))
+    if bass.inisettings['ShowModelingToolLaunchers'] \
+            or bass.inisettings['ShowTextureToolLaunchers']:
         BashStatusBar.buttons.append( #Nifskope
             Tooldir_Button('NifskopePath', imageList(u'tools/nifskope%s.png'),
                 _(u"Launch Nifskope")))
-    if bosh.inisettings['ShowTextureToolLaunchers']:
+    if bass.inisettings['ShowTextureToolLaunchers']:
         from .constants import texture_tool_buttons
         for tt in texture_tool_buttons:
             BashStatusBar.buttons.append(Tooldir_Button(*tt))
-    if bosh.inisettings['ShowAudioToolLaunchers']:
+    if bass.inisettings['ShowAudioToolLaunchers']:
         from .constants import audio_tools
         for at in audio_tools:
             BashStatusBar.buttons.append(Tooldir_Button(*at))
     from .constants import misc_tools
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
-    dirApps = bosh.dirs['mopy'].join(u'Apps')
-    badIcons = [Image(bosh.dirs['images'].join(u'x.png'))] * 3
+    dirApps = bass.dirs['mopy'].join(u'Apps')
+    badIcons = [Image(bass.dirs['images'].join(u'x.png'))] * 3
     def iconList(fileName):
         return [Image(fileName, ICO, x) for x in (16, 24, 32)]
     for path, icon, description in init_app_links(dirApps, badIcons, iconList):
@@ -160,14 +167,14 @@ def InitStatusBar():
                 App_Button((path, ()), icon, description, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(
-        App_Button((bosh.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
+        App_Button((bass.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
                     u'--bashmon'), imageList(u'bashmon%s.png'),
                    _(u"Launch BashMon"), uid=u'Bashmon'))
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
-    if bosh.inisettings['ShowDevTools']:
+    if bass.inisettings['ShowDevTools']:
         BashStatusBar.buttons.append(App_Restart(uid=u'Restart'))
         BashStatusBar.buttons.append(App_GenPickle(uid=u'Generate PKL File'))
 
@@ -403,7 +410,7 @@ def InitModLinks():
         ModList.mainMenu.append(Mods_LockTimes())
     ModList.mainMenu.append(Mods_ScanDirty())
     #--ModList: Item Links
-    if bosh.inisettings['ShowDevTools']:
+    if bass.inisettings['ShowDevTools']:
         ModList.itemMenu.append(Mod_FullLoad())
     if True: #--File
         fileMenu = MenuLink(_(u"File"))

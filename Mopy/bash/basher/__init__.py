@@ -588,7 +588,7 @@ class INIList(balt.UIList):
     @staticmethod
     def filterOutDefaultTweaks(tweaks):
         """Filter out default tweaks from tweaks iterable."""
-        return filter(lambda x: bosh.dirs['tweaks'].join(x).isfile(), tweaks)
+        return filter(lambda x: bass.dirs['tweaks'].join(x).isfile(), tweaks)
 
     def _toDelete(self, items):
         items = super(INIList, self)._toDelete(items)
@@ -1496,7 +1496,7 @@ class INIPanel(SashPanel):
         self.choices = settings['bash.ini.choices']
         self.choice = settings['bash.ini.choice']
         self.CheckTargets()
-        self.lastDir = bosh.dirs['mods'].s
+        self.lastDir = bass.dirs['mods'].s
         self.SortChoices()
         if self.choice < 0 or self.choice >= len(self.sortKeys):
             self.choice = 0
@@ -2242,7 +2242,7 @@ class InstallersList(balt.Tank):
         try:
             for i, omod in enumerate(omodnames):
                 progress(i, omod.stail)
-                outDir = bosh.dirs['installers'].join(omod.body)
+                outDir = bass.dirs['installers'].join(omod.body)
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
@@ -2335,15 +2335,15 @@ class InstallersList(balt.Tank):
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
-                     or x.cext in bosh.readExts and x not in converters]
+                     or x.cext in bolt.readExts and x not in converters]
         if len(omodnames) > 0: self._extractOmods(omodnames)
         if not filenames and not converters:
             return
         action = self._askCopyOrMove(filenames)
         if action not in ['COPY','MOVE']: return
         with balt.BusyCursor():
-            installersJoin = bosh.dirs['installers'].join
-            convertersJoin = bosh.dirs['converters'].join
+            installersJoin = bass.dirs['installers'].join
+            convertersJoin = bass.dirs['converters'].join
             filesTo = [installersJoin(x.tail) for x in filenames]
             filesTo.extend(convertersJoin(x.tail) for x in converters)
             filenames.extend(converters)
@@ -2422,7 +2422,7 @@ class InstallersList(balt.Tank):
             self.addMarker()
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            sel = map(lambda x: bosh.dirs['installers'].join(x).s,
+            sel = map(lambda x: bass.dirs['installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         # Enter: Open selected installers
@@ -2452,7 +2452,7 @@ class InstallersList(balt.Tank):
                 for index, (name, installer) in enumerate(toRefresh):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
-                    apath = bosh.dirs['installers'].join(name)
+                    apath = bass.dirs['installers'].join(name)
                     installer.refreshBasic(apath, SubProgress(progress, index,
                                                               index + 1))
                     self.data.hasChanged = True  # is it really needed ?
@@ -2603,7 +2603,7 @@ class InstallersPanel(SashTankPanel):
         if settings.get('bash.installers.updatedCRCs',True):
             settings['bash.installers.updatedCRCs'] = False
             self.refreshed = False
-        installers_paths = bosh.dirs[
+        installers_paths = bass.dirs[
             'installers'].list() if self.frameActivated else ()
         if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
             self.__extractOmods()
@@ -2632,8 +2632,8 @@ class InstallersPanel(SashTankPanel):
             for apath in changed:
                 # the Game/Data dir - will give correct relative path for both
                 # Ini tweaks and mods - those are keyed in data by rel path...
-                if apath.cs.startswith(bosh.dirs['mods'].cs):
-                    path = apath.relpath(bosh.dirs['mods'])
+                if apath.cs.startswith(bass.dirs['mods'].cs):
+                    path = apath.relpath(bass.dirs['mods'])
                 else:
                     path = apath
                 if apath.exists():
@@ -2647,7 +2647,7 @@ class InstallersPanel(SashTankPanel):
     def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
-            dirInstallers = bosh.dirs['installers']
+            dirInstallers = bass.dirs['installers']
             dirInstallersJoin = dirInstallers.join
             omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
                      x.cext == u'.omod']
@@ -3819,7 +3819,7 @@ class BashFrame(wx.Frame):
 
     @balt.conversation
     def warnTooManyModsBsas(self):
-        if not bosh.inisettings['WarnTooManyFiles']: return
+        if not bass.inisettings['WarnTooManyFiles']: return
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not \
                 settings['bash.mods.autoGhost']:
@@ -3922,7 +3922,7 @@ class BashFrame(wx.Frame):
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
             if bosh.modInfos.mtimesReset[0] == 'PLUGINS':
-                if not bosh.inisettings['SkipResetTimeNotifications']:
+                if not bass.inisettings['SkipResetTimeNotifications']:
                     balt.showWarning(self,_(u"An invalid plugin load order has been corrected."))
             else:
                 if bosh.modInfos.mtimesReset[0] == 'FAILED':
@@ -3930,7 +3930,7 @@ class BashFrame(wx.Frame):
                                             + bush.game.fsName+u'\\Data.\n' +
                                             _(u"Specifically had permission denied to change the time on:")
                                             + u'\n' + bosh.modInfos.mtimesReset[1].s)
-                if not bosh.inisettings['SkipResetTimeNotifications']:
+                if not bass.inisettings['SkipResetTimeNotifications']:
                     message = [u'',_(u'Modified dates have been reset for some mod files')]
                     message.extend(sorted(bosh.modInfos.mtimesReset))
                     ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
@@ -4060,7 +4060,7 @@ class BashFrame(wx.Frame):
 
     def _missingDocsDir(self):
         #--Missing docs directory?
-        testFile = GPath(bosh.dirs['mopy']).join(u'Docs', u'wtxt_teal.css')
+        testFile = GPath(bass.dirs['mopy']).join(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
         msg = _(u'Installation appears incomplete.  Please re-unzip bash '
@@ -4142,7 +4142,7 @@ def GetBashVersion():
     return bass.AppVersion
 
     #--Version from readme
-    #readme = bosh.dirs['mopy'].join(u'Wrye Bash.txt')
+    #readme = bass.dirs['mopy'].join(u'Wrye Bash.txt')
     #if readme.exists() and readme.mtime != settings['bash.readme'][0]:
     #    reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
     #    for line in readme.open(encoding='utf-8-sig'):
@@ -4155,7 +4155,7 @@ def GetBashVersion():
 class WryeBashSplashScreen(wx.SplashScreen):
     """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
     def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name = bosh.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
+        splashScreenBitmap = wx.Image(name = bass.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
         splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT  #This centers the image on the screen
         # image will stay until clicked by user or is explicitly destroyed when the main window is ready
         # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then you have to guess how long it should last
@@ -4183,8 +4183,8 @@ class BashApp(wx.App):
         progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
              style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
         # Is splash enabled in ini ?
-        if bosh.inisettings['EnableSplashScreen']:
-            if bosh.dirs['images'].join(u'wryesplash.png').exists():
+        if bass.inisettings['EnableSplashScreen']:
+            if bass.dirs['images'].join(u'wryesplash.png').exists():
                 try:
                         splashScreen = WryeBashSplashScreen()
                         splashScreen.Show()
@@ -4241,7 +4241,7 @@ class BashApp(wx.App):
         # screens, messages and Tank datas are refreshed() upon panel showing
         #--Patch check
         if bush.game.esp.canBash:
-            if not bosh.modInfos.bashed_patches and bosh.inisettings['EnsurePatchExists']:
+            if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
                 PatchFile.generateNextBashedPatch()
 
@@ -4290,8 +4290,8 @@ def InitSettings(): # this must run first !
     settings = bosh.settings
     settings.loadDefaults(settingDefaults)
     #--Wrye Balt
-    settings['balt.WryeLog.temp'] = bosh.dirs['saveBase'].join(u'WryeLogTemp.html')
-    settings['balt.WryeLog.cssDir'] = bosh.dirs['mopy'].join(u'Docs')
+    settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
+    settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
     #--StandAlone version?
     settings['bash.standalone'] = hasattr(sys,'frozen')
     initPatchers()
@@ -4301,13 +4301,13 @@ def InitImages():
     #--Colors
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
-    imgDirJn = bosh.dirs['images'].join
+    imgDirJn = bass.dirs['images'].join
     def _png(name): return Image(GPath(imgDirJn(name)),PNG)
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
-    #images['oblivion'] = Image(GPath(bosh.dirs['images'].join(u'oblivion.png')),png)
+    #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
     images['help.16'] = Image(GPath(imgDirJn(u'help16.png')))
     images['help.24'] = Image(GPath(imgDirJn(u'help24.png')))
     images['help.32'] = Image(GPath(imgDirJn(u'help32.png')))

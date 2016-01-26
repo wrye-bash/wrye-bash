@@ -60,7 +60,7 @@ class _AListsMerger(SpecialPatcher):
     def getDefaultTags():
         tags = {}
         for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            # TODO: P version: textPath = bosh.dirs['patches'].join(fileName)
+            # TODO: P version: textPath = bass.dirs['patches'].join(fileName)
             # Does it make a difference ?
             textPath = getPatchesPath(fileName)
             if textPath.exists():

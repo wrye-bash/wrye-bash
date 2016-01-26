@@ -23,8 +23,7 @@
 # =============================================================================
 
 """This module contains some constants ripped out of basher.py"""
-
-from .. import bush, bosh
+from .. import bass, bush
 from ..balt import Image, ImageList, defPos
 from ..bolt import GPath
 
@@ -383,7 +382,7 @@ ICO = Image.typesDict['ico']
 BMP = Image.typesDict['bmp']
 TIF = Image.typesDict['tif']
 
-imDirJn = bosh.dirs['images'].join
+imDirJn = bass.dirs['images'].join
 def _png(name): return Image(GPath(imDirJn(name)), PNG)
 
 #--Image lists
@@ -488,22 +487,6 @@ toolbar_buttons = (
         (u'Tes4FilesPath', imageList(u'tools/tes4files%s.png'),
         _(u"Launch TES4Files")),
 )
-
-try: # FIXME: due to constants being imported in showErrorInGui
-    app_buttons = (
-        ((bosh.tooldirs['OblivionBookCreatorPath'],
-          bosh.inisettings['OblivionBookCreatorJavaArg']),
-         imageList(u'tools/oblivionbookcreator%s.png'),
-         _(u"Launch Oblivion Book Creator"), {'uid': u'OblivionBookCreator'}),
-        ((bosh.tooldirs['Tes4GeckoPath'],
-          bosh.inisettings['Tes4GeckoJavaArg']),
-         imageList(u'tools/tes4gecko%s.png'),
-         _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
-        ((bosh.tooldirs['Tes5GeckoPath']), imageList(u'tools/tesvgecko%s.png'),
-         _(u"Launch TesVGecko"), {'uid': u'TesVGecko'}),
-    )
-except KeyError:
-    app_buttons = ()
 
 modeling_tools_buttons = (
     ('AutoCad', imageList(u'tools/autocad%s.png'), _(u"Launch AutoCad")),

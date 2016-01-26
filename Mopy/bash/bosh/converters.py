@@ -26,8 +26,9 @@
 import cPickle
 import re
 import sys
-from . import defaultExt, Installer, extractCommand, readExts, \
-    compressionSettings, compressCommand, InstallerArchive
+from . import Installer, InstallerArchive
+from ..bolt import defaultExt, extractCommand, readExts, compressionSettings, \
+    compressCommand
 from .. import bolt
 from ..bolt import DataDict, PickleDict, GPath, Path, StateError, sio, \
     SubProgress, ArgumentError
@@ -304,9 +305,8 @@ class InstallerConverter(object):
                     map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
         with self.fullPath.unicodeSafe() as path:
             # Temp rename if its name wont encode correctly
-            from . import exe7z ##: to bolt !!
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
-                exe7z, path.s)
+                bolt.exe7z, path.s)
             bolt.wrapPopenOut(command, translate, errorMsg=
                 u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
 
@@ -583,9 +583,8 @@ class InstallerConverter(object):
         if progress:
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
-        from . import exe7z ##: to bolt !!
         command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
-            exe7z, apath.s, subTempDir.s, tempList.s)
+            bolt.exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
         try:
             subArchives = bolt.extract7z(command, srcInstaller, progress,

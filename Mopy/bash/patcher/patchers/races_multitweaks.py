@@ -35,13 +35,13 @@ import re
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
 from ...bolt import SubProgress, BoltError, GPath, deprint
-from ...bosh import LoadFactory, ModFile
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
 from ...patcher.base import AMultiTweakItem
 from ...patcher.patch_files import PatchFile
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     DoublePatcher, CBash_DoublePatcher
+from ...parsers import LoadFactory, ModFile
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):

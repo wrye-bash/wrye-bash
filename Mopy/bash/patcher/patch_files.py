@@ -25,7 +25,9 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
-from ..bosh import ModFile, ModInfo, LoadFactory, MasterSet, dirs
+from .. import bass
+from ..bosh import ModInfo
+from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
 from ..balt import showWarning
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
@@ -447,7 +449,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         IIMSet = set([modName for modName in (self.allSet | self.scanSet) if
                       bool(infos[modName].getBashTags() & iiModeSet)])
 
-        self.Current = ObCollection(ModsPath=dirs['mods'].s)
+        self.Current = ObCollection(ModsPath=bass.dirs['mods'].s)
 
         #add order reordered
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet

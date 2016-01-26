@@ -32,7 +32,7 @@ import struct
 from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
-from .. import bosh, bolt, balt, bush
+from .. import bass, bosh, bolt, balt, bush, parsers
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image
@@ -54,7 +54,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
         """Initialize."""
-        self.baseSaves = bosh.dirs['saveBase'].join(u'Saves')
+        self.baseSaves = bass.dirs['saveBase'].join(u'Saves')
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showAdd    = True
@@ -133,7 +133,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             balt.showError(self.parent,_(u'Active profile cannot be removed.'))
             return False
         #--Get file count. If > zero, verify with user.
-        profileDir = bosh.dirs['saveBase'].join(profileSaves)
+        profileDir = bass.dirs['saveBase'].join(profileSaves)
         files = [file for file in profileDir.list() if bosh.reSaveExt.search(file.s)]
         if files:
             message = _(u'Delete profile %s and the %d save files it contains?') % (profile,len(files))
@@ -293,7 +293,7 @@ class Save_ExportScreenshot(OneItemLink):
 
     def Execute(self):
         saveInfo = bosh.saveInfos[self.selected[0]]
-        imagePath = balt.askSave(Link.Frame,_(u'Save Screenshot as:'), bosh.dirs['patches'].s,_(u'Screenshot %s.jpg') % self.selected[0].s,u'*.jpg')
+        imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'), bass.dirs['patches'].s, _(u'Screenshot %s.jpg') % self.selected[0].s, u'*.jpg')
         if not imagePath: return
         width,height,data = saveInfo.header.image
         image = Image.GetImage(data, height, width)
@@ -612,7 +612,7 @@ class Save_Move(ChoiceLink):
 
     def MoveFiles(self,profile):
         fileInfos = self.window.data
-        destDir = bosh.dirs['saveBase'].join(u'Saves')
+        destDir = bass.dirs['saveBase'].join(u'Saves')
         if profile != _(u'Default'):
             destDir = destDir.join(profile)
         if destDir == fileInfos.dir:
@@ -843,14 +843,15 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['NPC_'])
+            loadFactory = parsers.LoadFactory(
+                    False, bosh.MreRecord.type_class['NPC_'])
             ordered = list(bosh.modInfos.activeCached)
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):
                 subProgress(index,_(u'Scanning ') + modName.s)
                 modInfo = bosh.modInfos[modName]
-                modFile = bosh.ModFile(modInfo,loadFactory)
+                modFile = parsers.ModFile(modInfo, loadFactory)
                 try:
                     modFile.load(True)
                 except bosh.ModError as x:
@@ -858,7 +859,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                     continue
                 if 'NPC_' not in modFile.tops: continue
                 #--Loop over mod NPCs
-                mapToOrdered = bosh.MasterMap(modFile.tes4.masters+[modName], ordered)
+                mapToOrdered = parsers.MasterMap(modFile.tes4.masters + [modName], ordered)
                 for npc in modFile.NPC_.getActiveRecords():
                     fid = mapToOrdered(npc.fid,None)
                     if not fid: continue
@@ -872,7 +873,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 saveFile = bosh.SaveFile(saveInfo)
                 saveFile.load()
                 records = saveFile.records
-                mapToOrdered = bosh.MasterMap(saveFile.masters, ordered)
+                mapToOrdered = parsers.MasterMap(saveFile.masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
                 for recNum in xrange(len(records)):

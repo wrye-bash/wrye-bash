@@ -30,15 +30,14 @@ import re
 from ... import bosh # for modInfos
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
-from ...bosh import LoadFactory, ModFile, getPatchesList, \
-    reModExt, getPatchesPath
+from ...bosh import getPatchesList, reModExt, getPatchesPath
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
 from ..base import AImportPatcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
-    CBash_ItemStats, SpellRecords, CBash_SpellRecords
+    CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
 from .base import ImportPatcher, CBash_ImportPatcher, CountDict
 
 # Functions -------------------------------------------------------------------

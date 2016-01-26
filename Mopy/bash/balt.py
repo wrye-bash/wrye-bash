@@ -23,10 +23,10 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
-import bosh ##: BIN ! or rather split balt making clear which submodules use it
 from env import AccessDeniedError ##:same as above, env and balt should not mix
 from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
     StateError, CancelError, SkipError
@@ -233,7 +233,7 @@ class ColorChecks(ImageList):
                            u'red'):
                 shortKey = status + u'.' + state
                 imageKey = u'checkbox.' + shortKey
-                file = GPath(bosh.dirs['images'].join(
+                file = GPath(bass.dirs['images'].join(
                     u'checkbox_' + status + u'_' + state + u'.png'))
                 image = images[imageKey] = Image(file, Image.typesDict['png'])
                 self.Add(image, shortKey)
@@ -1585,7 +1585,7 @@ class UIList(wx.Panel):
     mainMenu = None
     itemMenu = None
     #--gList image collection
-    __icons = ImageList(16, 16) # sentinel value due to bosh.dirs not being
+    __icons = ImageList(16, 16) # sentinel value due to bass.dirs not being
     # yet initialized when balt is imported, so I can't use ColorChecks here
     icons = __icons
     _shellUI = False # only True in Screens/INIList/Installers

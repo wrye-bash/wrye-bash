@@ -25,6 +25,7 @@
 """Specific parser for Wrye Bash."""
 
 import ScriptParser         # generic parser class
+import bass
 from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
@@ -525,8 +526,8 @@ class PageVersions(PageInstaller):
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
 
-        bmp = [wx.Bitmap(bosh.dirs['images'].join(u'x.png').s),
-               wx.Bitmap(bosh.dirs['images'].join(u'check.png').s)
+        bmp = [wx.Bitmap(bass.dirs['images'].join(u'x.png').s),
+               wx.Bitmap(bass.dirs['images'].join(u'check.png').s)
                ]
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
@@ -1097,15 +1098,15 @@ class WryeParser(ScriptParser.Parser):
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
-        ret = self._TestVersion(self._TestVersion_Want(obWant), bosh.dirs['app'].join(bush.game.exe))
+        ret = self._TestVersion(self._TestVersion_Want(obWant), bass.dirs['app'].join(bush.game.exe))
         return ret[0]
     def fnCompareSEVersion(self, seWant):
         if bush.game.se.shortName != u'':
-            if bosh.inisettings['SteamInstall']:
+            if bass.inisettings['SteamInstall']:
                 se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
             else:
                 se = bush.game.se.exe
-            ret = self._TestVersion(self._TestVersion_Want(seWant), bosh.dirs['app'].join(se))
+            ret = self._TestVersion(self._TestVersion_Want(seWant), bass.dirs['app'].join(se))
             return ret[0]
         else:
             # No script extender available for this game
@@ -1122,7 +1123,7 @@ class WryeParser(ScriptParser.Parser):
         return cmp(float(wbHave), float(wbWant))
     def fnDataFileExists(self, *filenames):
         for filename in filenames:
-            if not bosh.dirs['mods'].join(filename).exists():
+            if not bass.dirs['mods'].join(filename).exists():
                 # Check for ghosted mods
                 if bolt.GPath(filename) in bosh.modInfos:
                     return True # It's a ghosted mod
@@ -1381,7 +1382,7 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"SubPackage '%s' does not exist.") % name)
                 List = []
                 if isinstance(self.installer,bosh.InstallerProject):
-                    dir = bosh.dirs['installers'].join(self.path,subpackage)
+                    dir = bass.dirs['installers'].join(self.path, subpackage)
                     for root,dirs,files in dir.walk():
                         for file in files:
                             rel = root.join(file).relpath(dir)
@@ -1479,11 +1480,11 @@ class WryeParser(ScriptParser.Parser):
         if self.bArchive:
             imageJoin = self.installer.getTempDir().join
         else:
-            imageJoin = bosh.dirs['installers'].join(self.path).join
+            imageJoin = bass.dirs['installers'].join(self.path).join
         for i in images:
             path = imageJoin(i)
-            if not path.exists() and bosh.dirs['mopy'].join(i).exists():
-                path = bosh.dirs['mopy'].join(i)
+            if not path.exists() and bass.dirs['mopy'].join(i).exists():
+                path = bass.dirs['mopy'].join(i)
             image_paths.append(path)
         self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
     def kwdCase(self, value):
@@ -1592,15 +1593,15 @@ class WryeParser(ScriptParser.Parser):
         if not wbWant: wbWant = u'0.0'
         wbHave = bosh.settings['bash.version']
 
-        ret = self._TestVersion(gameWant, bosh.dirs['app'].join(bush.game.exe))
+        ret = self._TestVersion(gameWant, bass.dirs['app'].join(bush.game.exe))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.se.shortName != u'':
-            if bosh.inisettings['SteamInstall']:
+            if bass.inisettings['SteamInstall']:
                 seName = bush.game.se.steamExe
             else:
                 seName = bush.game.se.exe
-            ret = self._TestVersion(seWant, bosh.dirs['app'].join(seName))
+            ret = self._TestVersion(seWant, bass.dirs['app'].join(seName))
             bSEOk = ret[0] >= 0
             seHave = ret[1]
         else:
@@ -1623,9 +1624,9 @@ class WryeParser(ScriptParser.Parser):
             self.page = PageVersions(self.parent, bGameOk, gameHave, game, bSEOk, seHave, se, bGEOk, geHave, ge, bWBOk, wbHave, wbWant)
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.ge.exe,str):
-            files = [bosh.dirs['mods'].join(bush.game.ge.exe)]
+            files = [bass.dirs['mods'].join(bush.game.ge.exe)]
         else:
-            files = [bosh.dirs['mods'].join(*x) for x in bush.game.ge.exe]
+            files = [bass.dirs['mods'].join(*x) for x in bush.game.ge.exe]
         for file in reversed(files):
             ret = self._TestVersion(want, file)
             if ret[1] != u'None':

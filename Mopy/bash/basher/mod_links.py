@@ -29,7 +29,7 @@ import StringIO
 import collections
 import copy
 import os
-from .. import bosh, bolt, balt, bush
+from .. import bass, bosh, bolt, balt, bush, parsers
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
@@ -81,8 +81,8 @@ class Mod_FullLoad(OneItemLink):
             print bosh.MreRecord.type_class
             readClasses = bosh.MreRecord.type_class
             print readClasses.values()
-            loadFactory = bosh.LoadFactory(False, *readClasses.values())
-            modFile = bosh.ModFile(bosh.modInfos[fileName],loadFactory)
+            loadFactory = parsers.LoadFactory(False, *readClasses.values())
+            modFile = parsers.ModFile(bosh.modInfos[fileName], loadFactory)
             try:
                 modFile.load(True,progress)
             except:
@@ -127,11 +127,11 @@ class Mod_CreateDummyMasters(OneItemLink):
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
             else:
-                newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+                newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
                 newFile.tes4.author = u'BASHED DUMMY'
                 newFile.safeSave()
         if doCBash:
-            with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
                 tempname = u'_DummyMaster.esp.tmp'
                 modFile = Current.addMod(tempname, CreateNew=True)
                 Current.load()
@@ -321,7 +321,7 @@ class _Mod_Groups_Export(EnabledLink):
 
     def Execute(self):
         textName = u'My' + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         textPath = self._askSave(title=self.__class__.askTitle,
@@ -349,7 +349,7 @@ class _Mod_Groups_Import(EnabledLink):
             u"mods the group they are assigned in the text file, if any.")
         if not self._askContinue(message, 'bash.groups.import.continue',
                                  _(u'Import Groups')): return
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import names from:'),textDir,
             u'', u'*_Groups.csv',mustExist=True)
@@ -1129,7 +1129,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
                                              'bash.patch.configs', {})
         exportConfig(patchName=self.selected[0].s, config=config,
                      isCBash=configIsCBash(config), win=self.window,
-                     outDir=bosh.dirs['patches'])
+                     outDir=bass.dirs['patches'])
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1313,8 +1313,10 @@ class Mod_RemoveWorldOrphans(EnabledLink):
             fileInfo = bosh.modInfos[fileName]
             #--Export
             with balt.Progress(_(u"Remove World Orphans")) as progress:
-                loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['CELL'],bosh.MreRecord.type_class['WRLD'])
-                modFile = bosh.ModFile(fileInfo,loadFactory)
+                loadFactory = parsers.LoadFactory(True,
+                        bosh.MreRecord.type_class['CELL'],
+                        bosh.MreRecord.type_class['WRLD'])
+                modFile = parsers.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' ' + fileName.s + u'.')
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
@@ -1508,16 +1510,16 @@ class Mod_DecompileAll(EnabledLink):
                                   _(u'Decompile All'))
                 continue
             fileInfo = bosh.modInfos[fileName]
-            loadFactory = bosh.LoadFactory(True,bosh.MreRecord.type_class['SCPT'])
-            modFile = bosh.ModFile(fileInfo,loadFactory)
+            loadFactory = parsers.LoadFactory(True, bosh.MreRecord.type_class['SCPT'])
+            modFile = parsers.ModFile(fileInfo, loadFactory)
             modFile.load(True)
             badGenericLore = False
             removed = []
             id_text = {}
             if modFile.SCPT.getNumRecords(False):
-                loadFactory = bosh.LoadFactory(False,bosh.MreRecord.type_class['SCPT'])
+                loadFactory = parsers.LoadFactory(False, bosh.MreRecord.type_class['SCPT'])
                 for master in modFile.tes4.masters:
-                    masterFile = bosh.ModFile(bosh.modInfos[master],loadFactory)
+                    masterFile = parsers.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
                     mapper = masterFile.getLongMapper()
                     for record in masterFile.SCPT.getActiveRecords():
@@ -1684,7 +1686,7 @@ class Mod_Fids_Replace(OneItemLink):
                                  _(u'Import Form IDs')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Form ID mapper file:'),textDir,
             u'', u'*_Formids.csv',mustExist=True)
@@ -1746,7 +1748,7 @@ class _Mod_Export_Link(EnabledLink):
     def Execute(self):
         fileName = GPath(self.selected[0])
         textName = fileName.root + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         textPath = self._askSave(title=self.__class__.askTitle,
@@ -1811,7 +1813,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
                                  _(u'Export NPC Levels')): return
         fileName = GPath(self.selected[0])
         textName = fileName.root+u'_NPC_Levels.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         textPath = self._askSave(title=_(u'Export NPC levels to:'),
@@ -1848,7 +1850,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_NPC_Levels.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import NPC levels from:'),
             textDir,textName,u'*_NPC_Levels.csv',mustExist=True)
@@ -1908,7 +1910,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Relations.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import faction relations from:'),
             textDir, textName, u'*_Relations.csv',mustExist=True)
@@ -1969,7 +1971,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Factions.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import Factions from:'),
             textDir, textName, u'*_Factions.csv',mustExist=True)
@@ -2014,7 +2016,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     def Execute(self): # overrides _Mod_Export_Link
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
+        defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)
             bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
@@ -2080,9 +2082,9 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                                  _(u'Import Scripts')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        defaultPath = bosh.dirs['patches'].join(fileName.s+u' Exported Scripts')
+        defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         if not defaultPath.exists():
-            defaultPath = bosh.dirs['patches']
+            defaultPath = bass.dirs['patches']
         textDir = self._askDirectory(
             message=_(u'Choose directory to import scripts from'),
             defaultPath=defaultPath)
@@ -2151,7 +2153,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Stats.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import stats from:'),
             textDir, textName, u'*_Stats.csv',mustExist=True)
@@ -2214,7 +2216,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_Prices.csv',mustExist=True)
@@ -2270,7 +2272,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_SigilStones.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import Sigil Stone details from:'),
             textDir, textName, u'*_SigilStones.csv',mustExist=True)
@@ -2346,7 +2348,7 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Spells.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import Spell details from:'),
             textDir, textName, u'*_Spells.csv',mustExist=True)
@@ -2407,7 +2409,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Ingredients.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import Ingredient details from:'),
             textDir,textName,u'*_Ingredients.csv',mustExist=True)
@@ -2467,7 +2469,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_Eids.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import names from:'),textDir,
             textName, u'*_Eids.csv',mustExist=True)
@@ -2542,7 +2544,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,
             textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
@@ -2605,7 +2607,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root+u'_MapMarkers.csv'
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Import Map Markers from:'),
             textDir, textName, u'*_MapMarkers.csv',mustExist=True)
@@ -2686,7 +2688,7 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
-        textDir = bosh.dirs['patches']
+        textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_ItemData.csv',mustExist=True)
@@ -2765,7 +2767,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
         modInfo = self.window.fileInfo
         path = modInfo.getPath()
 
-        with ObCollection(ModsPath=bosh.dirs['mods'].s) as Current:
+        with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
             modFile = Current.addMod(path.stail)
             Current.load()
             oldMasters = modFile.TES4.masters

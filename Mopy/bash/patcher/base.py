@@ -34,8 +34,10 @@ from this module outside of the patcher package."""
 import copy
 import re
 from ..bolt import AbstractError, GPath, Path
-from ..bosh import reModExt, dirs, reCsvExt # should I not import dirs here ?
+from ..bosh import reModExt
 from .. import bosh # for modInfos
+
+reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -201,8 +203,7 @@ class AListPatcher(_Abstract_Patcher):
                 autoItems.append(name)
                 if self.choiceMenu: self.getChoice(name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(set(dirs['patches'].list()) | set(
-                dirs['defaultPatches'].list())):
+        for fileName in sorted(bosh.getPatchesList()):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems

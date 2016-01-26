@@ -26,7 +26,7 @@
 points to BashFrame.modList singleton."""
 
 import re as _re
-from .. import bosh, balt
+from .. import bosh, balt, parsers
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
@@ -231,7 +231,7 @@ class Mods_CreateBlank(ItemLink):
                 windowSelected] if windowSelected else fileInfos.values()
         newTime = max(x.mtime for x in mods)
         newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
-        newFile = bosh.ModFile(newInfo,bosh.LoadFactory(True))
+        newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
         newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
         newFile.safeSave()
         mod_group = fileInfos.table.getColumn('group')

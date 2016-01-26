@@ -28,7 +28,7 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 import random
 import re
 # Internal
-from ... import bosh # for modInfos, dirs
+from ... import bass # for dirs
 from ...bolt import AbstractError, GPath
 from ...cint import FormID
 from ...patcher.base import AMultiTweakItem
@@ -198,10 +198,10 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
             skeletonList gets files that match the pattern "skel_*.nif",
             but not "skel_special_*.nif"
             skeletonSetSpecial gets files that match "skel_special_*.nif" """
-        # Since bosh.dirs hasn't been populated when __init__ executes,
+        # Since bass.dirs hasn't been populated when __init__ executes,
         # we do this here
         skeletonList = skeletonSetSpecial =[]
-        skeletonDir = bosh.dirs['mods'].join(u'Meshes', u'Characters',
+        skeletonDir = bass.dirs['mods'].join(u'Meshes', u'Characters',
                                                   u'_male')
         if skeletonDir.exists():
             skeletonList = [x for x in skeletonDir.list() if

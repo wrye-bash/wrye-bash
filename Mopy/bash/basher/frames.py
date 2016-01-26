@@ -26,7 +26,7 @@ import StringIO
 import re
 import string
 import wx
-from .. import balt, bosh, bolt
+from .. import bass, balt, bosh, bolt
 from ..bass import Resources
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
@@ -208,7 +208,7 @@ class DocBrowser(wx.Frame):
         if modName in self.docs:
             (docsDir,fileName) = self.docs[modName].headTail
         else:
-            docsDir = bosh.settings['bash.modDocs.dir'] or bosh.dirs['mods']
+            docsDir = bosh.settings['bash.modDocs.dir'] or bass.dirs['mods']
             fileName = GPath(u'')
         #--Dialog
         path = balt.askOpen(self,_(u'Select doc for %s:') % modName.s,
@@ -513,7 +513,7 @@ class ModChecker(wx.Frame):
             scanDirty=(None, self)[self.gScanDirty.GetValue()]
             )
         if bHaveComTypes:
-            logPath = bosh.dirs['saveBase'].join(u'ModChecker.html')
+            logPath = bass.dirs['saveBase'].join(u'ModChecker.html')
             cssDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
             ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
             with logPath.open('w',encoding='utf-8-sig') as out:
