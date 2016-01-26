@@ -51,6 +51,20 @@ def InitStatusBar():
     dirImages = bass.dirs['images']
     def imageList(template):
         return [Image(dirImages.join(template % i)) for i in (16,24,32)]
+    def _init_tool_buttons(): # tooldirs must have been initialized
+        return (((bass.tooldirs['OblivionBookCreatorPath'],
+                  bass.inisettings['OblivionBookCreatorJavaArg']),
+                 imageList(u'tools/oblivionbookcreator%s.png'),
+                 _(u"Launch Oblivion Book Creator"),
+                 {'uid': u'OblivionBookCreator'}),
+                ((bass.tooldirs['Tes4GeckoPath'],
+                  bass.inisettings['Tes4GeckoJavaArg']),
+                 imageList(u'tools/tes4gecko%s.png'),
+                 _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
+                ((bass.tooldirs['Tes5GeckoPath']),
+                imageList(u'tools/tesvgecko%s.png'),
+                _(u"Launch TesVGecko"), {'uid': u'TesVGecko'}),
+        )
     #--Bash Status/LinkBar
     BashStatusBar.obseButton = obseButton = Obse_Button(uid=u'OBSE')
     BashStatusBar.buttons.append(obseButton)
@@ -78,11 +92,11 @@ def InitStatusBar():
                    imageList(u'obmm%s.png'),
                    _(u"Launch OBMM"),
                    uid=u'OBMM'))
-    from .constants import toolbar_buttons, app_buttons
+    from .constants import toolbar_buttons
     for tb in toolbar_buttons:
         BashStatusBar.buttons.append(Tooldir_Button(*tb))
-    for ab in app_buttons:
-        BashStatusBar.buttons.append(App_Button(*ab[:-1], **ab[-1]))
+    for tb2 in _init_tool_buttons():
+        BashStatusBar.buttons.append(App_Button(*tb2[:-1], **tb2[-1]))
     BashStatusBar.buttons.append( #Tes4View
         App_Tes4View(
             (bass.tooldirs['Tes4ViewPath'], u'-TES4'), #no cmd argument to force view mode

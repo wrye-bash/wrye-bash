@@ -488,22 +488,6 @@ toolbar_buttons = (
         _(u"Launch TES4Files")),
 )
 
-try: # FIXME: due to constants being imported in showErrorInGui
-    app_buttons = (
-        ((bass.tooldirs['OblivionBookCreatorPath'],
-          bass.inisettings['OblivionBookCreatorJavaArg']),
-         imageList(u'tools/oblivionbookcreator%s.png'),
-         _(u"Launch Oblivion Book Creator"), {'uid': u'OblivionBookCreator'}),
-        ((bass.tooldirs['Tes4GeckoPath'],
-          bass.inisettings['Tes4GeckoJavaArg']),
-         imageList(u'tools/tes4gecko%s.png'),
-         _(u"Launch Tes4Gecko"), {'uid': u'Tes4Gecko'}),
-        ((bass.tooldirs['Tes5GeckoPath']), imageList(u'tools/tesvgecko%s.png'),
-         _(u"Launch TesVGecko"), {'uid': u'TesVGecko'}),
-    )
-except KeyError:
-    app_buttons = ()
-
 modeling_tools_buttons = (
     ('AutoCad', imageList(u'tools/autocad%s.png'), _(u"Launch AutoCad")),
     ('BlenderPath', imageList(u'tools/blender%s.png'), _(u"Launch Blender")),
